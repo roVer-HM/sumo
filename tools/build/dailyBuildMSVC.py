@@ -105,6 +105,8 @@ def generateCMake(generator, log, checkOptionalLibs, python):
     cmakeOpt = ["-DCOMPILE_DEFINITIONS=MSVC_TEST_SERVER", "-DCHECK_OPTIONAL_LIBS=%s" % checkOptionalLibs]
     if python:
         cmakeOpt += ["-DPYTHON_EXECUTABLE=%s" % python]
+    if checkOptionalLibs:
+        cmakeOpt += ["-DSUMO_UTILS=True"]
     # Create directory or clear it if already exists
     if os.path.exists(buildDir):
         print("Cleaning directory of", generator, file=log)
@@ -178,14 +180,14 @@ for platform, dllDir in platformDlls:
         if platform == "x64":
             generator += " Win64"
         buildDir = generateCMake(generator, log, options.suffix == "extra", options.python)
-        subprocess.call(["cmake", "--build", ".", "--config", "Release"],
-                        cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
+        ret = subprocess.call(["cmake", "--build", ".", "--config", "Release"],
+                              cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
     envSuffix = ""
     if platform == "x64":
         envSuffix = "_64"
     # we need to use io.open here due to http://bugs.python.org/issue16273
     log = io.open(makeLog, 'a')
-    if sumoAllZip:
+    if ret == 0 and sumoAllZip:
         try:
             binaryZip = sumoAllZip.replace("-all-", "-%s-" % env["FILEPREFIX"])
             zipf = zipfile.ZipFile(binaryZip, 'w', zipfile.ZIP_DEFLATED)
@@ -227,9 +229,9 @@ for platform, dllDir in platformDlls:
         print("Warning: Could not create nightly sumo-game.zip! (%s)" % e, file=log)
     log.close()
     with open(makeAllLog, 'a') as log:
-        subprocess.call(["cmake", "--build", ".", "--config", "Debug"],
-                        cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
-    if sumoAllZip:
+        ret = subprocess.call(["cmake", "--build", ".", "--config", "Debug"],
+                              cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
+    if ret == 0 and sumoAllZip:
         try:
             debugZip = sumoAllZip.replace("-all-", "Debug-%s-" % env["FILEPREFIX"])
             zipf = zipfile.ZipFile(debugZip, 'w', zipfile.ZIP_DEFLATED)

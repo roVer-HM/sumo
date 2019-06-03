@@ -38,6 +38,7 @@ except ImportError:
     from urllib.request import urlopen
 import os
 import json
+import io
 from optparse import OptionParser
 
 
@@ -111,15 +112,15 @@ if __name__ == "__main__":
                 pass
             images.update(getImages(c))
         name = name + ".txt"
-        fd = open(os.path.join(options.output, name), "w")
-        fd.write(c.encode("utf8"))
+        fd = io.open(os.path.join(options.output, name), "w", encoding="utf8")
+        fd.write(c)
         fd.close()
 
     for i in images:
         print("Fetching image %s" % i)
         if i.find(":") >= 0:
             f = urlopen("https://sumo.dlr.de/wiki/%s" % i)
-            c = f.read()
+            c = f.read().decode('utf8')
             b = c.find("<div class=\"fullImageLink\" id=\"file\">")
             b = c.find("href=", b) + 6
             e = c.find("\"", b + 1)
