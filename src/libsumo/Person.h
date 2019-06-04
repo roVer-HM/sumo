@@ -53,13 +53,14 @@ public:
     static int getIDCount();
     static double getSpeed(const std::string& personID);
     static TraCIPosition getPosition(const std::string& personID, const bool includeZ = false);
+    static TraCIPosition getPosition3D(const std::string& personID);
     static std::string getRoadID(const std::string& personID);
     static std::string getTypeID(const std::string& personID);
     static double getWaitingTime(const std::string& personID);
     static std::string getNextEdge(const std::string& personID);
     static std::string getVehicle(const std::string& personID);
     static int getRemainingStages(const std::string& personID);
-    static int getStage(const std::string& personID, int nextStageIndex = 0);
+    static TraCIStage getStage(const std::string& personID, int nextStageIndex = 0);
     static std::vector<std::string> getEdges(const std::string& personID, int nextStageIndex = 0);
     static std::string getParameter(const std::string& routeID, const std::string& param);
     static double getAngle(const std::string& personID);
