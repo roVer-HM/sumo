@@ -453,6 +453,55 @@ TraCIAPI::getColor(int cmd, int var, const std::string& id, tcpip::Storage* add)
 }
 
 
+libsumo::TraCIStage
+TraCIAPI::getTraCIStage(int cmd, int var, const std::string& id, tcpip::Storage* add) {
+    libsumo::TraCIStage s;
+    createCommand(cmd, var, id, add);
+    if (processGet(cmd, libsumo::TYPE_COMPOUND)) {
+        myInput.readInt(); // components
+        myInput.readUnsignedByte();
+        s.type = myInput.readInt();
+
+        myInput.readUnsignedByte();
+        s.vType = myInput.readString();
+
+        myInput.readUnsignedByte();
+        s.line = myInput.readString();
+
+        myInput.readUnsignedByte();
+        s.destStop = myInput.readString();
+
+        myInput.readUnsignedByte();
+        s.edges = myInput.readStringList();
+
+        myInput.readUnsignedByte();
+        s.travelTime = myInput.readDouble();
+
+        myInput.readUnsignedByte();
+        s.cost = myInput.readDouble();
+
+        myInput.readUnsignedByte();
+        s.length = myInput.readDouble();
+
+        myInput.readUnsignedByte();
+        s.intended = myInput.readString();
+
+        myInput.readUnsignedByte();
+        s.depart = myInput.readDouble();
+
+        myInput.readUnsignedByte();
+        s.departPos = myInput.readDouble();
+
+        myInput.readUnsignedByte();
+        s.arrivalPos = myInput.readDouble();
+
+        myInput.readUnsignedByte();
+        s.description = myInput.readString();
+    }
+    return s;
+}
+
+
 void
 TraCIAPI::readVariables(tcpip::Storage& inMsg, const std::string& objectID, int variableCount, libsumo::SubscriptionResults& into) {
     while (variableCount > 0) {
@@ -3146,12 +3195,12 @@ TraCIAPI::PersonScope::getRemainingStages(const std::string& personID) const {
     return myParent.getInt(libsumo::CMD_GET_PERSON_VARIABLE, libsumo::VAR_STAGES_REMAINING, personID);
 }
 
-int
+libsumo::TraCIStage
 TraCIAPI::PersonScope::getStage(const std::string& personID, int nextStageIndex) const {
     tcpip::Storage content;
     content.writeByte(libsumo::TYPE_INTEGER);
     content.writeInt(nextStageIndex);
-    return myParent.getInt(libsumo::CMD_GET_PERSON_VARIABLE, libsumo::VAR_STAGE, personID, &content);
+    return myParent.getTraCIStage(libsumo::CMD_GET_PERSON_VARIABLE, libsumo::VAR_STAGE, personID, &content);
 }
 
 std::vector<std::string>
@@ -3207,8 +3256,8 @@ TraCIAPI::PersonScope::appendWaitingStage(const std::string& personID, double du
     content.writeInt(4);
     content.writeUnsignedByte(libsumo::TYPE_INTEGER);
     content.writeInt(libsumo::STAGE_WAITING);
-    content.writeUnsignedByte(libsumo::TYPE_INTEGER);
-    content.writeInt((int)duration);
+    content.writeUnsignedByte(libsumo::TYPE_DOUBLE);
+    content.writeDouble(duration);
     content.writeUnsignedByte(libsumo::TYPE_STRING);
     content.writeString(description);
     content.writeUnsignedByte(libsumo::TYPE_STRING);
@@ -3231,8 +3280,8 @@ TraCIAPI::PersonScope::appendWalkingStage(const std::string& personID, const std
     content.writeStringList(edges);
     content.writeUnsignedByte(libsumo::TYPE_DOUBLE);
     content.writeDouble(arrivalPos);
-    content.writeUnsignedByte(libsumo::TYPE_INTEGER);
-    content.writeInt((int)duration);
+    content.writeUnsignedByte(libsumo::TYPE_DOUBLE);
+    content.writeDouble(duration);
     content.writeUnsignedByte(libsumo::TYPE_DOUBLE);
     content.writeDouble(speed);
     content.writeUnsignedByte(libsumo::TYPE_STRING);

@@ -69,6 +69,16 @@ GNEHierarchicalElementParents::LineGeometry::calculateRotationsAndLength(const P
 }
 
 // ---------------------------------------------------------------------------
+// GNEHierarchicalElementParents::EdgeGeometryLimits - methods
+// ---------------------------------------------------------------------------
+
+GNEHierarchicalElementParents::EdgeGeometryLimits::EdgeGeometryLimits(const int _indexBegin, const int _indexEnd, GNEConnection* _nextConnection) :
+    indexBegin(_indexBegin),
+    indexEnd(_indexEnd),
+    nextConnection(_nextConnection) {
+}
+
+// ---------------------------------------------------------------------------
 // GNEHierarchicalElementParents - methods
 // ---------------------------------------------------------------------------
 
@@ -85,6 +95,11 @@ GNEHierarchicalElementParents::GNEHierarchicalElementParents(GNEAttributeCarrier
     myAdditionalParents(additionalParents),
     myDemandElementParents(demandElementParents),
     myAC(AC) {
+    // fill myEdgeParentsLaneIndex
+    myEdgeGeometryLimits.reserve(edgeParents.size());
+    for (const auto &i : edgeParents) {
+        myEdgeGeometryLimits.push_back(EdgeGeometryLimits(0,0, false));
+    }
 }
 
 
@@ -158,6 +173,7 @@ GNEHierarchicalElementParents::addEdgeParent(GNEEdge* edge) {
         throw InvalidArgument("Trying to add a duplicate " + toString(SUMO_TAG_EDGE) + " parent in " + myAC->getTagStr() + " with ID='" + myAC->getID() + "'");
     } else {
         myEdgeParents.push_back(edge);
+        myEdgeGeometryLimits.push_back(EdgeGeometryLimits(0,0, false));
     }
 }
 
@@ -167,10 +183,14 @@ GNEHierarchicalElementParents::removeEdgeParent(GNEEdge* edge) {
     // Check that edge is valid and exist previously
     if (edge == nullptr) {
         throw InvalidArgument("Trying to remove an empty " + toString(SUMO_TAG_EDGE) + " parent in " + myAC->getTagStr() + " with ID='" + myAC->getID() + "'");
-    } else if (std::find(myEdgeParents.begin(), myEdgeParents.end(), edge) == myEdgeParents.end()) {
-        throw InvalidArgument("Trying to remove a non previously inserted " + toString(SUMO_TAG_EDGE) + " parent in " + myAC->getTagStr() + " with ID='" + myAC->getID() + "'");
     } else {
-        myEdgeParents.erase(std::find(myEdgeParents.begin(), myEdgeParents.end(), edge));
+        auto it = std::find(myEdgeParents.begin(), myEdgeParents.end(), edge);
+        if (it == myEdgeParents.end()) {
+            throw InvalidArgument("Trying to remove a non previously inserted " + toString(SUMO_TAG_EDGE) + " parent in " + myAC->getTagStr() + " with ID='" + myAC->getID() + "'");
+        } else {
+            myEdgeGeometryLimits.erase(myEdgeGeometryLimits.begin() + (it - myEdgeParents.begin()));
+            myEdgeParents.erase(it);
+        }
     }
 }
 
@@ -202,41 +222,51 @@ GNEHierarchicalElementParents::getEdgeParentsStr() const {
 }
 
 
-GNEConnection* 
-GNEHierarchicalElementParents::getNextConnection(const GNEEdge* edgeFrom) const {
-    for (int i = 0; i < (int)getEdgeParents().size(); i++) {
-        if (getEdgeParents().at(i) == edgeFrom) {
-            // check if current edge is the last edge
-            if (i < ((int)getEdgeParents().size()-1)) {
-                // search a common connection between edgeFrom and their next edge
-                for (const auto &j : getEdgeParents().at(i)->getGNEConnections()) {
-                    for (const auto &k : getEdgeParents().at(i+1)->getLanes()) {
-                        if (j->getLaneTo() == k) {
-                            return j; 
-                        }
-                    }
-                }
+GNEHierarchicalElementParents::LineGeometry
+GNEHierarchicalElementParents::getLinetoNextEdge(const GNEEdge* edgeFrom, int nextEdgeLaneIndex) const {
+    // declare a LineGeometry
+    LineGeometry geometry(edgeFrom->getLanes().front()->getGeometry().shape.back());
+    for (int i = 0; i < (int)myEdgeParents.size(); i++) {
+        if ((myEdgeParents.at(i) == edgeFrom) && i < ((int)myEdgeParents.size()-1)) {
+            // calculate rotation and lenght
+            if (myEdgeParents.at(i+1)->getLanes().size() > nextEdgeLaneIndex) {
+                geometry.calculateRotationsAndLength(myEdgeParents.at(i+1)->getLanes().at(nextEdgeLaneIndex)->getGeometry().shape.front());
             } else {
-                return nullptr;
+                geometry.calculateRotationsAndLength(myEdgeParents.at(i+1)->getLanes().at(0)->getGeometry().shape.front());
             }
         }
     }
-    return nullptr;
+    return geometry;
 }
 
 
-GNEHierarchicalElementParents::LineGeometry
-GNEHierarchicalElementParents::getLinetoNextEdge(const GNEEdge* edgeFrom) const {
-    // declare a LineGeometry
-    LineGeometry geometry(edgeFrom->getLanes().front()->getGeometry().shape.back());
-    for (int i = 0; i < (int)getEdgeParents().size(); i++) {
-        if ((getEdgeParents().at(i) == edgeFrom) && i < ((int)getEdgeParents().size()-1)) {
-            // update second point
-            // calculate rotation and lenght
-            geometry.calculateRotationsAndLength(getEdgeParents().at(i+1)->getLanes().front()->getGeometry().shape.front());
+const GNEHierarchicalElementParents::EdgeGeometryLimits &
+GNEHierarchicalElementParents::getEdgeGeometryLimits(const GNEEdge* edge) const {
+    auto it = std::find(myEdgeParents.begin(), myEdgeParents.end(), edge);
+    if (it != myEdgeParents.end()) {
+        return myEdgeGeometryLimits.at(it - myEdgeParents.begin());
+    } else {
+        throw InvalidArgument("edge with ID=" + edge->getID() + " isn't a parent edge");
+    }
+}
+
+
+void 
+GNEHierarchicalElementParents::recalculateEdgeGeometryLimits() {
+    for (int i = 0; i < myEdgeParents.size(); i++) {
+        // obtain next connection
+        myEdgeGeometryLimits.at(i).nextConnection = getNextConnection(myEdgeParents.at(i));
+        if (myEdgeGeometryLimits.at(i).nextConnection) {
+            if (i == 0) {
+                myEdgeGeometryLimits.at(i).indexBegin = myEdgeGeometryLimits.at(i).nextConnection->getLaneFrom()->getIndex();
+            }
+            if (i == (myEdgeParents.size() - 2)) {
+                myEdgeGeometryLimits.at(i+1).indexEnd = myEdgeGeometryLimits.at(i).nextConnection->getLaneTo()->getIndex();
+            }
+            myEdgeGeometryLimits.at(i).indexEnd = myEdgeGeometryLimits.at(i).nextConnection->getLaneFrom()->getIndex();
+            myEdgeGeometryLimits.at(i+1).indexBegin = myEdgeGeometryLimits.at(i).nextConnection->getLaneTo()->getIndex();
         }
     }
-    return geometry;
 }
 
 
@@ -643,6 +673,32 @@ GNEHierarchicalElementParents::changeDemandElementParent(GNEDemandElement* deman
         // update geometry after inserting
         demandElementTobeChanged->updateGeometry();
     }
+}
+
+// ---------------------------------------------------------------------------
+// Private methods
+// ---------------------------------------------------------------------------
+
+GNEConnection* 
+GNEHierarchicalElementParents::getNextConnection(const GNEEdge* edgeFrom) const {
+    for (int i = 0; i < (int)myEdgeParents.size(); i++) {
+        if (myEdgeParents.at(i) == edgeFrom) {
+            // check if current edge is the last edge
+            if (i < ((int)myEdgeParents.size()-1)) {
+                // search a common connection between edgeFrom and their next edge
+                for (const auto &j : myEdgeParents.at(i)->getGNEConnections()) {
+                    for (const auto &k : myEdgeParents.at(i+1)->getLanes()) {
+                        if (j->getLaneTo() == k) {
+                            return j; 
+                        }
+                    }
+                }
+            } else {
+                return nullptr;
+            }
+        }
+    }
+    return nullptr;
 }
 
 /****************************************************************************/

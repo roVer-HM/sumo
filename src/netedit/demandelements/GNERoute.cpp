@@ -212,6 +212,8 @@ GNERoute::commitGeometryMoving(GNEUndoList*) {
 
 void
 GNERoute::updateGeometry() {
+    // recalculate edge geometry limits
+    recalculateEdgeGeometryLimits();
     // only update demand element childs, because Route uses the geometry of lane parent
     for (const auto& i : getDemandElementChilds()) {
         i->updateGeometry();
