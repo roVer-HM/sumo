@@ -105,7 +105,7 @@ private:
     DeleteOptions* myDeleteOptions;
 
     /// @brief modul for hierarchy
-    ACHierarchy* myACHierarchy;
+    AttributeCarrierHierarchy* myAttributeCarrierHierarchy;
 
     /// @brief pointer to marked attributeCarrier (element)
     GNEAttributeCarrier* myMarkedAC;
