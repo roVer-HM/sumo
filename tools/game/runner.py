@@ -199,7 +199,6 @@ def computeScoreDRT(gamename):
     rideDuration = 0
     rideStarted = 0
     rideFinished = 0
-    completed = False
 
     tripinfos = gamename + ".tripinfos.xml"
     rideCount = 0
@@ -217,7 +216,7 @@ def computeScoreDRT(gamename):
         rideCount += 1
 
     if rideCount == 0:
-        return 0, totalArrived, False
+        return 0, 0, False
     else:
         avgWT = rideWaitingTime / rideCount
         avgDur = 0 if rideStarted == 0 else rideDuration / rideStarted
@@ -515,7 +514,6 @@ options, args = optParser.parse_args()
 
 base = os.path.dirname(sys.argv[0])
 high = loadHighscore()
-
 
 
 guisimPath = sumolib.checkBinary("sumo-gui")
