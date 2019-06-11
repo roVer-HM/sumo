@@ -1850,6 +1850,10 @@ GNEViewNetHelper::DemandCheckableButtons::buildDemandCheckableButtons() {
     stopButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes, "\tcreate stop mode\tMode for creating stops.",
         GUIIconSubSys::getIcon(ICON_MODESTOP), myViewNet, MID_HOTKEY_A_ADDITIONALMODE_STOPMODE, GUIDesignButtonToolbarCheckable);
     stopButton->create();
+    // person type mode
+    personTypeButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes, "\tcreate person type mode\tMode for creating person types.",
+        GUIIconSubSys::getIcon(ICON_MODEPERSONTYPE), myViewNet, MID_HOTKEY_W_PROHIBITIONMODE_PERSONTYPEMODE, GUIDesignButtonToolbarCheckable);
+    personTypeButton->create();
     // person mode
     personButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes, "\tcreate person mode\tMode for creating persons.",
         GUIIconSubSys::getIcon(ICON_MODEPERSON), myViewNet, MID_HOTKEY_P_POLYGONMODE_PERSONMODE, GUIDesignButtonToolbarCheckable);
@@ -1869,6 +1873,7 @@ GNEViewNetHelper::DemandCheckableButtons::showDemandCheckableButtons() {
     vehicleButton->show();
     vehicleTypeButton->show();
     stopButton->show();
+    personTypeButton->show();
     personButton->show();
     personPlanButton->show();
 }
@@ -1880,6 +1885,7 @@ GNEViewNetHelper::DemandCheckableButtons::hideDemandCheckableButtons() {
     vehicleButton->hide();
     vehicleTypeButton->hide();
     stopButton->hide();
+    personTypeButton->hide();
     personButton->hide();
     personPlanButton->hide();
 }
@@ -1891,6 +1897,7 @@ GNEViewNetHelper::DemandCheckableButtons::disableDemandCheckableButtons() {
     vehicleButton->setChecked(false);
     vehicleTypeButton->setChecked(false);
     stopButton->setChecked(false);
+    personTypeButton->setChecked(false);
     personButton->setChecked(false);
     personPlanButton->setChecked(false);
 }
@@ -1902,6 +1909,7 @@ GNEViewNetHelper::DemandCheckableButtons::updateDemandCheckableButtons() {
     vehicleButton->update();
     vehicleTypeButton->update();
     stopButton->update();
+    personTypeButton->update();
     personButton->update();
     personPlanButton->update();
 }
