@@ -96,7 +96,7 @@ public:
      * @param[in] predSpeed The speed of LEADER
      * @return EGO's safe speed
      */
-    double insertionFollowSpeed(const MSVehicle* const v, double speed, double gap2pred, double predSpeed, double predMaxDecel) const;
+    double insertionFollowSpeed(const MSVehicle* const v, double speed, double gap2pred, double predSpeed, double predMaxDecel, const MSVehicle* const pred = 0) const;
 
 
     /** @brief Returns the maximum gap at which an interaction between both vehicles occurs
@@ -147,12 +147,13 @@ private:
 
 
 private:
-    double _v(const MSVehicle* const veh, const double gap2pred, const double mySpeed,
+    double _v(const MSVehicle* const veh, const MSVehicle* const pred, const double gap2pred, const double mySpeed,
               const double predSpeed, const double desSpeed, const bool respectMinGap = true) const;
 
     double speedSpeedContol(const double speed, double vErr) const;
     double speedGapControl(const MSVehicle* const veh, const double gap2pred,
-                           const double speed, const double predSpeed, const double desSpeed, double vErr) const;
+                           const double speed, const double predSpeed, const double desSpeed, double vErr,
+                           const MSVehicle* const pred) const;
 
 private:
     MSCFModel_ACC acc_CFM;
