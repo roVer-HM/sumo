@@ -181,6 +181,29 @@ TraCIAPI::createCommand(int cmdID, int varID, const std::string& objID, tcpip::S
 
 
 void
+TraCIAPI::createFilterCommand(int cmdID, int varID, tcpip::Storage* add) const {
+    myOutput.reset();
+    // command length
+    int length = 1 + 1 + 1;
+    if (add != nullptr) {
+        length += (int)add->size();
+    }
+    if (length <= 255) {
+        myOutput.writeUnsignedByte(length);
+    } else {
+        myOutput.writeUnsignedByte(0);
+        myOutput.writeInt(length + 4);
+    }
+    myOutput.writeUnsignedByte(cmdID);
+    myOutput.writeUnsignedByte(varID);
+    // additional values
+    if (add != nullptr) {
+        myOutput.writeStorage(*add);
+    }
+}
+
+
+void
 TraCIAPI::send_commandSubscribeObjectVariable(int domID, const std::string& objID, double beginTime, double endTime,
         const std::vector<int>& vars) const {
     if (mySocket == nullptr) {
@@ -3119,6 +3142,133 @@ TraCIAPI::VehicleScope::setEmissionClass(const std::string& vehicleID, const std
     myParent.processSet(libsumo::CMD_SET_VEHICLE_VARIABLE);
 }
 
+void
+TraCIAPI::VehicleScope::addSubscriptionFilterLanes(const std::vector<int>& lanes,
+        bool noOpposite, double downstreamDist, double upstreamDist) const {
+    addSubscriptionFilterByteList(libsumo::FILTER_TYPE_LANES, lanes);
+    if (noOpposite) {
+        addSubscriptionFilterNoOpposite();
+    }
+    if (downstreamDist >= 0) {
+        addSubscriptionFilterDownstreamDistance(downstreamDist);
+    }
+    if (upstreamDist >= 0) {
+        addSubscriptionFilterUpstreamDistance(upstreamDist);
+    }
+}
+
+
+void
+TraCIAPI::VehicleScope::addSubscriptionFilterNoOpposite() const {
+    addSubscriptionFilterEmpty(libsumo::FILTER_TYPE_NOOPPOSITE);
+}
+
+void
+TraCIAPI::VehicleScope::addSubscriptionFilterDownstreamDistance(double dist) const {
+    addSubscriptionFilterFloat(libsumo::FILTER_TYPE_DOWNSTREAM_DIST, dist);
+}
+
+void
+TraCIAPI::VehicleScope::addSubscriptionFilterUpstreamDistance(double dist) const {
+    addSubscriptionFilterFloat(libsumo::FILTER_TYPE_UPSTREAM_DIST, dist);
+}
+
+
+void
+TraCIAPI::VehicleScope::addSubscriptionFilterCFManeuver(double downstreamDist, double upstreamDist) const {
+    addSubscriptionFilterLeadFollow(std::vector<int>({0}));
+    if (downstreamDist >= 0) {
+        addSubscriptionFilterDownstreamDistance(downstreamDist);
+    }
+    if (upstreamDist >= 0) {
+        addSubscriptionFilterUpstreamDistance(upstreamDist);
+    }
+}
+
+void
+TraCIAPI::VehicleScope::addSubscriptionFilterLCManeuver(int direction, bool noOpposite, double downstreamDist, double upstreamDist) const {
+    if (abs(direction) != 1) {
+        std::cerr << "Ignoring lane change subscription filter with non-neighboring lane offset direction " << direction << "\n";
+        return;
+    }
+    addSubscriptionFilterLeadFollow(std::vector<int>({0, direction}));
+    if (noOpposite) {
+        addSubscriptionFilterNoOpposite();
+    }
+    if (downstreamDist >= 0) {
+        addSubscriptionFilterDownstreamDistance(downstreamDist);
+    }
+    if (upstreamDist >= 0) {
+        addSubscriptionFilterUpstreamDistance(upstreamDist);
+    }
+}
+
+void
+TraCIAPI::VehicleScope::addSubscriptionFilterLeadFollow(const std::vector<int>& lanes) const {
+    addSubscriptionFilterEmpty(libsumo::FILTER_TYPE_LEAD_FOLLOW);
+    addSubscriptionFilterByteList(libsumo::FILTER_TYPE_LANES, lanes);
+}
+
+void
+TraCIAPI::VehicleScope::addSubscriptionFilterTurn(double downstreamDist, double upstreamDist) const {
+    addSubscriptionFilterEmpty(libsumo::FILTER_TYPE_TURN);
+    if (downstreamDist >= 0) {
+        addSubscriptionFilterDownstreamDistance(downstreamDist);
+    }
+    if (upstreamDist >= 0) {
+        addSubscriptionFilterUpstreamDistance(upstreamDist);
+    }
+}
+
+
+void 
+TraCIAPI::VehicleScope::addSubscriptionFilterVClass(const std::vector<std::string>& vClasses) const {
+    addSubscriptionFilterStringList(libsumo::FILTER_TYPE_VCLASS, vClasses);
+}
+
+
+void 
+TraCIAPI::VehicleScope::addSubscriptionFilterVType(const std::vector<std::string>& vTypes) const {
+    addSubscriptionFilterStringList(libsumo::FILTER_TYPE_VTYPE, vTypes);
+}
+
+
+void
+TraCIAPI::VehicleScope::addSubscriptionFilterEmpty(int filterType) const {
+    myParent.createFilterCommand(libsumo::CMD_ADD_SUBSCRIPTION_FILTER, filterType);
+    myParent.processSet(libsumo::CMD_ADD_SUBSCRIPTION_FILTER);
+}
+
+void 
+TraCIAPI::VehicleScope::addSubscriptionFilterFloat(int filterType, double val) const {
+    tcpip::Storage content;
+    content.writeUnsignedByte(libsumo::TYPE_DOUBLE);
+    content.writeDouble(val);
+    myParent.createFilterCommand(libsumo::CMD_ADD_SUBSCRIPTION_FILTER, filterType, &content);
+    myParent.processSet(libsumo::CMD_ADD_SUBSCRIPTION_FILTER);
+}
+
+
+void 
+TraCIAPI::VehicleScope::addSubscriptionFilterStringList(int filterType, const std::vector<std::string>& vals) const {
+    tcpip::Storage content;
+    content.writeUnsignedByte(libsumo::TYPE_STRINGLIST);
+    content.writeStringList(vals);
+    myParent.createFilterCommand(libsumo::CMD_ADD_SUBSCRIPTION_FILTER, filterType, &content);
+    myParent.processSet(libsumo::CMD_ADD_SUBSCRIPTION_FILTER);
+}
+
+void 
+TraCIAPI::VehicleScope::addSubscriptionFilterByteList(int filterType, const std::vector<int>& vals) const {
+    tcpip::Storage content;
+    content.writeUnsignedByte(vals.size());
+    for (int i : vals)  {
+        content.writeByte(i);
+    }
+    myParent.createFilterCommand(libsumo::CMD_ADD_SUBSCRIPTION_FILTER, filterType, &content);
+    myParent.processSet(libsumo::CMD_ADD_SUBSCRIPTION_FILTER);
+}
+
 
 // ---------------------------------------------------------------------------
 // // TraCIAPI::PersonScope-methods
@@ -3259,8 +3409,43 @@ TraCIAPI::PersonScope::add(const std::string& personID, const std::string& edgeI
 }
 
 void
+TraCIAPI::PersonScope::appendStage(const std::string& personID, const libsumo::TraCIStage& stage) {
+    tcpip::Storage content;
+    content.writeUnsignedByte(libsumo::TYPE_COMPOUND);
+    content.writeInt(13);
+    content.writeUnsignedByte(libsumo::TYPE_INTEGER);
+    content.writeInt(stage.type);
+    content.writeUnsignedByte(libsumo::TYPE_STRING);
+    content.writeString(stage.vType);
+    content.writeUnsignedByte(libsumo::TYPE_STRING);
+    content.writeString(stage.line);
+    content.writeUnsignedByte(libsumo::TYPE_STRING);
+    content.writeString(stage.destStop);
+    content.writeUnsignedByte(libsumo::TYPE_STRINGLIST);
+    content.writeStringList(stage.edges);
+    content.writeUnsignedByte(libsumo::TYPE_DOUBLE);
+    content.writeDouble(stage.travelTime);
+    content.writeUnsignedByte(libsumo::TYPE_DOUBLE);
+    content.writeDouble(stage.cost);
+    content.writeUnsignedByte(libsumo::TYPE_DOUBLE);
+    content.writeDouble(stage.length);
+    content.writeUnsignedByte(libsumo::TYPE_STRING);
+    content.writeString(stage.intended);
+    content.writeUnsignedByte(libsumo::TYPE_DOUBLE);
+    content.writeDouble(stage.depart);
+    content.writeUnsignedByte(libsumo::TYPE_DOUBLE);
+    content.writeDouble(stage.departPos);
+    content.writeUnsignedByte(libsumo::TYPE_DOUBLE);
+    content.writeDouble(stage.arrivalPos);
+    content.writeUnsignedByte(libsumo::TYPE_STRING);
+    content.writeString(stage.description);
+    myParent.createCommand(libsumo::CMD_SET_PERSON_VARIABLE, libsumo::APPEND_STAGE, personID, &content);
+    myParent.processSet(libsumo::CMD_SET_PERSON_VARIABLE);
+}
+
+
+void
 TraCIAPI::PersonScope::appendWaitingStage(const std::string& personID, double duration, const std::string& description, const std::string& stopID) {
-    duration *= 1000;
     tcpip::Storage content;
     content.writeUnsignedByte(libsumo::TYPE_COMPOUND);
     content.writeInt(4);
@@ -3278,9 +3463,6 @@ TraCIAPI::PersonScope::appendWaitingStage(const std::string& personID, double du
 
 void
 TraCIAPI::PersonScope::appendWalkingStage(const std::string& personID, const std::vector<std::string>& edges, double arrivalPos, double duration, double speed, const std::string& stopID) {
-    if (duration > 0) {
-        duration *= 1000;
-    }
     tcpip::Storage content;
     content.writeUnsignedByte(libsumo::TYPE_COMPOUND);
     content.writeInt(6);
