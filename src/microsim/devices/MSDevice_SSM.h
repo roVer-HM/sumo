@@ -112,6 +112,8 @@ public:
         ENCOUNTER_TYPE_FOLLOWING_PASSED = 18, //!< ENCOUNTER_TYPE_FOLLOWING_PASSED
         // The encounter has been a merging situation, but is not active any more
         ENCOUNTER_TYPE_MERGING_PASSED = 19, //!< ENCOUNTER_TYPE_FOLLOWING_PASSED
+        // Ego vehicle and foe are driving in opposite directions towards each other on the same lane (or sequence of consecutive lanes)
+        ENCOUNTER_TYPE_ONCOMING = 20, 
         // Collision (currently unused, might be differentiated further)
         ENCOUNTER_TYPE_COLLISION = 111 //!< ENCOUNTER_TYPE_COLLISION
     };
@@ -158,6 +160,8 @@ public:
                 return ("FOLLOWING_PASSED");
             case (ENCOUNTER_TYPE_MERGING_PASSED):
                 return ("MERGING_PASSED");
+            case (ENCOUNTER_TYPE_ONCOMING):
+                return ("ONCOMING");
             case (ENCOUNTER_TYPE_COLLISION):
                 return ("COLLISION");
         }
