@@ -1533,7 +1533,7 @@ MSLCM_SL2015::_wantsChangeSublane(
 
     if (!left) {
         // ONLY FOR CHANGING TO THE RIGHT
-        if (right && maxGain >= 0 && latDist <= 0) {
+        if (right && maxGainRight >= 0) {
             // honor the obligation to keep right (Rechtsfahrgebot)
             // XXX consider fast approaching followers on the current lane
             //const double vMax = myLookAheadSpeed;
@@ -1744,12 +1744,19 @@ MSLCM_SL2015::_wantsChangeSublane(
                 || (latDistSublane > 0 && mySpeedGainProbabilityLeft < mySpeedLossProbThreshold)
                 || computeSpeedGain(latDistSublane, defaultNextSpeed) < -mySublaneParam) {
             // do not risk losing speed
+#if defined(DEBUG_WANTSCHANGE)
+            if (gDebugFlag2) std::cout << "   aborting sublane change to avoid speed loss (mySpeedLossProbThreshold=" << mySpeedLossProbThreshold 
+                << " speedGain=" << computeSpeedGain(latDistSublane, defaultNextSpeed) << ")\n";
+#endif
             latDistSublane = 0;
         }
         // Ignore preferred lateral alignment if we are in the middle of an unfinished non-alignment maneuver into the opposite direction
         if (!myCanChangeFully
                 && (myPreviousState & (LCA_STRATEGIC | LCA_COOPERATIVE | LCA_KEEPRIGHT | LCA_SPEEDGAIN)) != 0
                 && ((myManeuverDist < 0 && latDistSublane > 0) || (myManeuverDist > 0 && latDistSublane < 0))) {
+#if defined(DEBUG_WANTSCHANGE)
+            if (gDebugFlag2) std::cout << "   aborting sublane change due to prior maneuver\n";
+#endif
             latDistSublane = 0;
         }
         latDist = latDistSublane;
@@ -1764,6 +1771,15 @@ MSLCM_SL2015::_wantsChangeSublane(
                                            << "\n";
 #endif
             ret |= LCA_SUBLANE;
+            // include prior motivation when sublane-change is part of finishing an ongoing maneuver in the same direction
+            if (myPreviousManeuverDist * latDist > 0) {
+                int priorReason = (myPreviousState & LCA_CHANGE_REASONS & ~LCA_SUBLANE);
+                ret |= priorReason;
+#ifdef DEBUG_WANTSCHANGE
+                if (gDebugFlag2 && priorReason != 0) std::cout << "   including prior reason " << toString((LaneChangeAction)priorReason) 
+                    << " prevManeuverDist=" << myPreviousManeuverDist << "\n";
+#endif
+            }
             if (!cancelRequest(ret, laneOffset)) {
                 blocked = checkBlocking(neighLane, latDist, maneuverDist, laneOffset,
                                         leaders, followers, blockers,
@@ -1940,8 +1956,11 @@ MSLCM_SL2015::updateExpectedSublaneSpeeds(const MSLeaderDistanceInfo& ahead, int
 #endif
                     const double deltaV = vMax - leader->getSpeed();
                     if (deltaV > 0 && gap / deltaV < 5) {
-                        // anticipate future braking
-                        vSafe = MIN2(vSafe, leader->getSpeed());
+                        // anticipate future braking by computing the average
+                        // speed over the next few seconds
+                        const double foreCastTime = 10;
+                        const double gapClosingTime = gap / deltaV;
+                        vSafe = (gapClosingTime * vSafe + (foreCastTime - gapClosingTime) * leader->getSpeed()) / foreCastTime;
                     }
                 }
             }
@@ -2369,6 +2388,27 @@ MSLCM_SL2015::overlap(double right, double left, double right2, double left2) {
 }
 
 
+int
+MSLCM_SL2015::lowest_bit(int changeReason) {
+    if ((changeReason & LCA_STRATEGIC) != 0) {
+        return LCA_STRATEGIC;
+    }
+    if ((changeReason & LCA_COOPERATIVE) != 0) {
+        return LCA_COOPERATIVE;
+    }
+    if ((changeReason & LCA_SPEEDGAIN) != 0) {
+        return LCA_SPEEDGAIN;
+    }
+    if ((changeReason & LCA_KEEPRIGHT) != 0) {
+        return LCA_KEEPRIGHT;
+    }
+    if ((changeReason & LCA_TRACI) != 0) {
+        return LCA_TRACI;
+    }
+    return changeReason;
+}
+
+
 MSLCM_SL2015::StateAndDist
 MSLCM_SL2015::decideDirection(StateAndDist sd1, StateAndDist sd2) const {
     // ignore dummy decisions (returned if mayChange() failes)
@@ -2382,6 +2422,8 @@ MSLCM_SL2015::decideDirection(StateAndDist sd1, StateAndDist sd2) const {
     const bool want2 = ((sd2.state & LCA_WANTS_LANECHANGE) != 0) || ((sd2.state & LCA_SUBLANE) != 0 && (sd2.state & LCA_STAY) != 0);
     const bool can1 = ((sd1.state & LCA_BLOCKED) == 0);
     const bool can2 = ((sd2.state & LCA_BLOCKED) == 0);
+    int reason1 = lowest_bit(sd1.state & LCA_CHANGE_REASONS);
+    int reason2 = lowest_bit(sd2.state & LCA_CHANGE_REASONS);
 #ifdef DEBUG_WANTSCHANGE
     if (DEBUG_COND) std::cout << SIMTIME
                                   << " veh=" << myVehicle.getID()
@@ -2393,16 +2435,18 @@ MSLCM_SL2015::decideDirection(StateAndDist sd1, StateAndDist sd2) const {
                                   << " want2=" << (sd2.state & LCA_WANTS_LANECHANGE)
                                   << " dist2=" << sd2.latDist
                                   << " dir2=" << sd2.dir
+                                  << " reason1=" << reason1
+                                  << " reason2=" << reason2
                                   << "\n";
 #endif
     if (want1) {
         if (want2) {
             // decide whether right or left has higher priority (lower value in enum LaneChangeAction)
-            if ((sd1.state & LCA_CHANGE_REASONS) < (sd2.state & LCA_CHANGE_REASONS)) {
+            if (reason1 < reason2) {
                 //if (DEBUG_COND) std::cout << "   " << (sd1.state & LCA_CHANGE_REASONS) << " < " << (sd2.state & LCA_CHANGE_REASONS) << "\n";
                 return (!can1 && can2 && sd1.sameDirection(sd2)) ? sd2 : sd1;
                 //return sd1;
-            } else if ((sd1.state & LCA_CHANGE_REASONS) > (sd2.state & LCA_CHANGE_REASONS)) {
+            } else if (reason1 > reason2) {
                 //if (DEBUG_COND) std::cout << "   " << (sd1.state & LCA_CHANGE_REASONS) << " > " << (sd2.state & LCA_CHANGE_REASONS) << "\n";
                 return (!can2 && can1 && sd1.sameDirection(sd2)) ? sd1 : sd2;
                 //return sd2;

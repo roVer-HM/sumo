@@ -50,3 +50,10 @@ cooperative_change
 
 # test whether cooperative changing works fluidly with higer lateral and temporal resolution
 cooperative_change_highres
+
+# test given change reason in lanechange-output
+change_reason
+
+# test given change reason in lanechange-output
+change_reason2
+overtaking_right_forbidden
