@@ -16,14 +16,50 @@
 
 from __future__ import absolute_import
 import struct
-import collections
 import warnings
 from . import constants as tc
 from .domain import Domain
 from .storage import Storage
 
-Stage = collections.namedtuple('Stage', ['type', 'vType', 'line', 'destStop', 'edges', 'travelTime', 'cost',
-                                         'length', 'intended', 'depart', 'departPos', 'arrivalPos', 'description'])
+class Stage(object):
+
+    def __init__(self, type, vType, line, destStop, edges, travelTime, cost, length, intended, depart, departPos, arrivalPos, description):
+        self.type = type
+        self.vType = vType
+        self.line = line
+        self.destStop = destStop
+        self.edges = edges
+        self.travelTime = travelTime
+        self.cost = cost
+        self.length = length
+        self.intended = intended
+        self.depart = depart
+        self.departPos = departPos
+        self.arrivalPos = arrivalPos
+        self.description = description
+
+    def __attr_repr__(self, attrname, default=""):
+        if getattr(self, attrname) == default:
+            return ""
+        else:
+            return "%s=%s" % (attrname, getattr(self, attrname))
+
+    def __repr__(self):
+        return "Stage(%s)" % ', '.join([v for v in [
+            self.__attr_repr__("type"),
+            self.__attr_repr__("vType"),
+            self.__attr_repr__("line"),
+            self.__attr_repr__("destStop"),
+            self.__attr_repr__("edges"),
+            self.__attr_repr__("travelTime"),
+            self.__attr_repr__("cost"),
+            self.__attr_repr__("length"),
+            self.__attr_repr__("intended"),
+            self.__attr_repr__("depart"),
+            self.__attr_repr__("departPos"),
+            self.__attr_repr__("arrivalPos"),
+            self.__attr_repr__("description"),
+            ] if v != ""])
 
 
 def _readStage(result):
