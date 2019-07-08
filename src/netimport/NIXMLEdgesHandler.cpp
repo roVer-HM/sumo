@@ -381,8 +381,7 @@ NIXMLEdgesHandler::addLane(const SUMOSAXAttributes& attrs) {
     if (attrs.hasAttribute(SUMO_ATTR_ACCELERATION)) {
         myCurrentEdge->setAcceleration(lane, attrs.get<bool>(SUMO_ATTR_ACCELERATION, myCurrentID.c_str(), ok));
     }
-
-    // check whether this is an acceleration lane
+    // check whether this lane has a custom shape
     if (attrs.hasAttribute(SUMO_ATTR_SHAPE)) {
         PositionVector shape = attrs.get<PositionVector>(SUMO_ATTR_SHAPE, myCurrentID.c_str(), ok);
         if (!NBNetBuilder::transformCoordinates(shape)) {
@@ -390,6 +389,10 @@ NIXMLEdgesHandler::addLane(const SUMOSAXAttributes& attrs) {
             WRITE_ERROR("Unable to project coordinates for lane '" + laneID + "'.");
         }
         myCurrentEdge->setLaneShape(lane, shape);
+    }
+    // set custom lane type
+    if (attrs.hasAttribute(SUMO_ATTR_TYPE)) {
+        myCurrentEdge->setLaneType(lane, attrs.get<std::string>(SUMO_ATTR_TYPE, myCurrentID.c_str(), ok));
     }
     myLastParameterised.push_back(&myCurrentEdge->getLaneStruct(lane));
 }
