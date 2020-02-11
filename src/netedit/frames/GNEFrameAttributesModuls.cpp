@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    GNEFrameAttributesModuls.cpp
 /// @author  Pablo Alvarez Lopez
@@ -633,6 +637,11 @@ GNEFrameAttributesModuls::AttributesCreator::showAttributesCreatorModul(const GN
         }
         // check special case for vaporizer IDs
         if ((i.getAttr() == SUMO_ATTR_ID) && (i.getTagPropertyParent().getTag() == SUMO_TAG_VAPORIZER)) {
+            showAttribute = false;
+        }
+        // check special case for VType IDs in vehicle Frame
+        if ((i.getAttr() == SUMO_ATTR_TYPE) && (myFrameParent->getViewNet()->getEditModes().currentSupermode == GNE_SUPERMODE_DEMAND) &&
+                (myFrameParent->getViewNet()->getEditModes().demandEditMode == GNE_DEMANDMODE_VEHICLE)) {
             showAttribute = false;
         }
         // show attribute depending of showAttribute flag

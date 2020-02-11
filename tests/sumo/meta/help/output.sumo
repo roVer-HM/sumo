@@ -1,5 +1,5 @@
-Eclipse SUMO Version v1_4_0+0806-d703acf
- Copyright (C) 2001-2019 German Aerospace Center (DLR) and others; https://sumo.dlr.de
+Eclipse SUMO Version v1_4_0+1029-d1b8be6105
+ Copyright (C) 2001-2020 German Aerospace Center (DLR) and others; https://sumo.dlr.de
 A microscopic, multi-modal traffic simulation.
 
 Usage: sumo [OPTION]*
@@ -113,6 +113,8 @@ Output Options:
                                          motivations for all vehicles into FILE
   --lanechange-output.started          Record start of lane change manoeuvres
   --lanechange-output.ended            Record end of lane change manoeuvres
+  --lanechange-output.xy               Record coordinates of lane change
+                                         manoeuvres
   --stop-output FILE                   Record stops and loading/unloading of
                                          passenger and containers for all
                                          vehicles into FILE
@@ -637,8 +639,6 @@ GUI Only Options:
                                          position
   --tracker-interval FLOAT             The aggregation period for value tracker
                                          windows
-  --osg-view                           Start with an OpenSceneGraph view
-                                         instead of the regular 2D view
   --gui-testing                        Enable ovelay for screen recognition
   --gui-testing-debug                  Enable output messages during
                                          GUI-Testing

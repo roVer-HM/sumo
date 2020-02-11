@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    MSEdge.h
 /// @author  Christian Roessel
@@ -38,6 +42,7 @@
 #include <utils/common/SUMOTime.h>
 #include <utils/common/SUMOVehicleClass.h>
 #include <utils/geom/Boundary.h>
+#include <utils/router/ReversedEdge.h>
 #include <utils/vehicle/SUMOVehicle.h>
 #include <utils/vehicle/SUMOTrafficObject.h>
 #include "MSNet.h"
@@ -191,7 +196,7 @@ public:
 
     /** @brief Get the allowed lanes to reach the destination-edge.
      *
-     * If there is no such edge, get 0. Then you are on the wrong edge.
+     * If there is no such edge, return nullptr. Then you are on the wrong edge.
      *
      * @param[in] destination The edge to reach
      * @param[in] vclass The vehicle class for which this information shall be returned
@@ -204,12 +209,17 @@ public:
 
     /** @brief Get the allowed lanes for the given vehicle class.
      *
-     * If there is no such edge, get 0. Then you are on the wrong edge.
+     * If there is no such edge, return nullptr. Then you are on the wrong edge.
      *
      * @param[in] vclass The vehicle class for which this information shall be returned
      * @return The lanes that may be used by the given vclass
      */
     const std::vector<MSLane*>* allowedLanes(SUMOVehicleClass vclass = SVC_IGNORING) const;
+
+    inline bool isConnectedTo(const MSEdge& destination, SUMOVehicleClass vclass) const {
+        const std::vector<MSLane*>* const lanes = allowedLanes(destination, vclass);
+        return lanes != nullptr && !lanes->empty();
+    }
     /// @}
 
 
@@ -753,6 +763,13 @@ public:
     /// @}
 
 
+    ReversedEdge<MSEdge, SUMOVehicle>* getReversedRoutingEdge() const {
+        if (myReversedRoutingEdge == nullptr) {
+            myReversedRoutingEdge = new ReversedEdge<MSEdge, SUMOVehicle>(this);
+        }
+        return myReversedRoutingEdge;
+    }
+
 protected:
     /** @class by_id_sorter
      * @brief Sorts edges by their ids
@@ -928,6 +945,9 @@ private:
 
     /// @brief the oppositing superposable edge
     const MSEdge* myBidiEdge;
+
+    /// @brief a reversed version for backward routing
+    mutable ReversedEdge<MSEdge, SUMOVehicle>* myReversedRoutingEdge = nullptr;
 
     /// @brief Invalidated copy constructor.
     MSEdge(const MSEdge&);

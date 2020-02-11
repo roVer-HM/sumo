@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2007-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    MSDispatch.h
 /// @author  Jakob Erdmann
@@ -35,11 +39,11 @@
 // ===========================================================================
 struct Reservation {
     Reservation(const std::vector<MSTransportable*>& _persons,
-            SUMOTime _reservationTime,
-            SUMOTime _pickupTime,
-            const MSEdge* _from, double _fromPos,
-            const MSEdge* _to, double _toPos,
-            const std::string& _group) :
+                SUMOTime _reservationTime,
+                SUMOTime _pickupTime,
+                const MSEdge* _from, double _fromPos,
+                const MSEdge* _to, double _toPos,
+                const std::string& _group) :
         persons(_persons.begin(), _persons.end()),
         reservationTime(_reservationTime),
         pickupTime(_pickupTime),
@@ -63,13 +67,13 @@ struct Reservation {
 
     bool operator==(const Reservation& other) const {
         return persons == other.persons
-            && reservationTime == other.reservationTime
-            && pickupTime == other.pickupTime
-            && from == other.from
-            && fromPos == other.fromPos
-            && to == other.to
-            && toPos == other.toPos
-            && group == other.group;
+               && reservationTime == other.reservationTime
+               && pickupTime == other.pickupTime
+               && from == other.from
+               && fromPos == other.fromPos
+               && to == other.to
+               && toPos == other.toPos
+               && group == other.group;
     }
 
     /// @brief debug identification
@@ -98,18 +102,18 @@ public:
     };
 
     /// @brief Constructor;
-    MSDispatch(const std::map<std::string, std::string>& params); 
+    MSDispatch(const std::map<std::string, std::string>& params);
 
     /// @brief Destructor
     virtual ~MSDispatch() { }
 
     /// @brief add a new reservation
     void addReservation(MSTransportable* person,
-            SUMOTime reservationTime, 
-            SUMOTime pickupTime,
-            const MSEdge* from, double fromPos,
-            const MSEdge* to, double toPos,
-            const std::string& group);
+                        SUMOTime reservationTime,
+                        SUMOTime pickupTime,
+                        const MSEdge* from, double fromPos,
+                        const MSEdge* to, double toPos,
+                        const std::string& group);
 
     /// @brief computes dispatch and updates reservations
     virtual void computeDispatch(SUMOTime now, const std::vector<MSDevice_Taxi*>& fleet) = 0;
@@ -124,12 +128,12 @@ public:
     static SUMOTime computePickupTime(SUMOTime t, const MSDevice_Taxi* taxi, const Reservation& res, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router);
 
     ///@brief compute directTime and detourTime
-    static double computeDetourTime(SUMOTime t, SUMOTime viaTime, const MSDevice_Taxi* taxi, 
-        const MSEdge* from, double fromPos, 
-        const MSEdge* via, double viaPos,
-        const MSEdge* to, double toPos,
-        SUMOAbstractRouter<MSEdge, SUMOVehicle>& router,
-        double& timeDirect) ;
+    static double computeDetourTime(SUMOTime t, SUMOTime viaTime, const MSDevice_Taxi* taxi,
+                                    const MSEdge* from, double fromPos,
+                                    const MSEdge* via, double viaPos,
+                                    const MSEdge* to, double toPos,
+                                    SUMOAbstractRouter<MSEdge, SUMOVehicle>& router,
+                                    double& timeDirect) ;
 
 
     /// @brief whether the last call to computeDispatch has left servable reservations
@@ -167,7 +171,7 @@ public:
 
 protected:
     /// @brief trigger taxi dispatch. @note: method exists so subclasses can inject code at this point (ride sharing)
-    virtual int dispatch(MSDevice_Taxi* taxi, Reservation* res, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router, std::vector<Reservation*>& reservations); 
+    virtual int dispatch(MSDevice_Taxi* taxi, Reservation* res, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router, std::vector<Reservation*>& reservations);
 
     /// @brief which router/edge weights to use
     const int myRoutingMode;

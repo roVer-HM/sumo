@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    GNEEdge.h
 /// @author  Jakob Erdmann
@@ -380,10 +384,10 @@ private:
         void addDemandElements(GNEDemandElement* demandElement);
 
         /// @brief get stack position
-        const StackPosition &getStackPosition() const;
+        const StackPosition& getStackPosition() const;
 
         /// @brief get demand elements
-        const std::vector<GNEDemandElement*> &getDemandElements() const;
+        const std::vector<GNEDemandElement*>& getDemandElements() const;
     };
 
     /// @brif flag to enable/disable update geomtetry of lanes (used mainly by setNumLanes)
@@ -440,7 +444,7 @@ private:
     void drawDemandElements(const GUIVisualizationSettings& s) const;
 
     /// @brief check if given stacked positions are overlapped
-    bool areStackPositionOverlapped(const GNEEdge::StackPosition &vehicleA, const GNEEdge::StackPosition &vehicleB) const;
+    bool areStackPositionOverlapped(const GNEEdge::StackPosition& vehicleA, const GNEEdge::StackPosition& vehicleB) const;
 
     /// @brief invalidated copy constructor
     GNEEdge(const GNEEdge& s) = delete;

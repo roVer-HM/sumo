@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2002-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    ROEdge.h
 /// @author  Daniel Krajzewicz
@@ -258,10 +262,10 @@ public:
     /** @brief returns the information whether this edge is directly connected to the given
      *
      * @param[in] e The edge which may be connected
-     * @param[in] vehicle The vehicle for which the connectivity is checked
+     * @param[in] vClass The vehicle class for which the connectivity is checked
      * @return Whether the given edge is a direct successor to this one
      */
-    bool isConnectedTo(const ROEdge* const e, const ROVehicle* const vehicle) const;
+    bool isConnectedTo(const ROEdge& e, const SUMOVehicleClass vClass) const;
 
 
     /** @brief Returns whether this edge prohibits the given vehicle to pass it
@@ -491,7 +495,6 @@ public:
         return myToJunction;
     }
 
-
     /** @brief Returns this edge's lanes
      *
      * @return This edge's lanes
@@ -499,6 +502,14 @@ public:
     const std::vector<ROLane*>& getLanes() const {
         return myLanes;
     }
+
+    ReversedEdge<ROEdge, ROVehicle>* getReversedRoutingEdge() const {
+        if (myReversedRoutingEdge == nullptr) {
+            myReversedRoutingEdge = new ReversedEdge<ROEdge, ROVehicle>(this);
+        }
+        return myReversedRoutingEdge;
+    }
+
 protected:
     /** @brief Retrieves the stored effort
      *
@@ -587,6 +598,9 @@ protected:
 
     /// @brief The successors with vias available for a given vClass
     mutable std::map<SUMOVehicleClass, ROConstEdgePairVector> myClassesViaSuccessorMap;
+
+    /// @brief a reversed version for backward routing
+    mutable ReversedEdge<ROEdge, ROVehicle>* myReversedRoutingEdge = nullptr;
 
 #ifdef HAVE_FOX
     /// The mutex used to avoid concurrent updates of myClassesSuccessorMap

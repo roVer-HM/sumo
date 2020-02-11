@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2017-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2017-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    Simulation.cpp
 /// @author  Laura Bieker-Walz
@@ -73,7 +77,7 @@ Simulation::load(const std::vector<std::string>& args) {
             MSNet::getInstance()->setCurrentTimeStep(begin); // needed for state loading
             WRITE_MESSAGE("Simulation started via Libsumo with time: " + time2string(begin));
         }
-    } catch(ProcessError& e) {
+    } catch (ProcessError& e) {
         throw TraCIException(e.what());
     }
 }
@@ -603,19 +607,19 @@ Simulation::getParameter(const std::string& objectID, const std::string& key) {
         } else {
             throw TraCIException("Invalid chargingStation parameter '" + attrName + "'");
         }
-	} else if (StringUtils::startsWith(key, "overheadWire.")) {
-		const std::string attrName = key.substr(16);
-		MSOverheadWire* cs = static_cast<MSOverheadWire*>(MSNet::getInstance()->getStoppingPlace(objectID, SUMO_TAG_OVERHEAD_WIRE_SEGMENT));
-		if (cs == 0) {
-			throw TraCIException("Invalid overhead wire '" + objectID + "'");
-		}
-		if (attrName == toString(SUMO_ATTR_TOTALENERGYCHARGED)) {
-			return toString(cs->getTotalCharged());
+    } else if (StringUtils::startsWith(key, "overheadWire.")) {
+        const std::string attrName = key.substr(16);
+        MSOverheadWire* cs = static_cast<MSOverheadWire*>(MSNet::getInstance()->getStoppingPlace(objectID, SUMO_TAG_OVERHEAD_WIRE_SEGMENT));
+        if (cs == 0) {
+            throw TraCIException("Invalid overhead wire '" + objectID + "'");
+        }
+        if (attrName == toString(SUMO_ATTR_TOTALENERGYCHARGED)) {
+            return toString(cs->getTotalCharged());
         } else if (attrName == toString(SUMO_ATTR_NAME)) {
             return toString(cs->getMyName());
-		} else {
-			throw TraCIException("Invalid overhead wire parameter '" + attrName + "'");
-		}
+        } else {
+            throw TraCIException("Invalid overhead wire parameter '" + attrName + "'");
+        }
     } else if (StringUtils::startsWith(key, "parkingArea.")) {
         const std::string attrName = key.substr(12);
         MSParkingArea* pa = static_cast<MSParkingArea*>(MSNet::getInstance()->getStoppingPlace(objectID, SUMO_TAG_PARKING_AREA));

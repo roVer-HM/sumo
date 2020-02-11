@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Sat Jan 18 02:31:07 2020 by Eclipse SUMO netconvert Version v1_4_0+0632-3958f5e20f
+<!-- generated on Sun Feb  9 20:59:42 2020 by Eclipse SUMO netconvert Version v1_4_0+0995-3d963feed3
 -->
 
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
@@ -103,6 +103,7 @@
         <geometry.avoid-overlap value="true" type="BOOL" help="Modify edge geometries to avoid overlap at junctions"/>
         <join-lanes value="false" type="BOOL" help="join adjacent lanes that have the same permissions and which do not admit lane-changing (sidewalks and disallowed lanes)"/>
         <ptline.match-dist value="100" type="FLOAT" help="Matches stops outside the road network to the referencing pt line when below the given distance"/>
+        <ptstop-output.no-bidi value="false" type="BOOL" help="Skips automatic generation of stops on the bidi-edge of a loaded stop"/>
         <geometry.max-grade value="10" type="FLOAT" help="Warn about edge geometries with a grade in % above FLOAT."/>
         <geometry.max-grade.fix value="true" type="BOOL" help="Smooth edge edge geometries with a grade in above the warning threshold."/>
         <offset.disable-normalization value="false" synonymes="disable-normalize-node-positions" type="BOOL" help="Turn off normalizing node positions"/>
@@ -113,6 +114,7 @@
         <roundabouts.guess value="true" synonymes="guess-roundabouts" type="BOOL" help="Enable roundabout-guessing"/>
         <opposites.guess value="false" type="BOOL" help="Enable guessing of opposite direction lanes usable for overtaking"/>
         <opposites.guess.fix-lengths value="false" type="BOOL" help="Ensure that opposite edges have the same length"/>
+        <fringe.guess value="false" type="BOOL" help="Enable guessing of network fringe nodes"/>
         <lefthand value="false" type="BOOL" help="Assumes left-hand traffic on the network"/>
         <edges.join value="false" type="BOOL" help="Merges edges which connect the same nodes and are close to each other (recommended for VISSIM import)"/>
         <speed.offset value="0" type="FLOAT" help="Modifies all edge speeds by adding FLOAT"/>
@@ -215,6 +217,7 @@
         <no-turnarounds.geometry value="true" type="BOOL" help="Disables building turnarounds at geometry-like junctions"/>
         <no-turnarounds.except-deadend value="false" type="BOOL" help="Disables building turnarounds except at dead end junctions"/>
         <no-turnarounds.except-turnlane value="false" type="BOOL" help="Disables building turnarounds except at at junctions with a dedicated turning lane"/>
+        <no-turnarounds.fringe value="false" type="BOOL" help="Disables building turnarounds at fringe junctions"/>
         <no-left-connections value="false" type="BOOL" help="Disables building connections to left"/>
         <junctions.join value="false" type="BOOL" help="Joins junctions that are close to each other (recommended for OSM import)"/>
         <junctions.join-dist value="10" type="FLOAT" help="Determines the maximal distance for joining junctions (defaults to 10)"/>

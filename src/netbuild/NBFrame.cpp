@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    NBFrame.cpp
 /// @author  Daniel Krajzewicz
@@ -129,6 +133,9 @@ NBFrame::fillOptions(bool forNetgen) {
     oc.doRegister("no-turnarounds.except-turnlane", new Option_Bool(false));
     oc.addDescription("no-turnarounds.except-turnlane", "Junctions", "Disables building turnarounds except at at junctions with a dedicated turning lane");
 
+    oc.doRegister("no-turnarounds.fringe", new Option_Bool(false));
+    oc.addDescription("no-turnarounds.fringe", "Junctions", "Disables building turnarounds at fringe junctions");
+
     oc.doRegister("no-left-connections", new Option_Bool(false));
     oc.addDescription("no-left-connections", "Junctions", "Disables building connections to left");
 
@@ -216,6 +223,9 @@ NBFrame::fillOptions(bool forNetgen) {
         oc.doRegister("railway.access-factor", new Option_Float(1.5));
         oc.addDescription("railway.access-factor", "Railway", "The walking length of the access is computed as air-line distance multiplied by FLOAT");
         oc.addSynonyme("railway.access-factor", "osm.stop-output.footway-access-factor", true);
+
+        oc.doRegister("ptstop-output.no-bidi", new Option_Bool(false));
+        oc.addDescription("ptstop-output.no-bidi", "Processing", "Skips automatic generation of stops on the bidi-edge of a loaded stop");
     }
 
     oc.doRegister("geometry.max-grade", new Option_Float(10));
@@ -252,6 +262,9 @@ NBFrame::fillOptions(bool forNetgen) {
 
     oc.doRegister("opposites.guess.fix-lengths", new Option_Bool(false));
     oc.addDescription("opposites.guess.fix-lengths", "Processing", "Ensure that opposite edges have the same length");
+
+    oc.doRegister("fringe.guess", new Option_Bool(false));
+    oc.addDescription("fringe.guess", "Processing", "Enable guessing of network fringe nodes");
 
     oc.doRegister("lefthand", new Option_Bool(false));
     oc.addDescription("lefthand", "Processing", "Assumes left-hand traffic on the network");

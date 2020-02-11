@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    GNEViewNetHelper.cpp
 /// @author  Jakob Erdmann
@@ -149,7 +153,8 @@ GNEViewNetHelper::ObjectsUnderCursor::updateObjectUnderCursor(const std::vector<
             }
         }
     }
-    // write information in debug mode
+    /*
+    // write information in debug mode (Currently disabled)
     WRITE_DEBUG("ObjectsUnderCursor: GUIGlObjects: " + toString(GUIGlObjects.size()) +
                 ", AttributeCarriers: " + toString(myAttributeCarriers.size()) +
                 ", NetworkElements: " + toString(myNetworkElements.size()) +
@@ -164,6 +169,7 @@ GNEViewNetHelper::ObjectsUnderCursor::updateObjectUnderCursor(const std::vector<
                 ", TAZs: " + toString(myTAZs.size()) +
                 ", POIs: " + toString(myPOIs.size()) +
                 ", Polys: " + toString(myPolys.size()));
+    */
 }
 
 
@@ -1307,8 +1313,8 @@ GNEViewNetHelper::SaveElements::buildSaveElementsButtons() {
         myViewNet->getViewParent()->getGNEAppWindows(), MID_HOTKEY_CTRL_SHIFT_A_SAVEADDITIONALS, GUIDesignButtonToolbar);
     saveAdditionalElements->create();
     // create save demand elements button
-    saveDemandElements = new FXButton(myViewNet->getViewParent()->getGNEAppWindows()->getToolbarsGrip().saveElements, 
-        "\tSave demand elements\tSave demand elements.", GUIIconSubSys::getIcon(ICON_SAVEDEMANDELEMENTS), 
+    saveDemandElements = new FXButton(myViewNet->getViewParent()->getGNEAppWindows()->getToolbarsGrip().saveElements,
+        "\tSave demand elements\tSave demand elements.", GUIIconSubSys::getIcon(ICON_SAVEDEMANDELEMENTS),
         myViewNet->getViewParent()->getGNEAppWindows(), MID_HOTKEY_CTRL_SHIFT_D_SAVEDEMANDELEMENTS, GUIDesignButtonToolbar);
     saveDemandElements->create();
     // create save data elements button
@@ -1563,8 +1569,8 @@ GNEViewNetHelper::CommonViewOptions::buildCommonViewOptionsMenuChecks() {
     menuCheckShowGrid->create();
 
     menuCheckDrawSpreadVehicles = new FXMenuCheck(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modeOptions,
-        ("Spread vehicles\t\tDraw vehicles spread in lane or in depart position"),
-        myViewNet, MID_GNE_COMMONVIEWOPTIONS_DRAWSPREADVEHICLES, LAYOUT_FIX_HEIGHT);
+            ("Spread vehicles\t\tDraw vehicles spread in lane or in depart position"),
+            myViewNet, MID_GNE_COMMONVIEWOPTIONS_DRAWSPREADVEHICLES, LAYOUT_FIX_HEIGHT);
 
     menuCheckDrawSpreadVehicles->setHeight(23);
     menuCheckDrawSpreadVehicles->setCheck(false);
@@ -1585,7 +1591,7 @@ GNEViewNetHelper::CommonViewOptions::getVisibleCommonMenuCommands(std::vector<FX
 }
 
 
-bool 
+bool
 GNEViewNetHelper::CommonViewOptions::drawSpreadVehicles() const {
     return (menuCheckDrawSpreadVehicles->getCheck() == TRUE);
 }
@@ -1822,15 +1828,15 @@ GNEViewNetHelper::DemandViewOptions::buildDemandViewOptionsMenuChecks() {
     menuCheckHideShapes->create();
 
     menuCheckHideNonInspectedDemandElements = new FXMenuCheck(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modeOptions,
-        ("Hide non-inspected\t\tToggle show non-inspected demand elements"),
-        myViewNet, MID_GNE_DEMANDVIEWOPTIONS_HIDENONINSPECTED, LAYOUT_FIX_HEIGHT);
+            ("Hide non-inspected\t\tToggle show non-inspected demand elements"),
+            myViewNet, MID_GNE_DEMANDVIEWOPTIONS_HIDENONINSPECTED, LAYOUT_FIX_HEIGHT);
     menuCheckHideNonInspectedDemandElements->setHeight(23);
     menuCheckHideNonInspectedDemandElements->setCheck(false);
     menuCheckHideNonInspectedDemandElements->create();
 
     menuCheckShowAllPersonPlans = new FXMenuCheck(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modeOptions,
-        ("Show person plans\t\tshow all person plans"),
-        myViewNet, MID_GNE_DEMANDVIEWOPTIONS_SHOWALLPERSONPLANS, LAYOUT_FIX_HEIGHT);
+            ("Show person plans\t\tshow all person plans"),
+            myViewNet, MID_GNE_DEMANDVIEWOPTIONS_SHOWALLPERSONPLANS, LAYOUT_FIX_HEIGHT);
     menuCheckShowAllPersonPlans->setHeight(23);
     menuCheckShowAllPersonPlans->setCheck(false);
     menuCheckShowAllPersonPlans->create();

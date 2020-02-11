@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    NBNode.cpp
 /// @author  Daniel Krajzewicz
@@ -375,10 +379,14 @@ NBNode::removeTrafficLight(NBTrafficLightDefinition* tlDef) {
 
 
 void
-NBNode::removeTrafficLights() {
+NBNode::removeTrafficLights(bool setAsPriority) {
     std::set<NBTrafficLightDefinition*> trafficLights = myTrafficLights; // make a copy because we will modify the original
     for (std::set<NBTrafficLightDefinition*>::const_iterator i = trafficLights.begin(); i != trafficLights.end(); ++i) {
         removeTrafficLight(*i);
+    }
+    if (setAsPriority) {
+        myType = myRequest != nullptr ? NODETYPE_PRIORITY : (
+                     myType == NODETYPE_TRAFFIC_LIGHT_NOJUNCTION ? NODETYPE_NOJUNCTION : NODETYPE_DEAD_END);
     }
 }
 
@@ -1061,7 +1069,7 @@ NBNode::computeLanes2Lanes() {
         int inOffset, outOffset, addedLanes;
         getReduction(out, in, outOffset, inOffset, addedLanes);
         if (in->getStep() <= NBEdge::EdgeBuildingStep::LANES2EDGES
-                && addedLanes > 0 
+                && addedLanes > 0
                 && in->isConnectedTo(out)) {
             const int addedRight = addedLanesRight(out, addedLanes);
             const int addedLeft = addedLanes - addedRight;
@@ -1419,9 +1427,9 @@ NBNode::addedLanesRight(NBEdge* out, int addedLanes) const {
     const int outOffset = MAX2(0, out->getFirstNonPedestrianLaneIndex(FORWARD, true));
     const int usableLanes = out->getNumLanes() - outOffset;
     int addedTurnLanes = MIN3(
-            addedLanes,
-            MAX2(0, usableLanes - outLanesStraight),
-            outLanesRight + outLanesLeft);
+                             addedLanes,
+                             MAX2(0, usableLanes - outLanesStraight),
+                             outLanesRight + outLanesLeft);
     if (outLanesLeft == 0) {
         return addedTurnLanes;
     } else {
@@ -1825,7 +1833,7 @@ NBNode::rightTurnConflict(const NBEdge* from, const NBEdge* to, int fromLane,
         const double toAngleAtNode = fmod(to->getStartAngle() + 180, (double)360.0);
         const double prohibitorToAngleAtNode = fmod(prohibitorTo->getStartAngle() + 180, (double)360.0);
         return (flip != (GeomHelper::getCWAngleDiff(from->getEndAngle(), toAngleAtNode) <
-                             GeomHelper::getCWAngleDiff(from->getEndAngle(), prohibitorToAngleAtNode)));
+                         GeomHelper::getCWAngleDiff(from->getEndAngle(), prohibitorToAngleAtNode)));
     }
 }
 
@@ -3383,9 +3391,9 @@ NBNode::sortEdges(bool useNodeShape) {
     NBEdge* firstOfIncoming = incoming.size() > 0 ? incoming.front() : 0;
     NBEdge* firstOfOutgoing = outgoing.size() > 0 ? outgoing.front() : 0;
     // sort by the angle between the node shape center and the point where the edge meets the node shape
-    sort(allEdges.begin(), allEdges.end(), NBContHelper::edge_by_angle_to_nodeShapeCentroid_sorter(this));
-    sort(incoming.begin(), incoming.end(), NBContHelper::edge_by_angle_to_nodeShapeCentroid_sorter(this));
-    sort(outgoing.begin(), outgoing.end(), NBContHelper::edge_by_angle_to_nodeShapeCentroid_sorter(this));
+    std::sort(allEdges.begin(), allEdges.end(), NBContHelper::edge_by_angle_to_nodeShapeCentroid_sorter(this));
+    std::sort(incoming.begin(), incoming.end(), NBContHelper::edge_by_angle_to_nodeShapeCentroid_sorter(this));
+    std::sort(outgoing.begin(), outgoing.end(), NBContHelper::edge_by_angle_to_nodeShapeCentroid_sorter(this));
     // let the first edge remain the first
     rotate(allEdges.begin(), std::find(allEdges.begin(), allEdges.end(), firstOfAll), allEdges.end());
     if (firstOfIncoming != nullptr) {

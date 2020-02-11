@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    MSE2Collector.cpp
 /// @author  Christian Roessel
@@ -866,6 +870,7 @@ MSE2Collector::detectorUpdate(const SUMOTime /* step */) {
     std::sort(myMoveNotifications.begin(), myMoveNotifications.end(), compareMoveNotification);
 
     // reset values concerning current time step (these are updated in integrateMoveNotification() and aggregateOutputValues())
+    myCurrentVehicleSamples = 0;
     myCurrentMeanSpeed = 0;
     myCurrentMeanLength = 0;
     myCurrentStartedHalts = 0;
@@ -967,7 +972,7 @@ MSE2Collector::aggregateOutputValues() {
     myMeanVehicleNumber += numVehicles;
     myMaxVehicleNumber = MAX2(numVehicles, myMaxVehicleNumber);
     // norm current values
-    myCurrentMeanSpeed = numVehicles != 0 ? myCurrentMeanSpeed / (double) numVehicles : -1;
+    myCurrentMeanSpeed = numVehicles != 0 ? myCurrentMeanSpeed / myCurrentVehicleSamples : -1;
     myCurrentMeanLength = numVehicles != 0 ? myCurrentMeanLength / (double) numVehicles : -1;
 }
 
@@ -991,6 +996,7 @@ MSE2Collector::integrateMoveNotification(VehicleInfo* vi, const MoveNotification
     myVehicleSamples += mni->timeOnDetector;
     myTotalTimeLoss += mni->timeLoss;
     mySpeedSum += mni->speed * mni->timeOnDetector;
+    myCurrentVehicleSamples += mni->timeOnDetector;
     myCurrentMeanSpeed += mni->speed * mni->timeOnDetector;
     myCurrentMeanLength += mni->lengthOnDetector;
 

@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    RORouteHandler.cpp
 /// @author  Daniel Krajzewicz
@@ -90,14 +94,14 @@ RORouteHandler::parseFromViaTo(SumoXMLTag tag, const SUMOSAXAttributes& attrs, b
     // from-attributes
     const std::string rid = "for " + element + " '" + myVehicleParameter->id + "'";
     if ((useTaz || !attrs.hasAttribute(SUMO_ATTR_FROM)) &&
-                (myVehicleParameter->wasSet(VEHPARS_FROM_TAZ_SET) || attrs.hasAttribute(SUMO_ATTR_FROMJUNCTION))) {
+            (myVehicleParameter->wasSet(VEHPARS_FROM_TAZ_SET) || attrs.hasAttribute(SUMO_ATTR_FROMJUNCTION))) {
         bool useJunction = attrs.hasAttribute(SUMO_ATTR_FROMJUNCTION);
         const std::string tazType = useJunction ? "junction" : "taz";
         const std::string tazID = useJunction ? attrs.get<std::string>(SUMO_ATTR_FROMJUNCTION, myVehicleParameter->id.c_str(), ok, true) : myVehicleParameter->fromTaz;
         const ROEdge* fromTaz = myNet.getEdge(tazID + "-source");
         if (fromTaz == nullptr) {
             myErrorOutput->inform("Source " + tazType + " '" + tazID + "' not known for " + element + " '" + myVehicleParameter->id + "'!"
-                    + (useJunction ? JUNCTION_TAZ_MISSING_HELP : ""));
+                                  + (useJunction ? JUNCTION_TAZ_MISSING_HELP : ""));
             ok = false;
         } else if (fromTaz->getNumSuccessors() == 0 && tag != SUMO_TAG_PERSON) {
             myErrorOutput->inform("Source " + tazType + " '" + tazID + "' has no outgoing edges for " + element + " '" + myVehicleParameter->id + "'!");
@@ -135,7 +139,7 @@ RORouteHandler::parseFromViaTo(SumoXMLTag tag, const SUMOSAXAttributes& attrs, b
     } else {
         parseEdges(attrs.getOpt<std::string>(SUMO_ATTR_VIA, myVehicleParameter->id.c_str(), ok, "", true), viaEdges, rid, ok);
     }
-    for (const ROEdge* e: viaEdges) {
+    for (const ROEdge* e : viaEdges) {
         myActiveRoute.push_back(e);
         myVehicleParameter->via.push_back(e->getID());
     }
@@ -149,7 +153,7 @@ RORouteHandler::parseFromViaTo(SumoXMLTag tag, const SUMOSAXAttributes& attrs, b
         const ROEdge* toTaz = myNet.getEdge(tazID + "-sink");
         if (toTaz == nullptr) {
             myErrorOutput->inform("Sink " + tazType + " '" + tazID + "' not known for " + element + " '" + myVehicleParameter->id + "'!"
-                    + (useJunction ? JUNCTION_TAZ_MISSING_HELP : ""));
+                                  + (useJunction ? JUNCTION_TAZ_MISSING_HELP : ""));
             ok = false;
         } else if (toTaz->getNumPredecessors() == 0 && tag != SUMO_TAG_PERSON) {
             myErrorOutput->inform("Sink " + tazType + " '" + tazID + "' has no incoming edges for " + element + " '" + myVehicleParameter->id + "'!");
@@ -906,7 +910,7 @@ RORouteHandler::getJunctionTaz(const Position& pos, const ROEdge* closestEdge, S
         const RONode* fromJunction = closestEdge->getFromJunction();
         const RONode* toJunction = closestEdge->getToJunction();
         const bool fromCloser = (fromJunction->getPosition().distanceSquaredTo2D(pos) <
-                toJunction->getPosition().distanceSquaredTo2D(pos));
+                                 toJunction->getPosition().distanceSquaredTo2D(pos));
         const ROEdge* fromSource = myNet.getEdge(fromJunction->getID() + "-source");
         const ROEdge* fromSink = myNet.getEdge(fromJunction->getID() + "-sink");
         const ROEdge* toSource = myNet.getEdge(toJunction->getID() + "-source");
@@ -942,10 +946,9 @@ RORouteHandler::getJunctionTaz(const Position& pos, const ROEdge* closestEdge, S
 
 void
 RORouteHandler::parseWalkPositions(const SUMOSAXAttributes& attrs, const std::string& personID,
-                            const ROEdge* /*fromEdge*/, const ROEdge*& toEdge,
-                            double& departPos, double& arrivalPos, std::string& busStopID,
-                            const ROPerson::PlanItem* const lastStage, bool& ok) 
-{
+                                   const ROEdge* /*fromEdge*/, const ROEdge*& toEdge,
+                                   double& departPos, double& arrivalPos, std::string& busStopID,
+                                   const ROPerson::PlanItem* const lastStage, bool& ok) {
     const std::string description = "walk or personTrip of '" + personID + "'.";
     if (attrs.hasAttribute(SUMO_ATTR_DEPARTPOS)) {
         WRITE_WARNING("The attribute departPos is no longer supported for walks, please use the person attribute, the arrivalPos of the previous step or explicit stops.");
@@ -968,9 +971,9 @@ RORouteHandler::parseWalkPositions(const SUMOSAXAttributes& attrs, const std::st
     }
     if (toEdge != nullptr) {
         if (attrs.hasAttribute(SUMO_ATTR_ARRIVALPOS)) {
-            arrivalPos = SUMOVehicleParserHelper::parseWalkPos(SUMO_ATTR_ARRIVALPOS, 
-                    myHardFail, description, toEdge->getLength(), 
-                    attrs.get<std::string>(SUMO_ATTR_ARRIVALPOS, description.c_str(), ok));
+            arrivalPos = SUMOVehicleParserHelper::parseWalkPos(SUMO_ATTR_ARRIVALPOS,
+                         myHardFail, description, toEdge->getLength(),
+                         attrs.get<std::string>(SUMO_ATTR_ARRIVALPOS, description.c_str(), ok));
         }
     } else {
         throw ProcessError("No destination edge for " + description + ".");

@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    GNETLSEditorFrame.cpp
 /// @author  Jakob Erdmann
@@ -1063,8 +1067,7 @@ GNETLSEditorFrame::TLSJunction::updateJunctionDescription() const {
 // ---------------------------------------------------------------------------
 
 GNETLSEditorFrame::TLSDefinition::TLSDefinition(GNETLSEditorFrame* TLSEditorParent) :
-    FXGroupBox(TLSEditorParent->myContentFrame, "Traffic Light Programs", GUIDesignGroupBoxFrame) 
-{
+    FXGroupBox(TLSEditorParent->myContentFrame, "Traffic Light Programs", GUIDesignGroupBoxFrame) {
     FXHorizontalFrame* buttonsFrame = new FXHorizontalFrame(this, GUIDesignAuxiliarHorizontalFrame);
     // create create tlDef button
     myNewTLProgram = new FXButton(buttonsFrame, "Create\t\tCreate a new traffic light program",
@@ -1105,10 +1108,10 @@ GNETLSEditorFrame::TLSPhases::TLSPhases(GNETLSEditorFrame* TLSEditorParent) :
     // using FXMatrix for tabular button layout would have been cleaner but the
     // below attempt did not make the buttons fill available horizontal space
     // FXMatrix* phaseButtons = new FXMatrix(this, 2, LAYOUT_FILL_X | MATRIX_BY_COLUMNS);
-    
+
     FXHorizontalFrame* phaseButtons = new FXHorizontalFrame(this, GUIDesignAuxiliarHorizontalFrame);
-    FXVerticalFrame* col1 = new FXVerticalFrame(phaseButtons, LAYOUT_FILL_X, 0,0,0,0, 0,0,0,0, 0,0); // left button columm
-    FXVerticalFrame* col2 = new FXVerticalFrame(phaseButtons, LAYOUT_FILL_X, 0,0,0,0, 0,0,0,0, 0,0); // right button column
+    FXVerticalFrame* col1 = new FXVerticalFrame(phaseButtons, LAYOUT_FILL_X, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); // left button columm
+    FXVerticalFrame* col2 = new FXVerticalFrame(phaseButtons, LAYOUT_FILL_X, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); // right button column
 
     // create new phase button
     myInsertDuplicateButton = new FXButton(col1, "Insert Phase\t\tInsert new phase after the selected phase. The new state is deduced from the selected phase.", nullptr, myTLSEditorParent, MID_GNE_TLSFRAME_PHASE_CREATE, GUIDesignButton);

@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    NBEdge.cpp
 /// @author  Daniel Krajzewicz
@@ -51,7 +55,7 @@
 //#define DEBUG_ANGLES
 //#define DEBUG_NODE_BORDER
 //#define DEBUG_REPLACECONNECTION
-#define DEBUGID "132406495"
+#define DEBUGID ""
 #define DEBUGCOND (getID() == DEBUGID)
 //#define DEBUGCOND (StringUtils::startsWith(getID(), DEBUGID))
 //#define DEBUGCOND (getID() == "22762377#1" || getID() == "146511467")
@@ -538,6 +542,7 @@ NBEdge::reshiftPosition(double xoff, double yoff) {
     }
     myFromBorder.add(xoff, yoff, 0);
     myToBorder.add(xoff, yoff, 0);
+    computeEdgeShape();
     computeAngle(); // update angles because they are numerically sensitive (especially where based on centroids)
 }
 
@@ -1225,7 +1230,7 @@ NBEdge::getConnectedSorted() {
             edges->push_back(outedge);
         }
     }
-    sort(edges->begin(), edges->end(), NBContHelper::relative_outgoing_edge_sorter(this));
+    std::sort(edges->begin(), edges->end(), NBContHelper::relative_outgoing_edge_sorter(this));
     return edges;
 }
 
@@ -2003,32 +2008,77 @@ NBEdge::computeAngle() {
     }
 
     // if the junction shape is suspicious we cannot trust the angle to the centroid
-    if (hasFromShape && (myFrom->getShape().distance2D(shape[0]) > 2 * POSITION_EPS
-                         || myFrom->getShape().around(shape[-1])
-                         || !(myFrom->getShape().around(fromCenter)))) {
-        fromCenter = myFrom->getPosition();
-    }
-    if (hasToShape && (myTo->getShape().distance2D(shape[-1]) > 2 * POSITION_EPS
-                       || myTo->getShape().around(shape[0])
-                       || !(myTo->getShape().around(toCenter)))) {
-        toCenter = myTo->getPosition();
-    }
+    const bool suspiciousFromShape = hasFromShape && (myFrom->getShape().distance2D(shape[0]) > 2 * POSITION_EPS
+                                     || myFrom->getShape().around(shape[-1])
+                                     || !(myFrom->getShape().around(fromCenter)));
+    const bool suspiciousToShape = hasToShape && (myTo->getShape().distance2D(shape[-1]) > 2 * POSITION_EPS
+                                   || myTo->getShape().around(shape[0])
+                                   || !(myTo->getShape().around(toCenter)));
 
     const double angleLookahead = MIN2(shape.length2D() / 2, ANGLE_LOOKAHEAD);
     const Position referencePosStart = shape.positionAtOffset2D(angleLookahead);
-    myStartAngle = GeomHelper::legacyDegree(fromCenter.angleTo2D(referencePosStart), true);
     const Position referencePosEnd = shape.positionAtOffset2D(shape.length() - angleLookahead);
+
+    myStartAngle = GeomHelper::legacyDegree(fromCenter.angleTo2D(referencePosStart), true);
+    const double myStartAngle2 = GeomHelper::legacyDegree(myFrom->getPosition().angleTo2D(referencePosStart), true);
+    const double myStartAngle3 = getAngleAtNode(myFrom);
     myEndAngle = GeomHelper::legacyDegree(referencePosEnd.angleTo2D(toCenter), true);
+    const double myEndAngle2 = GeomHelper::legacyDegree(referencePosEnd.angleTo2D(myTo->getPosition()), true);
+    const double myEndAngle3 = getAngleAtNode(myTo);
+
+#ifdef DEBUG_ANGLES
+    if (DEBUGCOND) {
+        if (suspiciousFromShape) {
+            std::cout << "  len=" << shape.length() << " startA=" << myStartAngle << " startA2=" << myStartAngle2 << " startA3=" << myStartAngle3
+                      << " rel=" << NBHelpers::normRelAngle(myStartAngle, myStartAngle2)
+                      << " fromCenter=" << fromCenter
+                      << " fromPos=" << myFrom->getPosition()
+                      << " refStart=" << referencePosStart
+                      << "\n";
+        }
+        if (suspiciousToShape) {
+            std::cout << " len=" << shape.length() << "  endA=" << myEndAngle << " endA2=" << myEndAngle2 << " endA3=" << myEndAngle3
+                      << " rel=" << NBHelpers::normRelAngle(myEndAngle, myEndAngle2)
+                      << " toCenter=" << toCenter
+                      << " toPos=" << myTo->getPosition()
+                      << " refEnd=" << referencePosEnd
+                      << "\n";
+        }
+    }
+#endif
+
+    if (suspiciousFromShape && shape.length() > 1) {
+        myStartAngle = myStartAngle2;
+    } else if (suspiciousToShape && fabs(NBHelpers::normRelAngle(myStartAngle, myStartAngle3)) > 90
+               // don't trust footpath angles
+               && (getPermissions() & ~SVC_PEDESTRIAN) != 0) {
+        myStartAngle = myStartAngle3;
+        if (myStartAngle < 0) {
+            myStartAngle += 360;
+        }
+    }
+
+    if (suspiciousToShape && shape.length() > 1) {
+        myEndAngle = myEndAngle2;
+    } else if (suspiciousToShape && fabs(NBHelpers::normRelAngle(myEndAngle, myEndAngle3)) > 90
+               // don't trust footpath angles
+               && (getPermissions() & ~SVC_PEDESTRIAN) != 0) {
+        myEndAngle = myEndAngle3;
+        if (myEndAngle < 0) {
+            myEndAngle += 360;
+        }
+    }
+
     myTotalAngle = GeomHelper::legacyDegree(myFrom->getPosition().angleTo2D(myTo->getPosition()), true);
 #ifdef DEBUG_ANGLES
-    if (DEBUGCOND) std::cout << "computeAngle edge=" << getID() 
-                             << " fromCenter=" << fromCenter << " toCenter=" << toCenter
-                             << " refStart=" << referencePosStart << " refEnd=" << referencePosEnd << " shape=" << shape
-                             << " hasFromShape=" << hasFromShape
-                             << " hasToShape=" << hasToShape
-                             << " numLanes=" << getNumLanes()
-                             << " shapeLane=" << getNumLanes() / 2
-                             << " startA=" << myStartAngle << " endA=" << myEndAngle << " totA=" << myTotalAngle << "\n";
+    if (DEBUGCOND) std::cout << "computeAngle edge=" << getID()
+                                 << " fromCenter=" << fromCenter << " toCenter=" << toCenter
+                                 << " refStart=" << referencePosStart << " refEnd=" << referencePosEnd << " shape=" << shape
+                                 << " hasFromShape=" << hasFromShape
+                                 << " hasToShape=" << hasToShape
+                                 << " numLanes=" << getNumLanes()
+                                 << " shapeLane=" << getNumLanes() / 2
+                                 << " startA=" << myStartAngle << " endA=" << myEndAngle << " totA=" << myTotalAngle << "\n";
 #endif
 }
 
@@ -2811,7 +2861,7 @@ NBEdge::prepareEdgePriorities(const EdgeVector* outgoing, const std::vector<int>
 
 
 void
-NBEdge::appendTurnaround(bool noTLSControlled, bool onlyDeadends, bool onlyTurnlane, bool noGeometryLike, bool checkPermissions) {
+NBEdge::appendTurnaround(bool noTLSControlled, bool noFringe, bool onlyDeadends, bool onlyTurnlane, bool noGeometryLike, bool checkPermissions) {
     // do nothing if no turnaround is known
     if (myTurnDestination == nullptr || myTo->getType() == NODETYPE_RAIL_CROSSING) {
         return;
@@ -2819,6 +2869,9 @@ NBEdge::appendTurnaround(bool noTLSControlled, bool onlyDeadends, bool onlyTurnl
     // do nothing if the destination node is controlled by a tls and no turnarounds
     //  shall be appended for such junctions
     if (noTLSControlled && myTo->isTLControlled()) {
+        return;
+    }
+    if (noFringe && myTo->getFringeType() == FRINGE_TYPE_OUTER) {
         return;
     }
     bool isDeadEnd = true;
@@ -3577,7 +3630,7 @@ NBEdge::getSignalOffset() const {
         return UNSPECIFIED_SIGNAL_OFFSET;
     } else {
         Position laneEnd = myLaneSpreadFunction == LANESPREAD_RIGHT ?
-            myLanes.back().shape.back() : myLanes[getNumLanes() / 2].shape.back();
+                           myLanes.back().shape.back() : myLanes[getNumLanes() / 2].shape.back();
         //std::cout << getID() << " signalPos=" << mySignalPosition << " laneEnd=" << laneEnd << " toShape=" << myTo->getShape() << " toBorder=" << myToBorder << "\n";
         return mySignalPosition.distanceTo2D(laneEnd);
     }
@@ -3635,6 +3688,16 @@ NBEdge::getPermissionVariants(int iStart, int iEnd) const {
     return result;
 }
 
+int
+NBEdge::getNumLanesThatAllow(SVCPermissions permissions) const {
+    int result = 0;
+    for (const Lane& lane : myLanes) {
+        if ((lane.permissions & permissions) == permissions) {
+            result++;
+        }
+    }
+    return result;
+}
 
 double
 NBEdge::getCrossingAngle(NBNode* node) {
@@ -3932,6 +3995,33 @@ NBEdge::joinLanes(SVCPermissions perms) {
         }
     }
     return haveJoined;
+}
+
+
+EdgeVector
+NBEdge::filterByPermissions(const EdgeVector& edges, SVCPermissions permissions) {
+    EdgeVector result;
+    for (NBEdge* edge : edges) {
+        if ((edge->getPermissions() & permissions) != 0) {
+            result.push_back(edge);
+        }
+    }
+    return result;
+}
+
+NBEdge*
+NBEdge::getStraightContinuation(SVCPermissions permissions) const {
+    EdgeVector cands = filterByPermissions(myTo->getOutgoingEdges(), permissions);
+    if (cands.size() == 0) {
+        return nullptr;
+    }
+    sort(cands.begin(), cands.end(), NBContHelper::edge_similar_direction_sorter(this));
+    NBEdge* best = cands.front();
+    if (isTurningDirectionAt(best)) {
+        return nullptr;
+    } else {
+        return best;
+    }
 }
 
 /****************************************************************************/

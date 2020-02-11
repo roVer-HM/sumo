@@ -51,5 +51,5 @@ ticket4223
 # test lookback
 ticket5416
 
-# lateral shift  (width-split) in lefthand networks
-ticket6573
+# deadlock on junction
+ticket6636

@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    NWWriter_SUMO.cpp
 /// @author  Daniel Krajzewicz
@@ -63,6 +67,10 @@ NWWriter_SUMO::writeNetwork(const OptionsCont& oc, NBNetBuilder& nb) {
     attrs[SUMO_ATTR_VERSION] = toString(NETWORK_VERSION, 1);
     if (oc.getBool("lefthand") != oc.getBool("flip-y-axis")) {
         attrs[SUMO_ATTR_LEFTHAND] = "true";
+    } else if (oc.getBool("lefthand")) {
+        // network was flipped, correct written link directions
+        OptionsCont::getOptions().resetWritable();
+        OptionsCont::getOptions().set("lefthand", "false");
     }
     const int cornerDetail = oc.getInt("junctions.corner-detail");
     if (cornerDetail > 0) {
@@ -339,7 +347,7 @@ NWWriter_SUMO::writeInternalEdges(OutputDevice& into, const NBEdgeCont& ec, cons
                 // with the wrong permissions we need to inherit them from the successor
                 const NBEdge::Lane& successor = k.toEdge->getLanes()[k.toLane];
                 SVCPermissions permissions = (k.permissions != SVC_UNSPECIFIED) ? k.permissions : (
-                        successor.permissions & e->getPermissions(k.fromLane));
+                                                 successor.permissions & e->getPermissions(k.fromLane));
                 const double width = n.isConstantWidthTransition() && e->getNumLanes() > k.toEdge->getNumLanes() ? e->getLaneWidth(k.fromLane) : successor.width;
                 writeLane(into, k.getInternalLaneID(), k.vmax,
                           permissions, successor.preferred,
@@ -365,7 +373,7 @@ NWWriter_SUMO::writeInternalEdges(OutputDevice& into, const NBEdgeCont& ec, cons
                     into.writeAttr(SUMO_ATTR_ID, k.viaID);
                     into.writeAttr(SUMO_ATTR_FUNCTION, EDGEFUNC_INTERNAL);
                     SVCPermissions permissions = (k.permissions != SVC_UNSPECIFIED) ? k.permissions : (
-                            successor.permissions & e->getPermissions(k.fromLane));
+                                                     successor.permissions & e->getPermissions(k.fromLane));
                     writeLane(into, k.viaID + "_0", k.vmax, permissions, successor.preferred,
                               NBEdge::UNSPECIFIED_OFFSET, NBEdge::UNSPECIFIED_OFFSET,
                               std::map<int, double>(), successor.width, k.viaShape, &k,
@@ -914,45 +922,50 @@ NWWriter_SUMO::prohibitionConnection(const NBConnection& c) {
 void
 NWWriter_SUMO::writeTrafficLights(OutputDevice& into, const NBTrafficLightLogicCont& tllCont) {
     std::vector<NBTrafficLightLogic*> logics = tllCont.getComputed();
-    for (std::vector<NBTrafficLightLogic*>::iterator it = logics.begin(); it != logics.end(); it++) {
-        into.openTag(SUMO_TAG_TLLOGIC);
-        into.writeAttr(SUMO_ATTR_ID, (*it)->getID());
-        into.writeAttr(SUMO_ATTR_TYPE, (*it)->getType());
-        into.writeAttr(SUMO_ATTR_PROGRAMID, (*it)->getProgramID());
-        into.writeAttr(SUMO_ATTR_OFFSET, writeSUMOTime((*it)->getOffset()));
-        // write the phases
-        const bool varPhaseLength = (*it)->getType() != TLTYPE_STATIC;
-        const std::vector<NBTrafficLightLogic::PhaseDefinition>& phases = (*it)->getPhases();
-        for (std::vector<NBTrafficLightLogic::PhaseDefinition>::const_iterator j = phases.begin(); j != phases.end(); ++j) {
-            into.openTag(SUMO_TAG_PHASE);
-            into.writeAttr(SUMO_ATTR_DURATION, writeSUMOTime(j->duration));
-            if (j->duration < TIME2STEPS(10)) {
-                into.writePadding(" ");
-            }
-            into.writeAttr(SUMO_ATTR_STATE, j->state);
-            if (varPhaseLength) {
-                if (j->minDur != NBTrafficLightDefinition::UNSPECIFIED_DURATION) {
-                    into.writeAttr(SUMO_ATTR_MINDURATION, writeSUMOTime(j->minDur));
-                }
-                if (j->maxDur != NBTrafficLightDefinition::UNSPECIFIED_DURATION) {
-                    into.writeAttr(SUMO_ATTR_MAXDURATION, writeSUMOTime(j->maxDur));
-                }
-            }
-            if (j->name != "") {
-                into.writeAttr(SUMO_ATTR_NAME, j->name);
-            }
-            if (j->next.size() > 0) {
-                into.writeAttr(SUMO_ATTR_NEXT, j->next);
-            }
-            into.closeTag();
-        }
-        // write params
-        (*it)->writeParams(into);
-        into.closeTag();
+    for (NBTrafficLightLogic* logic : logics) {
+        writeTrafficLight(into, logic);
     }
     if (logics.size() > 0) {
         into.lf();
     }
+}
+
+
+void
+NWWriter_SUMO::writeTrafficLight(OutputDevice& into, const NBTrafficLightLogic* logic) {
+    into.openTag(SUMO_TAG_TLLOGIC);
+    into.writeAttr(SUMO_ATTR_ID, logic->getID());
+    into.writeAttr(SUMO_ATTR_TYPE, logic->getType());
+    into.writeAttr(SUMO_ATTR_PROGRAMID, logic->getProgramID());
+    into.writeAttr(SUMO_ATTR_OFFSET, writeSUMOTime(logic->getOffset()));
+    // write the phases
+    const bool varPhaseLength = logic->getType() != TLTYPE_STATIC;
+    for (const NBTrafficLightLogic::PhaseDefinition& phase : logic->getPhases()) {
+        into.openTag(SUMO_TAG_PHASE);
+        into.writeAttr(SUMO_ATTR_DURATION, writeSUMOTime(phase.duration));
+        if (phase.duration < TIME2STEPS(10)) {
+            into.writePadding(" ");
+        }
+        into.writeAttr(SUMO_ATTR_STATE, phase.state);
+        if (varPhaseLength) {
+            if (phase.minDur != NBTrafficLightDefinition::UNSPECIFIED_DURATION) {
+                into.writeAttr(SUMO_ATTR_MINDURATION, writeSUMOTime(phase.minDur));
+            }
+            if (phase.maxDur != NBTrafficLightDefinition::UNSPECIFIED_DURATION) {
+                into.writeAttr(SUMO_ATTR_MAXDURATION, writeSUMOTime(phase.maxDur));
+            }
+        }
+        if (phase.name != "") {
+            into.writeAttr(SUMO_ATTR_NAME, phase.name);
+        }
+        if (phase.next.size() > 0) {
+            into.writeAttr(SUMO_ATTR_NEXT, phase.next);
+        }
+        into.closeTag();
+    }
+    // write params
+    logic->writeParams(into);
+    into.closeTag();
 }
 
 

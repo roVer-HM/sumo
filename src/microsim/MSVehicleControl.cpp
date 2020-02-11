@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    MSVehicleControl.cpp
 /// @author  Daniel Krajzewicz
@@ -65,8 +69,7 @@ MSVehicleControl::MSVehicleControl() :
     myWaitingForContainer(0),
     myMaxSpeedFactor(1),
     myMinDeceleration(SUMOVTypeParameter::getDefaultDecel(SVC_IGNORING)),
-    myPendingRemovals(MSGlobals::gNumSimThreads > 1) 
-{
+    myPendingRemovals(MSGlobals::gNumSimThreads > 1) {
     SUMOVTypeParameter defType(DEFAULT_VTYPE_ID, SVC_PASSENGER);
     myVTypeDict[DEFAULT_VTYPE_ID] = MSVehicleType::build(defType);
 
@@ -423,8 +426,8 @@ MSVehicleControl::getVTypeDistribution(const std::string& typeDistID) const {
 void
 MSVehicleControl::abortWaiting() {
     for (VehicleDictType::iterator i = myVehicleDict.begin(); i != myVehicleDict.end(); ++i) {
-        WRITE_WARNINGF("Vehicle '%' aborted waiting for a % that will never come.", i->first, 
-                i->second->getParameter().departProcedure == DEPART_SPLIT ? "split" : "person or container")
+        WRITE_WARNINGF("Vehicle '%' aborted waiting for a % that will never come.", i->first,
+                       i->second->getParameter().departProcedure == DEPART_SPLIT ? "split" : "person or container")
     }
 }
 

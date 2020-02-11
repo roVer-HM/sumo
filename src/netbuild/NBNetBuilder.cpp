@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    NBNetBuilder.cpp
 /// @author  Daniel Krajzewicz
@@ -156,9 +160,9 @@ NBNetBuilder::compute(OptionsCont& oc, const std::set<std::string>& explicitTurn
         NBRailwayTopologyAnalyzer::analyzeTopology(*this);
     }
 
-    if (oc.getBool("junctions.join") 
-            || (oc.exists("ramps.guess") && oc.getBool("ramps.guess")) 
-            || oc.getBool("tls.guess.joining") 
+    if (oc.getBool("junctions.join")
+            || (oc.exists("ramps.guess") && oc.getBool("ramps.guess"))
+            || oc.getBool("tls.guess.joining")
             || (oc.exists("tls.guess-signals") && oc.getBool("tls.guess-signals"))) {
         // preliminary geometry computations to determine the length of edges
         // This depends on turning directions and sorting of edge list
@@ -283,8 +287,8 @@ NBNetBuilder::compute(OptionsCont& oc, const std::set<std::string>& explicitTurn
 
     // guess ramps (after guessing tls because ramps should not be build at traffic lights)
     const bool modifyRamps = mayAddOrRemove && (
-            (oc.exists("ramps.guess") && oc.getBool("ramps.guess"))
-            || (oc.exists("ramps.set") && oc.isSet("ramps.set")));
+                                 (oc.exists("ramps.guess") && oc.getBool("ramps.guess"))
+                                 || (oc.exists("ramps.set") && oc.isSet("ramps.set")));
     if (modifyRamps || (oc.exists("ramps.guess-acceleration-lanes") && oc.getBool("ramps.guess-acceleration-lanes"))) {
         before = SysUtils::getCurrentMillis();
         if (modifyRamps) {
@@ -430,13 +434,23 @@ NBNetBuilder::compute(OptionsCont& oc, const std::set<std::string>& explicitTurn
     myEdgeCont.sortOutgoingLanesConnections();
     PROGRESS_TIME_MESSAGE(before);
     //
+    if (oc.getBool("fringe.guess")) {
+        before = PROGRESS_BEGIN_TIME_MESSAGE("Guessing Network fringe");
+        const int numGuessed = myNodeCont.guessFringe();
+        if (numGuessed > 0) {
+            WRITE_MESSAGE(" Guessed " + toString(numGuessed) + " fringe nodes.");
+        }
+        PROGRESS_TIME_MESSAGE(before);
+    }
+    //
     before = PROGRESS_BEGIN_TIME_MESSAGE("Processing turnarounds");
     if (!oc.getBool("no-turnarounds")) {
         myEdgeCont.appendTurnarounds(
-                oc.getBool("no-turnarounds.tls"),
-                oc.getBool("no-turnarounds.except-deadend"),
-                oc.getBool("no-turnarounds.except-turnlane"),
-                oc.getBool("no-turnarounds.geometry"));
+            oc.getBool("no-turnarounds.tls"),
+            oc.getBool("no-turnarounds.fringe"),
+            oc.getBool("no-turnarounds.except-deadend"),
+            oc.getBool("no-turnarounds.except-turnlane"),
+            oc.getBool("no-turnarounds.geometry"));
     } else {
         myEdgeCont.appendTurnarounds(explicitTurnarounds, oc.getBool("no-turnarounds.tls"));
     }
@@ -551,7 +565,10 @@ NBNetBuilder::compute(OptionsCont& oc, const std::set<std::string>& explicitTurn
     //find accesses for pt rail stops and add bidi-stops
     if (oc.exists("ptstop-output") && oc.isSet("ptstop-output")) {
         before = SysUtils::getCurrentMillis();
-        const int numBidiStops = myPTStopCont.generateBidiStops(myEdgeCont);
+        int numBidiStops = 0;
+        if (!oc.getBool("ptstop-output.no-bidi")) {
+            numBidiStops = myPTStopCont.generateBidiStops(myEdgeCont);
+        }
         PROGRESS_BEGIN_MESSAGE("Find accesses for pt rail stops");
         double maxRadius = oc.getFloat("railway.access-distance");
         double accessFactor = oc.getFloat("railway.access-factor");

@@ -13,6 +13,9 @@ ticket2790
 # joining a cluster with multiple intermediate edges
 ticket3981
 
+# join junctions despite long edges inside
+ticket5398
+
 # invalid tls link index in output network
 ticket5513
 
@@ -30,3 +33,12 @@ ticket6493
 
 # guess-signals must work in intermodal networks
 ticket6495
+
+# missing green phase
+ticket6582
+
+# guess.signals failure
+ticket6584
+
+# difficult junction shape impacts junction joining
+ticket6585

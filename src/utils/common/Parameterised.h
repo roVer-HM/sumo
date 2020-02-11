@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2002-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    Parameterised.h
 /// @author  Daniel Krajzewicz
@@ -95,7 +99,7 @@ public:
     const std::map<std::string, std::string>& getParametersMap() const;
 
     /// @brief Returns the inner key/value map in string format "key1=value1|key2=value2|...|keyN=valueN"
-    std::string getParametersStr(const std::string& kvsep="=", const std::string& sep="|") const;
+    std::string getParametersStr(const std::string& kvsep = "=", const std::string& sep = "|") const;
 
     /// @brief set the inner key/value map in map<string, string> format
     void setParameters(const Parameterised& params);
@@ -108,19 +112,19 @@ public:
      * @param[in] kvsep The separater between key and value
      * @param[in] sep The separater between map entries
      */
-    void setParametersStr(const std::string& paramsString, const std::string& kvsep="=", const std::string& sep="|");
+    void setParametersStr(const std::string& paramsString, const std::string& kvsep = "=", const std::string& sep = "|");
 
     /// @brief write Params in the given outputdevice
     void writeParams(OutputDevice& device) const;
 
     /// @brief check if given string can be parsed to a parameters map "key1=value1|key2=value2|...|keyN=valueN"
     static bool areParametersValid(const std::string& value,
-            bool report = false, const std::string& kvsep="=", const std::string& sep="|");
+                                   bool report = false, const std::string& kvsep = "=", const std::string& sep = "|");
 
 private:
     /// @brief check if given string can be parsed to a parameter of type "key=value"
-    static bool isParameterValid(const std::string& value, bool report, 
-            const std::string& kvsep="=", const std::string& sep="|");
+    static bool isParameterValid(const std::string& value, bool report,
+                                 const std::string& kvsep = "=", const std::string& sep = "|");
 
     /// @brief The key->value map
     std::map<std::string, std::string> myMap;

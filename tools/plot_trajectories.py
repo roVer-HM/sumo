@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+# Copyright (C) 2007-2020 German Aerospace Center (DLR) and others.
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# https://www.eclipse.org/legal/epl-2.0/
+# This Source Code may also be made available under the following Secondary
+# Licenses when the conditions for such availability set forth in the Eclipse
+# Public License 2.0 are satisfied: GNU General Public License, version 2
+# or later which is available at
+# https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+# SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 # @file    plot_trajectories.py
 # @author  Jakob Erdmann
@@ -29,11 +33,11 @@ import matplotlib
 if 'matplotlib.backends' not in sys.modules:
     if 'TEXTTEST_SANDBOX' in os.environ or (os.name == 'posix' and 'DISPLAY' not in os.environ):
         matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import math
+import matplotlib.pyplot as plt  # noqa
+import math  # noqa
 
-from sumolib.xml import parse_fast_nested
-from sumolib.miscutils import uMin, uMax
+from sumolib.xml import parse_fast_nested  # noqa
+from sumolib.miscutils import uMin, uMax  # noqa
 
 
 def getOptions(args=None):
@@ -76,6 +80,7 @@ def write_csv(data, fname):
             for x in zip(*vals):
                 f.write(" ".join(map(str, x)) + "\n")
             f.write('\n')
+
 
 def short_names(filenames):
     if len(filenames) == 1:
@@ -124,7 +129,7 @@ def main(options):
     data = defaultdict(lambda: ([], [], [], [], [], [], []))
     for fileIndex, fcdfile in enumerate(options.fcdfiles):
         for timestep, vehicle in parse_fast_nested(fcdfile, 'timestep', ['time'],
-                'vehicle', ['id', 'x', 'y', 'angle', 'speed', 'lane']):
+                                                   'vehicle', ['id', 'x', 'y', 'angle', 'speed', 'lane']):
             vehID = vehicle.id
             if len(options.fcdfiles) > 1:
                 suffix = shortFileNames[fileIndex]
@@ -209,7 +214,6 @@ def main(options):
 
     if options.legend > 0:
         plt.legend()
-
 
     plt.savefig(options.output)
     if options.csv_output is not None:

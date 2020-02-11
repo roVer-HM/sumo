@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    MSVehicle.cpp
 /// @author  Christian Roessel
@@ -2052,8 +2056,8 @@ MSVehicle::processNextStop(double currentVelocity) {
                         MSNet::getInstance()->getInsertionControl().add(splitVeh);
                         splitVeh->getRoute().getEdges()[0]->removeWaiting(splitVeh);
                         MSNet::getInstance()->getVehicleControl().unregisterOneWaiting(false);
-                        const double newLength = MAX2( myType->getLength() - splitVeh->getVehicleType().getLength(),
-                                myType->getParameter().locomotiveLength);
+                        const double newLength = MAX2(myType->getLength() - splitVeh->getVehicleType().getLength(),
+                                                      myType->getParameter().locomotiveLength);
                         getSingularType().setLength(newLength);
                     }
                 }
@@ -2376,7 +2380,7 @@ MSVehicle::planMoveInternal(const SUMOTime t, MSLeaderInfo ahead, DriveItemVecto
             }
 #endif
             PersonDist leader = lane->nextBlocking(relativePos,
-                                getRightSideOnLane(), getRightSideOnLane() + getVehicleType().getWidth(), ceil(getSpeed() / cfModel.getMaxDecel()));
+                                                   getRightSideOnLane(), getRightSideOnLane() + getVehicleType().getWidth(), ceil(getSpeed() / cfModel.getMaxDecel()));
             if (leader.first != 0) {
                 const double stopSpeed = cfModel.stopSpeed(this, getSpeed(), leader.second - getVehicleType().getMinGap());
                 v = MIN2(v, stopSpeed);
@@ -3878,7 +3882,7 @@ MSVehicle::executeMove() {
     MSDevice_ElecHybrid* elecHybridOfVehicle = dynamic_cast<MSDevice_ElecHybrid*>(getDevice(typeid(MSDevice_ElecHybrid)));
     if (elecHybridOfVehicle != nullptr) {
         elecHybridOfVehicle->setConsum(elecHybridOfVehicle->consumption(*this, (vNext - this->getSpeed()) / TS, vNext));
-        double maxPower = elecHybridOfVehicle->getParameterDouble(toString(SUMO_ATTR_MAXIMUMPOWER))/3600;
+        double maxPower = elecHybridOfVehicle->getParameterDouble(toString(SUMO_ATTR_MAXIMUMPOWER)) / 3600;
         if (elecHybridOfVehicle->getConsum() > maxPower) {
             double accel = elecHybridOfVehicle->acceleration(*this, maxPower, this->getSpeed());
             vNext = MIN2(vNext, this->getSpeed() + accel * TS);
@@ -5097,8 +5101,8 @@ MSVehicle::updateBestLanes(bool forceRebuild, const MSLane* startLane) {
             if (overheadWireID != "") {
                 for (std::vector<LaneQ>::iterator j = clanes.begin(); j != clanes.end(); ++j, ++index) {
                     (*j).bestLaneOffset = bestThisIndex - index;
-        }
-    }
+                }
+            }
         }
     }
     updateOccupancyAndCurrentBestLane(startLane);
@@ -5423,8 +5427,7 @@ MSVehicle::getStateOfCharge() const {
     if (static_cast<MSDevice_Battery*>(getDevice(typeid(MSDevice_Battery))) != 0) {
         MSDevice_Battery* batteryOfVehicle = dynamic_cast<MSDevice_Battery*>(getDevice(typeid(MSDevice_Battery)));
         return batteryOfVehicle->getActualBatteryCapacity();
-    }
-    else {
+    } else {
         if (static_cast<MSDevice_ElecHybrid*>(getDevice(typeid(MSDevice_ElecHybrid))) != 0) {
             MSDevice_ElecHybrid* batteryOfVehicle = dynamic_cast<MSDevice_ElecHybrid*>(getDevice(typeid(MSDevice_ElecHybrid)));
             return batteryOfVehicle->getActualBatteryCapacity();
@@ -5509,12 +5512,18 @@ MSVehicle::setBlinkerInformation() {
             }
         }
     }
-    if (myStopDist < (myLane->getLength() - getPositionOnLane())
-            // signal parking stop on the current lane when within braking distance (~2 seconds before braking)
-            && hasStops()
-            && myStops.begin()->pars.parking
-            && myStopDist < getCarFollowModel().brakeGap(myLane->getVehicleMaxSpeed(this), getCarFollowModel().getMaxDecel(), 3)) {
-        switchOnSignal(MSGlobals::gLefthand ? VEH_SIGNAL_BLINKER_LEFT : VEH_SIGNAL_BLINKER_RIGHT);
+    // stopping related signals
+    if (hasStops()
+            && (myStops.begin()->reached ||
+                (myStopDist < (myLane->getLength() - getPositionOnLane())
+                 && myStopDist < getCarFollowModel().brakeGap(myLane->getVehicleMaxSpeed(this), getCarFollowModel().getMaxDecel(), 3)))) {
+        if (myStops.begin()->lane->getIndex() > 0 && myStops.begin()->lane->getParallelLane(-1)->allowsVehicleClass(getVClass())) {
+            // not stopping on the right. Activate emergency blinkers
+            switchOnSignal(VEH_SIGNAL_BLINKER_LEFT | VEH_SIGNAL_BLINKER_RIGHT);
+        } else if (!myStops.begin()->reached && myStops.begin()->pars.parking) {
+            // signal upcoming parking stop on the current lane when within braking distance (~2 seconds before braking)
+            switchOnSignal(MSGlobals::gLefthand ? VEH_SIGNAL_BLINKER_LEFT : VEH_SIGNAL_BLINKER_RIGHT);
+        }
     }
     if (myInfluencer != nullptr && myInfluencer->getSignals() >= 0) {
         mySignals = myInfluencer->getSignals();
@@ -6141,7 +6150,7 @@ MSVehicle::abortNextStop() {
         } else {
             myStops.erase(myStops.begin());
         }
-    } 
+    }
 }
 
 std::list<MSVehicle::Stop>
@@ -6350,7 +6359,8 @@ MSVehicle::isLeader(const MSLink* link, const MSVehicle* veh) const {
                 // leader was on the junction first
 #ifdef DEBUG_PLAN_MOVE_LEADERINFO
                 if (DEBUG_COND) {
-                    std::cout << "       egoET=" << egoET << " foeET=" << foeET << " isLeader=" << (egoET > foeET) << "\n";
+                    std::cout << SIMTIME << " veh=" << getID() << " egoET " << egoET << " with foe " << veh->getID()
+                        << " foeET=" << foeET  << " isLeader=" << (egoET > foeET) << "\n";
                 }
 #endif
                 return egoET > foeET;

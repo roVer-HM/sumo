@@ -1,0 +1,8 @@
+# Copy of default
+default
+
+# using edgedata as input
+edgedata
+
+# test additional vehicle attributes
+attrs

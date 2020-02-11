@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2014-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    MSPModel_Striping.cpp
 /// @author  Jakob Erdmann
@@ -628,8 +632,8 @@ MSPModel_Striping::getNeighboringObstacles(const Pedestrians& pedestrians, int e
     for (int index = egoIndex + 1; index < (int)pedestrians.size(); index++) {
         const PState& p = *pedestrians[index];
         if DEBUGCOND(ego) {
-            std::cout << SIMTIME << " ped=" << ego.getID() << " cur=" << egoStripe << " checking neighbor " << p.getID() 
-                << " nCur=" << p.stripe() << " nOth=" << p.otherStripe();
+            std::cout << SIMTIME << " ped=" << ego.getID() << " cur=" << egoStripe << " checking neighbor " << p.getID()
+                      << " nCur=" << p.stripe() << " nOth=" << p.otherStripe();
         }
         if (!p.myWaitingToEnter && !p.myAmJammed) {
             const Obstacle o(p);
@@ -852,13 +856,13 @@ MSPModel_Striping::moveInDirection(SUMOTime currentTime, std::set<MSPerson*>& ch
                     if (p->myWalkingAreaPath == path) {
                         transformedPeds.push_back(p);
                         if (path == debugPath) std::cout << "  ped=" << p->myPerson->getID() << "  relX=" << p->myRelX << " relY=" << p->myRelY << " (untransformed), vecCoord="
-                            << path->shape.transformToVectorCoordinates(p->getPosition(*p->myStage, -1)) << "\n";
+                                                             << path->shape.transformToVectorCoordinates(p->getPosition(*p->myStage, -1)) << "\n";
                     } else if (p->myWalkingAreaPath->from == path->to && p->myWalkingAreaPath->to == path->from) {
                         if (p->myWalkingAreaPath->dir != path->dir) {
                             // opposite direction is already in the correct coordinate system
                             transformedPeds.push_back(p);
                             if (path == debugPath) std::cout << "  ped=" << p->myPerson->getID() << "  relX=" << p->myRelX << " relY=" << p->myRelY << " (untransformed), vecCoord="
-                                << path->shape.transformToVectorCoordinates(p->getPosition(*p->myStage, -1)) << "\n";
+                                                                 << path->shape.transformToVectorCoordinates(p->getPosition(*p->myStage, -1)) << "\n";
                         } else {
                             // x position must be reversed
                             PState* tp = new PState(*p);
@@ -869,7 +873,7 @@ MSPModel_Striping::moveInDirection(SUMOTime currentTime, std::set<MSPerson*>& ch
                             toDelete.push_back(tp);
                             transformedPeds.push_back(tp);
                             if (path == debugPath) std::cout << "  ped=" << p->myPerson->getID() << "  relX=" << p->myRelX << " relY=" << p->myRelY << " (semi-transformed), vecCoord="
-                                << path->shape.transformToVectorCoordinates(p->getPosition(*p->myStage, -1)) << "\n";
+                                                                 << path->shape.transformToVectorCoordinates(p->getPosition(*p->myStage, -1)) << "\n";
                         }
                     } else {
                         const Position relPos = path->shape.transformToVectorCoordinates(p->getPosition(*p->myStage, -1));

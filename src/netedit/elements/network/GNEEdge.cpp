@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    GNEEdge.cpp
 /// @author  Jakob Erdmann
@@ -517,7 +521,7 @@ GNEEdge::drawGL(const GUIVisualizationSettings& s) const {
         GLHelper::drawBoundary(getCenteringBoundary());
     }
     // draw lanes
-    for (const auto &lane : myLanes) {
+    for (const auto& lane : myLanes) {
         lane->drawGL(s);
     }
     // draw parent additionals
@@ -541,8 +545,8 @@ GNEEdge::drawGL(const GUIVisualizationSettings& s) const {
     }
     // draw vehicles
     const std::map<const GNELane*, std::vector<GNEDemandElement*> > vehiclesMap = getVehiclesOverEdgeMap();
-    for (const auto &vehicleMap : vehiclesMap) {
-        for (const auto &vehicle : vehicleMap.second) {
+    for (const auto& vehicleMap : vehiclesMap) {
+        for (const auto& vehicle : vehicleMap.second) {
             vehicle->drawGL(s);
         }
     }
@@ -1440,10 +1444,10 @@ GNEEdge::updateVehicleSpreadGeometries() {
     // get lane vehicles map
     const std::map<const GNELane*, std::vector<GNEDemandElement*> > laneVehiclesMap = getVehiclesOverEdgeMap();
     // iterate over every lane
-    for (const auto &laneVehicle : laneVehiclesMap) {
+    for (const auto& laneVehicle : laneVehiclesMap) {
         // obtain total lenght
         double totalLength = 0;
-        for (const auto &vehicle : laneVehicle.second) {
+        for (const auto& vehicle : laneVehicle.second) {
             totalLength += vehicle->getAttributeDouble(SUMO_ATTR_LENGTH) + VEHICLE_GAP;
         }
         // calculate multiplier for vehicle positions
@@ -1457,7 +1461,7 @@ GNEEdge::updateVehicleSpreadGeometries() {
         // declare current lenght
         double lenght = 0;
         // iterate over vehicles to calculate position and rotations
-        for (const auto &vehicle : laneVehicle.second) {
+        for (const auto& vehicle : laneVehicle.second) {
             vehicle->updateDemandElementSpreadGeometry(laneVehicle.first, lenght * multiplier);
             // update lenght
             lenght += vehicle->getAttributeDouble(SUMO_ATTR_LENGTH) + VEHICLE_GAP;
@@ -1474,14 +1478,18 @@ GNEEdge::updateVehicleStackLabels() {
     std::vector<std::pair<GNEEdge::StackPosition, GNEDemandElement*> > departPosVehicles;
     // declare vector of stack demand elements
     std::vector<GNEEdge::StackDemandElements> stackedVehicles;
-    // iterate over laneVehiclesMap and obtain a vector with 
-    for (const auto &vehicleMap : laneVehiclesMap) {
+    // iterate over laneVehiclesMap and obtain a vector with
+    for (const auto& vehicleMap : laneVehiclesMap) {
         // iterate over vehicles
-        for (const auto &vehicle : vehicleMap.second) {
+        for (const auto& vehicle : vehicleMap.second) {
             // get vehicle's depart pos and lenght
             const double departPos = vehicle->getAttributeDouble(SUMO_ATTR_DEPARTPOS);
             const double length = vehicle->getAttributeDouble(SUMO_ATTR_LENGTH);
-            const double posOverLane = vehicle->getAttributeDouble(SUMO_ATTR_DEPARTPOS);
+            double posOverLane = vehicle->getAttributeDouble(SUMO_ATTR_DEPARTPOS);
+            // check if we have to adapt posOverLane
+            if (posOverLane < 0) {
+                posOverLane += vehicleMap.first->getLaneShape().length();
+            }
             // make a stack position using departPos and length
             departPosVehicles.push_back(std::make_pair(StackPosition(departPos, length), vehicle));
             // update depart element geometry
@@ -1493,23 +1501,23 @@ GNEEdge::updateVehicleStackLabels() {
     // sort departPosVehicles
     std::sort(departPosVehicles.begin(), departPosVehicles.end());
     // iterate over departPosVehicles
-    for (const auto &departPosVehicle : departPosVehicles) {
+    for (const auto& departPosVehicle : departPosVehicles) {
         // obtain stack position and vehicle
-        const GNEEdge::StackPosition &vehicleStackPosition = departPosVehicle.first;
+        const GNEEdge::StackPosition& vehicleStackPosition = departPosVehicle.first;
         GNEDemandElement* vehicle = departPosVehicle.second;
         // if stackedVehicles is empty, add a new StackDemandElements
         if (stackedVehicles.empty()) {
             stackedVehicles.push_back(GNEEdge::StackDemandElements(vehicleStackPosition, vehicle));
         } else if (areStackPositionOverlapped(vehicleStackPosition, stackedVehicles.back().getStackPosition())) {
             // add new vehicle to last inserted stackDemandElements
-            stackedVehicles[stackedVehicles.size()-1].addDemandElements(vehicle);
+            stackedVehicles[stackedVehicles.size() - 1].addDemandElements(vehicle);
         } else {
             // No overlapping, then add a new StackDemandElements
             stackedVehicles.push_back(GNEEdge::StackDemandElements(vehicleStackPosition, vehicle));
         }
     }
     // iterate over stackedVehicles
-    for (const auto &vehicle : stackedVehicles) {
+    for (const auto& vehicle : stackedVehicles) {
         // only update vehicles with one or more stack
         if (vehicle.getDemandElements().size() > 1) {
             // set stack labels
@@ -1540,23 +1548,25 @@ GNEEdge::StackPosition::endPosition() const {
 
 
 GNEEdge::StackDemandElements::StackDemandElements(const StackPosition stackedPosition, GNEDemandElement* demandElement) :
-    tuple(stackedPosition, {demandElement}) {
+    tuple(stackedPosition, {
+    demandElement
+}) {
 }
 
 
-void 
+void
 GNEEdge::StackDemandElements::addDemandElements(GNEDemandElement* demandElement) {
     std::get<1>(*this).push_back(demandElement);
 }
 
 
-const GNEEdge::StackPosition &
+const GNEEdge::StackPosition&
 GNEEdge::StackDemandElements::getStackPosition() const {
     return std::get<0>(*this);
 }
 
 
-const std::vector<GNEDemandElement*> &
+const std::vector<GNEDemandElement*>&
 GNEEdge::StackDemandElements::getDemandElements() const {
     return std::get<1>(*this);
 }
@@ -1689,7 +1699,7 @@ GNEEdge::setAttribute(SumoXMLAttr key, const std::string& value) {
 }
 
 
-void 
+void
 GNEEdge::updateDottedContour() {
     // obtain lanes
     const GNELane* frontLane = myLanes.front();
@@ -1698,8 +1708,8 @@ GNEEdge::updateDottedContour() {
     const GUIVisualizationSettings& visualizationSetting = myNet->getViewNet()->getVisualisationSettings();
     // obtain lane widdths
     const double myHalfLaneWidthFront = myNBEdge->getLaneWidth(frontLane->getIndex()) / 2;
-    const double myHalfLaneWidthBack = (visualizationSetting.spreadSuperposed && backLane->drawAsRailway(visualizationSetting) && 
-        myNBEdge->isBidiRail()) ? 0 : myNBEdge->getLaneWidth(backLane->getIndex()) / 2;
+    const double myHalfLaneWidthBack = (visualizationSetting.spreadSuperposed && backLane->drawAsRailway(visualizationSetting) &&
+                                        myNBEdge->isBidiRail()) ? 0 : myNBEdge->getLaneWidth(backLane->getIndex()) / 2;
     // obtain shapes from NBEdge
     PositionVector mainShape = frontLane->getParentEdge()->getNBEdge()->getLaneShape(frontLane->getIndex());
     PositionVector backShape = backLane->getParentEdge()->getNBEdge()->getLaneShape(backLane->getIndex());
@@ -1714,7 +1724,7 @@ GNEEdge::updateDottedContour() {
     // reverse back shape
     backShape = backShape.reverse();
     // add back shape into mainShape
-    for (const auto &position : backShape) {
+    for (const auto& position : backShape) {
         mainShape.push_back(position);
     }
     // close polygon
@@ -2161,13 +2171,13 @@ GNEEdge::getVehiclesOverEdgeMap() const {
     // declare a set of vehicles (to avoid duplicates)
     std::set<std::pair<double, GNEDemandElement*> > vehicles;
     // first obtain all vehicles of this edge
-    for (const auto &edgeChild : getChildDemandElements()) {
-        if (((edgeChild->getTagProperty().getTag() == SUMO_TAG_TRIP) || (edgeChild->getTagProperty().getTag() == SUMO_TAG_FLOW)) && 
-            (edgeChild->getParentEdges().front() == this)) {
+    for (const auto& edgeChild : getChildDemandElements()) {
+        if (((edgeChild->getTagProperty().getTag() == SUMO_TAG_TRIP) || (edgeChild->getTagProperty().getTag() == SUMO_TAG_FLOW)) &&
+                (edgeChild->getParentEdges().front() == this)) {
             vehicles.insert(std::make_pair(edgeChild->getAttributeDouble(SUMO_ATTR_DEPART), edgeChild));
             vehicles.insert(std::make_pair(edgeChild->getAttributeDouble(SUMO_ATTR_DEPART), edgeChild));
         } else if ((edgeChild->getTagProperty().getTag() == SUMO_TAG_ROUTE) && (edgeChild->getParentEdges().front() == this)) {
-            for (const auto &routeChild : edgeChild->getChildDemandElements()) {
+            for (const auto& routeChild : edgeChild->getChildDemandElements()) {
                 if ((routeChild->getTagProperty().getTag() == SUMO_TAG_VEHICLE) || (routeChild->getTagProperty().getTag() == SUMO_TAG_ROUTEFLOW)) {
                     vehicles.insert(std::make_pair(routeChild->getAttributeDouble(SUMO_ATTR_DEPART), routeChild));
                 }
@@ -2179,12 +2189,12 @@ GNEEdge::getVehiclesOverEdgeMap() const {
     // reserve
     vehiclesOverEdge.reserve(vehicles.size());
     // iterate over vehicles
-    for (const auto &vehicle : vehicles) {
+    for (const auto& vehicle : vehicles) {
         // add it over vehiclesOverEdge;
         vehiclesOverEdge.push_back(vehicle.second);
     }
     // now split vehicles by lanes
-    for (const auto &vehicle : vehiclesOverEdge) {
+    for (const auto& vehicle : vehiclesOverEdge) {
         const GNELane* vehicleLane = vehicle->getFirstAllowedVehicleLane();
         if (vehicleLane) {
             vehiclesOverEdgeMap[vehicleLane].push_back(vehicle);
@@ -2394,7 +2404,7 @@ GNEEdge::drawRerouterSymbol(const GUIVisualizationSettings& s, GNEAdditional* re
 }
 
 
-void 
+void
 GNEEdge::drawDemandElements(const GUIVisualizationSettings& s) const {
     // certain demand elements children can contain loops (for example, routes) and it causes overlapping problems. It's needed to filter it before drawing
     if (s.drawForPositionSelection) {
@@ -2496,8 +2506,8 @@ GNEEdge::drawDemandElements(const GUIVisualizationSettings& s) const {
 }
 
 
-bool 
-GNEEdge::areStackPositionOverlapped(const GNEEdge::StackPosition &vehicleA, const GNEEdge::StackPosition &vehicleB) const {
+bool
+GNEEdge::areStackPositionOverlapped(const GNEEdge::StackPosition& vehicleA, const GNEEdge::StackPosition& vehicleB) const {
     if ((vehicleA.beginPosition() == vehicleB.beginPosition()) && (vehicleA.endPosition() == vehicleB.endPosition())) {
         return true;
     } else if ((vehicleA.beginPosition() < vehicleB.beginPosition()) && (vehicleA.endPosition() > vehicleB.endPosition())) {

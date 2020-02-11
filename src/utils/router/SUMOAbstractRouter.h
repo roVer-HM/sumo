@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2006-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2006-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    SUMOAbstractRouter.h
 /// @author  Daniel Krajzewicz
@@ -101,6 +105,7 @@ public:
         myErrorMsgHandler(unbuildIsWarning ? MsgHandler::getWarningInstance() : MsgHandler::getErrorInstance()),
         myOperation(operation), myTTOperation(ttOperation),
         myBulkMode(false),
+        myAutoBulkMode(false),
         myHavePermissions(havePermissions),
         myHaveRestrictions(haveRestrictions),
         myType(type),
@@ -131,10 +136,10 @@ public:
      * handling of looped routes
      * The definition of the effort depends on the wished routing scheme */
     inline bool compute(
-            const E* from, double fromPos, 
-            const E* to, double toPos,
-            const V* const vehicle,
-            SUMOTime msTime, std::vector<const E*>& into, bool silent = false) {
+        const E* from, double fromPos,
+        const E* to, double toPos,
+        const V* const vehicle,
+        SUMOTime msTime, std::vector<const E*>& into, bool silent = false) {
         if (from != to || fromPos <= toPos) {
             return compute(from, to, vehicle, msTime, into, silent);
         } else {
@@ -260,6 +265,10 @@ public:
         myBulkMode = mode;
     }
 
+    inline void setAutoBulkMode(const bool mode) {
+        myAutoBulkMode = mode;
+    }
+
 protected:
     /// @brief the handler for routing errors
     MsgHandler* const myErrorMsgHandler;
@@ -272,6 +281,9 @@ protected:
 
     /// @brief whether we are currently operating several route queries in a bulk
     bool myBulkMode;
+
+    /// @brief whether we are currently trying to detect bulk mode automatically
+    bool myAutoBulkMode;
 
     /// @brief whether edge permissions need to be considered
     const bool myHavePermissions;

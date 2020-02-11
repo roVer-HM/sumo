@@ -1,11 +1,15 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
+// Copyright (C) 2001-2020 German Aerospace Center (DLR) and others.
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// https://www.eclipse.org/legal/epl-2.0/
+// This Source Code may also be made available under the following Secondary
+// Licenses when the conditions for such availability set forth in the Eclipse
+// Public License 2.0 are satisfied: GNU General Public License, version 2
+// or later which is available at
+// https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
 /// @file    GUIApplicationWindow.cpp
 /// @author  Daniel Krajzewicz
@@ -208,7 +212,7 @@ GUIApplicationWindow::GUIApplicationWindow(FXApp* a, const std::string& configPa
     myLoadThread(nullptr), myRunThread(nullptr),
     myAmLoading(false),
     myAlternateSimDelay(0.),
-    myRecentNets(a, "nets"),
+    myRecentFiles(a, "files"),
     myConfigPattern(configPattern),
     hadDependentBuild(false),
     myShowTimeAsHMS(false),
@@ -398,37 +402,21 @@ GUIApplicationWindow::fillMenuBar() {
         GUIIconSubSys::getIcon(ICON_CLOSE), this, MID_HOTKEY_CTRL_W_CLOSESIMULATION);
     // Recent files
     FXMenuSeparator* sep1 = new FXMenuSeparator(myFileMenu);
-    sep1->setTarget(&myRecentConfigs);
+    sep1->setTarget(&myRecentFiles);
     sep1->setSelector(FXRecentFiles::ID_ANYFILES);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentConfigs, FXRecentFiles::ID_FILE_1);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentConfigs, FXRecentFiles::ID_FILE_2);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentConfigs, FXRecentFiles::ID_FILE_3);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentConfigs, FXRecentFiles::ID_FILE_4);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentConfigs, FXRecentFiles::ID_FILE_5);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentConfigs, FXRecentFiles::ID_FILE_6);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentConfigs, FXRecentFiles::ID_FILE_7);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentConfigs, FXRecentFiles::ID_FILE_8);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentConfigs, FXRecentFiles::ID_FILE_9);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentConfigs, FXRecentFiles::ID_FILE_10);
-    new FXMenuCommand(myFileMenu, "C&lear Recent Configurations", nullptr, &myRecentConfigs, FXRecentFiles::ID_CLEAR);
-    myRecentConfigs.setTarget(this);
-    myRecentConfigs.setSelector(MID_RECENTFILE);
-    FXMenuSeparator* sep2 = new FXMenuSeparator(myFileMenu);
-    sep2->setTarget(&myRecentNets);
-    sep2->setSelector(FXRecentFiles::ID_ANYFILES);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentNets, FXRecentFiles::ID_FILE_1);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentNets, FXRecentFiles::ID_FILE_2);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentNets, FXRecentFiles::ID_FILE_3);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentNets, FXRecentFiles::ID_FILE_4);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentNets, FXRecentFiles::ID_FILE_5);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentNets, FXRecentFiles::ID_FILE_6);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentNets, FXRecentFiles::ID_FILE_7);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentNets, FXRecentFiles::ID_FILE_8);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentNets, FXRecentFiles::ID_FILE_9);
-    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentNets, FXRecentFiles::ID_FILE_10);
-    new FXMenuCommand(myFileMenu, "Cl&ear Recent Networks", nullptr, &myRecentNets, FXRecentFiles::ID_CLEAR);
-    myRecentNets.setTarget(this);
-    myRecentNets.setSelector(MID_RECENTFILE);
+    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentFiles, FXRecentFiles::ID_FILE_1);
+    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentFiles, FXRecentFiles::ID_FILE_2);
+    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentFiles, FXRecentFiles::ID_FILE_3);
+    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentFiles, FXRecentFiles::ID_FILE_4);
+    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentFiles, FXRecentFiles::ID_FILE_5);
+    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentFiles, FXRecentFiles::ID_FILE_6);
+    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentFiles, FXRecentFiles::ID_FILE_7);
+    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentFiles, FXRecentFiles::ID_FILE_8);
+    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentFiles, FXRecentFiles::ID_FILE_9);
+    new FXMenuCommand(myFileMenu, "", nullptr, &myRecentFiles, FXRecentFiles::ID_FILE_10);
+    new FXMenuCommand(myFileMenu, "C&lear Recent Files", nullptr, &myRecentFiles, FXRecentFiles::ID_CLEAR);
+    myRecentFiles.setTarget(this);
+    myRecentFiles.setSelector(MID_RECENTFILE);
     new FXMenuSeparator(myFileMenu);
     new FXMenuCommand(myFileMenu,
         "&Quit\tCtrl+Q\tQuit the Application.",
@@ -859,7 +847,7 @@ GUIApplicationWindow::onCmdOpenConfiguration(FXObject*, FXSelector, void*) {
         gCurrentFolder = opendialog.getDirectory();
         std::string file = opendialog.getFilename().text();
         loadConfigOrNet(file, false);
-        myRecentConfigs.appendFile(file.c_str());
+        myRecentFiles.appendFile(file.c_str());
     }
     return 1;
 }
@@ -879,7 +867,7 @@ GUIApplicationWindow::onCmdOpenNetwork(FXObject*, FXSelector, void*) {
         gCurrentFolder = opendialog.getDirectory();
         std::string file = opendialog.getFilename().text();
         loadConfigOrNet(file, true);
-        myRecentNets.appendFile(file.c_str());
+        myRecentFiles.appendFile(file.c_str());
     }
     return 1;
 }
@@ -964,7 +952,7 @@ GUIApplicationWindow::onCmdOpenRecent(FXObject* sender, FXSelector, void* ptr) {
         return 1;
     }
     std::string file((const char*)ptr);
-    loadConfigOrNet(file, sender == &myRecentNets);
+    loadConfigOrNet(file, sender == &myRecentFiles);
     return 1;
 }
 
@@ -1838,12 +1826,8 @@ GUIApplicationWindow::setStatusBarText(const std::string& text) {
 
 
 void
-GUIApplicationWindow::addRecentFile(const FX::FXString& f, const bool isNet) {
-    if (isNet) {
-        myRecentNets.appendFile(f);
-    } else {
-        myRecentConfigs.appendFile(f);
-    }
+GUIApplicationWindow::addRecentFile(const FX::FXString& f) {
+    myRecentFiles.appendFile(f);
 }
 
 
