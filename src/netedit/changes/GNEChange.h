@@ -42,6 +42,7 @@ class GNEAdditional;
 class GNEDataSet;
 class GNEDemandElement;
 class GNEGenericData;
+class GNEDataInterval;
 class GNEEdge;
 class GNELane;
 class GNEShape;
