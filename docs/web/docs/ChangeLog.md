@@ -3,6 +3,19 @@ title: ChangeLog
 permalink: /ChangeLog/
 ---
 
+## Git Master
+
+### Bugfixes
+- NETCONVERT
+  - Fixed precision when filtering network with a given boundary. Issue #6206
+
+### Enhancements
+- Tools
+  - added osmWebWizard option to import a simplified network that is only for cars. Issue #6595
+
+### Other
+
+
 ## Version 1.5.0 (11.02.2020)
 
 ### Bugfixes
