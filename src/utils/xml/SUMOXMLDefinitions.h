@@ -169,6 +169,8 @@ enum SumoXMLTag {
     SUMO_TAG_STEP,
     /// @brief an aggreagated-output interval
     SUMO_TAG_INTERVAL,
+    /// @brief a relation between two edges
+    SUMO_TAG_EDGEREL,
     /// @brief The definition of a periodic event
     SUMO_TAG_TIMEDEVENT,
     /// @brief Incoming edge specification (jtrrouter)
@@ -396,6 +398,7 @@ enum SumoXMLAttr {
     SUMO_ATTR_REFID,
     SUMO_ATTR_NAME,
     SUMO_ATTR_TYPE,
+    SUMO_ATTR_VERSION,
     SUMO_ATTR_PRIORITY,
     SUMO_ATTR_NUMLANES,
     SUMO_ATTR_SPEED,
@@ -692,6 +695,7 @@ enum SumoXMLAttr {
     SUMO_ATTR_COSTS,
     SUMO_ATTR_SAVINGS,
     SUMO_ATTR_PROB,
+    SUMO_ATTR_COUNT,
     SUMO_ATTR_PROBS,
     SUMO_ATTR_ROUTES,
     SUMO_ATTR_VTYPES,
@@ -710,6 +714,7 @@ enum SumoXMLAttr {
     SUMO_ATTR_FROMJUNCTION,
     SUMO_ATTR_TOJUNCTION,
     SUMO_ATTR_PERIOD,
+    SUMO_ATTR_REPEAT,
     SUMO_ATTR_FROM_TAZ,
     SUMO_ATTR_TO_TAZ,
     SUMO_ATTR_REROUTE,
@@ -944,7 +949,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_GENERATE_WALKS,
     SUMO_ATTR_ACTTYPE,
     SUMO_ATTR_SLOPE,
-    SUMO_ATTR_VERSION,
     SUMO_ATTR_CORNERDETAIL,
     SUMO_ATTR_LINKDETAIL,
     SUMO_ATTR_RECTANGULAR_LANE_CUT,
@@ -1168,6 +1172,7 @@ enum SumoXMLEdgeFunc {
  */
 enum LaneSpreadFunction {
     LANESPREAD_RIGHT,
+    LANESPREAD_ROADCENTER,
     LANESPREAD_CENTER
 };
 

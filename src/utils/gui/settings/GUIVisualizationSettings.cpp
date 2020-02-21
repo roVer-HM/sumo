@@ -185,6 +185,8 @@ const std::string GUIVisualizationSettings::SCHEME_NAME_SELECTION("by selection"
 const std::string GUIVisualizationSettings::SCHEME_NAME_TYPE("by type");
 const std::string GUIVisualizationSettings::SCHEME_NAME_PERMISSION_CODE("by permission code");
 
+const double GUIVisualizationSettings::MISSING_DATA(std::numeric_limits<double>::max());
+
 // color constants for scheme background
 #define COL_SCHEME_EMISSION RGBColor(255,255,210)
 #define COL_SCHEME_MISC     RGBColor(210,220,255)
@@ -520,12 +522,13 @@ GUIVisualizationSettings::initSumoGuiDefaults() {
     scheme.addColor(RGBColor::GREEN, (double)100);
     scheme.setAllowsNegativeValues(true);
     laneColorer.addScheme(scheme);
-    scheme = GUIColorScheme("by given length/geometrical length", RGBColor::BLACK);
-    scheme.addColor(RGBColor::RED, 0.25);
+    scheme = GUIColorScheme("by given length/geometrical length", RGBColor::RED);
+    scheme.addColor(RGBColor::ORANGE, 0.25);
     scheme.addColor(RGBColor::YELLOW, 0.5);
     scheme.addColor(RGBColor(179, 179, 179, 255), (double)1.0);
     scheme.addColor(RGBColor::GREEN, (double)2.0);
-    scheme.addColor(RGBColor::BLUE, (double)4.0);
+    scheme.addColor(RGBColor::CYAN, (double)4.0);
+    scheme.addColor(RGBColor::BLUE, (double)100.0);
     laneColorer.addScheme(scheme);
     laneColorer.addScheme(GUIColorScheme("by angle", RGBColor::YELLOW, "", true));
     scheme = GUIColorScheme("by loaded weight", RGBColor::GREEN);
@@ -604,7 +607,7 @@ GUIVisualizationSettings::initSumoGuiDefaults() {
     scheme = GUIColorScheme(SCHEME_NAME_LANE_PARAM_NUMERICAL, RGBColor(204, 204, 204));
     scheme.setAllowsNegativeValues(true);
     laneColorer.addScheme(scheme);
-    scheme = GUIColorScheme(SCHEME_NAME_EDGEDATA_NUMERICAL, RGBColor(204, 204, 204));
+    scheme = GUIColorScheme(SCHEME_NAME_EDGEDATA_NUMERICAL, RGBColor(204, 204, 204), "missing data", false, MISSING_DATA);
     scheme.setAllowsNegativeValues(true);
     laneColorer.addScheme(scheme);
     scheme = GUIColorScheme("by distance (kilometrage)", RGBColor(204, 204, 204));
@@ -752,6 +755,7 @@ GUIVisualizationSettings::initSumoGuiDefaults() {
     scheme = GUIColorScheme(SCHEME_NAME_PARAM_NUMERICAL, RGBColor(204, 204, 204));
     scheme.setAllowsNegativeValues(true);
     vehicleColorer.addScheme(scheme);
+    vehicleColorer.addScheme(GUIColorScheme("by angle", RGBColor::YELLOW, "", true));
 
     /// add person coloring schemes
     personColorer.addScheme(GUIColorScheme("given person/type color", RGBColor::BLUE, "", true));
@@ -1092,12 +1096,13 @@ GUIVisualizationSettings::initNeteditDefaults() {
     scheme.addColor(RGBColor::BLUE, (double)5);
     laneColorer.addScheme(scheme);
 
-    scheme = GUIColorScheme("by given length/geometrical length", RGBColor::BLACK);
-    scheme.addColor(RGBColor::RED, 0.25);
+    scheme = GUIColorScheme("by given length/geometrical length", RGBColor::RED);
+    scheme.addColor(RGBColor::ORANGE, 0.25);
     scheme.addColor(RGBColor::YELLOW, 0.5);
     scheme.addColor(RGBColor(179, 179, 179, 255), (double)1.0);
     scheme.addColor(RGBColor::GREEN, (double)2.0);
-    scheme.addColor(RGBColor::BLUE, (double)4.0);
+    scheme.addColor(RGBColor::CYAN, (double)4.0);
+    scheme.addColor(RGBColor::BLUE, (double)100.0);
     laneColorer.addScheme(scheme);
     laneColorer.addScheme(GUIColorScheme("by angle", RGBColor::YELLOW, "", true));
 

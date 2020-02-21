@@ -374,6 +374,10 @@ MSNet::simulate(SUMOTime start, SUMOTime stop) {
         postSimStepOutput();
     }
     // exit simulation loop
+    if (myLogStepNumber) {
+        // start new line for final verbose output
+        std::cout << "\n";
+    }
     closeSimulation(start, getStateMessage(state));
     return state;
 }

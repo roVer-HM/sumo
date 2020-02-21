@@ -60,6 +60,9 @@ NBFrame::fillOptions(bool forNetgen) {
     oc.addSynonyme("default.lanewidth", "lanewidth", true);
     oc.addDescription("default.lanewidth", "Building Defaults", "The default width of lanes");
 
+    oc.doRegister("default.spreadtype", new Option_String("right"));
+    oc.addDescription("default.spreadtype", "Building Defaults", "The default method for computing lane shapes from edge shapes");
+
     oc.doRegister("default.speed", 'S', new Option_Float((double) 13.89));
     oc.addSynonyme("default.speed", "speed", true);
     oc.addDescription("default.speed", "Building Defaults", "The default speed on an edge (in m/s)");
@@ -205,6 +208,9 @@ NBFrame::fillOptions(bool forNetgen) {
 
         oc.doRegister("railway.topology.repair.connect-straight", new Option_Bool(false));
         oc.addDescription("railway.topology.repair.connect-straight", "Railway", "Allow bidiretional rail use wherever rails with opposite directions meet at a straight angle");
+
+        oc.doRegister("railway.topology.repair.stop-turn", new Option_Bool(false));
+        oc.addDescription("railway.topology.repair.stop-turn", "Railway", "Add turn-around connections at all loaded stops.");
 
         oc.doRegister("railway.topology.all-bidi", new Option_Bool(false));
         oc.addDescription("railway.topology.all-bidi", "Railway", "Make all rails usable in both direction");
@@ -676,6 +682,13 @@ NBFrame::checkOptions() {
     }
     if (oc.isDefault("railway.topology.all-bidi") && !oc.isDefault("railway.topology.all-bidi.input-file")) {
         oc.set("railway.topology.all-bidi", "true");
+    }
+    if (oc.isDefault("railway.topology.repair.stop-turn") && !oc.isDefault("railway.topology.repair")) {
+        oc.set("railway.topology.repair.stop-turn", "true");
+    }
+    if (!SUMOXMLDefinitions::LaneSpreadFunctions.hasString(oc.getString("default.spreadtype"))) {
+        WRITE_ERROR("Unknown value for default.spreadtype '" + oc.getString("default.spreadtype") + "'.");
+        ok = false;
     }
     return ok;
 }

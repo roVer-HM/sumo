@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Sun Feb  9 20:59:42 2020 by Eclipse SUMO netconvert Version v1_4_0+0995-3d963feed3
+<!-- generated on Tue Feb 18 15:48:08 2020 by Eclipse SUMO netconvert Version v1_5_0+0143-35f4fb3
 -->
 
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
@@ -125,6 +125,7 @@
     <building_defaults>
         <default.lanenumber value="1" synonymes="L lanenumber" type="INT" help="The default number of lanes in an edge"/>
         <default.lanewidth value="-1" synonymes="lanewidth" type="FLOAT" help="The default width of lanes"/>
+        <default.spreadtype value="right" type="STR" help="The default method for computing lane shapes from edge shapes"/>
         <default.speed value="13.89" synonymes="S speed" type="FLOAT" help="The default speed on an edge (in m/s)"/>
         <default.priority value="-1" synonymes="P priority" type="INT" help="The default priority of an edge"/>
         <default.type value="" type="STR" help="The default edge type"/>
@@ -260,6 +261,7 @@
         <railway.signals.discard value="false" type="BOOL" help="Discard all railway signal information loaded from other formats than plain-xml"/>
         <railway.topology.repair value="false" type="BOOL" help="Repair topology of the railway network"/>
         <railway.topology.repair.connect-straight value="false" type="BOOL" help="Allow bidiretional rail use wherever rails with opposite directions meet at a straight angle"/>
+        <railway.topology.repair.stop-turn value="false" type="BOOL" help="Add turn-around connections at all loaded stops."/>
         <railway.topology.all-bidi value="false" type="BOOL" help="Make all rails usable in both direction"/>
         <railway.topology.all-bidi.input-file value="" type="FILE" help="Make all rails edge ids from FILE usable in both direction"/>
         <railway.access-distance value="150" synonymes="osm.stop-output.footway-access-distance" type="FLOAT" help="The search radius for finding suitable road accesses for rail stops"/>

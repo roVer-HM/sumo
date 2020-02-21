@@ -47,13 +47,10 @@
 #include <utils/common/FileHelpers.h>
 #include <utils/router/DijkstraRouter.h>
 #include <utils/common/RandHelper.h>
-#include <utils/emissions/PollutantsInterface.h>
-#include <utils/emissions/HelpersHarmonoise.h>
 #include <utils/common/StringUtils.h>
 #include <utils/common/StdDefs.h>
 #include <utils/geom/GeomHelper.h>
 #include <utils/iodevices/OutputDevice.h>
-#include <utils/iodevices/BinaryInputDevice.h>
 #include <utils/xml/SUMOSAXAttributes.h>
 #include <utils/vehicle/SUMOVehicleParserHelper.h>
 #include <microsim/lcmodels/MSAbstractLaneChangeModel.h>
@@ -61,9 +58,7 @@
 #include <microsim/transportables/MSPModel.h>
 #include <microsim/devices/MSDevice_Transportable.h>
 #include <microsim/devices/MSDevice_DriverState.h>
-#include <microsim/devices/MSRoutingEngine.h>
 #include <microsim/devices/MSDevice_Vehroutes.h>
-#include <microsim/devices/MSDevice_Battery.h>
 #include <microsim/devices/MSDevice_ElecHybrid.h>
 #include <microsim/output/MSStopOut.h>
 #include <microsim/trigger/MSChargingStation.h>
@@ -78,7 +73,6 @@
 #include "MSStoppingPlace.h"
 #include "MSParkingArea.h"
 #include "devices/MSDevice_Transportable.h"
-#include "MSEdgeWeightsStorage.h"
 #include <microsim/lcmodels/MSAbstractLaneChangeModel.h>
 #include "MSMoveReminder.h"
 #include <microsim/transportables/MSTransportableControl.h>
@@ -373,8 +367,7 @@ MSVehicle::Influencer::Influencer() :
     myRightDriveLC(LC_NOCONFLICT),
     mySublaneLC(LC_NOCONFLICT),
     myTraciLaneChangePriority(LCP_URGENT),
-    myTraCISignals(-1),
-    myRoutingMode(0)
+    myTraCISignals(-1)
 {}
 
 
@@ -905,16 +898,6 @@ MSVehicle::Influencer::implicitDeltaPosRemote(const MSVehicle* veh) {
 }
 
 
-SUMOAbstractRouter<MSEdge, SUMOVehicle>&
-MSVehicle::Influencer::getRouterTT(const int rngIndex) const {
-    if (myRoutingMode == 1) {
-        return MSRoutingEngine::getRouterTT(rngIndex);
-    } else {
-        return MSNet::getInstance()->getRouterTT(rngIndex);
-    }
-}
-
-
 /* -------------------------------------------------------------------------
  * Stop-methods
  * ----------------------------------------------------------------------- */
@@ -1018,7 +1001,6 @@ MSVehicle::MSVehicle(SUMOVehicleParameter* pars, const MSRoute* route,
     myJunctionEntryTime(SUMOTime_MAX),
     myJunctionEntryTimeNeverYield(SUMOTime_MAX),
     myJunctionConflictEntryTime(SUMOTime_MAX),
-    myEdgeWeights(nullptr),
     myInfluencer(nullptr) {
     if (!(*myCurrEdge)->isTazConnector()) {
         if (pars->departLaneProcedure == DEPART_LANE_GIVEN) {
@@ -1043,7 +1025,6 @@ MSVehicle::MSVehicle(SUMOVehicleParameter* pars, const MSRoute* route,
 
 
 MSVehicle::~MSVehicle() {
-    delete myEdgeWeights;
     for (std::vector<MSLane*>::iterator i = myFurtherLanes.begin(); i != myFurtherLanes.end(); ++i) {
         (*i)->resetPartialOccupation(this);
     }
@@ -1115,6 +1096,7 @@ MSVehicle::replaceRoute(const MSRoute* newRoute, const std::string& info, bool o
     calculateArrivalParams();
     // save information that the vehicle was rerouted
     myNumberReroutes++;
+    myStopUntilOffset += myRoute->getPeriod();
     MSNet::getInstance()->informVehicleStateListener(this, MSNet::VEHICLE_STATE_NEWROUTE, info);
     // if we did not drive yet it may be best to simply reassign the stops from scratch
     if (stopsFromScratch) {
@@ -1172,7 +1154,7 @@ MSVehicle::replaceRoute(const MSRoute* newRoute, const std::string& info, bool o
         if (addRouteStops) {
             for (std::vector<SUMOVehicleParameter::Stop>::const_iterator i = newRoute->getStops().begin(); i != newRoute->getStops().end(); ++i) {
                 std::string error;
-                addStop(*i, error);
+                addStop(*i, error, myParameter->depart + myStopUntilOffset);
                 if (error != "") {
                     WRITE_WARNING(error);
                 }
@@ -1185,27 +1167,6 @@ MSVehicle::replaceRoute(const MSRoute* newRoute, const std::string& info, bool o
     updateBestLanes(true, onInit ? (*myCurrEdge)->getLanes().front() : 0);
     assert(!removeStops || haveValidStopEdges());
     return true;
-}
-
-
-const MSEdgeWeightsStorage&
-MSVehicle::getWeightsStorage() const {
-    return _getWeightsStorage();
-}
-
-
-MSEdgeWeightsStorage&
-MSVehicle::getWeightsStorage() {
-    return _getWeightsStorage();
-}
-
-
-MSEdgeWeightsStorage&
-MSVehicle::_getWeightsStorage() const {
-    if (myEdgeWeights == nullptr) {
-        myEdgeWeights = new MSEdgeWeightsStorage();
-    }
-    return *myEdgeWeights;
 }
 
 
@@ -1446,6 +1407,11 @@ double
 MSVehicle::computeAngle() const {
     Position p1;
     const double posLat = -myState.myPosLat; // @todo get rid of the '-'
+
+    // if parking manoeuvre is happening then rotate vehicle on each step
+    if (MSGlobals::gModelParkingManoeuver && !manoeuvreIsComplete())
+        return getAngle() + myManoeuvre.getGUIIncrement();
+
     if (isParking()) {
         if (myStops.begin()->parkingarea != nullptr) {
             return myStops.begin()->parkingarea->getVehicleAngle(*this);
@@ -5381,78 +5347,6 @@ MSVehicle::getTimeGapOnLane() const {
 }
 
 
-double
-MSVehicle::getCO2Emissions() const {
-    return PollutantsInterface::compute(myType->getEmissionClass(), PollutantsInterface::CO2, myState.speed(), myAcceleration, getSlope());
-}
-
-
-double
-MSVehicle::getCOEmissions() const {
-    return PollutantsInterface::compute(myType->getEmissionClass(), PollutantsInterface::CO, myState.speed(), myAcceleration, getSlope());
-}
-
-
-double
-MSVehicle::getHCEmissions() const {
-    return PollutantsInterface::compute(myType->getEmissionClass(), PollutantsInterface::HC, myState.speed(), myAcceleration, getSlope());
-}
-
-
-double
-MSVehicle::getNOxEmissions() const {
-    return PollutantsInterface::compute(myType->getEmissionClass(), PollutantsInterface::NO_X, myState.speed(), myAcceleration, getSlope());
-}
-
-
-double
-MSVehicle::getPMxEmissions() const {
-    return PollutantsInterface::compute(myType->getEmissionClass(), PollutantsInterface::PM_X, myState.speed(), myAcceleration, getSlope());
-}
-
-
-double
-MSVehicle::getFuelConsumption() const {
-    return PollutantsInterface::compute(myType->getEmissionClass(), PollutantsInterface::FUEL, myState.speed(), myAcceleration, getSlope());
-}
-
-
-double
-MSVehicle::getElectricityConsumption() const {
-    return PollutantsInterface::compute(myType->getEmissionClass(), PollutantsInterface::ELEC, myState.speed(), myAcceleration, getSlope());
-}
-
-double
-MSVehicle::getStateOfCharge() const {
-    if (static_cast<MSDevice_Battery*>(getDevice(typeid(MSDevice_Battery))) != 0) {
-        MSDevice_Battery* batteryOfVehicle = dynamic_cast<MSDevice_Battery*>(getDevice(typeid(MSDevice_Battery)));
-        return batteryOfVehicle->getActualBatteryCapacity();
-    } else {
-        if (static_cast<MSDevice_ElecHybrid*>(getDevice(typeid(MSDevice_ElecHybrid))) != 0) {
-            MSDevice_ElecHybrid* batteryOfVehicle = dynamic_cast<MSDevice_ElecHybrid*>(getDevice(typeid(MSDevice_ElecHybrid)));
-            return batteryOfVehicle->getActualBatteryCapacity();
-        }
-    }
-
-    return -1;
-}
-
-double
-MSVehicle::getElecHybridCurrent() const {
-    if (static_cast<MSDevice_ElecHybrid*>(getDevice(typeid(MSDevice_ElecHybrid))) != 0) {
-        MSDevice_ElecHybrid* batteryOfVehicle = dynamic_cast<MSDevice_ElecHybrid*>(getDevice(typeid(MSDevice_ElecHybrid)));
-        return batteryOfVehicle->getCurrentFromOverheadWire();
-    }
-
-    return NAN;
-}
-
-double
-MSVehicle::getHarmonoise_NoiseEmissions() const {
-    return HelpersHarmonoise::computeNoise(myType->getEmissionClass(), myState.speed(), myAcceleration);
-}
-
-
 void
 MSVehicle::addTransportable(MSTransportable* transportable) {
     MSBaseVehicle::addTransportable(transportable);
@@ -6166,9 +6060,19 @@ MSVehicle::getInfluencer() {
     return *myInfluencer;
 }
 
+MSVehicle::BaseInfluencer&
+MSVehicle::getBaseInfluencer() {
+    return getInfluencer();
+}
+
 
 const MSVehicle::Influencer*
 MSVehicle::getInfluencer() const {
+    return myInfluencer;
+}
+
+const MSVehicle::BaseInfluencer*
+MSVehicle::getBaseInfluencer() const {
     return myInfluencer;
 }
 
@@ -6493,14 +6397,14 @@ MSVehicle::setExitManoeuvre() {
  * methods of MSVehicle::manoeuvre
  * ----------------------------------------------------------------------- */
 
-MSVehicle::Manoeuvre::Manoeuvre() : myManoeuvreStop(""), myManoeuvreStartTime(0), myManoeuvreCompleteTime(0), myManoeuvreType(MSVehicle::MANOEUVRE_NONE), myManoeuvreAngle(0) {}
+MSVehicle::Manoeuvre::Manoeuvre() : myManoeuvreStop(""), myManoeuvreStartTime(0), myManoeuvreCompleteTime(0), myManoeuvreType(MSVehicle::MANOEUVRE_NONE), myGUIIncrement(0) {}
 
 MSVehicle::Manoeuvre::Manoeuvre(const Manoeuvre& manoeuvre) {
     myManoeuvreStop = manoeuvre.myManoeuvreStop;
     myManoeuvreStartTime = manoeuvre.myManoeuvreStartTime;
     myManoeuvreCompleteTime = manoeuvre.myManoeuvreCompleteTime;
     myManoeuvreType = manoeuvre.myManoeuvreType;
-    myManoeuvreAngle = manoeuvre.myManoeuvreAngle;
+    myGUIIncrement = manoeuvre.myGUIIncrement;
 }
 
 MSVehicle::Manoeuvre&
@@ -6509,7 +6413,7 @@ MSVehicle::Manoeuvre::operator=(const Manoeuvre& manoeuvre) {
     myManoeuvreStartTime = manoeuvre.myManoeuvreStartTime;
     myManoeuvreCompleteTime = manoeuvre.myManoeuvreCompleteTime;
     myManoeuvreType = manoeuvre.myManoeuvreType;
-    myManoeuvreAngle = manoeuvre.myManoeuvreAngle;
+    myGUIIncrement = manoeuvre.myGUIIncrement;
     return *this;
 }
 
@@ -6519,13 +6423,13 @@ MSVehicle::Manoeuvre::operator!=(const Manoeuvre& manoeuvre) {
             myManoeuvreStartTime != manoeuvre.myManoeuvreStartTime ||
             myManoeuvreCompleteTime != manoeuvre.myManoeuvreCompleteTime ||
             myManoeuvreType != manoeuvre.myManoeuvreType ||
-            myManoeuvreAngle != manoeuvre.myManoeuvreAngle
-           );
+            myGUIIncrement != manoeuvre.myGUIIncrement
+            );
 }
 
-int
-MSVehicle::Manoeuvre::getManoeuvreAngle() const {
-    return (myManoeuvreAngle);
+double
+MSVehicle::Manoeuvre::getGUIIncrement() const {
+    return (myGUIIncrement);
 }
 
 MSVehicle::ManoeuvreType
@@ -6559,16 +6463,20 @@ MSVehicle::Manoeuvre::configureEntryManoeuvre(MSVehicle* veh) {
     const SUMOTime currentTime = MSNet::getInstance()->getCurrentTimeStep();
     const Stop& stop = veh->getMyStops().front();
 
+    int manoeuverAngle = stop.parkingarea->getLastFreeLotAngle();
+    double GUIAngle = stop.parkingarea->getLastFreeLotGUIAngle();
+    if (abs(GUIAngle) < 0.1) GUIAngle = -0.1; // Wiggle vehicle on parallel entry
     myManoeuvreVehicleID = veh->getID();
     myManoeuvreStop = stop.parkingarea->getID();
     myManoeuvreType = MSVehicle::MANOEUVRE_ENTRY;
-    myManoeuvreAngle = stop.parkingarea->getLastFreeLotAngle();
     myManoeuvreStartTime = currentTime;
-    myManoeuvreCompleteTime = currentTime + veh->myType->getEntryManoeuvreTime(myManoeuvreAngle);
+    myManoeuvreCompleteTime = currentTime + veh->myType->getEntryManoeuvreTime(manoeuverAngle);
+    myGUIIncrement = GUIAngle / ((myManoeuvreCompleteTime - myManoeuvreStartTime) / (TS * 1000.));
+
 #ifdef DEBUG_STOPS
     if (veh->isSelected()) {
-        std::cout << "ENTRY manoeuvre start: vehicle=" << veh->getID() << " Angle=" << myManoeuvreAngle << " currentTime=" << currentTime <<
-                  " endTime=" << myManoeuvreCompleteTime << " manoeuvre time=" << myManoeuvreCompleteTime - currentTime << " parkArea=" << myManoeuvreStop << std::endl;
+       std::cout << "ENTRY manoeuvre start: vehicle=" << veh->getID() << " Manoeuvre Angle=" << manoeuverAngle << " Rotation angle=" << RAD2DEG(GUIAngle) << " Road Angle" << RAD2DEG(veh->getAngle()) << " increment=" << RAD2DEG(myGUIIncrement) << " currentTime=" << currentTime <<
+                    " endTime=" << myManoeuvreCompleteTime << " manoeuvre time=" << myManoeuvreCompleteTime - currentTime << " parkArea="<< myManoeuvreStop << std::endl;
     }
 #endif
 
@@ -6591,18 +6499,23 @@ MSVehicle::Manoeuvre::configureExitManoeuvre(MSVehicle* veh) {
 
     const SUMOTime currentTime = MSNet::getInstance()->getCurrentTimeStep();
 
+    int manoeuverAngle = veh->getCurrentParkingArea()->getManoeuverAngle(*veh);
+    double GUIAngle = veh->getCurrentParkingArea()->getGUIAngle(*veh);
+    if (abs(GUIAngle) < 0.1) GUIAngle = 0.1; // Wiggle vehicle on parallel exit
+
     myManoeuvreVehicleID = veh->getID();
     myManoeuvreStop = veh->getCurrentParkingArea()->getID();
     myManoeuvreType = MSVehicle::MANOEUVRE_EXIT;
     myManoeuvreStartTime = currentTime;
-    myManoeuvreCompleteTime = currentTime + veh->myType->getExitManoeuvreTime(myManoeuvreAngle);
+    myManoeuvreCompleteTime = currentTime + veh->myType->getExitManoeuvreTime(manoeuverAngle);
+    myGUIIncrement = (-GUIAngle) / ((myManoeuvreCompleteTime - myManoeuvreStartTime) / (TS * 1000.));
     if (veh->remainingStopDuration() > 0) {
         myManoeuvreCompleteTime += veh->remainingStopDuration();
     }
 
 #ifdef DEBUG_STOPS
     if (veh->isSelected()) {
-        std::cout << "EXIT manoeuvre start: vehicle=" << veh->getID() << " Angle=" << myManoeuvreAngle << " currentTime=" << currentTime
+        std::cout << "EXIT manoeuvre start: vehicle=" << veh->getID() << " Manoeuvre Angle=" << manoeuverAngle  << " increment=" << RAD2DEG(myGUIIncrement) << " currentTime=" << currentTime
                   << " endTime=" << myManoeuvreCompleteTime << " manoeuvre time=" << myManoeuvreCompleteTime - currentTime << " parkArea=" << myManoeuvreStop << std::endl;
     }
 #endif
@@ -6629,8 +6542,6 @@ MSVehicle::Manoeuvre::entryManoeuvreIsComplete(MSVehicle* veh) {
     } else if (MSNet::getInstance()->getCurrentTimeStep() < myManoeuvreCompleteTime) {
         return false;
     } else { // manoeuvre complete
-        // in case we ended up in a different lot - reset the angle for exit - to allow recompute
-        myManoeuvreAngle = currentStop->parkingarea->getLastFreeLotAngle();
         myManoeuvreType = MSVehicle::MANOEUVRE_NONE;
         return true;
     }

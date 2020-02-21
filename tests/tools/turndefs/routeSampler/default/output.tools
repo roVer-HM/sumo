@@ -1,2 +1,2 @@
-Wrote 122 routes to meet total count 678 at 138 locations
-Warning: Count deficit of 73 for 41 locations
+Wrote 89 routes (76 distinct) achieving total count 692 at 138 locations
+Warning: underflow locations: count 41, min 1.00 (('-131', '-131.180.00')), max 3.00 (('-27', '-27.80.00')), mean 1.44 Q1 1.00, median 1.00, Q3 2.00 (total 59)

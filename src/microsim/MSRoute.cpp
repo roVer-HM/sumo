@@ -32,7 +32,6 @@
 #include <limits>
 #include <utils/common/FileHelpers.h>
 #include <utils/common/RGBColor.h>
-#include <utils/iodevices/BinaryInputDevice.h>
 #include <utils/iodevices/OutputDevice.h>
 #include "MSEdge.h"
 #include "MSLane.h"
@@ -59,6 +58,7 @@ MSRoute::MSRoute(const std::string& id,
     Named(id), myEdges(edges), myAmPermanent(isPermanent),
     myReferenceCounter(isPermanent ? 1 : 0),
     myColor(c),
+    myPeriod(0),
     myCosts(-1),
     mySavings(0),
     myStops(stops) {}

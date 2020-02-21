@@ -544,16 +544,11 @@ MSEdge::getDepartLane(MSVehicle& veh) const {
     return (*myLanes)[0];
 }
 
-
 bool
-MSEdge::insertVehicle(SUMOVehicle& v, SUMOTime time, const bool checkOnly, const bool forceCheck) const {
-    // when vaporizing, no vehicles are inserted, but checking needs to be successful to trigger removal
-    if (isVaporizing() || isTazConnector()) {
-        return checkOnly;
-    }
+MSEdge::validateDepartSpeed(SUMOVehicle& v) const {
     const SUMOVehicleParameter& pars = v.getParameter();
     const MSVehicleType& type = v.getVehicleType();
-    if (pars.departSpeedProcedure == DEPART_SPEED_GIVEN && pars.departSpeed > getVehicleMaxSpeed(&v)) {
+    if (pars.departSpeedProcedure == DEPART_SPEED_GIVEN && pars.departSpeed > getVehicleMaxSpeed(&v) + NUMERICAL_EPS) {
         const std::vector<double>& speedFactorParams = type.getSpeedFactor().getParameter();
         if (speedFactorParams[1] > 0.) {
             v.setChosenSpeedFactor(type.computeChosenSpeedDeviation(nullptr, pars.departSpeed / getSpeedLimit()));
@@ -562,8 +557,26 @@ MSEdge::insertVehicle(SUMOVehicle& v, SUMOTime time, const bool checkOnly, const
                 WRITE_WARNING("Choosing new speed factor " + toString(v.getChosenSpeedFactor()) + " for vehicle '" + pars.id + "' to match departure speed.");
             }
         } else {
-            throw ProcessError("Departure speed for vehicle '" + pars.id +
-                               "' is too high for the departure edge '" + getID() + "'.");
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool
+MSEdge::insertVehicle(SUMOVehicle& v, SUMOTime time, const bool checkOnly, const bool forceCheck) const {
+    // when vaporizing, no vehicles are inserted, but checking needs to be successful to trigger removal
+    if (isVaporizing() || isTazConnector()) {
+        return checkOnly;
+    }
+    const SUMOVehicleParameter& pars = v.getParameter();
+    if (!validateDepartSpeed(v)) {
+        const std::string errorMsg = "Departure speed for vehicle '" + pars.id + "' is too high for the departure edge '" + getID() + "'.";
+        if (MSGlobals::gCheckRoutes) {
+            throw ProcessError(errorMsg);
+        } else {
+            WRITE_WARNING(errorMsg);
         }
     }
     if (MSGlobals::gUseMesoSim) {
@@ -826,15 +839,8 @@ MSEdge::insertIDs(std::vector<std::string>& into) {
 void
 MSEdge::parseEdgesList(const std::string& desc, ConstMSEdgeVector& into,
                        const std::string& rid) {
-    if (desc[0] == BinaryFormatter::BF_ROUTE) {
-        std::istringstream in(desc, std::ios::binary);
-        char c;
-        in >> c;
-        FileHelpers::readEdgeVector(in, into, rid);
-    } else {
-        StringTokenizer st(desc);
-        parseEdgesList(st.getVector(), into, rid);
-    }
+    StringTokenizer st(desc);
+    parseEdgesList(st.getVector(), into, rid);
 }
 
 

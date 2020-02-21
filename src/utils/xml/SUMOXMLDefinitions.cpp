@@ -103,6 +103,7 @@ StringBijection<int>::Entry SUMOXMLDefinitions::tags[] = {
     { "flowState",                  SUMO_TAG_FLOWSTATE },
     { "step",                       SUMO_TAG_STEP },
     { "interval",                   SUMO_TAG_INTERVAL },
+    { "edgeRelation",               SUMO_TAG_EDGEREL },
     { "timedEvent",                 SUMO_TAG_TIMEDEVENT },
     { "fromEdge",                   SUMO_TAG_FROMEDGE },
     { "toEdge",                     SUMO_TAG_TOEDGE },
@@ -254,6 +255,7 @@ StringBijection<int>::Entry SUMOXMLDefinitions::attrs[] = {
     { "refId",                  SUMO_ATTR_REFID },
     { "name",                   SUMO_ATTR_NAME },
     { "type",                   SUMO_ATTR_TYPE },
+    { "version",                SUMO_ATTR_VERSION },
     { "priority",               SUMO_ATTR_PRIORITY },
     { "numLanes",               SUMO_ATTR_NUMLANES },
     { "speed",                  SUMO_ATTR_SPEED },
@@ -450,6 +452,7 @@ StringBijection<int>::Entry SUMOXMLDefinitions::attrs[] = {
     { "costs",                  SUMO_ATTR_COSTS },
     { "savings",                SUMO_ATTR_SAVINGS },
     { "probability",            SUMO_ATTR_PROB },
+    { "count",                  SUMO_ATTR_COUNT },
     { "probabilities",          SUMO_ATTR_PROBS },
     { "routes",                 SUMO_ATTR_ROUTES },
     { "vTypes",                 SUMO_ATTR_VTYPES },
@@ -465,6 +468,7 @@ StringBijection<int>::Entry SUMOXMLDefinitions::attrs[] = {
     { "fromJunction",           SUMO_ATTR_FROMJUNCTION },
     { "toJunction",             SUMO_ATTR_TOJUNCTION },
     { "period",                 SUMO_ATTR_PERIOD },
+    { "repeat",                 SUMO_ATTR_REPEAT },
     { "fromTaz",                SUMO_ATTR_FROM_TAZ },
     { "toTaz",                  SUMO_ATTR_TO_TAZ },
     { "reroute",                SUMO_ATTR_REROUTE },
@@ -656,7 +660,6 @@ StringBijection<int>::Entry SUMOXMLDefinitions::attrs[] = {
     { "generateWalks",          SUMO_ATTR_GENERATE_WALKS },
     { "actType",                SUMO_ATTR_ACTTYPE },
     { "slope",                  SUMO_ATTR_SLOPE },
-    { "version",                SUMO_ATTR_VERSION },
     { "junctionCornerDetail",   SUMO_ATTR_CORNERDETAIL },
     { "junctionLinkDetail",     SUMO_ATTR_LINKDETAIL },
     { "rectangularLaneCut",     SUMO_ATTR_RECTANGULAR_LANE_CUT },
@@ -788,8 +791,9 @@ StringBijection<SumoXMLEdgeFunc>::Entry SUMOXMLDefinitions::sumoEdgeFuncValues[]
 
 
 StringBijection<LaneSpreadFunction>::Entry SUMOXMLDefinitions::laneSpreadFunctionValues[] = {
-    {"right",   LANESPREAD_RIGHT }, // default
-    {"center",  LANESPREAD_CENTER } //< must be the last one
+    {"right",      LANESPREAD_RIGHT }, // default: geometry is left edge border, lanes flare to the right
+    {"roadCenter", LANESPREAD_ROADCENTER }, // geometry is center of the bidirectional road
+    {"center",     LANESPREAD_CENTER } // geometry is center of the edge (must be the last one)
 };
 
 StringBijection<RightOfWay>::Entry SUMOXMLDefinitions::rightOfWayValuesInitializer[] = {

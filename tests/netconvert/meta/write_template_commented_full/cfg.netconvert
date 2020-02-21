@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Sun Feb  9 20:59:42 2020 by Eclipse SUMO netconvert Version v1_4_0+0995-3d963feed3
+<!-- generated on Tue Feb 18 15:48:08 2020 by Eclipse SUMO netconvert Version v1_5_0+0143-35f4fb3
 -->
 
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
@@ -332,6 +332,9 @@
 
         <!-- The default width of lanes -->
         <default.lanewidth value="-1" synonymes="lanewidth" type="FLOAT"/>
+
+        <!-- The default method for computing lane shapes from edge shapes -->
+        <default.spreadtype value="right" type="STR"/>
 
         <!-- The default speed on an edge (in m/s) -->
         <default.speed value="13.89" synonymes="S speed" type="FLOAT"/>
@@ -689,6 +692,9 @@
 
         <!-- Allow bidiretional rail use wherever rails with opposite directions meet at a straight angle -->
         <railway.topology.repair.connect-straight value="false" type="BOOL"/>
+
+        <!-- Add turn-around connections at all loaded stops. -->
+        <railway.topology.repair.stop-turn value="false" type="BOOL"/>
 
         <!-- Make all rails usable in both direction -->
         <railway.topology.all-bidi value="false" type="BOOL"/>

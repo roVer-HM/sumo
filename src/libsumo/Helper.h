@@ -32,6 +32,7 @@
 #include <libsumo/Subscription.h>
 #include <microsim/MSNet.h>
 
+
 // ===========================================================================
 // class declarations
 // ===========================================================================
@@ -41,6 +42,7 @@ class RGBColor;
 class MSEdge;
 class MSPerson;
 class MSVehicle;
+class MSBaseVehicle;
 class MSVehicleType;
 
 
@@ -135,7 +137,7 @@ public:
     static std::pair<MSLane*, double> convertCartesianToRoadMap(const Position& pos, const SUMOVehicleClass vClass);
     static double getDrivingDistance(std::pair<const MSLane*, double>& roadPos1, std::pair<const MSLane*, double>& roadPos2);
 
-    static MSVehicle* getVehicle(const std::string& id);
+    static MSBaseVehicle* getVehicle(const std::string& id);
     static const MSVehicleType& getVehicleType(const std::string& vehicleID);
 
     static void findObjectShape(int domain, const std::string& id, PositionVector& shape);
@@ -155,7 +157,7 @@ public:
 
     static void applySubscriptionFilterFieldOfVision(const Subscription& s, std::set<std::string>& objIDs);
 
-    static void applySubscriptionFilterLateralDistanceSinglePass(std::set<std::string>& objIDs, std::set<const MSVehicle*>& vehs,
+    static void applySubscriptionFilterLateralDistanceSinglePass(std::set<std::string>& objIDs, std::set<const MSBaseVehicle*>& vehs,
             const std::vector<const MSLane*>& lanes, double lateralDist, double streamDist,
             double posOnLane, bool isDownstream);
 
