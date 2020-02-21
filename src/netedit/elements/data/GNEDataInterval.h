@@ -13,8 +13,7 @@
 ///
 // A abstract class for data elements
 /****************************************************************************/
-#ifndef GNEDataInterval_h
-#define GNEDataInterval_h
+#pragma once
 
 
 // ===========================================================================
@@ -192,9 +191,6 @@ private:
     /// @brief Invalidated assignment operator.
     GNEDataInterval& operator=(const GNEDataInterval&) = delete;
 };
-
-
-#endif
 
 /****************************************************************************/
 

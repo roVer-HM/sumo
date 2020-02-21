@@ -17,8 +17,7 @@
 ///
 // A network change in which a single Shape is created or deleted
 /****************************************************************************/
-#ifndef GNEChange_Shape_h
-#define GNEChange_Shape_h
+#pragma once
 
 
 // ===========================================================================
@@ -68,5 +67,5 @@ private:
     GNEShape* myShape;
 };
 
-#endif
+
 /****************************************************************************/

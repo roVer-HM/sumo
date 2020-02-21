@@ -17,8 +17,7 @@
 ///
 // The Widget for create route elements
 /****************************************************************************/
-#ifndef GNERouteFrame_h
-#define GNERouteFrame_h
+#pragma once
 
 // ===========================================================================
 // included modules
@@ -298,8 +297,6 @@ private:
     NonConsecutiveEdges* myNonConsecutiveEdges;
 };
 
-
-#endif
 
 /****************************************************************************/
 

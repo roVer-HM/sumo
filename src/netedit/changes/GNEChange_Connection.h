@@ -17,8 +17,7 @@
 ///
 // A network change in which a single connection is created or deleted
 /****************************************************************************/
-#ifndef GNEChange_Connection_h
-#define GNEChange_Connection_h
+#pragma once
 
 
 // ===========================================================================
@@ -78,5 +77,5 @@ private:
     bool mySelected;
 };
 
-#endif
+
 /****************************************************************************/

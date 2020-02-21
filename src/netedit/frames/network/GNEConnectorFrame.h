@@ -17,8 +17,7 @@
 ///
 // The Widget for modifying lane-to-lane connections
 /****************************************************************************/
-#ifndef GNEConnectorFrame_h
-#define GNEConnectorFrame_h
+#pragma once
 
 // ===========================================================================
 // included modules
@@ -324,8 +323,6 @@ private:
     std::vector<NBEdge::Connection> myDeletedConnections;
 };
 
-
-#endif
 
 /****************************************************************************/
 

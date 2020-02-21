@@ -18,8 +18,7 @@
 ///
 // The Widget for modifying network-element attributes (i.e. lane speed)
 /****************************************************************************/
-#ifndef GNEInspectorFrame_h
-#define GNEInspectorFrame_h
+#pragma once
 
 
 // ===========================================================================
@@ -372,8 +371,6 @@ private:
     bool myPreviousElementDeleteWasMarked;
 };
 
-
-#endif
 
 /****************************************************************************/
 

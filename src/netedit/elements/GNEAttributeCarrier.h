@@ -13,8 +13,7 @@
 ///
 // Abstract Base class for gui objects which carry attributes
 /****************************************************************************/
-#ifndef GNEAttributeCarrier_h
-#define GNEAttributeCarrier_h
+#pragma once
 
 
 // ===========================================================================
@@ -422,8 +421,6 @@ private:
     /// @brief Invalidated assignment operator
     GNEAttributeCarrier& operator=(const GNEAttributeCarrier& src) = delete;
 };
-
-#endif
 
 /****************************************************************************/
 

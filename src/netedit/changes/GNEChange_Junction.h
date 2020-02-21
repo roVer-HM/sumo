@@ -17,8 +17,7 @@
 ///
 // A network change in which a single junction is created or deleted
 /****************************************************************************/
-#ifndef GNEChange_Junction_h
-#define GNEChange_Junction_h
+#pragma once
 
 
 // ===========================================================================
@@ -71,5 +70,5 @@ private:
     GNEJunction* myJunction;
 };
 
-#endif
+
 /****************************************************************************/

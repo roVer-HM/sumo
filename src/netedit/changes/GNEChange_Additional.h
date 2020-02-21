@@ -17,8 +17,7 @@
 ///
 // A network change in which a additional element is created or deleted
 /****************************************************************************/
-#ifndef GNEChange_Additional_h
-#define GNEChange_Additional_h
+#pragma once
 
 // ===========================================================================
 // included modules
@@ -69,5 +68,5 @@ private:
     GNEAdditional* myAdditional;
 };
 
-#endif
+
 /****************************************************************************/

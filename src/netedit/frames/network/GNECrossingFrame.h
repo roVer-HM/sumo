@@ -17,8 +17,7 @@
 ///
 // The Widget for add Crossing elements
 /****************************************************************************/
-#ifndef GNECrossingFrame_h
-#define GNECrossingFrame_h
+#pragma once
 
 
 // ===========================================================================
@@ -283,7 +282,5 @@ private:
     GNECrossingFrame::CreateCrossing* myCreateCrossing;
 };
 
-
-#endif
 
 /****************************************************************************/

@@ -17,8 +17,7 @@
 ///
 // A abstract class for representation of Hierarchical Elements
 /****************************************************************************/
-#ifndef GNEHierarchicalChildElements_h
-#define GNEHierarchicalChildElements_h
+#pragma once
 
 // ===========================================================================
 // included modules
@@ -288,4 +287,3 @@ private:
     GNEHierarchicalChildElements& operator=(const GNEHierarchicalChildElements&) = delete;
 };
 
-#endif

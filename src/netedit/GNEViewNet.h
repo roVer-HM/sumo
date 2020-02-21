@@ -17,8 +17,7 @@
 ///
 // A view on the network being edited (adapted from GUIViewTraffic)
 /****************************************************************************/
-#ifndef GNEViewNet_h
-#define GNEViewNet_h
+#pragma once
 
 
 // ===========================================================================
@@ -600,7 +599,5 @@ private:
     GNEViewNet& operator=(const GNEViewNet&) = delete;
 };
 
-
-#endif
 
 /****************************************************************************/

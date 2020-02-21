@@ -17,8 +17,7 @@
 ///
 // The Widget for add PersonPlan elements
 /****************************************************************************/
-#ifndef GNEPersonPlanFrame_h
-#define GNEPersonPlanFrame_h
+#pragma once
 
 
 // ===========================================================================
@@ -208,7 +207,5 @@ private:
     HelpCreation* myHelpCreation;
 };
 
-
-#endif
 
 /****************************************************************************/

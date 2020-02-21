@@ -17,8 +17,7 @@
 ///
 // A network change in which a traffic light is created or deleted
 /****************************************************************************/
-#ifndef GNEChange_TLS_h
-#define GNEChange_TLS_h
+#pragma once
 
 
 // ===========================================================================
@@ -83,5 +82,5 @@ private:
     bool myForceInsert;
 };
 
-#endif
+
 /****************************************************************************/

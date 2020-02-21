@@ -17,8 +17,7 @@
 ///
 // The main mesocopic simulation loop
 /****************************************************************************/
-#ifndef MELoop_h
-#define MELoop_h
+#pragma once
 
 
 // ===========================================================================
@@ -38,7 +37,6 @@ class MEVehicle;
 class MSEdge;
 class MSLink;
 class MSVehicleControl;
-class BinaryInputDevice;
 class OptionsCont;
 
 
@@ -165,8 +163,6 @@ private:
     MELoop& operator=(const MELoop&);
 };
 
-
-#endif
 
 /****************************************************************************/
 

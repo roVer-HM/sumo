@@ -20,8 +20,7 @@
 ///
 // The car-following model and parameter
 /****************************************************************************/
-#ifndef MSVehicleType_h
-#define MSVehicleType_h
+#pragma once
 
 
 // ===========================================================================
@@ -45,7 +44,6 @@
 // class declarations
 // ===========================================================================
 class MSLane;
-class BinaryInputDevice;
 class MSCFModel;
 class SUMOVTypeParameter;
 
@@ -608,8 +606,6 @@ private:
     MSVehicleType& operator=(const MSVehicleType&) = delete;
 };
 
-
-#endif
 
 /****************************************************************************/
 

@@ -17,8 +17,7 @@
 ///
 // A file used to reduce the size of GNEViewNet.h grouping structs and classes
 /****************************************************************************/
-#ifndef GNEViewNetHelper_h
-#define GNEViewNetHelper_h
+#pragma once
 
 
 // ===========================================================================
@@ -1043,7 +1042,5 @@ struct GNEViewNetHelper {
         GNEViewNet* myViewNet;
     };
 };
-
-#endif
 
 /****************************************************************************/

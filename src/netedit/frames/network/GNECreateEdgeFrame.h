@@ -17,8 +17,7 @@
 ///
 // The Widget for create edges (and junctions)
 /****************************************************************************/
-#ifndef GNECreateEdgeFrame_h
-#define GNECreateEdgeFrame_h
+#pragma once
 
 // ===========================================================================
 // included modules
@@ -83,8 +82,6 @@ private:
     GNEJunction* myCreateEdgeSource;
 };
 
-
-#endif
 
 /****************************************************************************/
 

@@ -20,8 +20,7 @@
 ///
 // A road/street connecting two junctions (gui-version)
 /****************************************************************************/
-#ifndef GUIEdge_h
-#define GUIEdge_h
+#pragma once
 
 
 // ===========================================================================
@@ -162,12 +161,7 @@ public:
         MSEdge::removeContainer(c);
     }
 
-    int getVehicleNo() const;
-    std::string getVehicleIDs() const;
-    double getBruttoOccupancy() const;
     double getAllowedSpeed() const;
-    /// @brief return flow based on meanSpead @note: may produced incorrect results when jammed
-    double getFlow() const;
     /// @brief return meanSpead divided by allowedSpeed
     double getRelativeSpeed() const;
 
@@ -246,8 +240,6 @@ private:
 
 };
 
-
-#endif
 
 /****************************************************************************/
 

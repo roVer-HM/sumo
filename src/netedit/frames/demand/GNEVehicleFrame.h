@@ -17,8 +17,7 @@
 ///
 // The Widget for add Vehicles/Flows/Trips/etc. elements
 /****************************************************************************/
-#ifndef GNEVehicleFrame_h
-#define GNEVehicleFrame_h
+#pragma once
 
 
 // ===========================================================================
@@ -116,7 +115,5 @@ private:
     HelpCreation* myHelpCreation;
 };
 
-
-#endif
 
 /****************************************************************************/

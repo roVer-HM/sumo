@@ -17,8 +17,7 @@
 ///
 // A single mesoscopic segment (cell)
 /****************************************************************************/
-#ifndef MESegment_h
-#define MESegment_h
+#pragma once
 
 
 // ===========================================================================
@@ -39,7 +38,6 @@ class MSLink;
 class MSMoveReminder;
 class MSVehicleControl;
 class MEVehicle;
-class BinaryInputDevice;
 class OutputDevice;
 
 
@@ -297,6 +295,9 @@ public:
         return STEPS2TIME(myEntryBlockTime);
     }
 
+    /// @brief Get the waiting time for vehicles in all queues
+    double getWaitingSeconds() const; 
+
     /// @name State saving/loading
     /// @{
 
@@ -526,7 +527,5 @@ private:
     MESegment(const std::string& id);
 };
 
-
-#endif
 
 /****************************************************************************/

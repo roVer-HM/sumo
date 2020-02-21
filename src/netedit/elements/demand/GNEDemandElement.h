@@ -17,8 +17,7 @@
 ///
 // A abstract class for demand elements
 /****************************************************************************/
-#ifndef GNEDemandElement_h
-#define GNEDemandElement_h
+#pragma once
 
 
 // ===========================================================================
@@ -466,8 +465,6 @@ private:
     GNEDemandElement& operator=(const GNEDemandElement&) = delete;
 };
 
-
-#endif
 
 /****************************************************************************/
 

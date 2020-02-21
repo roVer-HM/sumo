@@ -19,8 +19,7 @@
 ///
 // An XML-handler for network weights
 /****************************************************************************/
-#ifndef SAXWeightsHandler_h
-#define SAXWeightsHandler_h
+#pragma once
 
 
 // ===========================================================================
@@ -215,8 +214,6 @@ private:
     SAXWeightsHandler& operator=(const SAXWeightsHandler& src) = delete;
 };
 
-
-#endif
 
 /****************************************************************************/
 

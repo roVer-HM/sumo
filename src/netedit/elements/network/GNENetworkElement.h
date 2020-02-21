@@ -17,8 +17,7 @@
 ///
 // A abstract class for network elements
 /****************************************************************************/
-#ifndef GNENetworkElement_h
-#define GNENetworkElement_h
+#pragma once
 
 
 // ===========================================================================
@@ -216,8 +215,6 @@ private:
     GNENetworkElement& operator=(const GNENetworkElement&) = delete;
 };
 
-
-#endif
 
 /****************************************************************************/
 

@@ -17,8 +17,7 @@
 ///
 // The Widget for edit Vehicle Type elements
 /****************************************************************************/
-#ifndef GNEVehicleTypeFrame_h
-#define GNEVehicleTypeFrame_h
+#pragma once
 
 
 // ===========================================================================
@@ -185,7 +184,5 @@ private:
     VehicleTypeEditor* myVehicleTypeEditor;
 };
 
-
-#endif
 
 /****************************************************************************/

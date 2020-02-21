@@ -13,8 +13,8 @@
 ///
 // A network change in which a data set element is created or deleted
 /****************************************************************************/
-#ifndef GNEChange_DataSet_h
-#define GNEChange_DataSet_h
+#pragma once
+
 
 // ===========================================================================
 // included modules
@@ -65,5 +65,4 @@ private:
     GNEDataSet* myDataSet;
 };
 
-#endif
 /****************************************************************************/

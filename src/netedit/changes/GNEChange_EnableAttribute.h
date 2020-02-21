@@ -17,8 +17,7 @@
 ///
 // A network change in which the attribute of some object is modified
 /****************************************************************************/
-#ifndef GNEChange_EnableAttribute_h
-#define GNEChange_EnableAttribute_h
+#pragma once
 
 
 // ===========================================================================
@@ -78,5 +77,5 @@ private:
     const int myNewAttributes;
 };
 
-#endif
+
 /****************************************************************************/

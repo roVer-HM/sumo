@@ -24,8 +24,7 @@
 ///
 // The simulated network and simulation performer
 /****************************************************************************/
-#ifndef MSNet_h
-#define MSNet_h
+#pragma once
 
 
 // ===========================================================================
@@ -74,7 +73,6 @@ class MSDetectorControl;
 class ShapeContainer;
 class MSDynamicShapeUpdater;
 class PolygonDynamics;
-class BinaryInputDevice;
 class MSEdgeWeightsStorage;
 class SUMOVehicle;
 class MSTractionSubstation;
@@ -890,8 +888,6 @@ private:
 
 };
 
-
-#endif
 
 /****************************************************************************/
 
