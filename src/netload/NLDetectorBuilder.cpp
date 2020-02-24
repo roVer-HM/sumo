@@ -22,11 +22,6 @@
 ///
 // Builds detectors for microsim
 /****************************************************************************/
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <string>
@@ -385,7 +380,7 @@ NLDetectorBuilder::createInductLoop(const std::string& id,
     if (MSGlobals::gUseMesoSim) {
         return new MEInductLoop(id, MSGlobals::gMesoNet->getSegmentForEdge(lane->getEdge(), pos), pos, vTypes);
     }
-    return new MSInductLoop(id, lane, pos, vTypes);
+    return new MSInductLoop(id, lane, pos, vTypes, false);
 }
 
 

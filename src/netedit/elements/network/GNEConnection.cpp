@@ -17,11 +17,6 @@
 ///
 // A class for visualizing connections between lanes
 /****************************************************************************/
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <netbuild/NBLoadedSUMOTLDef.h>
@@ -675,5 +670,6 @@ GNEConnection::updateDottedContour() {
     // set as dotted contour
     myDottedGeometry.updateDottedGeometry(myNet->getViewNet()->getVisualisationSettings(), contourFront);
 }
+
 
 /****************************************************************************/

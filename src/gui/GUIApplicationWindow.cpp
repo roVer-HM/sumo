@@ -20,11 +20,6 @@
 ///
 // The main window of the SUMO-gui.
 /****************************************************************************/
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #ifdef HAVE_VERSION_H
@@ -1078,7 +1073,7 @@ GUIApplicationWindow::onCmdSaveState(FXObject*, FXSelector, void*) {
     FXFileDialog opendialog(this, "Save Simulation State");
     opendialog.setIcon(GUIIconSubSys::getIcon(ICON_SAVE));
     opendialog.setSelectMode(SELECTFILE_ANY);
-    opendialog.setPatternList("Binary State (*.sbx)\nXML State (*.xml)");
+    opendialog.setPatternList("GZipped State (*.xml.gz)\nXML State (*.xml)");
     if (gCurrentFolder.length() != 0) {
         opendialog.setDirectory(gCurrentFolder);
     }
@@ -1916,5 +1911,6 @@ GUIApplicationWindow::retrieveBreakpoints() const {
     myRunThread->getBreakpointLock().unlock();
     return result;
 }
+
 
 /****************************************************************************/

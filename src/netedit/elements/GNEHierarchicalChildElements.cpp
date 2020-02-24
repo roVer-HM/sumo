@@ -17,10 +17,6 @@
 ///
 // A abstract class for representation of additional elements
 /****************************************************************************/
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <netedit/GNEViewNet.h>
@@ -661,5 +657,6 @@ GNEHierarchicalChildElements::ChildConnections::draw(const GUIVisualizationSetti
         }
     }
 }
+
 
 /****************************************************************************/

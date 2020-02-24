@@ -17,12 +17,6 @@
 ///
 // File for geometry classes and functions
 /****************************************************************************/
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-
 #include <netedit/elements/network/GNEEdge.h>
 #include <netedit/elements/network/GNEJunction.h>
 #include <netedit/elements/network/GNELane.h>
@@ -1104,5 +1098,6 @@ GNEGeometry::angleLookup(const double angleDeg) {
     assert(index >= 0);
     return (int)index;
 }
+
 
 /****************************************************************************/

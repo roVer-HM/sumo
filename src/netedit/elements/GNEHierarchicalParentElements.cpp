@@ -17,10 +17,6 @@
 ///
 // A abstract class for representation of additional elements
 /****************************************************************************/
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <netedit/GNENet.h>
@@ -621,5 +617,6 @@ GNEHierarchicalParentElements::replaceParentDemandElement(GNEDemandElement* dema
         demandElementTobeChanged->updateGeometry();
     }
 }
+
 
 /****************************************************************************/

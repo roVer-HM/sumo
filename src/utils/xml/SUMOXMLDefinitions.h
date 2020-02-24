@@ -23,11 +23,6 @@
 // Definitions of elements and attributes known by SUMO
 /****************************************************************************/
 #pragma once
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <utils/common/StringBijection.h>
@@ -1582,5 +1577,3 @@ private:
     /// @brief all allowed characters for phase state
     static const char AllowedTLS_linkStatesInitializer[];
 };
-
-/****************************************************************************/

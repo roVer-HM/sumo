@@ -19,11 +19,6 @@
 ///
 // The gui-version of the MSInductLoop, together with the according
 /****************************************************************************/
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <utils/gui/globjects/GUIGlObject.h>
@@ -47,7 +42,7 @@
  * ----------------------------------------------------------------------- */
 GUIInductLoop::GUIInductLoop(const std::string& id, MSLane* const lane,
                              double position, const std::string& vTypes, bool show) :
-    MSInductLoop(id, lane, position, vTypes),
+    MSInductLoop(id, lane, position, vTypes, true),
     myWrapper(nullptr),
     myShow(show)
 {}
@@ -61,39 +56,6 @@ GUIInductLoop::buildDetectorGUIRepresentation() {
     // caller (GUINet) takes responsibility for pointer
     myWrapper = new MyWrapper(*this, myPosition);
     return myWrapper;
-}
-
-
-void
-GUIInductLoop::reset() {
-    FXMutexLock locker(myLock);
-    MSInductLoop::reset();
-}
-
-
-void
-GUIInductLoop::enterDetectorByMove(SUMOTrafficObject& veh, double entryTimestep) {
-    FXMutexLock locker(myLock);
-    MSInductLoop::enterDetectorByMove(veh, entryTimestep);
-}
-
-void
-GUIInductLoop::leaveDetectorByMove(SUMOTrafficObject& veh, double leaveTimestep) {
-    FXMutexLock locker(myLock);
-    MSInductLoop::leaveDetectorByMove(veh, leaveTimestep);
-}
-
-void
-GUIInductLoop::leaveDetectorByLaneChange(SUMOTrafficObject& veh, double lastPos) {
-    FXMutexLock locker(myLock);
-    MSInductLoop::leaveDetectorByLaneChange(veh, lastPos);
-}
-
-
-std::vector<MSInductLoop::VehicleData>
-GUIInductLoop::collectVehiclesOnDet(SUMOTime t, bool leaveTime) const {
-    FXMutexLock locker(myLock);
-    return MSInductLoop::collectVehiclesOnDet(t, leaveTime);
 }
 
 
@@ -141,8 +103,8 @@ GUIInductLoop::MyWrapper::getParameterWindow(GUIMainWindow& app,
     ret->mkItem("position [m]", false, myPosition);
     ret->mkItem("lane", false, myDetector.getLane()->getID());
     // values
-    ret->mkItem("passed vehicles [#]", true,
-                new FuncBinding_IntParam<GUIInductLoop, double>(&myDetector, &GUIInductLoop::getPassedNumber, 0));
+    ret->mkItem("entered vehicles [#]", true,
+                new FuncBinding_IntParam<GUIInductLoop, double>(&myDetector, &GUIInductLoop::getEnteredNumber, 0));
     ret->mkItem("speed [m/s]", true,
                 new FuncBinding_IntParam<GUIInductLoop, double>(&myDetector, &GUIInductLoop::getSpeed, 0));
     ret->mkItem("occupancy [%]", true,

@@ -21,11 +21,6 @@
 // structures than to write everything from scratch.
 /****************************************************************************/
 
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-
 #include <netedit/elements/additional/GNEAdditional.h>
 #include <netedit/elements/demand/GNEDemandElement.h>
 #include <netedit/dialogs/GNEDialogACChooser.h>
@@ -871,5 +866,5 @@ GNEViewParent::ACChoosers::~ACChoosers() {
     }
 }
 
-/****************************************************************************/
 
+/****************************************************************************/

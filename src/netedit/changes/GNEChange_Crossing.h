@@ -18,11 +18,6 @@
 // A network change in which a single crossing is created or deleted
 /****************************************************************************/
 #pragma once
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include "GNEChange.h"
@@ -99,6 +94,3 @@ private:
     /// @brief flag to check if crossing is selected
     bool mySelected;
 };
-
-
-/****************************************************************************/

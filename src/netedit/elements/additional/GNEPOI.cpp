@@ -18,12 +18,6 @@
 // A class for visualizing and editing POIS in netedit (adapted from
 // GUIPointOfInterest and NLHandler)
 /****************************************************************************/
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-
 #include <string>
 #include <utils/common/StringTokenizer.h>
 #include <utils/gui/globjects/GUIGLObjectPopupMenu.h>
@@ -545,5 +539,6 @@ const GUIGlObject*
 GNEPOI::getGUIGlObject() const {
     return this;
 }
+
 
 /****************************************************************************/

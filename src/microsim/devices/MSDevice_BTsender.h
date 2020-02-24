@@ -19,11 +19,6 @@
 // A BT sender
 /****************************************************************************/
 #pragma once
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <set>
@@ -122,7 +117,6 @@ public:
      * @param[in] lastPos Position on the lane when leaving.
      * @param[in] isArrival whether the vehicle arrived at its destination
      * @param[in] isLaneChange whether the vehicle changed from the lane
-     * @see leaveDetectorByLaneChange
      * @see MSMoveReminder
      * @see MSMoveReminder::notifyLeave
      */
@@ -233,7 +227,3 @@ private:
 
 
 };
-
-
-/****************************************************************************/
-

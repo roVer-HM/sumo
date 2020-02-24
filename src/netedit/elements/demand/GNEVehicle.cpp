@@ -17,11 +17,6 @@
 ///
 // Representation of vehicles in NETEDIT
 /****************************************************************************/
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-
 #include <cmath>
 #include <microsim/devices/MSDevice_BTreceiver.h>
 #include <netbuild/NBNode.h>
@@ -1842,5 +1837,6 @@ GNEVehicle::drawFlowLabel(const Position& vehiclePosition, const double vehicleR
     // pop draw matrix
     glPopMatrix();
 }
+
 
 /****************************************************************************/

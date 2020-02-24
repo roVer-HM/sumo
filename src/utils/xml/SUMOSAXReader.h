@@ -20,11 +20,6 @@
 // SAX-reader encapsulation containing binary reader
 /****************************************************************************/
 #pragma once
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <string>
@@ -120,8 +115,6 @@ private:
 
     std::unique_ptr<IStreamInputSource> myInputStream;
 
-    char mySbxVersion;
-
     /// @brief The stack of begun xml elements
     std::vector<SumoXMLTag> myXMLStack;
 
@@ -135,6 +128,3 @@ private:
     const SUMOSAXReader& operator=(const SUMOSAXReader& s);
 
 };
-
-
-/****************************************************************************/

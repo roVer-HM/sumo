@@ -25,11 +25,6 @@
 //   call compute to save results
 //
 /****************************************************************************/
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <netbuild/NBAlgorithms.h>
 #include <netbuild/NBNetBuilder.h>
 #include <netedit/changes/GNEChange_Additional.h>
@@ -3473,5 +3468,6 @@ GNENet::replaceInListAttribute(GNEAttributeCarrier* ac, SumoXMLAttr key, const s
     }
     ac->setAttribute(key, toString(newValues), undoList);
 }
+
 
 /****************************************************************************/

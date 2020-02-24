@@ -18,11 +18,6 @@
 // The main window of Netedit (adapted from GUIApplicationWindow)
 /****************************************************************************/
 #pragma once
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <utils/common/SUMOTime.h>
@@ -848,7 +843,3 @@ private:
     /// @brief warns about unsaved changes in demand elements and gives the user the option to abort
     bool continueWithUnsavedDemandElementChanges(const std::string& operation);
 };
-
-
-/****************************************************************************/
-

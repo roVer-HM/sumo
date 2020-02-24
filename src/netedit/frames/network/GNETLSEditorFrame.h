@@ -19,10 +19,6 @@
 /****************************************************************************/
 #pragma once
 
-// ===========================================================================
-// included modules
-// ===========================================================================
-
 #include <netedit/frames/GNEFrame.h>
 #include <netbuild/NBTrafficLightLogic.h>
 
@@ -475,7 +471,3 @@ private:
     /// @brief convert duration (potentially undefined) to string
     static std::string varDurString(SUMOTime dur);
 };
-
-
-/****************************************************************************/
-

@@ -17,10 +17,6 @@
 ///
 // A network change in which a single connection is created or deleted
 /****************************************************************************/
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <netedit/elements/network/GNEEdge.h>

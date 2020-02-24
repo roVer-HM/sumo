@@ -21,11 +21,6 @@
 // Structure representing possible vehicle parameter
 /****************************************************************************/
 #pragma once
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <string>
@@ -694,7 +689,7 @@ public:
     /// @brief individual speedFactor (overriding distribution from vType)
     double speedFactor;
 
-    /// @brief Information for the router which parameter were set, TraCI may modify this (whe changing color)
+    /// @brief Information for the router which parameter were set, TraCI may modify this (when changing color)
     mutable int parametersSet;
 
 protected:
@@ -725,7 +720,3 @@ protected:
     /// @brief obtain arrival speed parameter in string format
     std::string getArrivalSpeed() const;
 };
-
-/****************************************************************************/
-
-

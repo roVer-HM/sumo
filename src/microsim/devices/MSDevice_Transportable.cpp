@@ -22,10 +22,6 @@
 ///
 // A device which is used to keep track of persons and containers riding with a vehicle
 /****************************************************************************/
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <microsim/output/MSStopOut.h>
@@ -33,6 +29,7 @@
 #include <microsim/MSEdge.h>
 #include <microsim/transportables/MSPerson.h>
 #include <microsim/transportables/MSTransportableControl.h>
+#include <microsim/transportables/MSStageDriving.h>
 #include "MSDevice_Transportable.h"
 #include "MSDevice_Taxi.h"
 
@@ -61,15 +58,20 @@ MSDevice_Transportable::MSDevice_Transportable(SUMOVehicle& holder, const std::s
 
 MSDevice_Transportable::~MSDevice_Transportable() {
     // flush any unfortunate riders still remaining
-    while (!myTransportables.empty()) {
-        MSTransportable* transportable = myTransportables.front();
+    for (auto it = myTransportables.begin(); it != myTransportables.end();) {
+        MSTransportable* transportable = *it;
         WRITE_WARNING((myAmContainer ? "Removing container '" : "Removing person '") + transportable->getID() +
                       "' at removal of vehicle '" + myHolder.getID() + "'");
+        MSStageDriving* const stage = dynamic_cast<MSStageDriving*>(transportable->getCurrentStage());
+        if (stage != nullptr) {
+            stage->setVehicle(nullptr);
+        }
         if (myAmContainer) {
             MSNet::getInstance()->getContainerControl().erase(transportable);
         } else {
             MSNet::getInstance()->getPersonControl().erase(transportable);
         }
+        it = myTransportables.erase(it);
     }
 }
 
@@ -210,4 +212,3 @@ MSDevice_Transportable::getParameter(const std::string& key) const {
 
 
 /****************************************************************************/
-

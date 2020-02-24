@@ -18,12 +18,6 @@
 ///
 // A file used to reduce the size of GNEViewNet.h grouping structs and classes
 /****************************************************************************/
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-
 #include <netedit/elements/additional/GNEPOI.h>
 #include <netedit/elements/additional/GNEPoly.h>
 #include <netedit/elements/additional/GNETAZ.h>
@@ -2457,5 +2451,6 @@ GNEViewNetHelper::EditShapes::saveEditedShape() {
         myViewNet->update();
     }
 }
+
 
 /****************************************************************************/

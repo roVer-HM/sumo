@@ -17,11 +17,6 @@
 ///
 // A class for visualizing Inner Lanes (used when editing traffic lights)
 /****************************************************************************/
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <netedit/GNENet.h>
@@ -493,5 +488,6 @@ GNECrossing::updateDottedContour() {
     // set as dotted contour
     myDottedGeometry.updateDottedGeometry(myNet->getViewNet()->getVisualisationSettings(), contourFront);
 }
+
 
 /****************************************************************************/

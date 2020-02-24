@@ -18,11 +18,6 @@
 // A abstract class for demand elements
 /****************************************************************************/
 #pragma once
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <netedit/elements/GNEHierarchicalParentElements.h>
@@ -464,7 +459,3 @@ private:
     /// @brief Invalidated assignment operator.
     GNEDemandElement& operator=(const GNEDemandElement&) = delete;
 };
-
-
-/****************************************************************************/
-

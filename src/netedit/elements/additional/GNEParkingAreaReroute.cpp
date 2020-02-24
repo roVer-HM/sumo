@@ -17,10 +17,6 @@
 ///
 //
 /****************************************************************************/
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <netedit/dialogs/GNERerouterIntervalDialog.h>
@@ -219,5 +215,6 @@ GNEParkingAreaReroute::setAttribute(SumoXMLAttr key, const std::string& value) {
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
     }
 }
+
 
 /****************************************************************************/

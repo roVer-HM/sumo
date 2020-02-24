@@ -17,11 +17,6 @@
 ///
 // Definition of Vehicle Types in NETEDIT
 /****************************************************************************/
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-
 #include <netedit/GNENet.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEUndoList.h>
@@ -1710,5 +1705,6 @@ GNEVehicleType::updateDefaultVClassAttributes(const VClassDefaultValues& default
         locomotiveLength = defaultValues.locomotiveLength;
     }
 }
+
 
 /****************************************************************************/

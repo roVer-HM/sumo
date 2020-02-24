@@ -20,11 +20,6 @@
 // An XML-handler for network weights
 /****************************************************************************/
 #pragma once
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <string>
@@ -213,7 +208,3 @@ private:
     /// @brief we made the assignment operator invalid
     SAXWeightsHandler& operator=(const SAXWeightsHandler& src) = delete;
 };
-
-
-/****************************************************************************/
-

@@ -19,11 +19,6 @@
 // inherits from FXCommand and is used to for undo/redo
 /****************************************************************************/
 #pragma once
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <fx.h>
@@ -204,6 +199,3 @@ private:
     /// @brief vector of empty generic datas
     static const std::vector<GNEGenericData*> myEmptyGenericDatas;
 };
-
-
-/****************************************************************************/

@@ -18,10 +18,6 @@
 // A network change in which a demand element element is created or deleted
 /****************************************************************************/
 #pragma once
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include "GNEChange.h"
@@ -70,6 +66,3 @@ private:
     /// @brief reference to edge path vector
     const std::vector<GNEEdge*>& myEdgePath;
 };
-
-
-/****************************************************************************/

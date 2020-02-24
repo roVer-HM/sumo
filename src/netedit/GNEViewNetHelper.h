@@ -18,11 +18,6 @@
 // A file used to reduce the size of GNEViewNet.h grouping structs and classes
 /****************************************************************************/
 #pragma once
-
-
-// ===========================================================================
-// included modules
-// ===========================================================================
 #include <config.h>
 
 #include <utils/common/SUMOVehicleClass.h>
@@ -1042,5 +1037,3 @@ struct GNEViewNetHelper {
         GNEViewNet* myViewNet;
     };
 };
-
-/****************************************************************************/
