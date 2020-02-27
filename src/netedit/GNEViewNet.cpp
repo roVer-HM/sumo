@@ -111,6 +111,7 @@ FXDEFMAP(GNEViewNet) GNEViewNetMap[] = {
     FXMAPFUNC(SEL_COMMAND, MID_GNE_DEMANDVIEWOPTIONS_LOCKPERSON,            GNEViewNet::onCmdToogleLockPerson),
     // Data view options
     FXMAPFUNC(SEL_COMMAND, MID_GNE_DATAVIEWOPTIONS_SHOWDEMANDELEMENTS,      GNEViewNet::onCmdToogleShowDemandElements),
+    FXMAPFUNC(SEL_COMMAND, MID_GNE_DATAVIEWOPTIONS_HIDESHAPES,              GNEViewNet::onCmdToogleHideShapes),
     // Select elements
     FXMAPFUNC(SEL_COMMAND, MID_ADDSELECT,                                   GNEViewNet::onCmdAddSelected),
     FXMAPFUNC(SEL_COMMAND, MID_REMOVESELECT,                                GNEViewNet::onCmdRemoveSelected),
@@ -2462,6 +2463,8 @@ GNEViewNet::onCmdToogleHideShapes(FXObject*, FXSelector sel, void*) {
     // set focus in menu check again, if this function was called clicking over menu check instead using alt+<key number>
     if (sel == FXSEL(SEL_COMMAND, MID_GNE_DEMANDVIEWOPTIONS_HIDESHAPES)) {
         myDemandViewOptions.menuCheckHideShapes->setFocus();
+    } else if (sel == FXSEL(SEL_COMMAND, MID_GNE_DATAVIEWOPTIONS_HIDESHAPES)) {
+        myDataViewOptions.menuCheckHideShapes->setFocus();
     }
     return 1;
 }
@@ -2759,6 +2762,8 @@ GNEViewNet::updateDemandModeSpecificControls() {
     myIntervalBar.hideIntervalBar();
     // hide all frames
     myViewParent->hideAllFrames();
+    // always show "hide shapes"
+    myDemandViewOptions.menuCheckHideShapes->show();
     // enable selected controls
     switch (myEditModes.demandEditMode) {
         // common modes
@@ -2769,7 +2774,6 @@ GNEViewNet::updateDemandModeSpecificControls() {
             // set checkable button
             myCommonCheckableButtons.inspectButton->setChecked(true);
             // show view options
-            myDemandViewOptions.menuCheckHideShapes->show();
             myDemandViewOptions.menuCheckHideNonInspectedDemandElements->show();
             myDemandViewOptions.menuCheckShowAllPersonPlans->show();
             myDemandViewOptions.menuCheckLockPerson->show();
@@ -2783,7 +2787,6 @@ GNEViewNet::updateDemandModeSpecificControls() {
             // set checkable button
             myCommonCheckableButtons.deleteButton->setChecked(true);
             // show view options
-            myDemandViewOptions.menuCheckHideShapes->show();
             myDemandViewOptions.menuCheckShowAllPersonPlans->show();
             myDemandViewOptions.menuCheckLockPerson->show();
             // show toolbar grip of view options
@@ -2796,7 +2799,6 @@ GNEViewNet::updateDemandModeSpecificControls() {
             // set checkable button
             myCommonCheckableButtons.selectButton->setChecked(true);
             // show view options
-            myDemandViewOptions.menuCheckHideShapes->show();
             myDemandViewOptions.menuCheckShowAllPersonPlans->show();
             myDemandViewOptions.menuCheckLockPerson->show();
             // show toolbar grip of view options
@@ -2806,7 +2808,6 @@ GNEViewNet::updateDemandModeSpecificControls() {
             // set checkable button
             myDemandCheckableButtons.moveDemandElementsButton->setChecked(true);
             // show view options
-            myDemandViewOptions.menuCheckHideShapes->show();
             myDemandViewOptions.menuCheckShowAllPersonPlans->show();
             myDemandViewOptions.menuCheckLockPerson->show();
             // show toolbar grip of view options
@@ -2820,7 +2821,6 @@ GNEViewNet::updateDemandModeSpecificControls() {
             // set checkable button
             myDemandCheckableButtons.routeButton->setChecked(true);
             // show view options
-            myDemandViewOptions.menuCheckHideShapes->show();
             myDemandViewOptions.menuCheckShowAllPersonPlans->show();
             myDemandViewOptions.menuCheckLockPerson->show();
             // show toolbar grip of view options
@@ -2833,7 +2833,6 @@ GNEViewNet::updateDemandModeSpecificControls() {
             // set checkable button
             myDemandCheckableButtons.vehicleButton->setChecked(true);
             // show view options
-            myDemandViewOptions.menuCheckHideShapes->show();
             myDemandViewOptions.menuCheckShowAllPersonPlans->show();
             myDemandViewOptions.menuCheckLockPerson->show();
             // show toolbar grip of view options
@@ -2846,7 +2845,6 @@ GNEViewNet::updateDemandModeSpecificControls() {
             // set checkable button
             myDemandCheckableButtons.vehicleTypeButton->setChecked(true);
             // show view options
-            myDemandViewOptions.menuCheckHideShapes->show();
             myDemandViewOptions.menuCheckShowAllPersonPlans->show();
             myDemandViewOptions.menuCheckLockPerson->show();
             /// show toolbar grip of view options
@@ -2859,7 +2857,6 @@ GNEViewNet::updateDemandModeSpecificControls() {
             // set checkable button
             myDemandCheckableButtons.stopButton->setChecked(true);
             // show view options
-            myDemandViewOptions.menuCheckHideShapes->show();
             myDemandViewOptions.menuCheckShowAllPersonPlans->show();
             myDemandViewOptions.menuCheckLockPerson->show();
             // show toolbar grip of view options
@@ -2872,7 +2869,6 @@ GNEViewNet::updateDemandModeSpecificControls() {
             // set checkable button
             myDemandCheckableButtons.personTypeButton->setChecked(true);
             // show view options
-            myDemandViewOptions.menuCheckHideShapes->show();
             myDemandViewOptions.menuCheckShowAllPersonPlans->show();
             myDemandViewOptions.menuCheckLockPerson->show();
             // show toolbar grip of view options
@@ -2885,7 +2881,6 @@ GNEViewNet::updateDemandModeSpecificControls() {
             // set checkable button
             myDemandCheckableButtons.personButton->setChecked(true);
             // show view options
-            myDemandViewOptions.menuCheckHideShapes->show();
             myDemandViewOptions.menuCheckShowAllPersonPlans->show();
             myDemandViewOptions.menuCheckLockPerson->show();
             // show toolbar grip of view options
@@ -2898,7 +2893,6 @@ GNEViewNet::updateDemandModeSpecificControls() {
             // set checkable button
             myDemandCheckableButtons.personPlanButton->setChecked(true);
             // show view options
-            myDemandViewOptions.menuCheckHideShapes->show();
             myDemandViewOptions.menuCheckShowAllPersonPlans->show();
             myDemandViewOptions.menuCheckLockPerson->show();
             // show toolbar grip of view options
@@ -2938,8 +2932,9 @@ GNEViewNet::updateDataModeSpecificControls() {
     myIntervalBar.showIntervalBar();
     // hide all frames
     myViewParent->hideAllFrames();
-    // In data mode, always show option "show demand elements"
+    // In data mode, always show option "show demand elements" and "hide shapes"
     myDataViewOptions.menuCheckShowDemandElements->show();
+    myDataViewOptions.menuCheckHideShapes->show();
     // enable selected controls
     switch (myEditModes.dataEditMode) {
         // common modes
@@ -2950,7 +2945,6 @@ GNEViewNet::updateDataModeSpecificControls() {
             myCommonCheckableButtons.inspectButton->setChecked(true);
             // show view options
             /*
-            myDataViewOptions.menuCheckHideShapes->show();
             myDataViewOptions.menuCheckHideNonInspectedDataElements->show();
             myDataViewOptions.menuCheckShowAllPersonPlans->show();
             myDataViewOptions.menuCheckLockPerson->show();
@@ -2965,7 +2959,6 @@ GNEViewNet::updateDataModeSpecificControls() {
             myCommonCheckableButtons.deleteButton->setChecked(true);
             // show view options
             /*
-            myDataViewOptions.menuCheckHideShapes->show();
             myDataViewOptions.menuCheckShowAllPersonPlans->show();
             myDataViewOptions.menuCheckLockPerson->show();
             */
@@ -2979,7 +2972,6 @@ GNEViewNet::updateDataModeSpecificControls() {
             myCommonCheckableButtons.selectButton->setChecked(true);
             // show view options
             /*
-            myDataViewOptions.menuCheckHideShapes->show();
             myDataViewOptions.menuCheckShowAllPersonPlans->show();
             myDataViewOptions.menuCheckLockPerson->show();
             */
@@ -2994,7 +2986,6 @@ GNEViewNet::updateDataModeSpecificControls() {
             myDataCheckableButtons.edgeDataButton->setChecked(true);
             // show view options
             /*
-            myDemandViewOptions.menuCheckHideShapes->show();
             myDemandViewOptions.menuCheckShowAllEdgeDatas->show();
             myDemandViewOptions.menuCheckLockPerson->show();
             */
