@@ -12,6 +12,7 @@ permalink: /ChangeLog/
   - Fixed sublane model bug that was causing invalid lane alignment in multimodal networks. Issue #6691
   - Fixed crash when depart-triggered vehicles were discarded. Issue #6690
   - Fixed train reversal ahead of stop. Issue #6692
+  - Train routing now considers space requirement for train reversal. Issue #6697
   - Removed invalid warning for public transport users. Issue #6698
 - MESO
   - Calibrator attribute `vTypes` is now working. Issue #6702
@@ -21,6 +22,9 @@ permalink: /ChangeLog/
   - fixed layout of meso edge parameter dialog at high occupancy (regression in 1.5.0)
 - DUAROUTER
   - Attribute `group` of `<ride>` and `<personTrip>` is no longer lost. Issue #6555
+  - Train routing now considers space requirement for train reversal. Issue #6697
+- Tools
+  - [sort_routes.py](Tools/Routes.md#sort_routespy) can now handle trips, triggered vehicles and human-readable times.
 
 ### Enhancements
 - Simulation
@@ -38,6 +42,7 @@ permalink: /ChangeLog/
   - [Meso simulation](Simulation/Meso.md) now supports TraCI
 - Tools
   - added osmWebWizard option to import a simplified network that is only for cars. Issue #6595
+  - [matsim_impportPlans.py](Tools/Import/MATSim.md#matsim_importplanspy) now supports alternative input dialects and sorts its output.  
   - added new tool [net2kml.py](Tools/Net.md#net2kmlpy) to convert sumo networks to KML
   - [routeSampler.py](Tools/Turns.md#routesampler.py) improvements
     - supports optimization by linear programming using option **--optimize** (requires scipy)

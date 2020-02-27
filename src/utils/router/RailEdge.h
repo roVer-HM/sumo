@@ -20,6 +20,10 @@
 #include <config.h>
 #include <cassert>
 
+//#define RailEdge_DEBUG_TURNS
+//#define RailEdge_DEBUG_SUCCESSORS
+#define RailEdge_DEBUGID ""
+#define RailEdge_DEBUG_COND(obj) ((obj != 0 && (obj)->getID() == RailEdge_DEBUGID))
 
 // ===========================================================================
 // class definitions
@@ -92,7 +96,12 @@ public:
                             viaPair.second == nullptr ? nullptr : viaPair.second->getRailwayRoutingEdge()));
             }
         }
-        //std::cout << "railEdges::init " << getID() << " myViaSuccessors=" << myViaSuccessors.size() << " origSuccessors=" << myOriginal->getViaSuccessors().size() << "\n";
+#ifdef RailEdge_DEBUG_TURNS
+        std::cout << "RailEdge " << getID() << " successors=" << myViaSuccessors.size() << " orig=" << myOriginal->getViaSuccessors().size() << "\n";
+        for (const auto& viaPair : myViaSuccessors) {
+            std::cout << "    " << viaPair.first->getID() << "\n";
+        }
+#endif
     }
 
     /// @brief Returns the index (numeric id) of the edge
@@ -150,6 +159,11 @@ public:
     }
 
     inline bool prohibits(const V* const vehicle) const {
+#ifdef RailEdge_DEBUG_TURNS
+        if (myOriginal == nullptr && RailEdge_DEBUG_COND(vehicle)) {
+            std::cout << getID() << " maxLength=" << myMaxLength << " veh=" << vehicle->getID() << " length=" << vehicle->getLength() << "\n";
+        }
+#endif
         return vehicle->getLength() > myMaxLength || (myOriginal != nullptr && myOriginal->prohibits(vehicle));
     }
 
