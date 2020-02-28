@@ -255,6 +255,7 @@ MSTrafficLightLogic::init(NLDetectorBuilder&) {
             }
         }
     }
+    myNumLinks = (int)myLinks.size();
 }
 
 
