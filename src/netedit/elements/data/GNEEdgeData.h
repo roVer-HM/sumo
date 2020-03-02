@@ -43,6 +43,9 @@ public:
     /// @brief Destructor
     ~GNEEdgeData();
 
+    /// @brief get generic data color
+    const RGBColor &getColor() const;
+
     /// @brief update pre-computed geometry information
     void updateGeometry();
 
