@@ -166,6 +166,10 @@ MEVehicle::isOnRoad() const {
     return getSegment() != nullptr;
 }
 
+bool
+MEVehicle::isIdling() const {
+    return false;
+}
 
 bool
 MEVehicle::isParking() const {
@@ -447,8 +451,7 @@ MEVehicle::getBaseInfluencer() const {
 void
 MEVehicle::onRemovalFromNet(const MSMoveReminder::Notification reason) {
     MSGlobals::gMesoNet->removeLeaderCar(this);
-    MESegment* target = reason == MSMoveReminder::NOTIFICATION_VAPORIZED ? MESegment::getVaporizationTarget() : nullptr;
-    MSGlobals::gMesoNet->changeSegment(this, MSNet::getInstance()->getCurrentTimeStep(), target);
+    MSGlobals::gMesoNet->changeSegment(this, MSNet::getInstance()->getCurrentTimeStep(), nullptr, reason);
 }
 
 void
