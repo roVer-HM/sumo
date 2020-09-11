@@ -11,11 +11,11 @@
 // https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
-/// @file    GNEParametersDialog.h
+/// @file    GNEMultipleParametersDialog.h
 /// @author  Pablo Alvarez Lopez
-/// @date    Jul 2018
+/// @date    Sep 2020
 ///
-// Dialog for edit parameters
+// Dialog for edit multiple parameters
 /****************************************************************************/
 #pragma once
 #include <config.h>
@@ -36,12 +36,12 @@ class GNEViewNet;
 // ===========================================================================
 
 /**
- * @class GNEParametersDialog
+ * @class GNEMultipleParametersDialog
  * @brief Dialog for edit  parameters
  */
-class GNEParametersDialog : public FXDialogBox {
+class GNEMultipleParametersDialog : public FXDialogBox {
     /// @brief FOX-declaration
-    FXDECLARE(GNEParametersDialog)
+    FXDECLARE(GNEMultipleParametersDialog)
 
 public:
 
@@ -51,11 +51,11 @@ public:
 
     class ParametersValues : protected FXGroupBox {
         /// @brief FOX-declaration
-        FXDECLARE(GNEParametersDialog::ParametersValues)
+        FXDECLARE(GNEMultipleParametersDialog::ParametersValues)
 
     public:
         /// @brief constructor
-        ParametersValues(FXHorizontalFrame* frame, GNEParametersDialog* ParameterDialogParent);
+        ParametersValues(FXHorizontalFrame* frame, GNEMultipleParametersDialog* ParameterDialogParent);
 
         /// @brief destructor
         ~ParametersValues();
@@ -137,7 +137,7 @@ public:
         std::vector<ParameterRow*> myParameterRows;
 
         /// @brief pointer to ParameterDialog parent
-        GNEParametersDialog* myParameterDialogParent;
+        GNEMultipleParametersDialog* myParameterDialogParent;
     };
 
     // ===========================================================================
@@ -146,11 +146,11 @@ public:
 
     class ParametersOptions : protected FXGroupBox {
         /// @brief FOX-declaration
-        FXDECLARE(GNEParametersDialog::ParametersOptions)
+        FXDECLARE(GNEMultipleParametersDialog::ParametersOptions)
 
     public:
         /// @brief constructor
-        ParametersOptions(FXHorizontalFrame* frame, GNEParametersDialog* ParameterDialogParent);
+        ParametersOptions(FXHorizontalFrame* frame, GNEMultipleParametersDialog* ParameterDialogParent);
 
         /// @brief destructor
         ~ParametersOptions();
@@ -205,7 +205,7 @@ public:
         };
 
         /// @brief pointer to Shape Frame Parent
-        GNEParametersDialog* myParameterDialogParent;
+        GNEMultipleParametersDialog* myParameterDialogParent;
 
         /// @brief sort button
         FXButton* mySortButton;
@@ -224,10 +224,10 @@ public:
     };
 
     /// @brief Constructor
-    GNEParametersDialog(GNEFrameAttributesModuls::ParametersEditor* ParametersEditor);
+    GNEMultipleParametersDialog(GNEFrameAttributesModuls::ParametersEditor* ParametersEditor);
 
     /// @brief destructor
-    ~GNEParametersDialog();
+    ~GNEMultipleParametersDialog();
 
     /// @name FOX-callbacks
     /// @{
@@ -242,7 +242,7 @@ public:
     /// @}
 
 protected:
-    FOX_CONSTRUCTOR(GNEParametersDialog)
+    FOX_CONSTRUCTOR(GNEMultipleParametersDialog)
 
     /// @brief pointer to ParametersEditor
     GNEFrameAttributesModuls::ParametersEditor* myParametersEditor;
@@ -270,9 +270,9 @@ protected:
 
 private:
     /// @brief Invalidated copy constructor.
-    GNEParametersDialog(const GNEParametersDialog&) = delete;
+    GNEMultipleParametersDialog(const GNEMultipleParametersDialog&) = delete;
 
     /// @brief Invalidated assignment operator.
-    GNEParametersDialog& operator=(const GNEParametersDialog&) = delete;
+    GNEMultipleParametersDialog& operator=(const GNEMultipleParametersDialog&) = delete;
 };
 

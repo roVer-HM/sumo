@@ -5,8 +5,10 @@ set(netedit_dialogs_SRCS
    GNEAbout.cpp
    GNEAllowDisallow.h
    GNEAllowDisallow.cpp
-   GNEParametersDialog.h
-   GNEParametersDialog.cpp
+   GNESingleParametersDialog.h
+   GNESingleParametersDialog.cpp
+   GNEMultipleParametersDialog.h
+   GNEMultipleParametersDialog.cpp
    GNEFixAdditionalElements.h
    GNEFixAdditionalElements.cpp
    GNEFixDemandElements.h
