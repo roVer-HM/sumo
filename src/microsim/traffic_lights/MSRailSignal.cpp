@@ -207,6 +207,11 @@ MSRailSignal::constraintsAllow(const SUMOVehicle* veh) const {
         if (it != myConstraints.end()) {
             for (MSRailSignalConstraint* c : it->second) {
                 if (!c->cleared()) {
+#ifdef DEBUG_SIGNALSTATE
+                    if (gDebugFlag4) {
+                        std::cout << "  constraint '" << c->getDescription() << "' not cleared\n";
+                    }
+#endif
                     return false;
                 }
             }
@@ -367,6 +372,9 @@ MSRailSignal::hasOncomingRailTraffic(MSLink* link) {
                 //std::cout << SIMTIME <<< " hasOncomingRailTraffic link=" << getTLLinkID(link) << " dwRoute=" << toString(dw.myRoute) << " bidi=" << toString(dw.myBidi) << "\n";
                 for (MSLane* lane : dw.myBidi) {
                     if (!lane->isEmpty()) {
+#ifdef DEBUG_SIGNALSTATE
+                        if (DEBUG_HELPER(rs)) std::cout << " oncoming vehicle on bidi-lane " << lane->getID() << "\n";;
+#endif
                         return true;
                     }
                 }
@@ -374,6 +382,9 @@ MSRailSignal::hasOncomingRailTraffic(MSLink* link) {
                     if (!lane->isEmpty()) {
                         MSVehicle* veh = lane->getFirstAnyVehicle();
                         if (std::find(veh->getCurrentRouteEdge(), veh->getRoute().end(), bidi) != veh->getRoute().end()) {
+#ifdef DEBUG_SIGNALSTATE
+                            if (DEBUG_HELPER(rs)) std::cout << " oncoming vehicle on flank-lane " << lane->getID() << "\n";;
+#endif
                             return true;
                         }
                     }
@@ -382,7 +393,11 @@ MSRailSignal::hasOncomingRailTraffic(MSLink* link) {
                     if (foeLink->getApproaching().size() != 0) {
                         Approaching closest = getClosest(foeLink);
                         const SUMOVehicle* veh = closest.first;
-                        if (std::find(veh->getCurrentRouteEdge(), veh->getRoute().end(), bidi) != veh->getRoute().end()) {
+                        if (veh->getSpeed() > 0 && closest.second.arrivalSpeedBraking > 0
+                                && std::find(veh->getCurrentRouteEdge(), veh->getRoute().end(), bidi) != veh->getRoute().end()) {
+#ifdef DEBUG_SIGNALSTATE
+                            if (DEBUG_HELPER(rs)) std::cout << " oncoming vehicle approaching foe link " << foeLink->getDescription() << "\n";
+#endif
                             return true;
                         }
                     }
@@ -654,6 +669,8 @@ MSRailSignal::DriveWay::hasLinkConflict(const Approaching& veh, MSLink* foeLink)
                 if (gDebugFlag4) {
                     if (foeDriveWay.conflictLaneOccupied("", false)) {
                         std::cout << "     foe blocked\n";
+                    } else if (!foeRS->constraintsAllow(foe.first)) {
+                        std::cout << "     foe constrained\n";
                     } else {
                         std::cout << "     no overlap\n";
                     }
