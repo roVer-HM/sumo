@@ -55,6 +55,9 @@ public:
     /// @brief register the given transportable
     MSTransportableStateAdapter* add(MSTransportable* transportable, MSStageMoving* stage, SUMOTime now);
 
+    /// @brief load the state of the given transportable
+    MSTransportableStateAdapter* loadState(MSTransportable* transportable, MSStageMoving* stage, std::istringstream& in);
+
     /// @brief remove the specified person from the pedestrian simulation
     void remove(MSTransportableStateAdapter* state);
 
@@ -100,7 +103,7 @@ private:
     /// @brief implementation of callbacks to retrieve various state information from the model
     class PState : public MSTransportableStateAdapter {
     public:
-        PState(MoveToNextEdge* cmd): myCommand(cmd) {};
+        PState(MoveToNextEdge* cmd, std::istringstream* in = nullptr);
 
         /// @brief abstract methods inherited from PedestrianState
         /// @{
@@ -114,10 +117,18 @@ private:
         /// @}
 
         /// @brief compute walking time on edge and update state members
-        SUMOTime computeWalkingTime(const MSEdge* prev, const MSStageMoving& stage, SUMOTime currentTime);
-        MoveToNextEdge* getCommand() {
+        virtual SUMOTime computeDuration(const MSEdge* prev, const MSStageMoving& stage, SUMOTime currentTime);
+        MoveToNextEdge* getCommand() const {
             return myCommand;
         }
+
+        SUMOTime getEventTime() const {
+            return myLastEntryTime + myCurrentDuration;
+        }
+
+        /** @brief Saves the current state into the given stream
+         */
+        void saveState(std::ostringstream& out);
 
     protected:
         SUMOTime myLastEntryTime;
@@ -130,7 +141,7 @@ private:
 
     class CState : public PState {
     public:
-        CState(MoveToNextEdge* cmd) : PState(cmd) {};
+        CState(MoveToNextEdge* cmd, std::istringstream* in = nullptr);
 
         /// @brief the offset for computing container positions when being transhiped
         static const double LATERAL_OFFSET;
@@ -140,7 +151,7 @@ private:
         /// @brief return the direction in which the container heading to
         double getAngle(const MSStageMoving& stage, SUMOTime now) const;
         /// @brief compute tranship time on edge and update state members
-        SUMOTime computeTranshipTime(const MSEdge* prev, const MSStageMoving& stage, SUMOTime currentTime);
+        SUMOTime computeDuration(const MSEdge* prev, const MSStageMoving& stage, SUMOTime currentTime);
 
     private:
         Position myCurrentBeginPosition;  //the position the container is moving from during its tranship stage

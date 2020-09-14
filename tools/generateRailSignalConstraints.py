@@ -52,6 +52,12 @@ def get_options(args=None):
                         help="Output additional file")
     #parser.add_argument("--arrivals", action="store_true", default=False,
     #                    help="Use stop arrival time instead of 'until' time for sorting")
+    #parser.add_argument("-p", "--ignore-parking", dest="ignoreParking", action="store_true", default=False,
+    #                    help="Do not create constraints after a parking stop")
+    parser.add_argument("--comment.line", action="store_true", dest="commentLine", default=False,
+                        help="add lines of involved trains in comment")
+    parser.add_argument("--comment.id", action="store_true", dest="commentId", default=False,
+                        help="add ids of involved trains in comment (when different from tripId)")
     parser.add_argument("-v", "--verbose", action="store_true", default=False,
                         help="tell me what you are doing")
     parser.add_argument("--debug-switch", dest="debugSwitch",
@@ -98,7 +104,6 @@ def getStopRoutes(options, stopEdges):
         return: setOfUniqueRoutes, busstopDict
     """
     uniqueRoutes = set()
-    ignored = set()
     stopRoutes = defaultdict(list) # busStop -> [(edges, stopObj), ....]
     numRoutes = 0
     numStops = 0
@@ -109,20 +114,22 @@ def getStopRoutes(options, stopEdges):
         lastIndex = -1
         routeIndex = 0
         tripId = vehicle.id
+        line = vehicle.getAttributeSecure("line", "")
         for stop in vehicle.stop:
             numStops += 1
             if stop.busStop is None:
-                if not stop.lane in ignored:
-                    print("ignoring stop on lane '%s'" % stop.lane)
-                    ignored.add(stop.lane)
-                continue
+                stop.setAttribute("busStop", stop.lane)
+                stopEdges[stop.lane] = sumolib._laneID2edgeID(stop.lane)
             stopEdge = stopEdges[stop.busStop]
             while edges[routeIndex] != stopEdge:
                 routeIndex += 1
                 assert(routeIndex < len(edges))
             edgesBefore = edges[lastIndex + 1: routeIndex + 1]
-            tripId = stop.getAttributeSecure("tripId", tripId)
             stop.setAttribute("prevTripId", tripId)
+            stop.setAttribute("prevLine", line)
+            stop.setAttribute("vehID", vehicle.id)
+            tripId = stop.getAttributeSecure("tripId", tripId)
+            line = stop.getAttributeSecure("line", line)
             stopRoutes[stop.busStop].append((edgesBefore, stop))
             lastIndex = routeIndex
 
@@ -210,10 +217,10 @@ def findConflicts(options, switchRoutes, mergeSignals):
                 nSignal, nTime = mergeSignals[(switch, nEdges)]
                 if switch == options.debugSwitch:
                     print(pSignal, nSignal, pStop, nStop)
-                if pSignal != nSignal:
+                if pSignal != nSignal and pSignal is not None and nSignal is not None:
                     numConflicts += 1
                     numSwitchConflicts += 1
-                    conflicts[nSignal].append((nStop.prevTripId, pSignal, pStop.prevTripId))
+                    conflicts[nSignal].append((nStop.prevTripId, pSignal, pStop.prevTripId, nStop.prevLine, pStop.prevLine, nStop.vehID, pStop.vehID))
         if options.verbose:
             print("Found %s conflicts at switch %s" % (numSwitchConflicts, switch))
 
@@ -223,9 +230,22 @@ def findConflicts(options, switchRoutes, mergeSignals):
         sumolib.writeXMLHeader(outf, "$Id$", "additional")  # noqa
         for signal in sorted(conflicts.keys()):
             outf.write('    <railSignalConstraints id="%s">\n' % signal)
-            for tripID, otherSignal, otherTripID in conflicts[signal]:
-                outf.write('        <predecessor tripId="%s" tl="%s" foes="%s"/>\n' % (
-                    tripID, otherSignal, otherTripID))
+            for tripID, otherSignal, otherTripID, line, otherLine, vehID, otherVehID in conflicts[signal]:
+                comment = ""
+                if options.commentLine:
+                    if line != "":
+                        comment += "line=%s " % line
+                    if otherLine != "":
+                        comment += "foeLine=%s " % otherLine
+                if options.commentId:
+                    if vehID != tripID:
+                        comment += "vehID=%s " % vehID
+                    if otherVehID != otherTripID:
+                        comment += "foeID=%s " % otherVehID
+                if comment != "":
+                    comment = "   <!-- %s -->" % comment
+                outf.write('        <predecessor tripId="%s" tl="%s" foes="%s"/>%s\n' % (
+                    tripID, otherSignal, otherTripID, comment))
             outf.write('    </railSignalConstraints>\n')
         outf.write('</additional>\n')
 
