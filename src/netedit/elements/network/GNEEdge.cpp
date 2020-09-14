@@ -519,7 +519,7 @@ GNEEdge::drawGL(const GUIVisualizationSettings& s) const {
     drawEdgeName(s);
     // draw dotted contours
     if (myLanes.size() > 1) {
-        if (s.drawDottedContour() || (myNet->getViewNet()->getInspectedAttributeCarrier() == this)) {
+        if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {
             GNEGeometry::drawDottedContourEdge(GNEGeometry::DottedContourType::INSPECT, s, this, true, true);
         }
         if (s.drawDottedContour() || (myNet->getViewNet()->getFrontAttributeCarrier() == this)) {
@@ -633,7 +633,7 @@ GNEEdge::setGeometry(PositionVector geom, bool inner) {
     // invalidate junction destiny shape
     getParentJunctions().back()->invalidateShape();
     // iterate over second parent junction edges and update geometry
-    for (const auto& edge : getParentJunctions().front()->getGNEIncomingEdges()) {
+    for (const auto& edge : getParentJunctions().back()->getGNEIncomingEdges()) {
         edge->updateGeometry();
     }
     for (const auto& edge : getParentJunctions().back()->getGNEOutgoingEdges()) {
@@ -1332,6 +1332,13 @@ GNEEdge::drawEdgeGeometryPoints(const GUIVisualizationSettings& s, const GNELane
             glPopMatrix();
         }
     }
+}
+
+
+void 
+GNEEdge::setMoveGeometry(const GNEGeometry::Geometry& newGeometry) {
+    // just set entire geometry
+    setGeometry(newGeometry.getShape(), false);
 }
 
 // ===========================================================================
