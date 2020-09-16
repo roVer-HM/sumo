@@ -1345,8 +1345,9 @@ NBNode::computeLanes2Lanes() {
                             for (int i2 = 0; i2 < (int)currentOutgoing->getNumLanes(); i2++) {
                                 if ((currentOutgoing->getPermissions(i2) & SVC_BICYCLE) != 0) {
                                     // possibly a double-connection
-                                    // XXX could use 'true' here but this requires additional work on tls generation
-                                    incoming->setConnection(i, currentOutgoing, i2, NBEdge::Lane2LaneInfoType::COMPUTED, false);
+                                    const bool allowDouble = (incoming->getPermissions(i) == SVC_BICYCLE
+                                            && (dir == LinkDirection::RIGHT || dir == LinkDirection::PARTRIGHT || dir == LinkDirection::STRAIGHT));
+                                    incoming->setConnection(i, currentOutgoing, i2, NBEdge::Lane2LaneInfoType::COMPUTED, allowDouble);
                                     builtConnection = true;
                                     break;
                                 }
@@ -1865,6 +1866,15 @@ NBNode::rightTurnConflict(const NBEdge* from, const NBEdge* to, int fromLane,
     }
 }
 
+bool
+NBNode::mergeConflictYields(const NBEdge* from, int fromLane, int fromLaneFoe, NBEdge* to, int toLane) const {
+    if (myRequest == nullptr) {
+        return false;
+    }
+    NBEdge::Connection con = from->getConnection(fromLane, to, toLane);
+    NBEdge::Connection prohibitorCon = from->getConnection(fromLaneFoe, to, toLane);
+    return myRequest->mergeConflict(from, con, from, prohibitorCon, false);
+}
 
 bool
 NBNode::turnFoes(const NBEdge* from, const NBEdge* to, int fromLane,
