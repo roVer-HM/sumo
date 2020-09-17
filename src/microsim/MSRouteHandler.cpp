@@ -253,7 +253,7 @@ MSRouteHandler::myStartElement(int element,
                         throw ProcessError("The to edge '" + toID + "' within a ride of person '" + pid + "' is not known.");
                     }
                 }
-                const std::string group = attrs.getOpt<std::string>(SUMO_ATTR_GROUP, pid.c_str(), ok, pid);
+                const std::string group = attrs.getOpt<std::string>(SUMO_ATTR_GROUP, pid.c_str(), ok, getDefaultGroup(pid));
                 const std::string intendedVeh = attrs.getOpt<std::string>(SUMO_ATTR_INTENDED, nullptr, ok, "");
                 const SUMOTime intendedDepart = attrs.getOptSUMOTimeReporting(SUMO_ATTR_DEPART, nullptr, ok, -1);
                 arrivalPos = SUMOVehicleParameter::interpretEdgePos(arrivalPos, to->getLength(), SUMO_ATTR_ARRIVALPOS, "person '" + pid + "' riding to edge '" + to->getID() + "'");
@@ -1335,6 +1335,7 @@ MSRouteHandler::addPersonTrip(const SUMOSAXAttributes& attrs) {
     parseWalkPositions(attrs, myVehicleParameter->id, from, to, departPos, arrivalPos, stoppingPlace, nullptr, ok);
 
     const std::string modes = attrs.getOpt<std::string>(SUMO_ATTR_MODES, id, ok, "");
+    const std::string group = attrs.getOpt<std::string>(SUMO_ATTR_GROUP, id, ok, getDefaultGroup(id));
     SVCPermissions modeSet = 0;
     std::string errorMsg;
     // try to parse person modes
@@ -1366,7 +1367,9 @@ MSRouteHandler::addPersonTrip(const SUMOSAXAttributes& attrs) {
         }
         myVehicleParameter->parametersSet |= VEHPARS_FORCE_REROUTE;
         MSStoppingPlace* fromStop = myActivePlan->empty() ? nullptr : myActivePlan->back()->getDestinationStop();
-        myActivePlan->push_back(new MSStageTrip(from, fromStop, to == nullptr ? &stoppingPlace->getLane().getEdge() : to, stoppingPlace, duration, modeSet, types, speed, walkFactor, departPosLat, attrs.hasAttribute(SUMO_ATTR_ARRIVALPOS), arrivalPos));
+        myActivePlan->push_back(new MSStageTrip(from, fromStop, to == nullptr ? &stoppingPlace->getLane().getEdge() : to,
+                    stoppingPlace, duration, modeSet, types, speed, walkFactor, group,
+                    departPosLat, attrs.hasAttribute(SUMO_ATTR_ARRIVALPOS), arrivalPos));
     }
     myActiveRoute.clear();
 }
@@ -1458,5 +1461,10 @@ void
 MSRouteHandler::addTranship(const SUMOSAXAttributes& /*attrs*/) {
 }
 
+std::string
+MSRouteHandler::getDefaultGroup(const std::string& personID) {
+    const std::string defaultGroup = OptionsCont::getOptions().getString("persontrip.default.group");
+    return defaultGroup == "" ? personID : defaultGroup;
+}
 
 /****************************************************************************/
