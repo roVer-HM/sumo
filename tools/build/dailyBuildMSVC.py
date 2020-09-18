@@ -94,7 +94,7 @@ def runTests(options, env, gitrev, log, debugSuffix=""):
     # provide more information than just the date:
     fullOpt = ["-b", prefix, "-name", "%sr%s" %
                (datetime.date.today().strftime("%d%b%y"), gitrev)]
-    ttBin = "texttestc.py"
+    ttBin = "texttest"
     if options.suffix == "extra":
         runExtraTests.run(debugSuffix, fullOpt, log, True, True, debugSuffix == "")
     else:
@@ -107,8 +107,8 @@ def runTests(options, env, gitrev, log, debugSuffix=""):
     killall(debugSuffix)
 
 
-def generateCMake(generator, log, checkOptionalLibs, python):
-    buildDir = os.path.join(env["SUMO_HOME"], "build", "cmake-build-" + generator.replace(" ", "-"))
+def generateCMake(generator, platform, log, checkOptionalLibs, python):
+    buildDir = os.path.join(env["SUMO_HOME"], "build", "cmake-build-" + platform)
     cmakeOpt = ["-DCOMPILE_DEFINITIONS=MSVC_TEST_SERVER",
                 "-DDEFAULT_LIBSUMO_PYTHON=False",
                 "-DCHECK_OPTIONAL_LIBS=%s" % checkOptionalLibs]
@@ -122,9 +122,9 @@ def generateCMake(generator, log, checkOptionalLibs, python):
         shutil.rmtree(buildDir)
     os.makedirs(buildDir)
     status.printLog("Creating solution for %s." % generator, log)
-    subprocess.call(["cmake", "../..", "-G", generator] + cmakeOpt, cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
+    subprocess.call(["cmake", "../..", "-G", generator, "-A", platform] + cmakeOpt,
+                    cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
     return buildDir
-
 
 optParser = optparse.OptionParser()
 optParser.add_option("-r", "--root-dir", dest="rootDir",
@@ -141,6 +141,8 @@ optParser.add_option("-n", "--no-tests", dest="tests", action="store_false",
 optParser.add_option("-x", "--x64only", action="store_true",
                      default=False, help="skip Win32 and debug build (as well as netedit tests)")
 optParser.add_option("-p", "--python", help="path to python interpreter to use")
+optParser.add_option("-c", "--msvc-version", default="msvc12",
+                     help="Visual Studio version to use (either msvc12 or msvc16)")
 optParser.add_option("-u", "--repositories", default="git",
                      help="repositories to update")
 (options, args) = optParser.parse_args()
@@ -154,7 +156,6 @@ if "SUMO_HOME" not in env:
         os.path.dirname(os.path.dirname(__file__)))
 env["PYTHON"] = "python"
 env["SMTP_SERVER"] = "smtprelay.dlr.de"
-msvcVersion = "msvc12"
 
 maxTime = 0
 sumoAllZip = None
@@ -163,7 +164,7 @@ for fname in glob.glob(os.path.join(options.remoteDir, "sumo-all-*.zip")):
         maxTime = os.path.getmtime(fname)
         sumoAllZip = fname
 for platform in (["x64"] if options.x64only else ["Win32", "x64"]):
-    env["FILEPREFIX"] = msvcVersion + options.suffix + platform
+    env["FILEPREFIX"] = options.msvc_version + options.suffix + platform
     prefix = os.path.join(options.remoteDir, env["FILEPREFIX"])
     makeLog = prefix + "Release.log"
     makeAllLog = prefix + "Debug.log"
@@ -182,23 +183,23 @@ for platform in (["x64"] if options.x64only else ["Win32", "x64"]):
             pass
     # we need to use io.open here due to http://bugs.python.org/issue16273
     with io.open(makeLog, 'a') as log:
-        status.printLog("Running %s build using python %s." % (msvcVersion, sys.version), log)
+        status.printLog("Running %s build using python %s." % (options.msvc_version, sys.version), log)
         gitrev = repositoryUpdate(options, log)
-        generator = "Visual Studio 12 2013"
-        if platform == "x64":
-            generator += " Win64"
-        buildDir = generateCMake(generator, log, options.suffix == "extra", options.python)
+        generator = "Visual Studio " + ("12 2013" if options.msvc_version == "msvc12" else "16 2019")
+        buildDir = generateCMake(generator, platform, log, options.suffix == "extra", options.python)
         ret = subprocess.call(["cmake", "--build", ".", "--config", "Release"],
                               cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
         if os.path.exists(os.path.join("src", "libsumo", "_libsumo.vcxproj")):
-            ret = subprocess.call(["cmake", "--build", ".", "--target", "_libsumo"],
-                                  cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
-        ret = subprocess.call(["cmake", "--build", ".", "--target", "lisum-gui"],
-                              cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
+            subprocess.call(["cmake", "--build", ".", "--target", "_libsumo"],
+                            cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
+        subprocess.call(["cmake", "--build", ".", "--target", "lisum-gui"],
+                        cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
+        plat = platform.lower().replace("x", "win")
+        if options.msvc_version != "msvc12":
+            plat += options.msvc_version
         if ret == 0 and sumoAllZip:
             try:
-                binaryZip = sumoAllZip.replace("-all-", "-%s%s-" %
-                                               (platform.lower().replace("x", "win"), options.suffix))
+                binaryZip = sumoAllZip.replace("-all-", "-%s%s-" % (plat, options.suffix))
                 zipf = zipfile.ZipFile(binaryZip, 'w', zipfile.ZIP_DEFLATED)
                 srcZip = zipfile.ZipFile(sumoAllZip)
                 write = False
@@ -262,8 +263,7 @@ for platform in (["x64"] if options.x64only else ["Win32", "x64"]):
             if ret == 0 and sumoAllZip:
                 status.printLog("Creating sumoDebug.zip.", debugLog)
                 try:
-                    debugZip = sumoAllZip.replace("-all-", "-%s%sDebug-" %
-                                                  (platform.lower().replace("x", "win"), options.suffix))
+                    debugZip = sumoAllZip.replace("-all-", "-%s%sDebug-" % (plat, options.suffix))
                     zipf = zipfile.ZipFile(debugZip, 'w', zipfile.ZIP_DEFLATED)
                     for ext in ("*D.exe", "*.dll", "*D.pdb"):
                         for f in glob.glob(os.path.join(options.rootDir, options.binDir, ext)):
