@@ -57,6 +57,8 @@ def get_options(args=None):
     #                    help="Use stop arrival time instead of 'until' time for sorting")
     #parser.add_argument("-p", "--ignore-parking", dest="ignoreParking", action="store_true", default=False,
     #                    help="Do not create constraints after a parking stop")
+    parser.add_argument("-d", "--delay", default="0",
+                        help="Assume given maximum delay when computing the number of intermediate vehicles that pass a given signal (for setting limit)")
     parser.add_argument("--comment.line", action="store_true", dest="commentLine", default=False,
                         help="add lines of involved trains in comment")
     parser.add_argument("--comment.id", action="store_true", dest="commentId", default=False,
@@ -87,6 +89,8 @@ def get_options(args=None):
         sys.stdout.flush()
         subprocess.call(args)
         sys.stdout.flush()
+
+    options.delay = parseTime(options.delay)
 
     return options
 
@@ -219,6 +223,7 @@ def findStopsAfterMerge(net, stopRoutes, mergeSwitches):
 
 def computeSignalTimes(options, net, stopRoutes):
     signalTimes = defaultdict(list) # signal -> [(timeAtSignal, stop), ...]
+    debugInfo = []
     for busStop, stops in stopRoutes.items():
         for edgesBefore, stop in stops:
             if stop.hasAttribute("arrival"):
@@ -238,13 +243,21 @@ def computeSignalTimes(options, net, stopRoutes):
                             timeAtSignal = arrival - ttSignalStop
                             signalTimes[signal].append((timeAtSignal, stop))
                             if signal == options.debugSignal:
-                                print("Route past signal %s to stop %s arrival=%s ttSignalStop=%s timeAtSignal=%s edges=%s" % (
-                                    signal, stop.busStop, arrival, ttSignalStop, timeAtSignal, edgesBefore))
+                                debugInfo.append((timeAtSignal,
+                                    "%s vehID=%s prevTripId=%s passes signal %s to stop %s arrival=%s ttSignalStop=%s edges=%s" % (
+                                        humanReadableTime(timeAtSignal),
+                                        stop.vehID, stop.prevTripId,
+                                        signal, stop.busStop,
+                                        humanReadableTime(arrival), ttSignalStop,
+                                        edgesBefore)))
                             break
     for signal in signalTimes.keys():
         signalTimes[signal] = sorted(signalTimes[signal])
 
     if options.debugSignal in signalTimes:
+        debugInfo.sort()
+        for t, info in debugInfo:
+            print(info)
         busStops = set([s.busStop for a, s in signalTimes[options.debugSignal]])
         arrivals = [a for a,s in signalTimes[options.debugSignal]]
         print("Signal %s is passed %s times between %s and %s on approach to stops %s" % (
@@ -303,7 +316,13 @@ def findConflicts(options, switchRoutes, mergeSignals, signalTimes):
                     limit = 1
                     pTimeAtSignal = pArrival - pTimeSiSt
                     nTimeAtSignal = nArrival - nTimeSiSt
-                    limit += countPassingTrainsToOtherStops(options, pSignal, busStop, pTimeAtSignal, nTimeAtSignal, signalTimes)
+                    end = nTimeAtSignal + options.delay
+                    if options.verbose and options.debugSignal == pSignal:
+                        print("check vehicles between %s and %s (including delay %s) at signal %s pStop=%s nStop=%s" % (
+                            humanReadableTime(pTimeAtSignal),
+                            humanReadableTime(end), options.delay, pSignal,
+                            pStop, nStop))
+                    limit += countPassingTrainsToOtherStops(options, pSignal, busStop, pTimeAtSignal, end, signalTimes)
                     conflicts[nSignal].append((nStop.prevTripId, pSignal, pStop.prevTripId, limit,
                         # attributes for adding comments
                         nStop.prevLine, pStop.prevLine, nStop.vehID, pStop.vehID))
