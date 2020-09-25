@@ -86,6 +86,7 @@ bool MSRailSignal::myStoreVehicles(false);
 MSRailSignal::VehicleVector MSRailSignal::myBlockingVehicles;
 MSRailSignal::VehicleVector MSRailSignal::myRivalVehicles;
 MSRailSignal::VehicleVector MSRailSignal::myPriorityVehicles;
+std::string MSRailSignal::myConstraintInfo;
 
 // ===========================================================================
 // method definitions
@@ -224,6 +225,9 @@ MSRailSignal::constraintsAllow(const SUMOVehicle* veh) const {
                         std::cout << "  constraint '" << c->getDescription() << "' not cleared\n";
                     }
 #endif
+                    if (myStoreVehicles) {
+                        myConstraintInfo = c->getDescription();
+                    }
                     return false;
                 }
             }
@@ -739,6 +743,7 @@ MSRailSignal::DriveWay::hasLinkConflict(const Approaching& veh, MSLink* foeLink)
                         << "  aT=" << veh.second.arrivalTime << " foeAT=" << foe.second.arrivalTime
                         << "  aS=" << veh.first->getSpeed() << " foeS=" << foe.first->getSpeed()
                         << "  aD=" << veh.second.dist << " foeD=" << foe.second.dist
+                        << "  aW=" << veh.first->getWaitingTime() << " foeW=" << foe.first->getWaitingTime()
                         << "  aN=" << veh.first->getNumericalID() << " foeN=" << foe.first->getNumericalID()
                         << "\n";
             }
@@ -762,8 +767,12 @@ MSRailSignal::DriveWay::mustYield(const Approaching& veh, const Approaching& foe
     if (foe.second.arrivalSpeedBraking == veh.second.arrivalSpeedBraking) {
         if (foe.second.arrivalTime == veh.second.arrivalTime) {
             if (foe.first->getSpeed() == veh.first->getSpeed()) {
-                if (foe.second.dist  == veh.second.dist) {
-                    return foe.first->getNumericalID() < veh.first->getNumericalID();
+                if (foe.second.dist == veh.second.dist) {
+                    if (foe.first->getWaitingTime() == veh.first->getWaitingTime()) {
+                        return foe.first->getNumericalID() < veh.first->getNumericalID();
+                    } else {
+                        return foe.first->getWaitingTime() > veh.first->getWaitingTime();
+                    }
                 } else {
                     return foe.second.dist < veh.second.dist;
                 }
@@ -1277,17 +1286,20 @@ MSRailSignal::DriveWay::findFlankProtection(MSLink* link, double length, LaneVis
 }
 
 void
-MSRailSignal::storeTraCIVehicles(int linkIndex) {
+MSRailSignal::storeTraCIVehicles(int linkIndex) const {
     myBlockingVehicles.clear();
     myRivalVehicles.clear();
     myPriorityVehicles.clear();
+    myConstraintInfo = "";
     myStoreVehicles = true;
-    LinkInfo& li = myLinkInfos[linkIndex];
+    LinkInfo& li = const_cast<LinkInfo&>(myLinkInfos[linkIndex]);
     if (li.myLink->getApproaching().size() > 0) {
         Approaching closest = getClosest(li.myLink);
         DriveWay& driveway = li.getDriveWay(closest.first);
         MSEdgeVector occupied;
+        // call for side effects
         driveway.reserve(closest, occupied);
+        constraintsAllow(closest.first);
     } else {
         li.myDriveways.front().conflictLaneOccupied();
     }
@@ -1295,21 +1307,27 @@ MSRailSignal::storeTraCIVehicles(int linkIndex) {
 }
 
 MSRailSignal::VehicleVector
-MSRailSignal::getBlockingVehicles(int linkIndex) {
+MSRailSignal::getBlockingVehicles(int linkIndex) const{
     storeTraCIVehicles(linkIndex);
     return myBlockingVehicles;
 }
 
 MSRailSignal::VehicleVector
-MSRailSignal::getRivalVehicles(int linkIndex) {
+MSRailSignal::getRivalVehicles(int linkIndex) const{
     storeTraCIVehicles(linkIndex);
     return myRivalVehicles;
 }
 
 MSRailSignal::VehicleVector
-MSRailSignal::getPriorityVehicles(int linkIndex) {
+MSRailSignal::getPriorityVehicles(int linkIndex) const{
     storeTraCIVehicles(linkIndex);
     return myPriorityVehicles;
+}
+
+std::string
+MSRailSignal::getConstraintInfo(int linkIndex) const{
+    storeTraCIVehicles(linkIndex);
+    return myConstraintInfo;
 }
 
 const MSRailSignal::DriveWay&
@@ -1411,6 +1429,55 @@ MSRailSignal::updateDriveway(int numericalID) {
                 return;
             }
         }
+    }
+}
+
+std::string
+MSRailSignal::getBlockingVehicleIDs() const {
+    if (myLinkInfos.size() == 1) {
+        return toString(getBlockingVehicles(0));
+    } else {
+        std::string result;
+        for (int i = 0; i < (int)myLinkInfos.size(); i++) {
+            result += toString(i) + ": " + toString(getBlockingVehicles(i)) + ";";
+        }
+        return result;
+    }
+}
+std::string
+MSRailSignal::getRivalVehicleIDs() const {
+    if (myLinkInfos.size() == 1) {
+        return toString(getRivalVehicles(0));
+    } else {
+        std::string result;
+        for (int i = 0; i < (int)myLinkInfos.size(); i++) {
+            result += toString(i) + ": " + toString(getBlockingVehicles(i)) + ";";
+        }
+        return result;
+    }
+}
+std::string
+MSRailSignal::getPriorityVehicleIDs() const {
+    if (myLinkInfos.size() == 1) {
+        return toString(getPriorityVehicles(0));
+    } else {
+        std::string result;
+        for (int i = 0; i < (int)myLinkInfos.size(); i++) {
+            result += toString(i) + ": " + toString(getBlockingVehicles(i)) + ";";
+        }
+        return result;
+    }
+}
+std::string
+MSRailSignal::getConstraintInfo() const {
+    if (myLinkInfos.size() == 1) {
+        return getConstraintInfo(0);
+    } else {
+        std::string result;
+        for (int i = 0; i < (int)myLinkInfos.size(); i++) {
+            result += toString(i) + ": " + getConstraintInfo(i);
+        }
+        return result;
     }
 }
 
