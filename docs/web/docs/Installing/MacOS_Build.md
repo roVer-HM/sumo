@@ -13,7 +13,7 @@ You may use one of two ways to build and install SUMO on macOS: **Homebrew** (re
 
 The installation requires [Homebrew](http://brew.sh). If you did not already install homebrew, do so by invoking
 ```
-ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 ```
 and make sure your homebrew db is up-to-date.
 ```
@@ -40,7 +40,11 @@ In order to compile and execute SUMO, there are several libraries that need to b
 brew cask install xquartz
 brew install xerces-c fox proj gdal gl2ps
 ```
-Depending on the SUMO features you want to enable during compilation, you may want to additional libraries. Most libraries are available in homebrew and should be recognized with CMake.
+Depending on the SUMO features you want to enable during compilation, you may want to additional libraries. Most libraries are available in homebrew and should be recognized with CMake. Here is what you need to prepare some more features such as libsumo and the testing environment:
+```
+brew install python swig eigen pygobject3 gtk+3
+python3 -m pip install texttest
+```
 
 ## Git Cloning and Building
 The source code of SUMO can be cloned with the following command to the directory `./sumo`. The environment variable `SUMO_HOME` should also be set to this directory.
