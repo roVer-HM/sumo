@@ -31,8 +31,6 @@
 #include <utils/xml/SUMOSAXAttributes.h>
 #include <utils/xml/SUMOXMLDefinitions.h>
 
-#include <netedit/elements/GNEPathElements.h>
-
 #include "GNEReferenceCounter.h"
 
 
@@ -508,15 +506,6 @@ struct GNEGeometry {
 
     /// @brief adjust start and end positions in geometric path
     static void adjustStartPosGeometricPath(double& startPos, const GNELane* startLane, double& endPos, const GNELane* endLane);
-
-    /**@brief calculate route between lanes
-     * @brief segmentGeometry segment geometry to be updated
-     * @brief path list of pathElements (lanes)
-     * @param extremeGeometry ExtremeGeometry used to cut/adjust shape
-     */
-    static void calculateLaneGeometricPath(GNEGeometry::SegmentGeometry& segmentGeometry,
-                                           const std::vector<GNEPathElements::PathElement>& path,
-                                           GNEGeometry::ExtremeGeometry& extremeGeometry);
 
     /**@brief calculate route between edges
      * @brief segmentGeometry segment geometry to be updated

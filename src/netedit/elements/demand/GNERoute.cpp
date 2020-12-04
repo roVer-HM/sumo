@@ -72,45 +72,37 @@ GNERoute::GNERoutePopupMenu::onCmdApplyDistance(FXObject*, FXSelector, void*) {
 
 GNERoute::GNERoute(GNENet* net) :
     GNEDemandElement(net->generateDemandElementID(SUMO_TAG_ROUTE), net, GLO_ROUTE, SUMO_TAG_ROUTE,
-{}, {}, {}, {}, {}, {}, {}, {}),
-Parameterised(),
-myColor(RGBColor::YELLOW),
-myVClass(SVC_PASSENGER) {
-    // compute route
-    computePath();
+    {}, {}, {}, {}, {}, {}, {}, {}),
+    Parameterised(),
+    myColor(RGBColor::YELLOW),
+    myVClass(SVC_PASSENGER) {
 }
 
 
 GNERoute::GNERoute(GNENet* net, const GNERouteHandler::RouteParameter& routeParameters) :
     GNEDemandElement(routeParameters.routeID, net, GLO_ROUTE, SUMO_TAG_ROUTE,
-{}, routeParameters.edges, {}, {}, {}, {}, {}, {}),
-Parameterised(routeParameters.parameters),
-myColor(routeParameters.color),
-myVClass(routeParameters.vClass) {
-    // compute route
-    computePath();
+    {}, routeParameters.edges, {}, {}, {}, {}, {}, {}),
+    Parameterised(routeParameters.parameters),
+    myColor(routeParameters.color),
+    myVClass(routeParameters.vClass) {
 }
 
 
 GNERoute::GNERoute(GNENet* net, GNEDemandElement* vehicleParent, const GNERouteHandler::RouteParameter& routeParameters) :
     GNEDemandElement(vehicleParent, net, GLO_ROUTE, GNE_TAG_ROUTE_EMBEDDED,
-{}, routeParameters.edges, {}, {}, {}, {}, {vehicleParent}, {}),
-Parameterised(routeParameters.parameters),
-myColor(routeParameters.color),
-myVClass(routeParameters.vClass) {
-    // compute route
-    computePath();
+    {}, routeParameters.edges, {}, {}, {}, {}, {vehicleParent}, {}),
+    Parameterised(routeParameters.parameters),
+    myColor(routeParameters.color),
+    myVClass(routeParameters.vClass) {
 }
 
 
 GNERoute::GNERoute(GNEDemandElement* route) :
     GNEDemandElement(route, route->getNet(), GLO_ROUTE, SUMO_TAG_ROUTE,
-{}, route->getParentEdges(), {}, {}, {}, {}, {}, {}),
-Parameterised(),
-myColor(route->getColor()),
-myVClass(route->getVClass()) {
-    // compute route
-    computePath();
+    {}, route->getParentEdges(), {}, {}, {}, {}, {}, {}),
+    Parameterised(),
+    myColor(route->getColor()),
+    myVClass(route->getVClass()) {
 }
 
 
@@ -233,32 +225,12 @@ void
 GNERoute::updateGeometry() {
     // declare extreme geometry
     GNEGeometry::ExtremeGeometry extremeGeometry;
-    // calculate edge geometry path using path
-    GNEGeometry::calculateLaneGeometricPath(myDemandElementSegmentGeometry, getPath(), extremeGeometry);
     // update child demand elementss
     for (const auto& i : getChildDemandElements()) {
         if (!i->getTagProperty().isPersonStop() && !i->getTagProperty().isStop()) {
             i->updateGeometry();
         }
     }
-}
-
-
-void
-GNERoute::computePath() {
-    // calculate consecutive path using parent edges
-    calculateConsecutivePathLanes(getVClass(), true, getParentEdges());
-    // update geometry
-    updateGeometry();
-}
-
-
-void
-GNERoute::invalidatePath() {
-    // due routes don't need to calculate a dijkstra path, just calculate consecutive path lanes again
-    calculateConsecutivePathLanes(getVClass(), true, getParentEdges());
-    // update geometry
-    updateGeometry();
 }
 
 

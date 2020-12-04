@@ -277,8 +277,6 @@ GNENet::deleteJunction(GNEJunction* junction, GNEUndoList* undoList) {
     // all deletions must be undone/redone together so we start a new command group
     // @todo if any of those edges are dead-ends should we remove their orphan junctions as well?
     undoList->p_begin("delete " + toString(SUMO_TAG_JUNCTION));
-    // invalidate path elements
-    junction->invalidatePathElements();
     // delete all crossings vinculated with junction
     while (junction->getGNECrossings().size() > 0) {
         deleteCrossing(junction->getGNECrossings().front(), undoList);
@@ -317,8 +315,6 @@ GNENet::deleteEdge(GNEEdge* edge, GNEUndoList* undoList, bool recomputeConnectio
     undoList->p_begin("delete " + toString(SUMO_TAG_EDGE));
     // iterate over lanes
     for (const auto& lane : edge->getLanes()) {
-        // invalidate path elements
-        lane->invalidatePathElements();
         // delete lane additionals
         while (lane->getChildAdditionals().size() > 0) {
             deleteAdditional(lane->getChildAdditionals().front(), undoList);
@@ -454,8 +450,6 @@ GNENet::deleteLane(GNELane* lane, GNEUndoList* undoList, bool recomputeConnectio
         deleteEdge(edge, undoList, recomputeConnections);
     } else {
         undoList->p_begin("delete " + toString(SUMO_TAG_LANE));
-        // invalidate path elements
-        lane->invalidatePathElements();
         // delete lane additional children
         while (lane->getChildAdditionals().size() > 0) {
             deleteAdditional(lane->getChildAdditionals().front(), undoList);
@@ -1662,12 +1656,6 @@ GNENet::computeDemandElements(GNEApplicationWindow* window) {
     if (!myViewNet->getEditModes().isCurrentSupermodeDemand())  {
         myPathCalculator->updatePathCalculator();
     }
-    // iterate over all demand elements and compute
-    for (const auto& i : myAttributeCarriers->getDemandElements()) {
-        for (const auto& j : i.second) {
-            j.second->computePath();
-        }
-    }
     window->setStatusBarText("Finished computing demand elements.");
 }
 
@@ -2492,8 +2480,6 @@ GNENet::saveDemandElements(const std::string& filename) {
     // iterate over demandElements and obtain invalids
     for (const auto& demandElementSet : myAttributeCarriers->getDemandElements()) {
         for (const auto& demandElement : demandElementSet.second) {
-            // compute before check if demand element is valid
-            demandElement.second->computePath();
             // check if has to be fixed
             if (!demandElement.second->isDemandElementValid()) {
                 invalidSingleLaneDemandElements.push_back(demandElement.second);

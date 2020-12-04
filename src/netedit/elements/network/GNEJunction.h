@@ -242,9 +242,6 @@ public:
     /// @brief remove path demand element (used by GNEPathElement)
     void removePathGenericData(GNEGenericData* genericData);
 
-    /// @brief invalidate path element childs
-    void invalidatePathElements();
-
 protected:
     /// @brief A reference to the represented junction
     NBNode* myNBNode;

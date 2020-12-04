@@ -235,9 +235,6 @@ public:
     /// @brief remove path demand element (used by GNEPathElement)
     void removePathGenericData(GNEGenericData* genericData);
 
-    /// @brief invalidate path element childs
-    void invalidatePathElements();
-
     /* @brief method for setting the special color of the lane
      * @param[in] color Pointer to new special color
      */
@@ -308,15 +305,6 @@ private:
 
     /// @brief draw children
     void drawChildren(const GUIVisualizationSettings& s) const;
-
-    /// @brief path additional elements
-    void drawPathAdditionalElements(const GUIVisualizationSettings& s) const;
-
-    /// @brief path demand elements
-    void drawPathDemandElements(const GUIVisualizationSettings& s) const;
-
-    /// @brief path generic data elements
-    void drawPathGenericDataElements(const GUIVisualizationSettings& s) const;
 
     /// @brief draw lane markings
     void drawMarkings(const GUIVisualizationSettings& s, const double exaggeration, const bool drawRailway) const;
