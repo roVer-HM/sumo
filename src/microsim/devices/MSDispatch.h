@@ -122,8 +122,9 @@ public:
                                         SUMOTime pickupTime,
                                         const MSEdge* from, double fromPos,
                                         const MSEdge* to, double toPos,
-                                        const std::string& group,
-                                        int maxCapacity);
+                                        std::string group,
+                                        int maxCapacity,
+                                        int maxContainerCapacity);
 
     /// @brief remove person from reservation. If the whole reservation is removed, return it's id
     virtual std::string removeReservation(MSTransportable* person,
@@ -165,6 +166,9 @@ public:
 
 protected:
     void servedReservation(const Reservation* res);
+
+    /// @brief whether the given taxi has sufficient capacity to serve the reservation
+    int remainingCapacity(const MSDevice_Taxi* taxi, const Reservation* res);
 
     // reservations that are currently being served (could still be used during re-dispatch)
     std::set<const Reservation*> myRunningReservations;
