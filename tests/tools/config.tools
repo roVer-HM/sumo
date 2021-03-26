@@ -12,6 +12,8 @@ copy_test_path:input_net.net.xml
 copy_test_path:input_edges.edg.xml
 copy_test_path:input_nodes.nod.xml
 copy_test_path:input_trips.trips.xml
+copy_test_path:input_trips.trips_foo.xml
+copy_test_path:input_trips.trips_bar.xml
 copy_test_path:input_routes.rou.xml
 copy_test_path:input_routes2.rou.xml
 copy_test_path:input_flows.flows.xml
@@ -71,6 +73,7 @@ copy_test_path:ptlines.xml
 copy_test_path:input_edgedata.xml
 copy_test_path:summary.xml
 copy_test_path:config.txt
+copy_test_path:input.toolcfg
 copy_test_path:input_sel.txt
 copy_test_path:matsim_plans.xml
 copy_test_path:input_data.xml
@@ -97,6 +100,7 @@ fixed:routes.rou.xml.fixed
 activityfile:activityfile.tcl
 mobilityfile:mobilityfile.tcl
 cfg:config.tcl
+toolcfg:config.xml
 summary:intersection_metrics_summary.txt
 pois:pois.add.xml
 trips:trips.trips.xml
@@ -151,6 +155,14 @@ parking:input_routes.rou.parking.xml
 parking:parking_parkingLot.add.xml
 toolcfg:out.toolcfg
 tracefile:tracefile_out.txt
+parkingA:parkingA.xml
+parkingB:parkingB.xml
+parkingC:parkingC.xml
+parkingD:parkingD.xml
+parkingA:parkingA.csv
+parkingB:parkingB.csv
+parkingC:parkingC.csv
+parkingD:parkingD.csv
 
 [run_dependent_text]
 output:Begin time
@@ -192,6 +204,7 @@ routes:<!-- generated on{[->]}-->
 routesA:<!-- generated on{[->]}-->
 routesB:<!-- generated on{[->]}-->
 xml:<!-- generated on{[->]}-->
+toolcfg:<!-- generated on{[->]}-->
 errors:Execution of .*duarouter.*'{REPLACE Execution of <path-to>duarouter'}
 errors:Leaked object at 
 errors:*** 9 leaks found

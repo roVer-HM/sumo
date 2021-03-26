@@ -27,6 +27,7 @@ import numpy as np
 import zipfile
 import subprocess
 import time
+import datetime
 import math
 from argparse import ArgumentParser
 
@@ -41,7 +42,8 @@ def initOptions():
     argParser.add_argument("--osm-routes", help="osm routes file", required=True)
     argParser.add_argument("--gtfs", help="define gtfs zip file to load (mandatory)", required=True)
     argParser.add_argument("--region", help="define the region to filter gtfs data, format: W,S,E,N", required=True)
-    argParser.add_argument("--date", help="define the day to import, format: 'YYYYMMDD'") #date = "20200521"
+    argParser.add_argument("--date", help="define the day to import, format: 'YYYYMMDD'")
+    argParser.add_argument("--pt-types", help="filter pt-types to import (bus, tram, train, subway and/or ferry). format: 'bus,tram'", default="bus,tram,train,subway,ferry", required=False)
     argParser.add_argument("--repair", help="repair osm routes", action='store_true')
     argParser.add_argument("--debug", action='store_true')
     argParser.add_argument("--bus-stop-length", default=13, type=float, help="length for a bus stop")
@@ -73,7 +75,7 @@ def get_line_dir(line_orig, line_dest):
     return line_dir
 
 def repair_routes(options):
-    # use duarouter to repair the given osm routes #TODO
+    # use duarouter to repair the given osm routes
 
     dua_input = "dua_input.xml"
     dua_output = "dua_output.xml"
@@ -89,8 +91,8 @@ def repair_routes(options):
         sumo_edges = [sumo_edge.getID() for sumo_edge in net.getEdges()]
         for ptline, ptline_route in sumolib.xml.parse_fast_nested(options.osm_routes, "ptLine", ("id", "name", "line", "type"), "route", ("edges")):        
             count += 1
-            #if not any([ptline.type == "bus", ptline.type == "tram"]): #TODO enable pt_type filter
-            #    continue
+            if ptline.type not in options.pt_types:
+                continue
             if osm_routes.get(ptline.id, False):
                 continue
             
@@ -152,7 +154,7 @@ def repair_routes(options):
     # search ptLines with errors 
     with open(dua_error, 'r') as error_file:
         error_file = error_file.read()
-        error_lines = [line.split("'")[1] for line in error_file.splitlines() if line.startswith("Error:")]
+        error_lines = [line.split("'")[1] for line in error_file.splitlines() if line.startswith("Error:")] # takes only edge id
 
     return dua_output, osm_routes, set(error_lines)
 
@@ -161,6 +163,7 @@ if __name__ == "__main__":
     # read inputs
     argParser = initOptions()
     options = argParser.parse_args()
+    options.pt_types = options.pt_types.split(",")
 
     ######################################## Import SUMO net ########################################
 
@@ -243,6 +246,8 @@ if __name__ == "__main__":
                 del osm_routes[line]
     else:        
         for ptline, ptline_route in sumolib.xml.parse_fast_nested(options.osm_routes, "ptLine", ("id", "name", "line", "type"), "route", ("edges")):
+            if ptline.type not in options.pt_types:
+                continue
             if len(ptline_route.edges) > 2:
                 line_orig = ptline_route.edges.split(" ")[0]
                 x, y = net.getEdge(line_orig).getFromNode().getCoord()
@@ -267,6 +272,7 @@ if __name__ == "__main__":
     trips = pd.read_csv(gtfsZip.open('trips.txt'), dtype=str)
     shapes = pd.read_csv(gtfsZip.open('shapes.txt'), dtype=str)
     calendar_dates = pd.read_csv(gtfsZip.open('calendar_dates.txt'), dtype=str)
+    calendar = pd.read_csv(gtfsZip.open('calendar.txt'), dtype=str)
 
     # change col types
     stops['stop_lat'] = stops['stop_lat'].astype(float)
@@ -277,8 +283,13 @@ if __name__ == "__main__":
     stop_times['stop_sequence'] = stop_times['stop_sequence'].astype(float)
 
     # filter trips for a representative date
-    gtfs_data = pd.merge(trips, calendar_dates, on='service_id')
-    gtfs_data = gtfs_data[gtfs_data['date'] == options.date]
+    # from gtfs2fcd.py
+    weekday = 'monday tuesday wednesday thursday friday saturday sunday'.split()[datetime.datetime.strptime(options.date, "%Y%m%d").weekday()]
+    removed = calendar_dates[(calendar_dates.date == options.date) & (calendar_dates.exception_type == '2')]
+    services = calendar[(calendar.start_date <= options.date) & (calendar.end_date >= options.date) &
+                        (calendar[weekday] == '1') & (~calendar.service_id.isin(removed.service_id))]
+    added = calendar_dates[(calendar_dates.date == options.date) & (calendar_dates.exception_type == '1')]
+    gtfs_data = trips[trips.service_id.isin(services.service_id) | trips.service_id.isin(added.service_id)]
 
     # merge gtfs data from stop_times / trips / routes / stops
     gtfs_data = pd.merge(pd.merge(pd.merge(gtfs_data, stop_times, on='trip_id'), stops, on='stop_id'), routes, on='route_id')
@@ -565,8 +576,8 @@ if __name__ == "__main__":
                 stop_index = edges_list.index(stop.edge_id)
                 if stop_index > check_seq :
                     check_seq = stop_index
-                    output_file.write('        <stop busStop="%s" arrival="%s" duration="%s" until="%s"/><!--%s %s-->\n' %
-                        (stop.stop_item_id, stop.arrival_time, options.duration, stop.departure_time, stop.edge_id, stop_index))
+                    output_file.write('        <stop busStop="%s" name="%s" arrival="%s" duration="%s" until="%s"/><!--%s %s-->\n' %
+                        (stop.stop_item_id, stop.stop_name, stop.arrival_time, options.duration, stop.departure_time, stop.edge_id, stop_index))
                 elif stop_index < check_seq:
                     # stop not downstream
                     error_file.write("sequence error in stop item %s %s (sequence %s) of route %s (trip %s)\n" % (stop.stop_item_id, stop.stop_name, stop.stop_sequence, stop.route_id, stop.trip_id))

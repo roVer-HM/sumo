@@ -45,6 +45,7 @@
 #include "MSDevice_Taxi.h"
 
 //#define DEBUG_DISPATCH
+#define DEBUG_COND (true)
 
 // ===========================================================================
 // static member variables
@@ -259,7 +260,7 @@ MSDevice_Taxi::dispatch(const Reservation& res) {
 void
 MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
 #ifdef DEBUG_DISPATCH
-    if (true) {
+    if (DEBUG_COND) {
         std::cout << SIMTIME << " taxi=" << myHolder.getID() << " dispatch:\n";
         for (const Reservation* res : reservations) {
             std::cout << "   persons=" << toString(res->persons) << "\n";
@@ -271,11 +272,15 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
     double lastPos = myHolder.getPositionOnLane();
     MSBaseVehicle* veh = dynamic_cast<MSBaseVehicle*>(&myHolder);
     assert(veh != nullptr);
+    const MSEdge* rerouteOrigin = veh->getRerouteOrigin();
     if (isEmpty()) {
         // start fresh from the current edge
         myHolder.abortNextStop();
         assert(!veh->hasStops());
         tmpEdges.push_back(myHolder.getEdge());
+        if (myHolder.getEdge() != rerouteOrigin) {
+            tmpEdges.push_back(rerouteOrigin);
+        }
     } else {
         assert(veh->hasStops());
         // check how often existing customers appear in the new reservations
@@ -294,7 +299,9 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
             // no overlap with existing customers - extend route
             tmpEdges = myHolder.getRoute().getEdges();
             lastPos = veh->getStops().back().pars.endPos;
-
+#ifdef DEBUG_DISPATCH
+            if (DEBUG_COND) std::cout << " re-dispatch with route-extension\n";
+#endif
         } else if (nOccur.size() == myCustomers.size()) {
             // redefine route (verify correct number of mentions)
             std::set<const MSTransportable*> onBoard;
@@ -344,6 +351,12 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
                 myHolder.abortNextStop();
             }
             tmpEdges.push_back(myHolder.getEdge());
+            if (myHolder.getEdge() != rerouteOrigin) {
+                tmpEdges.push_back(rerouteOrigin);
+            }
+#ifdef DEBUG_DISPATCH
+            if (DEBUG_COND) std::cout << " re-dispatch from scratch\n";
+#endif
         } else {
             // inconsistent re-dispatch
             std::vector<std::string> missing;
@@ -383,7 +396,17 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
             stops.back().duration = TIME2STEPS(60); // pay and collect bags
         }
     }
-    myHolder.replaceRouteEdges(tmpEdges, -1, 0, "taxi:prepare_dispatch", false, false, false);
+#ifdef DEBUG_DISPATCH
+    if (DEBUG_COND) std::cout << "   tmpEdges=" << toString(tmpEdges) << "\n";
+#endif
+    if (!myHolder.replaceRouteEdges(tmpEdges, -1, 0, "taxi:prepare_dispatch", false, false, false)) {
+        throw ProcessError("Route replacement for taxi dispatch failed for vehicle '" + myHolder.getID()
+                + "' at time " + time2string(MSNet::getInstance()->getCurrentTimeStep()));
+    }
+#ifdef DEBUG_DISPATCH
+    if (DEBUG_COND) std::cout << "   replacedRoute=" << toString(tmpEdges)
+                            << "\n     actualRoute=" << toString(myHolder.getRoute().getEdges()) << "\n";
+#endif
     for (SUMOVehicleParameter::Stop& stop : stops) {
         std::string error;
         myHolder.addStop(stop, error);
@@ -394,6 +417,9 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
     SUMOAbstractRouter<MSEdge, SUMOVehicle>& router = MSRoutingEngine::getRouterTT(myHolder.getRNGIndex(), myHolder.getVClass());
     // SUMOAbstractRouter<MSEdge, SUMOVehicle>& router = myHolder.getInfluencer().getRouterTT(veh->getRNGIndex())
     myHolder.reroute(t, "taxi:dispatch", router, false);
+#ifdef DEBUG_DISPATCH
+    if (DEBUG_COND) std::cout << "\n      finalRoute=" << toString(myHolder.getRoute().getEdges()) << " routeIndex=" << myHolder.getRoutePosition() << "\n";
+#endif
     myState |= PICKUP;
 }
 

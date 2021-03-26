@@ -201,7 +201,9 @@ class Builder(object):
             self.additionalFiles.append(self.files["poly"])
 
         typefiles = [typemaps["net"]]
-        netconvertOptions = osmBuild.DEFAULT_NETCONVERT_OPTS
+        # leading space ensures that arguments starting with -- are not
+        # misinterpreted as options
+        netconvertOptions = " " + osmBuild.DEFAULT_NETCONVERT_OPTS
         netconvertOptions += ",--tls.default-type,actuated"
         if "pedestrian" in self.data["vehicles"]:
             # sidewalks are already included via typefile
@@ -329,10 +331,10 @@ class Builder(object):
                 if os.name == "posix":
                     f.write("#!/bin/bash\n")
                 if ptOptions is not None:
-                    f.write("python \"%s\" %s\n" %
+                    f.write('python "%s" %s\n' %
                             (ptlines2flowsPath, " ".join(map(quoted_str, self.getRelative(ptOptions)))))
                 for opts in sorted(randomTripsCalls):
-                    f.write("python \"%s\" %s\n" %
+                    f.write('python "%s" %s\n' %
                             (randomTripsPath, " ".join(map(quoted_str, self.getRelative(opts)))))
 
     def parseTripOpts(self, vehicle, options, publicTransport):

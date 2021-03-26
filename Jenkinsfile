@@ -7,8 +7,16 @@ apiVersion: v1
 kind: Pod
 spec:
   containers:
-  - name: maven
-    image: maven:alpine
+  - name: jnlp
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+  - name: ubuntu-sumo
+    image: roberthilbrich/ubuntu-sumo:latest
     tty: true
     resources:
       limits:
@@ -52,10 +60,46 @@ spec:
     }
   }
   stages {
-    stage('Run maven') {
+    stage('Building SUMO') {
       steps {
-        container('maven') {
-          sh 'mvn clean deploy'
+        container('ubuntu-sumo') {
+          sh '''
+            mkdir -p cmake-build 
+            cd cmake-build 
+            export CC=gcc; export CXX=g++; 
+            cmake ..
+            make -j4
+          '''
+        }
+      }
+    }
+    stage('Build TraaS') {
+      steps {
+        container('ubuntu-sumo') {
+          sh '''
+            cd cmake-build
+            make traas
+          '''
+        }
+      }
+    }
+    stage('Maven Artifact - libsumo') {
+      steps {
+        container('ubuntu-sumo') {
+          sh '''
+            cd cmake-build/src/libsumo
+            mvn --batch-mode deploy
+          '''
+        }
+      }
+    }
+    stage('Maven Artifact - libtraci') {
+      steps {
+        container('ubuntu-sumo') {
+          sh '''
+            cd cmake-build/src/libtraci 
+            mvn --batch-mode deploy
+          '''
         }
       }
     }
