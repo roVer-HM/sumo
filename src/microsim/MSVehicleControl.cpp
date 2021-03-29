@@ -66,6 +66,19 @@ MSVehicleControl::MSVehicleControl() :
     myMaxSpeedFactor(1),
     myMinDeceleration(SUMOVTypeParameter::getDefaultDecel(SVC_IGNORING)),
     myPendingRemovals(MSGlobals::gNumSimThreads > 1) {
+
+    initDefaultTypes();
+    myScale = OptionsCont::getOptions().getFloat("scale");
+}
+
+
+MSVehicleControl::~MSVehicleControl() {
+    clearState();
+}
+
+
+void 
+MSVehicleControl::initDefaultTypes() {
     SUMOVTypeParameter defType(DEFAULT_VTYPE_ID, SVC_PASSENGER);
     myVTypeDict[DEFAULT_VTYPE_ID] = MSVehicleType::build(defType);
 
@@ -88,13 +101,6 @@ MSVehicleControl::MSVehicleControl() :
     defContainerType.height = 2.6;
     defContainerType.parametersSet |= VTYPEPARS_VEHICLECLASS_SET;
     myVTypeDict[DEFAULT_CONTAINERTYPE_ID] = MSVehicleType::build(defContainerType);
-
-    myScale = OptionsCont::getOptions().getFloat("scale");
-}
-
-
-MSVehicleControl::~MSVehicleControl() {
-    clearState();
 }
 
 
@@ -249,24 +255,11 @@ MSVehicleControl::clearState() {
         delete (*i).second;
     }
     myVTypeDistDict.clear();
-    // delete vehicle types but keep default types
-    std::vector<MSVehicleType*> defaultTypes({
-            myVTypeDict[DEFAULT_VTYPE_ID],
-            myVTypeDict[DEFAULT_PEDTYPE_ID],
-            myVTypeDict[DEFAULT_CONTAINERTYPE_ID],
-            myVTypeDict[DEFAULT_BIKETYPE_ID],
-            myVTypeDict[DEFAULT_TAXITYPE_ID]}
-            );
-    for (auto t : defaultTypes) {
-        myVTypeDict.erase(t->getID());
-    }
+    // delete vehicle types
     for (VTypeDictType::iterator i = myVTypeDict.begin(); i != myVTypeDict.end(); ++i) {
         delete (*i).second;
     }
     myVTypeDict.clear();
-    for (auto t : defaultTypes) {
-        myVTypeDict[t->getID()] = t;
-    }
     myDefaultVTypeMayBeDeleted = true;
     myDefaultPedTypeMayBeDeleted = true;
     myDefaultContainerTypeMayBeDeleted = true;
