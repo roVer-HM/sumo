@@ -29,7 +29,6 @@ from __future__ import absolute_import
 import os
 import sys
 import subprocess
-import shutil
 import glob
 import argparse
 import xml.etree.ElementTree as ET
@@ -432,7 +431,7 @@ def get_basename(demand_file):
     for suffix in ['.rou.xml', '.rou.alt.xml', '.trips.xml', '.xml']:
         if basename.endswith(suffix):
             basename = basename[:-len(suffix)]
-            break;
+            break
     return basename
 
 

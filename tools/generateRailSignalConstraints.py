@@ -147,7 +147,8 @@ def get_options(args=None):
 
 
 class Conflict:
-    def __init__(self, tripID, otherSignal, otherTripID, limit, line, otherLine, vehID, otherVehID, conflictTime, foeInsertion = False):
+    def __init__(self, tripID, otherSignal, otherTripID, limit, line, otherLine,
+                 vehID, otherVehID, conflictTime, foeInsertion=False):
         self.tripID = tripID
         self.otherSignal = otherSignal
         self.otherTripID = otherTripID
@@ -369,7 +370,9 @@ def markOvertaken(options, vehicleStopRoutes, stopRoutes):
                 arrival = parseTime(stop.arrival)
                 until = parseTime(stop.until)
                 for edgesBefore2, stop2 in stopRoutes[stop.busStop]:
-                    if stop2.vehID == stop.vehID or not stop2.hasAttribute("arrival") or not stop2.hasAttribute("until"):
+                    if stop2.vehID == stop.vehID:
+                        continue
+                    if not stop2.hasAttribute("arrival") or not stop2.hasAttribute("until"):
                         continue
                     if options.skipParking and parseBool(stop2.getAttributeSecure("parking", "false")):
                         continue
@@ -377,11 +380,12 @@ def markOvertaken(options, vehicleStopRoutes, stopRoutes):
                     until2 = parseTime(stop2.until)
                     if arrival2 > arrival and until2 < until:
                         overtaken = True
-                        print("Vehicle %s (%s, %s) overtaken by %s (%s, %s) at stop %s (index %s) and ignored afterwards" % (
-                            stop.vehID, humanReadableTime(arrival), humanReadableTime(until),
-                            stop2.vehID, humanReadableTime(arrival2), humanReadableTime(until2),
-                            stop.busStop, i),
-                            file=sys.stderr)
+                        print(("Vehicle %s (%s, %s) overtaken by %s (%s, %s) " +
+                               "at stop %s (index %s) and ignored afterwards") %
+                              (stop.vehID, humanReadableTime(arrival), humanReadableTime(until),
+                               stop2.vehID, humanReadableTime(arrival2), humanReadableTime(until2),
+                               stop.busStop, i),
+                              file=sys.stderr)
                         break
             if overtaken:
                 stop.setAttribute("invalid", True)
@@ -462,7 +466,8 @@ def findConflicts(options, switchRoutes, mergeSignals, signalTimes):
         if options.verbose:
             print("Found %s conflicts at switch %s" % (numSwitchConflicts, switch))
             if numIgnoredSwitchConflicts > 0 or numIgnoredSwitchStops > 0:
-                print("Ignored %s conflicts and % stops at switch %s" % (numIgnoredSwitchConflicts, numIgnoredSwitchStops, switch))
+                print("Ignored %s conflicts and % stops at switch %s" %
+                      (numIgnoredSwitchConflicts, numIgnoredSwitchStops, switch))
 
     print("Found %s conflicts" % numConflicts)
 
@@ -659,7 +664,7 @@ def findFoeInsertionConflicts(options, net, stopEdges, stopRoutes, vehicleStopRo
                                 (humanReadableTime(parseTime(nStop.until)) if nStop.hasAttribute("until") else "-")))
                             numIgnoredConflicts += 1
                             continue
-                        #if parseBool(pStop.getAttributeSecure("parking", "false")):
+                        # if parseBool(pStop.getAttributeSecure("parking", "false")):
                         #    # additional check for until times
                         #    print("ignoring stop at %s for %s (%s, %s) after parking vehicle %s (%s, %s)" % (
                         #        busStop, nStop.vehID, humanReadableTime(nArrival),
@@ -677,18 +682,15 @@ def findFoeInsertionConflicts(options, net, stopEdges, stopRoutes, vehicleStopRo
                             nStop.prevTripId, pStop.prevTripId, busStop), file=sys.stderr)
                         continue
 
-
                     # predecessor tripId after stop is needed
                     pTripId = pStop.getAttributeSecure("tripId", pStop.vehID)
-                    # succesor tripId before stop is needed
-                    nTripId = nVehStops[nIndex - 1]
                     conflicts[nSignal].append(Conflict(nStop.prevTripId, pSignal, pTripId, limit,
                                                        # attributes for adding comments
                                                        nStop.prevLine,
                                                        pStop.prevLine,
                                                        nStop.vehID, pStop.vehID,
                                                        nStop.arrival,
-                                                       foeInsertion = True))
+                                                       foeInsertion=True))
                     numConflicts += 1
                     if busStop == options.debugStop:
                         print("   found foe insertion conflict pSignal=%s nSignal=%s pVehId=%s pTripId=%s" % (
@@ -743,8 +745,8 @@ def main(options):
     insertionConflicts = findInsertionConflicts(options, net, stopEdges, stopRoutes, vehicleStopRoutes)
 
     signals = sorted(set(list(conflicts.keys())
-        + list(foeInsertionConflicts.keys())
-        + list(insertionConflicts.keys())))
+                         + list(foeInsertionConflicts.keys())
+                         + list(insertionConflicts.keys())))
 
     with open(options.out, "w") as outf:
         sumolib.writeXMLHeader(outf, "$Id$", "additional")  # noqa
