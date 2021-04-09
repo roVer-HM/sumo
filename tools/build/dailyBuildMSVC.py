@@ -181,8 +181,11 @@ for platform in (["x64"] if options.x64only else ["Win32", "x64"]):
         buildDir = generateCMake(generator, platform, log, options.suffix == "extra", options.python)
         ret = subprocess.call(["cmake", "--build", ".", "--config", "Release"],
                               cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
-        if os.path.exists(os.path.join("src", "libsumo", "_libsumo.vcxproj")):
-            subprocess.call(["cmake", "--build", ".", "--target", "_libsumo"],
+        if os.path.exists(os.path.join("src", "libsumo", "libsumo.vcxproj")):
+            subprocess.call(["cmake", "--build", ".", "--target", "libsumo"],
+                            cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
+        if os.path.exists(os.path.join("src", "libtraci", "libtraci.vcxproj")):
+            subprocess.call(["cmake", "--build", ".", "--target", "libtraci"],
                             cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
         subprocess.call(["cmake", "--build", ".", "--target", "lisum"],
                         cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
@@ -228,9 +231,7 @@ for platform in (["x64"] if options.x64only else ["Win32", "x64"]):
                 srcDir = os.path.join(options.rootDir, options.binDir.replace("bin", "src"))
                 includeDir = binDir.replace("bin", "include")
                 status.printLog("Creating sumo.zip.", log)
-                for f in (glob.glob(os.path.join(srcDir, "libsumo", "*.h")) +
-                          glob.glob(os.path.join(srcDir, "utils", "traci", "TraCIAPI.*")) +
-                          glob.glob(os.path.join(srcDir, "foreign", "tcpip", "s*.*"))):
+                for f in glob.glob(os.path.join(srcDir, "libsumo", "*.h")):
                     if not f.endswith("Helper.h"):
                         zipf.write(f, includeDir + f[len(srcDir):])
                 zipf.write(os.path.join(buildDir, "src", "version.h"), os.path.join(includeDir, "version.h"))
@@ -256,6 +257,7 @@ for platform in (["x64"] if options.x64only else ["Win32", "x64"]):
                 except ImportError:
                     subprocess.call(["cmake", "--build", ".", "--target", "game"],
                                     cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
+                    shutil.move("sumo-game.zip", binaryZip.replace("sumo-", "sumo-game-"))
             except Exception as e:
                 status.printLog("Warning: Could not create nightly sumo-game.zip! (%s)" % e, log)
         with open(makeAllLog, 'a') as debugLog:
