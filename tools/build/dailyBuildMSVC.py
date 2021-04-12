@@ -171,7 +171,7 @@ for platform in (["x64"] if options.x64only else ["Win32", "x64"]):
     for f in toClean:
         try:
             os.remove(f)
-        except WindowsError:
+        except Exception as e:
             pass
     # we need to use io.open here due to http://bugs.python.org/issue16273
     with io.open(makeLog, 'a') as log:
@@ -181,10 +181,10 @@ for platform in (["x64"] if options.x64only else ["Win32", "x64"]):
         buildDir = generateCMake(generator, platform, log, options.suffix == "extra", options.python)
         ret = subprocess.call(["cmake", "--build", ".", "--config", "Release"],
                               cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
-        if os.path.exists(os.path.join("src", "libsumo", "libsumo.vcxproj")):
+        if os.path.exists(os.path.join(buildDir, "src", "libsumo", "libsumo.vcxproj")):
             subprocess.call(["cmake", "--build", ".", "--target", "libsumo"],
                             cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
-        if os.path.exists(os.path.join("src", "libtraci", "libtraci.vcxproj")):
+        if os.path.exists(os.path.join(buildDir, "src", "libtraci", "libtraci.vcxproj")):
             subprocess.call(["cmake", "--build", ".", "--target", "libtraci"],
                             cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
         subprocess.call(["cmake", "--build", ".", "--target", "lisum"],
@@ -232,20 +232,17 @@ for platform in (["x64"] if options.x64only else ["Win32", "x64"]):
                 includeDir = binDir.replace("bin", "include")
                 status.printLog("Creating sumo.zip.", log)
                 for f in glob.glob(os.path.join(srcDir, "libsumo", "*.h")):
-                    if not f.endswith("Helper.h"):
+                    if not f.endswith("Helper.h") and not f.endswith("Subscription.h"):
                         zipf.write(f, includeDir + f[len(srcDir):])
                 zipf.write(os.path.join(buildDir, "src", "version.h"), os.path.join(includeDir, "version.h"))
                 for f in glob.glob(os.path.join(toolsDir, "lib*", "*lib*.py*")):
-                    # no os.path.join here, since the namelist uses only "/"
-                    nameInZip = "tools/" + f[len(toolsDir) + 1].replace("\\", "/")
-                    if nameInZip not in zipf.namelist():
-                        zipf.write(f, nameInZip)
+                    zipf.write(f, binDir.replace("bin", "tools") + f[len(toolsDir):])
                 zipf.close()
                 if options.suffix == "":
                     # installers only for the vanilla build
                     status.printLog("Creating sumo.msi.", log)
                     wix.buildMSI(binaryZip, binaryZip.replace(".zip", ".msi"), log=log)
-            except IOError as ziperr:
+            except Exception as ziperr:
                 status.printLog("Warning: Could not zip to %s (%s)!" % (binaryZip, ziperr), log)
         if platform == "x64":
             status.printLog("Creating sumo-game.zip.", log)
