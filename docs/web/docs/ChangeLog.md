@@ -36,7 +36,7 @@ title: ChangeLog
     - Fixed invalid collision warning. Issue #8068
     - Fixed invalid vehicle angle in subsecond simulation. Issue #8070
     - Lateral deviation due to lcSigma > 0 is now independent of step-length when using `latAlignment="arbitrary"`. Issue #8154
-    - Lateral no longer exceeds lcAccelLat. Issue #8195
+    - Lateral acceleration no longer exceeds lcAccelLat. Issue #8195
   - Opposite direction driving fixes
     - Fixed undetected collisions. Issue #8082, #8111
     - Fixed invalid collision warning. Issue #8079
@@ -101,7 +101,7 @@ title: ChangeLog
   
 - TraCI
   - Function 'vehicle.getSpeedWithoutTraCI' now returns original model speeds after calling moveToXY. Issue #7190
-  - Fixed issues with mapping location and speed for funnction 'person.moveToXY' . Issue #7907, #7908
+  - Fixed issues with mapping location and speed for function 'person.moveToXY' . Issue #7907, #7908
   - Fixed crash when switching to carFollowModel that requries vehicle variables. Issue #7949
   - Fixed crash when using traci.simulation.getDistanceRoad. Issue #5114
   - Fixed non-deterministic behavior for person.moveToXY. Issue #7933
@@ -191,7 +191,7 @@ title: ChangeLog
   - Added option **--tls.no-mixed** which prevents building phases where different connections from the same lane have green and red signals. Issue #7821
   - Element `<laneType>` is now supported in an edge `<type>` to pre-configure speed, width and permissions for individual lanes. Issue #7791
   - Merging of overlapping geo-referenced networks with re-occuring ids now works without setting option **--ignore-errors**. Issue #8019
-  - When using option **--junctions.join-turns** to merge overlapping networks with diffent junction ids, the option **--edges.join** can now be used to automatically remove duplicate edges. Issue #8019
+  - When using option **--junctions.join-same** to merge overlapping networks with diffent junction ids, the option **--edges.join** can now be used to automatically remove duplicate edges. Issue #8019
   - Added option **--railway.topology.repair.minimal**. This works similar to **--railway.topology.repair** but avoids creating bidirectional tracks that are not needed for public transport routes (only applies when using option **--ptline-outut**). Issue #7982
   - Public transport edges that are disconnected from the main road network (in particular railways) are now included in the output when using option **--keep.edges.components 1** as long as they have public transport stops that are written via option **--ptstop-output**. Issue #8061
   - Edge types now support attribute 'spreadType'. Issue #7897
@@ -212,10 +212,13 @@ title: ChangeLog
   - Option **--scale** is now applied when loading route files instead of od-matrices. Issue #8352
   
 - od2trips
-  - Added option **--junctions** which interprets the loaded source and sink ids at fromJunction and toJunction ids. #8389
+  - Added option **--junctions** which interprets the loaded source and sink IDs as fromJunction and toJunction ids. #8389
 
 - dfrouter
   - Added option **--vclass** to filter eligble edges in a multi-modal network. Issue #8408
+  
+- polyconvert
+  - Added option **--visum.language-file** to support importing shapes from English and French language versions (default is German). Issue #8414
 
 - Routing (duarouter / sumo)
   - The landmark table format changed to a more compressed version (old tables are still readable). Issue #8153
@@ -227,7 +230,7 @@ title: ChangeLog
   - Can now retrieve vehicle parameters 'device.battery.totalEnergyConsumed' and 'device.battery.totalEnergyRegenerated' when a vehicle has the battery device. Issue #6507
   - vehicle.dispatchTaxi now supports re-dispatching a taxi that is already in pickup or occupied mode. Issue #8148
   - Vehicles that are accumulating insertion delay (because they cannot safely enter the network as schedule) can now be retrieved using the functions 'traci.simulation.getPendingVehicles', 'traci.edge.getPendingVehicles' and 'traci.lane.getPendingVehicles. Issue #8157
-  - Taxi customers (including those that shall be picked up but are not yet on board) can now be trieved using `traci.vehicle.getParameter(vehID, "device.taxi.currentCustomers")`. Issue #8189
+  - Taxi customers (including those that shall be picked up but are not yet on board) can now be retrieved using `traci.vehicle.getParameter(vehID, "device.taxi.currentCustomers")`. Issue #8189
   - The reservation objects returnd by [traci.person.getTaxiReservations](Simulation/Taxi.md#gettaxireservations) now includes persons that are eligible for re-dispatch and includes the state of the reservation (new, assigned, on board). Issue #8168
   - Added function 'traci.person.splitTaxiReservation' to transport pre-made groups with multiple vehicles. Issue #8236
   - The domains 'simulation', 'junction', 'inductionloop', 'lanearea', 'multientryexit' now support setParameter and getParameter. Issue #4733, #8244
