@@ -23,23 +23,9 @@ for tlsID in traci.trafficlight.getIDList():
     for c in traci.trafficlight.getConstraints(tlsID):
         print(" tls=%s %s" % (tlsID, c))
 
-newC = traci.trafficlight.swapConstraints("A", "t2", "D", "t0")
-print("constraints added to avoid deadlock")
-for c in newC:
-    print(" tls=%s %s" % (tlsID, c))
+traci.trafficlight.swapConstraints("H", "t2", "C", "t0")
 
-print("constraints after swap1")
-for tlsID in traci.trafficlight.getIDList():
-    for c in traci.trafficlight.getConstraints(tlsID):
-        print(" tls=%s %s" % (tlsID, c))
-
-newC = traci.trafficlight.swapConstraints("N", "t3", "J", "t1")
-
-print("constraints added to avoid deadlock")
-for c in newC:
-    print(" tls=%s %s" % (tlsID, c))
-
-print("constraints after swap2")
+print("constraints after swap")
 for tlsID in traci.trafficlight.getIDList():
     for c in traci.trafficlight.getConstraints(tlsID):
         print(" tls=%s %s" % (tlsID, c))
