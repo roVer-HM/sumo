@@ -143,23 +143,43 @@ python tools/generateParkingAreaRerouters.py -n <net-file> -a <parkingArea-fil
 # averageTripStatistics.py
 
 This script runs a given sumo configuration multiple times with
-different random seeds and averages the trip statistics output (see [trip statistics](../Simulation/Output.md#aggregated_traffic_measures).)
+different random seeds and averages the trip statistics output (see [trip statistics](../Simulation/Output/index.md#aggregated_traffic_measures)).
 
 Example:
 
 ```
-python tools/averageTripStatistics.py <sumocfg-file> -n 100
+python tools/averageTripStatistics.py <sumocfg-file>
 ```
+
+As default, the simulation will be run 10 times with an initial seed for 
+random seed generation of 42. These values can be changed with the options
+**-n** and **-s** respectively.
+
+# ptlines2flows.py
+
+This script determines feasible stop-to-stop travel times and creates a public
+transport schedule (regular interval timetable) for all lines. The stop-to-stop 
+travel times are determined on an empty network. Example:
+
+```
+python tools/ptlines2flows.py -n <net-file> -s <ptstops-file> -l <ptlines-file> -o <output-file>
+```
+
+As output, the public transport lines are written as [flows](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md).
+By default a period of 600 seconds is adopted as regular interval, which can be 
+changed with the **-p** option.
+
+With the option **--use-osm-routes**, public transport routes from the given osm
+ptlines-file will be used, rather than creating new shortest path routes between stops.
 
 # tileGet.py
 
 This script retrieves background images from ESRI ArcGIS tile servers and other imaging APIs
 such as Google Maps and MapQuest. The simplest usage is to call it with a SUMO
-network file only. It will generate a visualisation settings file containing the coordinates which
+network file only. It will generate a visualization settings file containing the coordinates which
 can be loaded with sumo-gui or netedit. The most useful options are -t for the
-(maximum) number of tiles to retrieve and -u to give the URL of the tile server.
+(maximum) number of tiles to retrieve and -u to give the URL of the tile server. Examples:
 
-Examples: 
 - Retrieving data from the public ArcGIS online instance:
 ```
 python tools/tileGet.py -n test.net.xml -t 10
