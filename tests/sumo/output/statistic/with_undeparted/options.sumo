@@ -3,5 +3,5 @@
 --end 45
 --statistic-output statistic.xml
 --tripinfo-output dummy.xml
---tripinfo-output.write-unfinished
+--tripinfo-output.write-undeparted
 -t
