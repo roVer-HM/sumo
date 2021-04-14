@@ -146,9 +146,9 @@ GNERerouter::drawGL(const GUIVisualizationSettings& s) const {
             glRotated(180, 0, 0, 1);
             // draw texture depending of selection
             if (drawUsingSelectColor()) {
-                GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GNETEXTURE_REROUTERSELECTED), s.additionalSettings.rerouterSize);
+                GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GUITexture::REROUTER_SELECTED), s.additionalSettings.rerouterSize);
             } else {
-                GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GNETEXTURE_REROUTER), s.additionalSettings.rerouterSize);
+                GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GUITexture::REROUTER), s.additionalSettings.rerouterSize);
             }
         } else {
             // set redcolor

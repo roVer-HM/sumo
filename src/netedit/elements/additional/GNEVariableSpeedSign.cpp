@@ -141,9 +141,9 @@ GNEVariableSpeedSign::drawGL(const GUIVisualizationSettings& s) const {
             glRotated(180, 0, 0, 1);
             // draw texture
             if (drawUsingSelectColor()) {
-                GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GNETEXTURE_VARIABLESPEEDSIGNSELECTED), s.additionalSettings.VSSSize);
+                GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GUITexture::VARIABLESPEEDSIGN_SELECTED), s.additionalSettings.VSSSize);
             } else {
-                GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GNETEXTURE_VARIABLESPEEDSIGN), s.additionalSettings.VSSSize);
+                GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GUITexture::VARIABLESPEEDSIGN), s.additionalSettings.VSSSize);
             }
         } else {
             // set white color
