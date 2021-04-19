@@ -911,15 +911,10 @@ Vehicle::setStop(const std::string& vehID,
                  double startPos,
                  double until) {
     MSBaseVehicle* vehicle = Helper::getVehicle(vehID);
-    MSVehicle* veh = dynamic_cast<MSVehicle*>(vehicle);
-    if (veh == nullptr) {
-        WRITE_WARNING("setStop not yet implemented for meso");
-        return;
-    }
     SUMOVehicleParameter::Stop stopPars = Helper::buildStopParameters(edgeID,
                                           pos, laneIndex, startPos, flags, duration, until);
     std::string error;
-    if (!veh->addTraciStop(stopPars, error)) {
+    if (!vehicle->addTraciStop(stopPars, error)) {
         throw TraCIException(error);
     }
 }
@@ -1886,6 +1881,14 @@ Vehicle::setParameter(const std::string& vehID, const std::string& key, const st
             microVeh->getCarFollowModel().setParameter(microVeh, attrName, value);
         } catch (InvalidArgument& e) {
             throw TraCIException("Vehicle '" + vehID + "' does not support carFollowModel parameter '" + key + "' (" + e.what() + ").");
+        }
+    } else if (StringUtils::startsWith(key, "junctionModel.")) {
+        try {
+            // use the whole key (including junctionModel prefix)
+            veh->setJunctionModelParameter(key, value);
+        } catch (InvalidArgument& e) {
+            // error message includes id since it is also used for xml input
+            throw TraCIException(e.what());
         }
     } else if (StringUtils::startsWith(key, "has.") && StringUtils::endsWith(key, ".device")) {
         StringTokenizer tok(key, ".");

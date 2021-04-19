@@ -127,6 +127,9 @@ public:
     /// @brief try to set the given parameter from any of the vehicles devices, raise InvalidArgument if no device parameter by that name exists
     void setDeviceParameter(const std::string& deviceName, const std::string& key, const std::string& value);
 
+    /// @brief set individual junction model paramete (not type related)
+    void setJunctionModelParameter(const std::string& key, const std::string& value);
+
     /** @brief Returns the current route
      * @return The route the vehicle uses
      */
@@ -583,6 +586,23 @@ public:
     }
 
     /**
+    * returns the next imminent stop in the stop queue
+    * @return the upcoming stop
+    */
+    MSStop& getNextStop();
+
+    /// @brief return parameters for the next stop (SUMOVehicle Interface)
+    const SUMOVehicleParameter::Stop* getNextStopParameter() const;
+
+    /**
+     * schedule a new stop for the vehicle; each time a stop is reached, the vehicle
+     * will wait for the given duration before continuing on its route
+     * @param[in] stop Stop parameters
+     * @param[out] errorMsg returned error message
+     */
+    virtual bool addTraciStop(SUMOVehicleParameter::Stop stop, std::string& errorMsg);
+
+    /**
     * resumes a vehicle from stopping
     * @return true on success, the resuming fails if the vehicle wasn't parking in the first place
     */
@@ -879,6 +899,8 @@ private:
     MSEdgeWeightsStorage& _getWeightsStorage() const;
 
     static NumericalID myCurrentNumericalIndex;
+
+    void initJunctionModelParams();
 
 private:
     /// invalidated assignment operator

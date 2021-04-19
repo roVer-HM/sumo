@@ -97,10 +97,6 @@ void
 MSDevice_Taxi::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& into) {
     OptionsCont& oc = OptionsCont::getOptions();
     if (equippedByDefaultAssignmentOptions(oc, "taxi", v, false)) {
-        if (MSGlobals::gUseMesoSim) {
-            WRITE_WARNING("Mesoscopic simulation does not support the taxi device yet.");
-            return;
-        }
         // build the device
         MSDevice_Taxi* device = new MSDevice_Taxi(v, "taxi_" + v.getID());
         into.push_back(device);
@@ -122,6 +118,7 @@ MSDevice_Taxi::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>
         }
     }
 }
+
 
 void
 MSDevice_Taxi::initDispatch() {
@@ -395,9 +392,13 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
             }
             //stops.back().awaitedPersons.insert(res.person->getID());
             stops.back().parametersSet |= STOP_PERMITTED_SET;
+            if (stops.back().duration == -1) {
+                // keep dropOffDuration if the stop is dropOff and pickUp
+                stops.back().duration = TIME2STEPS(getFloatParam(myHolder, OptionsCont::getOptions(), "taxi.pickUpDuration", 0, false));
+            }
         } else {
             prepareStop(tmpEdges, stops, lastPos, res->to, res->toPos, "dropOff " + toString(res->persons) + " (" + res->id + ")");
-            stops.back().duration = TIME2STEPS(60); // pay and collect bags
+            stops.back().duration = TIME2STEPS(getFloatParam(myHolder, OptionsCont::getOptions(), "taxi.dropOffDuration", 60, false)); // pay and collect bags
         }
     }
 #ifdef DEBUG_DISPATCH
@@ -459,7 +460,7 @@ MSDevice_Taxi::prepareStop(ConstMSEdgeVector& edges,
     stop.lane = getStopLane(stopEdge)->getID();
     stop.startPos = stopPos;
     stop.endPos = MAX2(stopPos, MIN2(myHolder.getVehicleType().getLength(), stopEdge->getLength()));
-    stop.parking = true;
+    stop.parking = getBoolParam(myHolder, OptionsCont::getOptions(), "taxi.parking", true, false);
     stop.actType = action;
     stop.index = STOP_INDEX_END;
     stops.push_back(stop);
@@ -501,8 +502,7 @@ MSDevice_Taxi::notifyMove(SUMOTrafficObject& /*tObject*/, double oldPos,
         if (!myIsStopped) {
             // limit duration of stop
             // @note: stops are not yet added to the vehicle so we can change the loaded parameters. Stops added from a route are not affected
-            MSVehicle& veh = static_cast<MSVehicle&>(myHolder);
-            veh.getNextStop().endBoarding = myServiceEnd;
+            myHolder.getNextStop().endBoarding = myServiceEnd;
         }
     }
     myIsStopped = myHolder.isStopped();
@@ -547,12 +547,11 @@ MSDevice_Taxi::customerArrived(const MSTransportable* person) {
     myCustomers.erase(person);
     if (myHolder.getPersonNumber() == 0 && myHolder.getContainerNumber() == 0) {
         myState &= ~OCCUPIED;
-        MSVehicle* veh = static_cast<MSVehicle*>(&myHolder);
-        if (veh->getStops().size() > 1 && (myState & PICKUP) == 0) {
+        if (myHolder.getStops().size() > 1 && (myState & PICKUP) == 0) {
             WRITE_WARNINGF("All customers left vehicle '%' at time % but there are % remaining stops",
-                           veh->getID(), time2string(MSNet::getInstance()->getCurrentTimeStep()), veh->getStops().size() - 1);
-            while (veh->getStops().size() > 1) {
-                veh->abortNextStop(1);
+                           myHolder.getID(), time2string(MSNet::getInstance()->getCurrentTimeStep()), myHolder.getStops().size() - 1);
+            while (myHolder.getStops().size() > 1) {
+                myHolder.abortNextStop(1);
             }
         }
     }
@@ -584,8 +583,7 @@ MSDevice_Taxi::customerArrived(const MSTransportable* person) {
 
 bool
 MSDevice_Taxi::hasFuturePickup() {
-    MSVehicle* veh = static_cast<MSVehicle*>(&myHolder);
-    for (const auto& stop : veh->getStops()) {
+    for (const auto& stop : myHolder.getStops()) {
         if (stop.reached) {
             continue;
         }
