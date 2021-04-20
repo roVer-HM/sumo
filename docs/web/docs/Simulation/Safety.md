@@ -71,10 +71,15 @@ Collisions at intersections may be caused by any of the following:
 - Unsafe [junction model
 parameters](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#junction_model_parameters)
   - *jmDriveAfterRedTime* \> 0 (ignoring a red light)
-  - *jmIgnoreFoeProb* and *jmIgnoreFoeSpeed* (ignore foes below the
+  - *jmIgnoreFoeProb* and *jmIgnoreFoeSpeed* (ignore foes that are approaching the junction below the
     given speed with the given probability)
   - *jmTimegapMinor* < 1 (safety time gap when passing an
     intersection without priority)
+  - *jmIgnoreJunctionFoeProb* > 0: allows ignoring foes that are already on the junction (with given probability)
+    - vehicular foes as long as they are not in the way
+    - any pedestrian foes
+  - *junctionModel.ignoreIDs*: ignores all foes with the given ids  (set via [generic parameters](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#transient_parameters))
+  - *junctionModel.ignoreTypess*: ignores all foes with the given types (set via [generic parameters](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#transient_parameters))    
 - yellow phases which are too short in relation to the vehicle speed
 (giving insufficient time to come to a stop). By default this causes
 strong braking (*Warning: emergency braking*) potentially followed
