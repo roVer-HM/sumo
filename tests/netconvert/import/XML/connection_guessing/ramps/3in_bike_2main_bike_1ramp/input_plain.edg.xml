@@ -28,5 +28,13 @@ SPDX-License-Identifier: EPL-2.0
 </configuration>
 -->
 
-<tlLogics version="0.27" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/tllogic_file.xsd">
-</tlLogics>
+<edges version="0.27" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+    <edge id="CE" from="C" to="E" numLanes="3" disallow="bicycle">
+        <lane index="0" allow="bicycle" width="1.00"/>
+    </edge>
+    <edge id="CS" from="C" to="S" numLanes="1" disallow="bicycle">
+    </edge>
+    <edge id="WC" from="W" to="C" numLanes="4" disallow="bicycle">
+        <lane index="0" allow="bicycle" width="1.00"/>
+    </edge>
+</edges>
