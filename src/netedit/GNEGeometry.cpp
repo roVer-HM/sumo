@@ -789,6 +789,8 @@ GNEGeometry::adjustStartPosGeometricPath(double& startPos, const GNELane* startL
 
 void
 GNEGeometry::drawGeometry(const GNEViewNet* viewNet, const Geometry& geometry, const double width) {
+    // get visualiaztion settings
+    GUIVisualizationSettings& s = viewNet->getVisualisationSettings();
     // continue depending of draw for position selection
     if (viewNet->getVisualisationSettings().drawForPositionSelection) {
         // obtain mouse Position
@@ -802,11 +804,15 @@ GNEGeometry::drawGeometry(const GNEViewNet* viewNet, const Geometry& geometry, c
             // translate to position over lane
             glTranslated(posOverLane.x(), posOverLane.y(), 0);
             // Draw circle
-            GLHelper::drawFilledCircle(width, viewNet->getVisualisationSettings().getCircleResolution());
+            GLHelper::drawFilledCircle(width, s.getCircleResolution());
             // pop draw matrix
             glPopMatrix();
         }
+    } else if (s.scale * width < 1) {
+        // draw line (needed for zoom out)
+        GLHelper::drawLine(geometry.getShape());
     } else {
+        // draw geometry
         GLHelper::drawBoxLines(geometry.getShape(), geometry.getShapeRotations(), geometry.getShapeLengths(), width);
     }
 }
