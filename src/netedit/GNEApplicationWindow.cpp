@@ -18,14 +18,12 @@
 // Functions from main window of NETEDIT
 /****************************************************************************/
 #include <netbuild/NBFrame.h>
-#include <netbuild/NBNetBuilder.h>
 #include <netedit/dialogs/GNEAbout.h>
 #include <netedit/elements/network/GNEEdgeType.h>
 #include <netedit/elements/network/GNELaneType.h>
 #include <netedit/elements/additional/GNEAdditionalHandler.h>
 #include <netedit/elements/data/GNEDataHandler.h>
 #include <netedit/elements/demand/GNERouteHandler.h>
-#include <netedit/frames/common/GNEInspectorFrame.h>
 #include <netedit/frames/network/GNECreateEdgeFrame.h>
 #include <netedit/frames/network/GNETAZFrame.h>
 #include <netedit/frames/network/GNETLSEditorFrame.h>
@@ -39,7 +37,6 @@
 #include <utils/foxtools/FXLinkLabel.h>
 #include <utils/gui/cursors/GUICursorSubSys.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/div/GUIDialog_GLChosenEditor.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
@@ -174,6 +171,8 @@ FXDEFMAP(GNEApplicationWindow) GNEApplicationWindowMap[] = {
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_Z_UNDO,                         GNEApplicationWindow::onUpdUndo),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_Y_REDO,                         GNEApplicationWindow::onCmdRedo),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_Y_REDO,                         GNEApplicationWindow::onUpdRedo),
+    FXMAPFUNC(SEL_COMMAND,  MID_GNE_TOOLBAREDIT_COMPUTEPATHMANAGER,         GNEApplicationWindow::onCmdComputePathManager),
+    FXMAPFUNC(SEL_UPDATE,   MID_GNE_TOOLBAREDIT_COMPUTEPATHMANAGER,         GNEApplicationWindow::onUpdComputePathManager),
     // Network view options
     FXMAPFUNC(SEL_COMMAND, MID_GNE_NETWORKVIEWOPTIONS_TOGGLEGRID,           GNEApplicationWindow::onCmdToggleViewOption),
     FXMAPFUNC(SEL_UPDATE,  MID_GNE_NETWORKVIEWOPTIONS_TOGGLEGRID,           GNEApplicationWindow::onUpdToggleViewOption),
@@ -249,6 +248,8 @@ FXDEFMAP(GNEApplicationWindow) GNEApplicationWindowMap[] = {
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_F6_CLEAN_SOLITARYJUNCTIONS_UNUSEDROUTES,     GNEApplicationWindow::onUpdNeedsNetwork),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_F7_JOIN_SELECTEDJUNCTIONS_ROUTES,            GNEApplicationWindow::onCmdProcessButton),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_F7_JOIN_SELECTEDJUNCTIONS_ROUTES,            GNEApplicationWindow::onUpdNeedsNetwork),
+    FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_SHIFT_F7_ADJUST_PERSON_PLANS,                GNEApplicationWindow::onCmdProcessButton),
+    FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_SHIFT_F7_ADJUST_PERSON_PLANS,                GNEApplicationWindow::onUpdNeedsNetwork),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_F8_CLEANINVALID_CROSSINGS_DEMANDELEMENTS,    GNEApplicationWindow::onCmdProcessButton),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_F8_CLEANINVALID_CROSSINGS_DEMANDELEMENTS,    GNEApplicationWindow::onUpdNeedsNetwork),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_F10_OPTIONSMENU,                             GNEApplicationWindow::onCmdOptions),
@@ -1594,7 +1595,7 @@ GNEApplicationWindow::onCmdProcessButton(FXObject*, FXSelector sel, void*) {
                 default:
                     break;
             }
-        } else {
+        } else if (myViewNet->getEditModes().isCurrentSupermodeDemand()) {
             // check what FXMenuCommand was called
             switch (FXSELID(sel)) {
                 case MID_HOTKEY_F5_COMPUTE_NETWORK_DEMAND:
@@ -1612,6 +1613,11 @@ GNEApplicationWindow::onCmdProcessButton(FXObject*, FXSelector sel, void*) {
                     // show extra information for tests
                     WRITE_DEBUG("Key F7 (JoinRoutes) pressed");
                     myNet->joinRoutes(myUndoList);
+                    break;
+                case MID_HOTKEY_SHIFT_F7_ADJUST_PERSON_PLANS:
+                    // show extra information for tests
+                    WRITE_DEBUG("Key F7 (AdjustPersonPlans) pressed");
+                    myNet->adjustPersonPlans(myUndoList);
                     break;
                 case MID_HOTKEY_F8_CLEANINVALID_CROSSINGS_DEMANDELEMENTS:
                     // show extra information for tests
@@ -2009,6 +2015,16 @@ GNEApplicationWindow::onCmdRedo(FXObject*, FXSelector, void*) {
 }
 
 
+long 
+GNEApplicationWindow::onCmdComputePathManager(FXObject*, FXSelector, void*) {
+    // first check viewNet
+    if (myViewNet) {
+        // update path calculator
+        myViewNet->getNet()->getPathManager()->getPathCalculator()->updatePathCalculator();
+    }
+    return 1;
+}
+
 
 long
 GNEApplicationWindow::onCmdCut(FXObject*, FXSelector, void*) {
@@ -2287,6 +2303,28 @@ GNEApplicationWindow::onUpdUndo(FXObject* obj, FXSelector sel, void* ptr) {
 long
 GNEApplicationWindow::onUpdRedo(FXObject* obj, FXSelector sel, void* ptr) {
     return myUndoList->p_onUpdRedo(obj, sel, ptr);
+}
+
+
+long
+GNEApplicationWindow::onUpdComputePathManager(FXObject* sender, FXSelector sel, void* ptr) {
+    // first check viewNet
+    if (myViewNet) {
+        // check supermode network
+        if (myViewNet->getEditModes().isCurrentSupermodeNetwork()) {
+            // disable
+            return sender->handle(this, FXSEL(SEL_COMMAND, ID_DISABLE), nullptr);
+        } else if (myViewNet->getNet()->getPathManager()->getPathCalculator()->isPathCalculatorUpdated()) {
+            // disable
+            return sender->handle(this, FXSEL(SEL_COMMAND, ID_DISABLE), nullptr);
+        } else {
+            // enable
+            return sender->handle(this, FXSEL(SEL_COMMAND, ID_ENABLE), nullptr);
+        }
+    } else {
+        // disable
+        return sender->handle(this, FXSEL(SEL_COMMAND, ID_DISABLE), nullptr);
+    }
 }
 
 

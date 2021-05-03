@@ -65,7 +65,7 @@ GNEDetectorE3::getMoveOperation(const double /*shapeOffset*/) {
 void
 GNEDetectorE3::updateGeometry() {
     // update additional geometry
-    myAdditionalGeometry.updateGeometry(myPosition, 0);
+    myAdditionalGeometry.updateSinglePosGeometry(myPosition, 0);
     // Update Hierarchical connections geometry
     myHierarchicalConnections.update();
 }
@@ -139,9 +139,9 @@ GNEDetectorE3::drawGL(const GUIVisualizationSettings& s) const {
             } else {
                 // draw texture
                 if (drawUsingSelectColor()) {
-                    GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GNETEXTURE_E3SELECTED), s.detectorSettings.E3Size);
+                    GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GUITexture::E3_SELECTED), s.detectorSettings.E3Size);
                 } else {
-                    GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GNETEXTURE_E3), s.detectorSettings.E3Size);
+                    GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GUITexture::E3), s.detectorSettings.E3Size);
                 }
             }
             // Pop texture matrix

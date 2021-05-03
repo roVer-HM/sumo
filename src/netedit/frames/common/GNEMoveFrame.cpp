@@ -57,6 +57,27 @@ FXIMPLEMENT(GNEMoveFrame::ShiftShapeGeometry,   FXGroupBox, ShiftShapeGeometryMa
 // ===========================================================================
 
 // ---------------------------------------------------------------------------
+// GNEMoveFrame::CommonModeOptions - methods
+// ---------------------------------------------------------------------------
+
+GNEMoveFrame::CommonModeOptions::CommonModeOptions(GNEMoveFrame* moveFrameParent) :
+    FXGroupBox(moveFrameParent->myContentFrame, "Common move options", GUIDesignGroupBoxFrame),
+    myMoveFrameParent(moveFrameParent) {
+    // Create checkbox for enable/disable move whole polygons
+    myAllowChangeLanes = new FXCheckButton(this, "Allow change Lane", this, MID_GNE_SET_ATTRIBUTE, GUIDesignCheckButton);
+    myAllowChangeLanes->setCheck(FALSE);
+}
+
+
+GNEMoveFrame::CommonModeOptions::~CommonModeOptions() {}
+
+
+bool
+GNEMoveFrame::CommonModeOptions::getAllowChangeLane() const {
+    return (myAllowChangeLanes->getCheck() == TRUE);
+}
+
+// ---------------------------------------------------------------------------
 // GNEMoveFrame::NetworkModeOptions - methods
 // ---------------------------------------------------------------------------
 
@@ -72,11 +93,63 @@ GNEMoveFrame::NetworkModeOptions::NetworkModeOptions(GNEMoveFrame* moveFramePare
 GNEMoveFrame::NetworkModeOptions::~NetworkModeOptions() {}
 
 
+void 
+GNEMoveFrame::NetworkModeOptions::showNetworkModeOptions() {
+    recalc();
+    show();
+}
+
+
+void 
+GNEMoveFrame::NetworkModeOptions::hideNetworkModeOptions() {
+    hide();
+}
+
+
 bool
 GNEMoveFrame::NetworkModeOptions::getMoveWholePolygons() const {
     if (myMoveFrameParent->getViewNet()->getEditModes().isCurrentSupermodeNetwork() &&
             (myMoveFrameParent->getViewNet()->getEditModes().networkEditMode == NetworkEditMode::NETWORK_MOVE)) {
         return (myMoveWholePolygons->getCheck() == TRUE);
+    } else {
+        return false;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// GNEMoveFrame::DemandModeOptions - methods
+// ---------------------------------------------------------------------------
+
+GNEMoveFrame::DemandModeOptions::DemandModeOptions(GNEMoveFrame* moveFrameParent) :
+    FXGroupBox(moveFrameParent->myContentFrame, "Demand move options", GUIDesignGroupBoxFrame),
+    myMoveFrameParent(moveFrameParent) {
+    // Create checkbox for enable/disable move whole polygons
+    myLeavePersonStopsConnected = new FXCheckButton(this, "Leave personStops connected", this, MID_GNE_SET_ATTRIBUTE, GUIDesignCheckButton);
+    myLeavePersonStopsConnected->setCheck(FALSE);
+}
+
+
+GNEMoveFrame::DemandModeOptions::~DemandModeOptions() {}
+
+
+void 
+GNEMoveFrame::DemandModeOptions::showDemandModeOptions() {
+    recalc();
+    show();
+}
+
+
+void 
+GNEMoveFrame::DemandModeOptions::hideDemandModeOptions() {
+    hide();
+}
+
+
+bool
+GNEMoveFrame::DemandModeOptions::getLeavePersonStopsConnected() const {
+    if (myMoveFrameParent->getViewNet()->getEditModes().isCurrentSupermodeDemand() &&
+        (myMoveFrameParent->getViewNet()->getEditModes().demandEditMode == DemandEditMode::DEMAND_MOVE)) {
+        return (myLeavePersonStopsConnected->getCheck() == TRUE);
     } else {
         return false;
     }
@@ -515,8 +588,12 @@ GNEMoveFrame::ShiftShapeGeometry::onCmdShiftShapeGeometry(FXObject*, FXSelector,
 
 GNEMoveFrame::GNEMoveFrame(FXHorizontalFrame* horizontalFrameParent, GNEViewNet* viewNet) :
     GNEFrame(horizontalFrameParent, viewNet, "Move") {
+    // create common mode options
+    myCommonModeOptions = new CommonModeOptions(this);
     // create network mode options
     myNetworkModeOptions = new NetworkModeOptions(this);
+    // create demand mode options
+    myDemandModeOptions = new DemandModeOptions(this);
     // create shift edge geometry modul
     myShiftEdgeGeometry = new ShiftEdgeGeometry(this);
     // create change z selection
@@ -539,6 +616,18 @@ GNEMoveFrame::processClick(const Position& /*clickedPosition*/,
 
 void
 GNEMoveFrame::show() {
+    // show network options frames
+    if (myViewNet->getEditModes().isCurrentSupermodeNetwork()) {
+        myNetworkModeOptions->showNetworkModeOptions();
+    } else {
+        myNetworkModeOptions->hideNetworkModeOptions();
+    }
+    // show demand options frames
+    if (myViewNet->getEditModes().isCurrentSupermodeDemand()) {
+        myDemandModeOptions->showDemandModeOptions();
+    } else {
+        myDemandModeOptions->hideDemandModeOptions();
+    }
     // get selected junctions
     const auto junctions = myViewNet->getNet()->retrieveJunctions(true);
     // get selected edges
@@ -567,6 +656,7 @@ GNEMoveFrame::show() {
     // show
     GNEFrame::show();
     // recalc and update
+    recalc();
     update();
 }
 
@@ -578,9 +668,21 @@ GNEMoveFrame::hide() {
 }
 
 
+GNEMoveFrame::CommonModeOptions*
+GNEMoveFrame::getCommonModeOptions() const {
+    return myCommonModeOptions;
+}
+
+
 GNEMoveFrame::NetworkModeOptions*
 GNEMoveFrame::getNetworkModeOptions() const {
     return myNetworkModeOptions;
+}
+
+
+GNEMoveFrame::DemandModeOptions*
+GNEMoveFrame::getDemandModeOptions() const {
+    return myDemandModeOptions;
 }
 
 /****************************************************************************/

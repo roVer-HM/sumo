@@ -30,12 +30,7 @@
 #include <netedit/elements/additional/GNEPoly.h>
 #include <netedit/elements/data/GNEDataInterval.h>
 #include <netedit/elements/demand/GNEVehicleType.h>
-#include <netedit/elements/network/GNEConnection.h>
 #include <netedit/elements/network/GNEEdgeType.h>
-#include <netedit/elements/network/GNEJunction.h>
-#include <netedit/elements/network/GNELaneType.h>
-#include <netedit/frames/common/GNEInspectorFrame.h>
-#include <utils/router/DijkstraRouter.h>
 
 #include "GNENetHelper.h"
 
@@ -682,6 +677,8 @@ GNENetHelper::AttributeCarriers::deleteAdditional(GNEAdditional* additional) {
     if (additional->getTagProperty().isPlacedInRTree()) {
         myNet->removeGLObjectFromGrid(additional);
     }
+    // delete path element
+    myNet->getPathManager()->removePath(additional);
     // additionals has to be saved
     myNet->requireSaveAdditionals(true);
 }
@@ -892,7 +889,6 @@ GNENetHelper::AttributeCarriers::insertDemandElement(GNEDemandElement* demandEle
     }
     // demandElements has to be saved
     myNet->requireSaveDemandElements(true);
-
 }
 
 
@@ -914,6 +910,8 @@ GNENetHelper::AttributeCarriers::deleteDemandElement(GNEDemandElement* demandEle
     }
     // remove element from grid
     myNet->removeGLObjectFromGrid(demandElement);
+    // delete path element
+    myNet->getPathManager()->removePath(demandElement);
     // demandElements has to be saved
     myNet->requireSaveDemandElements(true);
 }
@@ -1026,204 +1024,6 @@ GNENetHelper::AttributeCarriers::updateDataSetID(GNEAttributeCarrier* AC, const 
         // update interval toolbar
         myNet->getViewNet()->getIntervalBar().updateIntervalBar();
     }
-}
-
-// ---------------------------------------------------------------------------
-// GNENetHelper::PathCalculator - methods
-// ---------------------------------------------------------------------------
-
-GNENetHelper::PathCalculator::PathCalculator(const GNENet* net) :
-    myNet(net),
-    myDijkstraRouter(nullptr) {
-    // create myDijkstraRouter
-    myDijkstraRouter = new DijkstraRouter<NBRouterEdge, NBVehicle>(
-        myNet->getNetBuilder()->getEdgeCont().getAllRouterEdges(),
-        true, &NBRouterEdge::getTravelTimeStatic, nullptr, true);
-}
-
-
-GNENetHelper::PathCalculator::~PathCalculator() {
-    delete myDijkstraRouter;
-}
-
-
-void
-GNENetHelper::PathCalculator::updatePathCalculator() {
-    // simply delete and create myDijkstraRouter again
-    if (myDijkstraRouter) {
-        delete myDijkstraRouter;
-    }
-    myDijkstraRouter = new DijkstraRouter<NBRouterEdge, NBVehicle>(
-        myNet->getNetBuilder()->getEdgeCont().getAllRouterEdges(),
-        true, &NBRouterEdge::getTravelTimeStatic, nullptr, true);
-}
-
-
-std::vector<GNEEdge*>
-GNENetHelper::PathCalculator::calculatePath(const SUMOVehicleClass vClass, const std::vector<GNEEdge*>& partialEdges) const {
-    // declare a solution vector
-    std::vector<GNEEdge*> solution;
-    // calculate route depending of number of partial myEdges
-    if (partialEdges.size() == 0) {
-        // partial edges empty, then return a empty vector
-        return solution;
-    }
-    if (partialEdges.size() == 1) {
-        // if there is only one partialEdges, route has only one edge
-        solution.push_back(partialEdges.front());
-    } else {
-        // declare temporal vehicle
-        NBVehicle tmpVehicle("temporalNBVehicle", vClass);
-        // obtain pointer to GNENet
-        GNENet* net = partialEdges.front()->getNet();
-        // iterate over every selected myEdges
-        for (int i = 1; i < (int)partialEdges.size(); i++) {
-            // declare a temporal route in which save route between two last myEdges
-            std::vector<const NBRouterEdge*> partialRoute;
-            myDijkstraRouter->compute(partialEdges.at(i - 1)->getNBEdge(), partialEdges.at(i)->getNBEdge(), &tmpVehicle, 10, partialRoute);
-            // save partial route in solution
-            for (const auto& edgeID : partialRoute) {
-                solution.push_back(net->retrieveEdge(edgeID->getID()));
-            }
-        }
-    }
-    // filter solution
-    auto solutionIt = solution.begin();
-    // iterate over solution
-    while (solutionIt != solution.end()) {
-        if ((solutionIt + 1) != solution.end()) {
-            // if next edge is the same of current edge, remove it
-            if (*solutionIt == *(solutionIt + 1)) {
-                solutionIt = solution.erase(solutionIt);
-            } else {
-                solutionIt++;
-            }
-        } else {
-            solutionIt++;
-        }
-    }
-    return solution;
-}
-
-
-void
-GNENetHelper::PathCalculator::calculateReachability(const SUMOVehicleClass vClass, GNEEdge* originEdge) {
-    // first reset reachability of all lanes
-    for (const auto& edge : originEdge->getNet()->getAttributeCarriers()->getEdges()) {
-        for (const auto& lane : edge.second->getLanes()) {
-            lane->resetReachability();
-        }
-    }
-    // get max speed
-    const double defaultMaxSpeed = SUMOVTypeParameter::VClassDefaultValues(vClass).maxSpeed;
-    // declare map for reachable edges
-    std::map<GNEEdge*, double> reachableEdges;
-    // init first edge
-    reachableEdges[originEdge] = 0;
-    // declare a vector for checked edges
-    std::vector<GNEEdge*> check;
-    // add first edge
-    check.push_back(originEdge);
-    // continue while there is edges to check
-    while (check.size() > 0) {
-        GNEEdge* edge = check.front();
-        check.erase(check.begin());
-        double traveltime = reachableEdges[edge];
-        for (const auto& lane : edge->getLanes()) {
-            if ((edge->getNBEdge()->getLaneStruct(lane->getIndex()).permissions & vClass) == vClass) {
-                lane->setReachability(traveltime);
-            }
-        }
-        // update traveltime
-        traveltime += edge->getNBEdge()->getLength() / MIN2(edge->getNBEdge()->getSpeed(), defaultMaxSpeed);
-        std::vector<GNEEdge*> sucessors;
-        // get sucessor edges
-        for (const auto& sucessorEdge : edge->getParentJunctions().back()->getGNEOutgoingEdges()) {
-            // check if edge is connected with sucessor edge
-            if (consecutiveEdgesConnected(vClass, edge, sucessorEdge)) {
-                sucessors.push_back(sucessorEdge);
-            }
-        }
-        // add sucessors to check vector
-        for (const auto& nextEdge : sucessors) {
-            // revisit edge via faster path
-            if ((reachableEdges.count(nextEdge) == 0) || (reachableEdges[nextEdge] > traveltime)) {
-                reachableEdges[nextEdge] = traveltime;
-                check.push_back(nextEdge);
-            }
-        }
-    }
-}
-
-
-bool
-GNENetHelper::PathCalculator::consecutiveEdgesConnected(const SUMOVehicleClass vClass, const GNEEdge* from, const GNEEdge* to) const {
-    // check conditions
-    if ((from == nullptr) || (to == nullptr)) {
-        // myEdges cannot be null
-        return false;
-    } else if (from == to) {
-        // the same edge cannot be consecutive of itself
-        return false;
-    } else if (vClass == SVC_PEDESTRIAN) {
-        // for pedestrians consecutive myEdges are always connected
-        return true;
-    } else {
-        // iterate over connections of from edge
-        for (const auto& fromLane : from->getLanes()) {
-            for (const auto& fromConnection : from->getGNEConnections()) {
-                // within from loop, iterate ove to lanes
-                for (const auto& toLane : to->getLanes()) {
-                    if (fromConnection->getLaneTo() == toLane) {
-                        // get lane structs for both lanes
-                        const NBEdge::Lane NBFromLane = from->getNBEdge()->getLaneStruct(fromLane->getIndex());
-                        const NBEdge::Lane NBToLane = to->getNBEdge()->getLaneStruct(toLane->getIndex());
-                        // check vClass
-                        if (((NBFromLane.permissions & vClass) == vClass) &&
-                                ((NBToLane.permissions & vClass) == vClass)) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-}
-
-
-bool
-GNENetHelper::PathCalculator::busStopConnected(const GNEAdditional* busStop, const GNEEdge* edge) const {
-    if (busStop->getTagProperty().getTag() != SUMO_TAG_BUS_STOP) {
-        return false;
-    }
-    // check if busstop is placed over a pedestrian lane
-    if ((busStop->getParentLanes().front()->getParentEdge() == edge) &&
-            (edge->getNBEdge()->getLaneStruct(busStop->getParentLanes().front()->getIndex()).permissions & SVC_PEDESTRIAN) != 0) {
-        // busStop is placed over an lane that supports pedestrians, then return true
-        return true;
-    }
-    // obtain a list with all edge lanes that supports pedestrians
-    std::vector<GNELane*> pedestrianLanes;
-    for (int laneIndex = 0; laneIndex < (int)edge->getLanes().size(); laneIndex++) {
-        if ((edge->getNBEdge()->getLaneStruct(laneIndex).permissions & SVC_PEDESTRIAN) != 0) {
-            pedestrianLanes.push_back(edge->getLanes().at(laneIndex));
-        }
-    }
-    // check if exist an access between busStop and pedestrian lanes
-    for (const auto& access : busStop->getChildAdditionals()) {
-        // check that child is an access
-        if (access->getTagProperty().getTag() == SUMO_TAG_ACCESS) {
-            for (const auto& lane : pedestrianLanes) {
-                if (access->getParentLanes().front() == lane) {
-                    // found, then return true
-                    return true;
-                }
-            }
-        }
-    }
-    // There isn't a valid access, then return false
-    return false;
 }
 
 // ---------------------------------------------------------------------------

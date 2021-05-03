@@ -402,37 +402,16 @@ enum SumoXMLTag {
     /// @brief description of a vehicle with an embedded route (used in NETEDIT)
     GNE_TAG_FLOW_WITHROUTE,
     // person trips
-    GNE_TAG_PERSONTRIP_EDGE_EDGE,
-    GNE_TAG_PERSONTRIP_EDGE_BUSSTOP,
-    GNE_TAG_PERSONTRIP_EDGE_STOP,
-    GNE_TAG_PERSONTRIP_BUSSTOP_EDGE,
-    GNE_TAG_PERSONTRIP_BUSSTOP_BUSSTOP,
-    GNE_TAG_PERSONTRIP_BUSSTOP_STOP,
-    GNE_TAG_PERSONTRIP_STOP_EDGE,
-    GNE_TAG_PERSONTRIP_STOP_BUSSTOP,
-    GNE_TAG_PERSONTRIP_STOP_STOP,
+    GNE_TAG_PERSONTRIP_EDGE,
+    GNE_TAG_PERSONTRIP_BUSSTOP,
     // walks
-    GNE_TAG_WALK_EDGE_EDGE,
-    GNE_TAG_WALK_EDGE_BUSSTOP,
-    GNE_TAG_WALK_EDGE_STOP,
-    GNE_TAG_WALK_BUSSTOP_EDGE,
-    GNE_TAG_WALK_BUSSTOP_BUSSTOP,
-    GNE_TAG_WALK_BUSSTOP_STOP,
-    GNE_TAG_WALK_STOP_EDGE,
-    GNE_TAG_WALK_STOP_BUSSTOP,
-    GNE_TAG_WALK_STOP_STOP,
+    GNE_TAG_WALK_EDGE,
+    GNE_TAG_WALK_BUSSTOP,
     GNE_TAG_WALK_EDGES,
     GNE_TAG_WALK_ROUTE,
     // rides
-    GNE_TAG_RIDE_EDGE_EDGE,
-    GNE_TAG_RIDE_EDGE_BUSSTOP,
-    GNE_TAG_RIDE_EDGE_STOP,
-    GNE_TAG_RIDE_BUSSTOP_EDGE,
-    GNE_TAG_RIDE_BUSSTOP_BUSSTOP,
-    GNE_TAG_RIDE_BUSSTOP_STOP,
-    GNE_TAG_RIDE_STOP_EDGE,
-    GNE_TAG_RIDE_STOP_BUSSTOP,
-    GNE_TAG_RIDE_STOP_STOP,
+    GNE_TAG_RIDE_EDGE,
+    GNE_TAG_RIDE_BUSSTOP,
     // person stops
     GNE_TAG_PERSONSTOP_BUSSTOP,
     GNE_TAG_PERSONSTOP_EDGE,
@@ -1228,8 +1207,6 @@ enum SumoXMLAttr {
     GNE_ATTR_DEFAULT_VTYPE_MODIFIED,
     /// @brief flag to center camera after element creation
     GNE_ATTR_CENTER_AFTER_CREATION,
-    /// @brief from busStop (used by personPlans)
-    GNE_ATTR_FROM_BUSSTOP,
     /// @brief to busStop (used by personPlans)
     GNE_ATTR_TO_BUSSTOP,
     /// @brief from stop (used by personPlans)
@@ -1238,6 +1215,8 @@ enum SumoXMLAttr {
     GNE_ATTR_TO_STOP,
     /// @brief neighboring lane, simplified lane attr instead of child element
     GNE_ATTR_OPPOSITE,
+    /// @brief center (used in stoppingPlaces)
+    GNE_ATTR_CENTER,
 
     // @}
 

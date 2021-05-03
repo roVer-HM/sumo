@@ -214,6 +214,8 @@ enum {
     MID_HOTKEY_SHIFT_F3_TEMPLATE_CLEAR,
     /// @brief compute junctions with volatile options
     MID_HOTKEY_SHIFT_F5_COMPUTEJUNCTIONS_VOLATILE,
+    /// @brief Adjust person plans (start und end positions, arrival positions, etc.)
+    MID_HOTKEY_SHIFT_F7_ADJUST_PERSON_PLANS,
     /// @brief focus upper element of current frame (only used in NETEDIT)
     MID_HOTKEY_SHIFT_F12_FOCUSUPPERELEMENT,
     /// @}
@@ -628,6 +630,8 @@ enum {
     MID_GNE_TOOLBAREDIT_LOADADDITIONALS,
     /// @brief load demand in SUMO-GUI after press ctrl+T
     MID_GNE_TOOLBAREDIT_LOADDEMAND,
+    /// @brief compute path manager
+    MID_GNE_TOOLBAREDIT_COMPUTEPATHMANAGER,
 
     /// @}
 

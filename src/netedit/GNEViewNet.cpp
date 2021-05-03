@@ -26,9 +26,7 @@
 #include <netedit/elements/additional/GNETAZ.h>
 #include <netedit/elements/network/GNEConnection.h>
 #include <netedit/elements/network/GNECrossing.h>
-#include <netedit/elements/network/GNEJunction.h>
 #include <netedit/frames/common/GNEDeleteFrame.h>
-#include <netedit/frames/common/GNEInspectorFrame.h>
 #include <netedit/frames/common/GNESelectorFrame.h>
 #include <netedit/frames/common/GNEMoveFrame.h>
 #include <netedit/frames/data/GNEEdgeDataFrame.h>
@@ -814,6 +812,8 @@ GNEViewNet::doPaintGL(int mode, const Boundary& bound) {
             myDemandViewOptions.menuCheckShowAllPersonPlans->enable();
         }
     }
+    // clear pathDraw
+    myNet->getPathManager()->getPathDraw()->clearPathDraw();
     // draw elements
     glLineWidth(1);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -2184,7 +2184,7 @@ GNEViewNet::onCmdLaneReachability(FXObject* menu, FXSelector, void*) {
         // obtain vClass
         const SUMOVehicleClass vClass = SumoVehicleClassStrings.get(dynamic_cast<FXMenuCommand*>(menu)->getText().text());
         // calculate reachability
-        myNet->getPathCalculator()->calculateReachability(vClass, clickedLane->getParentEdge());
+        myNet->getPathManager()->getPathCalculator()->calculateReachability(vClass, clickedLane->getParentEdge());
         // select all lanes with reachablility greather than 0
         myUndoList->p_begin("select lane reachability");
         for (const auto& edge : myNet->getAttributeCarriers()->getEdges()) {

@@ -85,7 +85,7 @@ GNEDetectorE1::fixAdditionalProblem() {
 void
 GNEDetectorE1::updateGeometry() {
     // update geometry
-    myAdditionalGeometry.updateGeometry(getParentLanes().front(), getGeometryPositionOverLane());
+    myAdditionalGeometry.updateGeometry(getParentLanes().front()->getLaneShape(), getGeometryPositionOverLane(), myMoveElementLateralOffset);
 }
 
 
@@ -171,6 +171,17 @@ GNEDetectorE1::getAttribute(SumoXMLAttr key) const {
             return toString(isAttributeCarrierSelected());
         case GNE_ATTR_PARAMETERS:
             return getParametersStr();
+        default:
+            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+    }
+}
+
+
+double 
+GNEDetectorE1::getAttributeDouble(SumoXMLAttr key) const {
+    switch (key) {
+        case SUMO_ATTR_POSITION:
+            return myPositionOverLane;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
     }

@@ -52,10 +52,11 @@ public:
                      const PositionVector shapeToMove,
                      const std::vector<int> geometryPointsToMove);
 
-    /// @brief constructor for elements placed over lanes (StoppingPlaces, detectors...)
+    /// @brief constructor for elements placed over lanes (StoppingPlaces, detectors, vehicles...)
     GNEMoveOperation(GNEMoveElement* moveElement,
                      const GNELane* lane,
-                     const std::vector<double> originalPosOverLanes);
+                     const std::vector<double> originalPosOverLanes,
+                     const bool allowChangeLane);
 
     /// @brief constructor for edit elements placed over lanes (start/end of StoppingPlaces, detectors...)
     GNEMoveOperation(GNEMoveElement* moveElement,
@@ -89,6 +90,9 @@ public:
     /// @brief original position over lanes
     const std::vector<double> originalPosOverLanes;
 
+    /// @brief allow change lane
+    const bool allowChangeLane;
+
 private:
     /// @brief Invalidated copy constructor.
     GNEMoveOperation(const GNEMoveOperation&) = delete;
@@ -97,6 +101,31 @@ private:
     GNEMoveOperation& operator=(const GNEMoveOperation&) = delete;
 };
 
+/// @brief move offset
+class GNEMoveOffset {
+
+public:
+    /// @brief constructor
+    GNEMoveOffset();
+
+    /// @brief constructor for X-Y move
+    GNEMoveOffset(const double x, const double y);
+
+    /// @brief constructor for Z move
+    GNEMoveOffset(const double z);
+
+    /// @brief destructor
+    ~GNEMoveOffset();
+
+    /// @brief X
+    const double x;
+
+    /// @brief Y
+    const double y;
+
+    /// @brief Z
+    const double z;
+};
 
 /// @brief move result
 class GNEMoveResult {
@@ -113,6 +142,12 @@ public:
 
     /// @brief shape points to move (of shapeToMove)
     std::vector<int> geometryPointsToMove;
+
+    /// @brief lane offset
+    double laneOffset;
+
+    /// @brief new Lane
+    const GNELane *newLane;
 
 private:
     /// @brief Invalidated copy constructor.
@@ -136,10 +171,14 @@ public:
     virtual void removeGeometryPoint(const Position clickedPosition, GNEUndoList* undoList) = 0;
 
     /// @brief move element the for given offset (note: offset can be X-Y-0, 0-0-Z or X-Y-Z)
-    static void moveElement(const GNEViewNet* viewNet, GNEMoveOperation* moveOperation, const Position& offset);
+    static void moveElement(const GNEViewNet* viewNet, GNEMoveOperation* moveOperation, const GNEMoveOffset& offset);
 
     /// @brief commit move element for the given offset
-    static void commitMove(const GNEViewNet* viewNet, GNEMoveOperation* moveOperation, const Position& offset, GNEUndoList* undoList);
+    static void commitMove(const GNEViewNet* viewNet, GNEMoveOperation* moveOperation, const GNEMoveOffset& offset, GNEUndoList* undoList);
+
+protected:
+    /// @brief move element lateral offset (used by elements placed over lanes
+    double myMoveElementLateralOffset;
 
 private:
     /// @brief set move shape
@@ -149,7 +188,10 @@ private:
     virtual void commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) = 0;
 
     /// @brief calculate movement over lane
-    static const PositionVector calculateMovementOverLane(const GNEViewNet* viewNet, const GNEMoveOperation* moveOperation, const Position& offset);
+    static void calculateMovementOverLane(GNEMoveResult &moveResult, const GNEViewNet* viewNet, const GNEMoveOperation* moveOperation, const GNEMoveOffset& offset);
+
+    /// @brief calculate new lane
+    static void calculateNewLane(GNEMoveResult &moveResult, const GNEViewNet* viewNet, const GNEMoveOperation* moveOperation);
 
     /// @brief Invalidated copy constructor.
     GNEMoveElement(const GNEMoveElement&) = delete;

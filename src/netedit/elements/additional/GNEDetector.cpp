@@ -19,10 +19,14 @@
 /****************************************************************************/
 #include <config.h>
 
-#include <netedit/elements/network/GNELane.h>
-#include <netedit/elements/network/GNEEdge.h>
-#include <netedit/elements/additional/GNEAdditionalHandler.h>
+#include <netedit/GNENet.h>
 #include <netedit/GNEUndoList.h>
+#include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/elements/additional/GNEAdditionalHandler.h>
+#include <netedit/elements/network/GNEEdge.h>
+#include <netedit/elements/network/GNELane.h>
+#include <netedit/frames/common/GNEMoveFrame.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/globjects/GLIncludes.h>
 
@@ -67,7 +71,8 @@ GNEDetector::getMoveOperation(const double /*shapeOffset*/) {
         return nullptr;
     } else {
         // return move operation for additional placed over shape
-        return new GNEMoveOperation(this, getParentLanes().front(), {myPositionOverLane});
+        return new GNEMoveOperation(this, getParentLanes().front(), {myPositionOverLane}, 
+            myNet->getViewNet()->getViewParent()->getMoveFrame()->getCommonModeOptions()->getAllowChangeLane());
     }
 }
 
@@ -125,11 +130,6 @@ GNEDetector::getGeometryPositionOverLane() const {
     return fixedPos * getLane()->getLengthGeometryFactor();
 }
 
-
-double
-GNEDetector::getAttributeDouble(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
-}
 
 
 std::string
@@ -252,6 +252,8 @@ void
 GNEDetector::setMoveShape(const GNEMoveResult& moveResult) {
     // change both position
     myPositionOverLane = moveResult.shapeToUpdate.front().x();
+    // set lateral offset
+    myMoveElementLateralOffset = moveResult.laneOffset;
     // update geometry
     updateGeometry();
 }
@@ -259,9 +261,18 @@ GNEDetector::setMoveShape(const GNEMoveResult& moveResult) {
 
 void
 GNEDetector::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
+    // reset lateral offset
+    myMoveElementLateralOffset = 0;
+    // begin change attribute
     undoList->p_begin("position of " + getTagStr());
     // now adjust start position
     setAttribute(SUMO_ATTR_POSITION, toString(moveResult.shapeToUpdate.front().x()), undoList);
+    // check if lane has to be changed
+    if (moveResult.newLane) {
+        // set new lane
+        setAttribute(SUMO_ATTR_LANE, moveResult.newLane->getID(), undoList);
+    }
+    // end change attribute
     undoList->p_end();
 }
 

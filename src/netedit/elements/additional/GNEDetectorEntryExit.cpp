@@ -89,7 +89,7 @@ GNEDetectorEntryExit::fixAdditionalProblem() {
 void
 GNEDetectorEntryExit::updateGeometry() {
     // update geometry
-    myAdditionalGeometry.updateGeometry(getParentLanes().front(), getGeometryPositionOverLane());
+    myAdditionalGeometry.updateGeometry(getParentLanes().front()->getLaneShape(), getGeometryPositionOverLane(), myMoveElementLateralOffset);
     // update E3 parent children
     getParentAdditionals().at(0)->updateHierarchicalConnections();
 }
@@ -237,6 +237,17 @@ GNEDetectorEntryExit::getAttribute(SumoXMLAttr key) const {
             return toString(isAttributeCarrierSelected());
         case GNE_ATTR_PARAMETERS:
             return getParametersStr();
+        default:
+            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+    }
+}
+
+
+double 
+GNEDetectorEntryExit::getAttributeDouble(SumoXMLAttr key) const {
+    switch (key) {
+        case SUMO_ATTR_POSITION:
+            return myPositionOverLane;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
     }

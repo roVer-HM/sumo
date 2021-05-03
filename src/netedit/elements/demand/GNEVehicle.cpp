@@ -22,17 +22,18 @@
 #include <netedit/GNENet.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
-#include <netedit/changes/GNEChange_EnableAttribute.h>
+#include <netedit/GNEViewParent.h>
 #include <netedit/changes/GNEChange_Attribute.h>
+#include <netedit/changes/GNEChange_EnableAttribute.h>
+#include <netedit/frames/common/GNEMoveFrame.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/div/GUIBaseVehicleHelper.h>
+#include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/globjects/GLIncludes.h>
 #include <utils/gui/windows/GUIAppEnum.h>
-#include <utils/gui/div/GUIDesigns.h>
 
 #include "GNEVehicle.h"
 #include "GNERouteHandler.h"
-
 
 // ===========================================================================
 // FOX callback mapping
@@ -248,8 +249,8 @@ GNEVehicle::GNESelectedVehiclesPopupMenu::onCmdTransform(FXObject* obj, FXSelect
 
 GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, const std::string& vehicleID, GNEDemandElement* vehicleType, GNEDemandElement* route) :
     GNEDemandElement(vehicleID, net, (tag == GNE_TAG_FLOW_ROUTE) ? GLO_ROUTEFLOW : GLO_VEHICLE, tag,
-{}, {}, {}, {}, {}, {}, {vehicleType, route}, {}),
-SUMOVehicleParameter() {
+        {}, {}, {}, {}, {}, {}, {vehicleType, route}, {}),
+    SUMOVehicleParameter() {
     // SUMOVehicleParameter ID has to be set manually
     id = vehicleID;
     // set manually vtypeID (needed for saving)
@@ -259,8 +260,8 @@ SUMOVehicleParameter() {
 
 GNEVehicle::GNEVehicle(GNENet* net, GNEDemandElement* vehicleType, GNEDemandElement* route, const SUMOVehicleParameter& vehicleParameters) :
     GNEDemandElement(vehicleParameters.id, net, (vehicleParameters.tag == GNE_TAG_FLOW_ROUTE) ? GLO_ROUTEFLOW : GLO_VEHICLE, vehicleParameters.tag,
-{}, {}, {}, {}, {}, {}, {vehicleType, route}, {}),
-SUMOVehicleParameter(vehicleParameters) {
+        {}, {}, {}, {}, {}, {}, {vehicleType, route}, {}),
+    SUMOVehicleParameter(vehicleParameters) {
     // SUMOVehicleParameter ID has to be set manually
     id = vehicleParameters.id;
     // set manually vtypeID (needed for saving)
@@ -270,8 +271,8 @@ SUMOVehicleParameter(vehicleParameters) {
 
 GNEVehicle::GNEVehicle(GNENet* net, GNEDemandElement* vehicleType, const SUMOVehicleParameter& vehicleParameters) :
     GNEDemandElement(vehicleParameters.id, net, (vehicleParameters.tag == GNE_TAG_VEHICLE_WITHROUTE) ? GLO_VEHICLE : GLO_ROUTEFLOW, vehicleParameters.tag,
-{}, {}, {}, {}, {}, {}, {vehicleType}, {}),
-SUMOVehicleParameter(vehicleParameters) {
+        {}, {}, {}, {}, {}, {}, {vehicleType}, {}),
+    SUMOVehicleParameter(vehicleParameters) {
     // SUMOVehicleParameter ID has to be set manually
     id = vehicleParameters.id;
     // reset routeid
@@ -284,28 +285,44 @@ SUMOVehicleParameter(vehicleParameters) {
 GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, const std::string& vehicleID, GNEDemandElement* vehicleType, GNEEdge* fromEdge, GNEEdge* toEdge,
                        const std::vector<GNEEdge*>& via) :
     GNEDemandElement(vehicleID, net, (tag == SUMO_TAG_FLOW) ? GLO_FLOW : GLO_TRIP, tag,
-{}, {fromEdge, toEdge}, {}, {}, {}, {}, {vehicleType}, {}),
-SUMOVehicleParameter() {
+        {}, {fromEdge, toEdge}, {}, {}, {}, {}, {vehicleType}, {}),
+    SUMOVehicleParameter() {
     // set via parameter without updating references
     replaceMiddleParentEdges(toString(via), false);
-    // compute vehicle
-    computePath();
 }
 
 
 GNEVehicle::GNEVehicle(GNENet* net, GNEDemandElement* vehicleType, GNEEdge* fromEdge, GNEEdge* toEdge, const std::vector<GNEEdge*>& via,
                        const SUMOVehicleParameter& vehicleParameters) :
     GNEDemandElement(vehicleParameters.id, net, (vehicleParameters.tag == SUMO_TAG_FLOW) ? GLO_FLOW : GLO_TRIP, vehicleParameters.tag,
-{}, {fromEdge, toEdge}, {}, {}, {}, {}, {vehicleType}, {}),
-SUMOVehicleParameter(vehicleParameters) {
+        {}, {fromEdge, toEdge}, {}, {}, {}, {}, {vehicleType}, {}),
+    SUMOVehicleParameter(vehicleParameters) {
     // set via parameter without updating references
     replaceMiddleParentEdges(toString(via), false);
-    // compute vehicle
-    computePath();
 }
 
 
 GNEVehicle::~GNEVehicle() {}
+
+
+GNEMoveOperation* 
+GNEVehicle::getMoveOperation(const double /*shapeOffset*/) {
+    // declare departLane
+    GNELane* lane = getFirstAllowedVehicleLane();
+    // continue depending of lane
+    if (lane) {
+        // declare departPos
+        double posOverLane = 0;
+        if (canParse<double>(getDepartPos())) {
+            posOverLane = parse<double>(getDepartPos());
+        }
+        // return move operation
+        return new GNEMoveOperation(this, lane, {posOverLane},
+            myNet->getViewNet()->getViewParent()->getMoveFrame()->getCommonModeOptions()->getAllowChangeLane());
+    } else {
+        return nullptr;
+    }
+}
 
 
 std::string
@@ -390,22 +407,24 @@ GNEVehicle::isDemandElementValid() const {
         // check if from and to are the same edges
         if ((getParentEdges().size() == 2) && (getParentEdges().at(0) == getParentEdges().at(1))) {
             return true;
+        /*
         } else if (getPath().size() > 0) {
             // if path edges isn't empty, then there is a valid route
             return true;
+        */
         } else {
             return false;
         }
     } else if (getParentDemandElements().size() == 2) {
         // check if exist a valid path using route parent edges
-        if (myNet->getPathCalculator()->calculatePath(getParentDemandElements().at(0)->getVClass(), getParentDemandElements().at(1)->getParentEdges()).size() > 0) {
+        if (myNet->getPathManager()->getPathCalculator()->calculateDijkstraPath(getParentDemandElements().at(0)->getVClass(), getParentDemandElements().at(1)->getParentEdges()).size() > 0) {
             return true;
         } else {
             return false;
         }
     } else if (getChildDemandElements().size() > 0 && (getChildDemandElements().front()->getTagProperty().getTag() == GNE_TAG_ROUTE_EMBEDDED)) {
         // check if exist a valid path using embebbed route edges
-        if (myNet->getPathCalculator()->calculatePath(getParentDemandElements().at(0)->getVClass(), getChildDemandElements().front()->getParentEdges()).size() > 0) {
+        if (myNet->getPathManager()->getPathCalculator()->calculateDijkstraPath(getParentDemandElements().at(0)->getVClass(), getChildDemandElements().front()->getParentEdges()).size() > 0) {
             return true;
         } else {
             return false;
@@ -422,7 +441,7 @@ GNEVehicle::getDemandElementProblem() const {
     if ((myTagProperty.getTag() == SUMO_TAG_TRIP) || (myTagProperty.getTag() == SUMO_TAG_FLOW)) {
         // check if exist at least a connection between every edge
         for (int i = 1; i < (int)getParentEdges().size(); i++) {
-            if (myNet->getPathCalculator()->consecutiveEdgesConnected(getParentDemandElements().at(0)->getVClass(), getParentEdges().at((int)i - 1), getParentEdges().at(i)) == false) {
+            if (myNet->getPathManager()->getPathCalculator()->consecutiveEdgesConnected(getParentDemandElements().at(0)->getVClass(), getParentEdges().at((int)i - 1), getParentEdges().at(i)) == false) {
                 return ("There is no valid path between edges '" + getParentEdges().at((int)i - 1)->getID() + "' and '" + getParentEdges().at(i)->getID() + "'");
             }
         }
@@ -433,7 +452,7 @@ GNEVehicle::getDemandElementProblem() const {
         const std::vector<GNEEdge*>& routeEdges = getParentDemandElements().at(1)->getParentEdges();
         // check if exist at least a connection between every edge
         for (int i = 1; i < (int)routeEdges.size(); i++) {
-            if (myNet->getPathCalculator()->consecutiveEdgesConnected(getParentDemandElements().at(0)->getVClass(), routeEdges.at((int)i - 1), routeEdges.at(i)) == false) {
+            if (myNet->getPathManager()->getPathCalculator()->consecutiveEdgesConnected(getParentDemandElements().at(0)->getVClass(), routeEdges.at((int)i - 1), routeEdges.at(i)) == false) {
                 return ("There is no valid path between route edges '" + routeEdges.at((int)i - 1)->getID() + "' and '" + routeEdges.at(i)->getID() + "'");
             }
         }
@@ -444,7 +463,7 @@ GNEVehicle::getDemandElementProblem() const {
         const std::vector<GNEEdge*>& routeEdges = getChildDemandElements().front()->getParentEdges();
         // check if exist at least a connection between every edge
         for (int i = 1; i < (int)routeEdges.size(); i++) {
-            if (myNet->getPathCalculator()->consecutiveEdgesConnected(getParentDemandElements().at(0)->getVClass(), routeEdges.at((int)i - 1), routeEdges.at(i)) == false) {
+            if (myNet->getPathManager()->getPathCalculator()->consecutiveEdgesConnected(getParentDemandElements().at(0)->getVClass(), routeEdges.at((int)i - 1), routeEdges.at(i)) == false) {
                 return ("There is no valid path between embebbed route edges '" + routeEdges.at((int)i - 1)->getID() + "' and '" + routeEdges.at(i)->getID() + "'");
             }
         }
@@ -475,117 +494,29 @@ GNEVehicle::getColor() const {
 
 
 void
-GNEVehicle::startGeometryMoving() {
-    // Vehicles cannot be moved
-}
-
-
-void
-GNEVehicle::endGeometryMoving() {
-    // Vehicles cannot be moved
-}
-
-
-void
-GNEVehicle::moveGeometry(const Position&) {
-    // Vehicles cannot be moved
-}
-
-
-void
-GNEVehicle::commitGeometryMoving(GNEUndoList*) {
-    // Vehicles cannot be moved
-}
-
-
-void
 GNEVehicle::updateGeometry() {
-    // declare extreme geometry
-    GNEGeometry::ExtremeGeometry extremeGeometry;
-    // check if depart and arrival pos lanes are defined
-    if (departPosProcedure == DepartPosDefinition::GIVEN) {
-        extremeGeometry.laneStartPosition = departPos;
-    }
-    if (arrivalPosProcedure == ArrivalPosDefinition::GIVEN) {
-        extremeGeometry.laneEndPosition = arrivalPos;
-    }
-    // get first allowed lane
-    GNELane* firstLane = getFirstAllowedVehicleLane();
-    // check if first lane wasn't sucesfully obtained
-    if (!firstLane) {
-        if ((myTagProperty.getTag() == SUMO_TAG_VEHICLE) || (myTagProperty.getTag() == GNE_TAG_FLOW_ROUTE)) {
-            // use route edges
-            firstLane = getParentDemandElements().at(1)->getParentEdges().front()->getLanes().front();
-        } else if ((myTagProperty.getTag() == GNE_TAG_VEHICLE_WITHROUTE) || (myTagProperty.getTag() == GNE_TAG_FLOW_WITHROUTE)) {
-            // use embebbed route
-            if (getChildDemandElements().size() > 0) {
-                firstLane = getChildDemandElements().front()->getParentEdges().front()->getLanes().front();
-            } else {
-                firstLane = nullptr;
-            }
-        } else if ((getPath().size() > 0) && getPath().front().getLane()) {
-            // use path edges
-            firstLane = getPath().front().getLane();
-        } else if (getParentEdges().size() > 0) {
-            // use first
-            firstLane = getParentEdges().front()->getLanes().front();
-        } else {
-            firstLane = nullptr;
+    // declare departLane
+    GNELane* lane = getFirstAllowedVehicleLane();
+    // continue depending of lane
+    if (lane) {
+        // declare departPos
+        double posOverLane = 0;
+        if (canParse<double>(getDepartPos())) {
+            posOverLane = parse<double>(getDepartPos());
         }
+        // update Geometry
+        myDemandElementGeometry.updateGeometry(lane->getLaneShape(), posOverLane, myMoveElementLateralOffset);
+    } else {
+        // set vehicle in center position
+        myDemandElementGeometry.updateSinglePosGeometry(Position(0, 0), 0);
     }
-    // continue only if lane was sucesfully found
-    if (firstLane) {
-        // check if depart pos has to be adjusted
-        if ((departPosProcedure == DepartPosDefinition::GIVEN) && (extremeGeometry.laneStartPosition < 0)) {
-            extremeGeometry.laneStartPosition += firstLane->getLaneShape().length();
+    // compute route embedded vinculated with this vehicle
+    for (const auto& demandElement : getChildDemandElements()) {
+        if (demandElement->getTagProperty().getTag() == GNE_TAG_ROUTE_EMBEDDED) {
+            demandElement->computePathElement();
         }
-        // continue depending of tag
-        if ((myTagProperty.getTag() == SUMO_TAG_TRIP) || (myTagProperty.getTag() == SUMO_TAG_FLOW)) {
-            // calculate edge geometry path using path
-            GNEGeometry::calculateLaneGeometricPath(myDemandElementSegmentGeometry, getPath(), extremeGeometry);
-        } else if ((myTagProperty.getTag() == SUMO_TAG_VEHICLE) || (myTagProperty.getTag() == GNE_TAG_FLOW_ROUTE)) {
-            // calculate edge geometry path using route edges
-            GNEGeometry::calculateLaneGeometricPath(myDemandElementSegmentGeometry, getParentDemandElements().at(1)->getPath(), extremeGeometry);
-        } else if ((myTagProperty.getTag() == GNE_TAG_VEHICLE_WITHROUTE) || (myTagProperty.getTag() == GNE_TAG_FLOW_WITHROUTE)) {
-            // calculate edge geometry path using embedded route edges
-            GNEGeometry::calculateLaneGeometricPath(myDemandElementSegmentGeometry, getChildDemandElements().front()->getPath(), extremeGeometry);
-        }
-        // update start pos geometry
-        myDemandElementGeometry.updateGeometry(firstLane, extremeGeometry.laneStartPosition);
-        firstLane->getParentEdge()->updateVehicleStackLabels();
+        demandElement->updateGeometry();
     }
-    // update child demand elementss
-    for (const auto& i : getChildDemandElements()) {
-        i->updateGeometry();
-    }
-}
-
-
-void
-GNEVehicle::computePath() {
-    // calculate path (only for flows and trips)
-    if ((myTagProperty.getTag() == SUMO_TAG_FLOW) || (myTagProperty.getTag() == SUMO_TAG_TRIP)) {
-        calculatePathLanes(getVClass(), true,
-                           getFirstAllowedVehicleLane(),
-                           getLastAllowedVehicleLane(),
-                           getViaEdges());
-    }
-    // update geometry
-    updateGeometry();
-}
-
-
-void
-GNEVehicle::invalidatePath() {
-    // reset path (only for flows and trips)
-    if ((myTagProperty.getTag() == SUMO_TAG_FLOW) || (myTagProperty.getTag() == SUMO_TAG_TRIP)) {
-        resetPathLanes(getVClass(), true,
-                       getFirstAllowedVehicleLane(),
-                       getLastAllowedVehicleLane(),
-                       getViaEdges());
-    }
-    // update geometry
-    updateGeometry();
 }
 
 
@@ -775,78 +706,126 @@ GNEVehicle::drawGL(const GUIVisualizationSettings& s) const {
 
 
 void
-GNEVehicle::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* lane, const double offsetFront) const {
-    if (!s.drawForRectangleSelection && ((s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) || isAttributeCarrierSelected())) {
+GNEVehicle::computePathElement() {
+    // calculate path (only for flows and trips)
+    if ((myTagProperty.getTag() == SUMO_TAG_FLOW) || (myTagProperty.getTag() == SUMO_TAG_TRIP)) {
+        // extract lanes from parent edges
+        std::vector<GNELane*> lanes;
+        lanes.push_back(getFirstAllowedVehicleLane());
+        for (int i = 1; i < ((int)getParentEdges().size() - 1); i++) {
+            lanes.push_back(getParentEdges().at(i)->getLaneByAllowedVClass(getVClass()));
+        }
+        lanes.push_back(getLastAllowedVehicleLane());
+        // calculate path
+        myNet->getPathManager()->calculateConsecutivePathLanes(this, getVClass(), lanes);
+    }
+    // update geometry
+    updateGeometry();
+}
+
+
+void
+GNEVehicle::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* lane, const GNEPathManager::Segment* segment, const double offsetFront) const {
+    // get inspected and front flags
+    const bool dottedElement = myNet->getViewNet()->isAttributeCarrierInspected(this) || (myNet->getViewNet()->getFrontAttributeCarrier() == this);
+    // check conditions
+    if (!s.drawForRectangleSelection && 
+        (s.drawDottedContour() || dottedElement || isAttributeCarrierSelected()) &&
+        myNet->getPathManager()->getPathDraw()->drawPathGeometry(dottedElement, lane, myTagProperty.getTag())) {
         // declare flag to draw spread vehicles
         const bool drawSpreadVehicles = (myNet->getViewNet()->getNetworkViewOptions().drawSpreadVehicles() || myNet->getViewNet()->getDemandViewOptions().drawSpreadVehicles());
         // calculate width
         const double width = s.vehicleSize.getExaggeration(s, lane) * s.widthSettings.trip;
+        // calculate startPos
+        const double geometryDepartPos = getAttributeDouble(SUMO_ATTR_DEPARTPOS) + getParentDemandElements().at(0)->getAttributeDouble(SUMO_ATTR_LENGTH);
+        // get endPos
+        const double geometryEndPos = getAttributeDouble(SUMO_ATTR_ARRIVALPOS);
+        // declare path geometry
+        GNEGeometry::Geometry vehicleGeometry;
+        // check if segment is valid
+        if (segment->isValid()) {
+            // update pathGeometry depending of first and last segment
+            if (segment->isFirstSegment() && segment->isLastSegment()) {
+                vehicleGeometry.updateGeometry(lane->getLaneGeometry().getShape(), 
+                geometryDepartPos, geometryEndPos,      // extrem positions
+                Position::INVALID, Position::INVALID);  // extra positions
+            } else if (segment->isFirstSegment()) {
+                vehicleGeometry.updateGeometry(lane->getLaneGeometry().getShape(), 
+                geometryDepartPos, -1,                  // extrem positions
+                Position::INVALID, Position::INVALID);  // extra positions
+            } else if (segment->isLastSegment()) {
+                vehicleGeometry.updateGeometry(lane->getLaneGeometry().getShape(), 
+                -1, geometryEndPos,                     // extrem positions
+                Position::INVALID, Position::INVALID);  // extra positions
+            } else {
+                vehicleGeometry = lane->getLaneGeometry();
+            }
+        }
+        // obtain color
+        const RGBColor pathColor = drawUsingSelectColor() ? s.colorSettings.selectedVehicleColor : s.colorSettings.vehicleTrips;
         // Start drawing adding an gl identificator
         glPushName(getGlID());
         // Add a draw matrix
         glPushMatrix();
         // Start with the drawing of the area traslating matrix to origin
         glTranslated(0, 0, getType() + offsetFront);
-        // Set color of the base
-        if (drawUsingSelectColor()) {
-            GLHelper::setColor(s.colorSettings.selectedVehicleColor);
-        } else {
-            GLHelper::setColor(s.colorSettings.vehicleTrips);
-        }
-        // iterate over segments
-        if (drawSpreadVehicles) {
-            for (const auto& segment : myDemandElementSegmentGeometry) {
-                // draw partial segment
-                if (segment.isLaneSegment() && (segment.getLane() == lane)) {
-                    GNEGeometry::drawSegmentGeometry(myNet->getViewNet(), segment, width);
-                }
-            }
-        } else {
-            for (const auto& segment : myDemandElementSegmentGeometry) {
-                // draw partial segment
-                if (segment.isLaneSegment() && (segment.getLane() == lane)) {
-                    GNEGeometry::drawSegmentGeometry(myNet->getViewNet(), segment, width);
-                }
-            }
-        }
+        // Set color
+        GLHelper::setColor(pathColor);
+        // draw geometry
+        GNEGeometry::drawGeometry(myNet->getViewNet(), vehicleGeometry, width);
         // Pop last matrix
         glPopMatrix();
         // Draw name if isn't being drawn for selecting
         if (!s.drawForRectangleSelection) {
             drawName(getCenteringBoundary().getCenter(), s.scale, s.addName);
         }
-        // check if shape dotted contour has to be drawn
-        if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {
-            // get first and last allowed lanes
-            const GNELane* firstLane = getFirstAllowedVehicleLane();
-            const GNELane* lastLane = getLastAllowedVehicleLane();
-            // iterate over segments
-            for (const auto& segment : myDemandElementSegmentGeometry) {
-                if (segment.isLaneSegment() && (segment.getLane() == lane)) {
-                    // draw partial segment
-                    if (firstLane == lane) {
-                        // draw front dotted contour
-                        GNEGeometry::drawDottedContourLane(GNEGeometry::DottedContourType::INSPECT, s, GNEGeometry::DottedGeometry(s, segment.getShape(), false), width, true, false);
-                    } else if (lastLane == lane) {
-                        // draw back dotted contour
-                        GNEGeometry::drawDottedContourLane(GNEGeometry::DottedContourType::INSPECT, s, GNEGeometry::DottedGeometry(s, segment.getShape(), false), width, false, true);
-                    } else {
-                        // draw dotted contour
-                        GNEGeometry::drawDottedContourLane(GNEGeometry::DottedContourType::INSPECT, s, lane->getDottedLaneGeometry(), width, false, false);
-                    }
-                }
-            }
+        // check if we have to draw a red line to the next segment
+        if (segment->getNextSegment()) {
+            // push draw matrix
+            glPushMatrix();
+            // Start with the drawing of the area traslating matrix to origin
+            myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, getType());
+            // Set red color
+            GLHelper::setColor(RGBColor::RED);
+            // get firstPosition (last position of current lane shape)
+            const Position firstPosition = lane->getLaneShape().back();
+            // get lastPosition (first position of next lane shape)
+            const Position arrivalPos = segment->getNextSegment()->getPathElement()->getPathElementArrivalPos();
+            // draw box line
+            GLHelper::drawBoxLine(arrivalPos,
+                                  RAD2DEG(firstPosition.angleTo2D(arrivalPos)) - 90,
+                                  firstPosition.distanceTo2D(arrivalPos), .05);
+            // pop draw matrix
+            glPopMatrix();
         }
         // Pop name
         glPopName();
+        // check if shape dotted contour has to be drawn
+        if (s.drawDottedContour() || dottedElement) {
+            // declare trim geometry to draw
+            const GNEGeometry::DottedGeometry pathDottedGeometry((segment->isFirstSegment() || segment->isLastSegment())? GNEGeometry::DottedGeometry(s, vehicleGeometry.getShape(), false) : lane->getDottedLaneGeometry());
+            // draw inspected dotted contour
+            if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {
+                GNEGeometry::drawDottedContourGeometry(GNEGeometry::DottedContourType::INSPECT, s, pathDottedGeometry, width, segment->isFirstSegment(), segment->isLastSegment());
+            }
+            // draw front dotted contour
+            if (s.drawDottedContour() || (myNet->getViewNet()->getFrontAttributeCarrier() == this)) {
+                GNEGeometry::drawDottedContourGeometry(GNEGeometry::DottedContourType::FRONT, s, pathDottedGeometry, width, segment->isFirstSegment(), segment->isLastSegment());
+            }
+        }
     }
 }
 
 
 void
-GNEVehicle::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* fromLane, const GNELane* toLane, const double offsetFront) const {
-    if (!s.drawForRectangleSelection && fromLane->getLane2laneConnections().exist(toLane) &&
-            ((s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) || isAttributeCarrierSelected())) {
+GNEVehicle::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* fromLane, const GNELane* toLane, const GNEPathManager::Segment* /*segment*/, const double offsetFront) const {
+    // get inspected and front flags
+    const bool dottedElement = myNet->getViewNet()->isAttributeCarrierInspected(this) || (myNet->getViewNet()->getFrontAttributeCarrier() == this);
+    // check conditions
+    if (!s.drawForRectangleSelection && 
+        fromLane->getLane2laneConnections().exist(toLane) &&
+        (s.drawDottedContour() || dottedElement || isAttributeCarrierSelected()) &&
+        myNet->getPathManager()->getPathDraw()->drawPathGeometry(dottedElement, fromLane, toLane, myTagProperty.getTag())) {
         // Start drawing adding an gl identificator
         glPushName(getGlID());
         // obtain lane2lane geometry
@@ -868,10 +847,17 @@ GNEVehicle::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* from
         // Pop last matrix
         glPopMatrix();
         // check if shape dotted contour has to be drawn
-        if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {
-            // draw lane2lane dotted geometry
+        if (s.drawDottedContour() || dottedElement) {
+            // check if exist lane2lane connection
             if (fromLane->getLane2laneConnections().exist(toLane)) {
-                GNEGeometry::drawDottedContourLane(GNEGeometry::DottedContourType::INSPECT, s, fromLane->getLane2laneConnections().getLane2laneDottedGeometry(toLane), width, false, false);
+                // draw inspected dotted contour
+                if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {
+                    GNEGeometry::drawDottedContourGeometry(GNEGeometry::DottedContourType::INSPECT, s, fromLane->getLane2laneConnections().getLane2laneDottedGeometry(toLane), width, false, false);
+                }
+                // draw front dotted contour
+                if (s.drawDottedContour() || (myNet->getViewNet()->getFrontAttributeCarrier() == this)) {
+                    GNEGeometry::drawDottedContourGeometry(GNEGeometry::DottedContourType::FRONT, s, fromLane->getLane2laneConnections().getLane2laneDottedGeometry(toLane), width, false, false);
+                }
             }
         }
         // Pop name
@@ -1032,6 +1018,12 @@ GNEVehicle::getAttributeDouble(SumoXMLAttr key) const {
         default:
             throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
     }
+}
+
+
+Position 
+GNEVehicle::getAttributePosition(SumoXMLAttr key) const {
+    throw InvalidArgument(getTagStr() + " doesn't have a Position attribute of type '" + toString(key) + "'");
 }
 
 
@@ -1645,7 +1637,7 @@ GNEVehicle::setAttribute(SumoXMLAttr key, const std::string& value) {
             // change first edge
             replaceFirstParentEdge(value);
             // compute vehicle
-            computePath();
+            computePathElement();
             updateSpreadStackGeometry = true;
             break;
         }
@@ -1653,7 +1645,7 @@ GNEVehicle::setAttribute(SumoXMLAttr key, const std::string& value) {
             // change last edge
             replaceLastParentEdge(value);
             // compute vehicle
-            computePath();
+            computePathElement();
             updateSpreadStackGeometry = true;
             break;
         }
@@ -1672,7 +1664,7 @@ GNEVehicle::setAttribute(SumoXMLAttr key, const std::string& value) {
             // update via
             replaceMiddleParentEdges(value, true);
             // compute vehicle
-            computePath();
+            computePathElement();
             updateSpreadStackGeometry = true;
             break;
         }
@@ -1729,6 +1721,36 @@ GNEVehicle::setAttribute(SumoXMLAttr key, const std::string& value) {
 void
 GNEVehicle::setEnabledAttribute(const int enabledAttributes) {
     parametersSet = enabledAttributes;
+}
+
+
+void
+GNEVehicle::setMoveShape(const GNEMoveResult& moveResult) {
+    // change departPos
+    departPosProcedure = DepartPosDefinition::GIVEN;
+    departPos = moveResult.shapeToUpdate.front().x();
+    // set lateral offset
+    myMoveElementLateralOffset = moveResult.laneOffset;
+    // update geometry
+    updateGeometry();
+}
+
+
+void
+GNEVehicle::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
+    // reset lateral offset
+    myMoveElementLateralOffset = 0;
+    // begin change attribute
+    undoList->p_begin("departPos of " + getTagStr());
+    // now set departPos
+    setAttribute(SUMO_ATTR_DEPARTPOS, toString(moveResult.shapeToUpdate.front().x()), undoList);
+    // check if depart lane has to be changed
+    if (moveResult.newLane) {
+        // set new lane
+        setAttribute(SUMO_ATTR_DEPARTLANE, toString(moveResult.newLane->getIndex()), undoList);
+    }
+    // end change attribute
+    undoList->p_end();
 }
 
 

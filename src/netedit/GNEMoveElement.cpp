@@ -19,7 +19,6 @@
 /****************************************************************************/
 #include <netedit/elements/network/GNEEdge.h>
 #include <netedit/changes/GNEChange_Attribute.h>
-#include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
 
 #include "GNEMoveElement.h"
@@ -33,8 +32,9 @@ GNEMoveOperation::GNEMoveOperation(GNEMoveElement* _moveElement,
                                    const Position _originalPosition) :
     moveElement(_moveElement),
     originalShape({_originalPosition}),
-              shapeToMove({_originalPosition}),
-lane(nullptr) {
+    shapeToMove({_originalPosition}),
+    lane(nullptr),
+    allowChangeLane(false) {
 }
 
 
@@ -43,7 +43,8 @@ GNEMoveOperation::GNEMoveOperation(GNEMoveElement* _moveElement,
     moveElement(_moveElement),
     originalShape(_originalShape),
     shapeToMove(_originalShape),
-    lane(nullptr) {
+    lane(nullptr),
+    allowChangeLane(false) {
 }
 
 
@@ -57,16 +58,19 @@ GNEMoveOperation::GNEMoveOperation(GNEMoveElement* _moveElement,
     originalGeometryPoints(_originalgeometryPoints),
     shapeToMove(_shapeToMove),
     geometryPointsToMove(_geometryPointsToMove),
-    lane(nullptr) {
+    lane(nullptr),
+    allowChangeLane(false) {
 }
 
 
 GNEMoveOperation::GNEMoveOperation(GNEMoveElement* _moveElement,
                                    const GNELane* _lane,
-                                   const std::vector<double> _originalPosOverLanes) :
+                                   const std::vector<double> _originalPosOverLanes,
+                                   const bool _allowChangeLane) :
     moveElement(_moveElement),
     lane(_lane),
-    originalPosOverLanes(_originalPosOverLanes) {
+    originalPosOverLanes(_originalPosOverLanes),
+    allowChangeLane(_allowChangeLane) {
 }
 
 
@@ -77,17 +81,47 @@ GNEMoveOperation::GNEMoveOperation(GNEMoveElement* _moveElement,
     moveElement(_moveElement),
     geometryPointsToMove(_geometryPointsToMove),
     lane(_lane),
-    originalPosOverLanes(_originalPosOverLanes) {
+    originalPosOverLanes(_originalPosOverLanes),
+    allowChangeLane(false) {
 }
 
 
 GNEMoveOperation::~GNEMoveOperation() {}
 
 // ===========================================================================
+// GNEMoveOffset method definitions
+// ===========================================================================
+
+GNEMoveOffset::GNEMoveOffset() :
+    x(0),
+    y(0),
+    z(0) {
+}
+
+
+GNEMoveOffset::GNEMoveOffset(const double x_, const double y_) :
+    x(x_),
+    y(y_),
+    z(0) {
+}
+
+
+GNEMoveOffset::GNEMoveOffset(const double z_) :
+    x(0),
+    y(0),
+    z(z_) {
+}
+
+
+GNEMoveOffset::~GNEMoveOffset() {}
+
+// ===========================================================================
 // GNEMoveResult method definitions
 // ===========================================================================
 
-GNEMoveResult::GNEMoveResult() {}
+GNEMoveResult::GNEMoveResult() :
+    laneOffset(0),
+    newLane(nullptr) {}
 
 
 GNEMoveResult::~GNEMoveResult() {}
@@ -96,12 +130,13 @@ GNEMoveResult::~GNEMoveResult() {}
 // GNEMoveElement method definitions
 // ===========================================================================
 
-GNEMoveElement::GNEMoveElement() {
+GNEMoveElement::GNEMoveElement() :
+    myMoveElementLateralOffset(0) {
 }
 
 
 void
-GNEMoveElement::moveElement(const GNEViewNet* viewNet, GNEMoveOperation* moveOperation, const Position& offset) {
+GNEMoveElement::moveElement(const GNEViewNet* viewNet, GNEMoveOperation* moveOperation, const GNEMoveOffset& offset) {
     // declare move result
     GNEMoveResult moveResult;
     // set geometry points to move
@@ -109,7 +144,9 @@ GNEMoveElement::moveElement(const GNEViewNet* viewNet, GNEMoveOperation* moveOpe
     // check if we're moving over a lane shape, an entire shape or only certain geometry point
     if (moveOperation->lane) {
         // calculate movement over lane
-        moveResult.shapeToUpdate = calculateMovementOverLane(viewNet, moveOperation, offset);
+        calculateMovementOverLane(moveResult, viewNet, moveOperation, offset);
+        // calculate new lane
+        calculateNewLane(moveResult, viewNet, moveOperation);
     } else if (moveOperation->geometryPointsToMove.empty()) {
         // set values in moveResult
         moveResult.shapeToUpdate = moveOperation->shapeToMove;
@@ -117,7 +154,7 @@ GNEMoveElement::moveElement(const GNEViewNet* viewNet, GNEMoveOperation* moveOpe
         for (auto& geometryPointIndex : moveResult.shapeToUpdate) {
             if (geometryPointIndex != Position::INVALID) {
                 // add offset
-                geometryPointIndex.add(offset);
+                geometryPointIndex.add(offset.x, offset.y, offset.z);
                 // apply snap to active grid
                 geometryPointIndex = viewNet->snapToActiveGrid(geometryPointIndex);
             } else {
@@ -131,7 +168,7 @@ GNEMoveElement::moveElement(const GNEViewNet* viewNet, GNEMoveOperation* moveOpe
         for (const auto& geometryPointIndex : moveOperation->geometryPointsToMove) {
             if (moveResult.shapeToUpdate[geometryPointIndex] != Position::INVALID) {
                 // add offset
-                moveResult.shapeToUpdate[geometryPointIndex].add(offset);
+                moveResult.shapeToUpdate[geometryPointIndex].add(offset.x, offset.y, offset.z);
                 // apply snap to active grid
                 moveResult.shapeToUpdate[geometryPointIndex] = viewNet->snapToActiveGrid(moveResult.shapeToUpdate[geometryPointIndex]);
             } else {
@@ -145,7 +182,7 @@ GNEMoveElement::moveElement(const GNEViewNet* viewNet, GNEMoveOperation* moveOpe
 
 
 void
-GNEMoveElement::commitMove(const GNEViewNet* viewNet, GNEMoveOperation* moveOperation, const Position& offset, GNEUndoList* undoList) {
+GNEMoveElement::commitMove(const GNEViewNet* viewNet, GNEMoveOperation* moveOperation, const GNEMoveOffset& offset, GNEUndoList* undoList) {
     // declare move result
     GNEMoveResult moveResult;
     // check if we're moving over a lane shape, an entire shape or only certain geometry point
@@ -162,7 +199,9 @@ GNEMoveElement::commitMove(const GNEViewNet* viewNet, GNEMoveOperation* moveOper
         // set originalPosOverLanes in element
         moveOperation->moveElement->setMoveShape(moveResult);
         // calculate movement over lane
-        moveResult.shapeToUpdate = calculateMovementOverLane(viewNet, moveOperation, offset);
+        calculateMovementOverLane(moveResult, viewNet, moveOperation, offset);
+        // calculate new lane
+        calculateNewLane(moveResult, viewNet, moveOperation);
     } else {
         // set original geometry points to move
         moveResult.geometryPointsToMove = moveOperation->originalGeometryPoints;
@@ -180,7 +219,7 @@ GNEMoveElement::commitMove(const GNEViewNet* viewNet, GNEMoveOperation* moveOper
             for (auto& geometryPointIndex : moveResult.shapeToUpdate) {
                 if (geometryPointIndex != Position::INVALID) {
                     // add offset
-                    geometryPointIndex.add(offset);
+                    geometryPointIndex.add(offset.x, offset.y, offset.z);
                     // apply snap to active grid
                     geometryPointIndex = viewNet->snapToActiveGrid(geometryPointIndex);
                 } else {
@@ -192,7 +231,7 @@ GNEMoveElement::commitMove(const GNEViewNet* viewNet, GNEMoveOperation* moveOper
             for (const auto& geometryPointIndex : moveOperation->geometryPointsToMove) {
                 if (moveResult.shapeToUpdate[geometryPointIndex] != Position::INVALID) {
                     // add offset
-                    moveResult.shapeToUpdate[geometryPointIndex].add(offset);
+                    moveResult.shapeToUpdate[geometryPointIndex].add(offset.x, offset.y, offset.z);
                     // apply snap to active grid
                     moveResult.shapeToUpdate[geometryPointIndex] = viewNet->snapToActiveGrid(moveResult.shapeToUpdate[geometryPointIndex]);
                 } else {
@@ -210,10 +249,8 @@ GNEMoveElement::commitMove(const GNEViewNet* viewNet, GNEMoveOperation* moveOper
 }
 
 
-const PositionVector
-GNEMoveElement::calculateMovementOverLane(const GNEViewNet* viewNet, const GNEMoveOperation* moveOperation, const Position& offset) {
-    // declare new shape
-    PositionVector newShape;
+void
+GNEMoveElement::calculateMovementOverLane(GNEMoveResult &moveResult, const GNEViewNet* viewNet, const GNEMoveOperation* moveOperation, const GNEMoveOffset& offset) {
     // calculate lenght between pos over lanes
     const double centralPosition = (moveOperation->originalPosOverLanes.front() + moveOperation->originalPosOverLanes.back()) * 0.5;
     // calculate middle lenght between first and last pos over lanes
@@ -225,7 +262,7 @@ GNEMoveElement::calculateMovementOverLane(const GNEViewNet* viewNet, const GNEMo
     // calculate position at offset given by centralPosition
     Position lanePositionAtCentralPosition = moveOperation->lane->getLaneShape().positionAtOffset2D(centralPosition);
     // apply offset to positionAtCentralPosition
-    lanePositionAtCentralPosition.add(offset);
+    lanePositionAtCentralPosition.add(offset.x, offset.y, offset.z);
     // snap to grid
     lanePositionAtCentralPosition = viewNet->snapToActiveGrid(lanePositionAtCentralPosition);
     // calculate new posOverLane perpendicular
@@ -250,12 +287,51 @@ GNEMoveElement::calculateMovementOverLane(const GNEViewNet* viewNet, const GNEMo
             posOverLaneOffset = centralPosition - newPosOverLanePerpendicular;
         }
     }
+    // clear moveResult shape
+    moveResult.shapeToUpdate.clear();
     // apply posOverLaneOffset to all posOverLanes and generate new shape
     for (const auto& posOverlane : moveOperation->originalPosOverLanes) {
-        newShape.push_back(Position(posOverlane - posOverLaneOffset, 0));
+        moveResult.shapeToUpdate.push_back(Position(posOverlane - posOverLaneOffset, 0));
     }
-    // return newShape
-    return newShape;
+}
+
+
+void
+GNEMoveElement::calculateNewLane(GNEMoveResult &moveResult, const GNEViewNet* viewNet, const GNEMoveOperation* moveOperation) {
+    // first check if change lane is allowed
+    if (moveOperation->allowChangeLane) {
+        // get cursor position
+        const Position cursorPosition = viewNet->getPositionInformation();
+        // iterate over edge lanes
+        for (const auto &lane : moveOperation->lane->getParentEdge()->getLanes()) {
+            // avoid moveOperation lane
+            if (lane != moveOperation->lane) {
+                // calculate offset over lane shape
+                const double offSet = lane->getLaneShape().nearest_offset_to_point2D(cursorPosition, true);
+                // calculate position over lane shape
+                const Position posOverLane = lane->getLaneShape().positionAtOffset2D(offSet);
+                // check distance
+                if (posOverLane.distanceSquaredTo2D(cursorPosition) < 1) {
+                    // update newlane
+                    moveResult.newLane = lane;
+                    // calculate offset over moveOperation lane
+                    const double offsetMoveOperationLane = moveOperation->lane->getLaneShape().nearest_offset_to_point2D(cursorPosition, true);
+                    // calculate position over moveOperation lane
+                    const Position posOverMoveOperationLane = moveOperation->lane->getLaneShape().positionAtOffset2D(offsetMoveOperationLane);
+                    // update moveResult of laneOffset
+                    moveResult.laneOffset = posOverLane.distanceTo2D(posOverMoveOperationLane);
+                    // change sign of  moveResult laneOffset depending of lane index
+                    if (moveOperation->lane->getIndex() < moveResult.newLane->getIndex()) {
+                        moveResult.laneOffset *= -1;
+                    }
+                }
+            }
+        }
+    } else {
+        // reset values
+        moveResult.newLane = nullptr;
+        moveResult.laneOffset = 0;
+    }
 }
 
 /****************************************************************************/

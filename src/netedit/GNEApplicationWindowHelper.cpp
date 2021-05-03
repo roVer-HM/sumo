@@ -832,6 +832,7 @@ GNEApplicationWindowHelper::ProcessingMenuCommands::ProcessingMenuCommands(GNEAp
     computeDemand(nullptr),
     cleanRoutes(nullptr),
     joinRoutes(nullptr),
+    adjustPersonPlans(nullptr),
     clearInvalidDemandElements(nullptr),
     optionMenus(nullptr),
     myGNEApp(GNEApp) {
@@ -866,6 +867,9 @@ GNEApplicationWindowHelper::ProcessingMenuCommands::buildProcessingMenuCommands(
     joinRoutes = GUIDesigns::buildFXMenuCommandShortcut(fileMenu,
                  "Join routes", "F7", "Joins routes with the same edges.",
                  GUIIconSubSys::getIcon(GUIIcon::JOINROUTES), myGNEApp, MID_HOTKEY_F7_JOIN_SELECTEDJUNCTIONS_ROUTES);
+    adjustPersonPlans = GUIDesigns::buildFXMenuCommandShortcut(fileMenu,
+                        "Adjust person plans", "Shift+F7", "Adjust person plans (start/end positions, arrival positions, etc.)",
+                        GUIIconSubSys::getIcon(GUIIcon::ADJUSTPERSONPLANS), myGNEApp, MID_HOTKEY_SHIFT_F7_ADJUST_PERSON_PLANS);
     clearInvalidDemandElements = GUIDesigns::buildFXMenuCommandShortcut(fileMenu,
                                  "Clean invalid route elements", "F8", "Clear elements with an invalid path (routes, Trips, Flows...).",
                                  GUIIconSubSys::getIcon(GUIIcon::CLEANJUNCTIONS), myGNEApp, MID_HOTKEY_F8_CLEANINVALID_CROSSINGS_DEMANDELEMENTS);
@@ -917,11 +921,13 @@ GNEApplicationWindowHelper::ProcessingMenuCommands::showDemandProcessingMenuComm
     computeDemand->enable();
     cleanRoutes->enable();
     joinRoutes->enable();
+    adjustPersonPlans->enable();
     clearInvalidDemandElements->enable();
     // now show it
     computeDemand->show();
     cleanRoutes->show();
     joinRoutes->show();
+    adjustPersonPlans->show();
     clearInvalidDemandElements->show();
 }
 
@@ -932,11 +938,13 @@ GNEApplicationWindowHelper::ProcessingMenuCommands::hideDemandProcessingMenuComm
     computeDemand->disable();
     cleanRoutes->disable();
     joinRoutes->disable();
+    adjustPersonPlans->disable();
     clearInvalidDemandElements->disable();
     // now hide it
     computeDemand->hide();
     cleanRoutes->hide();
     joinRoutes->hide();
+    adjustPersonPlans->hide();
     clearInvalidDemandElements->hide();
 }
 

@@ -134,6 +134,7 @@
 #include "bigarrowright.xpm"
 
 #include "frontelement.xpm"
+#include "computepathmanager.xpm"
 
 #include "checkbox_askformerge.xpm"
 #include "checkbox_autoselectjunctions.xpm"
@@ -207,6 +208,7 @@
 #include "computedemand.xpm"
 #include "cleanroutes.xpm"
 #include "joinroutes.xpm"
+#include "adjustpersonplans.xpm"
 #include "options.xpm"
 
 #include "junction.xpm"
@@ -460,6 +462,7 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::BIGARROWLEFT] = new FXXPMIcon(a, bigarrowleft_xpm);
     myIcons[GUIIcon::BIGARROWRIGHT] = new FXXPMIcon(a, bigarrowright_xpm);
     myIcons[GUIIcon::FRONTELEMENT] = new FXXPMIcon(a, frontelement_xpm);
+    myIcons[GUIIcon::COMPUTEPATHMANAGER] = new FXXPMIcon(a, computepathmanager_xpm);
 
     myIcons[GUIIcon::COMMONMODE_CHECKBOX_TOGGLEGRID] = new FXXPMIcon(a, checkbox_grid_xpm);
     myIcons[GUIIcon::COMMONMODE_CHECKBOX_SPREADVEHICLE] = new FXXPMIcon(a, checkbox_spreadvehicle_xpm);
@@ -489,9 +492,9 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::ARROW_LEFT] = new FXXPMIcon(a, arrowleft_xpm);
     myIcons[GUIIcon::ARROW_RIGHT] = new FXXPMIcon(a, arrowright_xpm);
 
-    myIcons[GUIIcon::LANEPEDESTRIAN] = new FXXPMIcon(a, lanepedestrian);
-    myIcons[GUIIcon::LANEBUS] = new FXXPMIcon(a, lanebus);
-    myIcons[GUIIcon::LANEBIKE] = new FXXPMIcon(a, lanebike);
+    myIcons[GUIIcon::LANE_PEDESTRIAN] = new FXXPMIcon(a, lanepedestrian);
+    myIcons[GUIIcon::LANE_BUS] = new FXXPMIcon(a, lanebus);
+    myIcons[GUIIcon::LANE_BIKE] = new FXXPMIcon(a, lanebike);
     myIcons[GUIIcon::LANEGREENVERGE] = new FXXPMIcon(a, lanegreenverge);
 
     myIcons[GUIIcon::EXT] = new FXXPMIcon(a, ext_xpm);
@@ -539,6 +542,7 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::COMPUTEDEMAND] = new FXXPMIcon(a, computedemand_xpm);
     myIcons[GUIIcon::CLEANROUTES] = new FXXPMIcon(a, cleanroutes_xpm);
     myIcons[GUIIcon::JOINROUTES] = new FXXPMIcon(a, joinroutes_xpm);
+    myIcons[GUIIcon::ADJUSTPERSONPLANS] = new FXXPMIcon(a, adjustpersonplans_xpm);
 
     myIcons[GUIIcon::OPTIONS] = new FXXPMIcon(a, options_xpm);
 

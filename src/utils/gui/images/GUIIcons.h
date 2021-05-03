@@ -191,6 +191,7 @@ enum class GUIIcon {
     BIGARROWLEFT,
     BIGARROWRIGHT,
     FRONTELEMENT,
+    COMPUTEPATHMANAGER,
     /// @}
 
     /// @name NETEDIT common mode specific icons
@@ -238,9 +239,9 @@ enum class GUIIcon {
 
     /// @name lane icons
     /// @{
-    LANEPEDESTRIAN,
-    LANEBUS,
-    LANEBIKE,
+    LANE_PEDESTRIAN,
+    LANE_BUS,
+    LANE_BIKE,
     LANEGREENVERGE,
     /// @}
 
@@ -302,6 +303,7 @@ enum class GUIIcon {
     COMPUTEDEMAND,
     CLEANROUTES,
     JOINROUTES,
+    ADJUSTPERSONPLANS,
     OPTIONS,
     /// @}
 

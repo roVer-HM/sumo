@@ -496,17 +496,26 @@ GNEFrameModuls::DemandElementSelector::getPersonPlanPreviousEdge() const {
     const GNEDemandElement* lastPersonPlan = myCurrentDemandElement->getChildDemandElements().back();
     // check tag
     switch (lastPersonPlan->getTagProperty().getTag()) {
-        case GNE_TAG_PERSONTRIP_EDGE_EDGE:
+        // person trips
+        case GNE_TAG_PERSONTRIP_EDGE:
+        // rides
+        case GNE_TAG_RIDE_EDGE:
+        // walks
+        case GNE_TAG_WALK_EDGE:
         case GNE_TAG_WALK_EDGES:
-        case GNE_TAG_WALK_EDGE_EDGE:
-        case GNE_TAG_RIDE_EDGE_EDGE:
+        // stops
         case GNE_TAG_PERSONSTOP_EDGE:
             return lastPersonPlan->getParentEdges().back();
-        case GNE_TAG_PERSONTRIP_EDGE_BUSSTOP:
-        case GNE_TAG_WALK_EDGE_BUSSTOP:
-        case GNE_TAG_RIDE_EDGE_BUSSTOP:
+        // person trips
+        case GNE_TAG_PERSONTRIP_BUSSTOP:
+        // person trips
+        case GNE_TAG_RIDE_BUSSTOP:
+        // walks
+        case GNE_TAG_WALK_BUSSTOP:
+        // stops
         case GNE_TAG_PERSONSTOP_BUSSTOP:
             return lastPersonPlan->getParentAdditionals().back()->getParentLanes().front()->getParentEdge();
+        // route walks
         case GNE_TAG_WALK_ROUTE:
             return lastPersonPlan->getParentDemandElements().back()->getParentEdges().back();
         default:
@@ -2012,10 +2021,10 @@ GNEFrameModuls::PathCreator::Path::Path(GNEViewNet* viewNet, const SUMOVehicleCl
     myConflictVClass(false),
     myConflictDisconnected(false) {
     // calculate subpath
-    mySubPath = viewNet->getNet()->getPathCalculator()->calculatePath(vClass, {edgeFrom, edgeTo});
+    mySubPath = viewNet->getNet()->getPathManager()->getPathCalculator()->calculateDijkstraPath(vClass, {edgeFrom, edgeTo});
     // if subPath is empty, try it with pedestrian (i.e. ignoring vCass)
     if (mySubPath.empty()) {
-        mySubPath = viewNet->getNet()->getPathCalculator()->calculatePath(SVC_PEDESTRIAN, {edgeFrom, edgeTo});
+        mySubPath = viewNet->getNet()->getPathManager()->getPathCalculator()->calculateDijkstraPath(SVC_PEDESTRIAN, {edgeFrom, edgeTo});
         if (mySubPath.empty()) {
             mySubPath = { edgeFrom, edgeTo };
             myConflictDisconnected = true;
@@ -2067,7 +2076,6 @@ GNEFrameModuls::PathCreator::PathCreator(GNEFrame* frameParent) :
     myFrameParent(frameParent),
     myVClass(SVC_PASSENGER),
     myCreationMode(0),
-    myFromStoppingPlace(nullptr),
     myToStoppingPlace(nullptr),
     myRoute(nullptr) {
     // create label for route info
@@ -2148,51 +2156,33 @@ GNEFrameModuls::PathCreator::showPathCreatorModul(SumoXMLTag element, const bool
             myCreationMode |= START_EDGE;
             myCreationMode |= END_EDGE;
             break;
-        // edges
+        // walk edges
         case GNE_TAG_WALK_EDGES:
             myCreationMode |= SHOW_CANDIDATE_EDGES;
             myCreationMode |= START_EDGE;
             myCreationMode |= END_EDGE;
             break;
         // edge->edge
-        case GNE_TAG_PERSONTRIP_EDGE_EDGE:
-        case GNE_TAG_WALK_EDGE_EDGE:
-        case GNE_TAG_RIDE_EDGE_EDGE:
+        case GNE_TAG_PERSONTRIP_EDGE:
+        case GNE_TAG_RIDE_EDGE:
+        case GNE_TAG_WALK_EDGE:
             myCreationMode |= SHOW_CANDIDATE_EDGES;
             myCreationMode |= ONLY_FROMTO;
             myCreationMode |= START_EDGE;
             myCreationMode |= END_EDGE;
             break;
         // edge->busStop
-        case GNE_TAG_PERSONTRIP_EDGE_BUSSTOP:
-        case GNE_TAG_WALK_EDGE_BUSSTOP:
-        case GNE_TAG_RIDE_EDGE_BUSSTOP:
+        case GNE_TAG_PERSONTRIP_BUSSTOP:
+        case GNE_TAG_RIDE_BUSSTOP:
+        case GNE_TAG_WALK_BUSSTOP:
             myCreationMode |= SHOW_CANDIDATE_EDGES;
             myCreationMode |= ONLY_FROMTO;
-            myCreationMode |= START_BUSSTOP;
-            myCreationMode |= END_BUSSTOP;
-            break;
-        // busStop->edge
-        case GNE_TAG_PERSONTRIP_BUSSTOP_EDGE:
-        case GNE_TAG_WALK_BUSSTOP_EDGE:
-        case GNE_TAG_RIDE_BUSSTOP_EDGE:
-            myCreationMode |= SHOW_CANDIDATE_EDGES;
-            myCreationMode |= ONLY_FROMTO;
-            myCreationMode |= START_BUSSTOP;
-            myCreationMode |= END_EDGE;
-            break;
-        // busStop->busStop
-        case GNE_TAG_PERSONTRIP_BUSSTOP_BUSSTOP:
-        case GNE_TAG_WALK_BUSSTOP_BUSSTOP:
-        case GNE_TAG_RIDE_BUSSTOP_BUSSTOP:
-            myCreationMode |= ONLY_FROMTO;
-            myCreationMode |= START_BUSSTOP;
             myCreationMode |= END_BUSSTOP;
             break;
         // stops
         case GNE_TAG_PERSONSTOP_BUSSTOP:
             myCreationMode |= SINGLE_ELEMENT;
-            myCreationMode |= START_BUSSTOP;
+            myCreationMode |= END_BUSSTOP;
             break;
         case GNE_TAG_PERSONSTOP_EDGE:
             myCreationMode |= SINGLE_ELEMENT;
@@ -2336,33 +2326,14 @@ GNEFrameModuls::PathCreator::getSelectedEdges() const {
 bool
 GNEFrameModuls::PathCreator::addStoppingPlace(GNEAdditional* stoppingPlace, const bool /*shiftKeyPressed*/, const bool /*controlKeyPressed*/) {
     // check if stoppingPlaces aren allowed
-    if (((myCreationMode & START_BUSSTOP) + (myCreationMode & END_BUSSTOP)) == 0) {
+    if ((myCreationMode & END_BUSSTOP) == 0) {
         return false;
     }
-    // check if only a busStop is allowed
-    if ((myCreationMode & SINGLE_ELEMENT) && myFromStoppingPlace) {
+    // check if previously stopping place from was set
+    if (myToStoppingPlace) {
         return false;
-    }
-    // first add startBusStop
-    if (myCreationMode & START_BUSSTOP) {
-        // check if previously stopping place from was set
-        if (myFromStoppingPlace) {
-            // check if previously stopping place to was set
-            if ((myCreationMode & END_BUSSTOP) && myToStoppingPlace) {
-                return false;
-            } else {
-                myToStoppingPlace = stoppingPlace;
-            }
-        } else {
-            myFromStoppingPlace = stoppingPlace;
-        }
-    } else if (myCreationMode & END_BUSSTOP) {
-        // check if previously stopping place from was set
-        if (myToStoppingPlace) {
-            return false;
-        } else {
-            myToStoppingPlace = stoppingPlace;
-        }
+    } else {
+        myToStoppingPlace = stoppingPlace;
     }
     // enable abort route button
     myAbortCreationButton->enable();
@@ -2371,7 +2342,7 @@ GNEFrameModuls::PathCreator::addStoppingPlace(GNEAdditional* stoppingPlace, cons
     // disable undo/redo
     myFrameParent->myViewNet->getViewParent()->getGNEAppWindows()->disableUndoRedo("route creation");
     // enable or disable remove last stoppingPlace button
-    if (myFromStoppingPlace || myToStoppingPlace) {
+    if (myToStoppingPlace) {
         myRemoveLastInsertedElement->enable();
     } else {
         myRemoveLastInsertedElement->disable();
@@ -2383,16 +2354,6 @@ GNEFrameModuls::PathCreator::addStoppingPlace(GNEAdditional* stoppingPlace, cons
     // update stoppingPlace colors
     updateEdgeColors();
     return true;
-}
-
-
-GNEAdditional*
-GNEFrameModuls::PathCreator::getFromStoppingPlace(SumoXMLTag expectedTag) const {
-    if (myFromStoppingPlace && (myFromStoppingPlace->getTagProperty().getTag() == expectedTag)) {
-        return myFromStoppingPlace;
-    } else {
-        return nullptr;
-    }
 }
 
 
@@ -2577,7 +2538,7 @@ GNEFrameModuls::PathCreator::createPath() {
 void
 GNEFrameModuls::PathCreator::abortPathCreation() {
     // first check that there is elements
-    if ((mySelectedEdges.size() > 0) || myFromStoppingPlace || myToStoppingPlace || myRoute) {
+    if ((mySelectedEdges.size() > 0) || myToStoppingPlace || myRoute) {
         // unblock undo/redo
         myFrameParent->myViewNet->getViewParent()->getGNEAppWindows()->enableUndoRedo();
         // clear edges
@@ -2705,7 +2666,6 @@ GNEFrameModuls::PathCreator::clearPath() {
     }
     // clear edges, additionals and route
     mySelectedEdges.clear();
-    myFromStoppingPlace = nullptr;
     myToStoppingPlace = nullptr;
     myRoute = nullptr;
     // clear path
@@ -2725,10 +2685,6 @@ GNEFrameModuls::PathCreator::recalculatePath() {
     if (myRoute) {
         edges = myRoute->getParentEdges();
     } else {
-        // add from stopping place edge
-        if (myFromStoppingPlace) {
-            edges.push_back(myFromStoppingPlace->getParentLanes().front()->getParentEdge());
-        }
         // add selected edges
         for (const auto& edge : mySelectedEdges) {
             edges.push_back(edge);
@@ -2753,7 +2709,7 @@ GNEFrameModuls::PathCreator::recalculatePath() {
 void
 GNEFrameModuls::PathCreator::setSpecialCandidates(GNEEdge* originEdge) {
     // first calculate reachability for pedestrians (we use it, because pedestran can walk in almost all edges)
-    myFrameParent->getViewNet()->getNet()->getPathCalculator()->calculateReachability(SVC_PEDESTRIAN, originEdge);
+    myFrameParent->getViewNet()->getNet()->getPathManager()->getPathCalculator()->calculateReachability(SVC_PEDESTRIAN, originEdge);
     // change flags
     for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
         for (const auto& lane : edge.second->getLanes()) {
@@ -2768,7 +2724,7 @@ GNEFrameModuls::PathCreator::setSpecialCandidates(GNEEdge* originEdge) {
 void
 GNEFrameModuls::PathCreator::setPossibleCandidates(GNEEdge* originEdge, const SUMOVehicleClass vClass) {
     // first calculate reachability for pedestrians
-    myFrameParent->getViewNet()->getNet()->getPathCalculator()->calculateReachability(vClass, originEdge);
+    myFrameParent->getViewNet()->getNet()->getPathManager()->getPathCalculator()->calculateReachability(vClass, originEdge);
     // change flags
     for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
         for (const auto& lane : edge.second->getLanes()) {

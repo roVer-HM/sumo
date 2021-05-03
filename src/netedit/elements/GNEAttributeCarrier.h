@@ -414,39 +414,6 @@ private:
     /// @brief fill person plan rides
     static void fillPersonPlanRides();
 
-    /// @brief fill person plan edge -> edge
-    static void fillPersonPlanEdgeEdge(SumoXMLTag currentTag);
-
-    /// @brief fill person plan edge -> edge
-    static void fillPersonPlanEdgeBusStop(SumoXMLTag currentTag);
-
-    /// @brief fill person plan edge -> stop
-    static void fillPersonPlanEdgeStop(SumoXMLTag currentTag);
-
-    /// @brief fill person plan busStop -> edge
-    static void fillPersonPlanBusStopEdge(SumoXMLTag currentTag);
-
-    /// @brief fill person plan busStop -> edge
-    static void fillPersonPlanBusStopBusStop(SumoXMLTag currentTag);
-
-    /// @brief fill person plan busStop -> stop
-    static void fillPersonPlanBusStopStop(SumoXMLTag currentTag);
-
-    /// @brief fill person plan stop -> edge
-    static void fillPersonPlanStopEdge(SumoXMLTag currentTag);
-
-    /// @brief fill person plan stop -> edge
-    static void fillPersonPlanStopBusStop(SumoXMLTag currentTag);
-
-    /// @brief fill person plan stop -> stop
-    static void fillPersonPlanStopStop(SumoXMLTag currentTag);
-
-    /// @brief fill specific person trip attributes
-    static void fillPersonTripAttributes(SumoXMLTag currentTag);
-
-    /// @brief fill specific ride attributes
-    static void fillRideAttributes(SumoXMLTag currentTag);
-
     /// @brief fill personStop elements
     static void fillPersonStopElements();
 
@@ -468,7 +435,7 @@ private:
     /// @brief fill common person attributes (used by person and personFlows)
     static void fillCommonPersonAttributes(SumoXMLTag currentTag);
 
-    /// @brief fill stop person attributes (used by stops and personStps)
+    /// @brief fill stop person attributes
     static void fillCommonStopAttributes(SumoXMLTag currentTag, const bool parking);
 
     /// @brief fill Data elements

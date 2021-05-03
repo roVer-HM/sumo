@@ -21,8 +21,8 @@
 #include <config.h>
 
 #include <netedit/elements/GNEHierarchicalElement.h>
-#include <netedit/elements/GNEPathElements.h>
 #include <netedit/GNEGeometry.h>
+#include <netedit/GNEPathManager.h>
 #include <netedit/GNEMoveElement.h>
 #include <utils/common/Parameterised.h>
 #include <utils/geom/PositionVector.h>
@@ -44,7 +44,7 @@ class GUIGLObjectPopupMenu;
  * @class GNEAdditional
  * @brief An Element which don't belongs to GNENet but has influency in the simulation
  */
-class GNEAdditional : public GUIGlObject, public Parameterised, public GNEHierarchicalElement, public GNEPathElements, public GNEMoveElement  {
+class GNEAdditional : public GUIGlObject, public Parameterised, public GNEHierarchicalElement, public GNEMoveElement, public GNEPathManager::PathElement {
 
 public:
     /**@brief Constructor
@@ -118,9 +118,6 @@ public:
     /// @brief obtain additional geometry
     const GNEGeometry::Geometry& getAdditionalGeometry() const;
 
-    /// @brief obtain additional segment geometry
-    const GNEGeometry::SegmentGeometry& getAdditionalSegmentGeometry() const;
-
     /// @brief set special color
     void setSpecialColor(const RGBColor* color);
 
@@ -166,9 +163,6 @@ public:
     /// @brief Check if additional item is currently blocked (i.e. cannot be moved with mouse)
     bool isAdditionalBlocked() const;
 
-    /// @brief partial update pre-computed geometry information
-    void updatePartialGeometry(const GNELane* lane);
-
     /// @name inherited from GUIGlObject
     /// @{
 
@@ -199,22 +193,43 @@ public:
      */
     virtual void drawGL(const GUIVisualizationSettings& s) const = 0;
 
+    /// @}
+
+    /// @name inherited from GNEPathManager::PathElement
+    /// @{
+
+    /// @brief compute pathElement
+    void computePathElement();
+
     /**@brief Draws partial object (lane)
-    * @param[in] s The settings for the current view (may influence drawing)
-    * @param[in] lane GNELane in which draw partial
-    * @param[in] drawGeometry flag to enable/disable draw geometry (lines, boxLines, etc.)
-    * @note currently only E2Multilane detectors use drawPartialGL
-    */
-    void drawPartialGL(const GUIVisualizationSettings& s, const GNELane* lane, const double offsetFront) const;
+     * @param[in] s The settings for the current view (may influence drawing)
+     * @param[in] lane GNELane in which draw partial
+     * @param[in] segment segment geometry
+     * @note currently only E2Multilane detectors use drawPartialGL
+     */
+    void drawPartialGL(const GUIVisualizationSettings& s, const GNELane* lane, const GNEPathManager::Segment* segment, const double offsetFront) const;
 
     /**@brief Draws partial object (junction)
-    * @param[in] s The settings for the current view (may influence drawing)
-    * @param[in] fromLane from GNELane
-    * @param[in] toLane to GNELane
-    * @param[in] drawGeometry flag to enable/disable draw geometry (lines, boxLines, etc.)
-    * @note currently only E2Multilane detectors use drawPartialGL
-    */
-    void drawPartialGL(const GUIVisualizationSettings& s, const GNELane* fromLane, const GNELane* toLane, const double offsetFront) const;
+     * @param[in] s The settings for the current view (may influence drawing)
+     * @param[in] fromLane from GNELane
+     * @param[in] toLane to GNELane
+     * @param[in] drawGeometry flag to enable/disable draw geometry (lines, boxLines, etc.)
+     * @note currently only E2Multilane detectors use drawPartialGL
+     */
+    void drawPartialGL(const GUIVisualizationSettings& s, const GNELane* fromLane, const GNELane* toLane, const GNEPathManager::Segment* segment, const double offsetFront) const;
+
+    /// @brief get path element depart lane pos
+    double getPathElementDepartValue() const;
+
+    /// @brief get path element depart position
+    Position getPathElementDepartPos() const;
+
+    /// @brief get path element arrival lane pos
+    double getPathElementArrivalValue() const;
+
+    /// @brief get path element arrival position
+    Position getPathElementArrivalPos() const;
+
     /// @}
 
     /// @name inherited from GNEAttributeCarrier
@@ -280,9 +295,6 @@ protected:
 
     /// @brief geometry to be precomputed in updateGeometry(...)
     GNEGeometry::Geometry myAdditionalGeometry;
-
-    /// @brief segment geometry to be precomputed in updateGeometry(...) (used by E2Multilane)
-    GNEGeometry::SegmentGeometry myAdditionalSegmentGeometry;
 
     /// @brief name of additional
     std::string myAdditionalName;

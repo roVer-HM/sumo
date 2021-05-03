@@ -55,16 +55,15 @@ const double GNEEdge::SNAP_RADIUS_SQUARED = (SUMO_const_halfLaneWidth* SUMO_cons
 // ===========================================================================
 
 GNEEdge::GNEEdge(GNENet* net, NBEdge* nbe, bool wasSplit, bool loaded):
-    GNENetworkElement(net, nbe->getID(), GLO_EDGE, SUMO_TAG_EDGE, {
-    net->retrieveJunction(nbe->getFromNode()->getID()), net->retrieveJunction(nbe->getToNode()->getID())
-},
-{}, {}, {}, {}, {}, {}, {}),
-myNBEdge(nbe),
-myLanes(0),
-myAmResponsible(false),
-myWasSplit(wasSplit),
-myConnectionStatus(loaded ? FEATURE_LOADED : FEATURE_GUESSED),
-myUpdateGeometry(true) {
+    GNENetworkElement(net, nbe->getID(), GLO_EDGE, SUMO_TAG_EDGE, 
+        {net->retrieveJunction(nbe->getFromNode()->getID()), net->retrieveJunction(nbe->getToNode()->getID())},
+    {}, {}, {}, {}, {}, {}, {}),
+    myNBEdge(nbe),
+    myLanes(0),
+    myAmResponsible(false),
+    myWasSplit(wasSplit),
+    myConnectionStatus(loaded ? FEATURE_LOADED : FEATURE_GUESSED),
+    myUpdateGeometry(true) {
     // Create lanes
     int numLanes = myNBEdge->getNumLanes();
     myLanes.reserve(numLanes);
@@ -73,8 +72,8 @@ myUpdateGeometry(true) {
         myLanes.back()->incRef("GNEEdge::GNEEdge");
     }
     // update Lane geometries
-    for (const auto& i : myLanes) {
-        i->updateGeometry();
+    for (const auto& lane : myLanes) {
+        lane->updateGeometry();
     }
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
@@ -119,17 +118,28 @@ GNEEdge::updateGeometry() {
             connection->updateGeometry();
         }
         // Update geometry of additionals children vinculated to this edge
-        for (const auto& childAdditionals : getChildAdditionals()) {
-            childAdditionals->updateGeometry();
+        for (const auto& childAdditional : getChildAdditionals()) {
+            childAdditional->updateGeometry();
         }
         // Update geometry of additionals demand elements vinculated to this edge
-        for (const auto& childDemandElements : getChildDemandElements()) {
-            childDemandElements->computePath();
-            childDemandElements->updateGeometry();
+        for (const auto& childDemandElement : getChildDemandElements()) {
+            childDemandElement->updateGeometry();
         }
         // Update geometry of additionals generic datas vinculated to this edge
         for (const auto& childGenericData : getChildGenericDatas()) {
             childGenericData->updateGeometry();
+        }
+        // compute geometry of path elements elements vinculated with this edge (depending of showDemandElements)
+        if (myNet->getViewNet() && myNet->getViewNet()->getNetworkViewOptions().showDemandElements()) {
+            for (const auto& childAdditional : getChildAdditionals()) {
+                childAdditional->computePathElement();
+            }
+            for (const auto& childDemandElement : getChildDemandElements()) {
+                childDemandElement->computePathElement();
+            }
+            for (const auto& childGenericData : getChildGenericDatas()) {
+                childGenericData->computePathElement();
+            }
         }
     }
     // update vehicle geometry
@@ -1478,6 +1488,8 @@ GNEEdge::setAttribute(SumoXMLAttr key, const std::string& value) {
     if (updateTemplate) {
         templateEditor->updateEdgeTemplate(this);
     }
+    // invalidate path calculator
+    myNet->getPathManager()->getPathCalculator()->invalidatePathCalculator();
 }
 
 
