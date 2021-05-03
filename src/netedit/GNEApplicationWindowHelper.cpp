@@ -856,7 +856,7 @@ GNEApplicationWindowHelper::ProcessingMenuCommands::buildProcessingMenuCommands(
                     GUIIconSubSys::getIcon(GUIIcon::JOINJUNCTIONS), myGNEApp, MID_HOTKEY_F7_JOIN_SELECTEDJUNCTIONS_ROUTES);
     clearInvalidCrossings = GUIDesigns::buildFXMenuCommandShortcut(fileMenu,
                             "Clean invalid crossings", "F8", "Clear invalid crossings.",
-                            GUIIconSubSys::getIcon(GUIIcon::JOINJUNCTIONS), myGNEApp, MID_HOTKEY_F8_CLEANINVALID_CROSSINGS_DEMANDELEMENTS);
+                            GUIIconSubSys::getIcon(GUIIcon::CLEANJUNCTIONS), myGNEApp, MID_HOTKEY_F8_CLEANINVALID_CROSSINGS_DEMANDELEMENTS);
     // build demand  processing menu commands
     computeDemand = GUIDesigns::buildFXMenuCommandShortcut(fileMenu,
                     "Compute demand", "F5", "Computes demand elements.",
@@ -872,7 +872,7 @@ GNEApplicationWindowHelper::ProcessingMenuCommands::buildProcessingMenuCommands(
                         GUIIconSubSys::getIcon(GUIIcon::ADJUSTPERSONPLANS), myGNEApp, MID_HOTKEY_SHIFT_F7_ADJUST_PERSON_PLANS);
     clearInvalidDemandElements = GUIDesigns::buildFXMenuCommandShortcut(fileMenu,
                                  "Clean invalid route elements", "F8", "Clear elements with an invalid path (routes, Trips, Flows...).",
-                                 GUIIconSubSys::getIcon(GUIIcon::JOINJUNCTIONS), myGNEApp, MID_HOTKEY_F8_CLEANINVALID_CROSSINGS_DEMANDELEMENTS);
+                                 GUIIconSubSys::getIcon(GUIIcon::CLEANJUNCTIONS), myGNEApp, MID_HOTKEY_F8_CLEANINVALID_CROSSINGS_DEMANDELEMENTS);
     // add separator (because optionsmenu is commmon for Network and Demand modes
     new FXMenuSeparator(fileMenu);
     optionMenus = GUIDesigns::buildFXMenuCommandShortcut(fileMenu,
