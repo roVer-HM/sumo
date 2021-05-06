@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2021-05-06 12:02:55 by Eclipse SUMO sumo Version v1_9_1+0242-7657709
+<!-- generated on 2021-05-06 12:43:30 by Eclipse SUMO sumo Version v1_9_1+0242-7657709
 This data file and the accompanying materials
 are made available under the terms of the Eclipse Public License v2.0
 which accompanies this distribution, and is available at
@@ -16,22 +16,18 @@ SPDX-License-Identifier: EPL-2.0
 
     <output>
         <write-license value="true"/>
-        <tripinfo-output value="tripinfos.xml"/>
         <vehroute-output value="vehroutes.xml"/>
-        <vehroute-output.skip-ptlines value="true"/>
+        <vehroute-output.exit-times value="true"/>
     </output>
 
     <processing>
         <default.speeddev value="0"/>
     </processing>
 
-    <routing>
-        <persontrip.transfer.car-walk value="ptStops"/>
-    </routing>
-
     <report>
         <xml-validation value="never"/>
         <xml-validation.routes value="never"/>
+        <duration-log.disable value="true"/>
         <no-step-log value="true"/>
     </report>
 
@@ -39,17 +35,15 @@ SPDX-License-Identifier: EPL-2.0
 -->
 
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
-    <vehicle id="p0_0" depart="triggered" arrival="35.00">
-        <routeDistribution>
-            <route replacedOnEdge="" reason="person:p0" replacedAtTime="0.00" probability="0" edges="beg"/>
-            <route edges="beg beg2left"/>
-        </routeDistribution>
-    </vehicle>
-
-    <person id="p0" depart="0.00" arrival="824.00">
-        <ride from="beg" to="beg2left" trainStop="beg2left" lines="p0_0"/>
-        <ride from="gneE0" to="gneE0" trainStop="left2end" lines="train" intended="train.1" depart="310.00"/>
-        <walk edges="left2end end"/>
+    <person id="p0" depart="0.00" arrival="159.00">
+        <ride from="beg" to="end" parkingArea="pEnd" lines="car" exitTime="159.00"/>
     </person>
+
+    <vehicle id="car" depart="0.00" arrival="210.00">
+        <route edges="beg beg2left left left2end end" exitTimes="33.00 58.00 111.00 135.00 210.00"/>
+        <stop busStop="beg_0" until="10.00"/>
+        <stop busStop="left_0" until="110.00"/>
+        <stop busStop="end_0" until="210.00"/>
+    </vehicle>
 
 </routes>
