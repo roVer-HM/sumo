@@ -155,7 +155,7 @@ def initOptions():
     argParser.add_argument("-i", "--logitgamma", type=float, default=1., help="use the c-logit model for route choice")
     argParser.add_argument("-G", "--logittheta", type=float, help="parameter to adapt the cost unit")
     argParser.add_argument("-J", "--addweights", help="Additional weightes for duarouter")
-    argParser.add_argument("--logit-convergence-steps", dest="logitConvergence", type=int,
+    argParser.add_argument("--convergence-steps", dest="convergenceSteps", type=int,
                            help="Given x, if x > 0 Reduce probability to change route by 1/x per step. If x < 0 set probability of rerouting to 1/step after step |x|")
     argParser.add_argument("--addweights.once", dest="addweightsOnce", action="store_true",
                            default=False, help="use added weights only on the first iteration")
@@ -175,6 +175,8 @@ def initOptions():
     argParser.add_argument("--log", default="stdout.log", help="log file path (default 'dua.log')")
     argParser.add_argument("--marginal-cost", action="store_true", default=False,
                            help="use marginal cost to perform system optimal traffic assignment")
+    argParser.add_argument("--marginal-cost.exp", type=float, default=0, dest="mcExp",
+                           help="apply the given exponent on the current traffic count when computing marginal cost")
     argParser.add_argument("remaining_args", nargs='*')
     return argParser
 
@@ -228,13 +230,13 @@ def writeRouteConf(duarouterBinary, step, options, dua_args, file,
         args += ['--additional-files', options.districts]
     if options.logit:
         args += ['--route-choice-method', 'logit']
-        if options.logitConvergence:
-            if options.logitConvergence > 0:
-                probKeepRoute = max(0, min(step / float(options.logitConvergence), 1))
+        if options.convergenceSteps:
+            if options.convergenceSteps > 0:
+                probKeepRoute = max(0, min(step / float(options.convergenceSteps), 1))
             else:
                 startStep = -x;
                 probKeepRoute = 0 if step > startStep else 1 - 1.0 / (step - startStep)
-            args += ['--skip-new-routes.probability', str(probKeepRoute)]
+            args += ['--keep-route-probability', str(probKeepRoute)]
 
     if step > 0 or options.addweights:
         weightpath = ""
@@ -470,9 +472,7 @@ def calcMarginalCost(step, options):
                                 dif_tt = abs(tt_cur - tt_prv)
                                 dif_veh = abs(veh_cur - veh_prv)
                                 if dif_veh != 0:
-                                    #mc_cur = dif_tt / dif_veh + tt_cur
-                                    #mc_cur = (dif_tt / dif_veh) * math.sqrt(veh_cur) + tt_cur
-                                    mc_cur = (dif_tt / dif_veh) * veh_cur + tt_cur
+                                    mc_cur = (dif_tt / dif_veh) * (veh_cur ** options.mcExp) + tt_cur
                                 else:
                                     # previous marginal cost
                                     mc_cur = mc_prv
