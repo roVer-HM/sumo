@@ -14,7 +14,6 @@ set(BINARY_SUFFIX "" CACHE STRING "Append the suffix to every generated binary")
 set(COMPILE_DEFINITIONS "" CACHE STRING "Macros or defines to add when compiling")
 set(CCACHE_SUPPORT ON CACHE BOOL "Enable ccache support if installed")
 set(TCMALLOC ON CACHE BOOL "Use tcmalloc if installed")
-set(DATA_PATH "share/sumo/" CACHE STRING "subpath where to install data files")
 
 # Set a default build type if none was specified
 # you may use -DCMAKE_BUILD_TYPE:STRING=Debug from the command line
@@ -29,7 +28,7 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif ()
 
 project(SUMO CXX C)
-set(PACKAGE_VERSION "git")
+set(PACKAGE_VERSION "1.9.2")
 cmake_minimum_required(VERSION 3.1)
 
 find_program(CCACHE_FOUND "ccache")
@@ -474,6 +473,11 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMake")
 
 # installation
 include(GNUInstallDirs)
+if (SKBUILD)
+    set(DATA_PATH "")
+else ()
+    set(DATA_PATH "share/sumo/")
+endif ()
 install(DIRECTORY bin/ DESTINATION bin
         FILES_MATCHING PATTERN "*.dll"
         PATTERN "*d.dll" EXCLUDE
@@ -484,6 +488,7 @@ if (PROJ_7)
 endif ()
 install(DIRECTORY tools/ DESTINATION ${DATA_PATH}tools
         USE_SOURCE_PERMISSIONS
+        PATTERN "build/sumo" EXCLUDE  # needed for the scikit build
         PATTERN "calibration" EXCLUDE
         PATTERN "lisum-core" EXCLUDE
         PATTERN "lisum-gui" EXCLUDE

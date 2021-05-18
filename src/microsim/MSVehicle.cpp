@@ -1672,7 +1672,7 @@ MSVehicle::processNextStop(double currentVelocity) {
                         stop.duration = MAX2(stop.duration, stop.pars.until - time);
                     }
                 }
-                if (MSGlobals::gUseStopEnded && stop.pars.ended ) {
+                if (MSGlobals::gUseStopEnded && stop.pars.ended) {
                     stop.duration = stop.pars.ended - time;
                 }
                 stop.endBoarding = stop.pars.extension >= 0 ? time + stop.duration + stop.pars.extension : SUMOTime_MAX;
@@ -6456,7 +6456,10 @@ MSVehicle::saveState(OutputDevice& out) {
     for (SUMOVehicleParameter::Stop stop : myPastStops) {
         stop.write(out, false);
         out.writeAttr(SUMO_ATTR_STARTED, time2string(stop.started));
-        out.writeAttr(SUMO_ATTR_ENDED, time2string(stop.ended));
+        if ((stop.parametersSet & STOP_ENDED_SET) == 0) {
+            // do not write ended twice
+            out.writeAttr(SUMO_ATTR_ENDED, time2string(stop.ended));
+        }
         out.closeTag();
     }
     // save upcoming stops

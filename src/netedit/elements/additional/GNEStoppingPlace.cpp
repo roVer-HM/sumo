@@ -75,7 +75,7 @@ GNEStoppingPlace::getMoveOperation(const double /*shapeOffset*/) {
         double endPos = GNEAttributeCarrier::canParse<double>(myEndPosition)? GNEAttributeCarrier::parse<double>(myEndPosition) : laneLength;
         // return move operation for additional placed over shape
         return new GNEMoveOperation(this, getParentLanes().front(), {startPos, endPos},
-            myNet->getViewNet()->getViewParent()->getMoveFrame()->getCommonModeOptions()->getAllowChangeLane());
+                                    myNet->getViewNet()->getViewParent()->getMoveFrame()->getCommonModeOptions()->getAllowChangeLane());
     }
 }
 
