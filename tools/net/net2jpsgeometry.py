@@ -322,7 +322,7 @@ if __name__ == "__main__":
 
     polygons = []
     if "edge" in selectedObjects.keys():
-        for edgeId in selectedObjects["edge"]:
+        for edgeId in sorted(selectedObjects["edge"]):
             try:
                 edge = net.getEdge(edgeId)
             except KeyError:
@@ -337,7 +337,7 @@ if __name__ == "__main__":
                 for lane in edge.getLanes():
                     addLaneToPolygons(lane, polygons)
     if "lane" in selectedObjects.keys():
-        for laneId in selectedObjects["lane"]:
+        for laneId in sorted(selectedObjects["lane"]):
             try:
                 lane = net.getLane(laneId)
             except KeyError:
@@ -353,14 +353,17 @@ if __name__ == "__main__":
                     print("WARNING: lane \'%s\' is not the exclusive sidewalk lane, skipping..." % (laneId))
                     continue
             addLaneToPolygons(lane, polygons)
-    if options.allow_junctions and "junction" in selectedObjects.keys():
-        for nodeId in selectedObjects["junction"]:
-            try:
-                node = net.getNode(nodeId)
-            except KeyError:
-                print("WARNING: node \'%s\' does not exist in the network, skipping..." % (nodeId))
-                continue
-            addNodeToPolygons(node, polygons)
+    if "junction" in selectedObjects.keys():
+        for nodeId in sorted(selectedObjects["junction"]):
+            if options.allow_junctions:
+                try:
+                    node = net.getNode(nodeId)
+                except KeyError:
+                    print("WARNING: node \'%s\' does not exist in the network, skipping..." % (nodeId))
+                    continue
+                addNodeToPolygons(node, polygons)
+            else:
+                print("WARNING: junctions not allowed (\'%s\'), try \'--allow-junctions\'" % (nodeId))
 
     doors, polygonSlices = calculateDoors(polygons, net)
     if not options.outFile:
