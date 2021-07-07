@@ -26,6 +26,8 @@ except ImportError:
 import pyautogui
 import time
 import pyperclip
+from pyvirtualdisplay import Display
+
 
 # define delay before every operation
 DELAY_KEY = 0.5         # 0.2 0.3
@@ -420,6 +422,12 @@ def setupAndStart(testRoot, extraParameters=[], debugInformation=True):
     if os.name == "posix":
         # to work around non working gtk clipboard
         pyperclip.set_clipboard("xclip")
+    # declare display
+    display = None
+    # check if we have to open a virtual display (only in linux)
+    if sys.platform == "linux" or sys.platform == "linux2":
+        display = Display(visible=0, size=(1600, 900))
+        display.start()
     # Open Netedit
     neteditProcess = Popen(extraParameters, debugInformation)
     # atexit.register(quit, neteditProcess, False, False)
@@ -430,7 +438,7 @@ def setupAndStart(testRoot, extraParameters=[], debugInformation=True):
     typeKeyUp("control")
     typeKeyUp("alt")
     # Wait for Netedit reference
-    return neteditProcess, getReferenceMatch(neteditProcess)
+    return neteditProcess, getReferenceMatch(neteditProcess), display
 
 
 def supermodeNetwork():
@@ -622,7 +630,7 @@ def reload(NeteditProcess, openNetNonSavedDialog=False, saveNet=False,
         print("TestFunctions: Error reloading Netedit")
 
 
-def quit(NeteditProcess, openNetNonSavedDialog=False, saveNet=False,
+def quit(NeteditProcess, display, openNetNonSavedDialog=False, saveNet=False,
          openAdditionalsNonSavedDialog=False, saveAdditionals=False,
          openDemandNonSavedDialog=False, saveDemandElements=False,
          openDataNonSavedDialog=False, saveDataElements=False):
@@ -681,6 +689,9 @@ def quit(NeteditProcess, openNetNonSavedDialog=False, saveNet=False,
                 typeKeyUp("shift")
                 typeKeyUp("control")
                 typeKeyUp("alt")
+                # check if we have to close a virtual display (only in linux)
+                if display is not None:
+                    display.stop()
                 # exit
                 return
             except subprocess.TimeoutExpired:
@@ -693,6 +704,9 @@ def quit(NeteditProcess, openNetNonSavedDialog=False, saveNet=False,
                 typeKeyUp("shift")
                 typeKeyUp("control")
                 typeKeyUp("alt")
+                # check if we have to close a virtual display (only in linux)
+                if display is not None:
+                    display.stop()
                 # exit
                 return
         NeteditProcess.kill()
@@ -701,6 +715,9 @@ def quit(NeteditProcess, openNetNonSavedDialog=False, saveNet=False,
         typeKeyUp("shift")
         typeKeyUp("control")
         typeKeyUp("alt")
+        # check if we have to close a virtual display (only in linux)
+        if display is not None:
+            display.stop()
         # exit
         return
 
