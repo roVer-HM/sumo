@@ -26,7 +26,7 @@ sys.path.append(neteditTestRoot)
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot, ['--new'])
+neteditProcess, referencePosition, display = netedit.setupAndStart(neteditTestRoot, ['--new'])
 
 # rebuild network
 netedit.rebuildNetwork()
@@ -74,4 +74,4 @@ netedit.rebuildNetwork()
 netedit.saveNetwork(referencePosition)
 
 # quit netedit
-netedit.quit(neteditProcess)
+netedit.quit(neteditProcess, display)
