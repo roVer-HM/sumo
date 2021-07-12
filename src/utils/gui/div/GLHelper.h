@@ -328,9 +328,6 @@ public:
     /// @brief to be called when the font context is invalidated
     static void resetFont();
 
-    /// @brief set GL2PS
-    static void setGL2PS(bool active = true);
-
     /// @brief darw
     static void drawSpaceOccupancies(const double exaggeration, const Position& pos, const double rotation,
                                      const double width, const double length, const bool vehicle);
@@ -354,9 +351,6 @@ private:
     /// @brief Font context
     static struct FONScontext* myFont;
     static double myFontSize;
-
-    /// @brief whether we are currently rendering for gl2ps
-    static bool myGL2PSActive;
 
     /// @brief static vector with a list of alternated black/white colors (used for contourns)
     static std::vector<RGBColor> myDottedcontourColors;
