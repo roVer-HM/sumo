@@ -44,7 +44,7 @@ GNEPOI::GNEPOI(GNENet* net, const std::string& id, const std::string& type, cons
         const double yLat, const bool geo, const double layer, const double angle, const std::string& imgFile, 
         const bool relativePath, const double width, const double height, const std::string &name, 
         const std::map<std::string, std::string> &parameters, const bool blockMovement) :
-    PointOfInterest(id, type, color, Position(xLon, yLat), geo, "", 0, 0, layer, angle, imgFile, relativePath, width, height, name, parameters),
+    PointOfInterest(id, type, color, Position(xLon, yLat), geo, "", 0, false, 0, layer, angle, imgFile, relativePath, width, height, name, parameters),
     GNEShape(id, net, GLO_POI, geo? GNE_TAG_POIGEO : SUMO_TAG_POI,
         {}, {}, {}, {}, {}, {}, {}, {},
     blockMovement) {
@@ -60,9 +60,9 @@ GNEPOI::GNEPOI(GNENet* net, const std::string& id, const std::string& type, cons
 
 
 GNEPOI::GNEPOI(GNENet* net, const std::string& id, const std::string& type, const RGBColor& color, GNELane* lane, const double posOverLane,
-        const double posLat, const double layer, const double angle, const std::string& imgFile, const bool relativePath, const double width, 
+        const bool friendlyPos, const double posLat, const double layer, const double angle, const std::string& imgFile, const bool relativePath, const double width, 
         const double height, const std::string &name, const std::map<std::string, std::string> &parameters, const bool movementBlocked) :
-    PointOfInterest(id, type, color, Position(), false, lane->getID(), posOverLane, posLat, layer, angle, imgFile, relativePath, width, height, name, parameters),
+    PointOfInterest(id, type, color, Position(), false, lane->getID(), posOverLane, friendlyPos, posLat, layer, angle, imgFile, relativePath, width, height, name, parameters),
     GNEShape(id, net, GLO_POI, GNE_TAG_POILANE,
         {}, {}, {lane}, {}, {}, {}, {}, {},
         movementBlocked) {
@@ -113,7 +113,7 @@ GNEPOI::writeShape(OutputDevice& device) {
         // obtain fixed position over lane
         double fixedPositionOverLane = myPosOverLane > getParentLanes().at(0)->getLaneShape().length() ? getParentLanes().at(0)->getLaneShape().length() : myPosOverLane < 0 ? 0 : myPosOverLane;
         // write POILane using POI::writeXML
-        writeXML(device, false, 0, getParentLanes().at(0)->getID(), fixedPositionOverLane, myPosLat);
+        writeXML(device, false, 0, getParentLanes().at(0)->getID(), fixedPositionOverLane, myFriendlyPos, myPosLat);
     } else {
         writeXML(device, myGeo);
     }
@@ -142,7 +142,7 @@ GNEPOI::updateCenteringBoundary(const bool updateGrid) {
     // add position (this POI)
     myBoundary.add(*this);
     // grow boundary
-    myBoundary.grow(10 + std::max(getWidth(), getHeight()));
+    myBoundary.grow(10 + std::max(getWidth() * 0.5, getHeight() * 0.5));
     // add object into net
     if (updateGrid) {
         myNet->addGLObjectIntoGrid(this);
@@ -212,7 +212,7 @@ GNEPOI::drawGL(const GUIVisualizationSettings& s) const {
             // obtain POIExaggeration
             const double POIExaggeration = s.poiSize.getExaggeration(s, this);
             // push name (needed for getGUIGlObjectsUnderCursor(...)
-            glPushName(getGlID());
+            GLHelper::pushName(getGlID());
             // draw inner polygon
             if (myNet->getViewNet()->getFrontAttributeCarrier() == this) {
                 GUIPointOfInterest::drawInnerPOI(s, this, this, drawUsingSelectColor(), GLO_DOTTEDCONTOUR_FRONT);
@@ -222,18 +222,18 @@ GNEPOI::drawGL(const GUIVisualizationSettings& s) const {
             // draw an orange square mode if there is an image(see #4036)
             if (!getShapeImgFile().empty() && myNet->getViewNet()->getTestingMode().isTestingEnabled()) {
                 // Add a draw matrix for drawing logo
-                glPushMatrix();
+                GLHelper::pushMatrix();
                 glTranslated(x(), y(), getType() + 0.01);
                 GLHelper::setColor(RGBColor::ORANGE);
                 GLHelper::drawBoxLine(Position(0, 1), 0, 2, 1);
-                glPopMatrix();
+                GLHelper::popMatrix();
             }
             // check if dotted contour has to be drawn
             if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {
                 if (getShapeImgFile().empty()) {
                     GNEGeometry::drawDottedContourCircle(GNEGeometry::DottedContourType::INSPECT, s, *this, 1.3, POIExaggeration);
                 } else {
-                    GNEGeometry::drawDottedSquaredShape(GNEGeometry::DottedContourType::INSPECT, s, *this, getWidth(), getHeight(), 0, 0, getShapeNaviDegree(), POIExaggeration);
+                    GNEGeometry::drawDottedSquaredShape(GNEGeometry::DottedContourType::INSPECT, s, *this, getHeight() * 0.5, getWidth() * 0.5, 0, 0, getShapeNaviDegree(), POIExaggeration);
                 }
             }
             // check if front dotted contour has to be drawn
@@ -241,11 +241,11 @@ GNEPOI::drawGL(const GUIVisualizationSettings& s) const {
                 if (getShapeImgFile().empty()) {
                     GNEGeometry::drawDottedContourCircle(GNEGeometry::DottedContourType::FRONT, s, *this, 1.3, POIExaggeration);
                 } else {
-                    GNEGeometry::drawDottedSquaredShape(GNEGeometry::DottedContourType::FRONT, s, *this, getWidth(), getHeight(), 0, 0, getShapeNaviDegree(), POIExaggeration);
+                    GNEGeometry::drawDottedSquaredShape(GNEGeometry::DottedContourType::FRONT, s, *this, getHeight() * 0.5, getWidth() * 0.5, 0, 0, getShapeNaviDegree(), POIExaggeration);
                 }
             }
             // pop name
-            glPopName();
+            GLHelper::popName();
         }
     }
 }
@@ -266,6 +266,8 @@ GNEPOI::getAttribute(SumoXMLAttr key) const {
             } else {
                 return toString(*this);
             }
+        case SUMO_ATTR_FRIENDLY_POS:
+            return toString(getFriendlyPos());
         case SUMO_ATTR_POSITION_LAT:
             return toString(myPosLat);
         case SUMO_ATTR_LON: {
@@ -324,6 +326,7 @@ GNEPOI::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* und
         case SUMO_ATTR_COLOR:
         case SUMO_ATTR_LANE:
         case SUMO_ATTR_POSITION:
+        case SUMO_ATTR_FRIENDLY_POS:
         case SUMO_ATTR_POSITION_LAT:
         case SUMO_ATTR_LON:
         case SUMO_ATTR_LAT:
@@ -362,6 +365,8 @@ GNEPOI::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return canParse<Position>(value);
             }
+        case SUMO_ATTR_FRIENDLY_POS:
+            return canParse<bool>(value);
         case SUMO_ATTR_POSITION_LAT:
             return canParse<double>(value);
         case SUMO_ATTR_LON:
@@ -455,6 +460,9 @@ GNEPOI::setAttribute(SumoXMLAttr key, const std::string& value) {
             updateCenteringBoundary(true);
             break;
         }
+        case SUMO_ATTR_FRIENDLY_POS:
+            setFriendlyPos(parse<bool>(value));
+            break;
         case SUMO_ATTR_POSITION_LAT:
             myPosLat = parse<double>(value);
             // update centering boundary

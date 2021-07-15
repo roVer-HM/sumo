@@ -367,9 +367,9 @@ GNEContainer::drawGL(const GUIVisualizationSettings& s) const {
         // check if container can be drawn
         if (!(s.drawForPositionSelection && (containerPosition.distanceSquaredTo(myNet->getViewNet()->getPositionInformation()) > distanceSquared))) {
             // push GL ID
-            glPushName(getGlID());
+            GLHelper::pushName(getGlID());
             // push draw matrix
-            glPushMatrix();
+            GLHelper::pushMatrix();
             // Start with the drawing of the area traslating matrix to origin
             myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, getType());
             // translate and rotate
@@ -388,9 +388,9 @@ GNEContainer::drawGL(const GUIVisualizationSettings& s) const {
                 GUIBasePersonHelper::drawAction_drawAsTriangle(0, length, width);
             }
             // pop matrix
-            glPopMatrix();
+            GLHelper::popMatrix();
             // pop name
-            glPopName();
+            GLHelper::popName();
             // draw name
             drawName(containerPosition, s.scale, s.containerName, s.angle);
             if (s.personValue.show) {

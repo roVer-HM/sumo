@@ -107,9 +107,9 @@ GNEParkingArea::drawGL(const GUIVisualizationSettings& s) const {
                 signColor = s.stoppingPlaceSettings.parkingAreaColorSign;
             }
             // Start drawing adding an gl identificator
-            glPushName(getGlID());
+            GLHelper::pushName(getGlID());
             // Add a draw matrix
-            glPushMatrix();
+            GLHelper::pushMatrix();
             // translate to front
             myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_PARKING_AREA);
             // set base color
@@ -130,9 +130,9 @@ GNEParkingArea::drawGL(const GUIVisualizationSettings& s) const {
                 }
             }
             // pop draw matrix
-            glPopMatrix();
+            GLHelper::popMatrix();
             // Pop name
-            glPopName();
+            GLHelper::popName();
             // check if dotted contours has to be drawn
             if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {
                 GNEGeometry::drawDottedContourShape(GNEGeometry::DottedContourType::INSPECT, s, myAdditionalGeometry.getShape(), myWidth * 0.5, parkingAreaExaggeration);

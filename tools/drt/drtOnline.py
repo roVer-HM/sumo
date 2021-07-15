@@ -74,6 +74,8 @@ def initOptions():
                     help="Minimum time difference allowed between DRT travel time and direct connection for the cases of short trips (default 600 seconds)")  # noqa
     ap.add_argument("--max-wait", type=int, default=900,
                     help="Maximum waiting time for pickup (default 900 seconds)")  # noqa
+    ap.add_argument("--max-processing", type=int,
+                    help="Maximum number of attempts to process a request (default unlimited)")  # noqa
     ap.add_argument("--sim-step", type=int, default=30,
                     help="Step time to collect new reservations (default 30 seconds)")  # noqa
     ap.add_argument("--end-time", type=int, default=90000,
@@ -83,7 +85,7 @@ def initOptions():
     ap.add_argument("--routing-mode", type=int, default=0,
                     help="Mode for shortest path routing. Support: 0 (default) for routing with loaded or default speeds and 1 for routing with averaged historical speeds")  # noqa
     ap.add_argument("--dua-times", action='store_true')
-    ap.add_argument("--debug", action='store_true')
+    ap.add_argument("--verbose", action='store_true')
 
     return ap
 
@@ -209,22 +211,26 @@ def main():
     # start traci
     if options.sumocfg:
         run_traci = [SUMO, "-c", options.sumocfg,
-                     '--tripinfo-output.write-unfinished', "--no-step-log",
+                     '--tripinfo-output.write-unfinished',
                      '--routing-algorithm', options.routing_algorithm]
     else:
         run_traci = [SUMO, '--net-file', '%s' % options.network, '-r',
                      '%s,%s' % (options.reservations, options.taxis), '-l',
                      'log.txt', '--device.taxi.dispatch-algorithm', 'traci',
                      '--tripinfo-output', '%s' % options.output,
-                     '--tripinfo-output.write-unfinished', "--no-step-log",
+                     '--tripinfo-output.write-unfinished',
                      '--routing-algorithm', options.routing_algorithm,
                      '--stop-output', 'stops_%s' % options.output]
         if options.gui_settings:
             run_traci.extend(['-g', '%s' % options.gui_settings])
 
     if options.dua_times:
-        if options.debug:
+        if options.verbose:
             print('Calculate travel time between edges with duarouter')
+            if not options.reservations:
+                sys.exit("please specify the reservation file with the option '--reservations'")  # noqa
+            if not options.network:
+                sys.exit("please specify the sumo network file with the option '--network'")  # noqa
         pairs_dua_times = find_dua_times(options)
     else:
         pairs_dua_times = {}
@@ -322,23 +328,43 @@ def main():
             setattr(res, 'tw_pickup', [pickup_earliest, pickup_latest])
             setattr(res, 'tw_dropoff', [dropoff_earliest, dropoff_latest])
 
+            # time out for request processing
+            if options.max_processing:
+                setattr(res, 'max_processing',
+                        step + options.max_processing*options.sim_step)
+            else:
+                setattr(res, 'max_processing', pickup_latest+options.sim_step)
+
             # add reservation id to new reservations
             res_id_new.append(res.id)
             # add reservation object to list
             res_all[res.id] = res
 
-        # unassigned reservations
-        res_id_unassigned = [res.id for res in res_all.values()
-                             if not res.vehicle]
+        # find unassigned reservations and
+        # remove reservations which have exceeded the processing time
+        res_id_unassigned = []
+        res_id_proc_exceeded = []
+        for res_key, res_values in res_all.items():
+            if not res_values.vehicle:
+                if step >= res_values.max_processing:
+                    res_id_proc_exceeded.append(res_key)
+                    print("\nProcessing time for reservation %s -person %s- was exceeded. Reservation can not be served" % (res_key, res_values.persons))  # noqa
+                    for person in res_values.persons:
+                        traci.person.removeStages(person)
+                else:
+                    res_id_unassigned.append(res_key)
+
+        # remove reservations
+        [res_all.pop(key) for key in res_id_proc_exceeded]
 
         # if reservations pending
         if res_id_unassigned:
-            if options.debug:
+            if options.verbose:
                 print('\nRun dispatcher')
                 if res_id_new:
-                    print('New reservations: ', res_id_new)
-                print('Unassigned reservations: ',
-                      list(set(res_id_unassigned)-set(res_id_new)))
+                    print('New reservations:', sorted(res_id_new))
+                print('Pending reservations:',
+                      sorted(set(res_id_unassigned)-set(res_id_new)))
 
             # get fleet
             fleet = traci.vehicle.getTaxiFleet(-1)
@@ -371,14 +397,14 @@ def main():
             res_id_picked = [res.id for res in traci.person.getTaxiReservations(8)]  # noqa
 
             # call DARP solver to find the best routes
-            if options.debug:
+            if options.verbose:
                 print('Solve DARP with %s' % options.darp_solver)
 
             darp_solution = darpSolvers.main(options, step, fleet, veh_type,
                                              veh_time_pickup, veh_time_dropoff,
                                              res_all, res_id_new,
                                              res_id_unassigned, res_id_picked,
-                                             res_id_served, veh_edges,
+                                             veh_edges,
                                              pairs_dua_times)
             routes, ilp_res_cons, exact_sol = darp_solution
 
@@ -414,7 +440,7 @@ def main():
                     # generate dict with served reservations in the trip
                     res_constraints.update({idx: routes[trip_id][2]})
 
-                if options.debug:
+                if options.verbose:
                     print('Solve ILP')
                 ilp_result = ilp_solve(options, len(fleet), len(ilp_res_cons),
                                        costs, veh_constraints, res_constraints)
@@ -486,8 +512,8 @@ def main():
                     tt_new_route = routes[route_id][0]
                     if tt_new_route >= tt_current_route:
                         continue  # current route better than new found
-                if options.debug:
-                    print('Dispatch: ', route_id)
+                if options.verbose:
+                    print('Dispatch:', route_id)
                 traci.vehicle.dispatchTaxi(veh_id, stops[1:])
                 # assign vehicle to reservations
                 # TODO to avoid major changes in the pick-up time when assigning new passengers,  # noqa
@@ -497,16 +523,15 @@ def main():
                     res.vehicle = veh_id
 
         # TODO ticket #8385
-        if step > options.end_time or (traci.simulation.getMinExpectedNumber()
-                                       <= 0 and not traci.person.getIDList()):
+        if step > options.end_time:
             rerouting = False
 
         step += options.sim_step
 
     if all(exact_sol):
-        print('Exact solution found.')
+        print('\nExact solution found.')
     else:
-        print('Approximate solution found.')
+        print('\nApproximate solution found.')
     print('DRT simulation ended')
     traci.close()
 

@@ -363,9 +363,9 @@ GNEAdditional::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* l
         // obtain color
         const RGBColor E2Color = drawUsingSelectColor() ? s.colorSettings.selectedAdditionalColor : s.detectorSettings.E2Color;
         // Start drawing adding an gl identificator
-        glPushName(getGlID());
+        GLHelper::pushName(getGlID());
         // Add a draw matrix
-        glPushMatrix();
+        GLHelper::pushMatrix();
         // Start with the drawing of the area traslating matrix to origin
         glTranslated(0, 0, getType() + offsetFront);
         // Set color
@@ -373,9 +373,9 @@ GNEAdditional::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* l
         // draw geometry
         GNEGeometry::drawGeometry(myNet->getViewNet(), E2Geometry, E2DetectorWidth);
         // Pop last matrix
-        glPopMatrix();
+        GLHelper::popMatrix();
         // Pop name
-        glPopName();
+        GLHelper::popName();
         // draw additional ID
         if (!s.drawForRectangleSelection) {
             drawName(getCenteringBoundary().getCenter(), s.scale, s.addName);
@@ -388,7 +388,7 @@ GNEAdditional::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* l
                 // calculate rotation
                 const double rot = E2Geometry.getShape().rotationDegreeAtOffset(middlePoint);
                 // Start pushing matrix
-                glPushMatrix();
+                GLHelper::pushMatrix();
                 // Traslate to position
                 glTranslated(pos.x(), pos.y(), getType() + offsetFront + 0.1);
                 // rotate over lane
@@ -400,7 +400,7 @@ GNEAdditional::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* l
                 // draw E1 logo
                 GLHelper::drawText("E2 Multilane", Position(), .1, 1.5, RGBColor::BLACK);
                 // pop matrix
-                glPopMatrix();
+                GLHelper::popMatrix();
             }
         }
         // check if shape dotted contour has to be drawn
@@ -429,9 +429,9 @@ GNEAdditional::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* f
         // get flag for show only contour
         const bool onlyContour = myNet->getViewNet()->getEditModes().isCurrentSupermodeNetwork() ? myNet->getViewNet()->getNetworkViewOptions().showConnections() : false;
         // Start drawing adding an gl identificator
-        glPushName(getGlID());
+        GLHelper::pushName(getGlID());
         // Add a draw matrix
-        glPushMatrix();
+        GLHelper::pushMatrix();
         // Start with the drawing of the area traslating matrix to origin
         glTranslated(0, 0, getType() + offsetFront);
         // Set color of the base
@@ -462,9 +462,9 @@ GNEAdditional::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* f
             }
         }
         // Pop last matrix
-        glPopMatrix();
+        GLHelper::popMatrix();
         // Pop name
-        glPopName();
+        GLHelper::popName();
         // check if shape dotted contour has to be drawn
         if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {
             // draw lane2lane dotted geometry
@@ -623,9 +623,9 @@ GNEAdditional::drawSquaredAdditional(const GUIVisualizationSettings& s, const Po
             GLHelper::drawBoundary(getCenteringBoundary());
         }
         // Start drawing adding an gl identificator
-        glPushName(getGlID());
+        GLHelper::pushName(getGlID());
         // Add layer matrix
-        glPushMatrix();
+        GLHelper::pushMatrix();
         // translate to front
         myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_E3DETECTOR);
         // translate to position
@@ -645,17 +645,17 @@ GNEAdditional::drawSquaredAdditional(const GUIVisualizationSettings& s, const Po
         // draw lock icon
         GNEViewNetHelper::LockIcon::drawLockIcon(this, myAdditionalGeometry, exaggeration, -0.5, -0.5, false, 0.4);
         // Pop layer matrix
-        glPopMatrix();
+        GLHelper::popMatrix();
         // Pop name
-        glPopName();
+        GLHelper::popName();
         // push connection matrix
-        glPushMatrix();
+        GLHelper::pushMatrix();
         // translate to front
         myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_E3DETECTOR, -0.1);
         // Draw child connections
         drawHierarchicalConnections(s, this, exaggeration);
         // Pop connection matrix
-        glPopMatrix();
+        GLHelper::popMatrix();
         // check if dotted contour has to be drawn
         if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {
             GNEGeometry::drawDottedSquaredShape(GNEGeometry::DottedContourType::INSPECT, s, pos, size, size, 0, 0, 0, exaggeration);

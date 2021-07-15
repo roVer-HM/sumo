@@ -745,7 +745,7 @@ GNEViewNet::doPaintGL(int mode, const Boundary& bound) {
 
     glRenderMode(mode);
     glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
+    GLHelper::pushMatrix();
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_ALPHA_TEST);
     glEnable(GL_BLEND);
@@ -833,7 +833,7 @@ GNEViewNet::doPaintGL(int mode, const Boundary& bound) {
     // obtain objects included in minB and maxB
     int hits2 = myGrid->Search(minB, maxB, *myVisualizationSettings);
     // pop draw matrix
-    glPopMatrix();
+    GLHelper::popMatrix();
     return hits2;
 }
 
@@ -1937,8 +1937,8 @@ GNEViewNet::onCmdTransformPOI(FXObject*, FXSelector, void*) {
             // obtain lanes around POI boundary
             std::vector<GUIGlID> GLIDs = getObjectsInBoundary(POI->getCenteringBoundary(), false);
             std::vector<GNELane*> lanes;
-            for (auto i : GLIDs) {
-                GNELane* lane = dynamic_cast<GNELane*>(GUIGlObjectStorage::gIDStorage.getObjectBlocking(i));
+            for (const auto &GLID : GLIDs) {
+                GNELane* lane = dynamic_cast<GNELane*>(GUIGlObjectStorage::gIDStorage.getObjectBlocking(GLID));
                 if (lane) {
                     lanes.push_back(lane);
                 }
@@ -1950,13 +1950,13 @@ GNEViewNet::onCmdTransformPOI(FXObject*, FXSelector, void*) {
                 GNELane* nearestLane = lanes.front();
                 double minorPosOverLane = nearestLane->getLaneShape().nearest_offset_to_point2D(POI->getPositionInView());
                 double minorLateralOffset = nearestLane->getLaneShape().positionAtOffset(minorPosOverLane).distanceTo(POI->getPositionInView());
-                for (auto i : lanes) {
-                    double posOverLane = i->getLaneShape().nearest_offset_to_point2D(POI->getPositionInView());
-                    double lateralOffset = i->getLaneShape().positionAtOffset(posOverLane).distanceTo(POI->getPositionInView());
+                for (const auto &lane : lanes) {
+                    double posOverLane = lane->getLaneShape().nearest_offset_to_point2D(POI->getPositionInView());
+                    double lateralOffset = lane->getLaneShape().positionAtOffset(posOverLane).distanceTo(POI->getPositionInView());
                     if (lateralOffset < minorLateralOffset) {
                         minorPosOverLane = posOverLane;
                         minorLateralOffset = lateralOffset;
-                        nearestLane = i;
+                        nearestLane = lane;
                     }
                 }
                 // obtain values of POI
@@ -1970,11 +1970,12 @@ GNEViewNet::onCmdTransformPOI(FXObject*, FXSelector, void*) {
                 bool relativePath = POI->getShapeRelativePath();
                 double POIWidth = POI->getWidth();      // double width -> C4458
                 double POIHeight = POI->getHeight();    // double height -> C4458
+                bool friendlyPos = POI->getFriendlyPos();
                 // remove POI
                 myUndoList->p_begin("attach POI into " + toString(SUMO_TAG_LANE));
                 myNet->deleteShape(POI, myUndoList);
                 // add POILane
-                myNet->getAttributeCarriers()->addPOI(id, type, color, pos, false, nearestLane->getID(), minorPosOverLane, 0, layer, angle, imgFile, relativePath, POIWidth, POIHeight);
+                myNet->getAttributeCarriers()->addPOI(id, type, color, pos, false, nearestLane->getID(), minorPosOverLane, friendlyPos, 0, layer, angle, imgFile, relativePath, POIWidth, POIHeight);
                 myUndoList->p_end();
             }
         } else {
@@ -1989,11 +1990,12 @@ GNEViewNet::onCmdTransformPOI(FXObject*, FXSelector, void*) {
             bool relativePath = POI->getShapeRelativePath();
             double POIWidth = POI->getWidth();      // double width -> C4458
             double POIWeight = POI->getHeight();    // double height -> C4458
+            bool friendlyPos = POI->getFriendlyPos();
             // remove POI
             myUndoList->p_begin("release POI from " + toString(SUMO_TAG_LANE));
             myNet->deleteShape(POI, myUndoList);
             // add POI
-            myNet->getAttributeCarriers()->addPOI(id, type, color, pos, false, "", 0, 0, layer, angle, imgFile, relativePath, POIWidth, POIWeight);
+            myNet->getAttributeCarriers()->addPOI(id, type, color, pos, false, "", 0, friendlyPos, 0, layer, angle, imgFile, relativePath, POIWidth, POIWeight);
             myUndoList->p_end();
         }
         // update view after transform
@@ -4146,7 +4148,7 @@ GNEViewNet::drawLaneCandidates() const {
         // draw first point
         if (myViewParent->getAdditionalFrame()->getConsecutiveLaneSelector()->getSelectedLanes().size() > 0) {
             // Push draw matrix
-            glPushMatrix();
+            GLHelper::pushMatrix();
             // obtain first clicked point
             const Position& firstLanePoint = myViewParent->getAdditionalFrame()->getConsecutiveLaneSelector()->getSelectedLanes().front().first->getLaneShape().positionAtOffset(
                                                  myViewParent->getAdditionalFrame()->getConsecutiveLaneSelector()->getSelectedLanes().front().second);
@@ -4157,7 +4159,7 @@ GNEViewNet::drawLaneCandidates() const {
             GLHelper::drawFilledCircle((double) 1.3, myVisualizationSettings->getCircleResolution());
             GLHelper::drawText("S", Position(), .1, 1.3, RGBColor::CYAN);
             // pop draw matrix
-            glPopMatrix();
+            GLHelper::popMatrix();
         }
         // draw connections between lanes
         if (myViewParent->getAdditionalFrame()->getConsecutiveLaneSelector()->getSelectedLanes().size() > 1) {
@@ -4171,7 +4173,7 @@ GNEViewNet::drawLaneCandidates() const {
                 GNELane* from = myViewParent->getAdditionalFrame()->getConsecutiveLaneSelector()->getSelectedLanes().at(i).first;
                 GNELane* to = myViewParent->getAdditionalFrame()->getConsecutiveLaneSelector()->getSelectedLanes().at(i + 1).first;
                 // Push draw matrix
-                glPushMatrix();
+                GLHelper::pushMatrix();
                 // must draw on top of other connections
                 glTranslated(0, 0, GLO_JUNCTION + 0.2);
                 // obtain connection shape
@@ -4191,10 +4193,10 @@ GNEViewNet::drawLaneCandidates() const {
                 // draw a list of lines
                 GLHelper::drawBoxLines(shape, shapeRotations, shapeLengths, 0.2);
                 // pop draw matrix
-                glPopMatrix();
+                GLHelper::popMatrix();
             }
             // draw last point
-            glPushMatrix();
+            GLHelper::pushMatrix();
             // obtain last clicked point
             const Position& lastLanePoint = myViewParent->getAdditionalFrame()->getConsecutiveLaneSelector()->getSelectedLanes().back().first->getLaneShape().positionAtOffset(
                                                 myViewParent->getAdditionalFrame()->getConsecutiveLaneSelector()->getSelectedLanes().back().second);
@@ -4205,7 +4207,7 @@ GNEViewNet::drawLaneCandidates() const {
             GLHelper::drawFilledCircle((double) 1.3, 8);
             GLHelper::drawText("E", Position(), .1, 1.3, RGBColor::CYAN);
             // pop draw matrix
-            glPopMatrix();
+            GLHelper::popMatrix();
         }
 
     }
@@ -4227,14 +4229,14 @@ GNEViewNet::drawTemporalDrawShape() const {
     // check if we're in drawing mode
     if (temporalShape.size() > 0) {
         // draw blue line with the current drawed shape
-        glPushMatrix();
+        GLHelper::pushMatrix();
         glLineWidth(2);
         glTranslated(0, 0, GLO_TEMPORALSHAPE);
         GLHelper::setColor(RGBColor::BLUE);
         GLHelper::drawLine(temporalShape);
-        glPopMatrix();
+        GLHelper::popMatrix();
         // draw red line from the last point of shape to the current mouse position
-        glPushMatrix();
+        GLHelper::pushMatrix();
         glLineWidth(2);
         glTranslated(0, 0, GLO_TEMPORALSHAPE);
         // draw last line depending if shift key (delete last created point) is pressed
@@ -4244,7 +4246,7 @@ GNEViewNet::drawTemporalDrawShape() const {
             GLHelper::setColor(RGBColor::GREEN);
         }
         GLHelper::drawLine(temporalShape.back(), snapToActiveGrid(getPositionInformation()));
-        glPopMatrix();
+        GLHelper::popMatrix();
     }
 }
 
@@ -4265,11 +4267,11 @@ GNEViewNet::drawTemporalJunction() const {
         // change alpha
         bubbleColor.setAlpha(200);
         // push layer matrix
-        glPushMatrix();
+        GLHelper::pushMatrix();
         // translate to temporal shape layer
         glTranslated(0, 0, GLO_TEMPORALSHAPE);
         // push junction matrix
-        glPushMatrix();
+        GLHelper::pushMatrix();
         // move matrix junction center
         glTranslated(mousePosition.x(), mousePosition.y(), 0.1);
         // set color
@@ -4277,7 +4279,7 @@ GNEViewNet::drawTemporalJunction() const {
         // draw filled circle
         GLHelper::drawFilledCircle(myVisualizationSettings->neteditSizeSettings.junctionBubbleRadius * junctionExaggeration, myVisualizationSettings->getCircleResolution());
         // pop junction matrix
-        glPopMatrix();
+        GLHelper::popMatrix();
         // draw temporal edge
         if (myViewParent->getCreateEdgeFrame()->getJunctionSource() && (mousePosition.distanceSquaredTo(myViewParent->getCreateEdgeFrame()->getJunctionSource()->getPositionInView()) > 1)) {
             // set temporal edge color
@@ -4292,7 +4294,7 @@ GNEViewNet::drawTemporalJunction() const {
             // update geometry
             temporalEdgeGeometery.updateGeometry(temporalEdge);
             // push temporal edge matrix
-            glPushMatrix();
+            GLHelper::pushMatrix();
             // set color
             GLHelper::setColor(temporalEdgeColor);
             // draw temporal edge
@@ -4307,10 +4309,10 @@ GNEViewNet::drawTemporalJunction() const {
                 GNEGeometry::drawGeometry(this, temporalEdgeGeometery, 0.75);
             }
             // pop temporal edge matrix
-            glPopMatrix();
+            GLHelper::popMatrix();
         }
         // pop layer matrix
-        glPopMatrix();
+        GLHelper::popMatrix();
     }
 }
 

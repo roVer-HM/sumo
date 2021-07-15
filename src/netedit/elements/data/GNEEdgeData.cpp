@@ -172,10 +172,10 @@ GNEEdgeData::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* lan
         const double laneWidth = s.addSize.getExaggeration(s, lane) * (lane->getParentEdge()->getNBEdge()->getLaneWidth(lane->getIndex()) * 0.5);
         // Start drawing adding an gl identificator
         if (!onlyDrawContour) {
-            glPushName(getGlID());
+            GLHelper::pushName(getGlID());
         }
         // Add a draw matrix
-        glPushMatrix();
+        GLHelper::pushMatrix();
         // Start with the drawing of the area traslating matrix to origin
         myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_EDGEDATA, offsetFront);
         // Set orange color
@@ -193,10 +193,10 @@ GNEEdgeData::drawPartialGL(const GUIVisualizationSettings& s, const GNELane* lan
         // draw interne box lines
         GNEGeometry::drawLaneGeometry(myNet->getViewNet(), lane->getLaneShape(), lane->getShapeRotations(), lane->getShapeLengths(), {}, laneWidth - 0.1, onlyDrawContour);
         // Pop last matrix
-        glPopMatrix();
+        GLHelper::popMatrix();
         // Pop name
         if (!onlyDrawContour) {
-            glPopName();
+            GLHelper::popName();
         }
         // draw filtered attribute
         if (getParentEdges().front()->getLanes().front() == lane) {

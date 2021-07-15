@@ -144,9 +144,9 @@ GNEAccess::drawGL(const GUIVisualizationSettings& s) const {
     // first check if additional has to be drawn
     if (s.drawAdditionals(accessExaggeration) && myNet->getViewNet()->getDataViewOptions().showAdditionals()) {
         // Start drawing adding an gl identificator
-        glPushName(getGlID());
+        GLHelper::pushName(getGlID());
         // push layer matrix
-        glPushMatrix();
+        GLHelper::pushMatrix();
         // translate to front
         myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_ACCESS);
         // set color depending of selection
@@ -166,9 +166,9 @@ GNEAccess::drawGL(const GUIVisualizationSettings& s) const {
         // draw lock icon
         GNEViewNetHelper::LockIcon::drawLockIcon(this, myAdditionalGeometry, accessExaggeration, 0, 0, true, 0.3);
         // pop layer matrix
-        glPopMatrix();
+        GLHelper::popMatrix();
         // pop gl identficador
-        glPopName();
+        GLHelper::popName();
         // check if dotted contours has to be drawn
         if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {
             GNEGeometry::drawDottedContourCircle(GNEGeometry::DottedContourType::INSPECT, s, myAdditionalGeometry.getShape().front(), 0.5, accessExaggeration);

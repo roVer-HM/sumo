@@ -232,9 +232,9 @@ GNEStopContainer::drawGL(const GUIVisualizationSettings& s) const {
         // declare stop color
         const RGBColor stopColor = drawUsingSelectColor() ? s.colorSettings.selectedContainerPlanColor : s.colorSettings.stops;
         // Start drawing adding an gl identificator
-        glPushName(getGlID());
+        GLHelper::pushName(getGlID());
         // Add layer matrix matrix
-        glPushMatrix();
+        GLHelper::pushMatrix();
         // translate to front
         myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, getType());
         // check if draw stopContainer over stopContainer oder over lane
@@ -244,9 +244,9 @@ GNEStopContainer::drawGL(const GUIVisualizationSettings& s) const {
             drawStopContainerOverLane(s, exaggeration, stopColor);
         }
         // pop layer matrix
-        glPopMatrix();
+        GLHelper::popMatrix();
         // Pop name
-        glPopName();
+        GLHelper::popName();
         // check if dotted contours has to be drawn
         if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {
             GNEGeometry::drawDottedContourShape(GNEGeometry::DottedContourType::INSPECT, s, myDemandElementGeometry.getShape(), 0.3, exaggeration);

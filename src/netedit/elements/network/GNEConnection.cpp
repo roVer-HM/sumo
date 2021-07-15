@@ -377,10 +377,10 @@ GNEConnection::drawGL(const GUIVisualizationSettings& s) const {
         }
         // Push name
         if (pushGLID) {
-            glPushName(getGlID());
+            GLHelper::pushName(getGlID());
         }
         // Push layer matrix
-        glPushMatrix();
+        GLHelper::pushMatrix();
         // translate to front
         myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_CONNECTION, (editedNetworkElement == this) ? 1 : 0);
         // Set color
@@ -412,7 +412,7 @@ GNEConnection::drawGL(const GUIVisualizationSettings& s) const {
                 GNEGeometry::drawMovingHint(s, myNet->getViewNet(), myConnectionGeometry.getShape(), darkerColor, s.neteditSizeSettings.connectionGeometryPointRadius, 1);
             }
             // Pop layer matrix
-            glPopMatrix();
+            GLHelper::popMatrix();
             // check if edge value has to be shown
             if (s.edgeValue.show) {
                 NBEdge::Connection& nbCon = getNBEdgeConnection();
@@ -427,7 +427,7 @@ GNEConnection::drawGL(const GUIVisualizationSettings& s) const {
             }
             // Pop name
             if (pushGLID) {
-                glPopName();
+                GLHelper::popName();
             }
             // check if dotted contour has to be drawn (not useful at high zoom)
             if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {

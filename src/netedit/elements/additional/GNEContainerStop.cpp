@@ -89,9 +89,9 @@ GNEContainerStop::drawGL(const GUIVisualizationSettings& s) const {
                 signColor = s.stoppingPlaceSettings.containerStopColorSign;
             }
             // Start drawing adding an gl identificator
-            glPushName(getGlID());
+            GLHelper::pushName(getGlID());
             // Add a draw matrix
-            glPushMatrix();
+            GLHelper::pushMatrix();
             // translate to front
             myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_CONTAINER_STOP);
             // set base color
@@ -108,9 +108,9 @@ GNEContainerStop::drawGL(const GUIVisualizationSettings& s) const {
                 GNEViewNetHelper::LockIcon::drawLockIcon(this, myAdditionalGeometry, containerStopExaggeration, 0, 0, true);
             }
             // pop draw matrix
-            glPopMatrix();
+            GLHelper::popMatrix();
             // Pop name
-            glPopName();
+            GLHelper::popName();
             // check if dotted contours has to be drawn
             if (s.drawDottedContour() || myNet->getViewNet()->isAttributeCarrierInspected(this)) {
                 GNEGeometry::drawDottedContourShape(GNEGeometry::DottedContourType::INSPECT, s, myAdditionalGeometry.getShape(), s.stoppingPlaceSettings.containerStopWidth, containerStopExaggeration);

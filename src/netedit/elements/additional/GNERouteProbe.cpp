@@ -105,9 +105,9 @@ GNERouteProbe::drawGL(const GUIVisualizationSettings& s) const {
             centralLineColor = RGBColor::WHITE;
         }
         // Start drawing adding an gl identificator
-        glPushName(getGlID());
+        GLHelper::pushName(getGlID());
         // Add layer matrix matrix
-        glPushMatrix();
+        GLHelper::pushMatrix();
         // translate to front
         myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_ROUTEPROBE);
         // set base color
@@ -143,9 +143,9 @@ GNERouteProbe::drawGL(const GUIVisualizationSettings& s) const {
             GLHelper::drawBoxLine(Position(0, 0), 0, 2 * s.additionalSettings.routeProbeSize, s.additionalSettings.routeProbeSize * routeProbeExaggeration);
         }
         // pop layer matrix
-        glPopMatrix();
+        GLHelper::popMatrix();
         // Pop name
-        glPopName();
+        GLHelper::popName();
         // draw additional name
         drawAdditionalName(s);
         // check if dotted contours has to be drawn
