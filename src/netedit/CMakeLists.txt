@@ -36,7 +36,7 @@ set(netedit_SRCS
 add_executable(netedit ${netedit_SRCS} netedit.rc)
 set_target_properties(netedit PROPERTIES OUTPUT_NAME netedit${BINARY_SUFFIX})
 set_target_properties(netedit PROPERTIES OUTPUT_NAME_DEBUG netedit${BINARY_SUFFIX}D)
-target_link_libraries(netedit utils_gui_cursors utils_gui_shortcuts utils_foxtools foreign_eulerspiral
+target_link_libraries(netedit utils_gui_cursors utils_gui_shortcuts foreign_glad foreign_eulerspiral
         netedit_frames netedit_frames_common netedit_frames_network netedit_frames_demand netedit_frames_data
         netedit_elements_network netedit_elements_additional netedit_elements_demand netedit_elements_data netedit_elements netedit_changes 
         utils_gui_div utils_gui_settings utils_gui_images netedit_dialogs
