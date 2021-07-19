@@ -19,10 +19,10 @@ set(utils_gui_div_STAT_SRCS
    GUIVideoEncoder.h
    GLHelper.cpp
    GLHelper.h
-   DrawLib.h
-   DrawLib.cpp
-   Shader.h
-   Shader.cpp
+   GLTextLib.h
+   GLTextLib.cpp
+   GLShader.h
+   GLShader.cpp
    GUIBaseVehicleHelper.cpp
    GUIBaseVehicleHelper.h
    GUIBasePersonHelper.cpp
