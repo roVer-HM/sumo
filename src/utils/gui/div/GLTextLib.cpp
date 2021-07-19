@@ -1,6 +1,8 @@
 #include <iostream>
 
-#include "DrawLib.h"
+#include <foreign/glad/glad.h>
+
+#include "GLTextLib.h"
 
 
 DrawLib::DrawLib() :    
