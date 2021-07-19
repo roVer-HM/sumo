@@ -1,7 +1,7 @@
 set(foreign_glad_STAT_SRCS
-   glad.h
-  khrplatform.h
-   glad.c
+    glad.h
+    khrplatform.h
+    glad.c
 )
 
 add_library(foreign_glad STATIC ${foreign_glad_STAT_SRCS})
