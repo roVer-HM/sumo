@@ -46,6 +46,8 @@
 #include "Roboto.h"
 #include "GLHelper.h"
 
+#include "GLTextLib.h"
+
 #define CIRCLE_RESOLUTION (double)10 // inverse in degrees
 //#define CHECK_PUSHPOP // enable or disable check push and pop matrix/names
 
@@ -603,8 +605,14 @@ GLHelper::drawText(const std::string& text, const Position& pos, const double la
     GLHelper::pushMatrix();
     glAlphaFunc(GL_GREATER, 0.5);
     glEnable(GL_ALPHA_TEST);
+
+    Shader shader("D:/SUMOMaterial/projects/FreeType_example/text.vs", "D:/SUMOMaterial/projects/FreeType_example/text.fs");
+    DrawLib drawLib;
+    drawLib.RenderText(shader, "This is sample text", 25.0f, 25.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+    GLHelper::popMatrix();
+    /*
 #ifdef HAVE_GL2PS
-/*
+
     if (myGL2PSActive) {
         glRasterPos3d(pos.x(), pos.y(), layer);
         GLfloat color[] = {col.red() / 255.f, col.green() / 255.f, col.blue() / 255.f, col.alpha() / 255.f};
@@ -612,7 +620,7 @@ GLHelper::drawText(const std::string& text, const Position& pos, const double la
         GLHelper::popMatrix();
         return;
     }
-*/
+
 #endif
     glTranslated(pos.x(), pos.y(), layer);
     glScaled(width / myFontSize, size / myFontSize, 1.);
@@ -621,6 +629,7 @@ GLHelper::drawText(const std::string& text, const Position& pos, const double la
     fonsSetColor(myFont, glfonsRGBA(col.red(), col.green(), col.blue(), col.alpha()));
     fonsDrawText(myFont, 0., 0., text.c_str(), nullptr);
     GLHelper::popMatrix();
+    */
 }
 
 
