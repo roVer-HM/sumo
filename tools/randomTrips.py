@@ -139,6 +139,9 @@ def get_options(args=None):
                            help="Whether to produce trip output that is already checked for connectivity")
     optParser.add_argument("-v", "--verbose", action="store_true",
                            default=False, help="tell me what you are doing")
+    optParser.add_argument("--bound-box", default=None, required=False, dest="bbox",
+                           help="create trips only in given boundig box " +
+                           "xmin,ymin,xmax,ymax (comma seperated, no spaces)", type=str)
     options = optParser.parse_args(args=args)
     if not options.netfile:
         optParser.print_help()
@@ -178,6 +181,16 @@ def get_options(args=None):
         options.viaEdgeTypes = options.viaEdgeTypes.split(',')
     if options.fringe_speed_exponent is None:
         options.fringe_speed_exponent = options.speed_exponent
+
+    if options.bbox is not None:
+        _bbox_str = options.bbox.split(",")
+        try:
+            _bbox = [float(v) for v in _bbox_str]
+        except ValueError:
+            raise RuntimeError("open bound-box expected comma separated " +
+                               "list of floats [xmin,ymin,xmax,ymax] found: "+
+                               _bbox_str )
+        options.bbox = _bbox
 
     return options
 
@@ -259,6 +272,11 @@ class RandomTripGenerator:
 def get_prob_fun(options, fringe_bonus, fringe_forbidden, max_length):
     # fringe_bonus None generates intermediate way points
     def edge_probability(edge):
+        if options.bbox is not None:
+            xmin, ymin, xmax, ymax = options.bbox
+            e_xmin, e_ymin, e_xmax, e_ymax = edge.getBoundingBox()
+            if e_xmin < xmin or e_ymin < ymin or e_ymax > ymax or e_xmax > xmax:
+                return 0  # edge outside of given bound not allowed.
         if options.vclass and not edge.allows(options.vclass):
             return 0  # not allowed
         if fringe_bonus is None and edge.is_fringe() and not options.pedestrians:
