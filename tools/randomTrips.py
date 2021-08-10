@@ -165,6 +165,9 @@ def get_options(args=None):
                     default=False, help="Randomly choose a position on the starting edge of the trip")
     op.add_argument("--random-arrivalpos", category="processing", dest="randomArrivalPos", action="store_true",
                     default=False, help="Randomly choose a position on the ending edge of the trip")
+    op.add_argument("--bound-box", default=None, required=False, dest="bbox", type=str,
+                           help="create trips only in given boundig box " +
+                           "xmin,ymin,xmax,ymax (comma separated, no spaces)")
 
     group = op.add_mutually_exclusive_group()
     group.add_argument("-p", "--period", nargs="+", metavar="FLOAT", category="flow",
@@ -281,6 +284,15 @@ def get_options(args=None):
         except ValueError:
             print("Error: --fringe-factor argument must be a float or 'max'", file=sys.stderr)
             sys.exit(1)
+    if options.bbox is not None:
+        _bbox_str = options.bbox.split(",")
+        try:
+            _bbox = [float(v) for v in _bbox_str]
+        except ValueError:
+            raise RuntimeError("open bound-box expected comma separated " +
+                               "list of floats [xmin,ymin,xmax,ymax] found: "+
+                               _bbox_str )
+        options.bbox = _bbox
 
     return options
 
@@ -378,6 +390,11 @@ def get_prob_fun(options, fringe_bonus, fringe_forbidden, max_length):
     def edge_probability(edge):
         bonus_connections = None if fringe_bonus is None else getattr(edge, fringe_bonus)
         forbidden_connections = None if fringe_forbidden is None else getattr(edge, fringe_forbidden)
+        if options.bbox is not None:
+            xmin, ymin, xmax, ymax = options.bbox
+            e_xmin, e_ymin, e_xmax, e_ymax = edge.getBoundingBox()
+            if e_xmin < xmin or e_ymin < ymin or e_ymax > ymax or e_xmax > xmax:
+                return 0  # edge outside of given bound not allowed.
         if options.vclass and not edge.allows(options.vclass):
             return 0  # not allowed
         if fringe_bonus is None and edge.is_fringe() and not options.pedestrians:
