@@ -184,6 +184,10 @@ def get_options(args=None):
                     help="begin time")
     op.add_argument("-e", "--end", category="flow", default=3600, type=op.time,
                     help="end time (default 3600)")
+    op.add_argument("--bound-box", default=None, required=False, dest="bbox", type=str,
+                           help="create trips only in given boundig box " +
+                           "xmin,ymin,xmax,ymax (comma separated, no spaces)")
+
     group = op.add_mutually_exclusive_group()
     group.add_argument("-p", "--period", nargs="+", metavar="FLOAT", category="flow",
                        action=sumolib.options.SplitAction,
@@ -316,6 +320,15 @@ def get_options(args=None):
 
     if options.threads is None and os.cpu_count() is not None:
         options.threads = os.cpu_count() // 2
+    if options.bbox is not None:
+        _bbox_str = options.bbox.split(",")
+        try:
+            _bbox = [float(v) for v in _bbox_str]
+        except ValueError:
+            raise RuntimeError("open bound-box expected comma separated " +
+                               "list of floats [xmin,ymin,xmax,ymax] found: "+
+                               _bbox_str )
+        options.bbox = _bbox
 
     return options
 
@@ -481,6 +494,11 @@ def get_prob_fun(options, fringe_bonus, fringe_forbidden, max_length):
         forbidden_connections = None if fringe_forbidden is None else getattr(edge, fringe_forbidden)
         if options.edge_permission and not edge.allows(options.edge_permission) and not stopDict:
             return 0  # not allowed
+        if options.bbox is not None:
+            xmin, ymin, xmax, ymax = options.bbox
+            e_xmin, e_ymin, e_xmax, e_ymax = edge.getBoundingBox()
+            if e_xmin < xmin or e_ymin < ymin or e_ymax > ymax or e_xmax > xmax:
+                return 0  # edge outside of given bound not allowed.
         if fringe_bonus is None and edge.is_fringe() and not options.persons:
             return 0  # not suitable as intermediate way point
         if (fringe_forbidden is not None and
