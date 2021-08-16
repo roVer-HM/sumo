@@ -211,6 +211,10 @@ The [od2trips](../od2trips.md) application generates pedestrian
 demand when setting the option **--pedestrians**. Alternative it generates intermodal
 demand by setting option **--persontrips**.
 
+## From local counting data
+
+The tools [routeSampler](../Tools/Turns.md#routesamplerpy) and [flowrouter](../Tools/Detector.md#flowrouterpy) both suppor option **--pedestrians** to generate pedestrians instead of vehicular traffic based on countint data. See also [Chosing the right tool](../Demand/Routes_from_Observation_Points.html#chosing_the_right_tool).
+
 # Pedestrian Models
 
 The pedestrian model to use can be selected by using the simulation
@@ -296,6 +300,9 @@ routing may happen before the simulation starts (using
 [duarouter](../duarouter.md)) or it may be done at insertion time
 when loading only origin and destination into the simulation. Routes may
 later be influenced via [TraCI](../TraCI/Change_Person_State.md).
+
+Since persons may use each edge in both directions some extra configuration may be needed in shared space scenarios.
+The option **--persontrip.walk-opposite-factor** may be use with [duarouter](../duarouter.md) and [sumo](../sumo.md) to set a factor when walking against traffic flow on shared space. A factor below 1 discourages walking against the flow.
 
 When using the *striping*-model, pedestrians will also be routed within
 intersections to selected a sequence of *walkingareas* and *crossings*
