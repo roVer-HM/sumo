@@ -71,6 +71,12 @@ GNEVariableSpeedSign::updateGeometry() {
 }
 
 
+Position
+GNEVariableSpeedSign::getPositionInView() const {
+    return myPosition;
+}
+
+
 void
 GNEVariableSpeedSign::updateCenteringBoundary(const bool updateGrid) {
     // remove additional from grid
@@ -81,6 +87,12 @@ GNEVariableSpeedSign::updateCenteringBoundary(const bool updateGrid) {
     updateGeometry();
     // add shape boundary
     myBoundary = myAdditionalGeometry.getShape().getBoxBoundary();
+    // add positions of all childrens
+    for (const auto &additionalChildren : getChildAdditionals()) {
+        if (additionalChildren->getTagProperty().isSymbol()) {
+            myBoundary.add(additionalChildren->getPositionInView());
+        }
+    }
     // grow
     myBoundary.grow(10);
     // add additional into RTREE again

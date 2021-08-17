@@ -72,6 +72,12 @@ GNERerouterSymbol::updateGeometry() {
 }
 
 
+Position
+GNERerouterSymbol::getPositionInView() const {
+    return mySymbolGeometries.front().getShape().getCentroid();
+}
+
+
 void
 GNERerouterSymbol::updateCenteringBoundary(const bool /*updateGrid*/) {
     // just update geometry

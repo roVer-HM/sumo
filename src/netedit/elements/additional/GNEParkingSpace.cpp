@@ -68,6 +68,12 @@ GNEParkingSpace::updateGeometry() {
 }
 
 
+Position
+GNEParkingSpace::getPositionInView() const {
+    return myPosition;
+}
+
+
 void
 GNEParkingSpace::updateCenteringBoundary(const bool /*updateGrid*/) {
     // obtain double values
