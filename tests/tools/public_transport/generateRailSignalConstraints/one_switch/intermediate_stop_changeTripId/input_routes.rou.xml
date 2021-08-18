@@ -25,9 +25,10 @@
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     <vType id="train" length="50.00" vClass="rail"/>
     <vehicle id="t0" type="train" depart="0.00" departSpeed="max" line="S4">
-        <route edges="a b c -c c d"/>
-        <stop busStop="stop_c" arrival="70.00" duration="20.00" until="90.00"/>
-        <stop busStop="stop_d" arrival="100.00" duration="30.00" until="130.00"/>
+        <param key="tripId" value="tripId_initial"/>
+        <route edges="a b c d"/>
+        <stop busStop="stop_c" arrival="70.00" duration="20.00" until="90.00" tripId="tripId_at_c"/>
+        <stop busStop="stop_d" arrival="100.00" duration="30.00" until="130.00" tripId="tripId_at_d"/>
     </vehicle>
     <vehicle id="t1" type="train" depart="20.00" departSpeed="max">
         <route edges="a2 b2 c d"/>

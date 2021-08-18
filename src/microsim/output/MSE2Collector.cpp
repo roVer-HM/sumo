@@ -74,6 +74,11 @@ MSE2Collector::MSE2Collector(const std::string& id,
     myNumberOfEnteredVehicles(0),
     myNumberOfSeenVehicles(0),
     myNumberOfLeftVehicles(0),
+    myCurrentVehicleSamples(0),
+    myCurrentOccupancy(0),
+    myCurrentMeanSpeed(0),
+    myCurrentMeanLength(0),
+    myCurrentJamNo(0),
     myCurrentJamLengthInMeters(0),
     myCurrentJamLengthInVehicles(0),
     myCurrentHaltingsNumber(0)
@@ -167,7 +172,16 @@ MSE2Collector::MSE2Collector(const std::string& id,
     myJamDistanceThreshold(jamDistThreshold),
     myNumberOfEnteredVehicles(0),
     myNumberOfSeenVehicles(0),
-    myNumberOfLeftVehicles(0) {
+    myNumberOfLeftVehicles(0), 
+    myCurrentVehicleSamples(0),
+    myCurrentOccupancy(0),
+    myCurrentMeanSpeed(0),
+    myCurrentMeanLength(0),
+    myCurrentJamNo(0),
+    myCurrentJamLengthInMeters(0),
+    myCurrentJamLengthInVehicles(0),
+    myCurrentHaltingsNumber(0)
+{
     reset();
 
     for (std::vector<MSLane*>::const_iterator i = lanes.begin(); i != lanes.end(); ++i) {

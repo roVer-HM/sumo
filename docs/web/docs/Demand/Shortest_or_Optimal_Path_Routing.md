@@ -28,8 +28,8 @@ the router using an XML-file. The syntax of a single trip definition is:
 | -------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | id             | id (string)                                             | The name of vehicles that will be generated using this trip definition (a running number if not given)        |
 | **depart**     | int                                                     | The departure time of the (first) vehicle which is generated using this trip definition               |
-| from           | edge id                                                 | The name of the edge the route starts at; the edge must be a part of the used network                |
-| to             | edge id                                                 | The name of the edge the route ends at; the edge must be a part of the used network                   |
+| from           | edge id                                                 | The name of the edge the route starts at; the edge must be a part of the used network. Optional, if one of the via-attributes is used or if the trip includes stops.  |
+| to             | edge id                                                 | The name of the edge the route ends at; the edge must be a part of the used network. Optional, if one of the via-attributes is used or if the trip includes stops.                   |
 | via            | edge ids                                                | List of intermediate edge ids which shall be part of the route; the edges must be a part of the used network       |
 | fromTaz        | district id                                             | The name of the [district](../Demand/Importing_O/D_Matrices.md#describing_the_taz) the route starts at. [TAZ edges are selected so that travel time is minimized.](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#traffic_assignement_zones_taz)    |
 | toTaz          | district id                                             | The name of the [district](../Demand/Importing_O/D_Matrices.md#describing_the_taz) the route ends at. [TAZ edges are selected so that travel time is minimized.](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#traffic_assignement_zones_taz)       |
@@ -41,15 +41,15 @@ the router using an XML-file. The syntax of a single trip definition is:
 | arrivalLane    | int/string (≥0,"current")                               | The lane at which the vehicle shall leave the network<br><br>**Note:** see [Definition of Vehicles, Vehicle Types, and Routes#Vehicles and Routes](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#vehicles_and_routes)          |
 | arrivalPos     | float(m)/string (≥0<sup>(1)</sup>,"random","max")       | The position at which the vehicle shall leave the network<br><br>**Note:** see [Definition of Vehicles, Vehicle Types, and Routes#Vehicles and Routes](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#vehicles_and_routes)       |
 | arrivalSpeed   | float(m/s)/string (≥0,"current")                        | The speed with which the vehicle shall leave the network<br><br>**Note:** see [Definition of Vehicles, Vehicle Types, and Routes#Vehicles and Routes](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#vehicles_and_routes)         |
-| fromJunction | junction id  | The junction from which to depart [note](#Routing_between_junctions)    |
-| toJunction   | junction id  | The junction at which to arrive [note](#Routing_between_junctions)    |
-| viaJunctions | junction ids | The junctions to pass along the way [note](#Routing_between_junctions)   |
-| fromXY   | float, float    | The network position from which to depart [note](#Mapmatching)    |
-| toXY   | float, float    | The network position from which to depart [note](#Mapmatching)    |
-| viaXY   | float, float [float,float]    | The network positions to pass along the way [note](#Mapmatching)   |
-| fromLonLat   | float, float    | The network position from which to depart in geo-coordinates [note](#Mapmatching)    |
-| toLonLat   | float, float    | The network position from which to depart in geo-coordinates [note](#Mapmatching)    |
-| viaLonLat   | float, float [float,float]    | The network positions to pass along the way in geo-coordinates  [note](#Mapmatching)   |
+| fromJunction | junction id  | The junction from which to depart [note](#routing_between_junctions)    |
+| toJunction   | junction id  | The junction at which to arrive [note](#routing_between_junctions)    |
+| viaJunctions | junction ids | The junctions to pass along the way [note](#routing_between_junctions)   |
+| fromXY   | float, float    | The network position from which to depart [note](#mapmatching)    |
+| toXY   | float, float    | The network position from which to depart [note](#mapmatching)    |
+| viaXY   | float, float [float,float]    | The network positions to pass along the way [note](#mapmatching)   |
+| fromLonLat   | float, float    | The network position from which to depart in geo-coordinates [note](#mapmatching)    |
+| toLonLat   | float, float    | The network position from which to depart in geo-coordinates [note](#mapmatching)    |
+| viaLonLat   | float, float [float,float]    | The network positions to pass along the way in geo-coordinates  [note](#mapmatching)   |
 
 ## Routing between Junctions
 Trips and flows may use the attributes `fromJunction`, `toJunction`, and `viaJunctions` to describe origin, destination and intermediate locations. This is a special form of TAZ-routing and it must be enabled by either setting the duarouter option **--junction-taz** or by loading TAZ-definitions that use the respective junction IDs. When using option **--junction-taz**, all edges outgoing from a junction may be used at the origin and all edges incoming to a junction may be used to reach the intermediate and final junctions.
@@ -60,7 +60,7 @@ Since version 1.2 duarouter supports mapping positions to roads using attributes
 !!! caution
     SUMO does not yet support these mapping attributes.
     
-By setting the option **--mapmatch.junctions**, positions are mapped to junctions instead of edges. The routes are then [computed between junctions](#Routing_between_junctions).
+By setting the option **--mapmatch.junctions**, positions are mapped to junctions instead of edges. The routes are then [computed between junctions](#routing_between_junctions).
     
 ## Vehicle Types
 
