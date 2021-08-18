@@ -364,12 +364,6 @@ OSM networks often lack additional lanes for highway on- and off-ramps.
 They can be guessed via [netconvert](../../netconvert.md) using the **--guess-ramps**
 option.
 
-## Roundabouts
-
-To ensure correct right-of-way at roundabouts, the option **--roundabouts.guess** should be
-added. This option is set automatically when using the *osmBuild.py*
-script.
-
 ## Isolated Edges
 
 When dealing with strictly vehicular scenarios it usually helps to add
@@ -383,9 +377,14 @@ To discard edges which have no predecessor and no successor edge.
 However, this often causes the removal of railways or waterways which is
 not desirable for multi-modal scenarios.
 
-## Editing OSM networks
+## Shared Space for Trams and Road Vehicles
 
-### JOSM
+In the OSM database, shared space for tram and road vehicles is often modelled with distinct elements that occupy the same space. When imported directly, this would allow those modes of traffic to ignore each other due to running on different edges.
+To fix this, the option **--edges.join-tram-dist FLOAT** may be used. When this option is set (values between 1 and 2 are recommended), overlapping OSM elements will be converted to road lanes with shared permissions (indicated by a dark purple in [sumo-gui](../sumo-gui.md#default_coloring)).
+
+# Editing OSM networks
+
+## JOSM
 
 *From George Dita, on 01.07.2009* [JOSM](http://josm.openstreetmap.de/)
 can be used to edit OSM-data (i.e. for trimming a rectangular map and
@@ -402,7 +401,7 @@ xmlstarlet ed -d "/osm/*[@action='delete']" < input.osm > output.osm
 !!! caution
     Up to version 4279 of JOSM, nodes and ways created or modified by JOSM are assigned a negative ID. With each run of JOSM, these IDs are recalculated. Please do not rely on them in your SUMO files. If you decide not to upload your changes to OpenStreetMap, you can remove the minuses in the IDs, assure that IDs are unique and then safely refer to them in SUMO files.
 
-### OSMOSIS
+## OSMOSIS
 
 *From Christian Klotz, on 01.07.2009, tip by Christoph Sommmer*
 
@@ -416,6 +415,12 @@ java -jar osmosis.jar --read-xml file="orginal.osm.xml" --way-key-value \
     keyValueList="highway.motorway,highway.motorway_link" \
     --used-node --write-xml file="filtered.osm.xml"
 ```
+## osmfilter
+
+[osmfilter](https://wiki.openstreetmap.org/wiki/Osmfilter) is a command line tool used to filter OpenStreetMap data files.
+It can be used to preprocess the data and can save a lot of work for netconvert.
+With this tool it is possible to import the top-level roads for a whole country within minutes of processing time.
+It is recommended to use the associated tool [osmconvert](https://wiki.openstreetmap.org/wiki/Osmconvert) to convert the data into the '.o5m' format and back to speed up the work on large datasets.
 
 # netconvert Details
 
