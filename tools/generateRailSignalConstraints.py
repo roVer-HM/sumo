@@ -595,7 +595,7 @@ def updateStartedEnded(options, net, stopEdges, stopRoutes, vehicleStopRoutes):
                                                                pStop.line,
                                                                stop.vehID,
                                                                pStop.vehID,
-                                                               ended,
+                                                               "foeEnded=%s " % humanReadableTime(ended),
                                                                None,  # switch
                                                                stop.busStop,
                                                                "parking"))
@@ -653,11 +653,13 @@ def addCommonStop(options, switch, edgesBefore, stop, edgesBefore2, stop2, vehic
                 s2copy = copy.copy(s2)
                 s2copy.prevTripId = stop2.prevTripId
                 s2copy.setAttribute("intermediateStop", stop2.busStop)
+                s2copy.setAttribute("otherVeh", stop.vehID)
                 stopRoutes2[s.busStop].append((edgesBefore2, s2copy))
             if s.busStop != stop.busStop and ((edgesBefore, s) not in stopRoutes2[s.busStop]):
                 scopy = copy.copy(s)
                 scopy.prevTripId = stop.prevTripId
                 scopy.setAttribute("intermediateStop", stop.busStop)
+                scopy.setAttribute("otherVeh", stop2.vehID)
                 stopRoutes2[s.busStop].append((edgesBefore, scopy))
             return
         # advance along routes
@@ -785,6 +787,9 @@ def findConflicts(options, switchRoutes, mergeSignals, signalTimes, stopEdges, v
                         numIgnoredConflicts += 1
                         numIgnoredSwitchConflicts += 1
                         continue
+                    if nStop.intermediateStop and pStop.intermediateStop == nStop.intermediateStop:
+                        # intermediate conflict was added via other foes and this particular conflict is a normal one
+                        continue
                     numConflicts += 1
                     numSwitchConflicts += 1
                     # check for trains that pass the switch in between the
@@ -799,19 +804,21 @@ def findConflicts(options, switchRoutes, mergeSignals, signalTimes, stopEdges, v
                             humanReadableTime(end), options.delay, pSignal,
                             pStop, nStop))
                     info = getIntermediateInfo(pStop, nStop)
+                    times = "arrival=%s foeArrival=%s " % (humanReadableTime(nArrival), humanReadableTime(pArrival))
                     limit += countPassingTrainsToOtherStops(options, pSignal, busStop, pTimeAtSignal, end, signalTimes)
                     conflicts[nSignal].append(Conflict(nStop.prevTripId, pSignal, pStop.prevTripId, limit,
                                                        # attributes for adding comments
                                                        nStop.prevLine, pStop.prevLine,
                                                        nStop.vehID, pStop.vehID,
-                                                       nArrival, switch,
-                                                       nStop.busStop,
-                                                       info))
+                                                       times, switch, nStop.busStop, info))
                     if options.redundant >= 0:
                         prevBegin = pTimeAtSignal
                         for p2Arrival, p2Stop in reversed(arrivalsBySignal[pSignal]):
                             if pArrival - p2Arrival > options.redundant:
                                 break
+                            if nStop.intermediateStop and p2Stop.intermediateStop == nStop.intermediateStop:
+                                # intermediate conflict was added via other foes and this particular conflict is a normal one
+                                continue
                             numRedundant += 1
                             numRedundantSwitchConflicts += 1
                             p2TimeAtSignal = p2Arrival - pTimeSiSt
@@ -819,12 +826,13 @@ def findConflicts(options, switchRoutes, mergeSignals, signalTimes, stopEdges, v
                             limit += countPassingTrainsToOtherStops(options, pSignal,
                                                                     busStop, p2TimeAtSignal, prevBegin, signalTimes)
                             info = getIntermediateInfo(p2Stop, nStop)
+                            times = "arrival=%s foeArrival=%s " % (humanReadableTime(nArrival), humanReadableTime(p2Arrival))
                             conflicts[nSignal].append(Conflict(nStop.prevTripId, pSignal, p2Stop.prevTripId, limit,
                                                                # attributes for adding comments
                                                                nStop.prevLine, p2Stop.prevLine,
                                                                nStop.vehID,
                                                                p2Stop.vehID,
-                                                               nArrival, switch,
+                                                               times, switch,
                                                                nStop.busStop,
                                                                info))
                             prevBegin = p2TimeAtSignal
@@ -857,6 +865,10 @@ def getIntermediateInfo(pStop, nStop):
         info.append("intermediateStop=%s" % pStop.intermediateStop)
     if nStop.intermediateStop:
         info.append("foeIntermediateStop=%s" % nStop.intermediateStop)
+    #if pStop.otherVeh:
+    #    info.append("otherVeh=%s" % pStop.otherVeh)
+    #if nStop.otherVeh:
+    #    info.append("foeOtherVeh=%s" % nStop.otherVeh)
     return ' '.join(info)
 
 
@@ -944,13 +956,14 @@ def findInsertionConflicts(options, net, stopEdges, stopRoutes, vehicleStopRoute
                             continue
                         # predecessor tripId after stop is needed
                         pTripId = pStop.getAttributeSecure("tripId", pStop.vehID)
+                        times = "until=%s foeUntil=%s " % (humanReadableTime(nUntil), humanReadableTime(pUntil))
                         conflicts[nSignal].append(Conflict(nStop.prevTripId, pSignal, pTripId, limit,
                                                            # attributes for adding comments
                                                            nStop.prevLine,
                                                            pStop.prevLine,
                                                            nStop.vehID,
                                                            pStop.vehID,
-                                                           nUntil,
+                                                           times,
                                                            switch=None,
                                                            busStop=nStop.busStop,
                                                            info=""))
@@ -1070,12 +1083,13 @@ def findFoeInsertionConflicts(options, net, stopEdges, stopRoutes, vehicleStopRo
 
                     # predecessor tripId after stop is needed
                     pTripId = pStop.getAttributeSecure("tripId", pStop.vehID)
+                    times = "arrival=%s foeArrival=%s " % (humanReadableTime(nArrival), humanReadableTime(pArrival))
                     conflicts[nSignal].append(Conflict(nStop.prevTripId, pSignal, pTripId, limit,
                                                        # attributes for adding comments
                                                        nStop.prevLine,
                                                        pStop.prevLine,
                                                        nStop.vehID, pStop.vehID,
-                                                       nArrival,
+                                                       times,
                                                        switch=None,
                                                        busStop=pStop.busStop,
                                                        info="foeInsertion"))
@@ -1112,7 +1126,7 @@ def writeConstraint(options, outf, tag, c):
     if options.commentStop:
             comment += "busStop=%s " % c.busStop
     if options.commentTime:
-            comment += "time=%s " % humanReadableTime(c.conflictTime)
+            comment += c.conflictTime
     if c.info is not "":
         comment += "(%s) " % c.info
     if comment != "":
