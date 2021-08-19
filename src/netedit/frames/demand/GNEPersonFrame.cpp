@@ -302,9 +302,7 @@ GNEPersonFrame::buildPerson() {
         // obtain person parameters
         SUMOVehicleParameter* personParameters = SUMOVehicleParserHelper::parseVehicleAttributes(SUMO_TAG_PERSON, SUMOSAXAttrs, false, false, false);
         // build person in GNERouteHandler
-/*
         GNERouteHandler::buildPerson(myViewNet->getNet(), true, *personParameters);
-*/
         // delete personParameters
         delete personParameters;
     } else {
@@ -320,9 +318,7 @@ GNEPersonFrame::buildPerson() {
         // obtain personFlow parameters
         SUMOVehicleParameter* personFlowParameters = SUMOVehicleParserHelper::parseFlowAttributes(SUMO_TAG_PERSONFLOW, SUMOSAXAttrs, false, 0, SUMOTime_MAX);
         // build personFlow in GNERouteHandler
-/*
         GNERouteHandler::buildPersonFlow(myViewNet->getNet(), true, *personFlowParameters);
-*/
         // delete personFlowParameters
         delete personFlowParameters;
     }
