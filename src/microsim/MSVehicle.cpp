@@ -4548,16 +4548,23 @@ MSVehicle::checkRewindLinkLanes(const double lengthsInFront, DriveItemVector& lf
         }
         // abort requests
         if (removalBegin != -1 && !(removalBegin == 0 && myLane->getEdge().isInternal())) {
+            const double brakeGap = getCarFollowModel().brakeGap(myState.mySpeed, getCarFollowModel().getMaxDecel(), 0.);
             while (removalBegin < (int)(lfLinks.size())) {
-                const double brakeGap = getCarFollowModel().brakeGap(myState.mySpeed, getCarFollowModel().getMaxDecel(), 0.);
-                lfLinks[removalBegin].myVLinkPass = lfLinks[removalBegin].myVLinkWait;
+                DriveProcessItem& dpi = lfLinks[removalBegin];
+                if (dpi.myLink == nullptr) {
+                    break;
+                }
+                dpi.myVLinkPass = dpi.myVLinkWait;
 #ifdef DEBUG_CHECKREWINDLINKLANES
                 if (DEBUG_COND) {
-                    std::cout << " removalBegin=" << removalBegin << " brakeGap=" << brakeGap << " dist=" << lfLinks[removalBegin].myDistance << " speed=" << myState.mySpeed << " a2s=" << ACCEL2SPEED(getCarFollowModel().getMaxDecel()) << "\n";
+                    std::cout << " removalBegin=" << removalBegin << " brakeGap=" << brakeGap << " dist=" << dpi.myDistance << " speed=" << myState.mySpeed << " a2s=" << ACCEL2SPEED(getCarFollowModel().getMaxDecel()) << "\n";
                 }
 #endif
-                if (lfLinks[removalBegin].myDistance >= brakeGap || (lfLinks[removalBegin].myDistance > 0 && myState.mySpeed < ACCEL2SPEED(getCarFollowModel().getMaxDecel()))) {
-                    lfLinks[removalBegin].mySetRequest = false;
+                if (dpi.myDistance >= brakeGap || (dpi.myDistance > 0 && myState.mySpeed < ACCEL2SPEED(getCarFollowModel().getMaxDecel()))) {
+                    // always leave junctions after requesting to enter
+                    if (!dpi.myLink->isExitLink() || !lfLinks[removalBegin - 1].mySetRequest) {
+                        dpi.mySetRequest = false;
+                    }
                 }
                 ++removalBegin;
             }
