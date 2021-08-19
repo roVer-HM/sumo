@@ -226,31 +226,20 @@ RORouteHandler::myStartElement(int element,
             break;
         }
         case SUMO_TAG_CONTAINER:
+        case SUMO_TAG_CONTAINERFLOW:
             myActiveContainerPlan = new OutputDevice_String(1);
             myActiveContainerPlanSize = 0;
-            myActiveContainerPlan->openTag(SUMO_TAG_CONTAINER);
+            myActiveContainerPlan->openTag((SumoXMLTag)element);
             (*myActiveContainerPlan) << attrs;
             break;
-        case SUMO_TAG_TRANSPORT: {
-            myActiveContainerPlan->openTag(SUMO_TAG_TRANSPORT);
+        case SUMO_TAG_TRANSPORT: 
+        case SUMO_TAG_TRANSHIP: 
+            // copy container elements
+            myActiveContainerPlan->openTag((SumoXMLTag)element);
             (*myActiveContainerPlan) << attrs;
             myActiveContainerPlan->closeTag();
             myActiveContainerPlanSize++;
             break;
-        }
-        case SUMO_TAG_TRANSHIP: {
-            if (attrs.hasAttribute(SUMO_ATTR_EDGES)) {
-                // copy walk as it is
-                // XXX allow --repair?
-                myActiveContainerPlan->openTag(SUMO_TAG_TRANSHIP);
-                (*myActiveContainerPlan) << attrs;
-                myActiveContainerPlan->closeTag();
-                myActiveContainerPlanSize++;
-            } else {
-                //routePerson(attrs, *myActiveContainerPlan);
-            }
-            break;
-        }
         case SUMO_TAG_FLOW:
             myActiveRouteProbability = DEFAULT_VEH_PROB;
             parseFromViaTo((SumoXMLTag)element, attrs, ok);
@@ -679,7 +668,18 @@ RORouteHandler::closeContainer() {
 }
 
 void RORouteHandler::closeContainerFlow() {
-    // @todo: currently not used
+    myActiveContainerPlan->closeTag();
+    if (myActiveContainerPlanSize > 0) {
+        myNet.addContainer(myVehicleParameter->depart, myActiveContainerPlan->getString());
+        registerLastDepart();
+    } else {
+        WRITE_WARNING("Discarding containerFlow '" + myVehicleParameter->id + "' because it's plan is empty");
+    }
+    delete myVehicleParameter;
+    myVehicleParameter = nullptr;
+    delete myActiveContainerPlan;
+    myActiveContainerPlan = nullptr;
+    myActiveContainerPlanSize = 0;
 }
 
 

@@ -158,6 +158,8 @@ GNEAccess::drawGL(const GUIVisualizationSettings& s) const {
         // set color depending of selection
         if (drawUsingSelectColor()) {
             GLHelper::setColor(s.colorSettings.selectedAdditionalColor);
+        } else if (!getParentAdditionals().front()->getAttribute(SUMO_ATTR_COLOR).empty()) {
+            GLHelper::setColor(parse<RGBColor>(getParentAdditionals().front()->getAttribute(SUMO_ATTR_COLOR)));
         } else {
             GLHelper::setColor(s.stoppingPlaceSettings.busStopColor);
         }
