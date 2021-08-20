@@ -1960,11 +1960,13 @@ void MSLCM_LC2013::addLCSpeedAdvice(const double vSafe) {
 
 
 double
-MSLCM_LC2013::computeSpeedLat(double latDist, double& maneuverDist) const {
-    double result = MSAbstractLaneChangeModel::computeSpeedLat(latDist, maneuverDist);
+MSLCM_LC2013::computeSpeedLat(double latDist, double& maneuverDist, bool urgent) const {
+    double result = MSAbstractLaneChangeModel::computeSpeedLat(latDist, maneuverDist, urgent);
+#ifdef DEBUG_WANTS_CHANGE
     if (DEBUG_COND) {
-        std::cout << " myLeftSpace=" << myLeftSpace << " latDist=" << latDist << " maneuverDist=" << maneuverDist << "result1=" << result << "\n";
+        std::cout << SIMTIME << " veh=" << myVehicle.getID() << " myLeftSpace=" << myLeftSpace << " latDist=" << latDist << " maneuverDist=" << maneuverDist << " result=" << result << "\n";
     }
+#endif
     if (myLeftSpace > POSITION_EPS) {
         double speedBound = myMaxSpeedLatStanding + myMaxSpeedLatFactor * myVehicle.getSpeed();
         if (isChangingLanes()) {
