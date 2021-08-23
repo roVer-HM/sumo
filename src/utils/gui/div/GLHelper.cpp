@@ -49,6 +49,9 @@
 #define CIRCLE_RESOLUTION (double)10 // inverse in degrees
 //#define CHECK_PUSHPOP // enable or disable check push and pop matrix/names
 
+#ifndef CALLBACK
+#define CALLBACK
+#endif
 
 // ===========================================================================
 // static member definitions
@@ -62,7 +65,7 @@ FONScontext* GLHelper::myFont = nullptr;
 double GLHelper::myFontSize = 50.0;
 bool GLHelper::myGL2PSActive = false;
 
-void APIENTRY combCallback(GLdouble coords[3],
+void CALLBACK combCallback(GLdouble coords[3],
                            GLdouble* vertex_data[4],
                            GLfloat weight[4], GLdouble** dataOut) {
     UNUSED_PARAMETER(weight);
@@ -162,10 +165,17 @@ GLHelper::drawFilledPolyTesselated(const PositionVector& v, bool close) {
         return;
     }
     GLUtesselator* tobj = gluNewTess();
-    gluTessCallback(tobj, GLU_TESS_VERTEX, (GLvoid(APIENTRY*)()) &glVertex3dv);
-    gluTessCallback(tobj, GLU_TESS_BEGIN, (GLvoid(APIENTRY*)()) &glBegin);
-    gluTessCallback(tobj, GLU_TESS_END, (GLvoid(APIENTRY*)()) &glEnd);
-    gluTessCallback(tobj, GLU_TESS_COMBINE, (GLvoid(APIENTRY*)()) &combCallback);
+#if defined(__GNUC__) && __GNUC__ >= 8
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
+    gluTessCallback(tobj, GLU_TESS_VERTEX, (GLvoid(CALLBACK*)()) &glVertex3dv);
+    gluTessCallback(tobj, GLU_TESS_BEGIN, (GLvoid(CALLBACK*)()) &glBegin);
+    gluTessCallback(tobj, GLU_TESS_END, (GLvoid(CALLBACK*)()) &glEnd);
+    gluTessCallback(tobj, GLU_TESS_COMBINE, (GLvoid(CALLBACK*)()) &combCallback);
+#if defined(__GNUC__) && __GNUC__ >= 8
+#pragma GCC diagnostic pop
+#endif
     gluTessProperty(tobj, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
     gluTessBeginPolygon(tobj, nullptr);
     gluTessBeginContour(tobj);

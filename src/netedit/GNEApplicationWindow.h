@@ -414,6 +414,9 @@ public:
     /// @brief getEdit Menu Commands (needed for show/hide menu commands)
     GNEApplicationWindowHelper::EditMenuCommands& getEditMenuCommands();
 
+    /// @brief get lock Menu Commands
+    GNEApplicationWindowHelper::LockMenuCommands& getLockMenuCommands();
+
     /// @brief clear undo list
     void clearUndoList();
 
@@ -436,6 +439,7 @@ protected:
                 *myFileMenuDataElements,
                 *myModesMenu,
                 *myEditMenu,
+                *myLockMenu,
                 *myProcessingMenu,
                 *myLocatorMenu,
                 *myWindowsMenu,
@@ -487,7 +491,10 @@ private:
     /// @brief Edit Menu Commands
     GNEApplicationWindowHelper::EditMenuCommands myEditMenuCommands;
 
-    /// @brief Edit Menu Commands
+    /// @brief Lock Menu Commands
+    GNEApplicationWindowHelper::LockMenuCommands myLockMenuCommands;
+
+    /// @brief Processing Menu Commands
     GNEApplicationWindowHelper::ProcessingMenuCommands myProcessingMenuCommands;
 
     /// @brief Locate Menu Commands
