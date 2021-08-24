@@ -247,6 +247,10 @@ FXDEFMAP(GNEApplicationWindow) GNEApplicationWindowMap[] = {
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_V_PASTE,                        GNEApplicationWindow::onCmdPaste),
     */
 
+    // toolbar lock
+    FXMAPFUNC(SEL_COMMAND,  MID_GNE_LOCKELEMENT,                            GNEApplicationWindow::onCmdLockElements),
+    FXMAPFUNC(SEL_UPDATE,   MID_GNE_LOCKMENUTITLE,                          GNEApplicationWindow::onUpdLockMenuTitle),
+
     // Toolbar processing
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_F5_COMPUTE_NETWORK_DEMAND,                   GNEApplicationWindow::onCmdProcessButton),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_F5_COMPUTE_NETWORK_DEMAND,                   GNEApplicationWindow::onUpdNeedsNetwork),
@@ -366,6 +370,7 @@ GNEApplicationWindow::GNEApplicationWindow(FXApp* a, const std::string& configPa
     myWindowsMenu(nullptr),
     myHelpMenu(nullptr),
     myModesMenuTitle(nullptr),
+    myLockMenuTitle(nullptr),
     myMessageWindow(nullptr),
     myMainSplitter(nullptr),
     hadDependentBuild(false),
@@ -1139,7 +1144,10 @@ GNEApplicationWindow::fillMenuBar() {
     myEditMenuCommands.buildOpenSUMOMenuCommands(myEditMenu);
     // build lock menu
     myLockMenu = new FXMenuPane(this);
-    GUIDesigns::buildFXMenuTitle(myToolbarsGrip.menu, "&Lock", nullptr, myLockMenu);
+    myLockMenuTitle = GUIDesigns::buildFXMenuTitle(myToolbarsGrip.menu, "&Lock", nullptr, myLockMenu);
+    myLockMenuTitle->setTarget(this);
+    myLockMenuTitle->setSelector(MID_GNE_LOCKMENUTITLE);
+    // build lock menu commmands
     myLockMenuCommands.buildLockMenuCommands(myLockMenu);
     // build processing menu (trigger netbuild computations)
     myProcessingMenu = new FXMenuPane(this);
@@ -1573,6 +1581,56 @@ GNEApplicationWindow::onCmdSetMode(FXObject* sender, FXSelector sel, void* ptr) 
     return 1;
 }
 
+
+long
+GNEApplicationWindow::onCmdLockElements(FXObject*, FXSelector, void*) {
+    if (myViewNet) {
+        myViewNet->getLockManager().updateFlags();
+    }
+    return 1;
+}
+
+
+long
+GNEApplicationWindow::onUpdLockMenuTitle(FXObject*, FXSelector, void*) {
+    if (myViewNet) {
+        if (myViewNet->getEditModes().isCurrentSupermodeNetwork()) {
+            // supermode network
+            if ((myViewNet->getEditModes().networkEditMode == NetworkEditMode::NETWORK_INSPECT) ||
+                    (myViewNet->getEditModes().networkEditMode == NetworkEditMode::NETWORK_SELECT) ||
+                    (myViewNet->getEditModes().networkEditMode == NetworkEditMode::NETWORK_DELETE) ||
+                    (myViewNet->getEditModes().networkEditMode == NetworkEditMode::NETWORK_MOVE)) {
+                myLockMenuTitle->enable();
+            } else {
+                myLockMenuTitle->disable();
+            }
+        } else if (myViewNet->getEditModes().isCurrentSupermodeDemand()) {
+            // supermode demand
+            if ((myViewNet->getEditModes().demandEditMode == DemandEditMode::DEMAND_INSPECT) ||
+                    (myViewNet->getEditModes().demandEditMode == DemandEditMode::DEMAND_SELECT) ||
+                    (myViewNet->getEditModes().demandEditMode == DemandEditMode::DEMAND_DELETE) ||
+                    (myViewNet->getEditModes().demandEditMode == DemandEditMode::DEMAND_MOVE)) {
+                myLockMenuTitle->enable();
+            } else {
+                myLockMenuTitle->disable();
+            }
+        } else if (myViewNet->getEditModes().isCurrentSupermodeData()) {
+            // supermode data
+            if ((myViewNet->getEditModes().dataEditMode == DataEditMode::DATA_INSPECT) ||
+                    (myViewNet->getEditModes().dataEditMode == DataEditMode::DATA_SELECT) ||
+                    (myViewNet->getEditModes().dataEditMode == DataEditMode::DATA_DELETE)) {
+                myLockMenuTitle->enable();
+            } else {
+                myLockMenuTitle->disable();
+            }
+        } else {
+            myLockMenuTitle->disable();
+        }
+    } else {
+        myLockMenuTitle->disable();
+    }
+    return 1;
+}
 
 long
 GNEApplicationWindow::onCmdProcessButton(FXObject*, FXSelector sel, void*) {
@@ -3603,7 +3661,7 @@ GNEApplicationWindow::getEditMenuCommands() {
     return myEditMenuCommands;
 }
 
-   
+
 GNEApplicationWindowHelper::LockMenuCommands&
 GNEApplicationWindow::getLockMenuCommands() {
     return myLockMenuCommands;
@@ -3641,6 +3699,7 @@ GNEApplicationWindow::GNEApplicationWindow() :
     myWindowsMenu(nullptr),
     myHelpMenu(nullptr),
     myModesMenuTitle(nullptr),
+    myLockMenuTitle(nullptr),
     myMessageWindow(nullptr),
     myMainSplitter(nullptr),
     hadDependentBuild(false),

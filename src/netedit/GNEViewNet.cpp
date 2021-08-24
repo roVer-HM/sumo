@@ -365,7 +365,7 @@ GNEViewNet::getAttributeCarriersInBoundary(const Boundary& boundary, bool forceS
                     retrievedAC = dynamic_cast<GNELane*>(retrievedAC)->getParentEdge();
                 }
                 // make sure that AttributeCarrier can be selected
-                if (retrievedAC->getTagProperty().isSelectable() && !myViewParent->getSelectorFrame()->getLockGLObjectTypes()->IsObjectTypeLocked(retrievedAC->getGUIGlObject()->getType())) {
+                if (retrievedAC->getTagProperty().isSelectable() && !myLockManager.isObjectLocked(retrievedAC->getGUIGlObject()->getType())) {
                     result.insert(std::make_pair(retrievedAC->getID(), retrievedAC));
                 }
             }
@@ -1230,6 +1230,12 @@ GNEViewNet::getInspectedAttributeCarriers() const {
 }
 
 
+GNEViewNetHelper::LockManager&
+GNEViewNet::getLockManager() {
+    return myLockManager;
+}
+
+
 void
 GNEViewNet::setInspectedAttributeCarriers(const std::vector<GNEAttributeCarrier*> ACs) {
     myInspectedAttributeCarriers = ACs;
@@ -1922,7 +1928,7 @@ GNEViewNet::onCmdTransformPOI(FXObject*, FXSelector, void*) {
             // obtain lanes around POI boundary
             std::vector<GUIGlID> GLIDs = getObjectsInBoundary(POI->getCenteringBoundary(), false);
             std::vector<GNELane*> lanes;
-            for (const auto &GLID : GLIDs) {
+            for (const auto& GLID : GLIDs) {
                 GNELane* lane = dynamic_cast<GNELane*>(GUIGlObjectStorage::gIDStorage.getObjectBlocking(GLID));
                 if (lane) {
                     lanes.push_back(lane);
@@ -1935,7 +1941,7 @@ GNEViewNet::onCmdTransformPOI(FXObject*, FXSelector, void*) {
                 GNELane* nearestLane = lanes.front();
                 double minorPosOverLane = nearestLane->getLaneShape().nearest_offset_to_point2D(POI->getPositionInView());
                 double minorLateralOffset = nearestLane->getLaneShape().positionAtOffset(minorPosOverLane).distanceTo(POI->getPositionInView());
-                for (const auto &lane : lanes) {
+                for (const auto& lane : lanes) {
                     double posOverLane = lane->getLaneShape().nearest_offset_to_point2D(POI->getPositionInView());
                     double lateralOffset = lane->getLaneShape().positionAtOffset(posOverLane).distanceTo(POI->getPositionInView());
                     if (lateralOffset < minorLateralOffset) {
@@ -2119,7 +2125,7 @@ GNEViewNet::onCmdDuplicateLane(FXObject*, FXSelector, void*) {
         if (laneAtPopupPosition->isAttributeCarrierSelected()) {
             myUndoList->p_begin("duplicate selected " + toString(SUMO_TAG_LANE) + "s");
             std::vector<GNELane*> lanes = myNet->retrieveLanes(true);
-            for (const auto &lane : lanes) {
+            for (const auto& lane : lanes) {
                 myNet->duplicateLane(lane, myUndoList, true);
             }
             myUndoList->p_end();
@@ -2142,7 +2148,7 @@ GNEViewNet::onCmdResetLaneCustomShape(FXObject*, FXSelector, void*) {
         if (laneAtPopupPosition->isAttributeCarrierSelected()) {
             myUndoList->p_begin("reset custom lane shapes");
             std::vector<GNELane*> lanes = myNet->retrieveLanes(true);
-            for (const auto &lane : lanes) {
+            for (const auto& lane : lanes) {
                 lane->setAttribute(SUMO_ATTR_CUSTOMSHAPE, "", myUndoList);
             }
             myUndoList->p_end();
@@ -2163,16 +2169,16 @@ GNEViewNet::onCmdResetOppositeLane(FXObject*, FXSelector, void*) {
         // when duplicating an unselected lane, keep all connections as they
         // are, otherwise recompute them
         if (laneAtPopupPosition->isAttributeCarrierSelected()) {
-        myUndoList->p_begin("reset opposite lanes");
+            myUndoList->p_begin("reset opposite lanes");
             std::vector<GNELane*> lanes = myNet->retrieveLanes(true);
-            for (const auto &lane : lanes) {
+            for (const auto& lane : lanes) {
                 lane->setAttribute(GNE_ATTR_OPPOSITE, "", myUndoList);
             }
             myUndoList->p_end();
         } else {
-        myUndoList->p_begin("reset opposite lane");
-        laneAtPopupPosition->setAttribute(GNE_ATTR_OPPOSITE, "", myUndoList);
-        myUndoList->p_end();
+            myUndoList->p_begin("reset opposite lane");
+            laneAtPopupPosition->setAttribute(GNE_ATTR_OPPOSITE, "", myUndoList);
+            myUndoList->p_end();
         }
     }
     return 1;
@@ -2261,7 +2267,7 @@ GNEViewNet::restrictLane(SUMOVehicleClass vclass) {
         // Declare map of edges and lanes
         std::map<GNEEdge*, GNELane*> mapOfEdgesAndLanes;
         // Iterate over selected lanes
-        for (const auto &lane : lanes) {
+        for (const auto& lane : lanes) {
             mapOfEdgesAndLanes[myNet->retrieveEdge(lane->getParentEdge()->getID())] = lane;
         }
         // Throw warning dialog if there hare multiple lanes selected in the same edge
@@ -2338,11 +2344,11 @@ GNEViewNet::addRestrictedLane(SUMOVehicleClass vclass, const bool insertAtFront)
         // Declare set of edges
         std::set<GNEEdge*> setOfEdges;
         // Fill set of edges with vector of edges
-        for (const auto &edge : edges) {
+        for (const auto& edge : edges) {
             setOfEdges.insert(edge);
         }
         // iterate over selected lanes
-        for (const auto &lane : lanes) {
+        for (const auto& lane : lanes) {
             // Insert pointer to edge into set of edges (To avoid duplicates)
             setOfEdges.insert(myNet->retrieveEdge(lane->getParentEdge()->getID()));
         }
@@ -2429,11 +2435,11 @@ GNEViewNet::removeRestrictedLane(SUMOVehicleClass vclass) {
         // Declare set of edges
         std::set<GNEEdge*> setOfEdges;
         // Fill set of edges with vector of edges
-        for (const auto &edge : edges) {
+        for (const auto& edge : edges) {
             setOfEdges.insert(edge);
         }
         // iterate over selected lanes
-        for (const auto &lane : lanes) {
+        for (const auto& lane : lanes) {
             // Insert pointer to edge into set of edges (To avoid duplicates)
             setOfEdges.insert(myNet->retrieveEdge(lane->getParentEdge()->getID()));
         }
@@ -2442,7 +2448,7 @@ GNEViewNet::removeRestrictedLane(SUMOVehicleClass vclass) {
             // declare counter for number of restrictions
             int counter = 0;
             // iterate over set of edges
-            for (const auto & edge : setOfEdges) {
+            for (const auto& edge : setOfEdges) {
                 // update counter if edge has already a restricted lane of type "vclass"
                 if (edge->hasRestrictedLane(vclass)) {
                     counter++;
@@ -3557,6 +3563,8 @@ GNEViewNet::updateNetworkModeSpecificControls() {
             // show menu checks
             menuChecks.menuCheckSelectEdges->show();
             menuChecks.menuCheckShowConnections->show();
+            // update lock menu bar
+            myLockManager.updateLockMenuBar();
             // show
             break;
         case NetworkEditMode::NETWORK_DELETE:
@@ -4383,7 +4391,7 @@ GNEViewNet::processLeftButtonPressNetwork(void* eventData) {
                     // first check that under cursor there is an attribute carrier, isn't a demand element and is selectable
                     if (myObjectsUnderCursor.getAttributeCarrierFront() && !myObjectsUnderCursor.getAttributeCarrierFront()->getTagProperty().isDemandElement()) {
                         // Check if this GLobject type is locked
-                        if (!myViewParent->getSelectorFrame()->getLockGLObjectTypes()->IsObjectTypeLocked(myObjectsUnderCursor.getGlTypeFront())) {
+                        if (!myLockManager.isObjectLocked(myObjectsUnderCursor.getGlTypeFront())) {
                             // toggle networkElement selection
                             if (myObjectsUnderCursor.getAttributeCarrierFront()->isAttributeCarrierSelected()) {
                                 myObjectsUnderCursor.getAttributeCarrierFront()->unselectAttributeCarrier();
@@ -4687,7 +4695,7 @@ GNEViewNet::processLeftButtonPressDemand(void* eventData) {
                     // first check that under cursor there is an attribute carrier, is demand element and is selectable
                     if (myObjectsUnderCursor.getAttributeCarrierFront() && myObjectsUnderCursor.getAttributeCarrierFront()->getTagProperty().isDemandElement()) {
                         // Check if this GLobject type is locked
-                        if (!myViewParent->getSelectorFrame()->getLockGLObjectTypes()->IsObjectTypeLocked(myObjectsUnderCursor.getGlTypeFront())) {
+                        if (!myLockManager.isObjectLocked(myObjectsUnderCursor.getGlTypeFront())) {
                             // toggle networkElement selection
                             if (myObjectsUnderCursor.getAttributeCarrierFront()->isAttributeCarrierSelected()) {
                                 myObjectsUnderCursor.getAttributeCarrierFront()->unselectAttributeCarrier();
@@ -4852,7 +4860,7 @@ GNEViewNet::processLeftButtonPressData(void* eventData) {
                     // first check that under cursor there is an attribute carrier, is data element and is selectable
                     if (myObjectsUnderCursor.getAttributeCarrierFront() && myObjectsUnderCursor.getAttributeCarrierFront()->getTagProperty().isDataElement()) {
                         // Check if this GLobject type is locked
-                        if (!myViewParent->getSelectorFrame()->getLockGLObjectTypes()->IsObjectTypeLocked(myObjectsUnderCursor.getGlTypeFront())) {
+                        if (!myLockManager.isObjectLocked(myObjectsUnderCursor.getGlTypeFront())) {
                             // toggle networkElement selection
                             if (myObjectsUnderCursor.getAttributeCarrierFront()->isAttributeCarrierSelected()) {
                                 myObjectsUnderCursor.getAttributeCarrierFront()->unselectAttributeCarrier();

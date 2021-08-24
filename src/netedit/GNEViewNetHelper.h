@@ -1293,28 +1293,19 @@ struct GNEViewNetHelper {
         /// @brief destructor
         ~LockManager();
 
-        /// @brief check if given GLObject is locked for inspecting
-        bool isInspectLocked(GUIGlObjectType objectType) const;
+        /// @brief check if given GLObject is locked for inspect, select, delete and move
+        bool isObjectLocked(GUIGlObjectType objectType) const;
 
-        /// @brief check if given GLObject is locked for deleting
-        bool isDeleteLocked(GUIGlObjectType objectType) const;
-
-        /// @brief check if given GLObject is locked for selecting
-        bool isSelectLocked(GUIGlObjectType objectType) const;
+        /// @brief update flags
+        void updateFlags();
 
         /// @brief update lock inspect menuBar
-        void updateLockInspectMenuBar();
-
-         /// @brief update lock select menuBar
-        void updateLockSelectMenuBar();
-
-         /// @brief update lock delete menuBar
-        void updateLockDeleteMenuBar();
+        void updateLockMenuBar();
 
     private:
         /// @brief operation locked
         class OperationLocked {
-            
+
         public:
             /// @brief constructor
             OperationLocked();
@@ -1328,14 +1319,8 @@ struct GNEViewNetHelper {
             /// @brief get supermode
             Supermode getSupermode() const;
 
-            /// @brief inspect mode
-            bool inspection;
-
-            /// @brief delete mode
-            bool deletion;
-
-            /// @brief select mode
-            bool selection;
+            /// @brief flag for lock/unlock
+            bool lock;
 
         private:
             /// @brief supermode associated with this operation locked
@@ -1345,14 +1330,8 @@ struct GNEViewNetHelper {
         /// @brief pointer to viewNet
         GNEViewNet* myViewNet;
 
-        /// @brief map with locked objects for supermode network
-        std::map<GUIGlObjectType, OperationLocked> myLockedNetwork;
-
-        /// @brief map with locked objects for supermode network
-        std::map<GUIGlObjectType, OperationLocked> myLockedDemand;
-
-        /// @brief map with locked objects for supermode network
-        std::map<GUIGlObjectType, OperationLocked> myLockedData;
+        /// @brief map with locked elements
+        std::map<GUIGlObjectType, OperationLocked> myLockedElements;
     };
 
     /// @brief get scaled rainbow colors

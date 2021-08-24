@@ -68,8 +68,6 @@ void
 GNEAttributeCarrier::selectAttributeCarrier(const bool changeFlag) {
     if (getGUIGlObject() && myTagProperty.isSelectable()) {
         gSelected.select(getGUIGlObject()->getGlID());
-        // add object into list of selected objects
-        myNet->getViewNet()->getViewParent()->getSelectorFrame()->getLockGLObjectTypes()->addedLockedObject(getGUIGlObject()->getType());
         if (changeFlag) {
             mySelected = true;
         }
@@ -81,8 +79,6 @@ void
 GNEAttributeCarrier::unselectAttributeCarrier(const bool changeFlag) {
     if (getGUIGlObject() && myTagProperty.isSelectable()) {
         gSelected.deselect(getGUIGlObject()->getGlID());
-        // remove object of list of selected objects
-        myNet->getViewNet()->getViewParent()->getSelectorFrame()->getLockGLObjectTypes()->removeLockedObject(getGUIGlObject()->getType());
         if (changeFlag) {
             mySelected = false;
         }
@@ -607,7 +603,7 @@ GNEAttributeCarrier::allowedAttributeProperties(const bool onlyDrawables) {
         fillAttributeCarriers();
     }
     // fill all tags
-    for (const auto &tagProperty : myTagProperties) {
+    for (const auto& tagProperty : myTagProperties) {
         if (!onlyDrawables || tagProperty.second.isDrawable()) {
             attributeProperties.push_back(tagProperty.second);
         }
@@ -753,7 +749,7 @@ GNEAttributeCarrier::getAllowedTagPropertiesByCategory(const int tagPropertyCate
             }
         }
     }
-     if (tagPropertyCategory & GNETagProperties::CONTAINER) {
+    if (tagPropertyCategory & GNETagProperties::CONTAINER) {
         // fill container tags
         for (const auto& tagProperty : myTagProperties) {
             if (tagProperty.second.isContainer() && (!onlyDrawables || tagProperty.second.isDrawable())) {
@@ -3007,8 +3003,8 @@ GNEAttributeCarrier::fillTAZElements() {
         myTagProperties[currentTag].addAttribute(attrProperty);
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_NAME,
-                                        GNEAttributeProperties::STRING | GNEAttributeProperties::DEFAULTVALUESTATIC | GNEAttributeProperties::XMLOPTIONAL,
-                                        "Name of " + toString(currentTag));
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::DEFAULTVALUESTATIC | GNEAttributeProperties::XMLOPTIONAL,
+                                              "Name of " + toString(currentTag));
         myTagProperties[currentTag].addAttribute(attrProperty);
     }
     currentTag = SUMO_TAG_TAZSOURCE;
@@ -3775,7 +3771,7 @@ GNEAttributeCarrier::fillPersonElements() {
 }
 
 
-void 
+void
 GNEAttributeCarrier::fillContainerElements() {
     // declare empty GNEAttributeProperties
     GNEAttributeProperties attrProperty;
@@ -3808,7 +3804,7 @@ GNEAttributeCarrier::fillContainerElements() {
 }
 
 
-void 
+void
 GNEAttributeCarrier::fillContainerTransportElements() {
     // declare empty GNEAttributeProperties
     GNEAttributeProperties attrProperty;
@@ -3870,7 +3866,7 @@ GNEAttributeCarrier::fillContainerTransportElements() {
 }
 
 
-void 
+void
 GNEAttributeCarrier::fillContainerTranshipElements() {
     // declare empty GNEAttributeProperties
     GNEAttributeProperties attrProperty;
@@ -3975,7 +3971,7 @@ GNEAttributeCarrier::fillContainerTranshipElements() {
 }
 
 
-void 
+void
 GNEAttributeCarrier::fillContainerStopElements() {
     // declare empty GNEAttributeProperties
     GNEAttributeProperties attrProperty;
@@ -4631,7 +4627,7 @@ GNEAttributeCarrier::fillCarFollowingModelAttributes(SumoXMLTag currentTag) {
                                           "EIDM Shift parameter of startup/driveoff curve [-]",
                                           "0.70");
     myTagProperties[currentTag].addAttribute(attrProperty);
-    
+
     attrProperty = GNEAttributeProperties(SUMO_ATTR_CF_EIDM_USEVEHDYNAMICS,
                                           GNEAttributeProperties::BOOL | GNEAttributeProperties::DEFAULTVALUESTATIC | GNEAttributeProperties::XMLOPTIONAL | GNEAttributeProperties::EXTENDED,
                                           "EIDM parameter if model shall include vehicle dynamics into the acceleration calculation [0/1]",
@@ -4939,7 +4935,7 @@ GNEAttributeCarrier::fillCommonPersonAttributes(SumoXMLTag currentTag) {
 }
 
 
-void 
+void
 GNEAttributeCarrier::fillCommonContainerAttributes(SumoXMLTag currentTag) {
     // declare empty GNEAttributeProperties
     GNEAttributeProperties attrProperty;
@@ -4950,9 +4946,9 @@ GNEAttributeCarrier::fillCommonContainerAttributes(SumoXMLTag currentTag) {
     myTagProperties[currentTag].addAttribute(attrProperty);
 
     attrProperty = GNEAttributeProperties(SUMO_ATTR_DEPART,
-                                            GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUESTATIC,
-                                            "The time step at which the " + toString(currentTag) + " shall enter the network",
-                                            "0.00");
+                                          GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUESTATIC,
+                                          "The time step at which the " + toString(currentTag) + " shall enter the network",
+                                          "0.00");
     myTagProperties[currentTag].addAttribute(attrProperty);
 }
 

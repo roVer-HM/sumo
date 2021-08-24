@@ -30,6 +30,7 @@
 #include <netedit/frames/common/GNESelectorFrame.h>
 #include <netedit/frames/common/GNEMoveFrame.h>
 #include <netedit/frames/network/GNETLSEditorFrame.h>
+#include <utils/foxtools/FXMenuCheckIcon.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/globjects/GLIncludes.h>
@@ -3164,8 +3165,8 @@ GNEViewNetHelper::DemandCheckableButtons::buildDemandCheckableButtons() {
     personPlanButton->create();
     // container mode
     containerButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes,
-                                          "\tcreate container mode\tMode for creating containers. (P)",
-                                          GUIIconSubSys::getIcon(GUIIcon::MODECONTAINER), myViewNet, MID_HOTKEY_G_MODE_CONTAINER, GUIDesignMFXCheckableButton);
+            "\tcreate container mode\tMode for creating containers. (P)",
+            GUIIconSubSys::getIcon(GUIIcon::MODECONTAINER), myViewNet, MID_HOTKEY_G_MODE_CONTAINER, GUIDesignMFXCheckableButton);
     containerButton->create();
     // container plan mode
     containerPlanButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes,
@@ -3470,191 +3471,129 @@ GNEViewNetHelper::LockIcon::getLockIcon(const GNEAttributeCarrier* AC) {
 
 GNEViewNetHelper::LockManager::LockManager(GNEViewNet* viewNet) :
     myViewNet(viewNet) {
-    // fill myLockedNetwork objects
-    myLockedNetwork[GLO_JUNCTION] = OperationLocked(Supermode::NETWORK);
-    myLockedNetwork[GLO_EDGE] = OperationLocked(Supermode::NETWORK);
-    myLockedNetwork[GLO_LANE] = OperationLocked(Supermode::NETWORK);
-    myLockedNetwork[GLO_CONNECTION] = OperationLocked(Supermode::NETWORK);
-    myLockedNetwork[GLO_CROSSING] = OperationLocked(Supermode::NETWORK);
-    myLockedNetwork[GLO_ADDITIONALELEMENT] = OperationLocked(Supermode::NETWORK);
-    myLockedNetwork[GLO_TAZ] = OperationLocked(Supermode::NETWORK);
-    myLockedNetwork[GLO_POLYGON] = OperationLocked(Supermode::NETWORK);
-    myLockedNetwork[GLO_POI] = OperationLocked(Supermode::NETWORK);
-    // fill myLockedDemand objects
-    myLockedDemand[GLO_ROUTE] = OperationLocked(Supermode::DEMAND);
-    myLockedDemand[GLO_VEHICLE] = OperationLocked(Supermode::DEMAND);
-    myLockedDemand[GLO_ROUTEFLOW] = OperationLocked(Supermode::DEMAND);
-    myLockedDemand[GLO_TRIP] = OperationLocked(Supermode::DEMAND);
-    myLockedDemand[GLO_FLOW] = OperationLocked(Supermode::DEMAND);
-    myLockedDemand[GLO_STOP] = OperationLocked(Supermode::DEMAND);
-    myLockedDemand[GLO_PERSON] = OperationLocked(Supermode::DEMAND);
-    myLockedDemand[GLO_PERSONFLOW] = OperationLocked(Supermode::DEMAND);
-    myLockedDemand[GLO_PERSONTRIP] = OperationLocked(Supermode::DEMAND);
-    myLockedDemand[GLO_RIDE] = OperationLocked(Supermode::DEMAND);
-    myLockedDemand[GLO_WALK] = OperationLocked(Supermode::DEMAND);
-    myLockedDemand[GLO_STOP_PERSON] = OperationLocked(Supermode::DEMAND);
-    // fill myLockedData objects
-    myLockedData[GLO_EDGEDATA] = OperationLocked(Supermode::DATA);
-    myLockedData[GLO_EDGERELDATA] = OperationLocked(Supermode::DATA);
-    myLockedData[GLO_TAZRELDATA] = OperationLocked(Supermode::DATA);
+    // fill myLockedElements objects
+    myLockedElements[GLO_JUNCTION] = OperationLocked(Supermode::NETWORK);
+    myLockedElements[GLO_EDGE] = OperationLocked(Supermode::NETWORK);
+    myLockedElements[GLO_LANE] = OperationLocked(Supermode::NETWORK);
+    myLockedElements[GLO_CONNECTION] = OperationLocked(Supermode::NETWORK);
+    myLockedElements[GLO_CROSSING] = OperationLocked(Supermode::NETWORK);
+    myLockedElements[GLO_ADDITIONALELEMENT] = OperationLocked(Supermode::NETWORK);
+    myLockedElements[GLO_TAZ] = OperationLocked(Supermode::NETWORK);
+    myLockedElements[GLO_POLYGON] = OperationLocked(Supermode::NETWORK);
+    myLockedElements[GLO_POI] = OperationLocked(Supermode::NETWORK);
+    // fill myLockedElements objects
+    myLockedElements[GLO_ROUTE] = OperationLocked(Supermode::DEMAND);
+    myLockedElements[GLO_VEHICLE] = OperationLocked(Supermode::DEMAND);
+    myLockedElements[GLO_ROUTEFLOW] = OperationLocked(Supermode::DEMAND);
+    myLockedElements[GLO_TRIP] = OperationLocked(Supermode::DEMAND);
+    myLockedElements[GLO_FLOW] = OperationLocked(Supermode::DEMAND);
+    myLockedElements[GLO_STOP] = OperationLocked(Supermode::DEMAND);
+    myLockedElements[GLO_PERSON] = OperationLocked(Supermode::DEMAND);
+    myLockedElements[GLO_PERSONFLOW] = OperationLocked(Supermode::DEMAND);
+    myLockedElements[GLO_PERSONTRIP] = OperationLocked(Supermode::DEMAND);
+    myLockedElements[GLO_RIDE] = OperationLocked(Supermode::DEMAND);
+    myLockedElements[GLO_WALK] = OperationLocked(Supermode::DEMAND);
+    myLockedElements[GLO_STOP_PERSON] = OperationLocked(Supermode::DEMAND);
+    // fill myLockedElements objects
+    myLockedElements[GLO_EDGEDATA] = OperationLocked(Supermode::DATA);
+    myLockedElements[GLO_EDGERELDATA] = OperationLocked(Supermode::DATA);
+    myLockedElements[GLO_TAZRELDATA] = OperationLocked(Supermode::DATA);
 }
 
 
 GNEViewNetHelper::LockManager::~LockManager() {}
 
 
-bool 
-GNEViewNetHelper::LockManager::isInspectLocked(GUIGlObjectType objectType) const {
+bool
+GNEViewNetHelper::LockManager::isObjectLocked(GUIGlObjectType objectType) const {
     if ((objectType >= 100) && (objectType < 199)) {
-        return myLockedData.at(GLO_ADDITIONALELEMENT).inspection;
+        return myLockedElements.at(GLO_ADDITIONALELEMENT).lock;
     } else {
-        return myLockedData.at(objectType).inspection;
-    }
-}
-
-
-bool 
-GNEViewNetHelper::LockManager::isDeleteLocked(GUIGlObjectType objectType) const {
-    if ((objectType >= 100) && (objectType < 199)) {
-        return myLockedData.at(GLO_ADDITIONALELEMENT).deletion;
-    } else {
-        return myLockedData.at(objectType).deletion;
-    }
-}
-
-
-bool 
-GNEViewNetHelper::LockManager::isSelectLocked(GUIGlObjectType objectType) const {
-    if ((objectType >= 100) && (objectType < 199)) {
-        return myLockedData.at(GLO_ADDITIONALELEMENT).selection;
-    } else {
-        return myLockedData.at(objectType).selection;
+        return myLockedElements.at(objectType).lock;
     }
 }
 
 
 void
-GNEViewNetHelper::LockManager::updateLockInspectMenuBar() {
+GNEViewNetHelper::LockManager::updateFlags() {
     // get lock menu commands
-    GNEApplicationWindowHelper::LockMenuCommands &lockMenuCommands = myViewNet->getViewParent()->getGNEAppWindows()->getLockMenuCommands();
+    GNEApplicationWindowHelper::LockMenuCommands& lockMenuCommands = myViewNet->getViewParent()->getGNEAppWindows()->getLockMenuCommands();
     // network
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_JUNCTION].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_EDGE].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_LANE].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_CONNECTION].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_CROSSING].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_ADDITIONALELEMENT].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_TAZ].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_POLYGON].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_POI].inspection, "inspect");
+    myLockedElements[GLO_JUNCTION].lock = lockMenuCommands.menuCheckLockJunction->getCheck();
+    myLockedElements[GLO_EDGE].lock = lockMenuCommands.menuCheckLockEdges->getCheck();
+    myLockedElements[GLO_LANE].lock = lockMenuCommands.menuCheckLockLanes->getCheck();
+    myLockedElements[GLO_CONNECTION].lock = lockMenuCommands.menuCheckLockConnections->getCheck();
+    myLockedElements[GLO_CROSSING].lock = lockMenuCommands.menuCheckLockCrossings->getCheck();
+    myLockedElements[GLO_ADDITIONALELEMENT].lock = lockMenuCommands.menuCheckLockAdditionals->getCheck();
+    myLockedElements[GLO_TAZ].lock = lockMenuCommands.menuCheckLockTAZs->getCheck();
+    myLockedElements[GLO_POLYGON].lock = lockMenuCommands.menuCheckLockPolygons->getCheck();
+    myLockedElements[GLO_POI].lock = lockMenuCommands.menuCheckLockPOIs->getCheck();
     // demand
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_ROUTE].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_VEHICLE].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_ROUTEFLOW].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_TRIP].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_FLOW].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_STOP].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_PERSON].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_PERSONFLOW].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_PERSONTRIP].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_RIDE].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_WALK].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_STOP_PERSON].inspection, "inspect");
+    myLockedElements[GLO_ROUTE].lock = lockMenuCommands.menuCheckLockRoutes->getCheck();
+    myLockedElements[GLO_VEHICLE].lock = lockMenuCommands.menuCheckLockVehicles->getCheck();
+    myLockedElements[GLO_PERSON].lock = lockMenuCommands.menuCheckLockPersons->getCheck();
+    myLockedElements[GLO_PERSONTRIP].lock = lockMenuCommands.menuCheckLockPersonTrip->getCheck();
+    myLockedElements[GLO_WALK].lock = lockMenuCommands.menuCheckLockWalk->getCheck();
+    myLockedElements[GLO_RIDE].lock = lockMenuCommands.menuCheckLockRides->getCheck();
+    myLockedElements[GLO_CONTAINER].lock = lockMenuCommands.menuCheckLockContainers->getCheck();
+    myLockedElements[GLO_TRANSPORT].lock = lockMenuCommands.menuCheckLockTransports->getCheck();
+    myLockedElements[GLO_TRANSHIP].lock = lockMenuCommands.menuCheckLockTranships->getCheck();
+    myLockedElements[GLO_STOP].lock = lockMenuCommands.menuCheckLockStops->getCheck();
     // data
-    lockMenuCommands.updateLockJunction(myLockedData[GLO_EDGEDATA].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedData[GLO_EDGERELDATA].inspection, "inspect");
-    lockMenuCommands.updateLockJunction(myLockedData[GLO_TAZRELDATA].inspection, "inspect");
+    myLockedElements[GLO_EDGEDATA].lock = lockMenuCommands.menuCheckLockEdgeDatas->getCheck();
+    myLockedElements[GLO_EDGERELDATA].lock = lockMenuCommands.menuCheckLockEdgeRelDatas->getCheck();
+    myLockedElements[GLO_TAZRELDATA].lock = lockMenuCommands.menuCheckLockEdgeTAZRels->getCheck();
 }
 
 
 void
-GNEViewNetHelper::LockManager::updateLockSelectMenuBar() {
+GNEViewNetHelper::LockManager::updateLockMenuBar() {
     // get lock menu commands
-    GNEApplicationWindowHelper::LockMenuCommands &lockMenuCommands = myViewNet->getViewParent()->getGNEAppWindows()->getLockMenuCommands();
+    GNEApplicationWindowHelper::LockMenuCommands& lockMenuCommands = myViewNet->getViewParent()->getGNEAppWindows()->getLockMenuCommands();
     // network
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_JUNCTION].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_EDGE].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_LANE].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_CONNECTION].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_CROSSING].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_ADDITIONALELEMENT].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_TAZ].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_POLYGON].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_POI].selection, "select");
+    lockMenuCommands.menuCheckLockJunction->setCheck(myLockedElements[GLO_JUNCTION].lock);
+    lockMenuCommands.menuCheckLockEdges->setCheck(myLockedElements[GLO_EDGE].lock);
+    lockMenuCommands.menuCheckLockLanes->setCheck(myLockedElements[GLO_LANE].lock);
+    lockMenuCommands.menuCheckLockConnections->setCheck(myLockedElements[GLO_CONNECTION].lock);
+    lockMenuCommands.menuCheckLockCrossings->setCheck(myLockedElements[GLO_CROSSING].lock);
+    lockMenuCommands.menuCheckLockAdditionals->setCheck(myLockedElements[GLO_ADDITIONALELEMENT].lock);
+    lockMenuCommands.menuCheckLockTAZs->setCheck(myLockedElements[GLO_TAZ].lock);
+    lockMenuCommands.menuCheckLockPolygons->setCheck(myLockedElements[GLO_POLYGON].lock);
+    lockMenuCommands.menuCheckLockPOIs->setCheck(myLockedElements[GLO_POI].lock);
     // demand
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_ROUTE].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_VEHICLE].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_ROUTEFLOW].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_TRIP].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_FLOW].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_STOP].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_PERSON].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_PERSONFLOW].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_PERSONTRIP].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_RIDE].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_WALK].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_STOP_PERSON].selection, "select");
+    lockMenuCommands.menuCheckLockRoutes->setCheck(myLockedElements[GLO_ROUTE].lock);
+    lockMenuCommands.menuCheckLockVehicles->setCheck(myLockedElements[GLO_VEHICLE].lock);
+    lockMenuCommands.menuCheckLockPersons->setCheck(myLockedElements[GLO_PERSON].lock);
+    lockMenuCommands.menuCheckLockPersonTrip->setCheck(myLockedElements[GLO_PERSONTRIP].lock);
+    lockMenuCommands.menuCheckLockWalk->setCheck(myLockedElements[GLO_WALK].lock);
+    lockMenuCommands.menuCheckLockRides->setCheck(myLockedElements[GLO_RIDE].lock);
+    lockMenuCommands.menuCheckLockContainers->setCheck(myLockedElements[GLO_CONTAINER].lock);
+    lockMenuCommands.menuCheckLockTransports->setCheck(myLockedElements[GLO_TRANSPORT].lock);
+    lockMenuCommands.menuCheckLockTranships->setCheck(myLockedElements[GLO_TRANSHIP].lock);
+    lockMenuCommands.menuCheckLockStops->setCheck(myLockedElements[GLO_STOP].lock);
     // data
-    lockMenuCommands.updateLockJunction(myLockedData[GLO_EDGEDATA].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedData[GLO_EDGERELDATA].selection, "select");
-    lockMenuCommands.updateLockJunction(myLockedData[GLO_TAZRELDATA].inspection, "inspect");
-}
-
-
-void
-GNEViewNetHelper::LockManager::updateLockDeleteMenuBar() {
-    // get lock menu commands
-    GNEApplicationWindowHelper::LockMenuCommands &lockMenuCommands = myViewNet->getViewParent()->getGNEAppWindows()->getLockMenuCommands();
-    // network
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_JUNCTION].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_EDGE].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_LANE].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_CONNECTION].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_CROSSING].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_ADDITIONALELEMENT].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_TAZ].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_POLYGON].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedNetwork[GLO_POI].deletion, "delete");
-    // demand
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_ROUTE].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_VEHICLE].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_ROUTEFLOW].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_TRIP].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_FLOW].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_STOP].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_PERSON].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_PERSONFLOW].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_PERSONTRIP].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_RIDE].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_WALK].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedDemand[GLO_STOP_PERSON].deletion, "delete");
-    // data
-    lockMenuCommands.updateLockJunction(myLockedData[GLO_EDGEDATA].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedData[GLO_EDGERELDATA].deletion, "delete");
-    lockMenuCommands.updateLockJunction(myLockedData[GLO_TAZRELDATA].deletion, "delete");
+    lockMenuCommands.menuCheckLockEdgeDatas->setCheck(myLockedElements[GLO_EDGEDATA].lock);
+    lockMenuCommands.menuCheckLockEdgeRelDatas->setCheck(myLockedElements[GLO_EDGERELDATA].lock);
+    lockMenuCommands.menuCheckLockEdgeTAZRels->setCheck(myLockedElements[GLO_TAZRELDATA].lock);
 }
 
 
 GNEViewNetHelper::LockManager::OperationLocked::OperationLocked():
     mySupermode(Supermode::NETWORK),
-    inspection(false),
-    deletion(false),
-    selection(false) {
+    lock(false) {
 }
 
 
 GNEViewNetHelper::LockManager::OperationLocked::OperationLocked(Supermode supermode) :
     mySupermode(supermode),
-    inspection(false),
-    deletion(false),
-    selection(false) {
+    lock(false) {
 }
 
 
 GNEViewNetHelper::LockManager::OperationLocked::~OperationLocked() {}
 
 
-Supermode 
+Supermode
 GNEViewNetHelper::LockManager::OperationLocked::getSupermode() const {
     return mySupermode;
 }
