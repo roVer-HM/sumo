@@ -34,6 +34,8 @@
 
 CommonXMLStructure::SumoBaseObject::SumoBaseObject(SumoBaseObject* parent) :
     mySumoBaseObjectParent(parent),
+    myVClass(SVC_IGNORING),
+    myVehicleTypeParameter(""),
     myTag(SUMO_TAG_NOTHING) {
     // add this SumoBaseObject into parent children
     if (mySumoBaseObjectParent) {
@@ -162,6 +164,30 @@ CommonXMLStructure::SumoBaseObject::getPositionVectorAttribute(const SumoXMLAttr
 }
 
 
+SUMOVehicleClass 
+CommonXMLStructure::SumoBaseObject::getVClass() const {
+    return myVClass;
+}
+
+
+const SUMOVTypeParameter&
+CommonXMLStructure::SumoBaseObject::getVehicleTypeParameter() const {
+    return myVehicleTypeParameter;
+}
+
+
+const SUMOVehicleParameter&
+CommonXMLStructure::SumoBaseObject::getVehicleParameter() const {
+    return myVehicleParameter;
+}
+
+
+const SUMOVehicleParameter::Stop&
+CommonXMLStructure::SumoBaseObject::getStopParameter() const {
+    return myStopParameter;
+}
+
+
 const std::map<std::string, std::string>&
 CommonXMLStructure::SumoBaseObject::getParameters() const {
     return myParameters;
@@ -279,7 +305,62 @@ CommonXMLStructure::SumoBaseObject::addStringListAttribute(const SumoXMLAttr att
 void
 CommonXMLStructure::SumoBaseObject::addPositionVectorAttribute(const SumoXMLAttr attr, const PositionVector& value) {
     myPositionVectorAttributes[attr] = value;
+}
 
+
+void
+CommonXMLStructure::SumoBaseObject::setVClass(SUMOVehicleClass vClass) {
+    myVClass = vClass;
+}
+
+
+void 
+CommonXMLStructure::SumoBaseObject::setVehicleTypeParameter(const SUMOVTypeParameter* vehicleTypeParameter) {
+    myVehicleTypeParameter = *vehicleTypeParameter;
+}
+
+
+void
+CommonXMLStructure::SumoBaseObject::setVehicleParameter(const SUMOVehicleParameter* vehicleParameter) {
+    myVehicleParameter = *vehicleParameter;
+    // set attribute id
+    if (!vehicleParameter->id.empty()) {
+        addStringAttribute(SUMO_ATTR_ID, vehicleParameter->id);
+    }
+    // set attribute route
+    if (!vehicleParameter->routeid.empty()) {
+        addStringAttribute(SUMO_ATTR_ROUTE, vehicleParameter->routeid);
+    }
+}
+
+
+void
+CommonXMLStructure::SumoBaseObject::setStopParameter(const SUMOVehicleParameter::Stop &stopParameter) {
+    myStopParameter = stopParameter;
+    // set attribute edge
+    if (!stopParameter.edge.empty()) {
+        addStringAttribute(SUMO_ATTR_ID, stopParameter.edge);
+    }
+    // set attribute lane
+    if (!stopParameter.lane.empty()) {
+        addStringAttribute(SUMO_ATTR_LANE, stopParameter.lane);
+    }
+    // set attribute busStop
+    if (!stopParameter.busstop.empty()) {
+        addStringAttribute(SUMO_ATTR_BUS_STOP, stopParameter.busstop);
+    }
+    // set attribute containerstop
+    if (!stopParameter.containerstop.empty()) {
+        addStringAttribute(SUMO_ATTR_CONTAINER_STOP, stopParameter.containerstop);
+    }
+    // set attribute parkingarea
+    if (!stopParameter.parkingarea.empty()) {
+        addStringAttribute(SUMO_ATTR_PARKING_AREA, stopParameter.parkingarea);
+    }
+    // set attribute chargingStation
+    if (!stopParameter.chargingStation.empty()) {
+        addStringAttribute(SUMO_ATTR_CHARGING_STATION, stopParameter.chargingStation);
+    }
 }
 
 
