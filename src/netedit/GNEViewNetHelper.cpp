@@ -3370,40 +3370,23 @@ GNEViewNetHelper::EditNetworkElementShapes::getEditedNetworkElement() const {
 // ---------------------------------------------------------------------------
 
 void
-GNEViewNetHelper::LockIcon::drawLockIcon(const GNEAttributeCarrier* AC, const GNEGeometry::Geometry& geometry,
-        const double exaggeration, const double offsetx, const double offsety, const bool overlane, const double size) {
+GNEViewNetHelper::LockIcon::drawLockIcon(GUIGlObjectType type, const GNEAttributeCarrier* AC, 
+        const Position viewPosition, const double exaggeration, const double size, 
+        const double offsetx, const double offsety) {
     // first check if icon can be drawn
-    if (checkDrawing(AC, exaggeration) && (geometry.getShape().size() > 0)) {
-        // calculate middle point
-        const double middlePoint = (geometry.getShape().length2D() * 0.5);
-        // calculate position
-        const Position pos = (geometry.getShape().size() == 1) ? geometry.getShape().front() : geometry.getShape().positionAtOffset2D(middlePoint);
-        // calculate rotation
-        double rot = 0;
-        if ((geometry.getShape().size() == 1) && (geometry.getShapeRotations().size() > 0)) {
-            rot = geometry.getShapeRotations().front();
-        } else if (geometry.getShape().size() > 1) {
-            rot = geometry.getShape().rotationDegreeAtOffset(middlePoint);
-        }
-        // get texture
-        const GUIGlID lockTexture = getLockIcon(AC);
+    if (checkDrawing(type, AC, exaggeration)) {
         // Start pushing matrix
         GLHelper::pushMatrix();
         // Traslate to position
-        glTranslated(pos.x(), pos.y(), 0.1);
-        // rotate depending of overlane
-        if (overlane) {
-            GNEGeometry::rotateOverLane(rot);
-        } else {
-            // avoid draw invert
-            glRotated(180, 0, 0, 1);
-        }
+        glTranslated(viewPosition.x(), viewPosition.y(), 2);
+        // rotate toavoid draw invert
+        glRotated(180, 0, 0, 1);
         // Set draw color
         glColor3d(1, 1, 1);
         // Traslate depending of the offset
         glTranslated(offsetx, offsety, 0);
         // Draw lock icon
-        GUITexturesHelper::drawTexturedBox(lockTexture, size);
+        GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(GUITexture::LOCK), size);
         // Pop matrix
         GLHelper::popMatrix();
     }
@@ -3414,11 +3397,31 @@ GNEViewNetHelper::LockIcon::LockIcon() {}
 
 
 bool
-GNEViewNetHelper::LockIcon::checkDrawing(const GNEAttributeCarrier* AC, const double exaggeration) {
+GNEViewNetHelper::LockIcon::checkDrawing(GUIGlObjectType type, const GNEAttributeCarrier* AC, const double exaggeration) {
     // get visualization settings
     const auto s = AC->getNet()->getViewNet()->getVisualisationSettings();
+    // get view net
+    const auto viewNet = AC->getNet()->getViewNet();
     // check exaggeration
     if (exaggeration == 0) {
+        return false;
+    }
+    // check supermodes
+    if (viewNet->getEditModes().isCurrentSupermodeNetwork() && 
+        !(AC->getTagProperty().isNetworkElement() ||
+          AC->getTagProperty().isAdditionalElement() ||
+          AC->getTagProperty().isShape() ||
+          AC->getTagProperty().isTAZElement())) {
+        return false;
+    }
+    if (viewNet->getEditModes().isCurrentSupermodeDemand() && (!AC->getTagProperty().isDemandElement())) {
+        return false;
+    }
+    if (viewNet->getEditModes().isCurrentSupermodeData () && (!AC->getTagProperty().isDataElement())) {
+        return false;
+    }
+    // check if is locked
+    if (!viewNet->getLockManager().isObjectLocked(type)) {
         return false;
     }
     // check visualizationSettings
@@ -3430,39 +3433,10 @@ GNEViewNetHelper::LockIcon::checkDrawing(const GNEAttributeCarrier* AC, const do
         return false;
     }
     // check modes
-    if (!AC->getNet()->getViewNet()->showLockIcon()) {
+    if (!viewNet->showLockIcon()) {
         return false;
     }
     return true;
-}
-
-
-GUIGlID
-GNEViewNetHelper::LockIcon::getLockIcon(const GNEAttributeCarrier* AC) {
-    // Draw icon depending of the state of additional
-    if (AC->drawUsingSelectColor()) {
-        if (!AC->getTagProperty().canBlockMovement()) {
-            // Draw not movable texture if additional isn't movable and is selected
-            return GUITextureSubSys::getTexture(GUITexture::NOTMOVING_SELECTED);
-        } else if (AC->getAttribute(GNE_ATTR_BLOCK_MOVEMENT) == toString(true)) {
-            // Draw lock texture if additional is movable, is blocked and is selected
-            return GUITextureSubSys::getTexture(GUITexture::LOCK_SELECTED);
-        } else {
-            // Draw empty texture if additional is movable, isn't blocked and is selected
-            return GUITextureSubSys::getTexture(GUITexture::EMPTY_SELECTED);
-        }
-    } else {
-        if (!AC->getTagProperty().canBlockMovement()) {
-            // Draw not movable texture if additional isn't movable
-            return GUITextureSubSys::getTexture(GUITexture::NOTMOVING);
-        } else if (AC->getAttribute(GNE_ATTR_BLOCK_MOVEMENT) == toString(true)) {
-            // Draw lock texture if additional is movable and is blocked
-            return GUITextureSubSys::getTexture(GUITexture::LOCK);
-        } else {
-            // Draw empty texture if additional is movable and isn't blocked
-            return GUITextureSubSys::getTexture(GUITexture::EMPTY);
-        }
-    }
 }
 
 // ---------------------------------------------------------------------------

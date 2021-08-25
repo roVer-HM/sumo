@@ -1265,19 +1265,16 @@ struct GNEViewNetHelper {
     /// @brief struct for pack all variables and functions related with Block Icon
     struct LockIcon {
         /// @brief draw lock icon
-        static void drawLockIcon(const GNEAttributeCarrier* AC, const GNEGeometry::Geometry& geometry,
-                                 const double exaggeration, const double offsetx, const double offsety,
-                                 const bool overlane, const double size = 0.5);
+        static void drawLockIcon(GUIGlObjectType type, const GNEAttributeCarrier* AC, const Position viewPosition,
+                                 const double exaggeration, const double size = 0.5, 
+                                 const double offsetx = 0, const double offsety = 0);
 
     private:
         /// @brief constructor
         LockIcon();
 
         /// @brief check drawing
-        static bool checkDrawing(const GNEAttributeCarrier* AC, const double exaggeration);
-
-        /// @brief get lock icon
-        static GUIGlID getLockIcon(const GNEAttributeCarrier* AC);
+        static bool checkDrawing(GUIGlObjectType type, const GNEAttributeCarrier* AC, const double exaggeration);
 
         /// @brief Invalidated assignment operator
         LockIcon& operator=(const LockIcon& other) = delete;

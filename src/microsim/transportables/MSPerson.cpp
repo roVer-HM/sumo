@@ -241,7 +241,7 @@ MSPerson::MSPersonStage_Walking::routeOutput(const bool /* isPerson */, OutputDe
     os.openTag("walk").writeAttr(SUMO_ATTR_EDGES, myRoute);
     std::string comment = "";
     if (myDestinationStop != nullptr) {
-        os.writeAttr(SUMO_ATTR_BUS_STOP, myDestinationStop->getID());
+        os.writeAttr(toString(myDestinationStop->getElement()), myDestinationStop->getID());
         if (myDestinationStop->getMyName() != "") {
             comment =  " <!-- " + StringUtils::escapeXML(myDestinationStop->getMyName(), true) + " -->";
         }
@@ -262,6 +262,8 @@ MSPerson::MSPersonStage_Walking::routeOutput(const bool /* isPerson */, OutputDe
         std::vector<std::string> missing(MAX2(0, (int)myRoute.size() - (int)myExitTimes->size()), "-1");
         exits.insert(exits.end(), missing.begin(), missing.end());
         os.writeAttr("exitTimes", exits);
+        os.writeAttr(SUMO_ATTR_STARTED, myDeparted >= 0 ? time2string(myDeparted) : "-1");
+        os.writeAttr(SUMO_ATTR_ENDED, myArrived >= 0 ? time2string(myArrived) : "-1");
     }
     os.closeTag(comment);
 }

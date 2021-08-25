@@ -672,6 +672,8 @@ GNEVehicle::drawGL(const GUIVisualizationSettings& s) const {
                         GLHelper::drawTextSettings(s.vehicleName, "line:" + line, Position(0, 0), s.scale, s.angle);
                     }
                 }
+                // draw lock icon
+                GNEViewNetHelper::LockIcon::drawLockIcon(GLO_VEHICLE, this, vehiclePosition, exaggeration);
                 // pop draw matrix
                 GLHelper::popMatrix();
                 // draw stack label
