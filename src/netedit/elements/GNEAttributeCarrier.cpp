@@ -1462,7 +1462,7 @@ GNEAttributeCarrier::fillAdditionals() {
         attrProperty = GNEAttributeProperties(SUMO_ATTR_COLOR,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::COLOR | GNEAttributeProperties::DEFAULTVALUESTATIC | GNEAttributeProperties::XMLOPTIONAL,
                                               "The RGBA color with which the busStop shall be displayed",
-                                              "");
+                                              "76, 170, 50");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
     }
@@ -3658,6 +3658,12 @@ GNEAttributeCarrier::fillStopElements() {
                                               GNEAttributeProperties::BOOL | GNEAttributeProperties::DEFAULTVALUESTATIC | GNEAttributeProperties::XMLOPTIONAL,
                                               "If set, no error will be reported if element is placed behind the lane. Instead,it will be placed 0.1 meters from the lanes end or at position 0.1, if the position was negative and larger than the lanes length after multiplication with - 1",
                                               "0");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_POSITION_LAT,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::DEFAULTVALUESTATIC | GNEAttributeProperties::XMLOPTIONAL | GNEAttributeProperties::UPDATEGEOMETRY,
+                                              "The lateral offset on the named lane at which the vehicle must stop",
+                                              "");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
         // fill common stop attributes
