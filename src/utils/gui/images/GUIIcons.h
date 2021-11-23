@@ -293,6 +293,7 @@ enum class GUIIcon {
     MODETLS,
     MODEPOLYGON,
     MODEPROHIBITION,
+    MODEWIRE,
     /// @}
 
     /// @name NETEDIT Demand modes icons
