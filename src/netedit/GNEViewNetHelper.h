@@ -66,7 +66,9 @@ enum class NetworkEditMode {
     ///@brief Mode for editing Polygons
     NETWORK_POLYGON,
     ///@brief Mode for editing connection prohibitions
-    NETWORK_PROHIBITION
+    NETWORK_PROHIBITION,
+    ///@brief Mode for editing wires
+    NETWORK_WIRE
 };
 
 /// @brie enum for demand edit modes

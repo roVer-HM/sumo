@@ -1135,6 +1135,8 @@ GNEViewNet::abortOperation(bool clearSelection) {
             myViewParent->getAdditionalFrame()->getConsecutiveLaneSelector()->abortConsecutiveLaneSelector();
             // abort path
             myViewParent->getAdditionalFrame()->getE2MultilaneLaneSelector()->abortPathCreation();
+        } else if (myEditModes.networkEditMode == NetworkEditMode::NETWORK_WIRE) {
+            /* */
         }
     } else if (myEditModes.isCurrentSupermodeDemand()) {
         // abort operation depending of current mode
@@ -1654,7 +1656,7 @@ GNEViewNet::onCmdSetMode(FXObject*, FXSelector sel, void*) {
                 myEditModes.setNetworkEditMode(NetworkEditMode::NETWORK_POLYGON);
                 break;
             case MID_HOTKEY_W_MODE_WIRE:
-                myEditModes.setNetworkEditMode(NetworkEditMode::NETWORK_PROHIBITION);
+                myEditModes.setNetworkEditMode(NetworkEditMode::NETWORK_WIRE);
                 break;
             default:
                 break;
@@ -3955,6 +3957,12 @@ GNEViewNet::updateNetworkModeSpecificControls() {
             myCurrentFrame = myViewParent->getProhibitionFrame();
             myNetworkCheckableButtons.prohibitionButton->setChecked(true);
             break;
+        case NetworkEditMode::NETWORK_WIRE:
+            myViewParent->getWireFrame()->show();
+            myViewParent->getWireFrame()->focusUpperElement();
+            myCurrentFrame = myViewParent->getWireFrame();
+            myNetworkCheckableButtons.wireButton->setChecked(true);
+            break;
         default:
             break;
     }
@@ -4824,6 +4832,18 @@ GNEViewNet::processLeftButtonPressNetwork(void* eventData) {
                 myViewParent->getProhibitionFrame()->handleProhibitionClick(myObjectsUnderCursor);
                 updateViewNet();
             }
+            // process click
+            processClick(eventData);
+            break;
+        }
+        case NetworkEditMode::NETWORK_WIRE: {
+        /*
+            if (myObjectsUnderCursor.getConnectionFront()) {
+                // shift key may pass connections, Control key allow conflicts.
+                myViewParent->getWireFrame()->handleWireClick(myObjectsUnderCursor);
+                updateViewNet();
+            }
+        */
             // process click
             processClick(eventData);
             break;
