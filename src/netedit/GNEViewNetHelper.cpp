@@ -3094,6 +3094,7 @@ GNEViewNetHelper::NetworkCheckableButtons::NetworkCheckableButtons(GNEViewNet* v
     TAZButton(nullptr),
     shapeButton(nullptr),
     prohibitionButton(nullptr),
+    wireButton(nullptr),
     myViewNet(viewNet) {
 }
 
@@ -3151,6 +3152,7 @@ GNEViewNetHelper::NetworkCheckableButtons::buildNetworkCheckableButtons() {
         GUIIconSubSys::getIcon(GUIIcon::MODEWIRE), myViewNet, MID_HOTKEY_W_MODE_WIRE, GUIDesignMFXCheckableButton);
     // always recalc after creating new elements
     myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes->recalc();
+    wireButton->create();
 }
 
 
@@ -3165,6 +3167,7 @@ GNEViewNetHelper::NetworkCheckableButtons::showNetworkCheckableButtons() {
     TAZButton->show();
     shapeButton->show();
     prohibitionButton->show();
+    wireButton->show();
 }
 
 
@@ -3179,6 +3182,7 @@ GNEViewNetHelper::NetworkCheckableButtons::hideNetworkCheckableButtons() {
     TAZButton->hide();
     shapeButton->hide();
     prohibitionButton->hide();
+    wireButton->hide();
 }
 
 
@@ -3193,6 +3197,7 @@ GNEViewNetHelper::NetworkCheckableButtons::disableNetworkCheckableButtons() {
     TAZButton->setChecked(false);
     shapeButton->setChecked(false);
     prohibitionButton->setChecked(false);
+    wireButton->setChecked(false);
 }
 
 
@@ -3207,6 +3212,7 @@ GNEViewNetHelper::NetworkCheckableButtons::updateNetworkCheckableButtons() {
     TAZButton->update();
     shapeButton->update();
     prohibitionButton->update();
+    wireButton->update();
 }
 
 // ---------------------------------------------------------------------------

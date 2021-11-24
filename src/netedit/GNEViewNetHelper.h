@@ -1160,8 +1160,11 @@ struct GNEViewNetHelper {
         /// @brief chekable button for edit mode shape
         MFXCheckableButton* shapeButton;
 
-        /// @brief checkable button for edit mode polygon
+        /// @brief checkable button for edit mode prohibition
         MFXCheckableButton* prohibitionButton;
+
+        /// @brief checkable button for edit mode wires
+        MFXCheckableButton* wireButton;
 
     private:
         /// @brief pointer to net
