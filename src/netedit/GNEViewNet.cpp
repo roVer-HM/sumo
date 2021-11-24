@@ -50,6 +50,7 @@
 #include <netedit/frames/network/GNECrossingFrame.h>
 #include <netedit/frames/network/GNEPolygonFrame.h>
 #include <netedit/frames/network/GNEProhibitionFrame.h>
+#include <netedit/frames/network/GNEWireFrame.h>
 #include <netedit/frames/network/GNETAZFrame.h>
 #include <netedit/frames/network/GNETLSEditorFrame.h>
 #include <utils/foxtools/FXMenuCheckIcon.h>
@@ -1136,7 +1137,7 @@ GNEViewNet::abortOperation(bool clearSelection) {
             // abort path
             myViewParent->getAdditionalFrame()->getE2MultilaneLaneSelector()->abortPathCreation();
         } else if (myEditModes.networkEditMode == NetworkEditMode::NETWORK_WIRE) {
-            /* */
+            myViewParent->getWireFrame()->onCmdCancel(nullptr, 0, nullptr);
         }
     } else if (myEditModes.isCurrentSupermodeDemand()) {
         // abort operation depending of current mode
@@ -4837,13 +4838,12 @@ GNEViewNet::processLeftButtonPressNetwork(void* eventData) {
             break;
         }
         case NetworkEditMode::NETWORK_WIRE: {
-        /*
-            if (myObjectsUnderCursor.getConnectionFront()) {
-                // shift key may pass connections, Control key allow conflicts.
+            // avoid create additionals if control key is pressed
+            if (!myMouseButtonKeyPressed.controlKeyPressed()) {
                 myViewParent->getWireFrame()->handleWireClick(myObjectsUnderCursor);
+                // update view to show the new additional
                 updateViewNet();
             }
-        */
             // process click
             processClick(eventData);
             break;
