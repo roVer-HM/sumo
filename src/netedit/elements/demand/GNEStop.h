@@ -32,6 +32,9 @@
 class GNEStop : public GNEDemandElement, public SUMOVehicleParameter::Stop {
 
 public:
+    /// @brief default constructor
+    GNEStop(SumoXMLTag tag, GNENet* net);
+
     /// @brief constructor used for stops over stoppingPlaces
     GNEStop(SumoXMLTag tag, GNENet* net, const SUMOVehicleParameter::Stop& stopParameter, GNEAdditional* stoppingPlace, GNEDemandElement* stopParent);
 
@@ -228,8 +231,8 @@ private:
     /// @brief method for setting the attribute and nothing else
     void setAttribute(SumoXMLAttr key, const std::string& value);
 
-    /// @brief method for enabling the attribute and nothing else (used in GNEChange_EnableAttribute)
-    void setEnabledAttribute(const int enabledAttributes);
+    /// @brief method for enable or disable the attribute and nothing else (used in GNEChange_EnableAttribute)
+    void toogleAttribute(SumoXMLAttr key, const bool value);
 
     /// @brief set move shape
     void setMoveShape(const GNEMoveResult& moveResult);

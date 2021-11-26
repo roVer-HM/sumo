@@ -160,10 +160,18 @@ GNEContainer::GNESelectedContainersPopupMenu::onCmdTransform(FXObject* obj, FXSe
 // member method definitions
 // ===========================================================================
 
+GNEContainer::GNEContainer(SumoXMLTag tag, GNENet* net) :
+    GNEDemandElement("", net, GLO_CONTAINER, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
+        {}, {}, {}, {}, {}, {}, {}, {}) {
+    // reset default values
+    resetDefaultValues();
+}
+
+
 GNEContainer::GNEContainer(SumoXMLTag tag, GNENet* net, GNEDemandElement* pType, const SUMOVehicleParameter& containerparameters) :
     GNEDemandElement(containerparameters.id, net, (tag == SUMO_TAG_CONTAINERFLOW) ? GLO_CONTAINERFLOW : GLO_CONTAINER, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-{}, {}, {}, {}, {}, {}, {pType}, {}),
-SUMOVehicleParameter(containerparameters) {
+        {}, {}, {}, {}, {}, {}, {pType}, {}),
+    SUMOVehicleParameter(containerparameters) {
     // set manually vtypeID (needed for saving)
     vtypeid = pType->getID();
 }
@@ -906,8 +914,10 @@ GNEContainer::setAttribute(SumoXMLAttr key, const std::string& value) {
 
 
 void
-GNEContainer::setEnabledAttribute(const int enabledAttributes) {
+GNEContainer::toogleAttribute(SumoXMLAttr key, const bool value) {
+/*
     parametersSet = enabledAttributes;
+*/
 }
 
 

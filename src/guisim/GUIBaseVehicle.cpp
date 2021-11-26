@@ -61,6 +61,7 @@
 #include "GUINet.h"
 #include "GUIEdge.h"
 #include "GUILane.h"
+#include "GUIParkingArea.h"
 
 //#define DRAW_BOUNDING_BOX
 
@@ -597,6 +598,14 @@ GUIBaseVehicle::drawOnPos(const GUIVisualizationSettings& s, const Position& pos
             }
         }
     }
+    if (s.showParkingInfo && myAdditionalVisualizations.size() != 0 && hasActiveAddVisualisation(
+                myAdditionalVisualizations.begin()->first, VO_SHOW_ROUTE | VO_SHOW_FUTURE_ROUTE | VO_SHOW_ALL_ROUTES)) {
+        glRotated(-s.angle, 0, 0, 1);
+        glTranslated(0, 0.7 * s.vehicleName.scaledSize(s.scale), 0);
+        glRotated(s.angle, 0, 0, 1);
+        const double value = myVehicle.getNumberParkingReroutes();
+        GLHelper::drawTextSettings(s.vehicleName, toString(value), Position(0, 0), s.scale, s.angle);
+    }
 
     if (!drawCarriages) {
         mySeatPositions.clear();
@@ -905,6 +914,26 @@ GUIBaseVehicle::drawStopLabels(const GUIVisualizationSettings& s, bool noLoop, c
     }
 }
 
+void
+GUIBaseVehicle::drawParkingInfo(const GUIVisualizationSettings& s, const RGBColor& /*col*/) const {
+    if (s.showParkingInfo) {
+        const MSBaseVehicle::ParkingMemory* pm = myVehicle.getParkingMemory();
+        if (pm != nullptr) {
+            for (auto item : *pm) {
+                const GUIParkingArea* pa = dynamic_cast<const GUIParkingArea*>(item.first);
+                if (item.second.first >= 0) {
+                    const SUMOTime seenAgo = SIMSTEP - item.second.first;
+                    GLHelper::drawTextSettings(s.vehicleValue, time2string(seenAgo), pa->getSignPos(), s.scale, s.angle, 1.0);
+                }
+                if (item.second.second != "") {
+                    const double dist = 0.4 * (s.vehicleText.scaledSize(s.scale) + s.vehicleValue.scaledSize(s.scale));
+                    Position shift(0, -dist);
+                    GLHelper::drawTextSettings(s.vehicleText, item.second.second, pa->getSignPos() + shift, s.scale, s.angle, 1.0);
+                }
+            }
+        }
+    }
+}
 
 const GUIBaseVehicle::Seat&
 GUIBaseVehicle::getSeatPosition(int personIndex) const {
