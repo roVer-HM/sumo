@@ -93,8 +93,8 @@ GNETagProperties::checkTagIntegrity() const {
         throw ProcessError("element must be at least networkElement, additional, TAZ, shape, demandElement or dataElement");
     }
     // check that element only is networkElement, Additional, or shape at the same time
-    if ((isNetworkElement() + isAdditionalElement() + isShape() + isTAZElement() + isDemandElement() + isDataElement()) > 1) {
-        throw ProcessError("element can be only a networkElement, additional, TAZ, shape, demandElement or dataElement at the same time");
+    if ((isNetworkElement() + isAdditionalElement() + isWire() && isShape() + isTAZElement() + isDemandElement() + isDataElement()) > 1) {
+        throw ProcessError("element can be only a networkElement, additional, wire, TAZ, shape, demandElement or dataElement at the same time");
     }
     // if element can mask the start and end position, check that bot attributes exist
     if (canMaskStartEndPos() && (!hasAttribute(SUMO_ATTR_STARTPOS) || !hasAttribute(SUMO_ATTR_ENDPOS))) {
