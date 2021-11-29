@@ -263,10 +263,17 @@
 #include "destprobreroute.xpm"
 #include "parkingzonereroute.xpm"
 #include "routeprobreroute.xpm"
+
+#include "tractionsubstation.xpm"
+#include "wiresegment.xpm"
+#include "wireclamp.xpm"
+#include "wiresection.xpm"
+
 #include "poly.xpm"
 #include "poi.xpm"
 #include "poilane.xpm"
 #include "poigeo.xpm"
+
 #include "taz.xpm"
 #include "tazedge.xpm"
 
@@ -627,10 +634,17 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::DESTPROBREROUTE] = new FXXPMIcon(a, destprobreroute_xpm);
     myIcons[GUIIcon::PARKINGZONEREROUTE] = new FXXPMIcon(a, parkingzonereroute_xpm);
     myIcons[GUIIcon::ROUTEPROBREROUTE] = new FXXPMIcon(a, routeprobreroute_xpm);
+
+    myIcons[GUIIcon::TRACTION_SUBSTATION] = new FXXPMIcon(a, tractionsubstation_xpm);
+    myIcons[GUIIcon::WIRE_SEGMENT] = new FXXPMIcon(a, wiresegment_xpm);
+    myIcons[GUIIcon::WIRE_CLAMP] = new FXXPMIcon(a, wireclamp_xpm);
+    myIcons[GUIIcon::WIRE_SECTION] = new FXXPMIcon(a, wiresection_xpm);
+
     myIcons[GUIIcon::POLY] = new FXXPMIcon(a, poly_xpm);
     myIcons[GUIIcon::POI] = new FXXPMIcon(a, poi_xpm);
     myIcons[GUIIcon::POILANE] = new FXXPMIcon(a, poilane_xpm);
     myIcons[GUIIcon::POIGEO] = new FXXPMIcon(a, poigeo_xpm);
+
     myIcons[GUIIcon::TAZ] = new FXXPMIcon(a, taz_xpm);
     myIcons[GUIIcon::TAZEDGE] = new FXXPMIcon(a, tazedge_xpm);
 

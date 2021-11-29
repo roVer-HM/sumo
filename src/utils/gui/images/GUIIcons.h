@@ -328,7 +328,7 @@ enum class GUIIcon {
     OPTIONS,
     /// @}
 
-    /// @name NETEDIT network elements icons
+    /// @name network elements icons
     /// @{
     JUNCTION,
     TYPE,
@@ -340,7 +340,7 @@ enum class GUIIcon {
     CROSSING,
     /// @}
 
-    /// @name NETEDIT additional elements icons
+    /// @name additional elements icons
     /// @{
     BUSSTOP,
     TRAINSTOP,
@@ -367,13 +367,30 @@ enum class GUIIcon {
     DESTPROBREROUTE,
     PARKINGZONEREROUTE,
     ROUTEPROBREROUTE,
+    /// @}
+
+    /// @name poly elements icons
+    /// @{
+    TRACTION_SUBSTATION,
+    WIRE_SEGMENT,
+    WIRE_CLAMP,
+    WIRE_SECTION,
+    /// @}
+
+    /// @name poly elements icons
+    /// @{
     POLY,
     POI,
     POILANE,
     POIGEO,
+    /// @}
+
+    /// @name TAZ elements icons
+    /// @{
     TAZ,
     TAZEDGE,
     /// @}
+
 
     /// @name NETEDIT Demand elements icons
     /// @{
