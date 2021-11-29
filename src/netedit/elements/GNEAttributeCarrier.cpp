@@ -95,7 +95,7 @@ GNEAttributeCarrier::isAttributeCarrierSelected() const {
 bool
 GNEAttributeCarrier::drawUsingSelectColor() const {
     // get flag for network element
-    const bool networkElement = myTagProperty.isNetworkElement() || myTagProperty.isAdditionalElement() || myTagProperty.isShape() || myTagProperty.isTAZElement();
+    const bool networkElement = myTagProperty.isNetworkElement() || myTagProperty.isAdditionalElement() || myTagProperty.isWire() || myTagProperty.isShape() || myTagProperty.isTAZElement();
     // check supermode network
     if ((networkElement && myNet->getViewNet()->getEditModes().isCurrentSupermodeNetwork()) ||
             (myTagProperty.isDemandElement() && myNet->getViewNet()->getEditModes().isCurrentSupermodeDemand()) ||
@@ -661,6 +661,14 @@ GNEAttributeCarrier::getAllowedTagPropertiesByCategory(const int tagPropertyCate
             }
         }
     }
+    if (tagPropertyCategory & GNETagProperties::WIRE) {
+        // fill wire tags
+        for (const auto& tagProperty : myTagProperties) {
+            if (tagProperty.second.isWire() && (!onlyDrawables || !tagProperty.second.isNotDrawable())) {
+                allowedTags.push_back(std::make_pair(tagProperty.second, tagProperty.second.getTagStr()));
+            }
+        }
+    }
     if (tagPropertyCategory & GNETagProperties::SHAPE) {
         // fill shape tags
         for (const auto& tagProperty : myTagProperties) {
@@ -817,8 +825,9 @@ void
 GNEAttributeCarrier::fillAttributeCarriers() {
     // fill all groups of ACs
     fillNetworkElements();
-    fillAdditionals();
-    fillShapes();
+    fillAdditionalElements();
+    fillWireElements();
+    fillShapeElements();
     fillTAZElements();
     // demand
     fillDemandElements();
@@ -1488,7 +1497,7 @@ GNEAttributeCarrier::fillNetworkElements() {
 
 
 void
-GNEAttributeCarrier::fillAdditionals() {
+GNEAttributeCarrier::fillAdditionalElements() {
     // declare empty GNEAttributeProperties
     GNEAttributeProperties attrProperty;
     // fill additional elements
@@ -2745,8 +2754,134 @@ GNEAttributeCarrier::fillAdditionals() {
 }
 
 
+void 
+GNEAttributeCarrier::fillWireElements() {
+    // declare empty GNEAttributeProperties
+    GNEAttributeProperties attrProperty;
+    // fill wire elements
+    SumoXMLTag currentTag = SUMO_TAG_TRACTION_SUBSTATION;
+    {
+        // set values of tag
+        myTagProperties[currentTag] = GNETagProperties(currentTag,
+                                      GNETagProperties::WIRE,
+                                      0,
+                                      GUIIcon::TRACTION_SUBSTATION, currentTag);
+        // set values of attributes
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              "Traction substation ID");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_VOLTAGE,
+                                              GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUESTATIC,
+                                              "Voltage of at connection point for the overhead wire",
+                                              "600");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_CURRENTLIMIT,
+                                              GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUESTATIC,
+                                              "Current limit of the feeder line",
+                                              "400");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+    }
+    currentTag = SUMO_TAG_OVERHEAD_WIRE_SEGMENT;
+    {
+        // set values of tag
+        myTagProperties[currentTag] = GNETagProperties(currentTag,
+                                      GNETagProperties::WIRE,
+                                      0,
+                                      GUIIcon::WIRE_SEGMENT, currentTag);
+        // set values of attributes
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              "Overhead wire segment ID");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_LANE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              "Lane over which the segment is placed");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_VOLTAGESOURCE,
+                                              GNEAttributeProperties::BOOL | GNEAttributeProperties::DEFAULTVALUESTATIC,
+                                              "If true, the beginning point of the segment is connected to a substation",
+                                              "false");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_STARTPOS,
+                                              GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUESTATIC,
+                                              "Starting position in the specified lane",
+                                              "0");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_ENDPOS,
+                                              GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUESTATIC,
+                                              "Ending position in the specified lane",
+                                              toString(INVALID_DOUBLE));
+        myTagProperties[currentTag].addAttribute(attrProperty);
+    }
+    currentTag = SUMO_TAG_OVERHEAD_WIRE_CLAMP;
+    {
+        // set values of tag
+        myTagProperties[currentTag] = GNETagProperties(currentTag,
+                                      GNETagProperties::WIRE,
+                                      0,
+                                      GUIIcon::WIRE_CLAMP, currentTag);
+        // set values of attributes
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              "Overhead wire clamp ID");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_SUBSTATIONID,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              "Substation which can employ the overhead wire clamp");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_CLAMP_START,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              "ID of the overhead wire segment, to the start of which the overhead wire clamp is connected");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_CLAMP_END,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              "ID of the overhead wire segment, to the end of which the overhead wire clamp is connected");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+    }
+    currentTag = SUMO_TAG_OVERHEAD_WIRE_SECTION;
+    {
+        // set values of tag
+        myTagProperties[currentTag] = GNETagProperties(currentTag,
+                                      GNETagProperties::WIRE,
+                                      0,
+                                      GUIIcon::WIRE_SECTION, currentTag);
+        // set values of attributes
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_SECTION,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::LIST | GNEAttributeProperties::UNIQUE,
+                                              "Segments that form the given circuit");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_SUBSTATIONID,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              "Substation to which the circuit is connected");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_CLAMPS,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::LIST | GNEAttributeProperties::UNIQUE,
+                                              "Overhead wire clamps which interconnect overhead wire segments");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::LIST | GNEAttributeProperties::UNIQUE,
+                                              "Inner lanes, where placing of overhead wire is restricted");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+    }
+
+}
+
+
 void
-GNEAttributeCarrier::fillShapes() {
+GNEAttributeCarrier::fillShapeElements() {
     // declare empty GNEAttributeProperties
     GNEAttributeProperties attrProperty;
     // fill shape ACs

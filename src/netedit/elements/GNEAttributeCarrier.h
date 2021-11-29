@@ -266,69 +266,6 @@ public:
     /// @brief check if lanes are consecutives
     static bool lanesConsecutives(const std::vector<GNELane*>& lanes);
 
-    /// @brief Parse attribute from XML and show warnings if there are problems parsing it
-    template <typename T>
-    static T parseAttributeFromXML(const SUMOSAXAttributes& attrs, const std::string& objectID, const SumoXMLTag tag, const SumoXMLAttr attribute, bool& abort) {
-        bool parsedOk = true;
-        // declare string values
-        std::string defaultValue, parsedAttribute, warningMessage;
-        // obtain tag properties
-        const auto& tagProperties = getTagProperties(tag);
-        // first check if attribute is deprecated
-        if (tagProperties.isAttributeDeprecated(attribute)) {
-            // show warning if deprecateda ttribute is in the SUMOSAXAttributes
-            if (attrs.hasAttribute(attribute)) {
-                WRITE_WARNING("Attribute " + toString(attribute) + "' of " + tagProperties.getTagStr() + " is deprecated and will not be loaded.");
-            }
-            // return a dummy value
-            return parse<T>("");
-        }
-        // now check if we're obtaining attribute of an object with an already parsed ID
-        if (objectID != "") {
-            warningMessage = tagProperties.getTagStr() + " with ID '" + objectID + "'";
-        } else {
-            warningMessage = tagProperties.getTagStr();
-        }
-        // obtain attribute properties (Only for improving efficiency)
-        const auto& attrProperties = tagProperties.getAttributeProperties(attribute);
-        // set a special default value for numerical and boolean attributes (To avoid errors parsing)
-        if (attrProperties.isNumerical() || attrProperties.isBool()) {
-            defaultValue = "0";
-        } else if (attrProperties.isColor()) {
-            defaultValue = "black";
-        } else if (attrProperties.isposition()) {
-            defaultValue = "0,0";
-        }
-        // first check that attribute exists in XML
-        if (attrs.hasAttribute(attribute)) {
-            // First check if attribute can be parsed to string
-            parsedAttribute = attrs.get<std::string>(attribute, objectID.c_str(), parsedOk, false);
-            // check parsed attribute
-            if (!checkParsedAttribute(tagProperties, attrProperties, attribute, defaultValue, parsedAttribute, warningMessage)) {
-                abort = true;
-            }
-        } else if (tagProperties.canMaskXYZPositions() && (attribute == SUMO_ATTR_POSITION)) {
-            // obtain masked position attribute
-            if (!parseMaskedPositionAttribute(attrs, objectID, tagProperties, attrProperties, parsedAttribute, warningMessage)) {
-                abort = true;
-            }
-        } else {
-            // if attribute is optional and has a default value, obtain it. In other case, abort.
-            if (attrProperties.isOptional()) {
-                parsedAttribute = attrProperties.getDefaultValue();
-            } else {
-                WRITE_WARNING("Essential " + attrProperties.getDescription() + " attribute '" + toString(attribute) + "' of " +
-                              warningMessage +  " is missing; " + tagProperties.getTagStr() + " cannot be created");
-                // abort parsing (and creation) of element
-                abort = true;
-                // set default value (To avoid errors in parse<T>(parsedAttribute))
-                parsedAttribute = defaultValue;
-            }
-        }
-        // return parsed attribute
-        return parse<T>(parsedAttribute);
-    }
-
 protected:
     /// @brief the xml tag to which this attribute carrier corresponds
     const GNETagProperties& myTagProperty;
@@ -356,10 +293,13 @@ private:
     static void fillNetworkElements();
 
     /// @brief fill additional elements
-    static void fillAdditionals();
+    static void fillAdditionalElements();
+
+    /// @brief fill wire elements
+    static void fillWireElements();
 
     /// @brief fill shape elements
-    static void fillShapes();
+    static void fillShapeElements();
 
     /// @brief fill TAZ elements
     static void fillTAZElements();
