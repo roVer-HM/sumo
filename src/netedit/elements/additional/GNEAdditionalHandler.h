@@ -456,7 +456,7 @@ public:
     * @param[in] voltage Voltage of at connection point for the overhead wire
     * @param[in] currentLimit Current limit of the feeder line
     */
-    void buildTractionSubstation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const float voltage, const float currentLimit);
+    void buildTractionSubstation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const double voltage, const double currentLimit);
 
     /** @brief build overhead wire clamp
     * @param[in] id Overhead wire segment ID

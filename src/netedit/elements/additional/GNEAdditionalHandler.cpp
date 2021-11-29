@@ -1470,7 +1470,7 @@ GNEAdditionalHandler::buildTAZSink(const CommonXMLStructure::SumoBaseObject* sum
 
 
 void 
-GNEAdditionalHandler::buildTractionSubstation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const float voltage, const float currentLimit) {
+GNEAdditionalHandler::buildTractionSubstation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const double voltage, const double currentLimit) {
     //
 }
 
@@ -1487,8 +1487,9 @@ GNEAdditionalHandler::buildOverheadWireSegment(const CommonXMLStructure::SumoBas
 }
 
 
-void buildOverheadWireSection(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::vector<std::string>& segmentIDs, const std::string& substationId,
-                              const std::vector<std::string>& clamps, const std::vector<std::string>& forbiddenInnerLanes) {
+void
+GNEAdditionalHandler::buildOverheadWireSection(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::vector<std::string>& segmentIDs, const std::string& substationId,
+                                               const std::vector<std::string>& clamps, const std::vector<std::string>& forbiddenInnerLanes) {
     //
 }
 
