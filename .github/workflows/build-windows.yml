@@ -20,13 +20,16 @@ jobs:
     strategy:
       matrix:
         build-type: [plain]
-        python: [3.5, 3.6, 3.7, 3.8, 3.9]
+        python: [3.5, 3.6, 3.7, 3.8, 3.9, '3.10']
         include:
           - build-type: extra
             python: 3.8
           - build-type: wheel
             python: 3.8
 
+    env:
+      CC: cl
+      CXX: cl
     steps:
     - name: Cloning SUMO
       uses: actions/checkout@v2
@@ -51,6 +54,19 @@ jobs:
         python-version: ${{ matrix.python }}
         architecture: x64
 
+    - name: "Set up compiler cache"
+      uses: actions/cache@v2
+      with:
+        path: C:\Users\runneradmin\AppData\Local\Mozilla\sccache\cache
+        key: ${{ matrix.build-type }}-${{ matrix.python }}-${{ github.head_ref }}-${{ github.run_number }}
+        restore-keys: |
+          ${{ matrix.build-type }}-${{ matrix.python }}-${{ github.head_ref }}-
+          ${{ matrix.build-type }}-${{ matrix.python }}-
+
+    # required for CMake to find Ninja
+    - name: "Set up MSVC Developer Command Prompt"
+      uses: seanmiddleditch/gha-setup-vsdevenv@v3
+
     - name: Configuring SUMO plain build
       if: matrix.build-type == 'plain'
       run: |
@@ -58,7 +74,7 @@ jobs:
         cd sumo
         mkdir build_msvc
         cd build_msvc
-        cmake .. -G"Visual Studio 16 2019" -A x64 -DCHECK_OPTIONAL_LIBS=false
+        cmake .. -GNinja -DCHECK_OPTIONAL_LIBS=false
 
     - name: Building libsumo plain
       if: matrix.build-type == 'plain'
@@ -80,7 +96,7 @@ jobs:
         cd sumo
         mkdir build_msvc
         cd build_msvc
-        cmake -DFMI=ON .. -G"Visual Studio 16 2019" -A x64 -DCHECK_OPTIONAL_LIBS=true
+        cmake -DFMI=ON .. -GNinja -DCHECK_OPTIONAL_LIBS=true
         cmake --build . --config Release
 
     - name: Building SUMO Wheels
@@ -123,6 +139,7 @@ jobs:
     - name: Plain examples and tests
       if: matrix.build-type == 'plain' && matrix.python == '3.8'
       run: |
+        $env:TEXTTEST_TMP = "D:/texttest"
         cd sumo/build_msvc
         $env:TEXTTEST_CI_APPS = "-a activitygen,dfrouter,duarouter,jtrrouter,sumo"
         ctest -R texttest --verbose
@@ -132,11 +149,20 @@ jobs:
     - name: Examples and extra tests
       if: matrix.build-type == 'extra' && matrix.python == '3.8'
       run: |
-        $env:TEXTTEST_CI_APPS = "-a complex,tools,traci"
         python -m pip install pyproj Rtree ezdxf pulp pandas matplotlib scipy
         cd sumo/build_msvc
         cmake --build . --config Release --target examples
+        $env:TEXTTEST_TMP = "D:/texttest"
+        $env:TEXTTEST_CI_APPS = "-a complex,tools,traci"
         ctest --build-config Release --verbose
+
+    - name: Uploading test results
+      if: matrix.python == '3.8'
+      uses: actions/upload-artifact@v2
+      with:
+        name: texttesttmp-${{ matrix.build-type }}
+        path: D:/texttest
+        if-no-files-found: warn
 
     - name: Building FMU Compliance Checker
       if: matrix.build-type == 'extra'
