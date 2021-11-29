@@ -43,36 +43,37 @@ public:
         // basic types
         NETWORKELEMENT =    1 << 0,  // Network elements (Edges, Junctions, Lanes...)
         ADDITIONALELEMENT = 1 << 1,  // Additional elements (Bus Stops, Charging Stations, Detectors...)
-        SHAPE =             1 << 2,  // Shapes (Polygons and POIs)
-        TAZELEMENT =        1 << 3,  // Traffic Assignment Zones
-        DEMANDELEMENT =     1 << 4,  // Demand elements (Routes, Vehicles, Trips...)
-        DATAELEMENT =       1 << 5,  // Data elements (DataSets, Data Intervals, EdgeData...)
+        WIRE =              1 << 2,  // Wire (tractionSubstation, overheadWireSegment...)
+        SHAPE =             1 << 3,  // Shapes (Polygons and POIs)
+        TAZELEMENT =        1 << 4,  // Traffic Assignment Zones
+        DEMANDELEMENT =     1 << 5,  // Demand elements (Routes, Vehicles, Trips...)
+        DATAELEMENT =       1 << 6,  // Data elements (DataSets, Data Intervals, EdgeData...)
         // sub additional elements
-        STOPPINGPLACE =     1 << 6,  // StoppingPlaces (BusStops, ChargingStations...)
-        DETECTOR =          1 << 7,  // Detectors (E1, E2...)
+        STOPPINGPLACE =     1 << 7,  // StoppingPlaces (BusStops, ChargingStations...)
+        DETECTOR =          1 << 8,  // Detectors (E1, E2...)
         // sub demand elements
-        VTYPE =             1 << 8,  // Vehicle types (vType and pTye)
-        VEHICLE =           1 << 9,  // Vehicles (Vehicles, trips, flows, and routeFlows)
-        ROUTE =             1 << 10, // Routes and embedded routes
-        STOP =              1 << 11, // Stops
+        VTYPE =             1 << 9,  // Vehicle types (vType and pTye)
+        VEHICLE =           1 << 10, // Vehicles (Vehicles, trips, flows, and routeFlows)
+        ROUTE =             1 << 11, // Routes and embedded routes
+        STOP =              1 << 12, // Stops
         // persons
-        PERSON =            1 << 12, // Persons (Persons and personFlows)
-        PERSONPLAN =        1 << 13, // Person plans (Walks, rides, personTrips and stopPersons)
-        PERSONTRIP =        1 << 14, // Person Trips
-        WALK =              1 << 15, // Walks
-        RIDE =              1 << 16, // Rides
-        STOPPERSON =        1 << 17, // Person stops
+        PERSON =            1 << 13, // Persons (Persons and personFlows)
+        PERSONPLAN =        1 << 14, // Person plans (Walks, rides, personTrips and stopPersons)
+        PERSONTRIP =        1 << 15, // Person Trips
+        WALK =              1 << 16, // Walks
+        RIDE =              1 << 17, // Rides
+        STOPPERSON =        1 << 18, // Person stops
         // containers
-        CONTAINER =         1 << 18, // Containers (Containers and personFlows)
-        CONTAINERPLAN =     1 << 19, // Container plans (tranship and transport)
-        TRANSPORT =         1 << 20, // Transport
-        TRANSHIP =          1 << 21, // Tranship
-        STOPCONTAINER =     1 << 22, // Container stops
+        CONTAINER =         1 << 19, // Containers (Containers and personFlows)
+        CONTAINERPLAN =     1 << 20, // Container plans (tranship and transport)
+        TRANSPORT =         1 << 21, // Transport
+        TRANSHIP =          1 << 22, // Tranship
+        STOPCONTAINER =     1 << 23, // Container stops
         // sub data elements
-        GENERICDATA =       1 << 23, // Generic data (GNEEdgeData, GNELaneData...)
+        GENERICDATA =       1 << 24, // Generic data (GNEEdgeData, GNELaneData...)
         // other
-        SYMBOL =            1 << 24, // Symbol elements (VSSSymbols, RerouterSymbols...)
-        INTERNALLANE =      1 << 25, // Internal Lane
+        SYMBOL =            1 << 25, // Symbol elements (VSSSymbols, RerouterSymbols...)
+        INTERNALLANE =      1 << 26, // Internal Lane
     };
 
     enum TagProperty {
@@ -160,6 +161,9 @@ public:
     /// @brief return true if tag correspond to an additional element
     bool isAdditionalElement() const;
 
+    /// @brief return true if tag correspond to a wire
+    bool isWire() const;
+
     /// @brief return true if tag correspond to a shape
     bool isShape() const;
 
@@ -172,10 +176,10 @@ public:
     /// @brief return true if tag correspond to a data element
     bool isDataElement() const;
 
-    /// @brief return true if tag correspond to a detector (Only used to group all stoppingPlaces in the output XML)
+    /// @brief return true if tag correspond to a detector
     bool isStoppingPlace() const;
 
-    /// @brief return true if tag correspond to a shape (Only used to group all detectors in the XML)
+    /// @brief return true if tag correspond to a shape
     bool isDetector() const;
 
     /// @brief return true if tag correspond to a vehicle type element

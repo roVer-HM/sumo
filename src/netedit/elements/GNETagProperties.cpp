@@ -266,6 +266,12 @@ GNETagProperties::isAdditionalElement() const {
 
 
 bool
+GNETagProperties::isWire() const {
+    return (myTagType & WIRE) != 0;
+}
+
+
+bool
 GNETagProperties::isShape() const {
     return (myTagType & SHAPE) != 0;
 }
