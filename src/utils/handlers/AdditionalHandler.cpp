@@ -145,6 +145,19 @@ AdditionalHandler::beginParseAttributes(SumoXMLTag tag, const SUMOSAXAttributes&
             case SUMO_TAG_VAPORIZER:
                 parseVaporizerAttributes(attrs);
                 break;
+            // wires
+            case SUMO_TAG_TRACTION_SUBSTATION:
+                parseTractionSubstation(attrs);
+                break;
+            case SUMO_TAG_OVERHEAD_WIRE_CLAMP:
+                parseOverheadWireClamp(attrs);
+                break;
+            case SUMO_TAG_OVERHEAD_WIRE_SEGMENT:
+                parseOverheadWireSegment(attrs);
+                break;
+            case SUMO_TAG_OVERHEAD_WIRE_SECTION:
+                parseOverheadWireSection(attrs);
+                break;
             // Poly
             case SUMO_TAG_POLY:
                 parsePolyAttributes(attrs);
@@ -200,6 +213,11 @@ AdditionalHandler::endParseAttributes() {
         case SUMO_TAG_ROUTEPROBE:
         // Vaporizer (deprecated)
         case SUMO_TAG_VAPORIZER:
+        case SUMO_TAG_TRACTION_SUBSTATION:
+        // wires
+        case SUMO_TAG_OVERHEAD_WIRE_CLAMP:
+        case SUMO_TAG_OVERHEAD_WIRE_SEGMENT:
+        case SUMO_TAG_OVERHEAD_WIRE_SECTION:
         // Shapes
         case SUMO_TAG_POLY:
         case SUMO_TAG_POI:
@@ -539,6 +557,35 @@ AdditionalHandler::parseSumoBaseObject(CommonXMLStructure::SumoBaseObject* obj) 
                            obj->getTimeAttribute(SUMO_ATTR_END),
                            obj->getStringAttribute(SUMO_ATTR_NAME),
                            obj->getParameters());
+            break;
+        // wire
+        case SUMO_TAG_TRACTION_SUBSTATION:
+            buildTractionSubstation(obj,
+                                    obj->getStringAttribute(SUMO_ATTR_ID),
+                                    obj->getDoubleAttribute(SUMO_ATTR_VOLTAGE),
+                                    obj->getDoubleAttribute(SUMO_ATTR_CURRENTLIMIT));
+            break;
+        case SUMO_TAG_OVERHEAD_WIRE_CLAMP:
+            buildOverheadWireClamp(obj,
+                                   obj->getStringAttribute(SUMO_ATTR_ID),
+                                   obj->getStringAttribute(SUMO_ATTR_LANE),
+                                   obj->getBoolAttribute(SUMO_ATTR_VOLTAGESOURCE),
+                                   obj->getBoolAttribute(SUMO_ATTR_STARTPOS),
+                                   obj->getBoolAttribute(SUMO_ATTR_ENDPOS));
+            break;
+        case SUMO_TAG_OVERHEAD_WIRE_SEGMENT:
+            buildOverheadWireSegment(obj,
+                                     obj->getStringAttribute(SUMO_ATTR_ID),
+                                     obj->getStringAttribute(SUMO_ATTR_SUBSTATIONID),
+                                     obj->getStringAttribute(SUMO_ATTR_OVERHEAD_WIRE_CLAMP_START),
+                                     obj->getStringAttribute(SUMO_ATTR_OVERHEAD_WIRE_CLAMP_END));
+            break;
+        case SUMO_TAG_OVERHEAD_WIRE_SECTION:
+            buildOverheadWireSection(obj,
+                                     obj->getStringListAttribute(SUMO_ATTR_ID),
+                                     obj->getStringAttribute(SUMO_ATTR_OVERHEAD_WIRE_SECTION),
+                                     obj->getStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_CLAMPS),
+                                     obj->getStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN));
             break;
         // Polygon
         case SUMO_TAG_POLY:
@@ -1470,6 +1517,30 @@ AdditionalHandler::parseVaporizerAttributes(const SUMOSAXAttributes& attrs) {
         myCommonXMLStructure.getCurrentSumoBaseObject()->addTimeAttribute(SUMO_ATTR_END, end);
         myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_NAME, name);
     }
+}
+
+
+void
+AdditionalHandler::parseTractionSubstation(const SUMOSAXAttributes& attrs) {
+    //
+}
+
+
+void
+AdditionalHandler::parseOverheadWireClamp(const SUMOSAXAttributes& attrs) {
+    //
+}
+
+
+void
+AdditionalHandler::parseOverheadWireSegment(const SUMOSAXAttributes& attrs) {
+    //
+}
+
+
+void
+AdditionalHandler::parseOverheadWireSection(const SUMOSAXAttributes& attrs) {
+    //
 }
 
 
