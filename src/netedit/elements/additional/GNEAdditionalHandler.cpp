@@ -1469,6 +1469,30 @@ GNEAdditionalHandler::buildTAZSink(const CommonXMLStructure::SumoBaseObject* sum
 }
 
 
+void 
+GNEAdditionalHandler::buildTractionSubstation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const float voltage, const float currentLimit) {
+    //
+}
+
+void 
+GNEAdditionalHandler::buildOverheadWireClamp(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& lane, 
+                                             const bool voltageSource, const bool startPos, const bool endPos) {
+    //
+}
+
+void
+GNEAdditionalHandler::buildOverheadWireSegment(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& substationId, 
+                                               const std::string& idSegmentStartClamp, const std::string& idSegmentEndClamp) {
+    //
+}
+
+
+void buildOverheadWireSection(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::vector<std::string>& segmentIDs, const std::string& substationId,
+                              const std::vector<std::string>& clamps, const std::vector<std::string>& forbiddenInnerLanes) {
+    //
+}
+
+
 void
 GNEAdditionalHandler::buildPolygon(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& type,
                                    const RGBColor& color, double layer, double angle, const std::string& imgFile, bool relativePath, const PositionVector& shape, bool geo, bool fill,
