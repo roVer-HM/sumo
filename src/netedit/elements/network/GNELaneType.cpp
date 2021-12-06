@@ -20,9 +20,10 @@
 #include <config.h>
 
 #include <netedit/GNENet.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/changes/GNEChange_Attribute.h>
-#include <utils/options/OptionsCont.h>
+#include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/frames/network/GNECreateEdgeFrame.h>
+
 
 #include "GNELaneType.h"
 #include "GNEEdgeType.h"
@@ -32,21 +33,16 @@
 // members methods
 // ===========================================================================
 
-GNELaneType::GNELaneType(GNEEdgeType* edgeTypeParent):
+GNELaneType::GNELaneType(GNEEdgeType* edgeTypeParent) :
     GNENetworkElement(edgeTypeParent->getNet(), "", GLO_LANE, SUMO_TAG_LANETYPE, {}, {}, {}, {}, {}, {}, {}, {}),
-myEdgeTypeParent(edgeTypeParent) {
+    myEdgeTypeParent(edgeTypeParent) {
 }
 
 
-GNELaneType::GNELaneType(GNEEdgeType* edgeTypeParent, const NBTypeCont::LaneTypeDefinition& laneType):
+GNELaneType::GNELaneType(GNEEdgeType* edgeTypeParent, const NBTypeCont::LaneTypeDefinition &laneType) :
     GNENetworkElement(edgeTypeParent->getNet(), "", GLO_LANE, SUMO_TAG_LANETYPE, {}, {}, {}, {}, {}, {}, {}, {}),
-myEdgeTypeParent(edgeTypeParent) {
-    // copy parameters
-    speed = laneType.speed;
-    permissions = laneType.permissions;
-    width = laneType.width;
-    restrictions = laneType.restrictions;
-    attrs = laneType.attrs;
+    NBTypeCont::LaneTypeDefinition(laneType),
+    myEdgeTypeParent(edgeTypeParent) {
 }
 
 
@@ -126,7 +122,7 @@ std::string
 GNELaneType::getAttribute(SumoXMLAttr key) const {
     switch (key) {
         case SUMO_ATTR_ID:
-            return myEdgeTypeParent->getID() + toString(myEdgeTypeParent->getLaneTypeIndex(this));
+            return "lane: " + toString(myEdgeTypeParent->getLaneTypeIndex(this));
         case SUMO_ATTR_SPEED:
             if (attrs.count(key) == 0) {
                 return "";
@@ -134,13 +130,17 @@ GNELaneType::getAttribute(SumoXMLAttr key) const {
                 return toString(speed);
             }
         case SUMO_ATTR_ALLOW:
-            if (attrs.count(SUMO_ATTR_DISALLOW) == 0) {
+            if ((permissions == SVCAll) || (permissions == -1)) {
+                return "all";
+            } else if  (permissions == 0) {
                 return "";
             } else {
                 return getVehicleClassNames(permissions);
             }
         case SUMO_ATTR_DISALLOW:
-            if (attrs.count(SUMO_ATTR_DISALLOW) == 0) {
+            if (permissions == 0) {
+                return "all";
+            } else if ((permissions == SVCAll) || (permissions == -1)) {
                 return "";
             } else {
                 return getVehicleClassNames(invertPermissions(permissions));
@@ -160,20 +160,8 @@ GNELaneType::getAttribute(SumoXMLAttr key) const {
 
 
 void
-GNELaneType::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList) {
-    switch (key) {
-        case SUMO_ATTR_ID:
-            throw InvalidArgument("Modifying attribute '" + toString(key) + "' of " + getTagStr() + " isn't allowed");
-        case SUMO_ATTR_SPEED:
-        case SUMO_ATTR_ALLOW:
-        case SUMO_ATTR_DISALLOW:
-        case SUMO_ATTR_WIDTH:
-        case GNE_ATTR_PARAMETERS:
-            undoList->changeAttribute(new GNEChange_Attribute(this, key, value));
-            break;
-        default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
-    }
+GNELaneType::setAttribute(SumoXMLAttr /*key*/, const std::string& /*value*/, GNEUndoList* /*undoList*/) {
+    throw InvalidArgument("laneType attributes cannot be edited here");
 }
 
 
@@ -232,19 +220,33 @@ GNELaneType::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         case SUMO_ATTR_ALLOW:
-            if (value.empty()) {
+            // parse permissions
+            permissions = parseVehicleClasses(value);
+            // check attrs
+            if ((permissions == SVCAll) || (permissions == -1)) {
+                attrs.insert(SUMO_ATTR_ALLOW);
                 attrs.erase(SUMO_ATTR_DISALLOW);
-            } else {
+            } else if (permissions == 0) {
+                attrs.erase(SUMO_ATTR_ALLOW);
                 attrs.insert(SUMO_ATTR_DISALLOW);
-                permissions = parseVehicleClasses(value);
+            } else {
+                attrs.insert(SUMO_ATTR_ALLOW);
+                attrs.insert(SUMO_ATTR_DISALLOW);
             }
             break;
         case SUMO_ATTR_DISALLOW:
-            if (value.empty()) {
+            // parse invert permissions
+            permissions = invertPermissions(parseVehicleClasses(value));
+            // check attrs
+            if ((permissions == SVCAll) || (permissions == -1)) {
+                attrs.insert(SUMO_ATTR_ALLOW);
                 attrs.erase(SUMO_ATTR_DISALLOW);
-            } else {
+            } else if (permissions == 0) {
+                attrs.erase(SUMO_ATTR_ALLOW);
                 attrs.insert(SUMO_ATTR_DISALLOW);
-                permissions = invertPermissions(parseVehicleClasses(value));
+            } else {
+                attrs.insert(SUMO_ATTR_ALLOW);
+                attrs.insert(SUMO_ATTR_DISALLOW);
             }
             break;
         case SUMO_ATTR_WIDTH:
@@ -260,6 +262,10 @@ GNELaneType::setAttribute(SumoXMLAttr key, const std::string& value) {
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+    }
+    // update edge selector
+    if (myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->shown()) {
+        myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->getLaneTypeAttributes()->refreshAttributesCreator();
     }
 }
 

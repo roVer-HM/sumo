@@ -70,16 +70,15 @@ void
 GNEContainerStop::updateGeometry() {
     // Get value of option "lefthand"
     const double offsetSign = OptionsCont::getOptions().getBool("lefthand") ? -1 : 1;
-
     // Update common geometry of stopping place
     setStoppingPlaceGeometry(getParentLanes().front()->getParentEdge()->getNBEdge()->getLaneWidth(getParentLanes().front()->getIndex()) / 2);
-
     // Obtain a copy of the shape
     PositionVector tmpShape = myAdditionalGeometry.getShape();
-
+    // move entire shape and update
+    tmpShape.move2side(2);
+    myAdditionalGeometry.updateGeometry(tmpShape);
     // Move shape to side
     tmpShape.move2side(myNet->getViewNet()->getVisualisationSettings().stoppingPlaceSettings.stoppingPlaceSignOffset * offsetSign);
-
     // Get position of the sign
     mySignPos = tmpShape.getLineCenter();
 }
@@ -120,7 +119,7 @@ GNEContainerStop::drawGL(const GUIVisualizationSettings& s) const {
             // set base color
             GLHelper::setColor(baseColor);
             // Draw the area using shape, shapeRotations, shapeLengths and value of exaggeration
-            GUIGeometry::drawGeometry(s, myNet->getViewNet()->getPositionInformation(), myAdditionalGeometry, s.stoppingPlaceSettings.containerStopWidth * containerStopExaggeration);
+            GUIGeometry::drawGeometry(s, myNet->getViewNet()->getPositionInformation(), myAdditionalGeometry, s.stoppingPlaceSettings.containerStopWidth);
             // draw detail
             if (s.drawDetail(s.detailSettings.stoppingPlaceDetails, containerStopExaggeration)) {
                 // draw lines

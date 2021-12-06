@@ -23,14 +23,16 @@
 #include <netedit/GNENet.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
-#include <netedit/elements/additional/GNEPoly.h>
 #include <netedit/elements/additional/GNEPOI.h>
+#include <netedit/elements/additional/GNEPoly.h>
 #include <netedit/elements/additional/GNETAZ.h>
 #include <netedit/elements/data/GNEDataInterval.h>
 #include <netedit/elements/demand/GNEVehicleType.h>
 #include <netedit/elements/network/GNEConnection.h>
 #include <netedit/elements/network/GNECrossing.h>
+#include <netedit/elements/network/GNEEdgeTemplate.h>
 #include <netedit/elements/network/GNEEdgeType.h>
+#include <netedit/frames/common/GNEInspectorFrame.h>
 #include <netedit/frames/network/GNECreateEdgeFrame.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
 #include <utils/gui/globjects/GUIGlObjectStorage.h>
@@ -2084,12 +2086,16 @@ GNENetHelper::AttributeCarriers::edgeTypeExist(const GNEEdgeType* edgeType) cons
 
 void
 GNENetHelper::AttributeCarriers::insertEdgeType(GNEEdgeType* edgeType) {
+    // get pointer to create edge frame
+    const auto& createEdgeFrame = myNet->getViewNet()->getViewParent()->getCreateEdgeFrame();
     // insert in myEdgeTypes
     myEdgeTypes[edgeType->getMicrosimID()] = edgeType;
     // update edge selector
     if (myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->shown()) {
         myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->getEdgeTypeSelector()->refreshEdgeTypeSelector();
     }
+    // set current edge type inspected
+    createEdgeFrame->getEdgeTypeSelector()->setCurrentEdgeType(edgeType);
 }
 
 
@@ -2105,12 +2111,9 @@ GNENetHelper::AttributeCarriers::deleteEdgeType(GNEEdgeType* edgeType) {
     // check if this is the selected edge type in edgeSelector
     if (createEdgeFrame->getEdgeTypeSelector()->getEdgeTypeSelected() == edgeType) {
         createEdgeFrame->getEdgeTypeSelector()->clearEdgeTypeSelected();
-        createEdgeFrame->getEdgeTypeSelector()->refreshEdgeTypeSelector();
     }
     // update edge selector
-    if (createEdgeFrame->shown()) {
-        createEdgeFrame->getEdgeTypeSelector()->refreshEdgeTypeSelector();
-    }
+    createEdgeFrame->getEdgeTypeSelector()->refreshEdgeTypeSelector();
 }
 
 
@@ -2145,6 +2148,12 @@ GNENetHelper::AttributeCarriers::deleteSingleEdge(GNEEdge* edge) {
     // Remove refrences from GNEJunctions
     edge->getFromJunction()->removeOutgoingGNEEdge(edge);
     edge->getToJunction()->removeIncomingGNEEdge(edge);
+    // get template editor
+    GNEInspectorFrame::TemplateEditor* templateEditor = myNet->getViewNet()->getViewParent()->getInspectorFrame()->getTemplateEditor();
+    // check if we have to remove template
+    if (templateEditor->getEdgeTemplate() && (templateEditor->getEdgeTemplate()->getID() == edge->getID())) {
+        templateEditor->setEdgeTemplate(nullptr);
+    }
 }
 
 

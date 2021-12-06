@@ -24,6 +24,7 @@
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
 #include <netedit/changes/GNEChange_Attribute.h>
+#include <netedit/frames/common/GNEInspectorFrame.h>
 #include <netedit/frames/network/GNETLSEditorFrame.h>
 #include <netedit/frames/demand/GNERouteFrame.h>
 #include <netbuild/NBEdgeCont.h>
@@ -37,6 +38,7 @@
 #include "GNELane.h"
 #include "GNEInternalLane.h"
 #include "GNEConnection.h"
+#include "GNEEdgeTemplate.h"
 
 // ===========================================================================
 // FOX callback mapping
@@ -350,6 +352,10 @@ GNELane::drawArrows(const GUIVisualizationSettings& s, const bool spreadSuperpos
         glTranslated(end.x(), end.y(), 0);
         // rotate
         glRotated(rot, 0, 0, 1);
+        const double width = myParentEdge->getNBEdge()->getLaneWidth(myIndex);
+        if (width < SUMO_const_laneWidth) {
+            glScaled(width / SUMO_const_laneWidth, 1, 1);
+        }
         // get destiny node
         const NBNode* dest = myParentEdge->getNBEdge()->myTo;
         // draw all links iterating over connections
@@ -579,10 +585,8 @@ GNELane::drawChildren(const GUIVisualizationSettings& s) const {
     }
     // draw child additional
     for (const auto& additional : getChildAdditionals()) {
-        if (!additional->getTagProperty().isPlacedInRTree()) {
-            // check that ParkingAreas aren't draw two times
-            additional->drawGL(s);
-        }
+        // check that ParkingAreas aren't draw two times
+        additional->drawGL(s);
     }
     // draw child demand elements
     for (const auto& demandElement : getChildDemandElements()) {
@@ -1007,7 +1011,12 @@ GNELane::setSpecialColor(const RGBColor* color, double colorValue) {
 
 void
 GNELane::setAttribute(SumoXMLAttr key, const std::string& value) {
+    // get parent edge
     NBEdge* edge = myParentEdge->getNBEdge();
+    // get template editor
+    GNEInspectorFrame::TemplateEditor* templateEditor = myNet->getViewNet()->getViewParent()->getInspectorFrame()->getTemplateEditor();
+    // check if we have to update template
+    const bool updateTemplate = templateEditor->getEdgeTemplate()? (templateEditor->getEdgeTemplate()->getID() == myParentEdge->getID()) : false;
     switch (key) {
         case SUMO_ATTR_ID:
         case SUMO_ATTR_INDEX:
@@ -1089,6 +1098,10 @@ GNELane::setAttribute(SumoXMLAttr key, const std::string& value) {
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+    }
+    // update template
+    if (updateTemplate) {
+        templateEditor->setEdgeTemplate(myParentEdge);
     }
     // invalidate path calculator
     myNet->getPathManager()->getPathCalculator()->invalidatePathCalculator();

@@ -286,6 +286,9 @@ private:
     /// @brief method for enable or disable the attribute and nothing else (used in GNEChange_EnableAttribute)
     virtual void toogleAttribute(SumoXMLAttr key, const bool value, const int previousParameters) = 0;
 
+    /// @brief reset attributes to their default values without undo-redo (used in GNEFrameAttributesModuls)
+    void resetAttributes();
+
     /// @brief fill Attribute Carriers
     static void fillAttributeCarriers();
 
@@ -366,14 +369,6 @@ private:
 
     /// @brief fill Data elements
     static void fillDataElements();
-
-    /// @brief parse and check attribute (note: This function is only to improve legilibility)
-    static bool checkParsedAttribute(const GNETagProperties& tagProperties, const GNEAttributeProperties& attrProperties, const SumoXMLAttr attribute,
-                                     std::string& defaultValue, std::string& parsedAttribute, std::string& warningMessage);
-
-    /// @brief parse and check masked  (note: This function is only to improve legilibility)
-    static bool parseMaskedPositionAttribute(const SUMOSAXAttributes& attrs, const std::string& objectID, const GNETagProperties& tagProperties,
-            const GNEAttributeProperties& attrProperties, std::string& parsedAttribute, std::string& warningMessage);
 
     /// @brief map with the tags properties
     static std::map<SumoXMLTag, GNETagProperties> myTagProperties;

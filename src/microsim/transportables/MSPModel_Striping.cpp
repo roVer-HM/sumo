@@ -373,11 +373,17 @@ MSPModel_Striping::initWalkingAreaPaths(const MSNet*) {
             for (const MSEdge* in : edge->getPredecessors()) {
                 if (!in->isTazConnector()) {
                     lanes.push_back(getSidewalk<MSEdge, MSLane>(in));
+                    if (lanes.back() == nullptr) {
+                        throw ProcessError("Invalid connection from edge '" + in->getID() + "' to walkingarea edge '" + edge->getID() + "'");
+                    }
                 }
             }
             for (const MSEdge* out : edge->getSuccessors()) {
                 if (!out->isTazConnector()) {
                     lanes.push_back(getSidewalk<MSEdge, MSLane>(out));
+                    if (lanes.back() == nullptr) {
+                        throw ProcessError("Invalid connection from walkingarea edge '" + edge->getID() + "' to edge '" + out->getID() + "'");
+                    }
                 }
             }
             // build all combinations
@@ -1895,7 +1901,7 @@ MSPModel_Striping::PState::walk(const Obstacles& obs, SUMOTime currentTime) {
                // still on the road
                && stripe() == stripe(myRelY)
                // only when the vehicle is moving on the same lane
-               && !myLane->getEdge().isCrossing()) {
+               && !(myLane->getEdge().isCrossing() || myLane->getEdge().isWalkingArea())) {
         // step aside to let the vehicle pass
         int stepAsideDir = myDir;
         if (myLane->getEdge().getLanes().size() > 1 || current > sMax / 2) {

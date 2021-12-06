@@ -84,7 +84,10 @@ public:
         bool isAttributesCreatorRowEnabled() const;
 
         /// @brief refresh row
-        void refreshRow() const;
+        void refreshRow();
+
+        /// @brief disable Rows
+        void disableRow();
 
         /// @brief check if current attribute is valid
         bool isAttributeValid() const;
@@ -97,8 +100,8 @@ public:
         /// @brief called when user set the value of an attribute of type int/float/string/bool
         long onCmdSetAttribute(FXObject*, FXSelector, void*);
 
-        /// @brief called when user press the "Color" button
-        long onCmdSelectDialog(FXObject*, FXSelector, void*);
+        /// @brief called when user press the open dialog button
+        long onCmdOpenAttributeDialog(FXObject*, FXSelector, void*);
         /// @}
 
     protected:
@@ -126,8 +129,8 @@ public:
         /// @brief check button to enable/disable Label attribute
         FXCheckButton* myEnableAttributeCheckButton = nullptr;
 
-        /// @brief Button for open color editor
-        FXButton* myAttributeColorButton = nullptr;
+        /// @brief Button for open color or allow/disallow editor
+        FXButton* myAttributeButton = nullptr;
 
         /// @brief textField to modify the default value of string parameters
         FXTextField* myValueTextField = nullptr;
@@ -175,17 +178,27 @@ public:
         /// @brief show warning message with information about non-valid attributes
         void showWarningMessage(std::string extra = "") const;
 
+        /// @brief refresh attribute creator
+        void refreshAttributesCreator();
+
+        /// @brief disable AttributesCreator
+        void disableAttributesCreator();
+
         /// @name FOX-callbacks
         /// @{
+        /// @brief Called when reset button is pressed
+        long onCmdReset(FXObject*, FXSelector, void*);
+
         /// @brief Called when help button is pressed
         long onCmdHelp(FXObject*, FXSelector, void*);
-        /// @}
 
-        /// @brief refresh rows (called after creating an element)
-        void refreshRows();
+        /// @}
 
     protected:
         FOX_CONSTRUCTOR(AttributesCreator);
+
+        /// @brief refresh rows
+        void refreshRows(const bool createRows);
 
     private:
         /// @brief pointer to Frame Parent
@@ -197,11 +210,17 @@ public:
         /// @brief current templateAC
         GNEAttributeCarrier *myTemplateAC;
 
+        /// @brief hidden attributes
+        std::vector<SumoXMLAttr> myHiddenAttributes;
+
         /// @brief vector with the AttributesCreatorRow
         std::vector<AttributesCreatorRow*> myAttributesCreatorRows;
 
-        /// @brief help button
-        FXButton* myHelpButton = nullptr;
+        /// @brief frame buttons
+        FXHorizontalFrame* myFrameButtons = nullptr;
+
+        /// @brief reset button
+        FXButton* myResetButton = nullptr;
     };
 
     // ===========================================================================

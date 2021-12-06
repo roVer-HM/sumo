@@ -821,6 +821,16 @@ GNEAttributeCarrier::getAllowedTagPropertiesByCategory(const int tagPropertyCate
 // private
 // ===========================================================================
 
+void 
+GNEAttributeCarrier::resetAttributes() {
+    for (const auto &attrProperty : myTagProperty) {
+        if (attrProperty.hasStaticDefaultValue()) {
+            setAttribute(attrProperty.getAttr(), attrProperty.getDefaultValue());
+        }
+    }
+}
+
+
 void
 GNEAttributeCarrier::fillAttributeCarriers() {
     // fill all groups of ACs
@@ -873,7 +883,7 @@ GNEAttributeCarrier::fillNetworkElements() {
                                       GUIIcon::JUNCTION, currentTag);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of the node");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -1000,36 +1010,8 @@ GNEAttributeCarrier::fillNetworkElements() {
                                               "Lane width for all lanes of this edge in meters (used for visualization)",
                                               "-1");
         myTagProperties[currentTag].addAttribute(attrProperty);
-
-        /* */
-
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_ONEWAY,
-                                              GNEAttributeProperties::BOOL,
-                                              "Whether one-way traffic is mostly common for this edgeType");
-        myTagProperties[currentTag].addAttribute(attrProperty);
-
-
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_DISCARD,
-                                              GNEAttributeProperties::BOOL,
-                                              "Whether edges of this edgeType shall be discarded");
-        myTagProperties[currentTag].addAttribute(attrProperty);
-
-
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_WIDTHRESOLUTION,
-                                              GNEAttributeProperties::FLOAT,
-                                              "The resolution for interpreting custom (noisy) lane widths of this edgeType [m]");
-        myTagProperties[currentTag].addAttribute(attrProperty);
-
-
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_MAXWIDTH,
-                                              GNEAttributeProperties::FLOAT,
-                                              "The maximum width for lanes of this edgeType [m]");
-        myTagProperties[currentTag].addAttribute(attrProperty);
-
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_MINWIDTH,
-                                              GNEAttributeProperties::FLOAT,
-                                              "The maximum width for lanes of this edgeType [m]");
-        myTagProperties[currentTag].addAttribute(attrProperty);
+/*
+        implement in #9725
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_SIDEWALKWIDTH,
                                               GNEAttributeProperties::FLOAT,
@@ -1040,9 +1022,7 @@ GNEAttributeCarrier::fillNetworkElements() {
                                               GNEAttributeProperties::FLOAT,
                                               "The width of the bike lane that should be added as an additional lane");
         myTagProperties[currentTag].addAttribute(attrProperty);
-
-        /* */
-
+*/
     }
     currentTag = SUMO_TAG_LANETYPE;
     {
@@ -1086,7 +1066,7 @@ GNEAttributeCarrier::fillNetworkElements() {
                                       GUIIcon::EDGE, currentTag);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of the edge");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -1213,7 +1193,7 @@ GNEAttributeCarrier::fillNetworkElements() {
                                       GUIIcon::LANE, currentTag);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "ID of lane (Automatic, non editable)");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -1310,7 +1290,7 @@ GNEAttributeCarrier::fillNetworkElements() {
                                       GUIIcon::CROSSING, currentTag);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The ID of Crossing");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -1510,7 +1490,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GUIIcon::BUSSTOP, currentTag, {}, FXRGBA(240, 255, 205, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of bus stop");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -1573,7 +1553,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GUIIcon::TRAINSTOP, currentTag, {}, FXRGBA(240, 255, 205, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of train stop");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -1668,7 +1648,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GUIIcon::CONTAINERSTOP, currentTag, {}, FXRGBA(240, 255, 205, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of container stop");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -1730,7 +1710,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GUIIcon::CHARGINGSTATION, currentTag, {}, FXRGBA(240, 255, 205, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of charging station");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -1790,11 +1770,11 @@ GNEAttributeCarrier::fillAdditionalElements() {
         // set values of tag
         myTagProperties[currentTag] = GNETagProperties(currentTag,
                                       GNETagProperties::ADDITIONALELEMENT | GNETagProperties::STOPPINGPLACE,
-                                      GNETagProperties::RTREE | GNETagProperties::MASKSTARTENDPOS,
+                                      GNETagProperties::MASKSTARTENDPOS,
                                       GUIIcon::PARKINGAREA, currentTag, {}, FXRGBA(240, 255, 205, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of ParkingArea");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -1909,7 +1889,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GUIIcon::E1, currentTag, {}, FXRGBA(240, 238, 249, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of E1");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -1961,7 +1941,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
         myTagProperties[currentTag].addDeprecatedAttribute(SUMO_ATTR_CONT);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of E2");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -2042,7 +2022,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
         myTagProperties[currentTag].addDeprecatedAttribute(SUMO_ATTR_CONT);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of Multilane E2");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -2121,7 +2101,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GUIIcon::E3, currentTag, {}, FXRGBA(240, 238, 249, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of E3");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -2223,7 +2203,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GUIIcon::E1INSTANT, currentTag, {}, FXRGBA(240, 238, 249, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of Instant Induction Loop (E1Instant)");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -2270,7 +2250,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
         myTagProperties[currentTag].addDeprecatedAttribute(SUMO_ATTR_FILE);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::DEFAULTVALUESTATIC,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of Variable Speed Signal");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -2331,7 +2311,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GUIIcon::CALIBRATOR, currentTag, {}, FXRGBA(253, 255, 206, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of Calibrator");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -2387,7 +2367,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GUIIcon::CALIBRATOR, SUMO_TAG_CALIBRATOR, {}, FXRGBA(253, 255, 206, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of Calibrator");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -2491,7 +2471,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
 
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of Rerouter");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -2690,7 +2670,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GUIIcon::ROUTEPROBE, currentTag, {}, FXRGBA(240, 240, 240, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of RouteProbe");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -2730,7 +2710,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GUIIcon::VAPORIZER, currentTag, {}, FXRGBA(240, 240, 240, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::UPDATEGEOMETRY,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::UPDATEGEOMETRY | GNEAttributeProperties::AUTOMATICID,
                                               "Edge in which vaporizer is placed");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -2894,7 +2874,7 @@ GNEAttributeCarrier::fillShapeElements() {
                                       GUIIcon::POLY, currentTag);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of the polygon");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -2965,7 +2945,7 @@ GNEAttributeCarrier::fillShapeElements() {
                                       GUIIcon::POI, currentTag);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of the " + toString(currentTag));
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -3036,7 +3016,7 @@ GNEAttributeCarrier::fillShapeElements() {
                                       GUIIcon::POILANE, SUMO_TAG_POI);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of the " + toString(currentTag));
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -3124,7 +3104,7 @@ GNEAttributeCarrier::fillShapeElements() {
                                       GUIIcon::POIGEO, SUMO_TAG_POI);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of the " + toString(currentTag));
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -3209,7 +3189,7 @@ GNEAttributeCarrier::fillTAZElements() {
                                       GUIIcon::TAZ, currentTag);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of the TAZ");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -3309,7 +3289,7 @@ GNEAttributeCarrier::fillDemandElements() {
 
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The id of Route");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -3617,7 +3597,7 @@ GNEAttributeCarrier::fillVehicleElements() {
                                       GUIIcon::VEHICLE, currentTag);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The name of the " + toString(currentTag));
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -3660,7 +3640,7 @@ GNEAttributeCarrier::fillVehicleElements() {
                                       GUIIcon::VEHICLE, SUMO_TAG_VEHICLE);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The name of the " + toString(SUMO_TAG_VEHICLE));
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -3698,7 +3678,7 @@ GNEAttributeCarrier::fillVehicleElements() {
                                       GUIIcon::ROUTEFLOW, SUMO_TAG_FLOW, {});
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The name of the " + toString(currentTag));
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -3738,7 +3718,7 @@ GNEAttributeCarrier::fillVehicleElements() {
                                       GUIIcon::ROUTEFLOW, SUMO_TAG_FLOW);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The name of the " + toString(SUMO_TAG_FLOW));
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -3773,7 +3753,7 @@ GNEAttributeCarrier::fillVehicleElements() {
                                       GUIIcon::TRIP, currentTag);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The name of " + toString(currentTag) + "s that will be generated using this trip definition");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -3816,7 +3796,7 @@ GNEAttributeCarrier::fillVehicleElements() {
                                       GUIIcon::FLOW, currentTag);
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "The name of the " + toString(currentTag));
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -5154,7 +5134,7 @@ GNEAttributeCarrier::fillCommonPersonAttributes(SumoXMLTag currentTag) {
     GNEAttributeProperties attrProperty;
 
     attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                          GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                          GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                           "The name of the " + toString(currentTag));
     myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -5184,7 +5164,7 @@ GNEAttributeCarrier::fillCommonContainerAttributes(SumoXMLTag currentTag) {
     GNEAttributeProperties attrProperty;
 
     attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                          GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                          GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                           "The name of the " + toString(currentTag));
     myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -5281,7 +5261,7 @@ GNEAttributeCarrier::fillDataElements() {
 
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "Data set ID");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -5297,7 +5277,7 @@ GNEAttributeCarrier::fillDataElements() {
 
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
                                               "Interval ID");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -5325,7 +5305,7 @@ GNEAttributeCarrier::fillDataElements() {
 
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::UPDATEGEOMETRY,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::UPDATEGEOMETRY | GNEAttributeProperties::AUTOMATICID,
                                               "edge ID");
         myTagProperties[currentTag].addAttribute(attrProperty);
     }
@@ -5368,240 +5348,5 @@ GNEAttributeCarrier::fillDataElements() {
         myTagProperties[currentTag].addAttribute(attrProperty);
     }
 }
-
-
-bool
-GNEAttributeCarrier::checkParsedAttribute(const GNETagProperties& GNETagProperties,
-        const GNEAttributeProperties& attrProperties, const SumoXMLAttr attribute,
-        std::string& defaultValue, std::string& parsedAttribute, std::string& warningMessage) {
-    // declare a string for details about error formats
-    std::string errorFormat;
-    // set extra check for ID Values
-    if (attribute == SUMO_ATTR_ID) {
-        if (parsedAttribute.empty()) {
-            errorFormat = "ID cannot be empty; ";
-        } else if (GNETagProperties.isDetector()) {
-            // special case for detectors (because in this case empty spaces are allowed)
-            if (SUMOXMLDefinitions::isValidDetectorID(parsedAttribute) == false) {
-                errorFormat = "Detector ID contains invalid characters; ";
-            }
-        } else if (GNETagProperties.isDemandElement()) {
-            // special case for detectors (because in this case empty spaces are allowed)
-            if (SUMOXMLDefinitions::isValidVehicleID(parsedAttribute) == false) {
-                errorFormat = "Demand Element ID contains invalid characters; ";
-            }
-        } else if (SUMOXMLDefinitions::isValidAdditionalID(parsedAttribute) == false) {
-            errorFormat = "ID contains invalid characters; ";
-        }
-    }
-    // Set extra checks for int values
-    if (attrProperties.isInt()) {
-        if (canParse<int>(parsedAttribute)) {
-            // obtain int value
-            int parsedIntAttribute = parse<int>(parsedAttribute);
-            // check if attribute can be negative or zero
-            if (attrProperties.isPositive() && (parsedIntAttribute < 0)) {
-                errorFormat = "Cannot be negative; ";
-            }
-        } else if (canParse<double>(parsedAttribute)) {
-            errorFormat = "Float cannot be reinterpreted as int; ";
-        } else {
-            errorFormat = "Cannot be parsed to int; ";
-        }
-    }
-    // Set extra checks for float(double) values
-    if (attrProperties.isFloat()) {
-        if (canParse<double>(parsedAttribute)) {
-            // obtain double value
-            double parsedDoubleAttribute = parse<double>(parsedAttribute);
-            //check if can be negative and Zero
-            if (attrProperties.isPositive() && (parsedDoubleAttribute < 0)) {
-                errorFormat = "Cannot be negative; ";
-            }
-        } else {
-            errorFormat = "Cannot be parsed to float; ";
-        }
-    }
-    // Set extra checks for bool values
-    if (attrProperties.isBool()) {
-        if (!canParse<bool>(parsedAttribute)) {
-            errorFormat = "Cannot be parsed to boolean; ";
-        }
-    }
-    // Set extra checks for position values
-    if (attrProperties.isposition()) {
-        // check if we're parsing a single position or an entire shape
-        if (attrProperties.isList()) {
-            // check if parsed attribute can be parsed to Position Vector
-            if (!canParse<PositionVector>(parsedAttribute)) {
-                errorFormat = "List of Positions aren't neither x,y nor x,y,z; ";
-            }
-        } else if (!canParse<Position>(parsedAttribute)) {
-            errorFormat = "Position is neither x,y nor x,y,z; ";
-        }
-    }
-    // set extra check for time(double) values
-    if (attrProperties.isSUMOTime()) {
-        if (!canParse<SUMOTime>(parsedAttribute)) {
-            errorFormat = "Cannot be parsed to SUMOTime; ";
-        }
-    }
-    // set extra check for probability values
-    if (attrProperties.isProbability()) {
-        if (canParse<double>(parsedAttribute)) {
-            // parse to double and check if is between [0,1]
-            double probability = parse<double>(parsedAttribute);
-            if (probability < 0) {
-                errorFormat = "Probability cannot be smaller than 0; ";
-            } else if (probability > 1) {
-                errorFormat = "Probability cannot be greather than 1; ";
-            }
-        } else {
-            errorFormat = "Cannot be parsed to probability; ";
-        }
-    }
-    // set extra check for range values
-    if (attrProperties.hasAttrRange()) {
-        if (canParse<double>(parsedAttribute)) {
-            // parse to double and check if is in range
-            double range = parse<double>(parsedAttribute);
-            if (range < attrProperties.getMinimumRange()) {
-                errorFormat = "Float cannot be smaller than " + toString(attrProperties.getMinimumRange()) + "; ";
-            } else if (range > attrProperties.getMaximumRange()) {
-                errorFormat = "Float cannot be greather than " + toString(attrProperties.getMaximumRange()) + "; ";
-            }
-        } else {
-            errorFormat = "Cannot be parsed to float; ";
-        }
-    }
-    // set extra check for discrete values
-    if (attrProperties.isDiscrete()) {
-        // search value in the list of discretes values of attribute properties
-        auto finder = std::find(attrProperties.getDiscreteValues().begin(), attrProperties.getDiscreteValues().end(), parsedAttribute);
-        // check if attribute is valid
-        if (finder == attrProperties.getDiscreteValues().end()) {
-            errorFormat = "value is not within the set of allowed values for attribute '" + toString(attribute) + "'";
-        }
-    }
-    // set extra check for color values
-    if (attrProperties.isColor() && !canParse<RGBColor>(parsedAttribute)) {
-        errorFormat = "Invalid RGB format or named color; ";
-    }
-    // set extra check for filename values
-    if (attrProperties.isFilename()) {
-        if (SUMOXMLDefinitions::isValidFilename(parsedAttribute) == false) {
-            errorFormat = "Filename contains invalid characters; ";
-        } else if (parsedAttribute.empty() && !attrProperties.isOptional()) {
-            errorFormat = "Filename cannot be empty; ";
-        }
-    }
-    // set extra check for SVCPermissions values
-    if (attrProperties.isVClass()) {
-        if (!canParseVehicleClasses(parsedAttribute)) {
-            errorFormat = "List of VClasses isn't valid; ";
-            parsedAttribute = defaultValue;
-        }
-    }
-    // set extra check for RouteProbes
-    if ((attribute == SUMO_ATTR_ROUTEPROBE) && !SUMOXMLDefinitions::isValidAdditionalID(parsedAttribute)) {
-        errorFormat = "RouteProbe ID contains invalid characters; ";
-    }
-    // set extra check for list of edges
-    if ((attribute == SUMO_ATTR_EDGES) && parsedAttribute.empty()) {
-        errorFormat = "List of edges cannot be empty; ";
-    }
-    // set extra check for list of lanes
-    if ((attribute == SUMO_ATTR_LANES) && parsedAttribute.empty()) {
-        errorFormat = "List of lanes cannot be empty; ";
-    }
-    // set extra check for list of VTypes
-    if ((attribute == SUMO_ATTR_VTYPES) && !parsedAttribute.empty() && !SUMOXMLDefinitions::isValidListOfTypeID(parsedAttribute)) {
-        errorFormat = "List of vTypes contains invalid characters; ";
-    }
-    // set extra check for list of RouteProbe
-    if ((attribute == SUMO_ATTR_ROUTEPROBE) && !parsedAttribute.empty() && !SUMOXMLDefinitions::isValidAdditionalID(parsedAttribute)) {
-        errorFormat = "RouteProbe ID contains invalid characters; ";
-    }
-    // If attribute has an invalid format
-    if (errorFormat.size() > 0) {
-        // if attribute is optional and has a default value, obtain it as string. In other case, abort.
-        if (attrProperties.isOptional()) {
-            WRITE_DEBUG("Format of optional " + attrProperties.getDescription() + " attribute '" + toString(attribute) + "' of " +
-                        warningMessage +  " is invalid; " + errorFormat + "Default value will be used.");
-            // set default value defined in AttrProperties
-            parsedAttribute = attrProperties.getDefaultValue();
-        } else {
-            WRITE_WARNING("Format of essential " + attrProperties.getDescription() + " attribute '" + toString(attribute) + "' of " +
-                          warningMessage +  " is invalid; " + errorFormat + GNETagProperties.getTagStr() + " cannot be created");
-            // set default value (To avoid errors in parse<T>(parsedAttribute))
-            parsedAttribute = defaultValue;
-            // return false to abort creation of element
-            return false;
-        }
-    }
-    // return true to continue creation of element
-    return true;
-}
-
-
-bool
-GNEAttributeCarrier::parseMaskedPositionAttribute(const SUMOSAXAttributes& attrs, const std::string& objectID, const GNETagProperties& GNETagProperties,
-        const GNEAttributeProperties& attrProperties, std::string& parsedAttribute, std::string& warningMessage) {
-    // if element can mask their XYPosition, then must be extracted X Y coordiantes separeted
-    std::string x, y, z;
-    bool parsedOk = true;
-    // give a default value to parsedAttribute to avoid problem parsing invalid positions
-    parsedAttribute = "0,0";
-    if (attrs.hasAttribute(SUMO_ATTR_X)) {
-        x = attrs.get<std::string>(SUMO_ATTR_X, objectID.c_str(), parsedOk, false);
-        // check that X attribute is valid
-        if (!canParse<double>(x)) {
-            WRITE_WARNING("Format of essential " + attrProperties.getDescription() + " attribute '" + toString(SUMO_ATTR_X) + "' of " +
-                          warningMessage +  " is invalid; Cannot be parsed to float; " + GNETagProperties.getTagStr() + " cannot be created");
-            // abort parsing (and creation) of element
-            return false;
-        }
-    } else {
-        WRITE_WARNING("Essential " + attrProperties.getDescription() + " attribute '" + toString(SUMO_ATTR_X) + "' of " +
-                      warningMessage +  " is missing; " + GNETagProperties.getTagStr() + " cannot be created");
-        // abort parsing (and creation) of element
-        return false;
-    }
-    if (attrs.hasAttribute(SUMO_ATTR_Y)) {
-        y = attrs.get<std::string>(SUMO_ATTR_Y, objectID.c_str(), parsedOk, false);
-        // check that X attribute is valid
-        if (!canParse<double>(y)) {
-            WRITE_WARNING("Format of essential " + attrProperties.getDescription() + " attribute '" + toString(SUMO_ATTR_Y) + "' of " +
-                          warningMessage + " is invalid; Cannot be parsed to float; " + GNETagProperties.getTagStr() + " cannot be created");
-            // abort parsing (and creation) of element
-            return false;
-        }
-    } else {
-        WRITE_WARNING("Essential " + attrProperties.getDescription() + " attribute '" + toString(SUMO_ATTR_Y) + "' of " +
-                      warningMessage +  " is missing; " + GNETagProperties.getTagStr() + " cannot be created");
-        // abort parsing (and creation) of element
-        return false;
-    }
-    // Z attribute is optional
-    if (attrs.hasAttribute(SUMO_ATTR_Z)) {
-        z = attrs.get<std::string>(SUMO_ATTR_Z, objectID.c_str(), parsedOk, false);
-        // check that Z attribute is valid
-        if (!canParse<double>(z)) {
-            WRITE_WARNING("Format of optional " + attrProperties.getDescription() + " attribute '" + toString(SUMO_ATTR_Z) + "' of " +
-                          warningMessage + " is invalid; Cannot be parsed to float; " + GNETagProperties.getTagStr() + " cannot be created");
-            // leave Z attribute empty
-            z.clear();
-        }
-    }
-    // create Position attribute using parsed coordinates X, Y and, optionally, Z
-    if (z.empty()) {
-        parsedAttribute = x + "," + y;
-    } else {
-        parsedAttribute = x + "," + y + "," + z;
-    }
-    // continue creation of element
-    return true;
-}
-
 
 /****************************************************************************/

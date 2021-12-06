@@ -1,4 +1,4 @@
-Eclipse SUMO netconvert Version v1_11_0+0165-4261a27
+Eclipse SUMO netconvert Version v1_11_0+0316-1acbb37
  Copyright (C) 2001-2021 German Aerospace Center (DLR) and others; https://sumo.dlr.de
 Network importer / builder for the microscopic, multi-modal traffic simulation
  SUMO.
@@ -493,6 +493,8 @@ Railway Options:
                                         FILE usable in both direction
   --railway.topology.direction-priority  Set edge priority values based on
                                         estimated main direction
+  --railway.topology.extend-priority   Extend loaded edge priority values based
+                                        on estimated main direction
   --railway.access-distance FLOAT      The search radius for finding suitable
                                         road accesses for rail stops
   --railway.max-accesses INT           The maximum roud accesses registered per
@@ -591,6 +593,8 @@ Formats Options:
   --opendrive.internal-shapes          Import internal lane shapes
   --opendrive.position-ids             Sets edge-id based on road-id and offset
                                         in m (legacy)
+  --opendrive.lane-shapes              Use custom lane shapes to compensate
+                                        discarded lane types
 
 Report Options:
   -v, --verbose                        Switches to verbose output

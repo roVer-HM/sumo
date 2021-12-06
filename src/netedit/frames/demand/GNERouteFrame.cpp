@@ -52,10 +52,7 @@ FXIMPLEMENT(GNERouteFrame::RouteModeSelector,   FXGroupBox,     RouteModeSelecto
 
 GNERouteFrame::RouteModeSelector::RouteModeSelector(GNERouteFrame* routeFrameParent) :
     FXGroupBox(routeFrameParent->myContentFrame, "Route mode", GUIDesignGroupBoxFrame),
-    myRouteFrameParent(routeFrameParent),
-    myCurrentRouteMode(RouteMode::NONCONSECUTIVE_EDGES),
-    myValidVClass(true),
-    myRouteTemplate(nullptr) {
+    myRouteFrameParent(routeFrameParent) {
     // create route template
     myRouteTemplate = new GNERoute(routeFrameParent->getViewNet()->getNet());
     // first fill myRouteModesStrings
@@ -287,7 +284,7 @@ GNERouteFrame::createPath() {
         // abort path creation
         myPathCreator->abortPathCreation();
         // refresh route attributes
-        myRouteAttributes->refreshRows();
+        myRouteAttributes->refreshAttributesCreator();
         // compute path route
         myViewNet->getNet()->getAttributeCarriers()->retrieveDemandElement(SUMO_TAG_ROUTE, myRouteBaseObject->getStringAttribute(SUMO_ATTR_ID))->computePathElement();
     }

@@ -19,6 +19,7 @@
 /****************************************************************************/
 #pragma once
 #include <config.h>
+
 #include "GNENetworkElement.h"
 
 #include <netbuild/NBTypeCont.h>
@@ -33,17 +34,13 @@ class GNELaneType : public GNENetworkElement, public Parameterised, public NBTyp
 public:
     /// @brief GNECreateEdgeFrame need access to setAttribute
     friend class GNECreateEdgeFrame;
+    friend class GNEEdgeType;
 
-    /**@brief Constructor
-     * @param[in] edgeTypeParent GNEEdgeType parent
-     */
+    /// @brief Constructor
     GNELaneType(GNEEdgeType* edgeTypeParent);
 
-    /**@brief Constructor
-     * @param[in] edgeTypeParent GNEEdgeType parent
-     * @param[in] laneType laneType Definition
-     */
-    GNELaneType(GNEEdgeType* edgeTypeParent, const NBTypeCont::LaneTypeDefinition& laneType);
+    /// @brief Copy constructor
+    GNELaneType(GNEEdgeType* edgeTypeParent, const NBTypeCont::LaneTypeDefinition &laneType);
 
     /// @brief Destructor.
     ~GNELaneType();

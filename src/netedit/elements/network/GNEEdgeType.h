@@ -29,6 +29,7 @@
 // ===========================================================================
 
 class GNELaneType;
+class GNEEdgeTemplate;
 class GNECreateEdgeFrame;
 
 // ===========================================================================
@@ -46,6 +47,9 @@ public:
      */
     GNEEdgeType(GNECreateEdgeFrame* createEdgeFrame);
 
+    /// @brief copy constructor (this doesn't create new lanes)
+    GNEEdgeType(const GNEEdgeType* edgeType);
+
     /**@brief Constructor
      * @param[in] net The net to inform about gui updates
      */
@@ -62,6 +66,9 @@ public:
     /// @brief Destructor.
     ~GNEEdgeType();
 
+    /// @brief copy edge template
+    void copyTemplate(const GNEEdgeTemplate *edgeTemplate);
+
     /// @brief get laneTypes
     const std::vector<GNELaneType*>& getLaneTypes() const;
 
@@ -69,16 +76,10 @@ public:
     int getLaneTypeIndex(const GNELaneType* laneType) const;
 
     /// @brief add laneType
-    void addLaneType(GNELaneType* laneType, const int position);
-
-    /// @brief add laneType (in back and undoList)
-    void addLaneType(GNEUndoList* undoList);
+    void addLaneType(GNELaneType* laneType);
 
     /// @brief remove laneType
-    void removeLaneType(GNELaneType* laneType);
-
-    /// @brief remove laneType (using index and undoList)
-    void removeLaneType(const int index, GNEUndoList* undoList);
+    void removeLaneType(const int index);
 
     /// @name Functions related with geometry of element
     /// @{

@@ -28,6 +28,7 @@
 #include <netedit/changes/GNEChange_Lane.h>
 #include <netedit/elements/additional/GNERouteProbe.h>
 #include <netedit/elements/demand/GNERoute.h>
+#include <netedit/frames/common/GNEInspectorFrame.h>
 #include <netedit/frames/common/GNEDeleteFrame.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/globjects/GLIncludes.h>
@@ -38,6 +39,9 @@
 #include "GNEEdge.h"
 #include "GNEEdgeType.h"
 #include "GNELaneType.h"
+#include "GNEEdgeTemplate.h"
+#include "GNELaneTemplate.h"
+
 
 //#define DEBUG_SMOOTH_GEOM
 //#define DEBUGCOND(obj) (true)
@@ -332,6 +336,12 @@ GNEEdge::updateCenteringBoundary(const bool updateGrid) {
     // add lane boundaries
     for (const auto& lane : myLanes) {
         myBoundary.add(lane->getCenteringBoundary());
+        // add parkingArea boundaris
+        for (const auto &additional : lane->getChildAdditionals()) {
+            if (additional->getTagProperty().getTag() == SUMO_TAG_PARKING_AREA) {
+                myBoundary.add(additional->getCenteringBoundary());
+            }
+        }
     }
     // ensure that geometry points are selectable even if the lane geometry is strange
     for (const Position& pos : myNBEdge->getGeometry()) {
@@ -683,32 +693,32 @@ GNEEdge::getGNECrossings() {
 
 
 void
-GNEEdge::copyTemplate(const GNEInspectorFrame::TemplateEditor::EdgeTemplate& edgeTemplate, GNEUndoList* undoList) {
+GNEEdge::copyTemplate(const GNEEdgeTemplate* edgeTemplate, GNEUndoList* undoList) {
     // copy edge-specific attributes
-    setAttribute(SUMO_ATTR_NUMLANES,         edgeTemplate.edgeParameters.at(SUMO_ATTR_NUMLANES),        undoList);
-    setAttribute(SUMO_ATTR_TYPE,            edgeTemplate.edgeParameters.at(SUMO_ATTR_TYPE),             undoList);
-    setAttribute(SUMO_ATTR_PRIORITY,        edgeTemplate.edgeParameters.at(SUMO_ATTR_PRIORITY),         undoList);
-    setAttribute(SUMO_ATTR_SPREADTYPE,      edgeTemplate.edgeParameters.at(SUMO_ATTR_SPREADTYPE),       undoList);
-    setAttribute(GNE_ATTR_STOPOFFSET,       edgeTemplate.edgeParameters.at(GNE_ATTR_STOPOFFSET),        undoList);
-    setAttribute(GNE_ATTR_STOPOEXCEPTION,   edgeTemplate.edgeParameters.at(GNE_ATTR_STOPOEXCEPTION),    undoList);
+    setAttribute(SUMO_ATTR_NUMLANES,        edgeTemplate->getAttribute(SUMO_ATTR_NUMLANES),         undoList);
+    setAttribute(SUMO_ATTR_TYPE,            edgeTemplate->getAttribute(SUMO_ATTR_TYPE),             undoList);
+    setAttribute(SUMO_ATTR_PRIORITY,        edgeTemplate->getAttribute(SUMO_ATTR_PRIORITY),         undoList);
+    setAttribute(SUMO_ATTR_SPREADTYPE,      edgeTemplate->getAttribute(SUMO_ATTR_SPREADTYPE),       undoList);
+    setAttribute(GNE_ATTR_STOPOFFSET,       edgeTemplate->getAttribute(GNE_ATTR_STOPOFFSET),        undoList);
+    setAttribute(GNE_ATTR_STOPOEXCEPTION,   edgeTemplate->getAttribute(GNE_ATTR_STOPOEXCEPTION),    undoList);
     // copy raw values for lane-specific attributes
-    if (isValid(SUMO_ATTR_SPEED, edgeTemplate.edgeParameters.at(SUMO_ATTR_SPEED))) {
-        setAttribute(SUMO_ATTR_SPEED,       edgeTemplate.edgeParameters.at(SUMO_ATTR_SPEED),            undoList);
+    if (isValid(SUMO_ATTR_SPEED, edgeTemplate->getAttribute(SUMO_ATTR_SPEED))) {
+        setAttribute(SUMO_ATTR_SPEED,       edgeTemplate->getAttribute(SUMO_ATTR_SPEED),            undoList);
     }
-    if (isValid(SUMO_ATTR_WIDTH, edgeTemplate.edgeParameters.at(SUMO_ATTR_WIDTH))) {
-        setAttribute(SUMO_ATTR_WIDTH,       edgeTemplate.edgeParameters.at(SUMO_ATTR_WIDTH),            undoList);
+    if (isValid(SUMO_ATTR_WIDTH, edgeTemplate->getAttribute(SUMO_ATTR_WIDTH))) {
+        setAttribute(SUMO_ATTR_WIDTH,       edgeTemplate->getAttribute(SUMO_ATTR_WIDTH),            undoList);
     }
-    if (isValid(SUMO_ATTR_ENDOFFSET, edgeTemplate.edgeParameters.at(SUMO_ATTR_ENDOFFSET))) {
-        setAttribute(SUMO_ATTR_ENDOFFSET,   edgeTemplate.edgeParameters.at(SUMO_ATTR_ENDOFFSET),        undoList);
+    if (isValid(SUMO_ATTR_ENDOFFSET, edgeTemplate->getAttribute(SUMO_ATTR_ENDOFFSET))) {
+        setAttribute(SUMO_ATTR_ENDOFFSET,   edgeTemplate->getAttribute(SUMO_ATTR_ENDOFFSET),        undoList);
     }
     // copy lane attributes as well
     for (int i = 0; i < (int)myLanes.size(); i++) {
-        myLanes[i]->setAttribute(SUMO_ATTR_ALLOW,           edgeTemplate.laneParameters.at(i).at(SUMO_ATTR_ALLOW),          undoList);
-        myLanes[i]->setAttribute(SUMO_ATTR_SPEED,           edgeTemplate.laneParameters.at(i).at(SUMO_ATTR_SPEED),          undoList);
-        myLanes[i]->setAttribute(SUMO_ATTR_WIDTH,           edgeTemplate.laneParameters.at(i).at(SUMO_ATTR_WIDTH),          undoList);
-        myLanes[i]->setAttribute(SUMO_ATTR_ENDOFFSET,       edgeTemplate.laneParameters.at(i).at(SUMO_ATTR_ENDOFFSET),      undoList);
-        myLanes[i]->setAttribute(GNE_ATTR_STOPOFFSET,       edgeTemplate.laneParameters.at(i).at(GNE_ATTR_STOPOFFSET),      undoList);
-        myLanes[i]->setAttribute(GNE_ATTR_STOPOEXCEPTION,   edgeTemplate.laneParameters.at(i).at(GNE_ATTR_STOPOEXCEPTION),  undoList);
+        myLanes[i]->setAttribute(SUMO_ATTR_ALLOW,           edgeTemplate->getLaneTemplates().at(i)->getAttribute(SUMO_ATTR_ALLOW),          undoList);
+        myLanes[i]->setAttribute(SUMO_ATTR_SPEED,           edgeTemplate->getLaneTemplates().at(i)->getAttribute(SUMO_ATTR_SPEED),          undoList);
+        myLanes[i]->setAttribute(SUMO_ATTR_WIDTH,           edgeTemplate->getLaneTemplates().at(i)->getAttribute(SUMO_ATTR_WIDTH),          undoList);
+        myLanes[i]->setAttribute(SUMO_ATTR_ENDOFFSET,       edgeTemplate->getLaneTemplates().at(i)->getAttribute(SUMO_ATTR_ENDOFFSET),      undoList);
+        myLanes[i]->setAttribute(GNE_ATTR_STOPOFFSET,       edgeTemplate->getLaneTemplates().at(i)->getAttribute(GNE_ATTR_STOPOFFSET),      undoList);
+        myLanes[i]->setAttribute(GNE_ATTR_STOPOEXCEPTION,   edgeTemplate->getLaneTemplates().at(i)->getAttribute(GNE_ATTR_STOPOEXCEPTION),  undoList);
     }
 }
 
@@ -733,17 +743,21 @@ GNEEdge::copyEdgeType(const GNEEdgeType* edgeType, GNEUndoList* undoList) {
     setAttribute(GNE_ATTR_PARAMETERS, edgeType->getAttribute(GNE_ATTR_PARAMETERS), undoList);
     // copy lane attributes as well
     for (int i = 0; i < (int)myLanes.size(); i++) {
+        // now copy custom lane values
         if (edgeType->getLaneTypes().at(i)->getAttribute(SUMO_ATTR_SPEED).size() > 0) {
-            myLanes[i]->setAttribute(SUMO_ATTR_SPEED,       edgeType->getLaneTypes().at(i)->getAttribute(SUMO_ATTR_SPEED),      undoList);
+            myLanes[i]->setAttribute(SUMO_ATTR_SPEED, edgeType->getLaneTypes().at(i)->getAttribute(SUMO_ATTR_SPEED), undoList);
         }
         if (edgeType->getLaneTypes().at(i)->getAttribute(SUMO_ATTR_ALLOW).size() > 0) {
-            myLanes[i]->setAttribute(SUMO_ATTR_ALLOW,       edgeType->getLaneTypes().at(i)->getAttribute(SUMO_ATTR_ALLOW),      undoList);
+            myLanes[i]->setAttribute(SUMO_ATTR_ALLOW, edgeType->getLaneTypes().at(i)->getAttribute(SUMO_ATTR_ALLOW), undoList);
+        }
+        if (edgeType->getLaneTypes().at(i)->getAttribute(SUMO_ATTR_DISALLOW).size() > 0) {
+            myLanes[i]->setAttribute(SUMO_ATTR_DISALLOW, edgeType->getLaneTypes().at(i)->getAttribute(SUMO_ATTR_DISALLOW), undoList);
         }
         if (edgeType->getLaneTypes().at(i)->getAttribute(SUMO_ATTR_WIDTH).size() > 0) {
-            myLanes[i]->setAttribute(SUMO_ATTR_WIDTH,       edgeType->getLaneTypes().at(i)->getAttribute(SUMO_ATTR_WIDTH),      undoList);
+            myLanes[i]->setAttribute(SUMO_ATTR_WIDTH, edgeType->getLaneTypes().at(i)->getAttribute(SUMO_ATTR_WIDTH), undoList);
         }
         if (edgeType->getLaneTypes().at(i)->getAttribute(GNE_ATTR_PARAMETERS).size() > 0) {
-            myLanes[i]->setAttribute(GNE_ATTR_PARAMETERS,   edgeType->getLaneTypes().at(i)->getAttribute(GNE_ATTR_PARAMETERS),  undoList);
+            myLanes[i]->setAttribute(GNE_ATTR_PARAMETERS, edgeType->getLaneTypes().at(i)->getAttribute(GNE_ATTR_PARAMETERS), undoList);
         }
     }
 }
@@ -873,6 +887,10 @@ GNEEdge::getAttributeForSelection(SumoXMLAttr key) const {
 
 void
 GNEEdge::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList) {
+    // get template editor
+    GNEInspectorFrame::TemplateEditor* templateEditor = myNet->getViewNet()->getViewParent()->getInspectorFrame()->getTemplateEditor();
+    // check if we have to update template
+    const bool updateTemplate = templateEditor->getEdgeTemplate()? (templateEditor->getEdgeTemplate()->getID() == getID()) : false;
     switch (key) {
         case SUMO_ATTR_WIDTH:
         case SUMO_ATTR_ENDOFFSET:
@@ -966,6 +984,10 @@ GNEEdge::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* un
             throw InvalidArgument("Attribute of '" + toString(key) + "' cannot be modified");
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+    }
+    // update template
+    if (updateTemplate) {
+        templateEditor->setEdgeTemplate(this);
     }
 }
 
@@ -1464,10 +1486,8 @@ void
 GNEEdge::setAttribute(SumoXMLAttr key, const std::string& value) {
     // get template editor
     GNEInspectorFrame::TemplateEditor* templateEditor = myNet->getViewNet()->getViewParent()->getInspectorFrame()->getTemplateEditor();
-    // get edge parameters
-    const auto edgeParameters = templateEditor->getEdgeTemplate().edgeParameters;
     // check if we have to update template
-    const bool updateTemplate = edgeParameters.empty() ? false : (edgeParameters.at(SUMO_ATTR_ID) == getID());
+    const bool updateTemplate = templateEditor->getEdgeTemplate()? (templateEditor->getEdgeTemplate()->getID() == getID()) : false;
     switch (key) {
         case SUMO_ATTR_ID:
             myNet->getAttributeCarriers()->updateEdgeID(this, value);
@@ -1607,7 +1627,7 @@ GNEEdge::setAttribute(SumoXMLAttr key, const std::string& value) {
     }
     // update template
     if (updateTemplate) {
-        templateEditor->updateEdgeTemplate(this);
+        templateEditor->setEdgeTemplate(this);
     }
     // invalidate path calculator
     myNet->getPathManager()->getPathCalculator()->invalidatePathCalculator();
