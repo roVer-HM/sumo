@@ -558,32 +558,32 @@ AdditionalHandler::parseSumoBaseObject(CommonXMLStructure::SumoBaseObject* obj) 
                            obj->getStringAttribute(SUMO_ATTR_NAME),
                            obj->getParameters());
             break;
-        // wire
+        // wire elements
         case SUMO_TAG_TRACTION_SUBSTATION:
             buildTractionSubstation(obj,
                                     obj->getStringAttribute(SUMO_ATTR_ID),
                                     obj->getDoubleAttribute(SUMO_ATTR_VOLTAGE),
                                     obj->getDoubleAttribute(SUMO_ATTR_CURRENTLIMIT));
             break;
-        case SUMO_TAG_OVERHEAD_WIRE_CLAMP:
-            buildOverheadWireClamp(obj,
-                                   obj->getStringAttribute(SUMO_ATTR_ID),
-                                   obj->getStringAttribute(SUMO_ATTR_LANE),
-                                   obj->getBoolAttribute(SUMO_ATTR_VOLTAGESOURCE),
-                                   obj->getBoolAttribute(SUMO_ATTR_STARTPOS),
-                                   obj->getBoolAttribute(SUMO_ATTR_ENDPOS));
-            break;
         case SUMO_TAG_OVERHEAD_WIRE_SEGMENT:
             buildOverheadWireSegment(obj,
                                      obj->getStringAttribute(SUMO_ATTR_ID),
-                                     obj->getStringAttribute(SUMO_ATTR_SUBSTATIONID),
-                                     obj->getStringAttribute(SUMO_ATTR_OVERHEAD_WIRE_CLAMP_START),
-                                     obj->getStringAttribute(SUMO_ATTR_OVERHEAD_WIRE_CLAMP_END));
+                                     obj->getStringAttribute(SUMO_ATTR_LANE),
+                                     obj->getBoolAttribute(SUMO_ATTR_VOLTAGESOURCE));
+            break;
+        case SUMO_TAG_OVERHEAD_WIRE_CLAMP:
+            buildOverheadWireClamp(obj,
+                                   obj->getStringAttribute(SUMO_ATTR_ID),
+                                   obj->getStringAttribute(SUMO_ATTR_SUBSTATIONID),
+                                   obj->getStringAttribute(SUMO_ATTR_OVERHEAD_WIRE_CLAMP_START),
+                                   obj->getStringAttribute(SUMO_ATTR_OVERHEAD_WIRE_CLAMP_END));
             break;
         case SUMO_TAG_OVERHEAD_WIRE_SECTION:
             buildOverheadWireSection(obj,
-                                     obj->getStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS),
                                      obj->getStringAttribute(SUMO_ATTR_SUBSTATIONID),
+                                     obj->getStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS),
+                                     obj->getDoubleAttribute(SUMO_ATTR_STARTPOS),
+                                     obj->getDoubleAttribute(SUMO_ATTR_ENDPOS),
                                      obj->getStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_CLAMPS),
                                      obj->getStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN));
             break;
@@ -1542,7 +1542,7 @@ AdditionalHandler::parseTractionSubstation(const SUMOSAXAttributes& attrs) {
 
 
 void
-AdditionalHandler::parseOverheadWireClamp(const SUMOSAXAttributes& attrs) {
+AdditionalHandler::parseOverheadWireSegment(const SUMOSAXAttributes& attrs) {
     // declare Ok Flag
     bool parsedOk = true;
     // needed attributes
@@ -1550,24 +1550,20 @@ AdditionalHandler::parseOverheadWireClamp(const SUMOSAXAttributes& attrs) {
     const std::string lane = attrs.get<std::string>(SUMO_ATTR_LANE, id.c_str(), parsedOk);
     // optional attributes
     const bool voltageSource = attrs.getOpt<bool>(SUMO_ATTR_VOLTAGESOURCE, id.c_str(), parsedOk, false);
-    const double startPos = attrs.getOpt<double>(SUMO_ATTR_STARTPOS, id.c_str(), parsedOk, 0);
-    const double endPos = attrs.getOpt<double>(SUMO_ATTR_ENDPOS, id.c_str(), parsedOk, INVALID_DOUBLE);
     // continue if flag is ok
     if (parsedOk) {
         // set tag
         myCommonXMLStructure.getCurrentSumoBaseObject()->setTag(SUMO_TAG_OVERHEAD_WIRE_CLAMP);
         // add all attributes
-        myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_ID, id),
-        myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_LANE, lane),
-        myCommonXMLStructure.getCurrentSumoBaseObject()->addBoolAttribute(SUMO_ATTR_VOLTAGESOURCE, voltageSource),
-        myCommonXMLStructure.getCurrentSumoBaseObject()->addBoolAttribute(SUMO_ATTR_STARTPOS, startPos),
-        myCommonXMLStructure.getCurrentSumoBaseObject()->addBoolAttribute(SUMO_ATTR_ENDPOS, endPos);
+        myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_ID, id);
+        myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_LANE, lane);
+        myCommonXMLStructure.getCurrentSumoBaseObject()->addBoolAttribute(SUMO_ATTR_VOLTAGESOURCE, voltageSource);
     }
 }
 
 
 void
-AdditionalHandler::parseOverheadWireSegment(const SUMOSAXAttributes& attrs) {
+AdditionalHandler::parseOverheadWireClamp(const SUMOSAXAttributes& attrs) {
     // declare Ok Flag
     bool parsedOk = true;
     // needed attributes
@@ -1593,19 +1589,24 @@ AdditionalHandler::parseOverheadWireSection(const SUMOSAXAttributes& attrs) {
     // declare Ok Flag
     bool parsedOk = true;
     // needed attributes
-    const std::vector<std::string> segments = attrs.get<std::vector<std::string> >(SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS, "", parsedOk);
     const std::string substationID = attrs.get<std::string>(SUMO_ATTR_SUBSTATIONID, "", parsedOk);
+    const std::vector<std::string> segments = attrs.get<std::vector<std::string> >(SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS, "", parsedOk);
     const std::vector<std::string> clamps = attrs.get<std::vector<std::string> >(SUMO_ATTR_OVERHEAD_WIRE_CLAMPS, "", parsedOk);
-    const std::vector<std::string> forbiddenInnerLanes = attrs.get<std::vector<std::string> >(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN, "", parsedOk);
+    // optional attributes
+    const double startPos = attrs.getOpt<double>(SUMO_ATTR_STARTPOS, "", parsedOk, 0);
+    const double endPos = attrs.getOpt<double>(SUMO_ATTR_ENDPOS, "", parsedOk, INVALID_DOUBLE);
+    const std::vector<std::string> forbiddenInnerLanes = attrs.getOptStringVector(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN, "", parsedOk);
     // continue if flag is ok
     if (parsedOk) {
         // set tag
         myCommonXMLStructure.getCurrentSumoBaseObject()->setTag(SUMO_TAG_OVERHEAD_WIRE_SECTION);
         // add all attributes
-        myCommonXMLStructure.getCurrentSumoBaseObject()->addStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS, segments),
         myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_SUBSTATIONID, substationID),
+        myCommonXMLStructure.getCurrentSumoBaseObject()->addStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS, segments),
         myCommonXMLStructure.getCurrentSumoBaseObject()->addStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_CLAMPS, clamps),
         myCommonXMLStructure.getCurrentSumoBaseObject()->addStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN, forbiddenInnerLanes);
+        myCommonXMLStructure.getCurrentSumoBaseObject()->addBoolAttribute(SUMO_ATTR_STARTPOS, startPos),
+        myCommonXMLStructure.getCurrentSumoBaseObject()->addBoolAttribute(SUMO_ATTR_ENDPOS, endPos);
     }
 }
 

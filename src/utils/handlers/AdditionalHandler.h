@@ -456,33 +456,32 @@ public:
      */
     virtual void buildTractionSubstation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const double voltage, const double currentLimit) = 0;
 
-    /** @brief build overhead wire clamp
+    /** @brief build overhead wire segment
      * @param[in] id Overhead wire segment ID
      * @param[in] lane Lane over which the segment is placed
      * @param[in] voltageSource If true, the beginning point of the segment is connected to a substation
-     * @param[in] startPos Starting position in the specified lane
-     * @param[in] endPos Ending position in the specified lane
      */
-    virtual void buildOverheadWireClamp(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& lane, 
-                                        const bool voltageSource, const bool startPos, const bool endPos) = 0;
+    virtual void buildOverheadWireSegment(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& lane, const bool voltageSource) = 0;
 
-    /** @brief build overhead wire segment
+    /** @brief build overhead wire clamp
      * @param[in] id Overhead wire clamp ID 
      * @param[in] substationId Substation which can employ the overhead wire clamp
      * @param[in] idSegmentStartClamp ID of the overhead wire segment, to the start of which the overhead wire clamp is connected
      * @param[in] idSegmentEndClamp ID of the overhead wire segment, to the end of which the overhead wire clamp is connected
      */
-    virtual void buildOverheadWireSegment(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& substationId, 
-                                          const std::string& idSegmentStartClamp, const std::string& idSegmentEndClamp) = 0;
+    virtual void buildOverheadWireClamp(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& substationId, 
+                                        const std::string& idSegmentStartClamp, const std::string& idSegmentEndClamp) = 0;
 
     /** @brief build overhead wire section
-     * @param[in] segments Segments that form the given circuit
      * @param[in] substationId Substation to which the circuit is connected
+     * @param[in] segments Segments that form the given circuit
+     * @param[in] startPos Starting position in the specified lane
+     * @param[in] endPos Ending position in the specified lane
      * @param[in] clamps Overhead wire clamps which interconnect overhead wire segments
      * @param[in] forbiddenInnerLanes Inner lanes, where placing of overhead wire is restricted
      */
-    virtual void buildOverheadWireSection(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::vector<std::string>& segmentIDs, const std::string& substationId,
-                                          const std::vector<std::string>& clamps, const std::vector<std::string>& forbiddenInnerLanes) = 0;
+    virtual void buildOverheadWireSection(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& substationId, const std::vector<std::string>& segmentIDs, 
+                                          const double startPos, const double endPos, const std::vector<std::string>& clamps, const std::vector<std::string>& forbiddenInnerLanes) = 0;
 
     /**@brief Builds a polygon using the given values
      * @param[in] sumoBaseObject sumo base object used for build
@@ -666,12 +665,12 @@ private:
 
     /// @brief parse traction substation
     void parseTractionSubstation(const SUMOSAXAttributes& attrs);
-
-    /// @brief parse overhead wire clamp
-    void parseOverheadWireClamp(const SUMOSAXAttributes& attrs);
     
     /// @brief parse overhead wire segment
     void parseOverheadWireSegment(const SUMOSAXAttributes& attrs);
+    
+    /// @brief parse overhead wire clamp
+    void parseOverheadWireClamp(const SUMOSAXAttributes& attrs);
 
     /// @brief parse overhead wire section
     void parseOverheadWireSection(const SUMOSAXAttributes& attrs);
