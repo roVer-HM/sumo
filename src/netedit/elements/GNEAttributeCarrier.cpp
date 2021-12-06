@@ -2735,7 +2735,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::ADDITIONALELEMENT | GNETagProperties::WIRE,
+                                      GNETagProperties::WIRE,
                                       0,
                                       GUIIcon::TRACTION_SUBSTATION, currentTag);
         // set attribute properties
@@ -2760,7 +2760,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::ADDITIONALELEMENT | GNETagProperties::WIRE,
+                                      GNETagProperties::WIRE,
                                       0,
                                       GUIIcon::OVERHEADWIRE, currentTag);
         // set attribute properties
@@ -2808,7 +2808,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::ADDITIONALELEMENT | GNETagProperties::WIRE,
+                                      GNETagProperties::WIRE,
                                       0,
                                       GUIIcon::OVERHEADWIRE_CLAMP, currentTag);
         // set attribute properties
@@ -2816,8 +2816,6 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
                                               "Overhead wire clamp ID");
         myTagProperties[currentTag].addAttribute(attrProperty);
-
-
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRECLAMP_START,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
