@@ -2756,7 +2756,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                               "400");
         myTagProperties[currentTag].addAttribute(attrProperty);
     }
-    currentTag = SUMO_TAG_OVERHEAD_WIRE_SEGMENT;
+    currentTag = SUMO_TAG_OVERHEAD_WIRE_SECTION;
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
@@ -2769,16 +2769,40 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                               "Overhead wire segment ID");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_LANE,
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_SUBSTATIONID,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
-                                              "Lane over which the segment is placed");
+                                              "Substation to which the circuit is connected");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_LANES,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::LIST | GNEAttributeProperties::UNIQUE,
+                                              "List of consecutive lanes of the circuit");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_STARTPOS,
+                                              GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUESTATIC,
+                                              "Starting position in the specified lane",
+                                              "0");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_ENDPOS,
+                                              GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUESTATIC,
+                                              "Ending position in the specified lane",
+                                              toString(INVALID_DOUBLE));
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::LIST | GNEAttributeProperties::UNIQUE,
+                                              "Inner lanes, where placing of overhead wire is restricted");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+/*
         attrProperty = GNEAttributeProperties(SUMO_ATTR_VOLTAGESOURCE,
                                               GNEAttributeProperties::BOOL | GNEAttributeProperties::DEFAULTVALUESTATIC,
                                               "If true, the beginning point of the segment is connected to a substation",
                                               "false");
         myTagProperties[currentTag].addAttribute(attrProperty);
+*/
     }
     currentTag = SUMO_TAG_OVERHEAD_WIRE_CLAMP;
     {
@@ -2793,60 +2817,26 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                               "Overhead wire clamp ID");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_SUBSTATIONID,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
-                                              "Substation which can employ the overhead wire clamp");
-        myTagProperties[currentTag].addAttribute(attrProperty);
 
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_CLAMP_START,
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRECLAMP_START,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
                                               "ID of the overhead wire segment, to the start of which the overhead wire clamp is connected");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_CLAMP_END,
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRECLAMP_LANESTART,
+                                              GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
+                                              "ID of the overhead wire segment lane of overheadWireIDStartClamp");
+        myTagProperties[currentTag].addAttribute(attrProperty);
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRECLAMP_END,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
                                               "ID of the overhead wire segment, to the end of which the overhead wire clamp is connected");
         myTagProperties[currentTag].addAttribute(attrProperty);
-    }
-    currentTag = SUMO_TAG_OVERHEAD_WIRE_SECTION;
-    {
-        // set tag properties
-        myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::ADDITIONALELEMENT | GNETagProperties::WIRE,
-                                      0,
-                                      GUIIcon::WIRE_SECTION, currentTag);
-        // set attribute properties
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_SUBSTATIONID,
+
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRECLAMP_LANEEND,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
-                                              "Substation to which the circuit is connected");
-        myTagProperties[currentTag].addAttribute(attrProperty);
-
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::LIST | GNEAttributeProperties::UNIQUE,
-                                              "Segments that form the given circuit");
-        myTagProperties[currentTag].addAttribute(attrProperty);
-
-        
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_STARTPOS,
-                                              GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUESTATIC,
-                                              "Starting position in the specified lane",
-                                              "0");
-        myTagProperties[currentTag].addAttribute(attrProperty);
-
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_ENDPOS,
-                                              GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUESTATIC,
-                                              "Ending position in the specified lane",
-                                              toString(INVALID_DOUBLE));
-        myTagProperties[currentTag].addAttribute(attrProperty);
-
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_CLAMPS,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::LIST | GNEAttributeProperties::UNIQUE,
-                                              "Overhead wire clamps which interconnect overhead wire segments");
-        myTagProperties[currentTag].addAttribute(attrProperty);
-
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN,
-                                              GNEAttributeProperties::STRING | GNEAttributeProperties::LIST | GNEAttributeProperties::UNIQUE,
-                                              "Inner lanes, where placing of overhead wire is restricted");
+                                              "ID of the overhead wire segment lane of overheadWireIDEndClamp");
         myTagProperties[currentTag].addAttribute(attrProperty);
     }
 }
