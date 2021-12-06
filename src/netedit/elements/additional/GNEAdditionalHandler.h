@@ -452,11 +452,13 @@ public:
     void buildTAZSink(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& edgeID, const double arrivalWeight);
 
     /**@brief build traction substation
-    * @param[in] id Traction substation ID
-    * @param[in] voltage Voltage of at connection point for the overhead wire
-    * @param[in] currentLimit Current limit of the feeder line
-    */
-    void buildTractionSubstation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const double voltage, const double currentLimit);
+     * @param[in] id Traction substation ID
+     * @param[in] pos Position of traction substation in view (optional)
+     * @param[in] voltage Voltage of at connection point for the overhead wire
+     * @param[in] currentLimit Current limit of the feeder line
+     */
+    void buildTractionSubstation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const Position &pos, 
+                                 const double voltage, const double currentLimit);
 
     /** @brief build overhead wire
      * @param[in] id Overhead wire ID

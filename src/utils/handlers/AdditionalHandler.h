@@ -451,11 +451,12 @@ public:
 
     /**@brief build traction substation
      * @param[in] id Traction substation ID
+     * @param[in] pos Position of traction substation in view (optional)
      * @param[in] voltage Voltage of at connection point for the overhead wire
      * @param[in] currentLimit Current limit of the feeder line
-
      */
-    virtual void buildTractionSubstation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const double voltage, const double currentLimit) = 0;
+    virtual void buildTractionSubstation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const Position &pos, 
+                                         const double voltage, const double currentLimit) = 0;
 
     /**@brief build overhead wire
      * @param[in] id Overhead wire ID
