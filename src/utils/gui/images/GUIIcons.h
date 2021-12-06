@@ -372,9 +372,8 @@ enum class GUIIcon {
     /// @name poly elements icons
     /// @{
     TRACTION_SUBSTATION,
-    WIRE_SEGMENT,
-    WIRE_CLAMP,
-    WIRE_SECTION,
+    OVERHEADWIRE,
+    OVERHEADWIRE_CLAMP,
     /// @}
 
     /// @name poly elements icons

@@ -2762,7 +2762,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
         myTagProperties[currentTag] = GNETagProperties(currentTag,
                                       GNETagProperties::ADDITIONALELEMENT | GNETagProperties::WIRE,
                                       0,
-                                      GUIIcon::WIRE_SEGMENT, currentTag);
+                                      GUIIcon::OVERHEADWIRE, currentTag);
         // set attribute properties
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,
@@ -2810,7 +2810,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
         myTagProperties[currentTag] = GNETagProperties(currentTag,
                                       GNETagProperties::ADDITIONALELEMENT | GNETagProperties::WIRE,
                                       0,
-                                      GUIIcon::WIRE_CLAMP, currentTag);
+                                      GUIIcon::OVERHEADWIRE_CLAMP, currentTag);
         // set attribute properties
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE,

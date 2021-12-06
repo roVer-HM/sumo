@@ -265,9 +265,8 @@
 #include "routeprobreroute.xpm"
 
 #include "tractionsubstation.xpm"
-#include "wiresegment.xpm"
-#include "wireclamp.xpm"
-#include "wiresection.xpm"
+#include "overheadwire.xpm"
+#include "overheadwire_clamp.xpm"
 
 #include "poly.xpm"
 #include "poi.xpm"
@@ -636,9 +635,8 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::ROUTEPROBREROUTE] = new FXXPMIcon(a, routeprobreroute_xpm);
 
     myIcons[GUIIcon::TRACTION_SUBSTATION] = new FXXPMIcon(a, tractionsubstation_xpm);
-    myIcons[GUIIcon::WIRE_SEGMENT] = new FXXPMIcon(a, wiresegment_xpm);
-    myIcons[GUIIcon::WIRE_CLAMP] = new FXXPMIcon(a, wireclamp_xpm);
-    myIcons[GUIIcon::WIRE_SECTION] = new FXXPMIcon(a, wiresection_xpm);
+    myIcons[GUIIcon::OVERHEADWIRE] = new FXXPMIcon(a, overheadwire_xpm);
+    myIcons[GUIIcon::OVERHEADWIRE_CLAMP] = new FXXPMIcon(a, overheadwire_clamp_xpm);
 
     myIcons[GUIIcon::POLY] = new FXXPMIcon(a, poly_xpm);
     myIcons[GUIIcon::POI] = new FXXPMIcon(a, poi_xpm);
