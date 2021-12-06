@@ -582,7 +582,7 @@ AdditionalHandler::parseSumoBaseObject(CommonXMLStructure::SumoBaseObject* obj) 
             break;
         case SUMO_TAG_OVERHEAD_WIRE_SECTION:
             buildOverheadWireSection(obj,
-                                     obj->getStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_SECTION),
+                                     obj->getStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS),
                                      obj->getStringAttribute(SUMO_ATTR_SUBSTATIONID),
                                      obj->getStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_CLAMPS),
                                      obj->getStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN));
@@ -1593,7 +1593,7 @@ AdditionalHandler::parseOverheadWireSection(const SUMOSAXAttributes& attrs) {
     // declare Ok Flag
     bool parsedOk = true;
     // needed attributes
-    const std::vector<std::string> segments = attrs.get<std::vector<std::string> >(SUMO_ATTR_OVERHEAD_WIRE_SECTION, "", parsedOk);
+    const std::vector<std::string> segments = attrs.get<std::vector<std::string> >(SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS, "", parsedOk);
     const std::string substationID = attrs.get<std::string>(SUMO_ATTR_SUBSTATIONID, "", parsedOk);
     const std::vector<std::string> clamps = attrs.get<std::vector<std::string> >(SUMO_ATTR_OVERHEAD_WIRE_CLAMPS, "", parsedOk);
     const std::vector<std::string> forbiddenInnerLanes = attrs.get<std::vector<std::string> >(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN, "", parsedOk);
@@ -1602,7 +1602,7 @@ AdditionalHandler::parseOverheadWireSection(const SUMOSAXAttributes& attrs) {
         // set tag
         myCommonXMLStructure.getCurrentSumoBaseObject()->setTag(SUMO_TAG_OVERHEAD_WIRE_SECTION);
         // add all attributes
-        myCommonXMLStructure.getCurrentSumoBaseObject()->addStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_SECTION, segments),
+        myCommonXMLStructure.getCurrentSumoBaseObject()->addStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS, segments),
         myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_SUBSTATIONID, substationID),
         myCommonXMLStructure.getCurrentSumoBaseObject()->addStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_CLAMPS, clamps),
         myCommonXMLStructure.getCurrentSumoBaseObject()->addStringListAttribute(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN, forbiddenInnerLanes);

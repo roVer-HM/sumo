@@ -425,7 +425,7 @@ StringBijection<int>::Entry SUMOXMLDefinitions::attrs[] = {
     { "overheadWireChargingPower",      SUMO_ATTR_OVERHEADWIRECHARGINGPOWER },
     // OverheadWire
     { "overheadWireSegment",    SUMO_ATTR_OVERHEAD_WIRE_SEGMENT },
-    { "segments",               SUMO_ATTR_OVERHEAD_WIRE_SECTION },
+    { "segments",               SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS },
     { "voltage",                SUMO_ATTR_VOLTAGE },
     { "voltageSource",          SUMO_ATTR_VOLTAGESOURCE },
     { "currentLimit",           SUMO_ATTR_CURRENTLIMIT },

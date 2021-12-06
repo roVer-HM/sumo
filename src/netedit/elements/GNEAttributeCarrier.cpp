@@ -2821,7 +2821,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                               "Substation to which the circuit is connected");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
-        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_SECTION,
+        attrProperty = GNEAttributeProperties(SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::LIST | GNEAttributeProperties::UNIQUE,
                                               "Segments that form the given circuit");
         myTagProperties[currentTag].addAttribute(attrProperty);

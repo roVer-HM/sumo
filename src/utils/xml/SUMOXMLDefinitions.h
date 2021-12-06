@@ -607,7 +607,7 @@ enum SumoXMLAttr {
     /// @name overheadWire attributes
     /// @{
     SUMO_ATTR_OVERHEAD_WIRE_SEGMENT,
-    SUMO_ATTR_OVERHEAD_WIRE_SECTION,
+    SUMO_ATTR_OVERHEAD_WIRE_SEGMENTS,
     /// @brief voltage of the traction substation [V]
     SUMO_ATTR_VOLTAGE,
     /// @brief a voltage source on the overhead wire segment [bool]
