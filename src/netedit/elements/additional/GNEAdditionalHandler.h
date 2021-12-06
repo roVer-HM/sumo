@@ -451,39 +451,34 @@ public:
      */
     void buildTAZSink(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& edgeID, const double arrivalWeight);
 
-    /** @brief build traction substation
+    /**@brief build traction substation
     * @param[in] id Traction substation ID
     * @param[in] voltage Voltage of at connection point for the overhead wire
     * @param[in] currentLimit Current limit of the feeder line
     */
     void buildTractionSubstation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const double voltage, const double currentLimit);
 
-    /** @brief build overhead wire segment
-     * @param[in] id Overhead wire segment ID
+    /** @brief build overhead wire
+     * @param[in] id Overhead wire ID
      * @param[in] lane Lane over which the segment is placed
-     * @param[in] voltageSource If true, the beginning point of the segment is connected to a substation
-     */
-    void buildOverheadWireSegment(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& lane, const bool voltageSource);
-
-    /** @brief build overhead wire clamp
-     * @param[in] id Overhead wire clamp ID 
-     * @param[in] substationId Substation which can employ the overhead wire clamp
-     * @param[in] idSegmentStartClamp ID of the overhead wire segment, to the start of which the overhead wire clamp is connected
-     * @param[in] idSegmentEndClamp ID of the overhead wire segment, to the end of which the overhead wire clamp is connected
-     */
-    void buildOverheadWireClamp(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& substationId, 
-                                const std::string& idSegmentStartClamp, const std::string& idSegmentEndClamp);
-
-    /** @brief build overhead wire section
      * @param[in] substationId Substation to which the circuit is connected
-     * @param[in] segments Segments that form the given circuit
+     * @param[in] laneIDs list of consecutive lanes of the circuit
      * @param[in] startPos Starting position in the specified lane
      * @param[in] endPos Ending position in the specified lane
-     * @param[in] clamps Overhead wire clamps which interconnect overhead wire segments
      * @param[in] forbiddenInnerLanes Inner lanes, where placing of overhead wire is restricted
      */
-    void buildOverheadWireSection(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& substationId, const std::vector<std::string>& segmentIDs, 
-                                  const double startPos, const double endPos, const std::vector<std::string>& clamps, const std::vector<std::string>& forbiddenInnerLanes);
+    void buildOverheadWire(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& substationId, 
+                           const std::vector<std::string>& laneIDs, const double startPos, const double endPos, const std::vector<std::string>& forbiddenInnerLanes);
+   
+    /** @brief build overhead wire clamp
+     * @param[in] id Overhead wire clamp ID
+     * @param[in] overheadWireIDStartClamp ID of the overhead wire segment, to the start of which the overhead wire clamp is connected
+     * @param[in] laneIDStartClamp ID of the overhead wire segment lane of overheadWireIDStartClamp
+     * @param[in] overheadWireIDEndClamp ID of the overhead wire segment, to the end of which the overhead wire clamp is connected
+     * @param[in] laneIDEndClamp ID of the overhead wire segment lane of overheadWireIDEndClamp
+     */
+    void buildOverheadWireClamp(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& overheadWireIDStartClamp, 
+                                const std::string& laneIDStartClamp, const std::string& overheadWireIDEndClamp, const std::string& laneIDEndClamp);
 
     /**@brief Builds a polygon using the given values
      * @param[in] sumoBaseObject sumo base object used for build
