@@ -1474,22 +1474,23 @@ GNEAdditionalHandler::buildTractionSubstation(const CommonXMLStructure::SumoBase
     //
 }
 
+
 void 
-GNEAdditionalHandler::buildOverheadWireClamp(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& lane, 
-                                             const bool voltageSource, const bool startPos, const bool endPos) {
-    //
-}
-
-void
-GNEAdditionalHandler::buildOverheadWireSegment(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& substationId, 
-                                               const std::string& idSegmentStartClamp, const std::string& idSegmentEndClamp) {
+GNEAdditionalHandler::buildOverheadWireSegment(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& lane, const bool voltageSource) {
     //
 }
 
 
-void
-GNEAdditionalHandler::buildOverheadWireSection(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::vector<std::string>& segmentIDs, const std::string& substationId,
-                                               const std::vector<std::string>& clamps, const std::vector<std::string>& forbiddenInnerLanes) {
+void 
+GNEAdditionalHandler::buildOverheadWireClamp(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& substationId, 
+                            const std::string& idSegmentStartClamp, const std::string& idSegmentEndClamp) {
+    //
+}
+
+
+void 
+GNEAdditionalHandler::buildOverheadWireSection(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& substationId, const std::vector<std::string>& segmentIDs, 
+                                const double startPos, const double endPos, const std::vector<std::string>& clamps, const std::vector<std::string>& forbiddenInnerLanes) {
     //
 }
 
