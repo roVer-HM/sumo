@@ -298,9 +298,6 @@ private:
     /// @brief fill additional elements
     static void fillAdditionalElements();
 
-    /// @brief fill wire elements
-    static void fillWireElements();
-
     /// @brief fill shape elements
     static void fillShapeElements();
 
