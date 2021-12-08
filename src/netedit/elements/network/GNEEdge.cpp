@@ -443,10 +443,10 @@ GNEEdge::getSplitPos(const Position& clickPos) {
     int index = geom.indexOfClosest(clickPos, true);
     if (geom[index].distanceSquaredTo2D(clickPos) < SNAP_RADIUS_SQUARED) {
         // split at existing geometry point
-        return geom[index];
+        return myNet->getViewNet()->snapToActiveGrid(geom[index]);
     } else {
         // split straight between the next two points
-        return geom.positionAtOffset(geom.nearest_offset_to_point2D(clickPos));
+        return myNet->getViewNet()->snapToActiveGrid(geom.positionAtOffset(geom.nearest_offset_to_point2D(clickPos)));
     }
 }
 
@@ -616,12 +616,15 @@ GNEEdge::remakeGNEConnections() {
     for (const auto& connection : myGNEConnections) {
         // decrease reference
         connection->decRef();
+        // remove it from network
+        myNet->removeGLObjectFromGrid(connection);
+        // and from AttributeCarreirs
+        if (myNet->getAttributeCarriers()->getConnections().count(connection) > 0) {
+            myNet->getAttributeCarriers()->deleteConnection(connection);
+        }
         // delete GNEConnection if is unreferenced
         if (connection->unreferenced()) {
-            // remove it from network
-            myNet->removeGLObjectFromGrid(connection);
-            // and from AttributeCarreirs
-            myNet->getAttributeCarriers()->deleteConnection(connection);
+
             // show extra information for tests
             WRITE_DEBUG("Deleting unreferenced " + connection->getTagStr() + " '" + connection->getID() + "' in rebuildGNEConnections()");
             delete connection;
@@ -645,7 +648,9 @@ GNEEdge::clearGNEConnections() {
         // remove it from network
         myNet->removeGLObjectFromGrid(connection);
         // and from AttributeCarreirs
-        myNet->getAttributeCarriers()->deleteConnection(connection);
+        if (myNet->getAttributeCarriers()->getConnections().count(connection) > 0) {
+            myNet->getAttributeCarriers()->deleteConnection(connection);
+        }
         // Delete GNEConnectionToErase if is unreferenced
         if (connection->unreferenced()) {
             // show extra information for tests
@@ -1491,6 +1496,20 @@ GNEEdge::setAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_ID:
             myNet->getAttributeCarriers()->updateEdgeID(this, value);
+            // enable save demand elements if there are stops
+            for (const auto &stop : getChildDemandElements()) {
+                if (stop->getTagProperty().isStop() || stop->getTagProperty().isStopPerson()) {
+                    myNet->requireSaveDemandElements(true);
+                }
+            }
+            // also for lanes
+            for (const auto &lane : myLanes) {
+                for (const auto &stop : lane->getChildDemandElements()) {
+                    if (stop->getTagProperty().isStop() || stop->getTagProperty().isStopPerson()) {
+                        myNet->requireSaveDemandElements(true);
+                    }
+                }
+            }
             break;
         case SUMO_ATTR_FROM:
             myNet->changeEdgeEndpoints(this, value, getToJunction()->getID());
@@ -1886,8 +1905,10 @@ GNEEdge::removeConnection(NBEdge::Connection nbCon) {
         }
         // remove it from network
         myNet->removeGLObjectFromGrid(connection);
-        // and from AttributeCarreirs
-        myNet->getAttributeCarriers()->deleteConnection(connection);
+        // check if remove it from Attribute Carriers
+        if (myNet->getAttributeCarriers()->getConnections().count(connection) > 0) {
+            myNet->getAttributeCarriers()->deleteConnection(connection);
+        }
         if (connection->unreferenced()) {
             // show extra information for tests
             WRITE_DEBUG("Deleting unreferenced " + connection->getTagStr() + " '" + connection->getID() + "' in removeConnection()");

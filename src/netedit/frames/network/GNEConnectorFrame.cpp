@@ -51,8 +51,8 @@ FXDEFMAP(GNEConnectorFrame::ConnectionOperations) ConnectionOperationsMap[] = {
 };
 
 // Object implementation
-FXIMPLEMENT(GNEConnectorFrame::ConnectionModifications, FXGroupBox, ConnectionModificationsMap, ARRAYNUMBER(ConnectionModificationsMap))
-FXIMPLEMENT(GNEConnectorFrame::ConnectionOperations,    FXGroupBox, ConnectionOperationsMap,    ARRAYNUMBER(ConnectionOperationsMap))
+FXIMPLEMENT(GNEConnectorFrame::ConnectionModifications, FXGroupBoxModul, ConnectionModificationsMap, ARRAYNUMBER(ConnectionModificationsMap))
+FXIMPLEMENT(GNEConnectorFrame::ConnectionOperations,    FXGroupBoxModul, ConnectionOperationsMap,    ARRAYNUMBER(ConnectionOperationsMap))
 
 
 // ===========================================================================
@@ -64,7 +64,7 @@ FXIMPLEMENT(GNEConnectorFrame::ConnectionOperations,    FXGroupBox, ConnectionOp
 // ---------------------------------------------------------------------------
 
 GNEConnectorFrame::CurrentLane::CurrentLane(GNEConnectorFrame* connectorFrameParent) :
-    FXGroupBox(connectorFrameParent->myContentFrame, "Lane", GUIDesignGroupBoxFrame) {
+    FXGroupBoxModul(connectorFrameParent->myContentFrame, "Lane") {
     // create lane label
     myCurrentLaneLabel = new FXLabel(this, "No lane selected", 0, GUIDesignLabelLeft);
 }
@@ -87,7 +87,7 @@ GNEConnectorFrame::CurrentLane::updateCurrentLaneLabel(const std::string& laneID
 // ---------------------------------------------------------------------------
 
 GNEConnectorFrame::ConnectionModifications::ConnectionModifications(GNEConnectorFrame* connectorFrameParent) :
-    FXGroupBox(connectorFrameParent->myContentFrame, "Modifications", GUIDesignGroupBoxFrame),
+    FXGroupBoxModul(connectorFrameParent->myContentFrame, "Modifications"),
     myConnectorFrameParent(connectorFrameParent) {
 
     // Create "Cancel" button
@@ -149,7 +149,7 @@ GNEConnectorFrame::ConnectionModifications::onCmdSaveModifications(FXObject*, FX
 // ---------------------------------------------------------------------------
 
 GNEConnectorFrame::ConnectionOperations::ConnectionOperations(GNEConnectorFrame* connectorFrameParent) :
-    FXGroupBox(connectorFrameParent->myContentFrame, "Operations", GUIDesignGroupBoxFrame),
+    FXGroupBoxModul(connectorFrameParent->myContentFrame, "Operations"),
     myConnectorFrameParent(connectorFrameParent) {
 
     // Create "Select Dead Ends" button
@@ -306,7 +306,7 @@ GNEConnectorFrame::ConnectionOperations::onCmdResetSelectedConnections(FXObject*
 // ---------------------------------------------------------------------------
 
 GNEConnectorFrame::ConnectionSelection::ConnectionSelection(GNEConnectorFrame* connectorFrameParent) :
-    FXGroupBox(connectorFrameParent->myContentFrame, "Selection", GUIDesignGroupBoxFrame) {
+    FXGroupBoxModul(connectorFrameParent->myContentFrame, "Selection") {
     // create Selection Hint
     myHoldShiftLabel = new FXLabel(this, "Hold <SHIFT> while clicking\nto create unyielding\nconnections (pass=true).", 0, GUIDesignLabelFrameInformation);
     myHoldControlLabel = new FXLabel(this, "Hold <CTRL> while clicking\nto create conflicting\nconnections (i.e. at zipper\nnodes or with incompatible\npermissions)", 0, GUIDesignLabelFrameInformation);
@@ -319,8 +319,8 @@ GNEConnectorFrame::ConnectionSelection::~ConnectionSelection() {}
 // GNEConnectorFrame::ConnectionLegend - methods
 // ---------------------------------------------------------------------------
 
-GNEConnectorFrame::ConnectionLegend::ConnectionLegend(GNEConnectorFrame* connectorFrameParent) :
-    FXGroupBox(connectorFrameParent->myContentFrame, "Legend", GUIDesignGroupBoxFrame) {
+GNEConnectorFrame::Legend::Legend(GNEConnectorFrame* connectorFrameParent) :
+    FXGroupBoxModul(connectorFrameParent->myContentFrame, "Information") {
 
     // create possible target label
     FXLabel* possibleTargetLabel = new FXLabel(this, "Possible Target", 0, GUIDesignLabelLeft);
@@ -345,7 +345,7 @@ GNEConnectorFrame::ConnectionLegend::ConnectionLegend(GNEConnectorFrame* connect
 }
 
 
-GNEConnectorFrame::ConnectionLegend::~ConnectionLegend() {}
+GNEConnectorFrame::Legend::~Legend() {}
 
 // ---------------------------------------------------------------------------
 // GNEConnectorFrame - methods
@@ -368,7 +368,7 @@ GNEConnectorFrame::GNEConnectorFrame(FXHorizontalFrame* horizontalFrameParent, G
     myConnectionSelection = new ConnectionSelection(this);
 
     // create connection legend modul
-    myConnectionLegend = new ConnectionLegend(this);
+    myLegend = new Legend(this);
 }
 
 

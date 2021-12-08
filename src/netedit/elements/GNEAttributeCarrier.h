@@ -178,47 +178,23 @@ public:
      */
     std::string getAlternativeValueForDisabledAttributes(SumoXMLAttr key) const;
 
-    /// @name Certain attributes and ACs (for example, connections) can be either loaded or guessed. The following static variables are used to remark it.
-    /// @{
-    /// @brief feature is still unchanged after being loaded (implies approval)
-    static const std::string FEATURE_LOADED;
-
-    /// @brief feature has been reguessed (may still be unchanged be we can't tell (yet)
-    static const std::string FEATURE_GUESSED;
-
-    /// @brief feature has been manually modified (implies approval)
-    static const std::string FEATURE_MODIFIED;
-
-    /// @brief feature has been approved but not changed (i.e. after being reguessed)
-    static const std::string FEATURE_APPROVED;
-    /// @}
-
-    /// @brief max number of attributes allowed for every tag
-    static const size_t MAXNUMBEROFATTRIBUTES;
-
-    /// @brief invalid double position
-    static const double INVALID_POSITION;
-
     /// @brief method for getting the attribute in the context of object selection
     virtual std::string getAttributeForSelection(SumoXMLAttr key) const;
 
     /// @brief get tag assigned to this object in string format
     const std::string& getTagStr() const;
 
-    /// @brief get Tag Property assigned to this object
-    const GNETagProperties& getTagProperty() const;
-
     /// @brief get FXIcon associated to this AC
     FXIcon* getIcon() const;
 
-    /// @brief get Tag Properties
-    static const GNETagProperties& getTagProperties(SumoXMLTag tag);
+    /// @brief get tagProperty associated with this Attribute Carrier
+    const GNETagProperties& getTagProperty() const;
 
-    /// @brief get tags of all editable element types
-    static const std::vector<GNETagProperties> allowedAttributeProperties(const bool onlyDrawables);
+    /// @brief get tagProperty associated to the given tag
+    static const GNETagProperties& getTagProperty(SumoXMLTag tag);
 
-    /// @brief get tagProperties of all editable element types using TagProperty Type (NetworkEditMode::NETWORKELEMENT, ADDITIONALELEMENT, etc.)
-    static const std::vector<std::pair<GNETagProperties, std::string> > getAllowedTagPropertiesByCategory(const int tagPropertyCategory, const bool onlyDrawables);
+    /// @brief get tagProperties associated to the given GNETagProperties::TagType (NETWORKELEMENT, ADDITIONALELEMENT, VEHICLE, etc.)
+    static const std::vector<GNETagProperties> getTagPropertiesByType(const int tagPropertyCategory);
 
     /// @brief true if a value of type T can be parsed from string
     template<typename T>
@@ -266,8 +242,26 @@ public:
     /// @brief check if lanes are consecutives
     static bool lanesConsecutives(const std::vector<GNELane*>& lanes);
 
+    /// @name Certain attributes and ACs (for example, connections) can be either loaded or guessed. The following static variables are used to remark it.
+    /// @{
+    /// @brief feature is still unchanged after being loaded (implies approval)
+    static const std::string FEATURE_LOADED;
+
+    /// @brief feature has been reguessed (may still be unchanged be we can't tell (yet)
+    static const std::string FEATURE_GUESSED;
+
+    /// @brief feature has been manually modified (implies approval)
+    static const std::string FEATURE_MODIFIED;
+
+    /// @brief feature has been approved but not changed (i.e. after being reguessed)
+    static const std::string FEATURE_APPROVED;
+    /// @}
+
+    /// @brief max number of attributes allowed for every tag
+    static const size_t MAXNUMBEROFATTRIBUTES;
+
 protected:
-    /// @brief the xml tag to which this attribute carrier corresponds
+    /// @brief reference to tagProperty associated with this attribute carrier
     const GNETagProperties& myTagProperty;
 
     /// @brief pointer to net
@@ -275,9 +269,6 @@ protected:
 
     /// @brief boolean to check if this AC is selected (instead of GUIGlObjectStorage)
     bool mySelected;
-
-    /// @brief dummy TagProperty used for reference some elements (for Example, dummyEdge)
-    static GNETagProperties dummyTagProperty;
 
 private:
     /// @brief method for setting the attribute and nothing else (used in GNEChange_Attribute)
@@ -362,7 +353,7 @@ private:
     static void fillCommonContainerAttributes(SumoXMLTag currentTag);
 
     /// @brief fill stop person attributes
-    static void fillCommonStopAttributes(SumoXMLTag currentTag, const bool parking);
+    static void fillCommonStopAttributes(SumoXMLTag currentTag);
 
     /// @brief fill Data elements
     static void fillDataElements();

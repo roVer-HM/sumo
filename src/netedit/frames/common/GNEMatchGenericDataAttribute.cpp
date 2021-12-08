@@ -43,14 +43,14 @@ FXDEFMAP(GNEMatchGenericDataAttribute) GNEMatchGenericDataAttributeMap[] = {
 };
 
 // Object implementation
-FXIMPLEMENT(GNEMatchGenericDataAttribute, FXGroupBox, GNEMatchGenericDataAttributeMap, ARRAYNUMBER(GNEMatchGenericDataAttributeMap))
+FXIMPLEMENT(GNEMatchGenericDataAttribute, FXGroupBoxModul, GNEMatchGenericDataAttributeMap, ARRAYNUMBER(GNEMatchGenericDataAttributeMap))
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
 
 GNEMatchGenericDataAttribute::GNEMatchGenericDataAttribute(GNEElementSet* elementSet, SumoXMLTag defaultTag, SumoXMLAttr defaultAttr, const std::string& defaultValue) :
-    FXGroupBox(elementSet->getSelectorFrameParent()->getContentFrame(), "Match GenericData Attribute", GUIDesignGroupBoxFrame),
+    FXGroupBoxModul(elementSet->getSelectorFrameParent()->getContentFrame(), "Match GenericData Attribute"),
     myElementSet(elementSet),
     myIntervalSelector(nullptr),
     myBegin(nullptr),
@@ -129,10 +129,12 @@ GNEMatchGenericDataAttribute::enableMatchGenericDataAttribute() {
         myEnd->setText(toString(myIntervals.begin()->first.second).c_str());
         myEnd->setTextColor(FXRGB(0, 0, 0));
         // get generic datas
-        const auto genericDataTags = GNEAttributeCarrier::getAllowedTagPropertiesByCategory(GNETagProperties::TagType::GENERICDATA, true);
-        // fill combo box
+        const auto genericDataTags = GNEAttributeCarrier::getTagPropertiesByType(GNETagProperties::TagType::GENERICDATA);
+        // fill combo box (only with drawable elements)
         for (const auto& genericDataTag : genericDataTags) {
-            myMatchGenericDataTagComboBox->appendIconItem(genericDataTag.second.c_str(), GUIIconSubSys::getIcon(genericDataTag.first.getGUIIcon()));
+            if (genericDataTag.isDrawable()) {
+                myMatchGenericDataTagComboBox->appendIconItem(genericDataTag.getFieldString().c_str(), GUIIconSubSys::getIcon(genericDataTag.getGUIIcon()));
+            }
         }
         // set first item as current item
         myMatchGenericDataTagComboBox->setCurrentItem(0);
@@ -246,14 +248,16 @@ GNEMatchGenericDataAttribute::onCmdSetEnd(FXObject*, FXSelector, void*) {
 
 long
 GNEMatchGenericDataAttribute::onCmdSelectTag(FXObject*, FXSelector, void*) {
+    // check if net has proj
+    const bool notProj = (GeoConvHelper::getFinal().getProjString() == "!");
     // First check what type of elementes is being selected
     myCurrentTag = SUMO_TAG_NOTHING;
     // get generic data tags
-    const auto listOfTags = GNEAttributeCarrier::getAllowedTagPropertiesByCategory(GNETagProperties::TagType::GENERICDATA, true);
+    const auto listOfTags = GNEAttributeCarrier::getTagPropertiesByType(GNETagProperties::TagType::GENERICDATA);
     // fill myMatchGenericDataTagComboBox
     for (const auto& genericDataTag : listOfTags) {
-        if (genericDataTag.second == myMatchGenericDataTagComboBox->getText().text()) {
-            myCurrentTag = genericDataTag.first.getTag();
+        if (genericDataTag.isDrawable() && (genericDataTag.getFieldString() == myMatchGenericDataTagComboBox->getText().text())) {
+            myCurrentTag = genericDataTag.getTag();
         }
     }
     // check that typed-by-user value is correct

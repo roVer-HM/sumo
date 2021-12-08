@@ -47,8 +47,8 @@ FXDEFMAP(GNEVehicleTypeFrame::VehicleTypeEditor) vehicleTypeEditorMap[] = {
 };
 
 // Object implementation
-FXIMPLEMENT(GNEVehicleTypeFrame::VehicleTypeSelector,   FXGroupBox,     vehicleTypeSelectorMap,     ARRAYNUMBER(vehicleTypeSelectorMap))
-FXIMPLEMENT(GNEVehicleTypeFrame::VehicleTypeEditor,     FXGroupBox,     vehicleTypeEditorMap,       ARRAYNUMBER(vehicleTypeEditorMap))
+FXIMPLEMENT(GNEVehicleTypeFrame::VehicleTypeSelector,   FXGroupBoxModul,     vehicleTypeSelectorMap,     ARRAYNUMBER(vehicleTypeSelectorMap))
+FXIMPLEMENT(GNEVehicleTypeFrame::VehicleTypeEditor,     FXGroupBoxModul,     vehicleTypeEditorMap,       ARRAYNUMBER(vehicleTypeEditorMap))
 
 // ===========================================================================
 // method definitions
@@ -59,7 +59,7 @@ FXIMPLEMENT(GNEVehicleTypeFrame::VehicleTypeEditor,     FXGroupBox,     vehicleT
 // ---------------------------------------------------------------------------
 
 GNEVehicleTypeFrame::VehicleTypeSelector::VehicleTypeSelector(GNEVehicleTypeFrame* vehicleTypeFrameParent) :
-    FXGroupBox(vehicleTypeFrameParent->myContentFrame, "Current Vehicle Type", GUIDesignGroupBoxFrame),
+    FXGroupBoxModul(vehicleTypeFrameParent->myContentFrame, "Current Vehicle Type"),
     myVehicleTypeFrameParent(vehicleTypeFrameParent),
     myCurrentVehicleType(nullptr) {
     // Create FXComboBox
@@ -196,7 +196,7 @@ GNEVehicleTypeFrame::VehicleTypeSelector::onCmdSelectItem(FXObject*, FXSelector,
 // ---------------------------------------------------------------------------
 
 GNEVehicleTypeFrame::VehicleTypeEditor::VehicleTypeEditor(GNEVehicleTypeFrame* vehicleTypeFrameParent) :
-    FXGroupBox(vehicleTypeFrameParent->myContentFrame, "Vehicle Type Editor", GUIDesignGroupBoxFrame),
+    FXGroupBoxModul(vehicleTypeFrameParent->myContentFrame, "Vehicle Type Editor"),
     myVehicleTypeFrameParent(vehicleTypeFrameParent) {
     // Create new vehicle type
     myCreateVehicleTypeButton = new FXButton(this, "Create Vehicle Type", nullptr, this, MID_GNE_CREATE, GUIDesignButton);
@@ -323,7 +323,7 @@ GNEVehicleTypeFrame::VehicleTypeEditor::onCmdResetVehicleType(FXObject*, FXSelec
     // begin reset default vehicle type values
     myVehicleTypeFrameParent->getViewNet()->getUndoList()->begin(GUIIcon::VTYPE, "reset default vehicle type values");
     // reset all values of default vehicle type
-    for (const auto& i : GNEAttributeCarrier::getTagProperties(SUMO_TAG_VTYPE)) {
+    for (const auto& i : GNEAttributeCarrier::getTagProperty(SUMO_TAG_VTYPE)) {
         // change all attributes with "" to reset it (except ID and vClass)
         if ((i.getAttr() != SUMO_ATTR_ID) && (i.getAttr() != SUMO_ATTR_VCLASS)) {
             myVehicleTypeFrameParent->myVehicleTypeSelector->getCurrentVehicleType()->setAttribute(i.getAttr(), "", myVehicleTypeFrameParent->myViewNet->getUndoList());

@@ -46,8 +46,8 @@ FXDEFMAP(GNEPersonTypeFrame::PersonTypeEditor) personTypeEditorMap[] = {
 };
 
 // Object implementation
-FXIMPLEMENT(GNEPersonTypeFrame::PersonTypeSelector,   FXGroupBox,     personTypeSelectorMap,     ARRAYNUMBER(personTypeSelectorMap))
-FXIMPLEMENT(GNEPersonTypeFrame::PersonTypeEditor,     FXGroupBox,     personTypeEditorMap,       ARRAYNUMBER(personTypeEditorMap))
+FXIMPLEMENT(GNEPersonTypeFrame::PersonTypeSelector,   FXGroupBoxModul,     personTypeSelectorMap,     ARRAYNUMBER(personTypeSelectorMap))
+FXIMPLEMENT(GNEPersonTypeFrame::PersonTypeEditor,     FXGroupBoxModul,     personTypeEditorMap,       ARRAYNUMBER(personTypeEditorMap))
 
 // ===========================================================================
 // method definitions
@@ -58,7 +58,7 @@ FXIMPLEMENT(GNEPersonTypeFrame::PersonTypeEditor,     FXGroupBox,     personType
 // ---------------------------------------------------------------------------
 
 GNEPersonTypeFrame::PersonTypeSelector::PersonTypeSelector(GNEPersonTypeFrame* personTypeFrameParent) :
-    FXGroupBox(personTypeFrameParent->myContentFrame, "Current Person Type", GUIDesignGroupBoxFrame),
+    FXGroupBoxModul(personTypeFrameParent->myContentFrame, "Current Person Type"),
     myPersonTypeFrameParent(personTypeFrameParent),
     myCurrentPersonType(nullptr) {
     // Create FXComboBox
@@ -170,7 +170,7 @@ GNEPersonTypeFrame::PersonTypeSelector::onCmdSelectItem(FXObject*, FXSelector, v
 // ---------------------------------------------------------------------------
 
 GNEPersonTypeFrame::PersonTypeEditor::PersonTypeEditor(GNEPersonTypeFrame* personTypeFrameParent) :
-    FXGroupBox(personTypeFrameParent->myContentFrame, "Person Type Editor", GUIDesignGroupBoxFrame),
+    FXGroupBoxModul(personTypeFrameParent->myContentFrame, "Person Type Editor"),
     myPersonTypeFrameParent(personTypeFrameParent) {
     // Create new person type
     myCreatePersonTypeButton = new FXButton(this, "Create Person Type", nullptr, this, MID_GNE_CREATE, GUIDesignButton);
@@ -297,7 +297,7 @@ GNEPersonTypeFrame::PersonTypeEditor::onCmdResetPersonType(FXObject*, FXSelector
     // begin reset default person type values
     myPersonTypeFrameParent->getViewNet()->getUndoList()->begin(GUIIcon::PTYPE, "reset default person type values");
     // reset all values of default person type
-    for (const auto& i : GNEAttributeCarrier::getTagProperties(SUMO_TAG_PTYPE)) {
+    for (const auto& i : GNEAttributeCarrier::getTagProperty(SUMO_TAG_PTYPE)) {
         // change all attributes with "" to reset it (except ID and vClass)
         if ((i.getAttr() != SUMO_ATTR_ID) && (i.getAttr() != SUMO_ATTR_VCLASS)) {
             myPersonTypeFrameParent->myPersonTypeSelector->getCurrentPersonType()->setAttribute(i.getAttr(), "", myPersonTypeFrameParent->myViewNet->getUndoList());
