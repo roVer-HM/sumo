@@ -59,8 +59,8 @@ FXDEFMAP(GNECreateEdgeFrame::LaneTypeSelector) LaneTypeSelectorMap[] = {
 };
 
 // Object implementation
-FXIMPLEMENT(GNECreateEdgeFrame::EdgeTypeSelector,       FXGroupBoxModul,     EdgeTypeSelectorMap,    ARRAYNUMBER(EdgeTypeSelectorMap))
-FXIMPLEMENT(GNECreateEdgeFrame::LaneTypeSelector,       FXGroupBoxModul,     LaneTypeSelectorMap,    ARRAYNUMBER(LaneTypeSelectorMap))
+FXIMPLEMENT(GNECreateEdgeFrame::EdgeTypeSelector,       FXGroupBoxModule,     EdgeTypeSelectorMap,    ARRAYNUMBER(EdgeTypeSelectorMap))
+FXIMPLEMENT(GNECreateEdgeFrame::LaneTypeSelector,       FXGroupBoxModule,     LaneTypeSelectorMap,    ARRAYNUMBER(LaneTypeSelectorMap))
 
 
 // ===========================================================================
@@ -72,18 +72,18 @@ FXIMPLEMENT(GNECreateEdgeFrame::LaneTypeSelector,       FXGroupBoxModul,     Lan
 // ---------------------------------------------------------------------------
 
 GNECreateEdgeFrame::EdgeTypeSelector::EdgeTypeSelector(GNECreateEdgeFrame* createEdgeFrameParent) :
-    FXGroupBoxModul(createEdgeFrameParent->myContentFrame, "Template selector"),
+    FXGroupBoxModule(createEdgeFrameParent->myContentFrame, "Template selector"),
     myCreateEdgeFrameParent(createEdgeFrameParent),
     myDefaultEdgeType(new GNEEdgeType(createEdgeFrameParent)),
     myCurrentIndex(0) {
     // default edge radio button
-    myUseDefaultEdgeType = new FXRadioButton(this, "Create default edge", this, MID_GNE_CREATEEDGEFRAME_SELECTRADIOBUTTON, GUIDesignRadioButton);
+    myUseDefaultEdgeType = new FXRadioButton(getCollapsableFrame(), "Create default edge", this, MID_GNE_CREATEEDGEFRAME_SELECTRADIOBUTTON, GUIDesignRadioButton);
     // use custom edge radio button
-    myUseCustomEdgeType = new FXRadioButton(this, "Use edgeType/template", this, MID_GNE_CREATEEDGEFRAME_SELECTRADIOBUTTON, GUIDesignRadioButton);
+    myUseCustomEdgeType = new FXRadioButton(getCollapsableFrame(), "Use edgeType/template", this, MID_GNE_CREATEEDGEFRAME_SELECTRADIOBUTTON, GUIDesignRadioButton);
     // edge types combo box
-    myEdgeTypesComboBox = new FXComboBox(this, GUIDesignComboBoxNCol, this, MID_GNE_CREATEEDGEFRAME_SELECT, GUIDesignComboBoxAttribute);
+    myEdgeTypesComboBox = new FXComboBox(getCollapsableFrame(), GUIDesignComboBoxNCol, this, MID_GNE_CREATEEDGEFRAME_SELECT, GUIDesignComboBoxAttribute);
     // create horizontal frame
-    FXHorizontalFrame* horizontalFrameButtons = new FXHorizontalFrame(this, GUIDesignAuxiliarHorizontalFrame);
+    FXHorizontalFrame* horizontalFrameButtons = new FXHorizontalFrame(getCollapsableFrame(), GUIDesignAuxiliarHorizontalFrame);
     // create new edge type button
     myAddEdgeTypeButton = new FXButton(horizontalFrameButtons, "Add\t\tAdd edge type", GUIIconSubSys::getIcon(GUIIcon::ADD), 
                                        this, MID_GNE_CREATEEDGEFRAME_ADD, GUIDesignButton);
@@ -92,7 +92,7 @@ GNECreateEdgeFrame::EdgeTypeSelector::EdgeTypeSelector(GNECreateEdgeFrame* creat
                                           this, MID_GNE_CREATEEDGEFRAME_DELETE, GUIDesignButton);
 
     // create delete edge type button
-    myCreateFromTemplate = new FXButton(this, "Create from template\t\tCreate edgeType from template", GUIIconSubSys::getIcon(GUIIcon::EDGE), 
+    myCreateFromTemplate = new FXButton(getCollapsableFrame(), "Create from template\t\tCreate edgeType from template", GUIIconSubSys::getIcon(GUIIcon::EDGE), 
                                           this, MID_GNE_CREATEEDGEFRAME_CREATEFROMTEMPLATE, GUIDesignButton);
     // by default, create custom edge
     myUseDefaultEdgeType->setCheck(TRUE);
@@ -122,7 +122,7 @@ GNECreateEdgeFrame::EdgeTypeSelector::refreshEdgeTypeSelector() {
         myAddEdgeTypeButton->disable();
         myDeleteEdgeTypeButton->disable();
         // show default edgeType attributes
-        myCreateEdgeFrameParent->myEdgeTypeAttributes->showAttributesCreatorModul(myDefaultEdgeType, {SUMO_ATTR_ID});
+        myCreateEdgeFrameParent->myEdgeTypeAttributes->showAttributesCreatorModule(myDefaultEdgeType, {SUMO_ATTR_ID});
         // show lane attributes
         myCreateEdgeFrameParent->myLaneTypeSelector->showLaneTypeSelector();
     } else if (myUseCustomEdgeType->getCheck()) {
@@ -135,7 +135,7 @@ GNECreateEdgeFrame::EdgeTypeSelector::refreshEdgeTypeSelector() {
             myEdgeTypesComboBox->disable();
             myDeleteEdgeTypeButton->disable();
             // hide attributes creators
-            myCreateEdgeFrameParent->myEdgeTypeAttributes->hideAttributesCreatorModul();
+            myCreateEdgeFrameParent->myEdgeTypeAttributes->hideAttributesCreatorModule();
             myCreateEdgeFrameParent->myLaneTypeSelector->hideLaneTypeSelector();
         } else if (templateEditor->getEdgeTemplate() && (index == 0)) {
             // enable create from template
@@ -145,7 +145,7 @@ GNECreateEdgeFrame::EdgeTypeSelector::refreshEdgeTypeSelector() {
             // disable delete edge type button (because templates cannot be deleted)
             myDeleteEdgeTypeButton->disable();
             // show edgeType attributes and disable
-            myCreateEdgeFrameParent->myEdgeTypeAttributes->showAttributesCreatorModul(templateEditor->getEdgeTemplate(), {SUMO_ATTR_ID});
+            myCreateEdgeFrameParent->myEdgeTypeAttributes->showAttributesCreatorModule(templateEditor->getEdgeTemplate(), {SUMO_ATTR_ID});
             myCreateEdgeFrameParent->myEdgeTypeAttributes->disableAttributesCreator();
             // show lane attributes (will be automatic disabled)
             myCreateEdgeFrameParent->myLaneTypeSelector->showLaneTypeSelector();  
@@ -159,12 +159,12 @@ GNECreateEdgeFrame::EdgeTypeSelector::refreshEdgeTypeSelector() {
             // check if exist
             if (myEdgeTypeSelected) {
                 // show edgeType attributes
-                myCreateEdgeFrameParent->myEdgeTypeAttributes->showAttributesCreatorModul(myEdgeTypeSelected, {});
+                myCreateEdgeFrameParent->myEdgeTypeAttributes->showAttributesCreatorModule(myEdgeTypeSelected, {});
                 // show lane attributes
                 myCreateEdgeFrameParent->myLaneTypeSelector->showLaneTypeSelector();
             } else {
                 // hide edgeType attributes
-                myCreateEdgeFrameParent->myEdgeTypeAttributes->hideAttributesCreatorModul();
+                myCreateEdgeFrameParent->myEdgeTypeAttributes->hideAttributesCreatorModule();
                 // hide lane attributes
                 myCreateEdgeFrameParent->myLaneTypeSelector->hideLaneTypeSelector();
                 // set comboBox text
@@ -380,13 +380,13 @@ GNECreateEdgeFrame::EdgeTypeSelector::fillComboBox() {
 // ---------------------------------------------------------------------------
 
 GNECreateEdgeFrame::LaneTypeSelector::LaneTypeSelector(GNECreateEdgeFrame* createEdgeFrameParent) :
-    FXGroupBoxModul(createEdgeFrameParent->myContentFrame, "LaneType selector"),
+    FXGroupBoxModule(createEdgeFrameParent->myContentFrame, "LaneType selector"),
     myCreateEdgeFrameParent(createEdgeFrameParent),
     myLaneIndex(0) {
     // lane types combo box
-    myLaneTypesComboBox = new FXComboBox(this, GUIDesignComboBoxNCol, this, MID_GNE_CREATEEDGEFRAME_SELECT, GUIDesignComboBoxAttribute);
+    myLaneTypesComboBox = new FXComboBox(getCollapsableFrame(), GUIDesignComboBoxNCol, this, MID_GNE_CREATEEDGEFRAME_SELECT, GUIDesignComboBoxAttribute);
     // create horizontal frame
-    FXHorizontalFrame* horizontalFrameButtons = new FXHorizontalFrame(this, GUIDesignAuxiliarHorizontalFrame);
+    FXHorizontalFrame* horizontalFrameButtons = new FXHorizontalFrame(getCollapsableFrame(), GUIDesignAuxiliarHorizontalFrame);
     // create new lane type button
     myAddLaneTypeButton = new FXButton(horizontalFrameButtons, "Add\t\tAdd lane type", GUIIconSubSys::getIcon(GUIIcon::ADD), 
                                        this, MID_GNE_CREATEEDGEFRAME_ADD, GUIDesignButton);
@@ -414,7 +414,7 @@ GNECreateEdgeFrame::LaneTypeSelector::showLaneTypeSelector() {
 void
 GNECreateEdgeFrame::LaneTypeSelector::hideLaneTypeSelector() {
     // hide attributes creator modul
-    myCreateEdgeFrameParent->myLaneTypeAttributes->hideAttributesCreatorModul();
+    myCreateEdgeFrameParent->myLaneTypeAttributes->hideAttributesCreatorModule();
     // hide
     hide();
 }
@@ -434,7 +434,7 @@ GNECreateEdgeFrame::LaneTypeSelector::refreshLaneTypeSelector() {
         // update comboBox
         updateComboBox();
         // show laneTypeAttributes
-        myCreateEdgeFrameParent->myLaneTypeAttributes->showAttributesCreatorModul(edgeTemplate->getLaneTemplates().at(myLaneIndex), {SUMO_ATTR_ID});
+        myCreateEdgeFrameParent->myLaneTypeAttributes->showAttributesCreatorModule(edgeTemplate->getLaneTemplates().at(myLaneIndex), {SUMO_ATTR_ID});
         // disable laneAttributes (because is a template)
         myCreateEdgeFrameParent->myLaneTypeAttributes->disableAttributesCreator();
         // disable add and remove buttons
@@ -450,7 +450,7 @@ GNECreateEdgeFrame::LaneTypeSelector::refreshLaneTypeSelector() {
         // update comboBox
         updateComboBox();
         // show laneTypeAttributes
-        myCreateEdgeFrameParent->myLaneTypeAttributes->showAttributesCreatorModul(edgeType->getLaneTypes().at(myLaneIndex), {});
+        myCreateEdgeFrameParent->myLaneTypeAttributes->showAttributesCreatorModule(edgeType->getLaneTypes().at(myLaneIndex), {});
         // enable add and remove buttons
         myAddLaneTypeButton->enable();
         // check if enable or disable remove lane button
@@ -539,7 +539,7 @@ GNECreateEdgeFrame::LaneTypeSelector::updateComboBox() {
 // ---------------------------------------------------------------------------
 
 GNECreateEdgeFrame::Legend::Legend(GNECreateEdgeFrame* createEdgeFrameParent) :
-    FXGroupBoxModul(createEdgeFrameParent->myContentFrame, "Information") {
+    FXGroupBoxModule(createEdgeFrameParent->myContentFrame, "Information") {
     // crate information
     std::ostringstream information;
     // add label for shift+click
@@ -553,7 +553,7 @@ GNECreateEdgeFrame::Legend::Legend(GNECreateEdgeFrame* createEdgeFrameParent) :
             << "- Alt+Shift+Click:" << "\n"
             << "  Splits edge in one direction";
     // create label
-    new FXLabel(this, information.str().c_str(), 0, GUIDesignLabelFrameInformation);
+    new FXLabel(getCollapsableFrame(), information.str().c_str(), 0, GUIDesignLabelFrameInformation);
 }
 
 
@@ -570,11 +570,11 @@ GNECreateEdgeFrame::GNECreateEdgeFrame(FXHorizontalFrame* horizontalFrameParent,
     // create custom edge selector
     myEdgeTypeSelector = new EdgeTypeSelector(this);
     // Create edgeType parameters
-    myEdgeTypeAttributes = new GNEFrameAttributesModuls::AttributesCreator(this);
+    myEdgeTypeAttributes = new GNEFrameAttributeModules::AttributesCreator(this);
     // lane type selector
     myLaneTypeSelector = new LaneTypeSelector(this);
     // Create laneType parameters
-    myLaneTypeAttributes = new GNEFrameAttributesModuls::AttributesCreator(this);
+    myLaneTypeAttributes = new GNEFrameAttributeModules::AttributesCreator(this);
     // create edge selector legend
     myLegend = new Legend(this);
 }
@@ -711,7 +711,7 @@ GNECreateEdgeFrame::getEdgeTypeSelector() const {
 }
 
 
-GNEFrameAttributesModuls::AttributesCreator* 
+GNEFrameAttributeModules::AttributesCreator* 
 GNECreateEdgeFrame::getEdgeTypeAttributes() const {
     return myEdgeTypeAttributes;
 }
@@ -723,7 +723,7 @@ GNECreateEdgeFrame::getLaneTypeSelector() {
 }
 
 
-GNEFrameAttributesModuls::AttributesCreator* 
+GNEFrameAttributeModules::AttributesCreator* 
 GNECreateEdgeFrame::getLaneTypeAttributes() const {
     return myLaneTypeAttributes;
 }

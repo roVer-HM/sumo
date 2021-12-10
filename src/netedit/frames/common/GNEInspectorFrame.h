@@ -44,7 +44,7 @@ public:
     // class NeteditAttributesEditor
     // ===========================================================================
 
-    class NeteditAttributesEditor : public FXGroupBoxModul {
+    class NeteditAttributesEditor : public FXGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNEInspectorFrame::NeteditAttributesEditor)
 
@@ -113,7 +113,7 @@ public:
     // class GEOAttributesEditor
     // ===========================================================================
 
-    class GEOAttributesEditor : public FXGroupBoxModul {
+    class GEOAttributesEditor : public FXGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNEInspectorFrame::GEOAttributesEditor)
 
@@ -177,7 +177,7 @@ public:
     // class TemplateEditor
     // ===========================================================================
 
-    class TemplateEditor : public FXGroupBoxModul {
+    class TemplateEditor : public FXGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNEInspectorFrame::TemplateEditor)
 
@@ -249,7 +249,7 @@ public:
     // class ParametersEditorInspector
     // ===========================================================================
 
-    class ParametersEditorInspector : public FXGroupBoxModul {
+    class ParametersEditorInspector : public FXGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNEInspectorFrame::ParametersEditorInspector)
 
@@ -300,7 +300,7 @@ public:
     // class AdditionalDialog
     // ===========================================================================
 
-    class AdditionalDialog : public FXGroupBoxModul {
+    class AdditionalDialog : public FXGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNEInspectorFrame::AdditionalDialog)
 
@@ -387,7 +387,7 @@ public:
     void clearInspectedAC();
 
     /// @brief get AttributesEditor
-    GNEFrameAttributesModuls::AttributesEditor* getAttributesEditor() const;
+    GNEFrameAttributeModules::AttributesEditor* getAttributesEditor() const;
 
     /// @brief get Netedit Attributes editor
     GNEInspectorFrame::NeteditAttributesEditor* getNeteditAttributesEditor() const;
@@ -396,10 +396,10 @@ public:
     TemplateEditor* getTemplateEditor() const;
 
     /// @brief get OverlappedInspection modul
-    GNEFrameModuls::OverlappedInspection* getOverlappedInspection() const;
+    GNEFrameModules::OverlappedInspection* getOverlappedInspection() const;
 
     /// @brief get HierarchicalElementTree modul
-    GNEFrameModuls::HierarchicalElementTree* getHierarchicalElementTree() const;
+    GNEFrameModules::HierarchicalElementTree* getHierarchicalElementTree() const;
 
     /// @name FOX-callbacks
     /// @{
@@ -426,10 +426,10 @@ protected:
 
 private:
     /// @brief Overlapped Inspection
-    GNEFrameModuls::OverlappedInspection* myOverlappedInspection;
+    GNEFrameModules::OverlappedInspection* myOverlappedInspection;
 
     /// @brief Attribute editor
-    GNEFrameAttributesModuls::AttributesEditor* myAttributesEditor;
+    GNEFrameAttributeModules::AttributesEditor* myAttributesEditor;
 
     /// @brief Netedit Attributes editor
     NeteditAttributesEditor* myNeteditAttributesEditor;
@@ -447,7 +447,7 @@ private:
     TemplateEditor* myTemplateEditor;
 
     /// @brief Attribute Carrier Hierarchy
-    GNEFrameModuls::HierarchicalElementTree* myHierarchicalElementTree;
+    GNEFrameModules::HierarchicalElementTree* myHierarchicalElementTree;
 
     /// @brief Back Button
     FXButton* myBackButton;

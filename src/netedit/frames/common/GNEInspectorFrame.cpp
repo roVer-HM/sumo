@@ -78,11 +78,11 @@ FXDEFMAP(GNEInspectorFrame::AdditionalDialog) AdditionalDialogMap[] = {
 
 // Object implementation
 FXIMPLEMENT(GNEInspectorFrame,                              FXVerticalFrame,    GNEInspectorFrameMap,           ARRAYNUMBER(GNEInspectorFrameMap))
-FXIMPLEMENT(GNEInspectorFrame::NeteditAttributesEditor,     FXGroupBoxModul,         NeteditAttributesEditorMap,     ARRAYNUMBER(NeteditAttributesEditorMap))
-FXIMPLEMENT(GNEInspectorFrame::GEOAttributesEditor,         FXGroupBoxModul,         GEOAttributesEditorMap,         ARRAYNUMBER(GEOAttributesEditorMap))
-FXIMPLEMENT(GNEInspectorFrame::TemplateEditor,              FXGroupBoxModul,         TemplateEditorMap,              ARRAYNUMBER(TemplateEditorMap))
-FXIMPLEMENT(GNEInspectorFrame::ParametersEditorInspector,   FXGroupBoxModul,         ParametersEditorInspectorMap,   ARRAYNUMBER(ParametersEditorInspectorMap))
-FXIMPLEMENT(GNEInspectorFrame::AdditionalDialog,            FXGroupBoxModul,         AdditionalDialogMap,            ARRAYNUMBER(AdditionalDialogMap))
+FXIMPLEMENT(GNEInspectorFrame::NeteditAttributesEditor,     FXGroupBoxModule,         NeteditAttributesEditorMap,     ARRAYNUMBER(NeteditAttributesEditorMap))
+FXIMPLEMENT(GNEInspectorFrame::GEOAttributesEditor,         FXGroupBoxModule,         GEOAttributesEditorMap,         ARRAYNUMBER(GEOAttributesEditorMap))
+FXIMPLEMENT(GNEInspectorFrame::TemplateEditor,              FXGroupBoxModule,         TemplateEditorMap,              ARRAYNUMBER(TemplateEditorMap))
+FXIMPLEMENT(GNEInspectorFrame::ParametersEditorInspector,   FXGroupBoxModule,         ParametersEditorInspectorMap,   ARRAYNUMBER(ParametersEditorInspectorMap))
+FXIMPLEMENT(GNEInspectorFrame::AdditionalDialog,            FXGroupBoxModule,         AdditionalDialogMap,            ARRAYNUMBER(AdditionalDialogMap))
 
 
 // ===========================================================================
@@ -94,24 +94,24 @@ FXIMPLEMENT(GNEInspectorFrame::AdditionalDialog,            FXGroupBoxModul,    
 // ---------------------------------------------------------------------------
 
 GNEInspectorFrame::NeteditAttributesEditor::NeteditAttributesEditor(GNEInspectorFrame* inspectorFrameParent) :
-    FXGroupBoxModul(inspectorFrameParent->myContentFrame, "Netedit attributes"),
+    FXGroupBoxModule(inspectorFrameParent->myContentFrame, "Netedit attributes"),
     myInspectorFrameParent(inspectorFrameParent) {
 
     // Create mark as front element button
-    myMarkFrontElementButton = new FXButton(this, "Mark as front element", GUIIconSubSys::getIcon(GUIIcon::FRONTELEMENT), this, MID_GNE_MARKFRONTELEMENT, GUIDesignButton);
+    myMarkFrontElementButton = new FXButton(getCollapsableFrame(), "Mark as front element", GUIIconSubSys::getIcon(GUIIcon::FRONTELEMENT), this, MID_GNE_MARKFRONTELEMENT, GUIDesignButton);
 
     // Create elements for parent additional
-    myHorizontalFrameParentAdditional = new FXHorizontalFrame(this, GUIDesignAuxiliarHorizontalFrame);
+    myHorizontalFrameParentAdditional = new FXHorizontalFrame(getCollapsableFrame(), GUIDesignAuxiliarHorizontalFrame);
     myLabelParentAdditional = new FXLabel(myHorizontalFrameParentAdditional, "Block move", nullptr, GUIDesignLabelAttribute);
     myTextFieldParentAdditional = new FXTextField(myHorizontalFrameParentAdditional, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
 
     // Create elements for close shape
-    myHorizontalFrameCloseShape = new FXHorizontalFrame(this, GUIDesignAuxiliarHorizontalFrame);
+    myHorizontalFrameCloseShape = new FXHorizontalFrame(getCollapsableFrame(), GUIDesignAuxiliarHorizontalFrame);
     myLabelCloseShape = new FXLabel(myHorizontalFrameCloseShape, "Close shape", nullptr, GUIDesignLabelAttribute);
     myCheckBoxCloseShape = new FXCheckButton(myHorizontalFrameCloseShape, "", this, MID_GNE_SET_ATTRIBUTE, GUIDesignCheckButton);
 
     // Create help button
-    myHelpButton = new FXButton(this, "Help", nullptr, this, MID_HELP, GUIDesignButtonRectangular);
+    myHelpButton = new FXButton(getCollapsableFrame(), "Help", nullptr, this, MID_HELP, GUIDesignButtonRectangular);
 }
 
 
@@ -180,7 +180,7 @@ GNEInspectorFrame::NeteditAttributesEditor::showNeteditAttributesEditor() {
             myTextFieldParentAdditional->setText(toString(parents).c_str());
         }
         // disable all editable elements if we're in demand mode and inspected AC isn't a demand element
-        if (GNEFrameAttributesModuls::isSupermodeValid(myInspectorFrameParent->getViewNet(), myInspectorFrameParent->getViewNet()->getInspectedAttributeCarriers().front()) == false) {
+        if (GNEFrameAttributeModules::isSupermodeValid(myInspectorFrameParent->getViewNet(), myInspectorFrameParent->getViewNet()->getInspectedAttributeCarriers().front()) == false) {
             myTextFieldParentAdditional->disable();
             myCheckBoxCloseShape->disable();
         }
@@ -297,7 +297,7 @@ GNEInspectorFrame::NeteditAttributesEditor::onCmdMarkFrontElement(FXObject*, FXS
 long
 GNEInspectorFrame::NeteditAttributesEditor::onCmdNeteditAttributeHelp(FXObject*, FXSelector, void*) {
     // Create dialog box
-    FXDialogBox* additionalNeteditAttributesHelpDialog = new FXDialogBox(this, "Netedit Attributes Help", GUIDesignDialogBox);
+    FXDialogBox* additionalNeteditAttributesHelpDialog = new FXDialogBox(getCollapsableFrame(), "Netedit Attributes Help", GUIDesignDialogBox);
     additionalNeteditAttributesHelpDialog->setIcon(GUIIconSubSys::getIcon(GUIIcon::MODEADDITIONAL));
     // set help text
     std::ostringstream help;
@@ -336,21 +336,21 @@ GNEInspectorFrame::NeteditAttributesEditor::onCmdNeteditAttributeHelp(FXObject*,
 // ---------------------------------------------------------------------------
 
 GNEInspectorFrame::GEOAttributesEditor::GEOAttributesEditor(GNEInspectorFrame* inspectorFrameParent) :
-    FXGroupBoxModul(inspectorFrameParent->myContentFrame, "GEO Attributes"),
+    FXGroupBoxModule(inspectorFrameParent->myContentFrame, "GEO Attributes"),
     myInspectorFrameParent(inspectorFrameParent) {
 
     // Create Frame for GEOAttribute
-    myGEOAttributeFrame = new FXHorizontalFrame(this, GUIDesignAuxiliarHorizontalFrame);
+    myGEOAttributeFrame = new FXHorizontalFrame(getCollapsableFrame(), GUIDesignAuxiliarHorizontalFrame);
     myGEOAttributeLabel = new FXLabel(myGEOAttributeFrame, "Undefined GEO Attribute", nullptr, GUIDesignLabelAttribute);
     myGEOAttributeTextField = new FXTextField(myGEOAttributeFrame, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
 
     // Create Frame for use GEO
-    myUseGEOFrame = new FXHorizontalFrame(this, GUIDesignAuxiliarHorizontalFrame);
+    myUseGEOFrame = new FXHorizontalFrame(getCollapsableFrame(), GUIDesignAuxiliarHorizontalFrame);
     myUseGEOLabel = new FXLabel(myUseGEOFrame, toString(SUMO_ATTR_GEO).c_str(), nullptr, GUIDesignLabelAttribute);
     myUseGEOCheckButton = new FXCheckButton(myUseGEOFrame, "false", this, MID_GNE_SET_ATTRIBUTE, GUIDesignCheckButton);
 
     // Create help button
-    myHelpButton = new FXButton(this, "Help", nullptr, this, MID_HELP, GUIDesignButtonRectangular);
+    myHelpButton = new FXButton(getCollapsableFrame(), "Help", nullptr, this, MID_HELP, GUIDesignButtonRectangular);
 }
 
 
@@ -405,7 +405,7 @@ GNEInspectorFrame::GEOAttributesEditor::showGEOAttributesEditor() {
             }
         }
         // disable all editable elements if we're in demand mode and inspected AC isn't a demand element
-        if (GNEFrameAttributesModuls::isSupermodeValid(myInspectorFrameParent->getViewNet(), myInspectorFrameParent->myAttributesEditor->getFrameParent()->getViewNet()->getInspectedAttributeCarriers().front()) == false) {
+        if (GNEFrameAttributeModules::isSupermodeValid(myInspectorFrameParent->getViewNet(), myInspectorFrameParent->myAttributesEditor->getFrameParent()->getViewNet()->getInspectedAttributeCarriers().front()) == false) {
             myGEOAttributeTextField->disable();
             myUseGEOCheckButton->disable();
         }
@@ -478,7 +478,7 @@ GNEInspectorFrame::GEOAttributesEditor::onCmdSetGEOAttribute(FXObject* obj, FXSe
 
 long
 GNEInspectorFrame::GEOAttributesEditor::onCmdGEOAttributeHelp(FXObject*, FXSelector, void*) {
-    FXDialogBox* helpDialog = new FXDialogBox(this, "GEO attributes Help", GUIDesignDialogBox);
+    FXDialogBox* helpDialog = new FXDialogBox(getCollapsableFrame(), "GEO attributes Help", GUIDesignDialogBox);
     std::ostringstream help;
     help
             << " SUMO uses the World Geodetic System 84 (WGS84/UTM).\n"
@@ -500,15 +500,15 @@ GNEInspectorFrame::GEOAttributesEditor::onCmdGEOAttributeHelp(FXObject*, FXSelec
 // ---------------------------------------------------------------------------
 
 GNEInspectorFrame::TemplateEditor::TemplateEditor(GNEInspectorFrame* inspectorFrameParent) :
-    FXGroupBoxModul(inspectorFrameParent->myContentFrame, "Templates"),
+    FXGroupBoxModule(inspectorFrameParent->myContentFrame, "Templates"),
     myInspectorFrameParent(inspectorFrameParent),
     myEdgeTemplate(nullptr) {
     // Create set template button
-    mySetTemplateButton = new FXButton(this, "Set as Template\t\t", nullptr, this, MID_HOTKEY_SHIFT_F1_TEMPLATE_SET, GUIDesignButton);
+    mySetTemplateButton = new FXButton(getCollapsableFrame(), "Set as Template\t\t", nullptr, this, MID_HOTKEY_SHIFT_F1_TEMPLATE_SET, GUIDesignButton);
     // Create copy template button
-    myCopyTemplateButton = new FXButton(this, "", nullptr, this, MID_HOTKEY_SHIFT_F2_TEMPLATE_COPY, GUIDesignButton);
+    myCopyTemplateButton = new FXButton(getCollapsableFrame(), "", nullptr, this, MID_HOTKEY_SHIFT_F2_TEMPLATE_COPY, GUIDesignButton);
     // Create copy template button
-    myClearTemplateButton = new FXButton(this, "clear Edge Template", nullptr, this, MID_HOTKEY_SHIFT_F3_TEMPLATE_CLEAR, GUIDesignButton);
+    myClearTemplateButton = new FXButton(getCollapsableFrame(), "clear Edge Template", nullptr, this, MID_HOTKEY_SHIFT_F3_TEMPLATE_CLEAR, GUIDesignButton);
 }
 
 
@@ -663,15 +663,15 @@ GNEInspectorFrame::TemplateEditor::updateButtons() {
 }
 
 // ---------------------------------------------------------------------------
-// GNEFrameAttributesModuls::ParametersEditorInspector - methods
+// GNEFrameAttributeModules::ParametersEditorInspector - methods
 // ---------------------------------------------------------------------------
 
 GNEInspectorFrame::ParametersEditorInspector::ParametersEditorInspector(GNEInspectorFrame* inspectorFrameParent) :
-    FXGroupBoxModul(inspectorFrameParent->myContentFrame, "Parameters"),
+    FXGroupBoxModule(inspectorFrameParent->myContentFrame, "Parameters"),
     myInspectorFrameParent(inspectorFrameParent) {
     // create textfield and buttons
-    myTextFieldParameters = new FXTextField(this, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
-    myButtonEditParameters = new FXButton(this, "Edit parameters", nullptr, this, MID_GNE_OPEN_PARAMETERS_DIALOG, GUIDesignButton);
+    myTextFieldParameters = new FXTextField(getCollapsableFrame(), GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
+    myButtonEditParameters = new FXButton(getCollapsableFrame(), "Edit parameters", nullptr, this, MID_GNE_OPEN_PARAMETERS_DIALOG, GUIDesignButton);
 }
 
 
@@ -724,7 +724,7 @@ GNEInspectorFrame::ParametersEditorInspector::refreshParametersEditorInspector()
         // reset color
         myTextFieldParameters->setTextColor(FXRGB(0, 0, 0));
         // disable myTextFieldParameters if Tag correspond to an network element but we're in demand mode (or vice versa), disable all elements
-        if (GNEFrameAttributesModuls::isSupermodeValid(myInspectorFrameParent->myViewNet, frontAC)) {
+        if (GNEFrameAttributeModules::isSupermodeValid(myInspectorFrameParent->myViewNet, frontAC)) {
             myTextFieldParameters->enable();
             myButtonEditParameters->enable();
         } else {
@@ -826,10 +826,10 @@ GNEInspectorFrame::ParametersEditorInspector::onCmdSetParameters(FXObject*, FXSe
 // ---------------------------------------------------------------------------
 
 GNEInspectorFrame::AdditionalDialog::AdditionalDialog(GNEInspectorFrame* inspectorFrameParent) :
-    FXGroupBoxModul(inspectorFrameParent->myContentFrame, "Additional dialog"),
+    FXGroupBoxModule(inspectorFrameParent->myContentFrame, "Additional dialog"),
     myInspectorFrameParent(inspectorFrameParent) {
     // Create mark as front element button
-    myOpenAdditionalDialog = new FXButton(this, "Additional dialog", nullptr, this, MID_OPEN_ADDITIONAL_DIALOG, GUIDesignButton);
+    myOpenAdditionalDialog = new FXButton(getCollapsableFrame(), "Additional dialog", nullptr, this, MID_OPEN_ADDITIONAL_DIALOG, GUIDesignButton);
 }
 
 
@@ -919,10 +919,10 @@ GNEInspectorFrame::GNEInspectorFrame(FXHorizontalFrame* horizontalFrameParent, G
     myBackButton->hide();
 
     // Create Overlapped Inspection modul
-    myOverlappedInspection = new GNEFrameModuls::OverlappedInspection(this);
+    myOverlappedInspection = new GNEFrameModules::OverlappedInspection(this);
 
     // Create Attributes Editor modul
-    myAttributesEditor = new GNEFrameAttributesModuls::AttributesEditor(this);
+    myAttributesEditor = new GNEFrameAttributeModules::AttributesEditor(this);
 
     // Create GEO Parameters Editor modul
     myGEOAttributesEditor = new GEOAttributesEditor(this);
@@ -940,7 +940,7 @@ GNEInspectorFrame::GNEInspectorFrame(FXHorizontalFrame* horizontalFrameParent, G
     myTemplateEditor = new TemplateEditor(this);
 
     // Create HierarchicalElementTree modul
-    myHierarchicalElementTree = new GNEFrameModuls::HierarchicalElementTree(this);
+    myHierarchicalElementTree = new GNEFrameModules::HierarchicalElementTree(this);
 }
 
 
@@ -1102,7 +1102,7 @@ GNEInspectorFrame::inspectMultisection(const std::vector<GNEAttributeCarrier*>& 
     myHeaderLeftFrame->hide();
     myBackButton->hide();
     // Hide all elements
-    myAttributesEditor->hideAttributesEditorModul();
+    myAttributesEditor->hideAttributesEditorModule();
     myNeteditAttributesEditor->hideNeteditAttributesEditor();
     myGEOAttributesEditor->hideGEOAttributesEditor();
     myParametersEditorInspector->hideParametersEditorInspector();
@@ -1146,7 +1146,7 @@ GNEInspectorFrame::inspectMultisection(const std::vector<GNEAttributeCarrier*>& 
         getFrameHeaderLabel()->setText(headerString.c_str());
 
         // Show attributes editor
-        myAttributesEditor->showAttributeEditorModul(true, false);
+        myAttributesEditor->showAttributeEditorModule(true, false);
 
         // show netedit attributes editor if  we're inspecting elements with Netedit Attributes
         myNeteditAttributesEditor->showNeteditAttributesEditor();
@@ -1214,7 +1214,7 @@ GNEInspectorFrame::clearInspectedAC() {
 }
 
 
-GNEFrameAttributesModuls::AttributesEditor*
+GNEFrameAttributeModules::AttributesEditor*
 GNEInspectorFrame::getAttributesEditor() const {
     return myAttributesEditor;
 }
@@ -1232,13 +1232,13 @@ GNEInspectorFrame::getTemplateEditor() const {
 }
 
 
-GNEFrameModuls::OverlappedInspection*
+GNEFrameModules::OverlappedInspection*
 GNEInspectorFrame::getOverlappedInspection() const {
     return myOverlappedInspection;
 }
 
 
-GNEFrameModuls::HierarchicalElementTree*
+GNEFrameModules::HierarchicalElementTree*
 GNEInspectorFrame::getHierarchicalElementTree() const {
     return myHierarchicalElementTree;
 }

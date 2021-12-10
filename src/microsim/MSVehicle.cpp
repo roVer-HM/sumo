@@ -56,6 +56,7 @@
 #include <microsim/devices/MSDevice_DriverState.h>
 #include <microsim/devices/MSDevice_Vehroutes.h>
 #include <microsim/devices/MSDevice_ElecHybrid.h>
+#include <microsim/devices/MSDevice_Bluelight.h>
 #include <microsim/output/MSStopOut.h>
 #include <microsim/trigger/MSChargingStation.h>
 #include <microsim/trigger/MSOverheadWire.h>
@@ -2357,7 +2358,8 @@ MSVehicle::planMoveInternal(const SUMOTime t, MSLeaderInfo ahead, DriveItemVecto
                     && (myLaneChangeModel->getShadowLane() == nullptr
                         || myLaneChangeModel->getShadowLane()->getLinkCont().size() == 0
                         || myLaneChangeModel->getShadowLane()->getLinkCont().front()->getLane() != (*link)->getLane()))
-                || (opposite && (*link)->getViaLaneOrLane()->getParallelOpposite() == nullptr)) {
+                || (opposite && (*link)->getViaLaneOrLane()->getParallelOpposite() == nullptr
+                    && getDevice(typeid(MSDevice_Bluelight)) == nullptr)) {
             double va = cfModel.stopSpeed(this, getSpeed(), seen);
             if (lastLink != nullptr) {
                 lastLink->adaptLeaveSpeed(va);
@@ -4100,9 +4102,31 @@ MSVehicle::executeMove() {
             newOpposite = newOppositeEdge->getLanes()[oldLaneIndex];
         }
         if (newOpposite == nullptr) {
-            WRITE_WARNING("Unexpected end of opposite lane for vehicle '" + getID() + "' at lane '" + myLane->getID() + "', time=" +
-                          time2string(MSNet::getInstance()->getCurrentTimeStep()) + ".");
+            if (getDevice(typeid(MSDevice_Bluelight)) == nullptr) {
+                // unusual overtaking at junctions is ok for emergency vehicles
+                WRITE_WARNING("Unexpected end of opposite lane for vehicle '" + getID() + "' at lane '" + myLane->getID() + "', time=" +
+                        time2string(MSNet::getInstance()->getCurrentTimeStep()) + ".");
+            }
             myLaneChangeModel->changedToOpposite();
+            if (myState.myPos < getLength()) {
+                // further lanes is always cleared during opposite driving
+                MSLane* oldOpposite = oldLane->getOpposite();
+                if (oldOpposite != nullptr) {
+                    myFurtherLanes.push_back(oldOpposite);
+                    // small value since the lane is going in the other direction
+                    myState.myBackPos = getLength() - myState.myPos;
+                    myAngle = computeAngle();
+                } else {
+#ifdef WIN32
+#pragma warning(push)
+#pragma warning(disable: 4127) // do not warn about constant conditional expression
+#endif
+                    SOFT_ASSERT(false);
+#ifdef WIN32
+#pragma warning(pop)
+#endif
+                }
+            }
         } else {
             myState.myPos = myLane->getOppositePos(myState.myPos);
             myLane = newOpposite;
@@ -4320,6 +4344,8 @@ MSVehicle::getBackPositionOnLane(const MSLane* lane, bool calledByGetPosition) c
         std::cout << SIMTIME
                   << " getBackPositionOnLane veh=" << getID()
                   << " lane=" << Named::getIDSecure(lane)
+                  << " pos=" << myState.myPos
+                  << " backPos=" << myState.myBackPos
                   << " myLane=" << myLane->getID()
                   << " further=" << toString(myFurtherLanes)
                   << " furtherPosLat=" << toString(myFurtherLanesPosLat)
@@ -6226,7 +6252,8 @@ MSVehicle::rerouteParkingArea(const std::string& parkingAreaID, std::string& err
     ConstMSEdgeVector prevEdges(myCurrEdge, myRoute->end());
     const double savings = router.recomputeCosts(prevEdges, this, MSNet::getInstance()->getCurrentTimeStep());
     if (replaceParkingArea(newParkingArea, errorMsg)) {
-        replaceRouteEdges(edges, routeCost, savings, "TraCI:" + toString(SUMO_TAG_PARKING_AREA_REROUTE), false, false, false);
+        const bool onInit = myLane == nullptr;
+        replaceRouteEdges(edges, routeCost, savings, "TraCI:" + toString(SUMO_TAG_PARKING_AREA_REROUTE), onInit, false, false);
     } else {
         WRITE_WARNING("Vehicle '" + getID() + "' could not reroute to new parkingArea '" + newParkingArea->getID()
                       + "' reason=" + errorMsg + ", time=" + time2string(MSNet::getInstance()->getCurrentTimeStep()) + ".");

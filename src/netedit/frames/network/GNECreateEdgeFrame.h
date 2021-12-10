@@ -44,7 +44,7 @@ public:
     // class EdgeTypeSelector
     // ===========================================================================
 
-    class EdgeTypeSelector : public FXGroupBoxModul {
+    class EdgeTypeSelector : public FXGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNECreateEdgeFrame::EdgeTypeSelector)
 
@@ -144,7 +144,7 @@ public:
     // class LaneTypeSelector
     // ===========================================================================
 
-    class LaneTypeSelector : public FXGroupBoxModul {
+    class LaneTypeSelector : public FXGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNECreateEdgeFrame::LaneTypeSelector)
 
@@ -204,7 +204,7 @@ public:
     // class Legend
     // ===========================================================================
 
-    class Legend : public FXGroupBoxModul {
+    class Legend : public FXGroupBoxModule {
 
     public:
         /// @brief constructor
@@ -250,13 +250,13 @@ public:
     EdgeTypeSelector* getEdgeTypeSelector() const;
 
     /// @brief get edgeType attributes
-    GNEFrameAttributesModuls::AttributesCreator* getEdgeTypeAttributes() const;
+    GNEFrameAttributeModules::AttributesCreator* getEdgeTypeAttributes() const;
 
     /// @brief get lane type selector
     LaneTypeSelector* getLaneTypeSelector();
 
     /// @brief get laneType attributes
-    GNEFrameAttributesModuls::AttributesCreator* getLaneTypeAttributes() const;
+    GNEFrameAttributeModules::AttributesCreator* getLaneTypeAttributes() const;
 
     /// @brief set default to using edge template
     void setUseEdgeTemplate();
@@ -266,13 +266,13 @@ protected:
     EdgeTypeSelector* myEdgeTypeSelector = nullptr;
 
     /// @brief internal edgeType attributes
-    GNEFrameAttributesModuls::AttributesCreator* myEdgeTypeAttributes = nullptr;
+    GNEFrameAttributeModules::AttributesCreator* myEdgeTypeAttributes = nullptr;
 
     /// @brief lane type selector
     GNECreateEdgeFrame::LaneTypeSelector* myLaneTypeSelector = nullptr;
 
     /// @brief internal laneType attributes
-    GNEFrameAttributesModuls::AttributesCreator* myLaneTypeAttributes = nullptr;
+    GNEFrameAttributeModules::AttributesCreator* myLaneTypeAttributes = nullptr;
 
     /// @brief Legend
     GNECreateEdgeFrame::Legend* myLegend = nullptr;
