@@ -53,16 +53,18 @@
 // ===========================================================================
 NEMALogic::NEMALogic(MSTLLogicControl& tlcontrol,
                      const std::string& id, const std::string& programID,
+                     const SUMOTime _offset,
                      const Phases& phases,
-                     int step, SUMOTime delay,
+                     int /*step*/, SUMOTime /*delay*/,
                      const std::map<std::string, std::string>& parameter,
                      const std::string& basePath) :
-    MSSimpleTrafficLightLogic(tlcontrol, id, programID, TrafficLightType::NEMA, phases, step, delay, parameter),
+    MSSimpleTrafficLightLogic(tlcontrol, id, programID, _offset, TrafficLightType::NEMA, phases, 0, phases.front()->minDuration + SIMSTEP, parameter),
     myPhase(phases[0]->duration, phases[0]->getState()) {
     myDetectorLength = StringUtils::toDouble(getParameter("detector-length", "20"));
     myDetectorLengthLeftTurnLane = StringUtils::toDouble(getParameter("detector-length-leftTurnLane", "20"));
-    myCycleLength = (StringUtils::toDouble(getParameter("total-cycle-length", "60")));
+    myCycleLength = (StringUtils::toDouble(getParameter("total-cycle-length", getParameter("cycle-length", "60"))));
     myNextCycleLength = myCycleLength;
+    myDefaultCycleTime = TIME2STEPS(myCycleLength);
     myShowDetectors = StringUtils::toBool(getParameter("show-detectors", toString(OptionsCont::getOptions().getBool("tls.actuated.show-detectors"))));
     myFile = FileHelpers::checkForRelativity(getParameter("file", "NUL"), basePath);
     myFreq = TIME2STEPS(StringUtils::toDouble(getParameter("freq", "300")));
@@ -71,7 +73,7 @@ NEMALogic::NEMALogic(MSTLLogicControl& tlcontrol,
     ring2 = getParameter("ring2", "");
     barriers = getParameter("barrierPhases", "");
     coordinates = getParameter("coordinatePhases", getParameter("barrier2Phases",""));
-    offset = (StringUtils::toDouble(getParameter("offset", "0")));
+    offset = STEPS2TIME(_offset);
     myNextOffset = offset;
     whetherOutputState = StringUtils::toBool(getParameter("whetherOutputState", "false"));
     coordinateMode = StringUtils::toBool(getParameter("coordinate-mode", "false"));
@@ -546,12 +548,21 @@ std::string NEMALogic::combineStates(std::string state1, std::string state2) {
         char ch1 = state1[i];
         char ch2 = state2[i];
 
+        // check through this order. 'G' overwrite 'g'.
         if (ch1 == 'G' || ch2 == 'G') {
             output += 'G';
         } else if (ch1 == 'g' || ch2 == 'g') {
             output += 'g';
+        } else if (ch1 == 's' || ch2 == 's') {
+            output += 's';
         } else if (ch1 == 'y' || ch2 == 'y') {
             output += 'y';
+        } else if (ch1 == 'u' || ch2 == 'u') {
+            output += 'u';
+        } else if (ch1 == 'O' || ch2 == 'O') {
+            output += 'O';
+        } else if (ch1 == 'o' || ch2 == 'o') {
+            output += 'o';
         } else {
             output += 'r';
         }

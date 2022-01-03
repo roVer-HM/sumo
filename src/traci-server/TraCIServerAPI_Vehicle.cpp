@@ -956,6 +956,10 @@ TraCIServerAPI_Vehicle::processSet(TraCIServer& server, tcpip::Storage& inputSto
                     departSpeed = "desired";
                 } else if (-departSpeedCode == (int)DepartSpeedDefinition::LIMIT) {
                     departSpeed = "speedLimit";
+                } else if (-departSpeedCode == (int)DepartSpeedDefinition::LAST) {
+                    departSpeed = "last";
+                } else if (-departSpeedCode == (int)DepartSpeedDefinition::AVG) {
+                    departSpeed = "avg";
                 }
 
                 int departLaneCode;
@@ -1211,6 +1215,17 @@ TraCIServerAPI_Vehicle::processSet(TraCIServer& server, tcpip::Storage& inputSto
             break;
             case libsumo::VAR_UPDATE_BESTLANES: {
                 libsumo::Vehicle::updateBestLanes(id);
+            }
+            break;
+            case libsumo::VAR_MINGAP_LAT: {
+                double value = 0;
+                if (!server.readTypeCheckingDouble(inputStorage, value)) {
+                    return server.writeErrorStatusCmd(libsumo::CMD_SET_VEHICLE_VARIABLE, "Setting minimum lateral gap requires a double.", outputStorage);
+                }
+                if (value < 0.0 || fabs(value) == std::numeric_limits<double>::infinity()) {
+                    return server.writeErrorStatusCmd(libsumo::CMD_SET_VEHICLE_VARIABLE, "Invalid minimum lateral gap.", outputStorage);
+                }
+                libsumo::Vehicle::setMinGapLat(id, value);
             }
             break;
             default: {

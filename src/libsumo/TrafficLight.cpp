@@ -642,7 +642,7 @@ TrafficLight::setProgramLogic(const std::string& tlsID, const TraCILogic& logic)
         throw TraCIException("set program: parameter index must be less than parameter phase number.");
     }
     std::vector<MSPhaseDefinition*> phases;
-    for (TraCIPhase* phase : logic.phases) {
+    for (const std::shared_ptr<libsumo::TraCIPhase>& phase : logic.phases) {
         MSPhaseDefinition* sumoPhase = new MSPhaseDefinition(TIME2STEPS(phase->duration), phase->state, phase->name);
         sumoPhase->minDuration = TIME2STEPS(phase->minDur);
         sumoPhase->maxDuration = TIME2STEPS(phase->maxDur);
@@ -658,25 +658,25 @@ TrafficLight::setProgramLogic(const std::string& tlsID, const TraCILogic& logic)
         switch ((TrafficLightType)logic.type) {
             case TrafficLightType::ACTUATED:
                 tlLogic = new MSActuatedTrafficLightLogic(tlc,
-                        tlsID, logic.programID,
-                        phases, step, nextSwitch, 0,
+                        tlsID, logic.programID, 0,
+                        phases, step, nextSwitch,
                         logic.subParameter, basePath);
                 break;
             case TrafficLightType::NEMA:
                 tlLogic = new NEMALogic(tlc,
-                                        tlsID, logic.programID,
+                                        tlsID, logic.programID, 0,
                                         phases, step, nextSwitch,
                                         logic.subParameter, basePath);
                 break;
             case TrafficLightType::DELAYBASED:
                 tlLogic = new MSDelayBasedTrafficLightLogic(tlc,
-                        tlsID, logic.programID,
+                        tlsID, logic.programID, 0,
                         phases, step, nextSwitch,
                         logic.subParameter, basePath);
                 break;
             case TrafficLightType::STATIC:
                 tlLogic = new MSSimpleTrafficLightLogic(tlc,
-                                                        tlsID, logic.programID, TrafficLightType::STATIC,
+                                                        tlsID, logic.programID, 0, TrafficLightType::STATIC,
                                                         phases, step, nextSwitch,
                                                         logic.subParameter);
                 break;
@@ -687,6 +687,7 @@ TrafficLight::setProgramLogic(const std::string& tlsID, const TraCILogic& logic)
         // XXX pass GUIDetectorBuilder when running with gui
         NLDetectorBuilder db(*MSNet::getInstance());
         tlLogic->init(db);
+        MSNet::getInstance()->createTLWrapper(tlLogic);
     } else {
         static_cast<MSSimpleTrafficLightLogic*>(vars.getLogic(logic.programID))->setPhases(phases, logic.currentPhaseIndex);
     }

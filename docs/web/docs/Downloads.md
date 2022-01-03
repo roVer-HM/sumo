@@ -4,11 +4,11 @@ title: Downloads
 
 ## SUMO - Latest Release (Version {{Version}})
 
-**Release date: {{ReleaseDate}}**
+**Release date: {{ReleaseDate}} (updated 15.12.2021)**
 
 ### MS Windows binaries
 
-Contains the binaries (32 or 64 bit), all dlls needed, the examples,
+Contains the binaries (64 bit), all dlls needed, the examples,
 tools, and documentation in HTML format. For an explanation of the contents and the
 licensing, especially concerning the "extra" build, see [the notes below](Downloads.md#note_on_licensing)
 
@@ -16,9 +16,9 @@ licensing, especially concerning the "extra" build, see [the notes below](Downlo
 <li>Download 64 bit installer: <a class="no-arrow-link" href="https://sumo.dlr.de/releases/{{Version}}/sumo-win64-{{Version}}.msi">sumo-win64-{{Version}}.msi </a><span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-win64-{{Version}}.msi","r");?></span></li>
 <li>Download 64 bit zip: <a class="no-arrow-link" href="https://sumo.dlr.de/releases/{{Version}}/sumo-win64-{{Version}}.zip">sumo-win64-{{Version}}.zip </a><span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-win64-{{Version}}.zip","r");?></span></li>
 <li>Download 64 bit zip with all extras: <a class="no-arrow-link" href="https://sumo.dlr.de/releases/{{Version}}/sumo-win64extra-{{Version}}.zip">sumo-win64extra-{{Version}}.zip </a><span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-win64extra-{{Version}}.zip","r");?></span></li>
-<li>Download 32 bit installer: <a class="no-arrow-link" href="https://sumo.dlr.de/releases/{{Version}}/sumo-win32-{{Version}}.msi">sumo-win32-{{Version}}.msi </a><span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-win32-{{Version}}.msi","r");?></span> (Please rather use the 64bit build, Win32 is going to be discontinued.)</li>
-<li>Download 32 bit zip: <a class="no-arrow-link" href="https://sumo.dlr.de/releases/{{Version}}/sumo-win32-{{Version}}.zip">sumo-win32-{{Version}}.zip </a><span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-win32-{{Version}}.zip","r");?></span> (Please rather use the 64bit build, Win32 is going to be discontinued.)</li>
 </ul>
+
+Please note that due to the [log4j vulnerability](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-44228) the lisum-gui.jar in the distribution 1.11.0 has been replaced. Up to 15.12.2021 it contained a vulnerable version of the library. All other files are as in the original release. You can also download an updated [lisum-gui.jar directly](https://sumo.dlr.de/daily/lisum-gui.jar). Please note that no other part of SUMO (not even lisum-core.jar) is affected.
 
 ### SUMO-Game
 
@@ -32,14 +32,6 @@ solutions or Linux Makefiles. Does not contain tests. Download as:
 <ul>
 <li><a class="no-arrow-link" href="https://sumo.dlr.de/releases/{{Version}}/sumo-src-{{Version}}.tar.gz">sumo-src-{{Version}}.tar.gz </a><span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-src-{{Version}}.tar.gz","r");?></span></li>
 <li><a class="no-arrow-link" href="https://sumo.dlr.de/releases/{{Version}}/sumo-src-{{Version}}.zip">sumo-src-{{Version}}.zip </a><span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-src-{{Version}}.zip","r");?></span></li>
-</ul>
-
-### All-inclusive-tarball
-
-Includes sources, tests and docs but no binaries. Download as:
-
-<ul>
-<li><a class="no-arrow-link" href="https://sumo.dlr.de/releases/{{Version}}/sumo-all-{{Version}}.tar.gz">sumo-all-{{Version}}.tar.gz </a><span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-all-{{Version}}.tar.gz","r");?></span></li>
 </ul>
 
 ## Linux binaries
@@ -137,6 +129,9 @@ All releases can also be obtained via the [sourceforge download portal](https://
 If you want to try out an older version you can also use the virtual environment approach above with a fixed version, e.g.
 `pip install eclipse-sumo=1.9.0` (works only for 1.8.0 and later).
 
+If you need a complete zipped snapshot of the repository (including tests) for an older version have a look at the tags in your
+local repoository or at [GitHub tags](https://github.com/eclipse/sumo/tags).
+
 ## SUMO - Latest Development Version
 
 SUMO is under active development. You can find a continuously updated
@@ -160,7 +155,7 @@ packages can be obtained:
 <ul>
 <li>Sources: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-src-git.tar.gz">https://sumo.dlr.de/daily/sumo-src-git.tar.gz </a><span class="badge badge-pill badge-light"><?php getFileDate("sumo-src-git.tar.gz","d");?></span> <span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-src-git.tar.gz","d");?></span></li>
 <li>Sources: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-src-git.zip">https://sumo.dlr.de/daily/sumo-src-git.zip </a><span class="badge badge-pill badge-light"><?php getFileDate("sumo-src-git.zip","d");?></span> <span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-src-git.zip","d");?></span></li>
-<li>Sources, documentation and tests: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-all-git.tar.gz">https://sumo.dlr.de/daily/sumo-all-git.tar.gz </a><span class="badge badge-pill badge-light"><?php getFileDate("sumo-all-git.tar.gz","d");?></span> <span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-all-git.tar.gz","d");?></span></li>
+<li>Sources and static HTML documentation: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo_git.orig.tar.gz">https://sumo.dlr.de/daily/sumo_git.orig.tar.gz </a><span class="badge badge-pill badge-light"><?php getFileDate("sumo_git.orig.tar.gz","d");?></span> <span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-all-git.tar.gz","d");?></span></li>
 <li>Windows, 64bit: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-win64-git.zip">https://sumo.dlr.de/daily/sumo-win64-git.zip </a><span class="badge badge-pill badge-light"><?php getFileDate("sumo-win64-git.zip","d");?></span> <span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-win64-git.zip","d");?></span></li>
 <li>Windows 64bit binaries of the SUMO game: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-game-win64-git.zip">https://sumo.dlr.de/daily/sumo-game-win64-git.zip </a><span class="badge badge-pill badge-light"><?php getFileDate("sumo-game-win64-git.zip","d");?></span> <span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-game-win64-git.zip","d");?></span></li>
 <li>Windows installer, 64bit: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-win64-git.msi">https://sumo.dlr.de/daily/sumo-win64-git.msi </a><span class="badge badge-pill badge-light"><?php getFileDate("sumo-win64-git.msi","d");?></span> <span class="badge badge-pill badge-secondary"><?php getFileSize("sumo-win64-git.msi","d");?></span></li>
@@ -201,8 +196,7 @@ listed in the table below.
 |   | bin  | build  | src (source code)  | user docs  |  developer docs (doxygen) | data  | examples  | tutorials  | tests  | tools (except jars)  | jars  |
 |---|------|--------|--------------------|------------|---------------------------|-------|-----------|------------|--------|----------------------|-------|
 | sumo-src-*XXX*.tar.gz<br>sumo-src-*XXX*.zip  |   | &#10004; | &#10004; |   |   | &#10004; | &#10004; | &#10004; |   | &#10004; |   |
-|  sumo-win??-*XXX*.zip<br>sumo-win??-*XXX*.msi | &#10004; |   |   | &#10004; |   | &#10004; | &#10004; | &#10004; |   | &#10004; | &#10004; |
-| sumo-all-*XXX*.tar.gz<br>sumo-all-*XXX*.zip  |   | &#10004; | &#10004; | &#10004; |   | &#10004; | &#10004; | &#10004; | &#10004; | &#10004; | &#10004; |
+| sumo-win??-*XXX*.zip<br>sumo-win??-*XXX*.msi | &#10004; |   |   | &#10004; |   | &#10004; | &#10004; | &#10004; |   | &#10004; | &#10004; |
 | rpm  | (&#10004;) |   |   | &#10004; |   | &#10004; | &#10004; | &#10004; |   | &#10004; |   |
 
 ## Dependencies for developers

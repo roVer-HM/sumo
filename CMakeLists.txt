@@ -410,10 +410,14 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMake")
 
 # installation
-if (NOT MSVC)
+if (MSVC)
+    if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+        set(CMAKE_INSTALL_PREFIX "sumo-${PACKAGE_VERSION}")
+    endif()
+else ()
     include(GNUInstallDirs)
 endif ()
-if (SKBUILD)
+if (SKBUILD OR MSVC)
     set(DATA_PATH "")
 else ()
     set(DATA_PATH "share/sumo/")
@@ -421,6 +425,7 @@ endif ()
 install(DIRECTORY bin/ DESTINATION bin
         FILES_MATCHING PATTERN "*.dll"
         PATTERN "*d.dll" EXCLUDE
+        PATTERN "gtest*.dll" EXCLUDE
         PATTERN "FOXDLLD-1.6.dll" EXCLUDE)
 install(DIRECTORY data/ DESTINATION ${DATA_PATH}data)
 install(DIRECTORY tools/ DESTINATION ${DATA_PATH}tools
@@ -434,6 +439,7 @@ install(DIRECTORY tools/ DESTINATION ${DATA_PATH}tools
         PATTERN "traci4matlab/src" EXCLUDE
         PATTERN "__pycache__" EXCLUDE
         PATTERN "*.pyc" EXCLUDE
+        PATTERN "*.egg-info" EXCLUDE
         PATTERN ".git" EXCLUDE)
 if (DATA_PATH)
     install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ../../bin \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${DATA_PATH}bin)")
@@ -644,10 +650,6 @@ if (GIT_FOUND)
         COMMAND tar -czf sumo-src-${PACKAGE_VERSION}.tar.gz sumo-${PACKAGE_VERSION}
         COMMAND cp -a docs/userdoc docs/pydoc docs/javadoc docs/man sumo-${PACKAGE_VERSION}/docs
         COMMAND tar -czf sumo_${PACKAGE_VERSION}.orig.tar.gz --exclude "*.jar" sumo-${PACKAGE_VERSION}
-        COMMAND cp bin/*.jar sumo-${PACKAGE_VERSION}/bin
-        COMMAND cp -a tests sumo-${PACKAGE_VERSION}
-        COMMAND zip -rq sumo-all-${PACKAGE_VERSION}.zip sumo-${PACKAGE_VERSION}
-        COMMAND tar -czf sumo-all-${PACKAGE_VERSION}.tar.gz sumo-${PACKAGE_VERSION}
         COMMAND mkdir sumo-${PACKAGE_VERSION}/sumo-gui-macos
         COMMAND cp -a build/macos/*/*.app sumo-${PACKAGE_VERSION}/sumo-gui-macos
         COMMAND zip -rq sumo-gui-macos-${PACKAGE_VERSION}.zip sumo-${PACKAGE_VERSION}/sumo-gui-macos/*.app
