@@ -241,7 +241,16 @@ Helper::addSubscriptionFilter(SubscriptionFilterType filter) {
     if (myLastContextSubscription != nullptr) {
         myLastContextSubscription->activeFilters |= filter;
     } else {
-        WRITE_WARNING("addSubscriptionFilter: No previous vehicle context subscription exists to apply the context filter.");
+        // The following code relies on the fact that the filter is 2^(filterType-1),
+        // see Subscription.h and the corresponding TraCIConstants.h.
+        // It is only for getting similar error messages with libsumo and traci.
+        int index = (int)filter;
+        int filterType = 0;
+        if (index != 0) {
+            ++filterType;
+            while (index >>= 1) ++filterType;
+        }
+        throw TraCIException("No previous vehicle context subscription exists to apply filter type " + toHex(filterType, 2));
     }
     return myLastContextSubscription;
 }
@@ -297,17 +306,24 @@ Helper::handleSingleSubscription(const Subscription& s) {
         if (!s.variables.empty()) {
             std::vector<std::shared_ptr<tcpip::Storage> >::const_iterator k = s.parameters.begin();
             for (const int variable : s.variables) {
-                (*k)->resetPos();
-                handler->handle(objID, variable, container, k->get());
-                ++k;
+                if (s.contextDomain > 0 && variable == libsumo::TRACI_ID_LIST) {
+                    container->empty(objID);
+                } else {
+                    (*k)->resetPos();
+                    handler->handle(objID, variable, container, k->get());
+                    ++k;
+                }
             }
         } else {
             if (s.contextDomain == 0 && getCommandId == libsumo::CMD_GET_VEHICLE_VARIABLE) {
                 // default for vehicles is edge id and lane position
                 handler->handle(objID, VAR_ROAD_ID, container, nullptr);
                 handler->handle(objID, VAR_LANEPOSITION, container, nullptr);
-            } else if (s.contextDomain > 0 || !handler->handle(objID, libsumo::LAST_STEP_VEHICLE_NUMBER, container, nullptr)) {
-                // default for detectors is vehicle number, for all others (and contexts) id list
+            } else if (s.contextDomain > 0) {
+                // default for contexts is an empty map (similar to id list)
+                container->empty(objID);
+            } else if (!handler->handle(objID, libsumo::LAST_STEP_VEHICLE_NUMBER, container, nullptr)) {
+                // default for detectors is vehicle number, for all others id list
                 handler->handle(objID, libsumo::TRACI_ID_LIST, container, nullptr);
             }
         }
@@ -756,6 +772,9 @@ Helper::findObjectShape(int domain, const std::string& id, PositionVector& shape
         case libsumo::CMD_SUBSCRIBE_EDGE_CONTEXT:
             Edge::storeShape(id, shape);
             break;
+        case libsumo::CMD_SUBSCRIBE_SIM_CONTEXT:
+            Simulation::storeShape(shape);
+            break;
         default:
             break;
     }
@@ -804,6 +823,7 @@ Helper::collectObjectsInRange(int domain, const PositionVector& shape, double ra
         }
         break;
         default:
+            throw TraCIException("Infeasible context domain (" + toString(domain) + ")");
             break;
     }
 }
@@ -1851,6 +1871,12 @@ Helper::SubscriptionWrapper::wrapStringPair(const std::string& objID, const int 
     sl->value.push_back(value.second);
     (*myActiveResults)[objID][variable] = sl;
     return true;
+}
+
+
+void
+Helper::SubscriptionWrapper::empty(const std::string& objID) {
+    (*myActiveResults)[objID]; // initiate the empty map to track the objectID for TRACI_ID_LIST context subscriptions
 }
 
 

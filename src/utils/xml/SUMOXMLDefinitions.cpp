@@ -104,6 +104,7 @@ StringBijection<int>::Entry SUMOXMLDefinitions::tags[] = {
     { "phase",                          SUMO_TAG_PHASE },
     { "condition",                      SUMO_TAG_CONDITION },
     { "assignment",                     SUMO_TAG_ASSIGNMENT },
+    { "function",                       SUMO_TAG_FUNCTION },
     { "tripTAZ",                        SUMO_TAG_TRIP_TAZ },
     { "flow",                           SUMO_TAG_FLOW },
     { "flowJunctions",                  GNE_TAG_FLOW_JUNCTIONS },
@@ -425,6 +426,7 @@ StringBijection<int>::Entry SUMOXMLDefinitions::attrs[] = {
     { "collisionMinGapFactor",  SUMO_ATTR_COLLISION_MINGAP_FACTOR },
     { "boardingDuration",       SUMO_ATTR_BOARDING_DURATION },
     { "loadingDuration",        SUMO_ATTR_LOADING_DURATION },
+    { "insertionChecks",        SUMO_ATTR_INSERTIONCHECKS },
     { "maneuverAngleTimes",     SUMO_ATTR_MANEUVER_ANGLE_TIMES },
     // MSDevice_ElecHybrid
     { "overheadWireChargingPower",      SUMO_ATTR_OVERHEADWIRECHARGINGPOWER },
@@ -681,6 +683,7 @@ StringBijection<int>::Entry SUMOXMLDefinitions::attrs[] = {
     { "earlyTarget",            SUMO_ATTR_EARLY_TARGET },
     { "finalTarget",            SUMO_ATTR_FINAL_TARGET },
     { "check",                  SUMO_ATTR_CHECK },
+    { "nArgs",                  SUMO_ATTR_NARGS },
     { "vehext",                 SUMO_ATTR_VEHICLEEXTENSION },
     { "yellow",                 SUMO_ATTR_YELLOW },
     { "red",                    SUMO_ATTR_RED },
@@ -772,6 +775,7 @@ StringBijection<int>::Entry SUMOXMLDefinitions::attrs[] = {
 
     { "lon",                    SUMO_ATTR_LON },
     { "lat",                    SUMO_ATTR_LAT },
+    { "action",                 SUMO_ATTR_ACTION },
     { "geo",                    SUMO_ATTR_GEO },
     { "geoShape",               SUMO_ATTR_GEOSHAPE },
     { "k",                      SUMO_ATTR_K },
@@ -1079,6 +1083,19 @@ StringBijection<TrafficLightLayout>::Entry SUMOXMLDefinitions::trafficLightLayou
     { "",                TrafficLightLayout::DEFAULT } //< must be the last one
 };
 
+StringBijection<InsertionCheck>::Entry SUMOXMLDefinitions::insertionCheckValues[] = {
+    { "none",          InsertionCheck::NONE },
+    { "collision",     InsertionCheck::COLLISION },
+    { "leaderGap",     InsertionCheck::LEADER_GAP },
+    { "followerGap",   InsertionCheck::FOLLOWER_GAP },
+    { "junction",      InsertionCheck::JUNCTION },
+    { "stop",          InsertionCheck::STOP },
+    { "arrivalSpeed",  InsertionCheck::ARRIVAL_SPEED },
+    { "oncomingTrain", InsertionCheck::ONCOMING_TRAIN },
+    { "speedLimit",    InsertionCheck::SPEED_LIMIT },
+    { "pedestrian",    InsertionCheck::PEDESTRIAN },
+    { "all",           InsertionCheck::ALL } //< must be the last one
+};
 
 StringBijection<LaneChangeModel>::Entry SUMOXMLDefinitions::laneChangeModelValues[] = {
     { "DK2008",     LaneChangeModel::DK2008 },
@@ -1177,6 +1194,9 @@ StringBijection<TrafficLightType> SUMOXMLDefinitions::TrafficLightTypes(
 
 StringBijection<TrafficLightLayout> SUMOXMLDefinitions::TrafficLightLayouts(
     SUMOXMLDefinitions::trafficLightLayoutValues, TrafficLightLayout::DEFAULT);
+
+StringBijection<InsertionCheck> SUMOXMLDefinitions::InsertionChecks(
+    SUMOXMLDefinitions::insertionCheckValues, InsertionCheck::ALL);
 
 StringBijection<LaneChangeModel> SUMOXMLDefinitions::LaneChangeModels(
     SUMOXMLDefinitions::laneChangeModelValues, LaneChangeModel::DEFAULT);

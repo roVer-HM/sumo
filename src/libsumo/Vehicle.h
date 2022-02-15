@@ -134,6 +134,17 @@ public:
                             double until = libsumo::INVALID_DOUBLE_VALUE,
                             int teleport = 0);
 
+    static void insertStop(const std::string& vehID,
+                            int nextStopIndex,
+                            const std::string& edgeID,
+                            double pos = 1.,
+                            int laneIndex = 0,
+                            double duration = libsumo::INVALID_DOUBLE_VALUE,
+                            int flags = libsumo::STOP_DEFAULT,
+                            double startPos = libsumo::INVALID_DOUBLE_VALUE,
+                            double until = libsumo::INVALID_DOUBLE_VALUE,
+                            int teleport = 0);
+
     static void rerouteParkingArea(const std::string& vehID,
                                    const std::string& parkingAreaID);
 
@@ -165,7 +176,7 @@ public:
     static void deactivateGapControl(const std::string& vehID);
     static void requestToC(const std::string& vehID, double leadTime);
     static void setSpeed(const std::string& vehID, double speed);
-    static void setPreviousSpeed(const std::string& vehID, double prevspeed);
+    static void setPreviousSpeed(const std::string& vehID, double prevSpeed, double prevAcceleration = libsumo::INVALID_DOUBLE_VALUE);
     static void setSpeedMode(const std::string& vehID, int speedMode);
     static void setLaneChangeMode(const std::string& vehID, int laneChangeMode);
     static void setRoutingMode(const std::string& vehID, int routingMode);

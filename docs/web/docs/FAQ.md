@@ -402,7 +402,7 @@ and simply type `git pull`.
 ### How to get an older version of SUMO?
 
   see
-  [Alternative download and older releases](Downloads.md#sumo_-_alternative_download_and_older_releases).
+  [Alternative download and older releases](Downloads.md#older_releases_and_alternative_download).
   On Linux, older versions [must be built from source](Installing/Linux_Build.md).
 
 ### How to check out revision 5499 (or any other outdated sumo)?
@@ -637,10 +637,16 @@ use the Linux version or download the [nightly-extra version](https://sumo.dlr.d
 
 ## netedit
 
-### How can I obtain netedit?
+### How can I edit lane attributes?
 
-  [netedit](Netedit/index.md) is available as part of the regular
-  distribution since version 0.25.0.
+see [inspecting lanes](Netedit/editModesCommon.md#inspecting_lanes)
+  
+### How can I edit connection attributes?
+
+see [inspecting connections](Netedit/editModesCommon.md#inspecting_connections)
+
+!!! note
+    Connection mode is only used for adding and removing connections but not for editing connection attributes     
 
 ## Traffic Demand Generation
 

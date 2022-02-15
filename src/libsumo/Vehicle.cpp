@@ -972,6 +972,28 @@ Vehicle::replaceStop(const std::string& vehID,
 
 
 void
+Vehicle::insertStop(const std::string& vehID,
+                     int nextStopIndex,
+                     const std::string& edgeID,
+                     double pos,
+                     int laneIndex,
+                     double duration,
+                     int flags,
+                     double startPos,
+                     double until,
+                     int teleport) {
+    MSBaseVehicle* vehicle = Helper::getVehicle(vehID);
+    SUMOVehicleParameter::Stop stopPars = Helper::buildStopParameters(edgeID,
+            pos, laneIndex, startPos, flags, duration, until);
+
+    std::string error;
+    if (!vehicle->insertStop(nextStopIndex, stopPars, "traci:insertStop", teleport != 0, error)) {
+        throw TraCIException("Stop insertion failed for vehicle '" + vehID + "' (" + error + ").");
+    }
+}
+
+
+void
 Vehicle::rerouteParkingArea(const std::string& vehID, const std::string& parkingAreaID) {
     MSBaseVehicle* vehicle = Helper::getVehicle(vehID);
     MSVehicle* veh = dynamic_cast<MSVehicle*>(vehicle);
@@ -1409,15 +1431,17 @@ Vehicle::setSpeed(const std::string& vehID, double speed) {
 }
 
 void
-Vehicle::setPreviousSpeed(const std::string& vehID, double prevspeed) {
+Vehicle::setPreviousSpeed(const std::string& vehID, double prevSpeed, double prevAcceleration) {
     MSBaseVehicle* vehicle = Helper::getVehicle(vehID);
     MSVehicle* veh = dynamic_cast<MSVehicle*>(vehicle);
     if (veh == nullptr) {
         WRITE_WARNING("setPreviousSpeed not yet implemented for meso");
         return;
     }
-
-    veh->setPreviousSpeed(prevspeed);
+    if (prevAcceleration == INVALID_DOUBLE_VALUE) {
+        prevAcceleration = std::numeric_limits<double>::min();
+    }
+    veh->setPreviousSpeed(prevSpeed, prevAcceleration);
 }
 
 void

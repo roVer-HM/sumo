@@ -1018,10 +1018,10 @@ GUIApplicationWindow::onCmdSaveConfig(FXObject*, FXSelector, void*) {
                        opendialog.getPatternText(opendialog.getCurrentPattern()).after('.').before(')')).text();
     std::ofstream out(StringUtils::transcodeToLocal(file));
     if (out.good()) {
-        OptionsCont::getOptions().writeConfiguration(out, true, false, false);
+        OptionsCont::getOptions().writeConfiguration(out, true, false, false, file, true);
         setStatusBarText("Configuration saved to " + file);
     } else {
-        setStatusBarText("Could not save onfiguration to " + file);
+        setStatusBarText("Could not save configuration to " + file);
     }
     out.close();
     return 1;
@@ -1587,6 +1587,7 @@ GUIApplicationWindow::handleEvent_SimulationLoaded(GUIEvent* e) {
             if (myDemandScaleSpinner->getValue() == 1 || !OptionsCont::getOptions().isDefault("scale")) {
                 myDemandScaleSpinner->setValue(OptionsCont::getOptions().getFloat("scale"));
             }
+            myRunThread->getNet().getVehicleControl().setScale(myDemandScaleSpinner->getValue());
         }
     }
     getApp()->endWaitCursor();

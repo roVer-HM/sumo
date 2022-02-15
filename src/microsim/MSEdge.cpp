@@ -178,12 +178,8 @@ MSEdge::closeBuilding() {
         lane->checkBufferType();
     }
     std::sort(mySuccessors.begin(), mySuccessors.end(), by_id_sorter());
-    rebuildAllowedLanes();
+    rebuildAllowedLanes(true);
     recalcCache();
-    // segment building depends on the finished list of successors (for multi-queue)
-    if (MSGlobals::gUseMesoSim && !myLanes->empty()) {
-        MSGlobals::gMesoNet->buildSegmentsFor(*this, OptionsCont::getOptions());
-    }
 
     // extend lookup table for sublane model after all edges are read
     if (myLanes->back()->getOpposite() != nullptr) {
@@ -268,7 +264,7 @@ MSEdge::getMesoPermissions(SVCPermissions p, SVCPermissions ignoreIgnored) {
 
 
 void
-MSEdge::rebuildAllowedLanes() {
+MSEdge::rebuildAllowedLanes(const bool onInit) {
     // rebuild myMinimumPermissions and myCombinedPermissions
     myMinimumPermissions = SVCAll;
     myCombinedPermissions = 0;
@@ -296,13 +292,15 @@ MSEdge::rebuildAllowedLanes() {
             }
         }
     }
-    rebuildAllowedTargets(false);
-    for (MSEdge* pred : myPredecessors) {
-        pred->rebuildAllowedTargets(false);
-    }
-    if (MSGlobals::gUseMesoSim) {
-        for (MESegment* s = MSGlobals::gMesoNet->getSegmentForEdge(*this); s != nullptr; s = s->getNextSegment()) {
-            s->updatePermissions();
+    if (!onInit) {
+        rebuildAllowedTargets(false);
+        for (MSEdge* pred : myPredecessors) {
+            pred->rebuildAllowedTargets(false);
+        }
+        if (MSGlobals::gUseMesoSim) {
+            for (MESegment* s = MSGlobals::gMesoNet->getSegmentForEdge(*this); s != nullptr; s = s->getNextSegment()) {
+                s->updatePermissions();
+            }
         }
     }
 }
@@ -518,6 +516,9 @@ MSEdge::getDepartPosBound(const MSVehicle& veh, bool upper) const {
             break;
         case DepartPosDefinition::BASE:
         case DepartPosDefinition::DEFAULT:
+            if (!upper) {
+                pos = 0;
+            }
             break;
         default:
             pos = MIN2(pos, veh.getVehicleType().getLength());
@@ -883,12 +884,12 @@ MSEdge::getRoutingSpeed() const {
 
 bool
 MSEdge::dictionary(const std::string& id, MSEdge* ptr) {
-    DictType::iterator it = myDict.find(id);
-    if (it == myDict.end()) {
-        // id not in myDict.
-        myDict[id] = ptr;
-        while ((int)myEdges.size() < ptr->getNumericalID() + 1) {
-            myEdges.push_back(0);
+    const DictType::iterator it = myDict.lower_bound(id);
+    if (it == myDict.end() || it->first != id) {
+        // id not in myDict
+        myDict.emplace_hint(it, id, ptr);
+        while (ptr->getNumericalID() >= (int)myEdges.size()) {
+            myEdges.push_back(nullptr);
         }
         myEdges[ptr->getNumericalID()] = ptr;
         return true;
@@ -899,18 +900,24 @@ MSEdge::dictionary(const std::string& id, MSEdge* ptr) {
 
 MSEdge*
 MSEdge::dictionary(const std::string& id) {
-    DictType::iterator it = myDict.find(id);
+    const DictType::iterator it = myDict.find(id);
     if (it == myDict.end()) {
-        // id not in myDict.
         return nullptr;
     }
     return it->second;
 }
 
 
-int
-MSEdge::dictSize() {
-    return (int)myDict.size();
+MSEdge*
+MSEdge::dictionaryHint(const std::string& id, const int startIdx) {
+    // this method is mainly useful when parsing connections from the net.xml which are sorted by "from" id
+    if (myEdges[startIdx] != nullptr && myEdges[startIdx]->getID() == id) {
+        return myEdges[startIdx];
+    }
+    if (startIdx + 1 < (int)myEdges.size() && myEdges[startIdx + 1] != nullptr && myEdges[startIdx + 1]->getID() == id) {
+        return myEdges[startIdx + 1];
+    }
+    return dictionary(id);
 }
 
 

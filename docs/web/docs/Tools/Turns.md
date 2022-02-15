@@ -95,7 +95,9 @@ When setting option **--turn-max-gap 2**, the edgeRelation `<edgeRelation from="
         
 ## Origin-Destination restrictions
 When loading an edgeRelation file with the option **--od-files**, origin-destination counts will be added.
-This can be used to combine (edge-based) OD-relations with other counting data.
+This can be used to combine (edge-based) OD-relations with other counting data.  
+  
+The tool [route2OD.py](Routes.md#route2odpy) supports option **--edge-relations** to transform any kind of route file into a suitable file of edge-based origin-destination edgeRelations.
         
 ## Output Styles
 By default, routeSampler will generate individual vehicles with embedded routes. This can be changed with the following options (which can also be combined):
@@ -127,15 +129,15 @@ starting edges and inserted with high speed on a reasonable lane.
 To distinguish vehicles of different types, routeSampler may be run multiple times with different attributes. Note, that it is also necessary to set the option **--prefix** to prevent duplicate ids. The example below creates traffic consisting of cars and trucks using two edgedata files with distinct count values (stored in the default attribute 'entered').
 
 ```
-python tools/routeSampler.py --attributes="type=\"car\"" --edgedata-files carcounts.xml --prefix c -o cars.rou.xml -n net.net.xml -r candidate.rou.xml
-python tools/routeSampler.py --attributes="type=\"heavy\"" --edgedata-files truckcounts.xml --prefix t -o trucks.rou.xml  -n net.net.xml -r candidate.rou.xml
+python tools/routeSampler.py --attributes="type=\"car\"" --edgedata-files carcounts.xml --prefix c -o cars.rou.xml -r candidate.rou.xml
+python tools/routeSampler.py --attributes="type=\"heavy\"" --edgedata-files truckcounts.xml --prefix t -o trucks.rou.xml -r candidate.rou.xml
 ```
   
 Alternatively, the count values might also be stored in different attributes of the same file (i.e. 'count1', 'count2'):
   
 ```
-python tools/routeSampler.py --attributes="type=\"car\"" --edgedata-files counts.xml --edgedata-attribute count1 --prefix c -o cars.rou.xml  -n net.net.xml -r candidate.rou.xml
-python tools/routeSampler.py --attributes="type=\"heavy\"" --edgedata-files counts.xml --edgedata-attribute count2 --prefix t -o trucks.rou.xml  -n net.net.xml -r candidate.rou.xml
+python tools/routeSampler.py --attributes="type=\"car\"" --edgedata-files counts.xml --edgedata-attribute count1 --prefix c -o cars.rou.xml -r candidate.rou.xml
+python tools/routeSampler.py --attributes="type=\"heavy\"" --edgedata-files counts.xml --edgedata-attribute count2 --prefix t -o trucks.rou.xml  -r  candidate.rou.xml
 ```
    
 When running the simulation, the types 'car' and 'heavy' (previously set as vehicle attributes), must be defined in an additional file which could look like the following example (types.add.xml):

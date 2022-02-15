@@ -75,11 +75,13 @@ MSActuatedTrafficLightLogic::MSActuatedTrafficLightLogic(MSTLLogicControl& tlcon
         const std::map<std::string, std::string>& parameter,
         const std::string& basePath,
         const ConditionMap& conditions,
-        const AssignmentMap& assignments) :
+        const AssignmentMap& assignments,
+        const FunctionMap& functions) :
     MSSimpleTrafficLightLogic(tlcontrol, id, programID, offset, TrafficLightType::ACTUATED, phases, step, delay, parameter),
     myLastTrySwitchTime(0),
     myConditions(conditions),
     myAssignments(assignments),
+    myFunctions(functions),
     myTraCISwitch(false),
     myDetectorPrefix(id + "_" + programID + "_") {
     myMaxGap = StringUtils::toDouble(getParameter("max-gap", DEFAULT_MAX_GAP));
@@ -109,6 +111,7 @@ MSActuatedTrafficLightLogic::MSActuatedTrafficLightLogic(MSTLLogicControl& tlcon
             }
         }
     }
+    myStack.push_back(std::map<std::string, double>());
 }
 
 
@@ -615,11 +618,7 @@ MSActuatedTrafficLightLogic::trySwitch() {
     // @note any vehicles which arrived during the previous phases which are now waiting between the detector and the stop line are not
     // considere here. RiLSA recommends to set minDuration in a way that lets all vehicles pass the detector
     SUMOTime now = MSNet::getInstance()->getCurrentTimeStep();
-    for (const auto& assignment : myAssignments) {
-        if (evalExpression(std::get<1>(assignment))) {
-            myConditions[std::get<0>(assignment)] = toString(evalExpression(std::get<2>(assignment)));
-        }
-    }
+    executeAssignments(myAssignments, myConditions);
 
     if (myLinkGreenTimes.size() > 0) {
         // constraints exist, record green time durations for each link
@@ -987,24 +986,36 @@ MSActuatedTrafficLightLogic::evalExpression(const std::string& condition) const 
                 }
             }
         }
-        if (bracketOpen == std::string::npos) {
+        if (bracketClose == std::string::npos) {
             throw ProcessError("Unmatched parentheses in condition " + condition + "'");
         }
         std::string cond2 = condition;
         const std::string inBracket = condition.substr(bracketOpen + 1, bracketClose - bracketOpen - 1);
         double bracketVal = evalExpression(inBracket);
         cond2.replace(bracketOpen, bracketClose - bracketOpen + 1, toString(bracketVal));
-        return evalExpression(cond2);
+        try {
+            return evalExpression(cond2);
+        } catch (ProcessError& e) {
+            throw ProcessError("Error when evaluating expression '" + condition + "':\n  " + e.what());
+        }
     }
     std::vector<std::string> tokens = StringTokenizer(condition).getVector();
     //std::cout << SIMTIME << " tokens(" << tokens.size() << ")=" << toString(tokens) << "\n";
     if (tokens.size() == 0) {
         throw ProcessError("Invalid empty condition '" + condition + "'");
     } else if (tokens.size() == 1) {
-        return evalAtomicExpression(tokens[0]);
+        try {
+            return evalAtomicExpression(tokens[0]);
+        } catch (ProcessError& e) {
+            throw ProcessError("Error when evaluating expression '" + condition + "':\n  " + e.what());
+        }
     } else if (tokens.size() == 2) {
         if (tokens[0] == "not") {
-            return !(bool)(evalAtomicExpression(tokens[1]));
+            try {
+                return !(bool)(evalAtomicExpression(tokens[1]));
+            } catch (ProcessError& e) {
+                throw ProcessError("Error when evaluating expression '" + condition + "':\n  " + e.what());
+            }
         } else {
             throw ProcessError("Unsupported condition '" + condition + "'");
         }
@@ -1014,19 +1025,27 @@ MSActuatedTrafficLightLogic::evalExpression(const std::string& condition) const 
         const double b = evalAtomicExpression(tokens[2]);
         const std::string& o = tokens[1];
         //std::cout << SIMTIME << " o=" << o << " a=" << a << " b=" << b << "\n";
-        return evalTernaryExpression(a, o, b, condition);
+        try {
+            return evalTernaryExpression(a, o, b, condition);
+        } catch (ProcessError& e) {
+            throw ProcessError("Error when evaluating expression '" + condition + "':\n  " + e.what());
+        }
     } else {
         const int iEnd = (int)tokens.size() - 1;
         for (const std::string& o : OPERATOR_PRECEDENCE) {
             for (int i = 1; i < iEnd; i++) {
                 if (tokens[i] == o) {
-                    const double val = evalTernaryExpression(
-                                           evalAtomicExpression(tokens[i - 1]), o,
-                                           evalAtomicExpression(tokens[i + 1]), condition);
-                    std::vector<std::string> newTokens(tokens.begin(), tokens.begin() + (i - 1));
-                    newTokens.push_back(toString(val));
-                    newTokens.insert(newTokens.end(), tokens.begin() + (i + 2), tokens.end());
-                    return evalExpression(toString(newTokens));
+                    try {
+                        const double val = evalTernaryExpression(
+                                evalAtomicExpression(tokens[i - 1]), o,
+                                evalAtomicExpression(tokens[i + 1]), condition);
+                        std::vector<std::string> newTokens(tokens.begin(), tokens.begin() + (i - 1));
+                        newTokens.push_back(toString(val));
+                        newTokens.insert(newTokens.end(), tokens.begin() + (i + 2), tokens.end());
+                        return evalExpression(toString(newTokens));
+                    } catch (ProcessError& e) {
+                        throw ProcessError("Error when evaluating expression '" + condition + "':\n  " + e.what());
+                    }
                 }
             }
         }
@@ -1075,6 +1094,53 @@ MSActuatedTrafficLightLogic::evalTernaryExpression(double a, const std::string& 
 }
 
 double
+MSActuatedTrafficLightLogic::evalCustomFunction(const std::string& fun, const std::string& arg) const {
+    std::vector<std::string> args = StringTokenizer(arg, ",").getVector();
+    const Function& f = myFunctions.find(fun)->second;
+    if ((int)args.size() != f.nArgs) {
+        throw ProcessError("Function '" + fun + "' requires " + toString(f.nArgs) + " arguments but " + toString(args.size()) + " were given");
+    }
+    std::vector<double> args2;
+    for (auto a : args) {
+        args2.push_back(evalExpression(a));
+    }
+    myStack.push_back(myStack.back());
+    myStack.back()["$0"] = 0;
+    for (int i = 0; i < (int)args2.size(); i++) {
+        myStack.back()["$" + toString(i + 1)] = args2[i];
+    }
+    try {
+        ConditionMap empty;
+        executeAssignments(f.assignments, empty, myConditions);
+    } catch (ProcessError& e) {
+        throw ProcessError("Error when evaluating function '" + fun + "' with args '" + joinToString(args2, ",") + "' (" + e.what() + ")");
+    }
+    double result = myStack.back()["$0"];
+    myStack.pop_back();
+    return result;
+}
+
+
+void
+MSActuatedTrafficLightLogic::executeAssignments(const AssignmentMap& assignments, ConditionMap& conditions, const ConditionMap& forbidden) const {
+    for (const auto& assignment : assignments) {
+        if (evalExpression(std::get<1>(assignment))) {
+            const std::string& id = std::get<0>(assignment);
+            const double val = evalExpression(std::get<2>(assignment));
+            ConditionMap::iterator it = conditions.find(id);
+            if (it != conditions.end()) {
+                it->second = toString(val);
+            } else if (forbidden.find(id) != forbidden.end()) {
+                throw ProcessError("Modifying global condition '" + id + "' is forbidden");
+            } else {
+                myStack.back()[id] = val;
+            }
+        }
+    }
+}
+
+
+double
 MSActuatedTrafficLightLogic::evalAtomicExpression(const std::string& expr) const {
     if (expr.size() == 0) {
         throw ProcessError("Invalid empty expression");
@@ -1091,6 +1157,12 @@ MSActuatedTrafficLightLogic::evalAtomicExpression(const std::string& expr) const
                 // symbol lookup
                 return evalExpression(it->second);
             } else {
+                // look at stack
+                auto it2 = myStack.back().find(expr);
+                if (it2 != myStack.back().end()) {
+                    return it2->second;
+                }
+                // must be a number
                 return StringUtils::toDouble(expr);
             }
         } else {
@@ -1109,6 +1181,9 @@ MSActuatedTrafficLightLogic::evalAtomicExpression(const std::string& expr) const
                     int linkIndex = StringUtils::toInt(arg);
                     if (linkIndex >= 0 && linkIndex < myNumLinks) {
                         const std::vector<SUMOTime>& times = fun == "g" ? myLinkGreenTimes : myLinkRedTimes;
+                        if (times.empty()) {
+                            return 0;
+                        }
                         if (myLastTrySwitchTime < SIMSTEP) {
                             // times are only updated at the start of a phase where
                             // switching is possible (i.e. not during minDur).
@@ -1128,8 +1203,13 @@ MSActuatedTrafficLightLogic::evalAtomicExpression(const std::string& expr) const
                     }
                 } catch (NumberFormatException&) { }
                 throw ProcessError("Invalid link index '" + arg + "' in expression '" + expr + "'");
+            } else if (fun == "c") {
+                return STEPS2TIME(getTimeInCycle());
             } else {
-                throw ProcessError("Unsupported function '" + fun + "' in expression '" + expr + "'");
+                if (myFunctions.find(fun) == myFunctions.end()) {
+                    throw ProcessError("Unsupported function '" + fun + "' in expression '" + expr + "'");
+                }
+                return evalCustomFunction(fun, arg);
             }
         }
     }
@@ -1148,11 +1228,15 @@ MSActuatedTrafficLightLogic::getDetectorStates() const {
 std::map<std::string, double>
 MSActuatedTrafficLightLogic::getConditions() const {
     std::map<std::string, double> result;
-    for (auto item : myConditions) {
-        if (myListedConditions.count(item.first) != 0) {
-            result[item.first] = evalExpression(item.second);
+        for (auto item : myConditions) {
+            if (myListedConditions.count(item.first) != 0) {
+                try {
+                    result[item.first] = evalExpression(item.second);
+                } catch (ProcessError& e) {
+                    WRITE_ERROR("Error when retrieving conditions '" + item.first + "' for tlLogic '" + getID() + "' (" + e.what() + ")");
+                }
+            }
         }
-    }
     return result;
 }
 

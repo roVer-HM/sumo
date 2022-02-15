@@ -26,7 +26,7 @@ except ImportError:
 import pyautogui
 import time
 import pyperclip
-import attributesEnum as attrs #noqa
+import attributesEnum as attrs  # noqa
 
 # define delay before every operation
 DELAY_KEY = 0.1
@@ -1099,7 +1099,7 @@ def modifyCrossingDefaultValue(numtabs, value):
     # focus current frame
     focusOnFrame()
     # jump to value
-    for _ in range(numtabs + 4):
+    for _ in range(numtabs + 5):
         typeTab()
     # paste the new value
     pasteIntoTextField(value)
@@ -1114,7 +1114,7 @@ def modifyCrossingDefaultBoolValue(numtabs):
     # focus current frame
     focusOnFrame()
     # jump to value
-    for _ in range(numtabs + 4):
+    for _ in range(numtabs + 5):
         typeTab()
     # type space to change value
     typeSpace()
@@ -1197,7 +1197,7 @@ def saveConnectionEdit():
     # focus current frame
     focusOnFrame()
     # go to cancel button
-    for _ in range(2):
+    for _ in range(4):
         typeTab()
     # type space to press button
     typeSpace()
@@ -1365,7 +1365,7 @@ def changeRouteVClass(value):
     # focus current frame
     focusOnFrame()
     # jump to vClass
-    for _ in range(3):
+    for _ in range(4):
         typeTab()
     # paste the new value
     pasteIntoTextField(value)
@@ -1874,7 +1874,7 @@ def createTLS():
     # focus current frame
     focusOnFrame()
     # type tab 2 times to jump to create TLS button
-    for _ in range(2):
+    for _ in range(4):
         typeTab()
     # create TLS
     typeSpace()
@@ -2111,7 +2111,8 @@ def createDataSet(dataSetID="newDataSet"):
     # focus current frame
     focusOnFrame()
     # go to create new dataSet
-    typeTab()
+    for _ in range(2):
+        typeTab()
     # enable create dataSet
     typeSpace()
     # go to create new dataSet
@@ -2131,7 +2132,7 @@ def createDataInterval(begin="0", end="3600"):
     # focus current frame
     focusOnFrame()
     # go to create new dataInterval
-    for _ in range(3):
+    for _ in range(5):
         typeTab()
     typeTab()
     # enable create dataInterval

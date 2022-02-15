@@ -327,16 +327,24 @@ MSDevice_Vehroutes::writeOutput(const bool hasArrived) const {
             tmp.departLane = myDepartLane;
         }
         if (tmp.wasSet(VEHPARS_DEPARTPOSLAT_SET)) {
-            tmp.departPosLatProcedure = DepartPosLatDefinition::GIVEN;
+            tmp.departPosLatProcedure = (tmp.departPosLatProcedure == DepartPosLatDefinition::RANDOM
+                ? DepartPosLatDefinition::GIVEN_VEHROUTE
+                : DepartPosLatDefinition::GIVEN);
             tmp.departPosLat = myDepartPosLat;
         }
     }
     if (tmp.wasSet(VEHPARS_DEPARTPOS_SET)) {
-        tmp.departPosProcedure = DepartPosDefinition::GIVEN;
+        tmp.departPosProcedure = ((tmp.departPosProcedure != DepartPosDefinition::GIVEN
+                    && tmp.departPosProcedure != DepartPosDefinition::STOP)
+                ? DepartPosDefinition::GIVEN_VEHROUTE
+                : DepartPosDefinition::GIVEN);
         tmp.departPos = myDepartPos;
     }
     if (tmp.wasSet(VEHPARS_DEPARTSPEED_SET)) {
-        tmp.departSpeedProcedure = DepartSpeedDefinition::GIVEN;
+        tmp.departSpeedProcedure = ((tmp.departSpeedProcedure != DepartSpeedDefinition::GIVEN
+                    && tmp.departSpeedProcedure != DepartSpeedDefinition::LIMIT)
+                ? DepartSpeedDefinition::GIVEN_VEHROUTE
+                : DepartSpeedDefinition::GIVEN);
         tmp.departSpeed = myDepartSpeed;
     }
     if (oc.getBool("vehroute-output.speedfactor") ||
@@ -546,7 +554,8 @@ MSDevice_Vehroutes::loadState(const SUMOSAXAttributes& attrs) {
         }
     }
     if (mySaveExits && attrs.hasAttribute(SUMO_ATTR_EXITTIMES)) {
-        for (const std::string& t : attrs.getStringVector(SUMO_ATTR_EXITTIMES)) {
+        bool ok = true;
+        for (const std::string& t : attrs.get<std::vector<std::string> >(SUMO_ATTR_EXITTIMES, nullptr, ok)) {
             myExits.push_back(StringUtils::toLong(t));
         }
     }

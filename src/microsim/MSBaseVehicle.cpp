@@ -297,8 +297,16 @@ MSBaseVehicle::reroute(SUMOTime t, const std::string& info, SUMOAbstractRouter<M
             source = *s;
         }
     }
+    if (stops.empty() && source == sink && onInit
+            && myParameter->departPosProcedure == DepartPosDefinition::GIVEN
+            && myParameter->arrivalPosProcedure == ArrivalPosDefinition::GIVEN
+            && myParameter->departPos > myParameter->arrivalPos) {
+        router.computeLooped(source, sink, this, t, edges, silent);
+    } else {
+        router.compute(source, sink, this, t, edges, silent);
+    }
+
     // router.setHint(myCurrEdge, myRoute->end(), this, t);
-    router.compute(source, sink, this, t, edges, silent);
     if (edges.empty() && silent) {
         return;
     }
@@ -728,7 +736,7 @@ MSBaseVehicle::calculateArrivalParams(bool onInit) {
     const MSEdge* arrivalEdge = myParameter->arrivalEdge >= 0 ? myRoute->getEdges()[myParameter->arrivalEdge] : myRoute->getLastEdge();
     if (!onInit) {
         arrivalEdge = myRoute->getLastEdge();
-        // ingnore arrivalEdge parameter after rerouting
+        // ignore arrivalEdge parameter after rerouting
         const_cast<SUMOVehicleParameter*>(myParameter)->arrivalEdge = -1;
     }
     const std::vector<MSLane*>& lanes = arrivalEdge->getLanes();
@@ -1434,7 +1442,7 @@ MSBaseVehicle::replaceStop(int nextStopIndex, SUMOVehicleParameter::Stop stop, c
     const double routeCost = router.recomputeCosts(newEdges, this, t);
     const double previousCost = router.recomputeCosts(oldRemainingEdges, this, t);
     const double savings = previousCost - routeCost;
-    if (!hasDeparted()) {
+    if (!hasDeparted() && (int)myParameter->stops.size() > nextStopIndex) {
         // stops will be rebuilt from scratch so we must patch the stops in myParameter
         const_cast<SUMOVehicleParameter*>(myParameter)->stops[nextStopIndex] = stop;
     }
@@ -1442,6 +1450,102 @@ MSBaseVehicle::replaceStop(int nextStopIndex, SUMOVehicleParameter::Stop stop, c
 }
 
 
+bool
+MSBaseVehicle::insertStop(int nextStopIndex, SUMOVehicleParameter::Stop stop, const std::string& info, bool teleport, std::string& errorMsg) {
+    const int n = (int)myStops.size();
+    if (nextStopIndex < 0 || nextStopIndex > n) {
+        errorMsg = ("Invalid nextStopIndex '" + toString(nextStopIndex) + "' for " + toString(n) + " remaining stops");
+        return false;
+    }
+    if (nextStopIndex == 0 && isStopped()) {
+        errorMsg = "Cannot insert stop before the currently reached stop";
+        return false;
+    }
+    const SUMOTime t = MSNet::getInstance()->getCurrentTimeStep();
+    MSLane* stopLane = MSLane::dictionary(stop.lane);
+    MSEdge* stopEdge = &stopLane->getEdge();
+
+    if (!stopLane->allowsVehicleClass(getVClass())) {
+        errorMsg = ("Disallowed stop lane '" + stopLane->getID() + "'");
+        return false;
+    }
+
+    const ConstMSEdgeVector& oldEdges = getRoute().getEdges();
+    std::vector<MSStop> stops(myStops.begin(), myStops.end());
+    const int junctionOffset = getLane() != nullptr && getLane()->isInternal() ? 1 : 0;
+    MSRouteIterator itStart = nextStopIndex == 0 ? getCurrentRouteEdge() + junctionOffset : stops[nextStopIndex - 1].edge;
+    double startPos = nextStopIndex == 0 ? getPositionOnLane() : stops[nextStopIndex - 1].pars.endPos;
+    MSRouteIterator itEnd = nextStopIndex == n ? oldEdges.end() - 1 : stops[nextStopIndex].edge;
+    auto endPos = nextStopIndex == n ? getArrivalPos() : stops[nextStopIndex].pars.endPos;
+    SUMOAbstractRouter<MSEdge, SUMOVehicle>& router = getBaseInfluencer().getRouterTT(getRNGIndex(), getVClass());
+
+    bool newDestination = nextStopIndex == n;
+
+    ConstMSEdgeVector toNewStop;
+    if (!teleport) {
+        router.compute(*itStart, startPos, stopEdge, stop.endPos, this, t, toNewStop, true);
+        if (toNewStop.size() == 0) {
+            errorMsg = "No route found from edge '" + (*itStart)->getID() + "' to stop edge '" + stopEdge->getID() + "'";
+            return false;
+        }
+    }
+
+    ConstMSEdgeVector fromNewStop;
+    if (!newDestination) {
+        router.compute(stopEdge, stop.endPos, *itEnd, endPos, this, t, fromNewStop, true);
+        if (fromNewStop.size() == 0) {
+            errorMsg = "No route found from stop edge '" + stopEdge->getID() + "' to edge '" + (*itEnd)->getID() + "'";
+            return false;
+        }
+    }
+
+    auto itStop = myStops.begin();
+    std::advance(itStop, nextStopIndex);
+    MSStop newStop(stop);
+    newStop.initPars(stop);
+    newStop.edge = myRoute->end(); // will be patched in replaceRoute
+    newStop.lane = stopLane;
+    if (MSGlobals::gUseMesoSim) {
+        newStop.segment = MSGlobals::gMesoNet->getSegmentForEdge(newStop.lane->getEdge(), newStop.getEndPos(*this));
+        if (newStop.lane->isInternal()) {
+            errorMsg = "Mesoscopic simulation does not allow stopping on internal edge '" + stop.edge + "' for vehicle '" + getID() + "'.";
+            return false;
+        }
+    }
+    myStops.insert(itStop, newStop);
+
+    ConstMSEdgeVector oldRemainingEdges(myCurrEdge, getRoute().end());
+    ConstMSEdgeVector newEdges; // only remaining
+    newEdges.insert(newEdges.end(), myCurrEdge, itStart);
+    if (!teleport) {
+        newEdges.insert(newEdges.end(), toNewStop.begin(), toNewStop.end() - 1);
+    } else {
+        newEdges.push_back(*itStart);
+    }
+    if (!newDestination) {
+        newEdges.insert(newEdges.end(), fromNewStop.begin(), fromNewStop.end() - 1);
+        newEdges.insert(newEdges.end(), itEnd, oldEdges.end());
+    } else {
+        newEdges.push_back(stopEdge);
+    }
+    //std::cout << SIMTIME << " replaceStop veh=" << getID()
+    //    << " oldEdges=" << oldRemainingEdges.size()
+    //    << " newEdges=" << newEdges.size()
+    //    << " toNewStop=" << toNewStop.size()
+    //    << " fromNewStop=" << fromNewStop.size()
+    //    << "\n";
+
+    const double routeCost = router.recomputeCosts(newEdges, this, t);
+    const double previousCost = router.recomputeCosts(oldRemainingEdges, this, t);
+    const double savings = previousCost - routeCost;
+
+    if (!hasDeparted() && (int)myParameter->stops.size() >= nextStopIndex) {
+        // stops will be rebuilt from scratch so we must patch the stops in myParameter
+        auto it = myParameter->stops.begin() + nextStopIndex;
+        const_cast<SUMOVehicleParameter*>(myParameter)->stops.insert(it, stop);
+    }
+    return replaceRouteEdges(newEdges, routeCost, savings, info, !hasDeparted(), false, false, &errorMsg);
+}
 
 
 double

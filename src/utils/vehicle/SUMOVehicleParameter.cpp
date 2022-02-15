@@ -50,6 +50,7 @@ SUMOVehicleParameter::SUMOVehicleParameter()
       line(), fromTaz(), toTaz(), personNumber(0), containerNumber(0),
       speedFactor(-1),
       calibratorSpeed(-1),
+      insertionChecks((int)InsertionCheck::ALL),
       parametersSet(0)
 { }
 
@@ -167,11 +168,27 @@ SUMOVehicleParameter::write(OutputDevice& dev, const OptionsCont& oc, const Sumo
     }
     // individual speedFactor
     if (wasSet(VEHPARS_SPEEDFACTOR_SET)) {
+        dev.setPrecision(MAX2(gPrecisionRandom, gPrecision));
         dev.writeAttr(SUMO_ATTR_SPEEDFACTOR, speedFactor);
+        dev.setPrecision(gPrecision);
     }
     // speed (only used by calibrators)
     if (wasSet(VEHPARS_CALIBRATORSPEED_SET)) {
         dev.writeAttr(SUMO_ATTR_SPEED, calibratorSpeed);
+    }
+    // speed (only used by calibrators)
+    if (insertionChecks != (int)InsertionCheck::ALL) {
+        std::vector<std::string> checks;
+        if (insertionChecks == (int)InsertionCheck::NONE) {
+            checks.push_back(toString(InsertionCheck::NONE));
+        } else {
+            for (auto it : SUMOXMLDefinitions::InsertionChecks.getValues()) {
+                if (((int)it & insertionChecks) != 0) {
+                    checks.push_back(toString(it));
+                }
+            }
+        }
+        dev.writeAttr(SUMO_ATTR_INSERTIONCHECKS, checks);
     }
 }
 
@@ -734,6 +751,9 @@ SUMOVehicleParameter::getDepartPos() const {
         case DepartPosDefinition::GIVEN:
             val = toString(departPos);
             break;
+        case DepartPosDefinition::GIVEN_VEHROUTE:
+            val = StringUtils::pruneZeros(toString(departPos, MAX2(gPrecisionRandom, gPrecision)), 2);
+            break;
         case DepartPosDefinition::RANDOM:
             val = "random";
             break;
@@ -767,6 +787,9 @@ SUMOVehicleParameter::getDepartPosLat() const {
         case DepartPosLatDefinition::GIVEN:
             val = toString(departPos);
             break;
+        case DepartPosLatDefinition::GIVEN_VEHROUTE:
+            val = StringUtils::pruneZeros(toString(departPos, MAX2(gPrecisionRandom, gPrecision)), 2);
+            break;
         case DepartPosLatDefinition::RANDOM:
             val = "random";
             break;
@@ -799,6 +822,9 @@ SUMOVehicleParameter::getDepartSpeed() const {
     switch (departSpeedProcedure) {
         case DepartSpeedDefinition::GIVEN:
             val = toString(departSpeed);
+            break;
+        case DepartSpeedDefinition::GIVEN_VEHROUTE:
+            val = StringUtils::pruneZeros(toString(departSpeed, MAX2(gPrecisionRandom, gPrecision)), 2);
             break;
         case DepartSpeedDefinition::RANDOM:
             val = "random";

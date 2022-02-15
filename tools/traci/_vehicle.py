@@ -1116,6 +1116,25 @@ class VehicleDomain(Domain):
         self._setCmd(tc.CMD_REPLACE_STOP, vehID, "tsdbdiddib", 9, edgeID, pos,
                      laneIndex, duration, flags, startPos, until, nextStopIndex, teleport)
 
+    def insertStop(self, vehID, nextStopIndex, edgeID, pos=1., laneIndex=0, duration=tc.INVALID_DOUBLE_VALUE,
+                   flags=tc.STOP_DEFAULT, startPos=tc.INVALID_DOUBLE_VALUE,
+                   until=tc.INVALID_DOUBLE_VALUE, teleport=0):
+        """replaceStop(string, int, string, double, integer, double, integer, double, double) -> None
+
+        Insert stop at the given index. Automatically modifies
+        the route if the new stop is not along the route between the preceeding
+        and succeeding stops (or start / end).
+        For edgeID a stopping place id may be given if the flag marks this
+        stop as stopping on busStop, parkingArea, containerStop etc.
+        If teleport is set to 1, the route to the new stop will be
+        disconnected (forcing a teleport).
+        If stopIndex is 0 the gap will be between the current
+        edge and the new stop. Otherwise the gap will be between the stop edge for
+        nextStopIndex - 1 and the new stop.
+        """
+        self._setCmd(tc.CMD_INSERT_STOP, vehID, "tsdbdiddib", 9, edgeID, pos,
+                     laneIndex, duration, flags, startPos, until, nextStopIndex, teleport)
+
     def resume(self, vehID):
         """resume(string) -> None
 
@@ -1353,13 +1372,14 @@ class VehicleDomain(Domain):
         """
         self._setCmd(tc.VAR_SPEED, vehID, "d", speed)
 
-    def setPreviousSpeed(self, vehID, speed):
-        """setPreviousSpeed(string, double) -> None
+    def setPreviousSpeed(self, vehID, speed, acceleration=tc.INVALID_DOUBLE_VALUE):
+        """setPreviousSpeed(string, double, double) -> None
 
         Sets the previous speed in m/s for the named vehicle wich will be used for
-        calculations in the current step.
+        calculations in the current step. Optionally, the acceleration for the
+        previous step (in m/s^2) can be set as well.
         """
-        self._setCmd(tc.VAR_PREV_SPEED, vehID, "d", speed)
+        self._setCmd(tc.VAR_PREV_SPEED, vehID, "tdd", 2, speed, acceleration)
 
     def setColor(self, vehID, color):
         """setColor(string, (integer, integer, integer, integer)) -> None

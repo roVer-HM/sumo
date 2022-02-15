@@ -175,6 +175,8 @@ enum SumoXMLTag {
     SUMO_TAG_CONDITION,
     /// @brief a conditional variable assignment for phase switching
     SUMO_TAG_ASSIGNMENT,
+    /// @brief a sequence of assignments evaluated in the context of passed arguments
+    SUMO_TAG_FUNCTION,
     /// @brief a single trip definition that uses TAZs (used in NETEDIT)
     SUMO_TAG_TRIP_TAZ,
     /// @brief a flow definitio nusing a from-to edges instead of a route (used by router)
@@ -602,6 +604,7 @@ enum SumoXMLAttr {
     SUMO_ATTR_COLLISION_MINGAP_FACTOR,
     SUMO_ATTR_BOARDING_DURATION,
     SUMO_ATTR_LOADING_DURATION,
+    SUMO_ATTR_INSERTIONCHECKS,
     /// @brief Class specific timing values for vehicle manoeuvering through angle ranges
     SUMO_ATTR_MANEUVER_ANGLE_TIMES,
     /// @}
@@ -1009,6 +1012,8 @@ enum SumoXMLAttr {
     SUMO_ATTR_FINAL_TARGET,
     /// @brief The expression for a condition assignment
     SUMO_ATTR_CHECK,
+    /// @brief The number of arguments for a condition function
+    SUMO_ATTR_NARGS,
     /// @brief vehicle extension time of a phase
     SUMO_ATTR_VEHICLEEXTENSION,
     /// @brief yellow duration of a phase
@@ -1114,6 +1119,7 @@ enum SumoXMLAttr {
 
     SUMO_ATTR_LON,
     SUMO_ATTR_LAT,
+    SUMO_ATTR_ACTION,
     SUMO_ATTR_GEO,
     SUMO_ATTR_GEOSHAPE,
     SUMO_ATTR_K,
@@ -1556,6 +1562,22 @@ enum class TrafficLightLayout {
 };
 
 
+/// @brief different checking levels for vehicle insertion
+enum class InsertionCheck {
+    NONE = 0,
+    COLLISION = 1 << 0,
+    LEADER_GAP = 1 << 1,
+    FOLLOWER_GAP = 1 << 2,
+    JUNCTION = 1 << 3,
+    STOP = 1 << 4,
+    ARRIVAL_SPEED = 1 << 5,
+    ONCOMING_TRAIN = 1 << 6,
+    SPEED_LIMIT = 1 << 7,
+    PEDESTRIAN = 1 << 8,
+    ALL = ((1 << 9) - 1) // <- must be the last one
+};
+
+
 /** @enum LaneChangeAction
  * @brief The state of a vehicle's lane-change behavior
  */
@@ -1718,6 +1740,9 @@ public:
     /// @brief traffic light layouts
     static StringBijection<TrafficLightLayout> TrafficLightLayouts;
 
+    /// @brief traffic light layouts
+    static StringBijection<InsertionCheck> InsertionChecks;
+
     /// @brief lane change models
     static StringBijection<LaneChangeModel> LaneChangeModels;
 
@@ -1815,6 +1840,9 @@ private:
 
     /// @brief traffic light layout values
     static StringBijection<TrafficLightLayout>::Entry trafficLightLayoutValues[];
+
+    /// @brief traffic light layout values
+    static StringBijection<InsertionCheck>::Entry insertionCheckValues[];
 
     /// @brief lane change model values
     static StringBijection<LaneChangeModel>::Entry laneChangeModelValues[];

@@ -147,17 +147,14 @@ MSStateHandler::saveState(const std::string& file, SUMOTime step) {
         }
     }
     MSVehicleTransfer::getInstance()->saveState(out);
-    if (MSGlobals::gUseMesoSim) {
-        for (int i = 0; i < MSEdge::dictSize(); i++) {
-            for (MESegment* s = MSGlobals::gMesoNet->getSegmentForEdge(*MSEdge::getAllEdges()[i]); s != nullptr; s = s->getNextSegment()) {
+    for (MSEdge* const edge : MSEdge::getAllEdges()) {
+        if (MSGlobals::gUseMesoSim) {
+            for (MESegment* s = MSGlobals::gMesoNet->getSegmentForEdge(*edge); s != nullptr; s = s->getNextSegment()) {
                 s->saveState(out);
             }
-        }
-    } else {
-        for (int i = 0; i < MSEdge::dictSize(); i++) {
-            const std::vector<MSLane*>& lanes = MSEdge::getAllEdges()[i]->getLanes();
-            for (std::vector<MSLane*>::const_iterator it = lanes.begin(); it != lanes.end(); ++it) {
-                (*it)->saveState(out);
+        } else {
+            for (MSLane* const lane : edge->getLanes()) {
+                lane->saveState(out);
             }
         }
     }
@@ -269,14 +266,13 @@ MSStateHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
             break;
         }
         case SUMO_TAG_VIEWSETTINGS_VEHICLES: {
-            try {
-                const std::vector<std::string>& vehIDs = attrs.getStringVector(SUMO_ATTR_VALUE);
-                if (MSGlobals::gUseMesoSim) {
-                    mySegment->loadState(vehIDs, MSNet::getInstance()->getVehicleControl(), StringUtils::toLong(attrs.getString(SUMO_ATTR_TIME)) - myOffset, myQueIndex);
-                } else {
-                    myCurrentLane->loadState(vehIDs, MSNet::getInstance()->getVehicleControl());
-                }
-            } catch (EmptyData&) {} // attr may be empty
+            bool ok;
+            const std::vector<std::string>& vehIDs = attrs.get<std::vector<std::string> >(SUMO_ATTR_VALUE, nullptr, ok, false);
+            if (MSGlobals::gUseMesoSim) {
+                mySegment->loadState(vehIDs, MSNet::getInstance()->getVehicleControl(), StringUtils::toLong(attrs.getString(SUMO_ATTR_TIME)) - myOffset, myQueIndex);
+            } else {
+                myCurrentLane->loadState(vehIDs, MSNet::getInstance()->getVehicleControl());
+            }
             myQueIndex++;
             break;
         }
@@ -301,16 +297,15 @@ MSStateHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
             const double arrivalSpeed = attrs.get<double>(SUMO_ATTR_ARRIVALSPEED, nullptr, ok);
             const double leaveSpeed = attrs.get<double>(SUMO_ATTR_DEPARTSPEED, nullptr, ok);
             const bool setRequest = attrs.get<bool>(SUMO_ATTR_REQUEST, nullptr, ok);
-            const SUMOTime arrivalTimeBraking = attrs.get<SUMOTime>(SUMO_ATTR_ARRIVALTIMEBRAKING, nullptr, ok);
             const double arrivalSpeedBraking = attrs.get<double>(SUMO_ATTR_ARRIVALSPEEDBRAKING, nullptr, ok);
             const SUMOTime waitingTime = attrs.get<SUMOTime>(SUMO_ATTR_WAITINGTIME, nullptr, ok);
             const double dist = attrs.get<double>(SUMO_ATTR_DISTANCE, nullptr, ok);
             const double latOffset = attrs.getOpt<double>(SUMO_ATTR_POSITION_LAT, nullptr, ok, 0);
             SUMOVehicle* veh = vc.getVehicle(vehID);
-            myCurrentLink->setApproaching(veh, arrivalTime, arrivalSpeed, leaveSpeed, setRequest, arrivalTimeBraking, arrivalSpeedBraking, waitingTime, dist, latOffset);
+            myCurrentLink->setApproaching(veh, arrivalTime, arrivalSpeed, leaveSpeed, setRequest, arrivalSpeedBraking, waitingTime, dist, latOffset);
             if (!MSGlobals::gUseMesoSim) {
                 MSVehicle* microVeh = dynamic_cast<MSVehicle*>(veh);
-                microVeh->loadPreviousApproaching(myCurrentLink, setRequest, arrivalTime, arrivalSpeed, arrivalTimeBraking, arrivalSpeedBraking, dist, leaveSpeed);
+                microVeh->loadPreviousApproaching(myCurrentLink, setRequest, arrivalTime, arrivalSpeed, arrivalSpeedBraking, dist, leaveSpeed);
             }
             break;
         }
