@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -38,22 +38,22 @@ netedit.changeElement("busStop")
 netedit.leftClick(referencePosition, 250, 250)
 
 # enable ID
-netedit.changeDefaultBoolValue(2)
+netedit.changeDefaultBoolValue(netedit.attrs.busStop.create.idEnable)
 
 # set invalid ID (duplicated
-netedit.changeDefaultValue(3, ";;;;;;;;;;;;;;;;")
+netedit.changeDefaultValue(netedit.attrs.busStop.create.id, ";;;;;;;;;;;;;;;;")
 
 # create busStop in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)
 
 # set invalid ID (duplicated
-netedit.changeDefaultValue(3, "busStop_gneE0_0_0")
+netedit.changeDefaultValue(netedit.attrs.busStop.create.id, "bs_0")
 
 # create busStop in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)
 
 # set invalid ID (duplicated
-netedit.changeDefaultValue(3, "custom_ID")
+netedit.changeDefaultValue(netedit.attrs.busStop.create.id, "custom_ID")
 
 # create busStop in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)

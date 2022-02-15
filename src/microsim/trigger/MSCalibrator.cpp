@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2005-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -75,7 +75,8 @@ MSCalibrator::MSCalibrator(const std::string& id,
     myEdge(edge),
     myLane(lane),
     myPos(pos), myProbe(probe),
-    myMeanDataParent(id + "_dummyMeanData", 0, 0, false, false, false, false, false, false, 1, 0, 0, vTypes, ""),
+    myMeanDataParent(id + "_dummyMeanData", 0, 0, false, false, false, false, false, false, 1, 0, 0, vTypes, "",
+            std::vector<MSEdge*>(), false),
     myEdgeMeanData(nullptr, length, false, &myMeanDataParent),
     myCurrentStateInterval(myIntervals.begin()),
     myOutput(nullptr), myFrequency(freq), myRemoved(0),
@@ -561,8 +562,7 @@ MSCalibrator::VehicleRemover::notifyEnter(SUMOTrafficObject& veh, Notification /
                         << " vaporizing " << vehicle->getID() << " to clear jam\n";
 #endif
             if (!myParent->myHaveWarnedAboutClearingJam) {
-                WRITE_WARNING("Clearing jam at calibrator '" + myParent->getID() + "' at time "
-                              + time2string(MSNet::getInstance()->getCurrentTimeStep()));
+                WRITE_WARNINGF("Clearing jam at calibrator '%' at time=%.", myParent->getID(), time2string(SIMSTEP));
                 myParent->myHaveWarnedAboutClearingJam = true;
             }
             if (myParent->scheduleRemoval(&veh)) {
@@ -644,7 +644,7 @@ MSCalibrator::setFlow(SUMOTime begin, SUMOTime end, double vehsPerHour, double s
     auto it = myCurrentStateInterval;
     while (it != myIntervals.end()) {
         if (it->begin > begin) {
-            throw ProcessError("Cannot set flow for calibrator '" + getID() + "' with begin time " + time2string(begin) + " in the past.");
+            throw ProcessError("Cannot set flow for calibrator '" + getID() + "' with begin time=" + time2string(begin) + " in the past.");
         } else if (it->begin == begin && it->end == end) {
             // update current interval
             AspiredState& state = const_cast<AspiredState&>(*it);

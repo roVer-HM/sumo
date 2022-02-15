@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2011-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -331,6 +331,8 @@ def _createRecordAndPattern(element_name, attrnames, warn, optional, extra=None)
 def _open(xmlfile, encoding="utf8"):
     if isinstance(xmlfile, str):
         if xmlfile.endswith(".gz"):
+            if encoding is None:
+                return gzip.open(xmlfile, "r")
             return gzip.open(xmlfile, "rt")
         if encoding is not None:
             return io.open(xmlfile, encoding=encoding)
@@ -409,8 +411,8 @@ def parse_fast_structured(xmlfile, element_name, attrnames, nested,
     returns objects where the child elements can be accessed by name (e.g. timestep.vehicle[0])
     as with the parse method. The returned object is not modifiable though.
     @Note: Every element must be on its own line and the attributes must appear in the given order.
-    @Example: parse_fast_collated('fcd.xml', 'timestep', ['time'],
-                                  {'vehicle': ['id', 'speed', 'lane'], 'person': ['id', 'speed', 'edge']}):
+    @Example: parse_fast_structured('fcd.xml', 'timestep', ['time'],
+                                    {'vehicle': ['id', 'speed', 'lane'], 'person': ['id', 'speed', 'edge']}):
     """
     Record, reprog = _createRecordAndPattern(element_name, attrnames, warn, optional, nested.keys())
     re2 = [(elem,) + _createRecordAndPattern(elem, attr, warn, optional) for elem, attr in nested.items()]

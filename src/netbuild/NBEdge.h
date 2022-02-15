@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -636,6 +636,20 @@ public:
      */
     double getLaneWidth(int lane) const;
 
+    /** @brief Returns the width of the internal lane associated with the connection
+     * @param[in] node The node for which this edge is an incoming one
+     * @param[in] connection The connection from this edge to the successor lane
+     * @param[in] successor The outgoing lane of the connection
+     * @param[in] isVia Whether it is computing the Via stage
+     * @return The width of the internal lane
+     * @todo validity checks
+     */
+    double getInternalLaneWidth(
+            const NBNode& node,
+            const NBEdge::Connection& connection,
+            const NBEdge::Lane& successor,
+            bool isVia) const;
+
     /// @brief Returns the combined width of all lanes of this edge
     double getTotalWidth() const;
 
@@ -731,6 +745,12 @@ public:
 
     /// @brief get lane indices that allow the given permissions
     int getNumLanesThatAllow(SVCPermissions permissions) const;
+
+    /** @brief Returns whether the given vehicle class may change left from this lane */
+    bool allowsChangingLeft(int lane, SUMOVehicleClass vclass) const;
+
+    /** @brief Returns whether the given vehicle class may change left from this lane */
+    bool allowsChangingRight(int lane, SUMOVehicleClass vclass) const;
 
     /// @brief return the angle for computing pedestrian crossings at the given node
     double getCrossingAngle(NBNode* node);
@@ -1413,7 +1433,7 @@ public:
     void debugPrintConnections(bool outgoing = true, bool incoming = false) const;
 
     /// @brief compute the first intersection point between the given lane geometries considering their rspective widths
-    static double firstIntersection(const PositionVector& v1, const PositionVector& v2, double width2, const std::string& error = "", bool secondIntersection = false);
+    static double firstIntersection(const PositionVector& v1, const PositionVector& v2, double width1, double width2, const std::string& error = "", bool secondIntersection = false);
 
     /** returns a modified version of laneShape which starts at the outside of startNode. laneShape may be shorted or extended
      * @note see [wiki:Developer/Network_Building_Process]
@@ -1636,7 +1656,7 @@ private:
     /// @brief determine conflict between opposite left turns
     bool bothLeftTurns(LinkDirection dir, const NBEdge* otherFrom, LinkDirection dir2) const;
     bool haveIntersection(const NBNode& n, const PositionVector& shape, const NBEdge* otherFrom, const NBEdge::Connection& otherCon,
-                          int numPoints, double width2, int shapeFlag = 0) const;
+                          int numPoints, double width1, double width2, int shapeFlag = 0) const;
 
     /// @brief returns whether any lane already allows the given vclass exclusively
     bool hasRestrictedLane(SUMOVehicleClass vclass) const;

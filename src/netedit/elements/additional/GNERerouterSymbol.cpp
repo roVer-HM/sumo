@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -32,8 +32,8 @@
 
 GNERerouterSymbol::GNERerouterSymbol(GNEAdditional* rerouterParent, GNEEdge* edge) :
     GNEAdditional(rerouterParent->getNet(), GLO_REROUTER, GNE_TAG_REROUTER_SYMBOL, "",
-        {}, {edge}, {}, {rerouterParent}, {}, {}, {}, {},
-    std::map<std::string, std::string>()) {
+{}, {edge}, {}, {rerouterParent}, {}, {}, {}, {},
+std::map<std::string, std::string>()) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -50,7 +50,7 @@ GNERerouterSymbol::getMoveOperation() {
 }
 
 
-void 
+void
 GNERerouterSymbol::writeAdditional(OutputDevice& /*device*/) const {
     // noting to write
 }
@@ -61,7 +61,11 @@ GNERerouterSymbol::updateGeometry() {
     // clear geometries
     mySymbolGeometries.clear();
     // iterate over all lanes
+    NBEdge* nbe = getParentEdges().front()->getNBEdge();
     for (const auto& lane : getParentEdges().front()->getLanes()) {
+        if ((nbe->getPermissions(lane->getIndex()) & ~SVC_PEDESTRIAN) == 0) {
+            continue;
+        }
         // declare geometry
         GUIGeometry symbolGeometry;
         // update it with lane and pos over lane

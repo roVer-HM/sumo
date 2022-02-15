@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -48,19 +48,19 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 280, 392)
 
 # Change parameter edges with a non valid value (empty)
-netedit.modifyAttribute(1, "", False)
+netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "", False)
 
 # Change parameter edges with a non valid value (dummy)
-netedit.modifyAttribute(1, "dummyEdges", False)
+netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "dummyEdges", False)
 
 # Change parameter edges with a NON consecutive edges
-netedit.modifyAttribute(1, "gneE2 gneE5", False)
+netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "gneE2 gneE5", False)
 
 # Change parameter edges with a consecutive NON connected edges
-netedit.modifyAttribute(1, "gneE7 gneE2", False)
+netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "gneE7 gneE2", False)
 
 # Change parameter edges with valid a single edge
-netedit.modifyAttribute(1, "gneE2", False)
+netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "gneE2", False)
 
 # Check undo redo
 netedit.undo(referencePosition, 3)

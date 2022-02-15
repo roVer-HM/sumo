@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -34,10 +34,10 @@
 
 GNEVaporizer::GNEVaporizer(GNENet* net) :
     GNEAdditional("", net, GLO_VAPORIZER, SUMO_TAG_VAPORIZER, "",
-        {}, {}, {}, {}, {}, {}, {}, {},
-    std::map<std::string, std::string>()),
+{}, {}, {}, {}, {}, {}, {}, {},
+std::map<std::string, std::string>()),
     myBegin(0),
-    myEnd(0) {
+myEnd(0) {
     // reset default values
     resetDefaultValues();
 }
@@ -46,10 +46,10 @@ GNEVaporizer::GNEVaporizer(GNENet* net) :
 GNEVaporizer::GNEVaporizer(GNENet* net, GNEEdge* edge, SUMOTime from, SUMOTime end, const std::string& name,
                            const std::map<std::string, std::string>& parameters) :
     GNEAdditional(edge->getID(), net, GLO_VAPORIZER, SUMO_TAG_VAPORIZER, name,
-        {}, {edge}, {}, {}, {}, {}, {}, {},
-    parameters),
-    myBegin(from),
-    myEnd(end) {
+{}, {edge}, {}, {}, {}, {}, {}, {},
+parameters),
+myBegin(from),
+myEnd(end) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -66,15 +66,15 @@ GNEVaporizer::getMoveOperation() {
 }
 
 
-void 
+void
 GNEVaporizer::writeAdditional(OutputDevice& device) const {
     device.openTag(getTagProperty().getTag());
-    device.writeAttr(SUMO_ATTR_EDGE, getID());
+    device.writeAttr(SUMO_ATTR_ID, getID());
     if (!myAdditionalName.empty()) {
         device.writeAttr(SUMO_ATTR_NAME, StringUtils::escapeXML(myAdditionalName));
     }
-    device.writeAttr(SUMO_ATTR_BEGIN, myBegin);
-    device.writeAttr(SUMO_ATTR_END, myEnd);
+    device.writeAttr(SUMO_ATTR_BEGIN, time2string(myBegin));
+    device.writeAttr(SUMO_ATTR_END, time2string(myEnd));
     // write parameters (Always after children to avoid problems with additionals.xsd)
     writeParams(device);
     device.closeTag();

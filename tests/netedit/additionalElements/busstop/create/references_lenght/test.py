@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,31 +35,31 @@ netedit.additionalMode()
 netedit.changeElement("busStop")
 
 # set invalid lenght (dummy)
-netedit.changeDefaultValue(13, "dummyLenght")
+netedit.changeDefaultValue(netedit.attrs.busStop.create.length, "dummyLenght")
 
 # try to create busstop with invalid lenght
 netedit.leftClick(referencePosition, 500, 250)
 
 # set invalid lenght (negative)
-netedit.changeDefaultValue(13, "-20")
+netedit.changeDefaultValue(netedit.attrs.busStop.create.length, "-20")
 
 # try to create busstop with invalid lenght
 netedit.leftClick(referencePosition, 500, 250)
 
 # Change length
-netedit.changeDefaultValue(13, "5")
+netedit.changeDefaultValue(netedit.attrs.busStop.create.length, "5")
 
 # create busStop in mode "reference left"
 netedit.leftClick(referencePosition, 500, 250)
 
 # change reference to right
-netedit.changeDefaultValue(11, "reference right")
+netedit.changeDefaultValue(netedit.attrs.busStop.create.references, "reference right")
 
 # create busStop in mode "reference right"
 netedit.leftClick(referencePosition, 230, 250)
 
 # change reference to center
-netedit.changeDefaultValue(11, "reference center")
+netedit.changeDefaultValue(netedit.attrs.busStop.create.references, "reference center")
 
 # create busStop in mode "reference center"
 netedit.leftClick(referencePosition, 425, 250)

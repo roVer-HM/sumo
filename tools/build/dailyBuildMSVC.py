@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2008-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -25,17 +25,13 @@ hard coded into this script.
 """
 from __future__ import absolute_import
 from __future__ import print_function
-import io
 import datetime
-import optparse
 import os
 import glob
-import subprocess
 import zipfile
 import shutil
 import sys
 
-import filterDebugDLL
 import status
 import wix
 
@@ -57,20 +53,20 @@ BINARIES = ("activitygen", "emissionsDrivingCycle", "emissionsMap",
             "TraCITestClient")
 
 
-def repositoryUpdate(options, log):
+def repositoryUpdate(options):
     gitrev = ""
     cwd = os.getcwd()
     for d in options.repositories.split(","):
         os.chdir(os.path.join(options.rootDir, d))
-        subprocess.call(["git", "pull"], stdout=log, stderr=subprocess.STDOUT)
-        subprocess.call(["git", "submodule", "update"], stdout=log, stderr=subprocess.STDOUT)
+        status.log_subprocess(["git", "pull"])
+        status.log_subprocess(["git", "submodule", "update"])
         if gitrev == "":
             gitrev = sumolib.version.gitDescribe()
     os.chdir(cwd)
     return gitrev
 
 
-def runTests(options, env, gitrev, log, debugSuffix=""):
+def runTests(options, env, gitrev, debugSuffix=""):
     if not options.tests:
         return
     prefix = env["FILEPREFIX"] + debugSuffix
@@ -93,18 +89,15 @@ def runTests(options, env, gitrev, log, debugSuffix=""):
                (datetime.date.today().strftime("%d%b%y"), gitrev)]
     ttBin = "texttest"
     if options.suffix == "extra":
-        runExtraTests.run(debugSuffix, fullOpt, log, True, True, debugSuffix == "")
+        runExtraTests.run(debugSuffix, fullOpt, True, debugSuffix == "")
     else:
-        subprocess.call([ttBin] + fullOpt, env=env,
-                        stdout=log, stderr=subprocess.STDOUT, shell=True)
-        subprocess.call([ttBin, "-a", "sumo.gui"] + fullOpt, env=env,
-                        stdout=log, stderr=subprocess.STDOUT, shell=True)
-    subprocess.call([ttBin, "-b", env["FILEPREFIX"], "-coll"], env=env,
-                    stdout=log, stderr=subprocess.STDOUT, shell=True)
+        status.log_subprocess([ttBin] + fullOpt, env)
+        status.log_subprocess([ttBin, "-a", "sumo.gui"] + fullOpt, env)
+    status.log_subprocess([ttBin, "-b", env["FILEPREFIX"], "-coll"], env)
     status.killall((debugSuffix,), BINARIES)
 
 
-def generateCMake(generator, platform, log, checkOptionalLibs, python):
+def generateCMake(generator, platform, checkOptionalLibs, python):
     buildDir = os.path.join(SUMO_HOME, "build", "cmake-build-" + platform)
     cmakeOpt = ["-DCOMPILE_DEFINITIONS=MSVC_TEST_SERVER",
                 "-DCHECK_OPTIONAL_LIBS=%s" % checkOptionalLibs]
@@ -115,36 +108,17 @@ def generateCMake(generator, platform, log, checkOptionalLibs, python):
     # Create directory or clear it if already exists
     try:
         if os.path.exists(buildDir):
-            status.printLog("Cleaning directory of %s." % generator, log)
+            status.printLog("Cleaning directory of %s." % generator)
             shutil.rmtree(buildDir)
         os.makedirs(buildDir)
     except Exception as e:
-        status.printLog("Error occured on build dir cleanup: %s." % e, log)
-    status.printLog("Creating solution for %s." % generator, log)
-    subprocess.call(["cmake", "../..", "-G", generator, "-A", platform] + cmakeOpt,
-                    cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
+        status.printLog("Error occured on build dir cleanup: %s." % e)
+    status.printLog("Creating solution for %s." % generator)
+    status.log_subprocess(["cmake", "../..", "-G", generator, "-A", platform] + cmakeOpt, cwd=buildDir)
     return buildDir
 
 
-optParser = optparse.OptionParser()
-optParser.add_option("-r", "--root-dir", dest="rootDir",
-                     default=r"D:\Sumo", help="root for git and log output")
-optParser.add_option("-s", "--suffix", default="", help="suffix to the fileprefix")
-optParser.add_option("-m", "--remote-dir", dest="remoteDir", default="S:\\daily",
-                     help="directory to move the results to")
-optParser.add_option("-n", "--no-tests", dest="tests", action="store_false",
-                     default=True, help="skip tests")
-optParser.add_option("-x", "--x64only", action="store_true",
-                     default=False, help="skip debug build")
-optParser.add_option("-p", "--python", help="path to python interpreter to use")
-optParser.add_option("-c", "--msvc-version", default="msvc16",
-                     help="Visual Studio version to use (either msvc12 or msvc16)")
-optParser.add_option("-u", "--repositories", default="git",
-                     help="repositories to update")
-(options, args) = optParser.parse_args()
-
-
-for platform in ["x64"]:
+def main(options, platform="x64"):
     env["FILEPREFIX"] = options.msvc_version + options.suffix + platform
     prefix = os.path.join(options.remoteDir, env["FILEPREFIX"])
     makeLog = prefix + "Release.log"
@@ -152,7 +126,7 @@ for platform in ["x64"]:
     statusLog = prefix + "status.log"
 
     status.killall(("", "D"), BINARIES)
-    toClean = [makeLog, makeAllLog]
+    toClean = []
     for ext in ("*.exe", "*.ilk", "*.pdb", "*.py", "*.pyd", "*.dll", "*.lib", "*.exp", "*.jar", "*.manifest"):
         toClean += glob.glob(os.path.join(SUMO_HOME, "bin", ext))
     toClean += glob.glob(os.path.join(SUMO_HOME, "tools", "lib*", "*lib*"))
@@ -170,83 +144,99 @@ for platform in ["x64"]:
             shutil.rmtree(d, ignore_errors=True)
 
     # we need to use io.open here due to http://bugs.python.org/issue16273
-    with io.open(makeLog, 'a') as log:
-        status.printLog("Running %s build using python %s." % (options.msvc_version, sys.version), log)
-        gitrev = repositoryUpdate(options, log)
-        generator = "Visual Studio " + ("12 2013" if options.msvc_version == "msvc12" else "16 2019")
-        buildDir = generateCMake(generator, platform, log, options.suffix == "extra", options.python)
-        ret = subprocess.call(["cmake", "--build", ".", "--config", "Release"],
-                              cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
-        subprocess.call(["cmake", "--build", ".", "--config", "Release", "--target", "lisum"],
-                        cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
-        subprocess.call(["cmake", "--build", ".", "--config", "Release", "--target", "userdoc", "examples"],
-                        cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
-        subprocess.call(["cmake", "--install", "."],
-                        cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
-        plat = platform.lower().replace("x", "win")
-        if options.msvc_version != "msvc16":
-            plat += options.msvc_version
-        for d in glob.glob(os.path.join(buildDir, "sumo-*")):
-            if os.path.isdir(d):
-                installDir = d
-        installBase = os.path.basename(installDir)
-        binaryZip = os.path.join(buildDir, "sumo-%s%s-%s" % (plat, options.suffix, installBase[5:]))
-        if ret == 0:
-            try:
-                for f in (glob.glob(os.path.join(SUMO_HOME, "*.md")) +
-                          [os.path.join(SUMO_HOME, n) for n in ("AUTHORS", "ChangeLog", "LICENSE")]):
-                    shutil.copy(f, installDir)
-                shutil.copytree(os.path.join(SUMO_HOME, "docs"), os.path.join(installDir, "docs"))
-                shutil.copy(os.path.join(buildDir, "src", "version.h"), os.path.join(installDir, "include"))
-                status.printLog("Creating sumo.zip.", log)
-                shutil.make_archive(binaryZip, 'zip', buildDir, installBase)
-                shutil.copy(binaryZip + ".zip", options.remoteDir)
-                if options.suffix == "":
-                    # installers only for the vanilla build
-                    status.printLog("Creating sumo.msi.", log)
-                    wix.buildMSI(binaryZip + ".zip", binaryZip + ".msi", log=log)
-                    shutil.copy(binaryZip + ".msi", options.remoteDir)
-            except Exception as ziperr:
-                status.printLog("Warning: Could not zip to %s.zip (%s)!" % (binaryZip, ziperr), log)
-        binaryZip += ".zip"
-
-        status.printLog("Creating sumo-game.zip.", log)
+    log_handler = status.set_rotating_log(makeLog)
+    status.printLog("Running %s build using python %s." % (options.msvc_version, sys.version))
+    gitrev = repositoryUpdate(options)
+    generator = "Visual Studio " + ("12 2013" if options.msvc_version == "msvc12" else "16 2019")
+    buildDir = generateCMake(generator, platform, options.suffix == "extra", options.python)
+    ret = status.log_subprocess(["cmake", "--build", ".", "--config", "Release"], cwd=buildDir)
+    status.log_subprocess(["cmake", "--build", ".", "--config", "Release", "--target", "lisum"], cwd=buildDir)
+    status.log_subprocess(["cmake", "--build", ".", "--config", "Release", "--target", "userdoc", "examples"],
+                          cwd=buildDir)
+    status.log_subprocess(["cmake", "--install", "."], cwd=buildDir)
+    plat = platform.lower().replace("x", "win")
+    if options.msvc_version != "msvc16":
+        plat += options.msvc_version
+    for d in glob.glob(os.path.join(buildDir, "sumo-*")):
+        if os.path.isdir(d):
+            installDir = d
+    installBase = os.path.basename(installDir)
+    binaryZip = os.path.join(buildDir, "sumo-%s%s-%s" % (plat, options.suffix, installBase[5:]))
+    if ret == 0:
         try:
-            try:
-                import py2exe  # noqa
-                setup = os.path.join(SUMO_HOME, 'tools', 'game', 'setup.py')
-                subprocess.call(['python', setup, binaryZip], stdout=log, stderr=subprocess.STDOUT)
-            except ImportError:
-                subprocess.call(["cmake", "--build", ".", "--target", "game"],
-                                cwd=buildDir, stdout=log, stderr=subprocess.STDOUT)
-                shutil.move(os.path.join(buildDir, "sumo-game.zip"), binaryZip.replace("sumo-", "sumo-game-"))
-            shutil.copy(binaryZip.replace("sumo-", "sumo-game-"), options.remoteDir)
-        except Exception as e:
-            status.printLog("Warning: Could not create nightly sumo-game.zip! (%s)" % e, log)
+            for f in (glob.glob(os.path.join(SUMO_HOME, "*.md")) +
+                      [os.path.join(SUMO_HOME, n) for n in ("AUTHORS", "ChangeLog", "LICENSE")]):
+                shutil.copy(f, installDir)
+            if options.suffix == "extra":
+                shutil.copy(os.path.join(SUMO_HOME, "build", "wix", "gpl-2.0.txt"), os.path.join(installDir, "LICENSE"))
+            for f in glob.glob(os.path.join(SUMO_HOME, "bin", "*.jar")):
+                shutil.copy(f, os.path.join(installDir, "bin"))
+            shutil.copytree(os.path.join(SUMO_HOME, "docs"), os.path.join(installDir, "docs"),
+                            ignore=shutil.ignore_patterns('web'))
+            shutil.copy(os.path.join(buildDir, "src", "version.h"), os.path.join(installDir, "include"))
+            status.printLog("Creating sumo.zip.")
+            shutil.make_archive(binaryZip, 'zip', buildDir, installBase)
+            shutil.copy(binaryZip + ".zip", options.remoteDir)
+            status.printLog("Creating sumo.msi.")
+            if options.suffix == "extra":
+                wix.buildMSI(binaryZip + ".zip", binaryZip + ".msi",
+                             license=os.path.join(SUMO_HOME, "build", "wix", "gpl-2.0.rtf"))
+            else:
+                wix.buildMSI(binaryZip + ".zip", binaryZip + ".msi")
+            shutil.copy(binaryZip + ".msi", options.remoteDir)
+        except Exception as ziperr:
+            status.printLog("Warning: Could not zip to %s.zip (%s)!" % (binaryZip, ziperr))
 
-        with open(makeAllLog, 'a') as debugLog:
-            ret = subprocess.call(["cmake", "--build", ".", "--config", "Debug"],
-                                  cwd=buildDir, stdout=debugLog, stderr=subprocess.STDOUT)
-            if ret == 0:
-                status.printLog("Creating sumoDebug.zip.", debugLog)
-                try:
-                    with zipfile.ZipFile(binaryZip.replace(plat, plat + "Debug"), 'w', zipfile.ZIP_DEFLATED) as zipf:
-                        for ext in ("*D.exe", "*.dll", "*D.pdb"):
-                            for f in glob.glob(os.path.join(SUMO_HOME, "bin", ext)):
-                                zipf.write(f, os.path.join(installBase, "bin", os.path.basename(f)))
-                        for f in glob.glob(os.path.join(SUMO_HOME, "tools", "lib*", "*lib*.p*")):
-                            zipf.write(f, os.path.join(installBase, f[len(SUMO_HOME):]))
-                    shutil.copy(binaryZip.replace(plat, plat + "Debug"), options.remoteDir)
-                except IOError as ziperr:
-                    status.printLog("Warning: Could not zip to %s (%s)!" % (binaryZip, ziperr), debugLog)
+    gameZip = os.path.join(buildDir, "sumo-game-%s%s-%s.zip" % (plat, options.suffix, installBase[5:]))
+    status.printLog("Creating sumo-game.zip.")
+    try:
+        status.log_subprocess(["cmake", "--build", ".", "--target", "game"], cwd=buildDir)
+        shutil.move(os.path.join(buildDir, "sumo-game.zip"), gameZip)
+        shutil.copy(gameZip, options.remoteDir)
+    except Exception as e:
+        status.printLog("Warning: Could not create nightly sumo-game.zip! (%s)" % e)
 
-        status.printLog("Running tests.", log)
-        runTests(options, env, gitrev, log)
+    debug_handler = status.set_rotating_log(makeAllLog, log_handler)
+    ret = status.log_subprocess(["cmake", "--build", ".", "--config", "Debug"], cwd=buildDir)
+    if ret == 0:
+        debugZip = os.path.join(buildDir, "sumo-%s%sDebug-%s.zip" % (plat, options.suffix, installBase[5:]))
+        status.printLog("Creating sumoDebug.zip.")
+        try:
+            with zipfile.ZipFile(debugZip, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for ext in ("*D.exe", "*.dll", "*D.pdb"):
+                    for f in glob.glob(os.path.join(SUMO_HOME, "bin", ext)):
+                        zipf.write(f, os.path.join(installBase, "bin", os.path.basename(f)))
+            shutil.copy(debugZip, options.remoteDir)
+        except IOError as ziperr:
+            status.printLog("Warning: Could not zip to %s (%s)!" % (debugZip, ziperr))
+
+    log_handler = status.set_rotating_log(makeLog, debug_handler)
+    status.printLog("Running tests.")
+    runTests(options, env, gitrev)
     with open(statusLog, 'w') as log:
         status.printStatus(makeLog, makeAllLog, env["SMTP_SERVER"], log)
-if not options.x64only:
-    with open(makeAllLog, 'a') as debugLog:
-        status.printLog("Running debug tests.", debugLog)
-        runTests(options, env, gitrev, debugLog, "D")
-    with open(prefix + "Dstatus.log", 'w') as log:
-        status.printStatus(makeAllLog, makeAllLog, env["SMTP_SERVER"], log)
+    if not options.x64only:
+        debug_handler = status.set_rotating_log(makeAllLog, log_handler)
+        status.printLog("Running debug tests.")
+        runTests(options, env, gitrev, "D")
+        with open(prefix + "Dstatus.log", 'w') as log:
+            status.printStatus(makeAllLog, makeAllLog, env["SMTP_SERVER"], log)
+
+
+if __name__ == "__main__":
+    optParser = sumolib.options.ArgumentParser()
+    optParser.add_option("-r", "--root-dir", dest="rootDir",
+                         default=r"D:\Sumo", help="root for git and log output")
+    optParser.add_option("-s", "--suffix", default="", help="suffix to the fileprefix")
+    optParser.add_option("-m", "--remote-dir", dest="remoteDir", default="S:\\daily",
+                         help="directory to move the results to")
+    optParser.add_option("-n", "--no-tests", dest="tests", action="store_false",
+                         default=True, help="skip tests")
+    optParser.add_option("-x", "--x64only", action="store_true",
+                         default=False, help="skip debug build")
+    optParser.add_option("-p", "--python", help="path to python interpreter to use")
+    optParser.add_option("--msvc-version", default="msvc16",
+                         help="Visual Studio version to use (either msvc12 or msvc16)")
+    optParser.add_option("-u", "--repositories", default="git",
+                         help="repositories to update")
+    main(optParser.parse_args())

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -45,8 +45,8 @@ GNEEdgeType::GNEEdgeType(GNECreateEdgeFrame* createEdgeFrame) :
 
 GNEEdgeType::GNEEdgeType(const GNEEdgeType* edgeType) :
     GNENetworkElement(edgeType->getNet(), edgeType->getID(), GLO_EDGE, SUMO_TAG_TYPE, {}, {}, {}, {}, {}, {}, {}, {}),
-    Parameterised(edgeType->getParametersMap()),
-    NBTypeCont::EdgeTypeDefinition(edgeType) {
+                  Parameterised(edgeType->getParametersMap()),
+NBTypeCont::EdgeTypeDefinition(edgeType) {
 }
 
 
@@ -85,7 +85,7 @@ GNEEdgeType::GNEEdgeType(GNENet* net, const std::string& ID, const NBTypeCont::E
 
 
 void
-GNEEdgeType::copyTemplate(const GNEEdgeTemplate *edgeTemplate) {
+GNEEdgeType::copyTemplate(const GNEEdgeTemplate* edgeTemplate) {
     // copy all edge attributes
     setAttribute(SUMO_ATTR_NUMLANES, edgeTemplate->getAttribute(SUMO_ATTR_NUMLANES));
     setAttribute(SUMO_ATTR_SPEED, edgeTemplate->getAttribute(SUMO_ATTR_SPEED));
@@ -219,7 +219,7 @@ GNEEdgeType::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_ALLOW:
             if ((permissions == SVCAll) || (permissions == -1)) {
                 return "all";
-            } else if  (permissions == 0) {
+            } else if (permissions == 0) {
                 return "";
             } else {
                 return getVehicleClassNames(permissions);

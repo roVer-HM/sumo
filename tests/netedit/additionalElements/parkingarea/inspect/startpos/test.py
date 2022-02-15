@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,7 +35,7 @@ netedit.additionalMode()
 netedit.changeElement("parkingArea")
 
 # change reference to center
-netedit.changeDefaultValue(12, "reference center")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.references, "reference center")
 
 # create parkingArea in mode "reference center"
 netedit.leftClick(referencePosition, 250, 170)
@@ -47,19 +47,19 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 250, 200)
 
 # Change parameter StartPos with a non valid value (dummy)
-netedit.modifyAttribute(2, "dummyStartPos", True)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspect.startPos, "dummyStartPos", True)
 
 # Change parameter StartPos with a valid value (empty)
-netedit.modifyAttribute(2, "", True)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspect.startPos, "", True)
 
 # Change parameter StartPos with a valid value (< 0)
-netedit.modifyAttribute(2, "-5", True)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspect.startPos, "-5", True)
 
 # Change parameter StartPos with a non valid value (> endPos)
-netedit.modifyAttribute(2, "400", True)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspect.startPos, "400", True)
 
 # Change parameter StartPos with a valid value
-netedit.modifyAttribute(2, "20", True)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspect.startPos, "20", True)
 
 # Check undos and redos
 netedit.undo(referencePosition, 5)

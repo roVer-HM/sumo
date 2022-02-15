@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -34,11 +34,11 @@
 
 GNECalibrator::GNECalibrator(SumoXMLTag tag, GNENet* net) :
     GNEAdditional("", net, GLO_CALIBRATOR, tag, "",
-        {}, {}, {}, {}, {}, {}, {}, {},
-    std::map<std::string, std::string>()),
+{}, {}, {}, {}, {}, {}, {}, {},
+std::map<std::string, std::string>()),
     myPositionOverLane(0),
     myFrequency(0),
-    myJamThreshold(0) {
+myJamThreshold(0) {
     // reset default values
     resetDefaultValues();
 }
@@ -47,13 +47,13 @@ GNECalibrator::GNECalibrator(SumoXMLTag tag, GNENet* net) :
 GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, GNEEdge* edge, double pos, SUMOTime frequency, const std::string& name,
                              const std::string& output, const double jamThreshold, const std::vector<std::string>& vTypes, const std::map<std::string, std::string>& parameters) :
     GNEAdditional(id, net, GLO_CALIBRATOR, SUMO_TAG_CALIBRATOR, name,
-        {}, {edge}, {}, {}, {}, {}, {}, {},
-    parameters),
-    myPositionOverLane(pos),
-    myFrequency(frequency),
-    myOutput(output),
-    myJamThreshold(jamThreshold),
-    myVTypes(vTypes) {
+{}, {edge}, {}, {}, {}, {}, {}, {},
+parameters),
+myPositionOverLane(pos),
+myFrequency(frequency),
+myOutput(output),
+myJamThreshold(jamThreshold),
+myVTypes(vTypes) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -63,13 +63,13 @@ GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, GNEEdge* edge, 
                              const std::string& output, GNEAdditional* routeProbe, const double jamThreshold, const std::vector<std::string>& vTypes,
                              const std::map<std::string, std::string>& parameters) :
     GNEAdditional(id, net, GLO_CALIBRATOR, SUMO_TAG_CALIBRATOR, name,
-        {}, {edge}, {}, {routeProbe}, {}, {}, {}, {},
-    parameters),
-    myPositionOverLane(pos),
-    myFrequency(frequency),
-    myOutput(output),
-    myJamThreshold(jamThreshold),
-    myVTypes(vTypes) {
+{}, {edge}, {}, {routeProbe}, {}, {}, {}, {},
+parameters),
+myPositionOverLane(pos),
+myFrequency(frequency),
+myOutput(output),
+myJamThreshold(jamThreshold),
+myVTypes(vTypes) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -77,14 +77,14 @@ GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, GNEEdge* edge, 
 
 GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, GNELane* lane, double pos, SUMOTime frequency, const std::string& name,
                              const std::string& output, const double jamThreshold, const std::vector<std::string>& vTypes, const std::map<std::string, std::string>& parameters) :
-    GNEAdditional(id, net, GLO_CALIBRATOR, SUMO_TAG_LANECALIBRATOR, name,
-        {}, {}, {lane}, {}, {}, {}, {}, {},
-    parameters),
-    myPositionOverLane(pos),
-    myFrequency(frequency),
-    myOutput(output),
-    myJamThreshold(jamThreshold),
-    myVTypes(vTypes) {
+    GNEAdditional(id, net, GLO_CALIBRATOR, GNE_TAG_CALIBRATOR_LANE, name,
+{}, {}, {lane}, {}, {}, {}, {}, {},
+parameters),
+myPositionOverLane(pos),
+myFrequency(frequency),
+myOutput(output),
+myJamThreshold(jamThreshold),
+myVTypes(vTypes) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -93,14 +93,14 @@ GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, GNELane* lane, 
 GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, GNELane* lane, double pos, SUMOTime frequency, const std::string& name,
                              const std::string& output, GNEAdditional* routeProbe, const double jamThreshold, const std::vector<std::string>& vTypes,
                              const std::map<std::string, std::string>& parameters) :
-    GNEAdditional(id, net, GLO_CALIBRATOR, SUMO_TAG_LANECALIBRATOR, name,
-        {}, {}, {lane}, {routeProbe}, {}, {}, {}, {},
-    parameters),
-    myPositionOverLane(pos),
-    myFrequency(frequency),
-    myOutput(output),
-    myJamThreshold(jamThreshold),
-    myVTypes(vTypes) {
+    GNEAdditional(id, net, GLO_CALIBRATOR, GNE_TAG_CALIBRATOR_LANE, name,
+{}, {}, {lane}, {routeProbe}, {}, {}, {}, {},
+parameters),
+myPositionOverLane(pos),
+myFrequency(frequency),
+myOutput(output),
+myJamThreshold(jamThreshold),
+myVTypes(vTypes) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -142,7 +142,7 @@ GNECalibrator::writeAdditional(OutputDevice& device) const {
     }
     // write calibrator flows
     for (const auto& calibratorFlow : getChildAdditionals()) {
-        if (calibratorFlow->getTagProperty().getTag() == GNE_TAG_FLOW_CALIBRATOR) {
+        if (calibratorFlow->getTagProperty().getTag() == GNE_TAG_CALIBRATOR_FLOW) {
             calibratorFlow->writeAdditional(device);
         }
     }
@@ -237,16 +237,26 @@ GNECalibrator::drawGL(const GUIVisualizationSettings& s) const {
             // begin push name
             GLHelper::pushName(getGlID());
             // draw first symbol
-            drawCalibratorSymbol(s, exaggeration, myAdditionalGeometry.getShape().front(), myAdditionalGeometry.getShapeRotations().front());
+            drawCalibratorSymbol(s, exaggeration, myAdditionalGeometry.getShape().front(), myAdditionalGeometry.getShapeRotations().front() + 90);
             // continue with the other symbols
             for (const auto& edgeCalibratorGeometry : myEdgeCalibratorGeometries) {
-                drawCalibratorSymbol(s, exaggeration, edgeCalibratorGeometry.getShape().front(), edgeCalibratorGeometry.getShapeRotations().front());
+                drawCalibratorSymbol(s, exaggeration, edgeCalibratorGeometry.getShape().front(), edgeCalibratorGeometry.getShapeRotations().front() + 90);
             }
             // pop name
             GLHelper::popName();
+            // draw additional ID
+            drawAdditionalID(s);
+            // iterate over additionals and check if drawn
+            for (const auto& calibratorFlow : getChildAdditionals()) {
+                // if rerouter or their intevals are selected, then draw
+                if (myNet->getViewNet()->getNetworkViewOptions().showSubAdditionals() ||
+                        isAttributeCarrierSelected() || myNet->getViewNet()->isAttributeCarrierInspected(this) ||
+                        calibratorFlow->isAttributeCarrierSelected() || myNet->getViewNet()->isAttributeCarrierInspected(calibratorFlow) ||
+                        (myNet->getViewNet()->getFrontAttributeCarrier() == calibratorFlow)) {
+                    calibratorFlow->drawGL(s);
+                }
+            }
         }
-        // draw additional ID
-        drawAdditionalID(s);
     }
 }
 
@@ -410,8 +420,6 @@ GNECalibrator::getHierarchyName() const {
 // ===========================================================================
 
 void GNECalibrator::drawCalibratorSymbol(const GUIVisualizationSettings& s, const double exaggeration, const Position& pos, const double rot) const {
-    // draw parent and child lines
-    drawParentChildLines(s, s.additionalSettings.connectionColor);
     // push layer matrix
     GLHelper::pushMatrix();
     // translate to front
@@ -419,7 +427,7 @@ void GNECalibrator::drawCalibratorSymbol(const GUIVisualizationSettings& s, cons
     // translate to position
     glTranslated(pos.x(), pos.y(), 0);
     // rotate over lane
-    GUIGeometry::rotateOverLane(rot - 90);
+    GUIGeometry::rotateOverLane(rot);
     // scale
     glScaled(exaggeration, exaggeration, 1);
     // set drawing mode
@@ -460,14 +468,14 @@ void GNECalibrator::drawCalibratorSymbol(const GUIVisualizationSettings& s, cons
     if (myNet->getViewNet()->isAttributeCarrierInspected(this)) {
         GUIDottedGeometry::drawDottedSquaredShape(GUIDottedGeometry::DottedContourType::INSPECT, s, pos,
                 s.additionalSettings.calibratorWidth, s.additionalSettings.calibratorHeight * 0.5,
-                0, s.additionalSettings.calibratorHeight * -0.5,
-                rot + 90, exaggeration);
+                0, s.additionalSettings.calibratorHeight * 0.5,
+                rot, exaggeration);
     }
     if (myNet->getViewNet()->getFrontAttributeCarrier() == this) {
         GUIDottedGeometry::drawDottedSquaredShape(GUIDottedGeometry::DottedContourType::FRONT, s, pos,
                 s.additionalSettings.calibratorWidth, s.additionalSettings.calibratorHeight * 0.5,
-                0, s.additionalSettings.calibratorHeight * -0.5,
-                rot + 90, exaggeration);
+                0, s.additionalSettings.calibratorHeight * 0.5,
+                rot, exaggeration);
     }
 }
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -254,17 +254,20 @@ GNEVehicle::GNESelectedVehiclesPopupMenu::onCmdTransform(FXObject* obj, FXSelect
 
 GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net) :
     GNEDemandElement("", net, GLO_VEHICLE, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {}, {}),
-    SUMOVehicleParameter() {
+{}, {}, {}, {}, {}, {}, {}, {}),
+SUMOVehicleParameter() {
     // reset default values
     resetDefaultValues();
+    // set end and vehPerHours
+    toogleAttribute(SUMO_ATTR_END, 1, 0);
+    toogleAttribute(SUMO_ATTR_VEHSPERHOUR, 1, 0);
 }
 
 
 GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, const std::string& vehicleID, GNEDemandElement* vehicleType, GNEDemandElement* route) :
     GNEDemandElement(vehicleID, net, (tag == GNE_TAG_FLOW_ROUTE) ? GLO_ROUTEFLOW : GLO_VEHICLE, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {vehicleType, route}, {}),
-    SUMOVehicleParameter() {
+{}, {}, {}, {}, {}, {}, {vehicleType, route}, {}),
+SUMOVehicleParameter() {
     // SUMOVehicleParameter ID has to be set manually
     id = vehicleID;
     // set manually vtypeID (needed for saving)
@@ -274,8 +277,8 @@ GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, const std::string& vehicleID
 
 GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, GNEDemandElement* vehicleType, GNEDemandElement* route, const SUMOVehicleParameter& vehicleParameters) :
     GNEDemandElement(vehicleParameters.id, net, (tag == GNE_TAG_FLOW_ROUTE) ? GLO_ROUTEFLOW : GLO_VEHICLE, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {vehicleType, route}, {}),
-    SUMOVehicleParameter(vehicleParameters) {
+{}, {}, {}, {}, {}, {}, {vehicleType, route}, {}),
+SUMOVehicleParameter(vehicleParameters) {
     // SUMOVehicleParameter ID has to be set manually
     id = vehicleParameters.id;
     // set manually vtypeID (needed for saving)
@@ -285,8 +288,8 @@ GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, GNEDemandElement* vehicleTyp
 
 GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, GNEDemandElement* vehicleType, const SUMOVehicleParameter& vehicleParameters) :
     GNEDemandElement(vehicleParameters.id, net, (tag == GNE_TAG_VEHICLE_WITHROUTE) ? GLO_VEHICLE : GLO_ROUTEFLOW, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {vehicleType}, {}),
-    SUMOVehicleParameter(vehicleParameters) {
+{}, {}, {}, {}, {}, {}, {vehicleType}, {}),
+SUMOVehicleParameter(vehicleParameters) {
     // SUMOVehicleParameter ID has to be set manually
     id = vehicleParameters.id;
     // reset routeid
@@ -299,8 +302,8 @@ GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, GNEDemandElement* vehicleTyp
 GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, const std::string& vehicleID, GNEDemandElement* vehicleType, GNEEdge* fromEdge, GNEEdge* toEdge,
                        const std::vector<GNEEdge*>& via) :
     GNEDemandElement(vehicleID, net, (tag == SUMO_TAG_FLOW) ? GLO_FLOW : GLO_TRIP, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {fromEdge, toEdge}, {}, {}, {}, {}, {vehicleType}, {}),
-    SUMOVehicleParameter() {
+{}, {fromEdge, toEdge}, {}, {}, {}, {}, {vehicleType}, {}),
+SUMOVehicleParameter() {
     // set via parameter without updating references
     replaceMiddleParentEdges(toString(via), false);
 }
@@ -309,10 +312,26 @@ GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, const std::string& vehicleID
 GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, GNEDemandElement* vehicleType, GNEEdge* fromEdge, GNEEdge* toEdge, const std::vector<GNEEdge*>& via,
                        const SUMOVehicleParameter& vehicleParameters) :
     GNEDemandElement(vehicleParameters.id, net, (tag == SUMO_TAG_FLOW) ? GLO_FLOW : GLO_TRIP, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {fromEdge, toEdge}, {}, {}, {}, {}, {vehicleType}, {}),
-    SUMOVehicleParameter(vehicleParameters) {
+{}, {fromEdge, toEdge}, {}, {}, {}, {}, {vehicleType}, {}),
+SUMOVehicleParameter(vehicleParameters) {
     // set via parameter without updating references
     replaceMiddleParentEdges(toString(via), false);
+}
+
+
+GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, const std::string& vehicleID, GNEDemandElement* vehicleType, GNEJunction* fromJunction, GNEJunction* toJunction) :
+    GNEDemandElement(vehicleID, net, (tag == GNE_TAG_FLOW_JUNCTIONS) ? GLO_FLOW : GLO_TRIP, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT, {
+    fromJunction, toJunction
+}, {}, {}, {}, {}, {}, {vehicleType}, {}),
+SUMOVehicleParameter() {
+}
+
+
+GNEVehicle::GNEVehicle(SumoXMLTag tag, GNENet* net, GNEDemandElement* vehicleType, GNEJunction* fromJunction, GNEJunction* toJunction, const SUMOVehicleParameter& vehicleParameters) :
+    GNEDemandElement(vehicleParameters.id, net, (tag == GNE_TAG_FLOW_JUNCTIONS) ? GLO_FLOW : GLO_TRIP, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT, {
+    fromJunction, toJunction
+}, {}, {}, {}, {}, {}, {vehicleType}, {}),
+SUMOVehicleParameter(vehicleParameters) {
 }
 
 
@@ -387,11 +406,17 @@ GNEVehicle::writeDemandElement(OutputDevice& device) const {
             device.writeAttr(SUMO_ATTR_VIA, via);
         }
     }
+    // write fronJunction and toJunction
+    if ((myTagProperty.getTag() == GNE_TAG_TRIP_JUNCTIONS) || (myTagProperty.getTag() == GNE_TAG_FLOW_JUNCTIONS)) {
+        // write manually from/to junctions (it correspond to fron and back parent junctions)
+        device.writeAttr(SUMO_ATTR_FROMJUNCTION, getParentJunctions().front()->getID());
+        device.writeAttr(SUMO_ATTR_TOJUNCTION, getParentJunctions().back()->getID());
+    }
     // write specific routeFlow/flow attributes
-    if ((myTagProperty.getTag() == GNE_TAG_FLOW_ROUTE) || (myTagProperty.getTag() == GNE_TAG_FLOW_WITHROUTE) || (myTagProperty.getTag() == SUMO_TAG_FLOW)) {
+    if (myTagProperty.isFlow()) {
         // write routeFlow values depending if it was set
         if (isAttributeEnabled(SUMO_ATTR_END)) {
-            device.writeAttr(SUMO_ATTR_END,  time2string(repetitionEnd));
+            device.writeAttr(SUMO_ATTR_END, time2string(repetitionEnd));
         }
         if (isAttributeEnabled(SUMO_ATTR_NUMBER)) {
             device.writeAttr(SUMO_ATTR_NUMBER, repetitionNumber);
@@ -408,37 +433,66 @@ GNEVehicle::writeDemandElement(OutputDevice& device) const {
     }
     // write parameters
     writeParams(device);
-    // write child demand elements associated to this vehicle
-    for (const auto& i : getChildDemandElements()) {
-        i->writeDemandElement(device);
+    // write route elements associated to this vehicle
+    if (getChildDemandElements().size() > 0) {
+        if (getChildDemandElements().front()->getTagProperty().getTag() == GNE_TAG_ROUTE_EMBEDDED) {
+            // write embedded route
+            getChildDemandElements().front()->writeDemandElement(device);
+            // write sorted stops
+            const auto sortedStops = getSortedStops(getChildDemandElements().front()->getParentEdges());
+            for (const auto& stop : sortedStops) {
+                stop->writeDemandElement(device);
+            }
+        } else {
+            for (const auto& route : getChildDemandElements()) {
+                route->writeDemandElement(device);
+            }
+        }
     }
     // close vehicle tag
     device.closeTag();
 }
 
 
-bool
+GNEDemandElement::Problem
 GNEVehicle::isDemandElementValid() const {
     // only trips or flows can have problems
     if ((myTagProperty.getTag() == SUMO_TAG_TRIP) || (myTagProperty.getTag() == SUMO_TAG_FLOW)) {
         // check path
-        return myNet->getPathManager()->isPathValid(this);
+        if (myNet->getPathManager()->isPathValid(this)) {
+            return Problem::OK;
+        } else {
+            return Problem::INVALID_PATH;
+        }
+    } else if ((myTagProperty.getTag() == GNE_TAG_TRIP_JUNCTIONS) || (myTagProperty.getTag() == GNE_TAG_FLOW_JUNCTIONS)) {
+        return Problem::OK;
     } else if (getParentDemandElements().size() == 2) {
         // check if exist a valid path using route parent edges
         if (myNet->getPathManager()->getPathCalculator()->calculateDijkstraPath(getParentDemandElements().at(0)->getVClass(), getParentDemandElements().at(1)->getParentEdges()).size() > 0) {
-            return true;
+            return Problem::OK;
         } else {
-            return false;
+            return Problem::INVALID_PATH;
         }
     } else if (getChildDemandElements().size() > 0 && (getChildDemandElements().front()->getTagProperty().getTag() == GNE_TAG_ROUTE_EMBEDDED)) {
+        // get sorted stops and check number
+        std::vector<GNEDemandElement*> embeddedRouteStops;
+        for (const auto& routeChild : getChildDemandElements()) {
+            if (routeChild->getTagProperty().isStop()) {
+                embeddedRouteStops.push_back(routeChild);
+            }
+        }
+        const auto sortedStops = getSortedStops(getChildDemandElements().front()->getParentEdges());
+        if (sortedStops.size() != embeddedRouteStops.size()) {
+            return Problem::STOP_DOWNSTREAM;
+        }
         // check if exist a valid path using embebbed route edges
         if (myNet->getPathManager()->getPathCalculator()->calculateDijkstraPath(getParentDemandElements().at(0)->getVClass(), getChildDemandElements().front()->getParentEdges()).size() > 0) {
-            return true;
+            return Problem::OK;
         } else {
-            return false;
+            return Problem::INVALID_PATH;
         }
     } else {
-        return false;
+        return Problem::INVALID_ELEMENT;
     }
 }
 
@@ -467,6 +521,17 @@ GNEVehicle::getDemandElementProblem() const {
         // there is connections bewteen all edges, then all ok
         return "";
     } else if (getChildDemandElements().size() > 0 && (getChildDemandElements().front()->getTagProperty().getTag() == GNE_TAG_ROUTE_EMBEDDED)) {
+        // get sorted stops and check number
+        std::vector<GNEDemandElement*> embeddedRouteStops;
+        for (const auto& routeChild : getChildDemandElements()) {
+            if (routeChild->getTagProperty().isStop()) {
+                embeddedRouteStops.push_back(routeChild);
+            }
+        }
+        const auto sortedStops = getSortedStops(getChildDemandElements().front()->getParentEdges());
+        if (sortedStops.size() != embeddedRouteStops.size()) {
+            return toString(embeddedRouteStops.size() - sortedStops.size()) + " stops are outside of embedded route (downstream)";
+        }
         // get embebbed route edges
         const std::vector<GNEEdge*>& routeEdges = getChildDemandElements().front()->getParentEdges();
         // check if exist at least a connection between every edge
@@ -503,23 +568,32 @@ GNEVehicle::getColor() const {
 
 void
 GNEVehicle::updateGeometry() {
-    // get first path lane
-    const GNELane* firstPathLane = getFirstPathLane();
-    // check path lane
-    if (firstPathLane) {
-        // declare departPos
-        double posOverLane = 0;
-        if (canParse<double>(getDepartPos())) {
-            posOverLane = parse<double>(getDepartPos());
-        }
+    if (getParentJunctions().size() > 0) {
+        // calculate rotation between both junctions
+        const Position posA = getParentJunctions().front()->getPositionInView();
+        const Position posB = getParentJunctions().back()->getPositionInView();
+        const double rot = ((double)atan2((posB.x() - posA.x()), (posA.y() - posB.y())) * (double) -180.0 / (double)M_PI);
         // update Geometry
-        myDemandElementGeometry.updateGeometry(firstPathLane->getLaneShape(), posOverLane, myMoveElementLateralOffset);
-        // compute route embedded vinculated with this vehicle
-        for (const auto& demandElement : getChildDemandElements()) {
-            if (demandElement->getTagProperty().getTag() == GNE_TAG_ROUTE_EMBEDDED) {
-                demandElement->computePathElement();
+        myDemandElementGeometry.updateSinglePosGeometry(getParentJunctions().front()->getPositionInView(), rot);
+    } else {
+        // get first path lane
+        const GNELane* firstPathLane = getFirstPathLane();
+        // check path lane
+        if (firstPathLane) {
+            // declare departPos
+            double posOverLane = 0;
+            if (canParse<double>(getDepartPos())) {
+                posOverLane = parse<double>(getDepartPos());
             }
-            demandElement->updateGeometry();
+            // update Geometry
+            myDemandElementGeometry.updateGeometry(firstPathLane->getLaneShape(), posOverLane, myMoveElementLateralOffset);
+            // compute route embedded vinculated with this vehicle
+            for (const auto& demandElement : getChildDemandElements()) {
+                if (demandElement->getTagProperty().getTag() == GNE_TAG_ROUTE_EMBEDDED) {
+                    demandElement->computePathElement();
+                }
+                demandElement->updateGeometry();
+            }
         }
     }
 }
@@ -653,20 +727,6 @@ GNEVehicle::drawGL(const GUIVisualizationSettings& s) const {
                     } else if (s.drawDetail(s.detailSettings.vehicleTriangles, exaggeration)) {
                         GUIBaseVehicleHelper::drawAction_drawVehicleAsTrianglePlus(width, length);
                     }
-
-                    /*
-                    switch (s.vehicleQuality) {
-                        case 0:
-                            GUIBaseVehicleHelper::drawAction_drawVehicleAsTrianglePlus(width, length);
-                            break;
-                        case 1:
-                            GUIBaseVehicleHelper::drawAction_drawVehicleAsBoxPlus(width, length);
-                            break;
-                        default:
-                            GUIBaseVehicleHelper::drawAction_drawVehicleAsPoly(s, shape, width, length);
-                            break;
-                    }
-                    */
                     // check if min gap has to be drawn
                     if (s.drawMinGap) {
                         const double minGap = -1 * getParentDemandElements().at(0)->getAttributeDouble(SUMO_ATTR_MINGAP);
@@ -696,7 +756,7 @@ GNEVehicle::drawGL(const GUIVisualizationSettings& s) const {
                     drawStackLabel(vehiclePosition, vehicleRotation, width, length, exaggeration);
                 }
                 // draw flow label
-                if ((myTagProperty.getTag() == SUMO_TAG_FLOW) || (myTagProperty.getTag() == GNE_TAG_FLOW_ROUTE) || (myTagProperty.getTag() == GNE_TAG_FLOW_WITHROUTE)) {
+                if (myTagProperty.isFlow()) {
                     drawFlowLabel(vehiclePosition, vehicleRotation, width, length, exaggeration);
                 }
                 // draw lock icon
@@ -705,10 +765,14 @@ GNEVehicle::drawGL(const GUIVisualizationSettings& s) const {
                 if (myNet->getViewNet()->isAttributeCarrierInspected(this)) {
                     // draw using drawDottedContourClosedShape
                     GUIDottedGeometry::drawDottedSquaredShape(GUIDottedGeometry::DottedContourType::INSPECT, s, vehiclePosition, length * 0.5, width * 0.5, length * -0.5, 0, vehicleRotation, exaggeration);
+                    // draw junction line
+                    drawJunctionLine();
                 }
                 if (myNet->getViewNet()->getFrontAttributeCarrier() == this) {
                     // draw using drawDottedContourClosedShape
                     GUIDottedGeometry::drawDottedSquaredShape(GUIDottedGeometry::DottedContourType::FRONT, s, vehiclePosition, length * 0.5, width * 0.5, length * -0.5, 0, vehicleRotation, exaggeration);
+                    // draw junction line
+                    drawJunctionLine();
                 }
             }
             // pop name
@@ -721,7 +785,9 @@ GNEVehicle::drawGL(const GUIVisualizationSettings& s) const {
 void
 GNEVehicle::computePathElement() {
     // calculate path (only for flows and trips)
-    if ((myTagProperty.getTag() == SUMO_TAG_FLOW) || (myTagProperty.getTag() == SUMO_TAG_TRIP)) {
+    if (getParentJunctions().size() > 0) {
+        // currently disabled
+    } else if ((myTagProperty.getTag() == SUMO_TAG_FLOW) || (myTagProperty.getTag() == SUMO_TAG_TRIP)) {
         // declare lane stops
         std::vector<GNELane*> laneStops;
         // iterate over child demand elements
@@ -1122,7 +1188,7 @@ GNEVehicle::getAttribute(SumoXMLAttr key) const {
             } else {
                 return "";
             }
-        // Specific of Trips
+        // Specific of from-to edge
         case SUMO_ATTR_FROM:
             return getParentEdges().front()->getID();
         case SUMO_ATTR_TO:
@@ -1141,7 +1207,12 @@ GNEVehicle::getAttribute(SumoXMLAttr key) const {
             } else {
                 return toString(arrivalEdge);
             }
-        // Specific of routeFlows
+        // Specific of from-to junctions
+        case SUMO_ATTR_FROMJUNCTION:
+            return getParentJunctions().front()->getID();
+        case SUMO_ATTR_TOJUNCTION:
+            return getParentJunctions().back()->getID();
+        // Specific of flows
         case SUMO_ATTR_BEGIN:
             return time2string(depart);
         case SUMO_ATTR_END:
@@ -1159,6 +1230,8 @@ GNEVehicle::getAttribute(SumoXMLAttr key) const {
             return toString(isAttributeCarrierSelected());
         case GNE_ATTR_PARAMETERS:
             return getParametersStr();
+        case GNE_ATTR_FLOWPARAMETERS:
+            return toString(parametersSet);
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
     }
@@ -1260,13 +1333,16 @@ GNEVehicle::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList*
         // Specific of vehicles
         case SUMO_ATTR_DEPART:
         case SUMO_ATTR_ROUTE:
-        // Specific of Trips
+        // Specific of from-to edges
         case SUMO_ATTR_FROM:
         case SUMO_ATTR_TO:
         case SUMO_ATTR_VIA:
         case SUMO_ATTR_DEPARTEDGE:
         case SUMO_ATTR_ARRIVALEDGE:
-        // Specific of routeFlows
+        // Specific of from-to junctions
+        case SUMO_ATTR_FROMJUNCTION:
+        case SUMO_ATTR_TOJUNCTION:
+        // Specific of flows
         case SUMO_ATTR_BEGIN:
         case SUMO_ATTR_END:
         case SUMO_ATTR_NUMBER:
@@ -1398,7 +1474,7 @@ GNEVehicle::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return true;
             }
-        // Specific of Trips
+        // Specific of from-to edges
         case SUMO_ATTR_FROM:
         case SUMO_ATTR_TO:
             return SUMOXMLDefinitions::isValidNetID(value) && (myNet->getAttributeCarriers()->retrieveEdge(value, false) != nullptr);
@@ -1429,7 +1505,11 @@ GNEVehicle::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return canParse<std::vector<GNEEdge*> >(myNet, value, false);
             }
-        // Specific of routeFlows
+        // Specific of from-to junctions
+        case SUMO_ATTR_FROMJUNCTION:
+        case SUMO_ATTR_TOJUNCTION:
+            return SUMOXMLDefinitions::isValidNetID(value) && (myNet->getAttributeCarriers()->retrieveJunction(value, false) != nullptr);
+        // Specific of flows
         case SUMO_ATTR_BEGIN:
             if (canParse<double>(value)) {
                 return (parse<double>(value) >= 0);
@@ -1876,7 +1956,7 @@ GNEVehicle::setAttribute(SumoXMLAttr key, const std::string& value) {
             updateGeometry();
             updateSpreadStackGeometry = true;
             break;
-        // Specific of Trips and flow
+        // Specific of from-to edges
         case SUMO_ATTR_FROM: {
             // change first edge
             replaceFirstParentEdge(value);
@@ -1940,7 +2020,24 @@ GNEVehicle::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         }
-        // Specific of routeFlows
+        // Specific of from-to junctions
+        case SUMO_ATTR_FROMJUNCTION: {
+            // change first junction
+            replaceFirstParentJunction(value);
+            // compute vehicle
+            computePathElement();
+            updateSpreadStackGeometry = true;
+            break;
+        }
+        case SUMO_ATTR_TOJUNCTION: {
+            // change last junction
+            replaceLastParentJunction(value);
+            // compute vehicle
+            computePathElement();
+            updateSpreadStackGeometry = true;
+            break;
+        }
+        // Specific of flows
         case SUMO_ATTR_BEGIN: {
             depart = string2time(value);
             break;
@@ -2101,5 +2198,27 @@ GNEVehicle::drawFlowLabel(const Position& vehiclePosition, const double vehicleR
     GLHelper::popMatrix();
 }
 
+
+void
+GNEVehicle::drawJunctionLine() const {
+    // draw line for trip/flows junctions
+    if ((myTagProperty.getTag() == GNE_TAG_TRIP_JUNCTIONS) || (myTagProperty.getTag() == GNE_TAG_FLOW_JUNCTIONS)) {
+        // get two points
+        const Position posA = getParentJunctions().front()->getPositionInView();
+        const Position posB = getParentJunctions().back()->getPositionInView();
+        const double rot = ((double)atan2((posB.x() - posA.x()), (posA.y() - posB.y())) * (double) 180.0 / (double)M_PI);
+        const double len = posA.distanceTo2D(posB);
+        // push draw matrix
+        GLHelper::pushMatrix();
+        // Start with the drawing of the area traslating matrix to origin
+        myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, getType() + 0.1);
+        // set trip color
+        GLHelper::setColor(RGBColor::ORANGE);
+        // draw line
+        GLHelper::drawBoxLine(posA, rot, len, 0.25);
+        // pop draw matrix
+        GLHelper::popMatrix();
+    }
+}
 
 /****************************************************************************/

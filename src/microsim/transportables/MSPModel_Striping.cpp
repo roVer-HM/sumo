@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2014-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2014-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -1542,7 +1542,7 @@ MSPModel_Striping::PState::PState():
 }
 
 
-MSPModel_Striping::PState::PState(MSPerson* person, MSStageMoving* stage, std::istringstream* in): 
+MSPModel_Striping::PState::PState(MSPerson* person, MSStageMoving* stage, std::istringstream* in):
     myPerson(person),
     myStage(stage),
     myLane(nullptr),
@@ -1559,13 +1559,13 @@ MSPModel_Striping::PState::PState(MSPerson* person, MSStageMoving* stage, std::i
         int nextDir;
 
         (*in) >> laneID
-            >> myRelX >> myRelY >> myDir >> mySpeed >> mySpeedLat >> myWaitingToEnter >> myWaitingTime 
-            >> wapLaneFrom >> wapLaneTo
-            >> myAmJammed
-            >> nextLaneID
-            >> nextLinkFrom
-            >> nextLinkTo
-            >> nextDir;
+              >> myRelX >> myRelY >> myDir >> mySpeed >> mySpeedLat >> myWaitingToEnter >> myWaitingTime
+              >> wapLaneFrom >> wapLaneTo
+              >> myAmJammed
+              >> nextLaneID
+              >> nextLinkFrom
+              >> nextLinkTo
+              >> nextDir;
 
 
         myLane = MSLane::dictionary(laneID);
@@ -1632,11 +1632,11 @@ MSPModel_Striping::PState::saveState(std::ostringstream& out) {
         nextLinkTo = myNLI.link->getViaLaneOrLane()->getID();
     }
     out << " " << myLane->getID()
-        << " " << myRelX 
-        << " " << myRelY 
-        << " " << myDir 
-        << " " << mySpeed 
-        << " " << mySpeedLat 
+        << " " << myRelX
+        << " " << myRelY
+        << " " << myDir
+        << " " << mySpeed
+        << " " << mySpeedLat
         << " " << myWaitingToEnter
         << " " << myWaitingTime
         << " " << wapLaneFrom

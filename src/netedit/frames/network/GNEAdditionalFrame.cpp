@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -145,12 +145,12 @@ GNEAdditionalFrame::SelectorParentLanes::stopConsecutiveLaneSelector() {
     myAdditionalFrameParent->myNeteditAttributes->getNeteditAttributesAndValues(myAdditionalFrameParent->myBaseAdditional, nullptr);
     // Check if ID has to be generated
     if (!myAdditionalFrameParent->myBaseAdditional->hasStringAttribute(SUMO_ATTR_ID)) {
-        myAdditionalFrameParent->myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, myAdditionalFrameParent->generateID(nullptr));
+        myAdditionalFrameParent->myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, myAdditionalFrameParent->getViewNet()->getNet()->getAttributeCarriers()->generateAdditionalID(tagProperties.getTag()));
     }
     // obtain lane IDs
     std::vector<std::string> laneIDs;
-    for (auto i : mySelectedLanes) {
-        laneIDs.push_back(i.first->getID());
+    for (const auto& selectedlane : mySelectedLanes) {
+        laneIDs.push_back(selectedlane.first->getID());
     }
     myAdditionalFrameParent->myBaseAdditional->addStringListAttribute(SUMO_ATTR_LANES, laneIDs);
     // Obtain clicked position over first lane
@@ -1181,7 +1181,7 @@ GNEAdditionalFrame::createBaseAdditionalObject(const GNETagProperties& tagProper
     // check if baseAdditionalTag has to be updated
     if (baseAdditionalTag == GNE_TAG_E2DETECTOR_MULTILANE) {
         baseAdditionalTag = SUMO_TAG_E2DETECTOR;
-    } else if (baseAdditionalTag == GNE_TAG_FLOW_CALIBRATOR) {
+    } else if (baseAdditionalTag == GNE_TAG_CALIBRATOR_FLOW) {
         baseAdditionalTag = SUMO_TAG_FLOW;
     }
     // check if additional is child
@@ -1216,36 +1216,6 @@ GNEAdditionalFrame::createBaseAdditionalObject(const GNETagProperties& tagProper
     // BaseAdditional created, then return true
     return true;
 }
-
-
-std::string
-GNEAdditionalFrame::generateID(GNENetworkElement* networkElement) const {
-    // obtain current number of additionals to generate a new index faster
-    int additionalIndex = (int)myViewNet->getNet()->getAttributeCarriers()->getAdditionals().at(myAdditionalTagSelector->getCurrentTemplateAC()->getTagProperty().getTag()).size();
-    // obtain tag Properties (only for improve code legilibility
-    const auto& tagProperties = myAdditionalTagSelector->getCurrentTemplateAC()->getTagProperty();
-    // get attribute carriers
-    const auto& attributeCarriers = myViewNet->getNet()->getAttributeCarriers();
-    if (networkElement) {
-        // special case for vaporizers
-        if (tagProperties.getTag() == SUMO_TAG_VAPORIZER) {
-            return networkElement->getID();
-        } else {
-            // generate ID using networkElement
-            while (attributeCarriers->retrieveAdditional(tagProperties.getTag(), tagProperties.getTagStr() + "_" + networkElement->getID() + "_" + toString(additionalIndex), false) != nullptr) {
-                additionalIndex++;
-            }
-            return tagProperties.getTagStr() + "_" + networkElement->getID() + "_" + toString(additionalIndex);
-        }
-    } else {
-        // generate ID without networkElement
-        while (attributeCarriers->retrieveAdditional(tagProperties.getTag(), tagProperties.getTagStr() + "_" + toString(additionalIndex), false) != nullptr) {
-            additionalIndex++;
-        }
-        return tagProperties.getTagStr() + "_" + toString(additionalIndex);
-    }
-}
-
 
 
 bool
@@ -1299,7 +1269,7 @@ GNEAdditionalFrame::buildAdditionalOverEdge(GNELane* lane, const GNETagPropertie
         myBaseAdditional->addStringAttribute(SUMO_ATTR_EDGE, lane->getParentEdge()->getID());
         // Check if ID has to be generated
         if (!myBaseAdditional->hasStringAttribute(SUMO_ATTR_ID)) {
-            myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, generateID(lane->getParentEdge()));
+            myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, myViewNet->getNet()->getAttributeCarriers()->generateAdditionalID(tagProperties.getTag()));
         }
     } else {
         return false;
@@ -1337,7 +1307,7 @@ GNEAdditionalFrame::buildAdditionalOverLane(GNELane* lane, const GNETagPropertie
         myBaseAdditional->addStringAttribute(SUMO_ATTR_LANE, lane->getID());
         // Check if ID has to be generated
         if (!myBaseAdditional->hasStringAttribute(SUMO_ATTR_ID)) {
-            myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, generateID(lane));
+            myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, myViewNet->getNet()->getAttributeCarriers()->generateAdditionalID(tagProperties.getTag()));
         }
     } else {
         return false;
@@ -1373,9 +1343,24 @@ GNEAdditionalFrame::buildAdditionalOverLane(GNELane* lane, const GNETagPropertie
 
 bool
 GNEAdditionalFrame::buildAdditionalOverView(const GNETagProperties& tagProperties) {
+    // disable intervals (temporal)
+    if ((tagProperties.getTag() == SUMO_TAG_INTERVAL) ||
+        (tagProperties.getTag() == SUMO_TAG_DEST_PROB_REROUTE) ||
+        (tagProperties.getTag() == SUMO_TAG_CLOSING_REROUTE) ||
+        (tagProperties.getTag() == SUMO_TAG_CLOSING_LANE_REROUTE) ||
+        (tagProperties.getTag() == SUMO_TAG_ROUTE_PROB_REROUTE) ||
+        (tagProperties.getTag() == SUMO_TAG_PARKING_AREA_REROUTE)) {
+        WRITE_WARNING("Currently unsuported. Create rerouter elements using rerouter dialog");
+        return false;
+    }
+        // disable intervals (temporal)
+    if (tagProperties.getTag() == SUMO_TAG_STEP) {
+        WRITE_WARNING("Currently unsuported. Create VSS steps elements using VSS dialog");
+        return false;
+    }
     // Check if ID has to be generated
     if (!myBaseAdditional->hasStringAttribute(SUMO_ATTR_ID)) {
-        myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, generateID(nullptr));
+        myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, myViewNet->getNet()->getAttributeCarriers()->generateAdditionalID(tagProperties.getTag()));
     }
     // Obtain position as the clicked position over view
     const Position viewPos = myViewNet->snapToActiveGrid(myViewNet->getPositionInformation());

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -46,6 +46,8 @@
 #include "MSDevice_Taxi.h"
 
 //#define DEBUG_DISPATCH
+
+//#define DEBUG_COND (myHolder.isSelected())
 #define DEBUG_COND (true)
 
 // ===========================================================================
@@ -428,7 +430,7 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
 #endif
     if (!myHolder.replaceRouteEdges(tmpEdges, -1, 0, "taxi:prepare_dispatch", false, false, false)) {
         throw ProcessError("Route replacement for taxi dispatch failed for vehicle '" + myHolder.getID()
-                           + "' at time " + time2string(MSNet::getInstance()->getCurrentTimeStep()));
+                           + "' at time=" + time2string(t) + ".");
     }
 #ifdef DEBUG_DISPATCH
     if (DEBUG_COND) std::cout << "   replacedRoute=" << toString(tmpEdges)
@@ -438,7 +440,7 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
         std::string error;
         myHolder.addStop(stop, error);
         if (error != "") {
-            WRITE_WARNINGF("Could not add taxi stop for vehicle '%' to %. time=% error=%", myHolder.getID(), stop.actType, time2string(t), error)
+            WRITE_WARNINGF("Could not add taxi stop for vehicle '%' to %. time=% error=%.", myHolder.getID(), stop.actType, time2string(t), error)
         }
     }
     SUMOAbstractRouter<MSEdge, SUMOVehicle>& router = MSRoutingEngine::getRouterTT(myHolder.getRNGIndex(), myHolder.getVClass());
@@ -462,6 +464,33 @@ MSDevice_Taxi::prepareStop(ConstMSEdgeVector& edges,
     if (stopPos < lastPos && stopPos + NUMERICAL_EPS >= lastPos) {
         stopPos = lastPos;
     }
+
+    if (stops.empty()) {
+        // check brakeGap
+        double distToStop = stopPos - lastPos;
+        const double brakeGap = myHolder.getBrakeGap();
+        if (myHolder.getLane() != nullptr && myHolder.getLane()->isInternal()) {
+            distToStop += myHolder.getLane()->getLength();
+        }
+        if (stopEdge != edges.back()) {
+            distToStop += edges.back()->getLength();
+            if (distToStop < brakeGap) {
+                // the distance between current edge and stop edge may be small
+                SUMOAbstractRouter<MSEdge, SUMOVehicle>& router = MSRoutingEngine::getRouterTT(myHolder.getRNGIndex(), myHolder.getVClass());
+                ConstMSEdgeVector toFirstStop;
+                router.compute(edges.back(), stopEdge, &myHolder, SIMSTEP, toFirstStop, true);
+                for (int i = 1; i < (int)toFirstStop.size() - 1; i++) {
+                    distToStop += toFirstStop[i]->getLength();
+                }
+            }
+        }
+        if (distToStop < brakeGap) {
+            // circle back to stopEdge
+            //std::cout << SIMTIME << " taxi=" << getID() << " brakeGap=" << brakeGap << " distToStop=" << distToStop << "\n";
+            edges.push_back(stopEdge);
+        }
+    }
+
     if (stopEdge == edges.back() && !stops.empty()) {
         if (stopPos >= lastPos && stopPos <= stops.back().endPos) {
             // no new stop and no adaption needed
@@ -571,8 +600,8 @@ MSDevice_Taxi::customerArrived(const MSTransportable* person) {
     if (myHolder.getPersonNumber() == 0 && myHolder.getContainerNumber() == 0) {
         myState &= ~OCCUPIED;
         if (myHolder.getStops().size() > 1 && (myState & PICKUP) == 0) {
-            WRITE_WARNINGF("All customers left vehicle '%' at time % but there are % remaining stops",
-                           myHolder.getID(), time2string(MSNet::getInstance()->getCurrentTimeStep()), myHolder.getStops().size() - 1);
+            WRITE_WARNINGF("All customers left vehicle '%' at time=% but there are % remaining stops",
+                           myHolder.getID(), time2string(SIMSTEP), myHolder.getStops().size() - 1);
             while (myHolder.getStops().size() > 1) {
                 myHolder.abortNextStop(1);
             }

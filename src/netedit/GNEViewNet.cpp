@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -40,11 +40,10 @@
 #include <netedit/frames/demand/GNEContainerPlanFrame.h>
 #include <netedit/frames/demand/GNEPersonFrame.h>
 #include <netedit/frames/demand/GNEPersonPlanFrame.h>
-#include <netedit/frames/demand/GNEPersonTypeFrame.h>
 #include <netedit/frames/demand/GNERouteFrame.h>
 #include <netedit/frames/demand/GNEStopFrame.h>
 #include <netedit/frames/demand/GNEVehicleFrame.h>
-#include <netedit/frames/demand/GNEVehicleTypeFrame.h>
+#include <netedit/frames/demand/GNETypeFrame.h>
 #include <netedit/frames/network/GNEAdditionalFrame.h>
 #include <netedit/frames/network/GNEConnectorFrame.h>
 #include <netedit/frames/network/GNECreateEdgeFrame.h>
@@ -166,6 +165,7 @@ FXDEFMAP(GNEViewNet) GNEViewNetMap[] = {
     FXMAPFUNC(SEL_COMMAND, MID_GNE_EDGE_RESET_LENGTH,                       GNEViewNet::onCmdResetLength),
     // Lanes
     FXMAPFUNC(SEL_COMMAND, MID_GNE_LANE_DUPLICATE,                          GNEViewNet::onCmdDuplicateLane),
+    FXMAPFUNC(SEL_COMMAND, MID_GNE_LANE_EDIT_SHAPE,                         GNEViewNet::onCmdEditLaneShape),
     FXMAPFUNC(SEL_COMMAND, MID_GNE_LANE_RESET_CUSTOMSHAPE,                  GNEViewNet::onCmdResetLaneCustomShape),
     FXMAPFUNC(SEL_COMMAND, MID_GNE_LANE_RESET_OPPOSITELANE,                 GNEViewNet::onCmdResetOppositeLane),
     FXMAPFUNC(SEL_COMMAND, MID_GNE_LANE_TRANSFORM_SIDEWALK,                 GNEViewNet::onCmdLaneOperation),
@@ -1639,9 +1639,6 @@ GNEViewNet::onCmdSetMode(FXObject*, FXSelector sel, void*) {
             case MID_HOTKEY_C_MODE_CONNECT_PERSONPLAN:
                 myEditModes.setNetworkEditMode(NetworkEditMode::NETWORK_CONNECT);
                 break;
-            case MID_HOTKEY_H_MODE_PROHIBITION_CONTAINERPLAN:
-                myEditModes.setNetworkEditMode(NetworkEditMode::NETWORK_PROHIBITION);
-                break;
             case MID_HOTKEY_T_MODE_TLS_TYPE:
                 myEditModes.setNetworkEditMode(NetworkEditMode::NETWORK_TLS);
                 break;
@@ -1656,6 +1653,9 @@ GNEViewNet::onCmdSetMode(FXObject*, FXSelector sel, void*) {
                 break;
             case MID_HOTKEY_P_MODE_POLYGON_PERSON:
                 myEditModes.setNetworkEditMode(NetworkEditMode::NETWORK_POLYGON);
+                break;
+            case MID_HOTKEY_H_MODE_PROHIBITION_CONTAINERPLAN:
+                myEditModes.setNetworkEditMode(NetworkEditMode::NETWORK_PROHIBITION);
                 break;
             case MID_HOTKEY_W_MODE_WIRE:
                 myEditModes.setNetworkEditMode(NetworkEditMode::NETWORK_WIRE);
@@ -1691,7 +1691,7 @@ GNEViewNet::onCmdSetMode(FXObject*, FXSelector sel, void*) {
                 myEditModes.setDemandEditMode(DemandEditMode::DEMAND_VEHICLE);
                 break;
             case MID_HOTKEY_T_MODE_TLS_TYPE:
-                myEditModes.setDemandEditMode(DemandEditMode::DEMAND_VEHICLETYPES);
+                myEditModes.setDemandEditMode(DemandEditMode::DEMAND_TYPE);
                 break;
             case MID_HOTKEY_A_MODE_ADDITIONAL_STOP:
                 myEditModes.setDemandEditMode(DemandEditMode::DEMAND_STOP);
@@ -2303,6 +2303,20 @@ GNEViewNet::onCmdDuplicateLane(FXObject*, FXSelector, void*) {
             myUndoList->end();
         }
     }
+    return 1;
+}
+
+
+long
+GNEViewNet::onCmdEditLaneShape(FXObject*, FXSelector, void*) {
+    // Obtain lane under mouse
+    GNELane* lane = getLaneAtPopupPosition();
+    if (lane) {
+        myEditNetworkElementShapes.startEditCustomShape(lane);
+    }
+    // destroy pop-up and update view Net
+    destroyPopup();
+    setFocus();
     return 1;
 }
 
@@ -4079,12 +4093,12 @@ GNEViewNet::updateDemandModeSpecificControls() {
             // set checkable button
             myDemandCheckableButtons.vehicleButton->setChecked(true);
             break;
-        case DemandEditMode::DEMAND_VEHICLETYPES:
-            myViewParent->getVehicleTypeFrame()->show();
-            myViewParent->getVehicleTypeFrame()->focusUpperElement();
-            myCurrentFrame = myViewParent->getVehicleTypeFrame();
+        case DemandEditMode::DEMAND_TYPE:
+            myViewParent->getTypeFrame()->show();
+            myViewParent->getTypeFrame()->focusUpperElement();
+            myCurrentFrame = myViewParent->getTypeFrame();
             // set checkable button
-            myDemandCheckableButtons.vehicleTypeButton->setChecked(true);
+            myDemandCheckableButtons.typeButton->setChecked(true);
             break;
         case DemandEditMode::DEMAND_STOP:
             myViewParent->getStopFrame()->show();
@@ -4092,14 +4106,6 @@ GNEViewNet::updateDemandModeSpecificControls() {
             myCurrentFrame = myViewParent->getStopFrame();
             // set checkable button
             myDemandCheckableButtons.stopButton->setChecked(true);
-            break;
-        case DemandEditMode::DEMAND_PERSONTYPES:
-            myViewParent->getPersonTypeFrame()->show();
-            myViewParent->getPersonTypeFrame()->focusUpperElement();
-            myCurrentFrame = myViewParent->getPersonTypeFrame();
-            // set checkable button
-            myDemandCheckableButtons.personTypeButton->setChecked(true);
-            myDemandCheckableButtons.personTypeButton->disable();
             break;
         case DemandEditMode::DEMAND_PERSON:
             myViewParent->getPersonFrame()->show();
@@ -4694,7 +4700,10 @@ GNEViewNet::processLeftButtonPressNetwork(void* eventData) {
         case NetworkEditMode::NETWORK_MOVE: {
             // first swap lane to edges if mySelectEdges is enabled and shift key isn't pressed
             if (myNetworkViewOptions.selectEdges() && (myMouseButtonKeyPressed.shiftKeyPressed() == false)) {
-                myObjectsUnderCursor.swapLane2Edge();
+                // swap lane to edge (except if we're editing a shape lane)
+                if (!(myObjectsUnderCursor.getLaneFront() && myObjectsUnderCursor.getLaneFront()->isShapeEdited())) {
+                    myObjectsUnderCursor.swapLane2Edge();
+                }
                 // update AC under cursor
                 AC = myObjectsUnderCursor.getAttributeCarrierFront();
             }

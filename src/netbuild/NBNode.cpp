@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -2248,6 +2248,9 @@ NBNode::getDirection(const NBEdge* const incoming, const NBEdge* const outgoing,
                 return angle > 0 ? LinkDirection::PARTRIGHT : LinkDirection::PARTLEFT;
             }
         }
+        if (angle > 0 && incoming->getJunctionPriority(this) == NBEdge::JunctionPriority::ROUNDABOUT) {
+            return angle > 15 ? LinkDirection::RIGHT : LinkDirection::PARTRIGHT;
+        }
         return LinkDirection::STRAIGHT;
     }
 
@@ -2264,7 +2267,9 @@ NBNode::getDirection(const NBEdge* const incoming, const NBEdge* const outgoing,
         }
     } else {
         // check whether any other edge goes further to the left
-        if (angle < -90) {
+        if (angle < -170 && incoming->getGeometry().reverse() == outgoing->getGeometry()) {
+            return leftHand ? LinkDirection::TURN_LEFTHAND : LinkDirection::TURN;
+        } else if (angle < -90) {
             return LinkDirection::LEFT;
         }
         NBEdge* outCCW = getNextCompatibleOutgoing(incoming, vehPerm, itOut, leftHand);

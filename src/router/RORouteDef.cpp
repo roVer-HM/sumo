@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -95,9 +95,9 @@ RORouteDef::preComputeCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router
                                    SUMOTime begin, const ROVehicle& veh) const {
     myNewRoute = false;
     const OptionsCont& oc = OptionsCont::getOptions();
+    const bool ignoreErrors = oc.getBool("ignore-errors");
     assert(myAlternatives[0]->getEdgeVector().size() > 0);
-    MsgHandler* mh = (OptionsCont::getOptions().getBool("ignore-errors") ?
-                      MsgHandler::getWarningInstance() : MsgHandler::getErrorInstance());
+    MsgHandler* mh = ignoreErrors ? MsgHandler::getWarningInstance() : MsgHandler::getErrorInstance();
     if (myAlternatives[0]->getFirst()->prohibits(&veh) && (!oc.getBool("repair.from")
             // do not try to reassign starting edge for trip input
             || myMayBeDisconnected || myAlternatives[0]->getEdgeVector().size() < 2)) {
@@ -131,8 +131,9 @@ RORouteDef::preComputeCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router
         }
         return;
     }
-    if (RouteCostCalculator<RORoute, ROEdge, ROVehicle>::getCalculator().skipRouteCalculation()
-            || OptionsCont::getOptions().getBool("remove-loops")) {
+    if ((RouteCostCalculator<RORoute, ROEdge, ROVehicle>::getCalculator().skipRouteCalculation()
+            || OptionsCont::getOptions().getBool("remove-loops"))
+            && (skipTripRouting || myAlternatives[myLastUsed]->isValid(veh, ignoreErrors))) {
         myPrecomputed = myAlternatives[myLastUsed];
     } else {
         // build a new route to test whether it is better
@@ -224,8 +225,10 @@ RORouteDef::repairCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
         int lastMandatory = 0;
         for (ConstROEdgeVector::const_iterator i = targets.begin() + 1;
                 i != targets.end() && nextMandatory != mandatory.end(); ++i) {
-            if ((*(i - 1))->isConnectedTo(**i, veh.getVClass())) {
-                newEdges.push_back(*i);
+            const ROEdge* prev = *(i - 1);
+            const ROEdge* cur = *i;
+            if (prev->isConnectedTo(*cur, veh.getVClass()) && (!isRailway(veh.getVClass()) || prev->getBidiEdge() != cur)) {
+                newEdges.push_back(cur);
             } else {
                 if (initialSize > 2) {
                     // only inform if the input is (probably) not a trip

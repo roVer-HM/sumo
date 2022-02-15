@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -1435,7 +1435,7 @@ MSLaneChanger::changeOpposite(MSVehicle* vehicle, std::pair<MSVehicle*, double> 
         // compute the remaining distance that can be driven on the opposite side
         // this value will put into oppositeLength of the opposite lanes
         // @note: length counts from the start of the current lane
-        // @note: see MSLCM_LC2013::_wantsChange @1092 (isOpposite()
+        // @note: see MSLaneChangeModel::LC2013::_wantsChange @1092 (isOpposite()
         // position on the target lane
         const double forwardPos = source->getOppositePos(vehicle->getPositionOnLane());
 
@@ -1625,7 +1625,7 @@ MSLaneChanger::foundHilltop(MSVehicle* vehicle, bool foundHill, double searchDis
 #ifdef DEBUG_CHANGE_OPPOSITE
                     if (DEBUG_COND) {
                         std::cout << "   cannot changeOpposite before the top of a hill searchDist=" << searchDist << " hillDrop=" << drop
-                            << " lastMax=" << lastMax << " lane=" << lane->getID() << " laneDist=" << laneDist << " z=" << z << "\n";
+                                  << " lastMax=" << lastMax << " lane=" << lane->getID() << " laneDist=" << laneDist << " z=" << z << "\n";
                     }
 #endif
                     return true;

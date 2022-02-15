@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -41,7 +41,9 @@ GNEDetectorE1Instant::GNEDetectorE1Instant(GNENet* net) :
 
 GNEDetectorE1Instant::GNEDetectorE1Instant(const std::string& id, GNELane* lane, GNENet* net, const double pos, const std::string& filename, const std::vector<std::string>& vehicleTypes,
         const std::string& name, const bool friendlyPos, const std::map<std::string, std::string>& parameters) :
-    GNEDetector(id, net, GLO_E1DETECTOR_INSTANT, SUMO_TAG_INSTANT_INDUCTION_LOOP, pos, 0, {lane}, filename, vehicleTypes, name, friendlyPos, parameters) {
+    GNEDetector(id, net, GLO_E1DETECTOR_INSTANT, SUMO_TAG_INSTANT_INDUCTION_LOOP, pos, 0, {
+    lane
+}, filename, vehicleTypes, name, friendlyPos, parameters) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -60,7 +62,6 @@ GNEDetectorE1Instant::writeAdditional(OutputDevice& device) const {
     }
     device.writeAttr(SUMO_ATTR_LANE, getParentLanes().front()->getID());
     device.writeAttr(SUMO_ATTR_POSITION, myPositionOverLane);
-    device.writeAttr(SUMO_ATTR_FREQUENCY, time2string(myFreq));
     if (myFilename.size() > 0) {
         device.writeAttr(SUMO_ATTR_FILE, myFilename);
     }

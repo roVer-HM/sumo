@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -56,6 +56,7 @@ public:
         VEHICLE =           1 << 10, // Vehicles (Vehicles, trips, flows, and routeFlows)
         ROUTE =             1 << 11, // Routes and embedded routes
         STOP =              1 << 12, // Stops
+        FLOW =              1 << 12, // Flows
         // persons
         PERSON =            1 << 13, // Persons (Persons and personFlows)
         PERSONPLAN =        1 << 14, // Person plans (Walks, rides, personTrips and stopPersons)
@@ -91,7 +92,8 @@ public:
         RTREE =                     1 << 11,    // Element is placed in RTREE
         CENTERAFTERCREATION =       1 << 12,    // Camera is moved after element creation
         EMBEDDED_ROUTE =            1 << 13,    // Element has an embedded route
-        REQUIERE_PROJ  =            1 << 14,    // Element requiere a geo-projection defined in network
+        REQUIERE_PROJ =             1 << 14,    // Element requiere a geo-projection defined in network
+        VCLASS_ICON =               1 << 15,    // Element returns icon depending of their vClass
     };
 
     /// @brief default constructor
@@ -123,10 +125,10 @@ public:
     void addDeprecatedAttribute(SumoXMLAttr attr);
 
     /// @brief get field string (by default tag in string format)
-    const std::string &getFieldString() const;
+    const std::string& getFieldString() const;
 
     /// @brief set field that will be drawn in TextFields/ComboBox/etc,
-    void setFieldString(const std::string &fieldString);
+    void setFieldString(const std::string& fieldString);
 
     /// @brief get background color
     unsigned int getBackGroundColor() const;
@@ -199,6 +201,9 @@ public:
 
     /// @brief return true if tag correspond to a stop element
     bool isStop() const;
+
+    /// @brief return true if tag correspond to a flow element
+    bool isFlow() const;
 
     /// @brief return true if tag correspond to a person element
     bool isPerson() const;
@@ -286,6 +291,9 @@ public:
 
     /// @brief return true if tag correspond to an element that requires a geo projection
     bool requireProj() const;
+
+    /// @brief return true if tag correspond to an element that has vClass icons
+    bool vClassIcon() const;
 
     /// @brief return true if attribute of this tag is deprecated
     bool isAttributeDeprecated(SumoXMLAttr attr) const;

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -79,7 +79,7 @@ public:
      * @param[in] defaultValue The default value to return if no value is stored under the key
      * @return The value stored under the key
      */
-    const std::string getParameter(const std::string& key, const std::string defaultValue = "") const;
+    virtual const std::string getParameter(const std::string& key, const std::string defaultValue = "") const;
 
     /**@brief Returns the value for a given key converted to a double
      * @param[in] key The key to ask for

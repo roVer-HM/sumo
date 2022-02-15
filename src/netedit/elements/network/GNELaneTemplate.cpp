@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -27,7 +27,7 @@
 // members methods
 // ===========================================================================
 
-GNELaneTemplate::GNELaneTemplate(const GNELane *lane) :
+GNELaneTemplate::GNELaneTemplate(const GNELane* lane) :
     GNEAttributeCarrier(SUMO_TAG_LANE, lane->getNet()),
     myLane(lane) {
 }
@@ -37,13 +37,19 @@ GNELaneTemplate::~GNELaneTemplate() {
 }
 
 
-const std::string& 
+GNEHierarchicalElement*
+GNELaneTemplate::getHierarchicalElement() {
+    return nullptr;
+}
+
+
+const std::string&
 GNELaneTemplate::getID() const {
     return myLane->getID();
 }
 
 
-GUIGlObject* 
+GUIGlObject*
 GNELaneTemplate::getGUIGlObject() {
     return nullptr;
 }
@@ -57,7 +63,7 @@ GNELaneTemplate::updateGeometry() {
 
 std::string
 GNELaneTemplate::getAttribute(SumoXMLAttr key) const {
-        return myLane->getAttribute(key);
+    return myLane->getAttribute(key);
 }
 
 
@@ -72,13 +78,13 @@ GNELaneTemplate::isValid(SumoXMLAttr /*key*/, const std::string& /*value*/) {
     throw InvalidArgument("cannot be called in templates");
 }
 
-void 
+void
 GNELaneTemplate::enableAttribute(SumoXMLAttr /*key*/, GNEUndoList* /*undoList*/) {
     throw InvalidArgument("cannot be called in templates");
 }
 
 
-void 
+void
 GNELaneTemplate::disableAttribute(SumoXMLAttr /*key*/, GNEUndoList* /*undoList*/) {
     throw InvalidArgument("cannot be called in templates");
 }
@@ -96,13 +102,13 @@ GNELaneTemplate::isAttributeComputed(SumoXMLAttr /*key*/) const {
 }
 
 
-std::string 
+std::string
 GNELaneTemplate::getPopUpID() const {
     return myLane->getPopUpID();
 }
 
 
-std::string 
+std::string
 GNELaneTemplate::getHierarchyName() const {
     return myLane->getHierarchyName();
 }
@@ -122,7 +128,7 @@ GNELaneTemplate::setAttribute(SumoXMLAttr /*key*/, const std::string& /*value*/)
     throw InvalidArgument("cannot be called in templates");
 }
 
-void 
+void
 GNELaneTemplate::toogleAttribute(SumoXMLAttr /*key*/, const bool /*value*/, const int /*previousParameters*/) {
     throw InvalidArgument("cannot be called in templates");
 }

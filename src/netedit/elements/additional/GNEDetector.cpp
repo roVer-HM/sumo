@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -41,11 +41,11 @@ GNEDetector::GNEDetector(const std::string& id, GNENet* net, GUIGlObjectType typ
                          const std::vector<GNELane*>& parentLanes, const std::string& filename, const std::vector<std::string>& vehicleTypes, const std::string& name,
                          const bool friendlyPos, const std::map<std::string, std::string>& parameters) :
     GNEAdditional(id, net, type, tag, name, {}, {}, parentLanes, {}, {}, {}, {}, {}, parameters),
-    myPositionOverLane(pos),
-    myFreq(freq),
-    myFilename(filename),
-    myVehicleTypes(vehicleTypes),
-    myFriendlyPosition(friendlyPos) {
+              myPositionOverLane(pos),
+              myFreq(freq),
+              myFilename(filename),
+              myVehicleTypes(vehicleTypes),
+myFriendlyPosition(friendlyPos) {
 }
 
 
@@ -53,10 +53,10 @@ GNEDetector::GNEDetector(GNEAdditional* additionalParent, GNENet* net, GUIGlObje
                          const std::vector<GNELane*>& parentLanes, const std::string& filename, const std::string& name, const bool friendlyPos,
                          const std::map<std::string, std::string>& parameters) :
     GNEAdditional(net, type, tag, name, {}, {}, parentLanes, {additionalParent}, {}, {}, {}, {}, parameters),
-    myPositionOverLane(pos),
-    myFreq(freq),
-    myFilename(filename),
-    myFriendlyPosition(friendlyPos) {
+myPositionOverLane(pos),
+myFreq(freq),
+myFilename(filename),
+myFriendlyPosition(friendlyPos) {
 }
 
 

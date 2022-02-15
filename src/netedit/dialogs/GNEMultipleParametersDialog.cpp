@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -492,9 +492,9 @@ GNEMultipleParametersDialog::ParametersOptions::onlyForExistentKeys() const {
 // GNEMultipleParametersDialog - methods
 // ---------------------------------------------------------------------------
 
-GNEMultipleParametersDialog::GNEMultipleParametersDialog(GNEInspectorFrame::ParametersEditorInspector* parametersEditorInspector) :
+GNEMultipleParametersDialog::GNEMultipleParametersDialog(GNEInspectorFrame::ParametersEditor* parametersEditorInspector) :
     FXDialogBox(parametersEditorInspector->getInspectorFrameParent()->getViewNet()->getApp(), "Edit parameters", GUIDesignDialogBoxExplicitStretchable(430, 300)),
-    myParametersEditorInspector(parametersEditorInspector) {
+    myParametersEditor(parametersEditorInspector) {
     // call auxiliar constructor
     constructor();
     // reset
@@ -507,10 +507,10 @@ GNEMultipleParametersDialog::~GNEMultipleParametersDialog() {}
 
 long
 GNEMultipleParametersDialog::onCmdAccept(FXObject*, FXSelector, void*) {
-    const auto& ACs = myParametersEditorInspector->getInspectorFrameParent()->getViewNet()->getInspectedAttributeCarriers();
+    const auto& ACs = myParametersEditor->getInspectorFrameParent()->getViewNet()->getInspectedAttributeCarriers();
     if (ACs.size() > 0) {
         // get undo list
-        GNEUndoList* undoList = myParametersEditorInspector->getInspectorFrameParent()->getViewNet()->getUndoList();
+        GNEUndoList* undoList = myParametersEditor->getInspectorFrameParent()->getViewNet()->getUndoList();
         // declare vector for parameters in stringvector format
         std::vector<std::pair<std::string, std::string> > parametersChanged;
         // declare keep keys vector
@@ -596,7 +596,7 @@ GNEMultipleParametersDialog::onCmdReset(FXObject*, FXSelector, void*) {
     // declare a map for key-values
     std::map<std::string, std::vector<std::string> > keyValuesMap;
     // fill keys
-    for (const auto& AC : myParametersEditorInspector->getInspectorFrameParent()->getViewNet()->getInspectedAttributeCarriers()) {
+    for (const auto& AC : myParametersEditor->getInspectorFrameParent()->getViewNet()->getInspectedAttributeCarriers()) {
         for (const auto& keyAttribute : AC->getACParametersMap()) {
             keyValuesMap[keyAttribute.first].push_back(keyAttribute.second);
         }

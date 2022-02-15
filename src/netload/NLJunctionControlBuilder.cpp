@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -296,7 +296,7 @@ NLJunctionControlBuilder::closeTrafficLightLogic(const std::string& basePath) {
             tlLogic = new MSActuatedTrafficLightLogic(getTLLogicControlToUse(),
                     myActiveKey, myActiveProgram, myOffset,
                     myActivePhases, step, (*i)->minDuration + myNet.getCurrentTimeStep(),
-                    myAdditionalParameter, basePath);
+                    myAdditionalParameter, basePath, myActiveConditions, myActiveAssignments);
             break;
         case TrafficLightType::NEMA:
             tlLogic = new NEMALogic(getTLLogicControlToUse(),
@@ -410,6 +410,8 @@ NLJunctionControlBuilder::initTrafficLightLogic(const std::string& id, const std
     myActiveKey = id;
     myActiveProgram = programID;
     myActivePhases.clear();
+    myActiveConditions.clear();
+    myActiveAssignments.clear();
     myAbsDuration = 0;
     myRequestSize = NO_REQUEST_SIZE;
     myLogicType = type;
@@ -424,6 +426,23 @@ NLJunctionControlBuilder::addPhase(MSPhaseDefinition* phase) {
     myActivePhases.push_back(phase);
     // add phase duration to the absolute duration
     myAbsDuration += phase->duration;
+}
+
+
+bool
+NLJunctionControlBuilder::addCondition(const std::string& id, const std::string& value) {
+    if (myActiveConditions.count(id) == 0) {
+        myActiveConditions[id] = value;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+void
+NLJunctionControlBuilder::addAssignment(const std::string& id, const std::string& check, const std::string& value) {
+    myActiveAssignments.push_back(std::make_tuple(id, check, value));
 }
 
 

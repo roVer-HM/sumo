@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -63,7 +63,8 @@
 #include <netedit/elements/demand/GNETranship.h>
 #include <netedit/elements/demand/GNETransport.h>
 #include <netedit/elements/demand/GNEVehicle.h>
-#include <netedit/elements/demand/GNEVehicleType.h>
+#include <netedit/elements/demand/GNEVType.h>
+#include <netedit/elements/demand/GNEVTypeDistribution.h>
 #include <netedit/elements/demand/GNEWalk.h>
 #include <netedit/elements/network/GNEConnection.h>
 #include <netedit/elements/network/GNECrossing.h>
@@ -155,7 +156,7 @@ GNEFrameModules::TagSelector::TagSelector(GNEFrame* frameParent, GNETagPropertie
 
 GNEFrameModules::TagSelector::~TagSelector() {
     // clear myACTemplates and myTagsMatchBox
-    for (const auto &ACTemplate : myACTemplates) {
+    for (const auto& ACTemplate : myACTemplates) {
         delete ACTemplate;
     }
     myACTemplates.clear();
@@ -171,6 +172,18 @@ GNEFrameModules::TagSelector::showTagSelector() {
 void
 GNEFrameModules::TagSelector::hideTagSelector() {
     hide();
+}
+
+
+GNEAttributeCarrier*
+GNEFrameModules::TagSelector::getTemplateAC(SumoXMLTag ACTag) const {
+    // clear myACTemplates and myTagsMatchBox
+    for (const auto& ACTemplate : myACTemplates) {
+        if (ACTemplate->getAC()->getTagProperty().getTag() == ACTag) {
+            return ACTemplate->getAC();
+        }
+    }
+    return nullptr;
 }
 
 
@@ -234,7 +247,7 @@ GNEFrameModules::TagSelector::setCurrentTagType(GNETagProperties::TagType tagTyp
             throw ProcessError("invalid tag property");
     }
     // clear myACTemplates and myTagsMatchBox
-    for (const auto &ACTemplate : myACTemplates) {
+    for (const auto& ACTemplate : myACTemplates) {
         delete ACTemplate;
     }
     myACTemplates.clear();
@@ -242,7 +255,7 @@ GNEFrameModules::TagSelector::setCurrentTagType(GNETagProperties::TagType tagTyp
     // get tag properties
     const auto tagProperties = GNEAttributeCarrier::getTagPropertiesByType(myTagType);
     // fill myACTemplates and myTagsMatchBox
-    for (const auto &tagProperty : tagProperties) {
+    for (const auto& tagProperty : tagProperties) {
         if ((!onlyDrawables || tagProperty.isDrawable()) && (!tagProperty.requireProj() || proj)) {
             myACTemplates.push_back(new ACTemplate(myFrameParent->getViewNet()->getNet(), tagProperty));
             myTagsMatchBox->appendIconItem(tagProperty.getFieldString().c_str(), GUIIconSubSys::getIcon(tagProperty.getGUIIcon()), tagProperty.getBackGroundColor());
@@ -326,7 +339,7 @@ GNEFrameModules::TagSelector::ACTemplate::getAC() const {
 
 GNEFrameModules::TagSelector::ACTemplate::ACTemplate(GNENet* net, const GNETagProperties tagProperty) :
     myAC(nullptr) {
-    // create attribute carrier depending of 
+    // create attribute carrier depending of
     switch (tagProperty.getTag()) {
         // additional elements
         case SUMO_TAG_BUS_STOP:
@@ -372,10 +385,10 @@ GNEFrameModules::TagSelector::ACTemplate::ACTemplate(GNENet* net, const GNETagPr
             myAC = new GNEVariableSpeedSignStep(net);
             break;
         case SUMO_TAG_CALIBRATOR:
-        case SUMO_TAG_LANECALIBRATOR:
+        case GNE_TAG_CALIBRATOR_LANE:
             myAC = new GNECalibrator(tagProperty.getTag(), net);
             break;
-        case GNE_TAG_FLOW_CALIBRATOR:
+        case GNE_TAG_CALIBRATOR_FLOW:
             myAC = new GNECalibratorFlow(net);
             break;
         case SUMO_TAG_REROUTER:
@@ -428,15 +441,19 @@ GNEFrameModules::TagSelector::ACTemplate::ACTemplate(GNENet* net, const GNETagPr
             myAC = new GNERoute(tagProperty.getTag(), net);
             break;
         case SUMO_TAG_VTYPE:
-        case SUMO_TAG_PTYPE:
-            myAC = new GNEVehicleType(tagProperty.getTag(), net);
+            myAC = new GNEVType(net);
+            break;
+        case SUMO_TAG_VTYPE_DISTRIBUTION:
+            myAC = new GNEVTypeDistribution(net);
             break;
         case SUMO_TAG_VEHICLE:
         case GNE_TAG_VEHICLE_WITHROUTE:
         case GNE_TAG_FLOW_ROUTE:
         case GNE_TAG_FLOW_WITHROUTE:
         case SUMO_TAG_TRIP:
+        case GNE_TAG_TRIP_JUNCTIONS:
         case SUMO_TAG_FLOW:
+        case GNE_TAG_FLOW_JUNCTIONS:
             myAC = new GNEVehicle(tagProperty.getTag(), net);
             break;
         case SUMO_TAG_STOP_LANE:
@@ -469,12 +486,14 @@ GNEFrameModules::TagSelector::ACTemplate::ACTemplate(GNENet* net, const GNETagPr
             break;
         case GNE_TAG_PERSONTRIP_EDGE:
         case GNE_TAG_PERSONTRIP_BUSSTOP:
+        case GNE_TAG_PERSONTRIP_JUNCTIONS:
             myAC = new GNEPersonTrip(tagProperty.getTag(), net);
             break;
         case GNE_TAG_WALK_EDGE:
         case GNE_TAG_WALK_BUSSTOP:
         case GNE_TAG_WALK_EDGES:
         case GNE_TAG_WALK_ROUTE:
+        case GNE_TAG_WALK_JUNCTIONS:
             myAC = new GNEWalk(tagProperty.getTag(), net);
             break;
         case GNE_TAG_RIDE_EDGE:
@@ -488,7 +507,7 @@ GNEFrameModules::TagSelector::ACTemplate::ACTemplate(GNENet* net, const GNETagPr
 }
 
 
- GNEFrameModules::TagSelector::ACTemplate::~ACTemplate() {
+GNEFrameModules::TagSelector::ACTemplate::~ACTemplate() {
     delete myAC;
 }
 
@@ -496,10 +515,10 @@ GNEFrameModules::TagSelector::ACTemplate::ACTemplate(GNENet* net, const GNETagPr
 // GNEFrameModules::DemandElementSelector - methods
 // ---------------------------------------------------------------------------
 
-GNEFrameModules::DemandElementSelector::DemandElementSelector(GNEFrame* frameParent, SumoXMLTag demandElementTag) :
+GNEFrameModules::DemandElementSelector::DemandElementSelector(GNEFrame* frameParent, SumoXMLTag demandElementTag, GNEDemandElement* defaultElement) :
     FXGroupBoxModule(frameParent->myContentFrame, ("Parent " + toString(demandElementTag)).c_str()),
     myFrameParent(frameParent),
-    myCurrentDemandElement(nullptr),
+    myCurrentDemandElement(defaultElement),
     myDemandElementTags({demandElementTag}) {
     // Create MFXIconComboBox
     myDemandElementsMatchBox = new MFXIconComboBox(getCollapsableFrame(), GUIDesignComboBoxNCol, this, MID_GNE_SET_TYPE, GUIDesignComboBox);
@@ -570,9 +589,6 @@ GNEFrameModules::DemandElementSelector::showDemandElementSelector() {
         if (myDemandElementTags.at(0) == SUMO_TAG_VTYPE) {
             const auto defaultVType = myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->retrieveDemandElement(SUMO_TAG_VTYPE, DEFAULT_VTYPE_ID);
             myDemandElementsMatchBox->setItem(defaultVType->getID().c_str(), defaultVType->getIcon());
-        } else if (myDemandElementTags.at(0) == SUMO_TAG_PTYPE) {
-            const auto defaultPType = myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->retrieveDemandElement(SUMO_TAG_VTYPE, DEFAULT_PEDTYPE_ID);
-            myDemandElementsMatchBox->setItem(defaultPType->getID().c_str(), defaultPType->getIcon());
         }
     }
     onCmdSelectDemandElement(nullptr, 0, nullptr);
@@ -600,26 +616,19 @@ GNEFrameModules::DemandElementSelector::refreshDemandElementSelector() {
     myDemandElementsMatchBox->clearItems();
     // fill myTypeMatchBox with list of demand elements
     for (const auto& demandElementTag : myDemandElementTags) {
-        // special case for VTypes and PTypes
+        // special case for VTypes
         if (demandElementTag == SUMO_TAG_VTYPE) {
-            // add default Vehicle an Bike types in the first and second positions
+            // add default  types in the first positions
             myDemandElementsMatchBox->appendIconItem(DEFAULT_VTYPE_ID.c_str(), GUIIconSubSys::getIcon(GUIIcon::VTYPE));
             myDemandElementsMatchBox->appendIconItem(DEFAULT_BIKETYPE_ID.c_str(), GUIIconSubSys::getIcon(GUIIcon::VTYPE));
+            myDemandElementsMatchBox->appendIconItem(DEFAULT_TAXITYPE_ID.c_str(), GUIIconSubSys::getIcon(GUIIcon::VTYPE));
+            myDemandElementsMatchBox->appendIconItem(DEFAULT_PEDTYPE_ID.c_str(), GUIIconSubSys::getIcon(GUIIcon::VTYPE));
+            myDemandElementsMatchBox->appendIconItem(DEFAULT_CONTAINERTYPE_ID.c_str(), GUIIconSubSys::getIcon(GUIIcon::VTYPE));
             // add rest of vTypes
             for (const auto& vType : demandElements.at(demandElementTag)) {
                 // avoid insert duplicated default vType
-                if ((vType->getID() != DEFAULT_VTYPE_ID) && (vType->getID() != DEFAULT_BIKETYPE_ID)) {
+                if (DEFAULT_VTYPES.count(vType->getID()) == 0) {
                     myDemandElementsMatchBox->appendIconItem(vType->getID().c_str(), vType->getIcon());
-                }
-            }
-        } else if (demandElementTag == SUMO_TAG_PTYPE) {
-            // add default Person type in the firs
-            myDemandElementsMatchBox->appendIconItem(DEFAULT_PEDTYPE_ID.c_str(), GUIIconSubSys::getIcon(GUIIcon::PTYPE));
-            // add rest of pTypes
-            for (const auto& pType : demandElements.at(demandElementTag)) {
-                // avoid insert duplicated default pType
-                if (pType->getID() != DEFAULT_PEDTYPE_ID) {
-                    myDemandElementsMatchBox->appendIconItem(pType->getID().c_str(), pType->getIcon());
                 }
             }
         } else {
@@ -647,9 +656,7 @@ GNEFrameModules::DemandElementSelector::refreshDemandElementSelector() {
     } else {
         // set first element in the list as myCurrentDemandElement (Special case for default person and vehicle type)
         if (myDemandElementsMatchBox->getItem(0).text() == DEFAULT_VTYPE_ID) {
-            myCurrentDemandElement = myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getDefaultVType();
-        } else if (myDemandElementsMatchBox->getItem(0).text() == DEFAULT_PEDTYPE_ID) {
-            myCurrentDemandElement = myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getDefaultPType();
+            myCurrentDemandElement = myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getDefaultType();
         } else {
             // disable myCurrentDemandElement
             myCurrentDemandElement = nullptr;
@@ -2403,6 +2410,13 @@ GNEFrameModules::PathCreator::showPathCreatorModule(SumoXMLTag element, const bo
             myCreationMode |= START_EDGE;
             myCreationMode |= END_EDGE;
             break;
+        case GNE_TAG_TRIP_JUNCTIONS:
+        case GNE_TAG_FLOW_JUNCTIONS:
+            myCreationMode |= SHOW_CANDIDATE_JUNCTIONS;
+            myCreationMode |= START_JUNCTION;
+            myCreationMode |= END_JUNCTION;
+            myCreationMode |= ONLY_FROMTO;
+            break;
         // walk edges
         case GNE_TAG_WALK_EDGES:
             myCreationMode |= SHOW_CANDIDATE_EDGES;
@@ -2426,6 +2440,14 @@ GNEFrameModules::PathCreator::showPathCreatorModule(SumoXMLTag element, const bo
             myCreationMode |= ONLY_FROMTO;
             myCreationMode |= END_BUSSTOP;
             break;
+        // junction->junction
+        case GNE_TAG_PERSONTRIP_JUNCTIONS:
+        case GNE_TAG_WALK_JUNCTIONS:
+            myCreationMode |= SHOW_CANDIDATE_JUNCTIONS;
+            myCreationMode |= START_JUNCTION;
+            myCreationMode |= END_JUNCTION;
+            myCreationMode |= ONLY_FROMTO;
+            break;
         // stops
         case GNE_TAG_STOPPERSON_BUSSTOP:
             myCreationMode |= SINGLE_ELEMENT;
@@ -2445,10 +2467,11 @@ GNEFrameModules::PathCreator::showPathCreatorModule(SumoXMLTag element, const bo
             showPathCreator = false;
             break;
     }
+    // update colors
+    updateEdgeColors();
+    updateJunctionColors();
     // check if show path creator
     if (showPathCreator) {
-        // update edge colors
-        updateEdgeColors();
         // recalc before show (to avoid graphic problems)
         recalc();
         // show modul
@@ -2480,6 +2503,57 @@ GNEFrameModules::PathCreator::setVClass(SUMOVehicleClass vClass) {
     myVClass = vClass;
     // update edge colors
     updateEdgeColors();
+}
+
+
+bool
+GNEFrameModules::PathCreator::addJunction(GNEJunction* junction, const bool /* shiftKeyPressed */, const bool /* controlKeyPressed */) {
+    // check if junctions are allowed
+    if (((myCreationMode & START_JUNCTION) + (myCreationMode & END_JUNCTION)) == 0) {
+        return false;
+    }
+    // check if only an junction is allowed
+    if ((myCreationMode & SINGLE_ELEMENT) && (mySelectedJunctions.size() == 1)) {
+        return false;
+    }
+    // continue depending of number of selected edge
+    if (mySelectedJunctions.size() > 0) {
+        // check double junctions
+        if (mySelectedJunctions.back() == junction) {
+            // Write warning
+            WRITE_WARNING("Double junctions aren't allowed");
+            // abort add junction
+            return false;
+        }
+    }
+    // check number of junctions
+    if (mySelectedJunctions.size() == 2 && (myCreationMode & Mode::ONLY_FROMTO)) {
+        // Write warning
+        WRITE_WARNING("Only two junctions are allowed");
+        // abort add junction
+        return false;
+    }
+    // All checks ok, then add it in selected elements
+    mySelectedJunctions.push_back(junction);
+    // enable abort route button
+    myAbortCreationButton->enable();
+    // enable finish button
+    myFinishCreationButton->enable();
+    // disable undo/redo
+    myFrameParent->myViewNet->getViewParent()->getGNEAppWindows()->disableUndoRedo("route creation");
+    // enable or disable remove last junction button
+    if (mySelectedJunctions.size() > 1) {
+        myRemoveLastInsertedElement->enable();
+    } else {
+        myRemoveLastInsertedElement->disable();
+    }
+    // recalculate path
+    recalculatePath();
+    // update info route label
+    updateInfoRouteLabel();
+    // update junction colors
+    updateJunctionColors();
+    return true;
 }
 
 
@@ -2564,9 +2638,15 @@ GNEFrameModules::PathCreator::addEdge(GNEEdge* edge, const bool shiftKeyPressed,
 }
 
 
-std::vector<GNEEdge*>
+const std::vector<GNEEdge*>&
 GNEFrameModules::PathCreator::getSelectedEdges() const {
     return mySelectedEdges;
+}
+
+
+const std::vector<GNEJunction*>&
+GNEFrameModules::PathCreator::getSelectedJunctions() const {
+    return mySelectedJunctions;
 }
 
 
@@ -2664,10 +2744,47 @@ GNEFrameModules::PathCreator::drawCandidateEdgesWithSpecialColor() const {
 
 
 void
+GNEFrameModules::PathCreator::updateJunctionColors() {
+    // clear junction colors
+    clearJunctionColors();
+    // check if show possible candidates
+    if (myCreationMode & SHOW_CANDIDATE_JUNCTIONS) {
+        // set candidate flags
+        for (const auto& junction : myFrameParent->myViewNet->getNet()->getAttributeCarriers()->getJunctions()) {
+            junction.second->resetCandidateFlags();
+            junction.second->setPossibleCandidate(true);
+        }
+    }
+    // set selected junctions
+    if (mySelectedJunctions.size() > 0) {
+        // mark selected eges
+        for (const auto& junction : mySelectedJunctions) {
+            junction->resetCandidateFlags();
+            junction->setSourceCandidate(true);
+        }
+        // finally mark last selected element as target
+        mySelectedJunctions.back()->resetCandidateFlags();
+        mySelectedJunctions.back()->setTargetCandidate(true);
+    }
+    // update view net
+    myFrameParent->myViewNet->updateViewNet();
+}
+
+
+void
 GNEFrameModules::PathCreator::updateEdgeColors() {
-    // reset all flags
-    for (const auto& edge : myFrameParent->myViewNet->getNet()->getAttributeCarriers()->getEdges()) {
-        edge.second->resetCandidateFlags();
+    // clear edge colors
+    clearEdgeColors();
+    // first check if show candidate edges
+    if (myShowCandidateEdges->getCheck() == TRUE && (myCreationMode & SHOW_CANDIDATE_EDGES)) {
+        // mark all edges that have at least one lane that allow given vClass
+        for (const auto& edge : myFrameParent->myViewNet->getNet()->getAttributeCarriers()->getEdges()) {
+            if (edge.second->getNBEdge()->getNumLanesThatAllow(myVClass) > 0) {
+                edge.second->setPossibleCandidate(true);
+            } else {
+                edge.second->setSpecialCandidate(true);
+            }
+        }
     }
     // set reachability
     if (mySelectedEdges.size() > 0) {
@@ -2675,6 +2792,7 @@ GNEFrameModules::PathCreator::updateEdgeColors() {
         if ((myShowCandidateEdges->getCheck() == TRUE) && (myCreationMode & SHOW_CANDIDATE_EDGES)) {
             // mark all edges as conflicted (to mark special candidates)
             for (const auto& edge : myFrameParent->myViewNet->getNet()->getAttributeCarriers()->getEdges()) {
+                edge.second->resetCandidateFlags();
                 edge.second->setConflictedCandidate(true);
             }
             // set special candidates (Edges that are connected but aren't compatibles with current vClass
@@ -2694,34 +2812,40 @@ GNEFrameModules::PathCreator::updateEdgeColors() {
         // finally mark last selected element as target
         mySelectedEdges.back()->resetCandidateFlags();
         mySelectedEdges.back()->setTargetCandidate(true);
-    } else if (myShowCandidateEdges->getCheck() == TRUE && (myCreationMode & SHOW_CANDIDATE_EDGES)) {
-        // mark all edges that have at least one lane that allow given vClass
-        for (const auto& edge : myFrameParent->myViewNet->getNet()->getAttributeCarriers()->getEdges()) {
-            if (edge.second->getNBEdge()->getNumLanesThatAllow(myVClass) > 0) {
-                edge.second->setPossibleCandidate(true);
-            } else {
-                edge.second->setSpecialCandidate(true);
-            }
-        }
     }
     // update view net
     myFrameParent->myViewNet->updateViewNet();
 }
 
 
-#if defined(_MSC_VER) && _MSC_VER == 1800
-#pragma warning(push)
-#pragma warning(disable: 4100) // do not warn about "unused" parameters which get optimized away
-#endif
+void
+GNEFrameModules::PathCreator::clearJunctionColors() {
+    // reset all junction flags
+    for (const auto& junction : myFrameParent->myViewNet->getNet()->getAttributeCarriers()->getJunctions()) {
+        junction.second->resetCandidateFlags();
+    }
+}
+
+
+void
+GNEFrameModules::PathCreator::clearEdgeColors() {
+    // reset all junction flags
+    for (const auto& edge : myFrameParent->myViewNet->getNet()->getAttributeCarriers()->getEdges()) {
+        edge.second->resetCandidateFlags();
+    }
+}
+
+
 void
 GNEFrameModules::PathCreator::drawTemporalRoute(const GUIVisualizationSettings& s) const {
+    const double lineWidth = 0.35;
+    const double lineWidthin = 0.25;
+    // Add a draw matrix
+    GLHelper::pushMatrix();
+    // Start with the drawing of the area traslating matrix to origin
+    glTranslated(0, 0, GLO_MAX - 0.1);
+    // check if draw bewteen junction or edges
     if (myPath.size() > 0) {
-        const double lineWidth = 0.35;
-        const double lineWidthin = 0.25;
-        // Add a draw matrix
-        GLHelper::pushMatrix();
-        // Start with the drawing of the area traslating matrix to origin
-        glTranslated(0, 0, GLO_MAX - 0.1);
         // set first color
         GLHelper::setColor(RGBColor::GREY);
         // iterate over path
@@ -2777,13 +2901,23 @@ GNEFrameModules::PathCreator::drawTemporalRoute(const GUIVisualizationSettings& 
                 }
             }
         }
-        // Pop last matrix
-        GLHelper::popMatrix();
+    } else if (mySelectedJunctions.size() > 0) {
+        // set color
+        GLHelper::setColor(RGBColor::ORANGE);
+        // draw line between junctions
+        for (int i = 0; i < (int)mySelectedJunctions.size() - 1; i++) {
+            // get two points
+            const Position posA = mySelectedJunctions.at(i)->getPositionInView();
+            const Position posB = mySelectedJunctions.at(i + 1)->getPositionInView();
+            const double rot = ((double)atan2((posB.x() - posA.x()), (posA.y() - posB.y())) * (double) 180.0 / (double)M_PI);
+            const double len = posA.distanceTo2D(posB);
+            // draw line
+            GLHelper::drawBoxLine(posA, rot, len, 0.25);
+        }
     }
+    // Pop last matrix
+    GLHelper::popMatrix();
 }
-#if defined(_MSC_VER) && _MSC_VER == 1800
-#pragma warning(pop)
-#endif
 
 
 void
@@ -2796,7 +2930,7 @@ GNEFrameModules::PathCreator::createPath() {
 void
 GNEFrameModules::PathCreator::abortPathCreation() {
     // first check that there is elements
-    if ((mySelectedEdges.size() > 0) || myToStoppingPlace || myRoute) {
+    if ((mySelectedJunctions.size() > 0) || (mySelectedEdges.size() > 0) || myToStoppingPlace || myRoute) {
         // unblock undo/redo
         myFrameParent->myViewNet->getViewParent()->getGNEAppWindows()->enableUndoRedo();
         // clear edges
@@ -2807,7 +2941,9 @@ GNEFrameModules::PathCreator::abortPathCreation() {
         myRemoveLastInsertedElement->disable();
         // update info route label
         updateInfoRouteLabel();
-        // update reachability
+        // update junction colors
+        updateJunctionColors();
+        // update edge colors
         updateEdgeColors();
         // update view (to see the new route)
         myFrameParent->getViewNet()->updateViewNet();
@@ -2837,7 +2973,9 @@ GNEFrameModules::PathCreator::removeLastElement() {
         recalculatePath();
         // update info route label
         updateInfoRouteLabel();
-        // update reachability
+        // update junction colors
+        updateJunctionColors();
+        // update edge colors
         updateEdgeColors();
         // update view
         myFrameParent->myViewNet->updateViewNet();
@@ -2918,11 +3056,11 @@ GNEFrameModules::PathCreator::updateInfoRouteLabel() {
 
 void
 GNEFrameModules::PathCreator::clearPath() {
-    // reset all flags
-    for (const auto& edge : myFrameParent->myViewNet->getNet()->getAttributeCarriers()->getEdges()) {
-        edge.second->resetCandidateFlags();
-    }
-    // clear edges, additionals and route
+    /// reset flags
+    clearJunctionColors();
+    clearEdgeColors();
+    // clear junction, edges, additionals and route
+    mySelectedJunctions.clear();
     mySelectedEdges.clear();
     myToStoppingPlace = nullptr;
     myRoute = nullptr;

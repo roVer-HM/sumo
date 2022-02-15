@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -39,7 +39,7 @@
 #include <cassert>
 #include <algorithm>
 #ifdef HAVE_FOX
-#include <utils/foxtools/FXConditionalLock.h>
+#include <utils/common/ScopedLocker.h>
 #endif
 #include <microsim/MSLane.h>
 #include <microsim/MSEdge.h>
@@ -82,9 +82,11 @@ MSE2Collector::MSE2Collector(const std::string& id,
     myCurrentMeanSpeed(0),
     myCurrentMeanLength(0),
     myCurrentJamNo(0),
+    myCurrentMaxJamLengthInMeters(0),
     myCurrentJamLengthInMeters(0),
     myCurrentJamLengthInVehicles(0),
-    myCurrentHaltingsNumber(0) {
+    myCurrentHaltingsNumber(0),
+    myOverrideVehNumber(-1) {
     reset();
 
 #ifdef DEBUG_E2_CONSTRUCTOR
@@ -182,7 +184,8 @@ MSE2Collector::MSE2Collector(const std::string& id,
     myCurrentJamNo(0),
     myCurrentJamLengthInMeters(0),
     myCurrentJamLengthInVehicles(0),
-    myCurrentHaltingsNumber(0) {
+    myCurrentHaltingsNumber(0),
+    myOverrideVehNumber(-1) {
     reset();
 
     for (std::vector<MSLane*>::const_iterator i = lanes.begin(); i != lanes.end(); ++i) {
@@ -621,7 +624,7 @@ MSE2Collector::notifyMove(SUMOTrafficObject& veh, double oldPos,
         return keep;
     }
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myNotificationMutex, MSGlobals::gNumSimThreads > 1);
+    ScopedLocker<> lock(myNotificationMutex, MSGlobals::gNumSimThreads > 1);
 #endif
     VehicleInfoMap::iterator vi = myVehicleInfos.find(veh.getID());
     assert(vi != myVehicleInfos.end()); // all vehicles calling notifyMove() should have called notifyEnter() before
@@ -703,7 +706,7 @@ MSE2Collector::notifyLeave(SUMOTrafficObject& veh, double /*lastPos*/, MSMoveRem
 #endif
 
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myNotificationMutex, MSGlobals::gNumSimThreads > 1);
+    ScopedLocker<> lock(myNotificationMutex, MSGlobals::gNumSimThreads > 1);
 #endif
     if (reason == MSMoveReminder::NOTIFICATION_JUNCTION && !veh.isPerson()) {
         // vehicle left lane via junction, unsubscription and registering in myLeftVehicles when
@@ -805,7 +808,7 @@ MSE2Collector::notifyEnter(SUMOTrafficObject& veh, MSMoveReminder::Notification 
 #endif
 
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myNotificationMutex, MSGlobals::gNumSimThreads > 1);
+    ScopedLocker<> lock(myNotificationMutex, MSGlobals::gNumSimThreads > 1);
 #endif
     const std::string& vehID = veh.getID();
     VehicleInfoMap::iterator vi = myVehicleInfos.find(vehID);
@@ -1458,12 +1461,21 @@ MSE2Collector::reset() {
 int
 MSE2Collector::getCurrentVehicleNumber() const {
     int result = 0;
-    for (VehicleInfoMap::const_iterator it = myVehicleInfos.begin(); it != myVehicleInfos.end(); it++) {
-        if (it->second->onDetector) {
-            result++;
+    if (myOverrideVehNumber >= 0){
+        result = myOverrideVehNumber;
+    } else {
+        for (VehicleInfoMap::const_iterator it = myVehicleInfos.begin(); it != myVehicleInfos.end(); it++) {
+            if (it->second->onDetector) {
+                result++;
+            }
         }
     }
     return result;
+}
+
+void
+MSE2Collector::overrideVehicleNumber(int num){
+    myOverrideVehNumber = num;
 }
 
 

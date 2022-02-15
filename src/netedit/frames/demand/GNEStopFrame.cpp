@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -172,6 +172,11 @@ GNEStopFrame::show() {
 
 bool
 GNEStopFrame::addStop(const GNEViewNetHelper::ObjectsUnderCursor& objectsUnderCursor, const GNEViewNetHelper::MouseButtonKeyPressed& mouseButtonKeyPressed) {
+    // first check stop type
+    if (myStopTagSelector->getCurrentTemplateAC() == nullptr) {
+        WRITE_WARNING("Selected Stop type isn't valid.");
+        return false;
+    }
     // check if we're selecting a new stop parent
     if (mouseButtonKeyPressed.shiftKeyPressed()) {
         if (objectsUnderCursor.getDemandElementFront() &&
@@ -183,7 +188,6 @@ GNEStopFrame::addStop(const GNEViewNetHelper::ObjectsUnderCursor& objectsUnderCu
             WRITE_WARNING("Selected Stop parent isn't valid.");
             return false;
         }
-
     } else {
         // now check if stop parent selector is valid
         if (myStopParentSelector->getCurrentDemandElement() == nullptr) {
@@ -196,7 +200,7 @@ GNEStopFrame::addStop(const GNEViewNetHelper::ObjectsUnderCursor& objectsUnderCu
         if (myStopParentBaseObject->getTag() != SUMO_TAG_NOTHING) {
             myRouteHandler.buildStop(myStopParentBaseObject->getSumoBaseObjectChildren().front(),
                                      myStopParentBaseObject->getSumoBaseObjectChildren().front()->getStopParameter());
-            // show all trips 
+            // show all trips
             if (myStopTagSelector->getCurrentTemplateAC()->getTagProperty().isStop()) {
                 myViewNet->getDemandViewOptions().menuCheckShowAllTrips->setChecked(TRUE);
             } else {
@@ -291,8 +295,34 @@ GNEStopFrame::getStopParameter(const SumoXMLTag stopTag, const GNELane* lane, co
         myStopAttributes->showWarningMessage();
         return false;
     }
-    // get parent
+    // get stop parent
     const GNEDemandElement* stopParent = myStopParentSelector->getCurrentDemandElement();
+    // if stopParent is a route, check that stop is placed over a route's edge
+    if (stopParent->isRoute() && lane) {
+        bool found = false;
+        for (const auto& edge : stopParent->getParentEdges()) {
+            if (edge == lane->getParentEdge()) {
+                found = true;
+            }
+        }
+        if (!found) {
+            WRITE_WARNING("Stop must be placed over a route's edge");
+            return false;
+        }
+    }
+    // same if stoParent is a vehicle/flow with embedded route
+    if (stopParent->getChildDemandElements().size() > 0 && stopParent->getChildDemandElements().front()->getTagProperty().isRoute() && lane) {
+        bool found = false;
+        for (const auto& edge : stopParent->getChildDemandElements().front()->getParentEdges()) {
+            if (edge == lane->getParentEdge()) {
+                found = true;
+            }
+        }
+        if (!found) {
+            WRITE_WARNING("Stop must be placed over an embeded route's edge");
+            return false;
+        }
+    }
     // set parent tag and id
     myStopParentBaseObject->setTag(stopParent->getTagProperty().getTag());
     myStopParentBaseObject->addStringAttribute(SUMO_ATTR_ID, stopParent->getID());

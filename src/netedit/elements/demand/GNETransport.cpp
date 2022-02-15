@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -36,8 +36,8 @@
 
 GNETransport::GNETransport(SumoXMLTag tag, GNENet* net) :
     GNEDemandElement("", net, GLO_TRANSPORT, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {}, {}),
-    myArrivalPosition(0) {
+{}, {}, {}, {}, {}, {}, {}, {}),
+myArrivalPosition(0) {
     // reset default values
     resetDefaultValues();
 }
@@ -45,17 +45,17 @@ GNETransport::GNETransport(SumoXMLTag tag, GNENet* net) :
 
 GNETransport::GNETransport(GNENet* net, GNEDemandElement* containerParent, GNEEdge* fromEdge, GNEEdge* toEdge, const std::vector<std::string>& lines, const double arrivalPosition) :
     GNEDemandElement(containerParent, net, GLO_TRANSPORT, GNE_TAG_TRANSPORT_EDGE, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {fromEdge, toEdge}, {}, {}, {}, {}, {containerParent}, {}),
-    myLines(lines),
-    myArrivalPosition(arrivalPosition) {
+{}, {fromEdge, toEdge}, {}, {}, {}, {}, {containerParent}, {}),
+myLines(lines),
+myArrivalPosition(arrivalPosition) {
 }
 
 
 GNETransport::GNETransport(GNENet* net, GNEDemandElement* containerParent, GNEEdge* fromEdge, GNEAdditional* toContainerStop, const std::vector<std::string>& lines, const double arrivalPosition) :
     GNEDemandElement(containerParent, net, GLO_TRANSPORT, GNE_TAG_TRANSPORT_CONTAINERSTOP, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {fromEdge}, {}, {toContainerStop}, {}, {}, {containerParent}, {}),
-    myLines(lines),
-    myArrivalPosition(arrivalPosition) {
+{}, {fromEdge}, {}, {toContainerStop}, {}, {}, {containerParent}, {}),
+myLines(lines),
+myArrivalPosition(arrivalPosition) {
 }
 
 
@@ -136,23 +136,22 @@ GNETransport::writeDemandElement(OutputDevice& device) const {
 }
 
 
-bool
+GNEDemandElement::Problem
 GNETransport::isDemandElementValid() const {
     if (getParentEdges().size() == 2) {
         if (getParentEdges().at(0) == getParentEdges().at(1)) {
             // from and to are the same edges, then path is valid
-            return true;
+            return Problem::OK;
         } else {
             // check if exist a route between parent edges
-            return (myNet->getPathManager()->getPathCalculator()->calculateDijkstraPath(getParentDemandElements().at(0)->getVClass(), getParentEdges()).size() > 0);
+            if (myNet->getPathManager()->getPathCalculator()->calculateDijkstraPath(getParentDemandElements().at(0)->getVClass(), getParentEdges()).size() > 0) {
+                return Problem::OK;
+            } else {
+                return Problem::INVALID_PATH;
+            }
         }
-        /*
-            } else if (getPath().size() > 0) {
-                // if path edges isn't empty, then there is a valid route
-                return true;
-        */
     } else {
-        return false;
+        return Problem::INVALID_ELEMENT;;
     }
 }
 
@@ -542,7 +541,7 @@ GNETransport::setAttribute(SumoXMLAttr key, const std::string& value) {
 
 void
 GNETransport::toogleAttribute(SumoXMLAttr /*key*/, const bool /*value*/, const int /*previousParameters*/) {
-    throw InvalidArgument("Nothing to enable");
+    // nothing to toogle
 }
 
 

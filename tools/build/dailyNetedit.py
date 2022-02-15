@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2008-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -29,10 +29,7 @@ import datetime
 import optparse
 import os
 import glob
-import subprocess
 import sys
-import logging
-import logging.handlers
 
 import status
 
@@ -61,8 +58,7 @@ def runTests(options, env, gitrev, debugSuffix=""):
     taskID = os.path.basename(tasks[today.toordinal() % len(tasks)])[10:]
     cmd = [ttBin, "-b", prefix, "-a", taskID, "-name", "%sr%s" % (today.strftime("%d%b%y"), gitrev)]
     for call in (cmd, [ttBin, "-b", env["FILEPREFIX"], "-coll"]):
-        status.log_subprocess_output(subprocess.Popen(
-            call, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True))
+        status.log_subprocess(call, env)
     status.killall((debugSuffix,), BINARIES)
 
 
@@ -90,14 +86,7 @@ msvcVersion = "msvc16"
 platform = "x64"
 env["FILEPREFIX"] = msvcVersion + options.suffix + platform
 prefix = os.path.join(options.remoteDir, env["FILEPREFIX"])
-testLog = prefix + "NeteditTest.log"
 gitrev = sumolib.version.gitDescribe()
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-try:
-    handler = logging.handlers.TimedRotatingFileHandler(testLog, when="d", interval=1, backupCount=5)
-    logger.addHandler(handler)
-except Exception as e:
-    logger.error(e)
-logger.info(u"%s: %s" % (datetime.datetime.now(), "Running tests."))
+status.set_rotating_log(prefix + "NeteditTest.log")
+status.printLog("Running tests.")
 runTests(options, env, gitrev)

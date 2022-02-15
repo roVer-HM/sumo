@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -144,7 +144,7 @@ public:
         /// @brief menu command for transform all selected vehicles to flow
         FXMenuCommand* myTransformAllVehiclesToFlow;
     };
-    
+
     /// @brief default constructor
     GNEVehicle(SumoXMLTag tag, GNENet* net);
 
@@ -157,11 +157,17 @@ public:
     /// @brief parameter constructor for vehicles and routeFlows with embedded routes (note: After creation create immediately a embedded route referencing this vehicle)
     GNEVehicle(SumoXMLTag tag, GNENet* net, GNEDemandElement* vehicleType, const SUMOVehicleParameter& vehicleParameters);
 
-    /// @brief default constructor for trips and Flows
+    /// @brief default constructor for trips and Flows over edges
     GNEVehicle(SumoXMLTag tag, GNENet* net, const std::string& vehicleID, GNEDemandElement* vehicleType, GNEEdge* fromEdge, GNEEdge* toEdge, const std::vector<GNEEdge*>& via);
 
-    /// @brief parameter constructor for trips and Flows
+    /// @brief parameter constructor for trips and Flows over junctions
     GNEVehicle(SumoXMLTag tag, GNENet* net, GNEDemandElement* vehicleType, GNEEdge* fromEdge, GNEEdge* toEdge, const std::vector<GNEEdge*>& via, const SUMOVehicleParameter& vehicleParameters);
+
+    /// @brief default constructor for trips and Flows over junctions
+    GNEVehicle(SumoXMLTag tag, GNENet* net, const std::string& vehicleID, GNEDemandElement* vehicleType, GNEJunction* fromJunction, GNEJunction* toJunction);
+
+    /// @brief parameter constructor for trips and Flows over junctions
+    GNEVehicle(SumoXMLTag tag, GNENet* net, GNEDemandElement* vehicleType, GNEJunction* fromJunction, GNEJunction* toJunction, const SUMOVehicleParameter& vehicleParameters);
 
     /// @brief destructor
     ~GNEVehicle();
@@ -183,7 +189,7 @@ public:
     void writeDemandElement(OutputDevice& device) const;
 
     /// @brief check if current demand element is valid to be writed into XML (by default true, can be reimplemented in children)
-    bool isDemandElementValid() const;
+    Problem isDemandElementValid() const;
 
     /// @brief return a string with the current demand element problem (by default empty, can be reimplemented in children)
     std::string getDemandElementProblem() const;
@@ -364,6 +370,9 @@ private:
 
     /// @brief draw flow label
     void drawFlowLabel(const Position& vehiclePosition, const double vehicleRotation, const double width, const double length, const double exaggeration) const;
+
+    /// @brief draw junction line
+    void drawJunctionLine() const;
 
     /// @brief Invalidated copy constructor.
     GNEVehicle(const GNEVehicle&) = delete;

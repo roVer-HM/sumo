@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -182,7 +182,7 @@ public:
      * @param[in] inComment Whether -- in input shall be converted to &#45;&#45; (semantically equivalent but allowed in XML comments)
      */
     void writeConfiguration(std::ostream& os, const bool filled,
-                            const bool complete, const bool addComments,
+                            const bool complete, const bool addComments, const std::string& relativeTo = "",
                             const bool inComment = false) const;
 
 

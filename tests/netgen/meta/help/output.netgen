@@ -1,5 +1,5 @@
-Eclipse SUMO netgenerate Version v1_10_0+0213-4059ee3
- Copyright (C) 2001-2021 German Aerospace Center (DLR) and others; https://sumo.dlr.de
+Eclipse SUMO netgenerate Version v1_12_0+0087-1185162ac9e
+ Copyright (C) 2001-2022 German Aerospace Center (DLR) and others; https://sumo.dlr.de
 Synthetic network generator for the microscopic, multi-modal traffic simulation
  SUMO.
 
@@ -10,6 +10,8 @@ Usage: netgenerate [OPTION]*
 Configuration Options:
   -c, --configuration-file FILE        Loads the named config on startup
   -C, --save-configuration FILE        Saves current configuration into FILE
+  --save-configuration.relative        Enforce relative paths when saving the
+                                        configuration
   --save-template FILE                 Saves a configuration template (empty)
                                         into FILE
   --save-schema FILE                   Saves the configuration schema into FILE
@@ -359,6 +361,8 @@ Junctions Options:
   --junctions.higher-speed             Use maximum value of incoming and
                                         outgoing edge speed on junction instead
                                         of average
+  --internal-junctions.vehicle-width FLOAT  Assumed vehicle width for computing
+                                        internal junction positions
   --rectangular-lane-cut               Forces rectangular cuts between lanes
                                         and intersections
   --check-lane-foes.roundabout         Allow driving onto a multi-lane road if

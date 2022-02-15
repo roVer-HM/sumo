@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -76,7 +76,7 @@ class SUMOTrafficObject;
  */
 
 
-class MSE2Collector : public MSMoveReminder, public MSDetectorFileOutput, public Parameterised {
+class MSE2Collector : public MSMoveReminder, public MSDetectorFileOutput {
 public:
     /** @brief A VehicleInfo stores values that are tracked for the individual vehicles on the detector,
      *         e.g., accumulated timeloss. These infos are stored in myVehicles. If a vehicle leaves the detector
@@ -517,6 +517,14 @@ public:
     /** @brief Remove all vehicles before quick-loading state */
     virtual void clearState();
 
+    /** @brief Persistently overrides the number of vehicles on top of the detector 
+     * Setting a negative value removes the override
+    */
+    void overrideVehicleNumber(int num);
+
+    double getOverrideVehNumber() const {
+        return myOverrideVehNumber;
+    }
 private:
 
     /** @brief checks whether the vehicle stands in a jam
@@ -772,6 +780,9 @@ private:
     int myCurrentHaltingsNumber;
     /// @}
 
+    
+    /// @brief stores the overriden (via Traci) number of vehicles on detector 
+    int myOverrideVehNumber;
 
 private:
     /// @brief Invalidated copy constructor.

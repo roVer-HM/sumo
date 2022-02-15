@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,19 +35,19 @@ netedit.additionalMode()
 netedit.changeElement("chargingStation")
 
 # set invalid chargeDelay (dummy)
-netedit.changeDefaultValue(8, "dummyChargeDelay")
+netedit.changeDefaultValue(netedit.attrs.chargingStation.create.chargeDelay, "dummyChargeDelay")
 
 # try to create chargingStation in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)
 
 # set invalid chargeDelay (negative)
-netedit.changeDefaultValue(8, "-50")
+netedit.changeDefaultValue(netedit.attrs.chargingStation.create.chargeDelay, "-50")
 
 # try to create chargingStation in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)
 
 # set valid chargeDelay (double)
-netedit.changeDefaultValue(8, "20.5")
+netedit.changeDefaultValue(netedit.attrs.chargingStation.create.chargeDelay, "20.5")
 
 # try to create chargingStation in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)

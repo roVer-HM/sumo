@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -291,7 +291,7 @@ public:
      */
     class PersonTrip : public PlanItem {
     public:
-        PersonTrip(const ROEdge* _to, const std::string _stopDest) : 
+        PersonTrip(const ROEdge* _to, const std::string _stopDest) :
             from(0), to(_to), modes(SVC_PEDESTRIAN), dep(0), arr(0), stopDest(_stopDest), walkFactor(1.0) {}
         PersonTrip(const ROEdge* const _from, const ROEdge* const _to, const SVCPermissions modeSet,
                    const double departPos, const std::string& _stopOrigin, const double arrivalPos, const std::string& _stopDest, double _walkFactor, const std::string& _group) :

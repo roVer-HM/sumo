@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -29,7 +29,7 @@
 #include <netedit/elements/demand/GNERoute.h>
 #include <netedit/elements/additional/GNECalibrator.h>
 #include <netedit/elements/additional/GNECalibratorFlow.h>
-#include <netedit/elements/demand/GNEVehicleType.h>
+#include <netedit/elements/demand/GNEVType.h>
 
 #include "GNECalibratorDialog.h"
 #include "GNECalibratorFlowDialog.h"
@@ -89,7 +89,7 @@ GNECalibratorDialog::GNECalibratorDialog(GNECalibrator* editedCalibrator) :
     // create add buton and label for flows in right frame
     FXHorizontalFrame* buttonAndLabelFlow = new FXHorizontalFrame(columnRight, GUIDesignAuxiliarHorizontalFrame);
     myAddFlow = new FXButton(buttonAndLabelFlow, "", GUIIconSubSys::getIcon(GUIIcon::ADD), this, MID_GNE_CALIBRATORDIALOG_ADD_FLOW, GUIDesignButtonIcon);
-    myLabelFlow = new FXLabel(buttonAndLabelFlow, ("Add new " + toString(GNE_TAG_FLOW_CALIBRATOR) + "s").c_str(), nullptr, GUIDesignLabelThick);
+    myLabelFlow = new FXLabel(buttonAndLabelFlow, ("Add new " + toString(GNE_TAG_CALIBRATOR_FLOW) + "s").c_str(), nullptr, GUIDesignLabelThick);
 
     // Create table in right frame
     myFlowList = new FXTable(columnRight, this, MID_GNE_CALIBRATORDIALOG_TABLE_FLOW, GUIDesignTableAdditionals);
@@ -175,8 +175,8 @@ GNECalibratorDialog::onCmdClickedRoute(FXObject*, FXSelector, void*) {
                 WRITE_DEBUG("Opening FXMessageBox of type 'question'");
                 // open question dialog box
                 const std::string msg = ("Deletion of " + toString(SUMO_TAG_ROUTE) + " '" + myRouteList->getItem(i, 0)->getText().text() + "' will remove " +
-                                         toString(calibratorFlowsToErase.size()) + " " + toString(GNE_TAG_FLOW_CALIBRATOR) + (calibratorFlowsToErase.size() > 1 ? ("s") : ("")) + ". Continue?");
-                FXuint answer = FXMessageBox::question(getApp(), MBOX_YES_NO, ("Remove " + toString(GNE_TAG_FLOW_CALIBRATOR) + "s").c_str(), "%s", msg.c_str());
+                                         toString(calibratorFlowsToErase.size()) + " " + toString(GNE_TAG_CALIBRATOR_FLOW) + (calibratorFlowsToErase.size() > 1 ? ("s") : ("")) + ". Continue?");
+                FXuint answer = FXMessageBox::question(getApp(), MBOX_YES_NO, ("Remove " + toString(GNE_TAG_CALIBRATOR_FLOW) + "s").c_str(), "%s", msg.c_str());
                 if (answer != 1) { //1:yes, 2:no, 4:esc
                     // write warning if netedit is running in testing mode
                     if (answer == 2) {
@@ -226,7 +226,7 @@ long
 GNECalibratorDialog::onCmdAddFlow(FXObject*, FXSelector, void*) {
     // get routes and vTypes
     const auto& routes = myEditedAdditional->getNet()->getViewNet()->getNet()->getAttributeCarriers()->getDemandElements().at(SUMO_TAG_ROUTE);
-    GNEDemandElement* defaultVType = myEditedAdditional->getNet()->getViewNet()->getNet()->getAttributeCarriers()->getDefaultVType();
+    GNEDemandElement* defaultVType = myEditedAdditional->getNet()->getViewNet()->getNet()->getAttributeCarriers()->getDefaultType();
     // only add flow if there is at least a GNERoute (There is always a Vehicle Type)
     if (routes.size() > 0) {
         // create new calibrator and configure it with GNECalibratorFlowDialog
@@ -267,7 +267,7 @@ long
 GNECalibratorDialog::onCmdAddVehicleType(FXObject*, FXSelector, void*) {
     // create a new Vehicle Type and configure it with GNEVehicleTypeDialog
     std::string vehicleTypeID = myEditedAdditional->getNet()->getViewNet()->getNet()->getAttributeCarriers()->generateDemandElementID(SUMO_TAG_VTYPE);
-    GNEVehicleTypeDialog(new GNEVehicleType(myEditedAdditional->getNet(), vehicleTypeID, SVC_PASSENGER, SUMO_TAG_VTYPE), false);
+    GNEVehicleTypeDialog(new GNEVType(myEditedAdditional->getNet(), vehicleTypeID, SVC_PASSENGER), false);
     // update vehicle types table
     updateVehicleTypeTable();
     return 1;
@@ -296,8 +296,8 @@ GNECalibratorDialog::onCmdClickedVehicleType(FXObject*, FXSelector, void*) {
             // if there are flows that has vehicle type to remove as "vehicle type" parameter
             if (calibratorFlowsToErase.size() > 0) {
                 const std::string msg = ("Deletion of " + toString(SUMO_TAG_VTYPE) + " '" + myVehicleTypeList->getItem(i, 0)->getText().text() + "' will remove " +
-                                         toString(calibratorFlowsToErase.size()) + " " + toString(GNE_TAG_FLOW_CALIBRATOR) + (calibratorFlowsToErase.size() > 1 ? ("s") : ("")) + ". Continue?");
-                FXuint answer = FXMessageBox::question(getApp(), MBOX_YES_NO, ("Remove " + toString(GNE_TAG_FLOW_CALIBRATOR) + "s").c_str(), "%s", msg.c_str());
+                                         toString(calibratorFlowsToErase.size()) + " " + toString(GNE_TAG_CALIBRATOR_FLOW) + (calibratorFlowsToErase.size() > 1 ? ("s") : ("")) + ". Continue?");
+                FXuint answer = FXMessageBox::question(getApp(), MBOX_YES_NO, ("Remove " + toString(GNE_TAG_CALIBRATOR_FLOW) + "s").c_str(), "%s", msg.c_str());
                 if (answer != 1) { //1:yes, 2:no, 4:esc
                     // write warning if netedit is running in testing mode
                     if (answer == 2) {
@@ -474,7 +474,7 @@ GNECalibratorDialog::updateFlowAndLabelButton() {
     } else {
         myAddFlow->enable();
         myFlowList->enable();
-        myLabelFlow->setText(("Add new " + toString(GNE_TAG_FLOW_CALIBRATOR) + "s").c_str());
+        myLabelFlow->setText(("Add new " + toString(GNE_TAG_CALIBRATOR_FLOW) + "s").c_str());
     }
 }
 

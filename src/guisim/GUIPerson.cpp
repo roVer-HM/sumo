@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -26,6 +26,7 @@
 #include <microsim/transportables/MSTransportableControl.h>
 #include <microsim/logging/FunctionBinding.h>
 #include <microsim/transportables/MSPModel_Striping.h>
+#include <utils/common/ScopedLocker.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
 #include <utils/gui/div/GUIParameterTableWindow.h>
@@ -659,13 +660,10 @@ GUIPerson::getStageArrivalPos() const {
 
 bool
 GUIPerson::proceed(MSNet* net, SUMOTime time, const bool vehicleArrived) {
-    const MSEdge* current = getEdge();
     // acquire lock before locking the person to avoid mutual deadlock (#9468)
-    current->lock();
+    ScopedLocker<const MSEdge, true> edgeLocker(*getEdge());
     FXMutexLock locker(myLock);
-    const bool planContinues = MSTransportable::proceed(net, time, vehicleArrived);
-    current->unlock();
-    return planContinues;
+    return MSTransportable::proceed(net, time, vehicleArrived);
 }
 
 // -------------------------------------------------------------------------

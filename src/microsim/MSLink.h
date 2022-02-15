@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -740,6 +740,9 @@ private:
 
     /// @brief whether this connection is an indirect turning movement
     const bool myAmIndirect;
+
+    /// @brief the turning radius for this link or doublemax for straight links
+    double myRadius;
 
     /// @brief the junction to which this link belongs
     MSJunction* myJunction;

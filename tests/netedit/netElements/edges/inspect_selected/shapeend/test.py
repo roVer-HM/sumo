@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -51,20 +51,21 @@ netedit.forceSaveAdditionals()
 
 # inspect selected edges
 netedit.leftClick(referencePosition, 250, 180)
+
 # Change parameter 15 with a non valid value (dummy)
-netedit.modifyAttribute(15, "dummyShapeEnd", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspectSelection.shapeEnd, "dummyShapeEnd", False)
 
 # Change parameter 15 with a non valid value (non valid position)
-netedit.modifyAttribute(15, "24", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspectSelection.shapeEnd, "24", False)
 
 # Change parameter 15 with a duplicated value (See #3157)
-netedit.modifyAttribute(15, "14,15.5", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspectSelection.shapeEnd, "14,15.5", False)
 
 # Change parameter 15 with a valid value (empty)
-netedit.modifyAttribute(15, "", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspectSelection.shapeEnd, "", False)
 
 # Change parameter 15 with a valid value
-netedit.modifyAttribute(15, "34,15.5", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspectSelection.shapeEnd, "34,15.5", False)
 
 # recompute
 netedit.rebuildNetwork()

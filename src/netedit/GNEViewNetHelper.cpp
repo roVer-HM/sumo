@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -951,6 +951,16 @@ GNEViewNetHelper::MoveSingleElementValues::beginMoveNetworkElementShape() {
         } else {
             return false;
         }
+    } else if (myViewNet->myObjectsUnderCursor.getLaneFront() && (myViewNet->myObjectsUnderCursor.getLaneFront() == editedElement)) {
+        // get move operation
+        GNEMoveOperation* moveOperation = myViewNet->myObjectsUnderCursor.getLaneFront()->getMoveOperation();
+        // continue if move operation is valid
+        if (moveOperation) {
+            myMoveOperations.push_back(moveOperation);
+            return true;
+        } else {
+            return false;
+        }
     } else if (myViewNet->myObjectsUnderCursor.getCrossingFront() && (myViewNet->myObjectsUnderCursor.getCrossingFront() == editedElement)) {
         // get move operation
         GNEMoveOperation* moveOperation = myViewNet->myObjectsUnderCursor.getCrossingFront()->getMoveOperation();
@@ -1600,6 +1610,8 @@ GNEViewNetHelper::TestingMode::drawTestingElements(GUIMainWindow* mainWindow) {
         GLHelper::pushMatrix();
         const double size = myViewNet->p2m(32);
         Position center = myViewNet->screenPos2NetPos(8, 8);
+        // magenta
+        GLHelper::pushMatrix();
         GLHelper::setColor(RGBColor::MAGENTA);
         glTranslated(center.x(), center.y(), GLO_TESTELEMENT);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -1610,8 +1622,34 @@ GNEViewNetHelper::TestingMode::drawTestingElements(GUIMainWindow* mainWindow) {
         glVertex2d(size, 0);
         glEnd();
         GLHelper::popMatrix();
+        // blue
         GLHelper::pushMatrix();
+        GLHelper::setColor(RGBColor::BLUE);
+        glTranslated(center.x(), center.y(), GLO_TESTELEMENT + 1);
+        glScaled(0.7, 0.7, 0);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glBegin(GL_QUADS);
+        glVertex2d(0, 0);
+        glVertex2d(0, -size);
+        glVertex2d(size, -size);
+        glVertex2d(size, 0);
+        glEnd();
+        GLHelper::popMatrix();
+        // yellow
+        GLHelper::pushMatrix();
+        GLHelper::setColor(RGBColor::YELLOW);
+        glTranslated(center.x(), center.y(), GLO_TESTELEMENT + 2);
+        glScaled(0.4, 0.4, 0);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glBegin(GL_QUADS);
+        glVertex2d(0, 0);
+        glVertex2d(0, -size);
+        glVertex2d(size, -size);
+        glVertex2d(size, 0);
+        glEnd();
+        GLHelper::popMatrix();
         // show box with the current position relative to pink square
+        GLHelper::pushMatrix();
         Position posRelative = myViewNet->screenPos2NetPos(myViewNet->getWidth() - 40, myViewNet->getHeight() - 20);
         // adjust cursor position (24,25) to show exactly the same position as in function netedit.leftClick(match, X, Y)
         GLHelper::drawTextBox(toString(myViewNet->getWindowCursorPosition().x() - 24) + " " + toString(myViewNet->getWindowCursorPosition().y() - 25), posRelative, GLO_TESTELEMENT, myViewNet->p2m(20), RGBColor::BLACK, RGBColor::WHITE);
@@ -3118,13 +3156,13 @@ GNEViewNetHelper::NetworkCheckableButtons::buildNetworkCheckableButtons() {
     connectionButton->create();
     // prohibition mode
     prohibitionButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes,
-        "\tset prohibition mode\tMode for editing connection prohibitions. (H)",
-        GUIIconSubSys::getIcon(GUIIcon::MODEPROHIBITION), myViewNet, MID_HOTKEY_H_MODE_PROHIBITION_CONTAINERPLAN, GUIDesignMFXCheckableButton);
+            "\tset prohibition mode\tMode for editing connection prohibitions. (W)",
+            GUIIconSubSys::getIcon(GUIIcon::MODEPROHIBITION), myViewNet, MID_HOTKEY_H_MODE_PROHIBITION_CONTAINERPLAN, GUIDesignMFXCheckableButton);
     prohibitionButton->create();
     // traffic light mode
     trafficLightButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes,
-        "\tset traffic light mode\tMode for edit traffic lights over junctions. (T)",
-        GUIIconSubSys::getIcon(GUIIcon::MODETLS), myViewNet, MID_HOTKEY_T_MODE_TLS_TYPE, GUIDesignMFXCheckableButton);
+            "\tset traffic light mode\tMode for edit traffic lights over junctions. (T)",
+            GUIIconSubSys::getIcon(GUIIcon::MODETLS), myViewNet, MID_HOTKEY_T_MODE_TLS_TYPE, GUIDesignMFXCheckableButton);
     trafficLightButton->create();
     // additional mode
     additionalButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes,
@@ -3223,9 +3261,8 @@ GNEViewNetHelper::DemandCheckableButtons::DemandCheckableButtons(GNEViewNet* vie
     moveDemandElementsButton(nullptr),
     routeButton(nullptr),
     vehicleButton(nullptr),
-    vehicleTypeButton(nullptr),
+    typeButton(nullptr),
     stopButton(nullptr),
-    personTypeButton(nullptr),
     personButton(nullptr),
     personPlanButton(nullptr),
     containerButton(nullptr),
@@ -3251,22 +3288,16 @@ GNEViewNetHelper::DemandCheckableButtons::buildDemandCheckableButtons() {
                                            "\tcreate vehicle mode\tMode for creating vehicles. (V)",
                                            GUIIconSubSys::getIcon(GUIIcon::MODEVEHICLE), myViewNet, MID_HOTKEY_V_MODE_VEHICLE, GUIDesignMFXCheckableButton);
     vehicleButton->create();
-    // vehicle type mode
-    vehicleTypeButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes,
-            "\tcreate vehicle type mode\tMode for creating vehicle types. (T)",
-            GUIIconSubSys::getIcon(GUIIcon::MODEVEHICLETYPE), myViewNet, MID_HOTKEY_T_MODE_TLS_TYPE, GUIDesignMFXCheckableButton);
-    vehicleTypeButton->create();
+    // type mode
+    typeButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes,
+                                        "\tcreate type mode\tMode for creating types (vehicles, person and containers). (T)",
+                                        GUIIconSubSys::getIcon(GUIIcon::MODETYPE), myViewNet, MID_HOTKEY_T_MODE_TLS_TYPE, GUIDesignMFXCheckableButton);
+    typeButton->create();
     // stop mode
     stopButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes,
                                         "\tcreate stop mode\tMode for creating stops. (A)",
                                         GUIIconSubSys::getIcon(GUIIcon::MODESTOP), myViewNet, MID_HOTKEY_A_MODE_ADDITIONAL_STOP, GUIDesignMFXCheckableButton);
     stopButton->create();
-    // person type mode
-    personTypeButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes,
-            "\tcreate person type mode\tMode for creating person types. (W)",
-            GUIIconSubSys::getIcon(GUIIcon::MODEPERSONTYPE), myViewNet, MID_HOTKEY_W_MODE_WIRE, GUIDesignMFXCheckableButton);
-    personTypeButton->create();
-    personTypeButton->disable();
     // person mode
     personButton = new MFXCheckableButton(false, myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().modes,
                                           "\tcreate person mode\tMode for creating persons. (P)",
@@ -3297,10 +3328,8 @@ GNEViewNetHelper::DemandCheckableButtons::showDemandCheckableButtons() {
     moveDemandElementsButton->show();
     routeButton->show();
     vehicleButton->show();
-    vehicleTypeButton->show();
+    typeButton->show();
     stopButton->show();
-    personTypeButton->show();
-    personTypeButton->disable();
     personButton->show();
     personPlanButton->show();
     containerButton->show();
@@ -3313,9 +3342,8 @@ GNEViewNetHelper::DemandCheckableButtons::hideDemandCheckableButtons() {
     moveDemandElementsButton->hide();
     routeButton->hide();
     vehicleButton->hide();
-    vehicleTypeButton->hide();
+    typeButton->hide();
     stopButton->hide();
-    personTypeButton->hide();
     personButton->hide();
     personPlanButton->hide();
     containerButton->hide();
@@ -3328,9 +3356,8 @@ GNEViewNetHelper::DemandCheckableButtons::disableDemandCheckableButtons() {
     moveDemandElementsButton->setChecked(false);
     routeButton->setChecked(false);
     vehicleButton->setChecked(false);
-    vehicleTypeButton->setChecked(false);
+    typeButton->setChecked(false);
     stopButton->setChecked(false);
-    personTypeButton->setChecked(false);
     personButton->setChecked(false);
     personPlanButton->setChecked(false);
     containerButton->setChecked(false);
@@ -3343,9 +3370,8 @@ GNEViewNetHelper::DemandCheckableButtons::updateDemandCheckableButtons() {
     moveDemandElementsButton->update();
     routeButton->update();
     vehicleButton->update();
-    vehicleTypeButton->update();
+    typeButton->update();
     stopButton->update();
-    personTypeButton->update();
     personButton->update();
     personPlanButton->update();
     containerButton->update();

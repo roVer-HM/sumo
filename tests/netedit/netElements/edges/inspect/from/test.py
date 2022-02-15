@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -41,16 +41,16 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 250, 180)
 
 # Change parameter 1 with a non valid value (dummy Junction)
-netedit.modifyAttribute(1, "dummy_Junction", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.fromEdge, "dummy_Junction", False)
 
 # Change parameter 1 with a non valid value (empty Junction)
-netedit.modifyAttribute(1, "", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.fromEdge, "", False)
 
 # Change parameter 1 with a non valid value (same from Junction)
-netedit.modifyAttribute(1, "gneJ2", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.fromEdge, "gneJ2", False)
 
 # Change parameter 1 with a value
-netedit.modifyAttribute(1, "gneJ0", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.fromEdge, "gneJ0", False)
 
 # recompute
 netedit.rebuildNetwork()

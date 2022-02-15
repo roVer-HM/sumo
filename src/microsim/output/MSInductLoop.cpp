@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -28,6 +28,9 @@
 #include <cassert>
 #include <numeric>
 #include <utility>
+#ifdef HAVE_FOX
+#include <utils/common/ScopedLocker.h>
+#endif
 #include <utils/common/WrappingCommand.h>
 #include <utils/common/ToString.h>
 #include <microsim/MSEventControl.h>
@@ -57,6 +60,7 @@ MSInductLoop::MSInductLoop(const std::string& id, MSLane* const lane,
     myPosition(positionInMeters),
     myNeedLock(needLocking || MSGlobals::gNumSimThreads > 1),
     myLastLeaveTime(SIMTIME),
+    myOverrideTime(-1),
     myVehicleDataCont(),
     myVehiclesOnDet() {
     assert(myPosition >= 0 && myPosition <= myLane->getLength());
@@ -71,7 +75,7 @@ MSInductLoop::~MSInductLoop() {
 void
 MSInductLoop::reset() {
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myNotificationMutex, myNeedLock);
+    ScopedLocker<> lock(myNotificationMutex, myNeedLock);
 #endif
     myEnteredVehicleNumber = 0;
     myLastVehicleDataCont = myVehicleDataCont;
@@ -91,7 +95,7 @@ MSInductLoop::notifyEnter(SUMOTrafficObject& veh, Notification reason, const MSL
         }
         if (veh.getPositionOnLane() >= myPosition) {
 #ifdef HAVE_FOX
-            FXConditionalLock lock(myNotificationMutex, myNeedLock);
+            ScopedLocker<> lock(myNotificationMutex, myNeedLock);
 #endif
             myVehiclesOnDet[&veh] = SIMTIME;
             myEnteredVehicleNumber++;
@@ -117,7 +121,7 @@ MSInductLoop::notifyMove(SUMOTrafficObject& veh, double oldPos,
         return keep;
     }
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myNotificationMutex, myNeedLock);
+    ScopedLocker<> lock(myNotificationMutex, myNeedLock);
 #endif
     const double oldSpeed = veh.getPreviousSpeed();
     if (newPos >= myPosition && oldPos < myPosition) {
@@ -162,7 +166,7 @@ MSInductLoop::notifyLeave(SUMOTrafficObject& veh, double lastPos, MSMoveReminder
     }
     if (reason != MSMoveReminder::NOTIFICATION_JUNCTION || (veh.isPerson() && myDetectPersons != (int)PersonMode::NONE)) {
 #ifdef HAVE_FOX
-        FXConditionalLock lock(myNotificationMutex, myNeedLock);
+        ScopedLocker<> lock(myNotificationMutex, myNeedLock);
 #endif
         const std::map<SUMOTrafficObject*, double>::iterator it = myVehiclesOnDet.find(&veh);
         if (it != myVehiclesOnDet.end()) {
@@ -194,6 +198,9 @@ MSInductLoop::getVehicleLength(const int offset) const {
 
 double
 MSInductLoop::getOccupancy() const {
+    if (myOverrideTime >= 0) {
+        return myOverrideTime < TS ? (TS - myOverrideTime) / TS * 100 : 0;
+    }
     const SUMOTime tbeg = SIMSTEP - DELTA_T;
     double occupancy = 0;
     const double csecond = SIMTIME;
@@ -208,6 +215,9 @@ MSInductLoop::getOccupancy() const {
 
 double
 MSInductLoop::getEnteredNumber(const int offset) const {
+    if (myOverrideTime >= 0) {
+        return myOverrideTime < TS ? 1 : 0;
+    }
     return (double)collectVehiclesOnDet(SIMSTEP - offset, true, true).size();
 }
 
@@ -224,6 +234,9 @@ MSInductLoop::getVehicleIDs(const int offset) const {
 
 double
 MSInductLoop::getTimeSinceLastDetection() const {
+    if (myOverrideTime >= 0) {
+        return myOverrideTime;
+    }
     if (myVehiclesOnDet.size() != 0) {
         // detector is occupied
         return 0;
@@ -234,12 +247,20 @@ MSInductLoop::getTimeSinceLastDetection() const {
 
 SUMOTime
 MSInductLoop::getLastDetectionTime() const {
+    if (myOverrideTime >= 0) {
+        return SIMTIME - myOverrideTime;
+    }
     if (myVehiclesOnDet.size() != 0) {
         return MSNet::getInstance()->getCurrentTimeStep();
     }
     return TIME2STEPS(myLastLeaveTime);
 }
 
+
+void
+MSInductLoop::overrideTimeSinceDetection(double time) {
+    myOverrideTime = time;
+}
 
 void
 MSInductLoop::writeXMLDetectorProlog(OutputDevice& dev) const {
@@ -322,7 +343,7 @@ MSInductLoop::notifyMovePerson(MSTransportable* p, int dir, double pos) {
 std::vector<MSInductLoop::VehicleData>
 MSInductLoop::collectVehiclesOnDet(SUMOTime tMS, bool includeEarly, bool leaveTime, bool forOccupancy) const {
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myNotificationMutex, myNeedLock);
+    ScopedLocker<> lock(myNotificationMutex, myNeedLock);
 #endif
     const double t = STEPS2TIME(tMS);
     std::vector<VehicleData> ret;

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -55,7 +55,7 @@
 
 //#define DEBUG_GUESS_ROUNDABOUT
 //#define DEBUG_JOIN_TRAM
-#define DEBUG_EDGE_ID "301241681#2"
+#define DEBUG_EDGE_ID ""
 
 // ===========================================================================
 // method definitions
@@ -1216,7 +1216,6 @@ NBEdgeCont::guessRoundabouts() {
         NBNode* const to = e->getToNode();
         if (e->getTurnDestination() == nullptr
                 && to->getConnectionTo(e->getFromNode()) == nullptr
-                && loadedRoundaboutEdges.count(e) == 0
                 && (e->getPermissions() & valid) != 0) {
             candidates.insert(e);
         }
@@ -1238,11 +1237,11 @@ NBEdgeCont::guessRoundabouts() {
         loopEdges.push_back(e);
         bool doLoop = true;
 #ifdef DEBUG_GUESS_ROUNDABOUT
-        gDebugFlag1 = false;
+        gDebugFlag1 = e->getID() == DEBUG_EDGE_ID;
 #endif
         do {
 #ifdef DEBUG_GUESS_ROUNDABOUT
-            if (e->getID() == DEBUG_EDGE_ID || gDebugFlag1) {
+            if (gDebugFlag1) {
                 std::cout << " e=" << e->getID() << " loopEdges=" << toString(loopEdges) << "\n";
                 gDebugFlag1 = true;
             }
@@ -1274,7 +1273,7 @@ NBEdgeCont::guessRoundabouts() {
                 doLoop = false;
 #ifdef DEBUG_GUESS_ROUNDABOUT
                 if (gDebugFlag1) {
-                    std::cout << " turn\n";
+                    std::cout << " invalid turnAround e=" << e->getID() << " dest=" << Named::getIDSecure(e->getTurnDestination()) << "\n";
                 }
                 gDebugFlag1 = false;
 #endif
@@ -1304,7 +1303,7 @@ NBEdgeCont::guessRoundabouts() {
             double nextAngle = nextLeft == e ? 180 : fabs(NBHelpers::relAngle(e->getAngleAtNode(e->getToNode()), nextLeft->getAngleAtNode(e->getToNode())));
 #ifdef DEBUG_GUESS_ROUNDABOUT
             if (gDebugFlag1) {
-                std::cout << "   angle=" << angle << " nextAngle=" << nextAngle << "\n";
+                std::cout << "   e=" << e->getID() << " left=" << left->getID() << " nextLeft=" << nextLeft->getID() << " angle=" << angle << " nextAngle=" << nextAngle << " eLength=" << e->getLength() << " lLength=" << left->getLength() << " dist=" << e->getLaneShape(0).back().distanceTo2D(left->getLaneShape(0).front()) << "\n";
             }
 #endif
             if (angle >= 120
@@ -1320,7 +1319,7 @@ NBEdgeCont::guessRoundabouts() {
                 doLoop = false;
 #ifdef DEBUG_GUESS_ROUNDABOUT
                 if (gDebugFlag1) {
-                    std::cout << " angle=" << angle << "\n";
+                    std::cout << "     failed angle=" << angle << "\n";
                 }
                 gDebugFlag1 = false;
 #endif
@@ -1362,16 +1361,40 @@ NBEdgeCont::guessRoundabouts() {
                 e = left;
             }
         } while (doLoop);
+        if (doLoop) {
+            // check form factor to avoid elongated shapes (circle: 1, square: ~0.79)
+#ifdef DEBUG_GUESS_ROUNDABOUT
+            if (gDebugFlag1) {
+                std::cout << " formFactor=" << formFactor(loopEdges) << "\n";
+            }
+#endif
+            if (formFactor(loopEdges) > 0.6) {
+                // collected edges are marked in markRoundabouts
+                EdgeSet guessed(loopEdges.begin(), loopEdges.end());
+                if (loadedRoundaboutEdges.count(loopEdges.front()) != 0) {
+                    if (find(myRoundabouts.begin(), myRoundabouts.end(), guessed) == myRoundabouts.end()) {
+                        for (auto it = myRoundabouts.begin(); it != myRoundabouts.end(); it++) {
+                            if ((*it).count(loopEdges.front()) != 0) {
+                                WRITE_WARNINGF("Replacing loaded roundabout '%s' with '%s'", toString(*it), toString(guessed));
+                                myRoundabouts.erase(it);
+                                break;
+                            }
+                        }
+                        myGuessedRoundabouts.insert(guessed);
+                    }
+                } else {
+                    myGuessedRoundabouts.insert(guessed);
+#ifdef DEBUG_GUESS_ROUNDABOUT
+                    if (gDebugFlag1) {
+                        std::cout << " foundRoundabout=" << toString(loopEdges) << "\n";
+                    }
+#endif
+                }
+            }
+        }
 #ifdef DEBUG_GUESS_ROUNDABOUT
         gDebugFlag1 = false;
 #endif
-        if (doLoop) {
-            // check form factor to avoid elongated shapes (circle: 1, square: ~0.79)
-            if (formFactor(loopEdges) > 0.6) {
-                // collected edges are marked in markRoundabouts
-                myGuessedRoundabouts.insert(EdgeSet(loopEdges.begin(), loopEdges.end()));
-            }
-        }
     }
     return (int)myGuessedRoundabouts.size();
 }

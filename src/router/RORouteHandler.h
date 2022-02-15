@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -65,6 +65,9 @@ public:
 
     /// @brief standard destructor
     virtual ~RORouteHandler();
+
+    /// @brief Checks whether the route file is sorted by departure time if needed
+    bool checkLastDepart();
 
 protected:
     /// @name inherited from GenericSAXHandler
@@ -236,6 +239,9 @@ protected:
     /// @brief maximum distance when map-matching
     const double myMapMatchingDistance;
     const bool myMapMatchJunctions;
+
+    /// @brief whether input is read all at once (no sorting check is necessary)
+    const bool myUnsortedInput;
 
     /// @brief The currently parsed distribution of vehicle types (probability->vehicle type)
     RandomDistributor<SUMOVTypeParameter*>* myCurrentVTypeDistribution;

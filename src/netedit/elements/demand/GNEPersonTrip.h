@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2016-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2016-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -63,6 +63,18 @@ public:
     GNEPersonTrip(GNENet* net, GNEDemandElement* personParent, GNEEdge* fromEdge, GNEAdditional* toBusStop,
                   double arrivalPosition, const std::vector<std::string>& types, const std::vector<std::string>& modes);
 
+    /**@brief parameter constructor for person junction->junction
+     * @param[in] viewNet view in which this PersonTrip is placed
+     * @param[in] personParent person parent
+     * @param[in] fromJunction from junction
+     * @param[in] toJunction to junction
+     * @param[in] arrivalPosition arrival position on the destination junction
+     * @param[in] types list of possible vehicle types to take
+     * @param[in] modes list of possible traffic modes
+     */
+    GNEPersonTrip(GNENet* net, GNEDemandElement* personParent, GNEJunction* fromJunction, GNEJunction* toJunction,
+                  double arrivalPosition, const std::vector<std::string>& types, const std::vector<std::string>& modes);
+
     /// @brief destructor
     ~GNEPersonTrip();
 
@@ -77,7 +89,7 @@ public:
     void writeDemandElement(OutputDevice& device) const;
 
     /// @brief check if current demand element is valid to be writed into XML (by default true, can be reimplemented in children)
-    bool isDemandElementValid() const;
+    Problem isDemandElementValid() const;
 
     /// @brief return a string with the current demand element problem (by default empty, can be reimplemented in children)
     std::string getDemandElementProblem() const;

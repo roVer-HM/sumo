@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -38,13 +38,13 @@ netedit.forceSaveAdditionals()
 netedit.leftClick(referencePosition, 325, 250)
 
 # set invalid radius
-netedit.modifyAttribute(5, "dummyRadius", False)
+netedit.modifyAttribute(netedit.attrs.junction.inspect.radius, "dummyRadius", False)
 
 # set invalid radius
-netedit.modifyAttribute(5, "-7", False)
+netedit.modifyAttribute(netedit.attrs.junction.inspect.radius, "-7", False)
 
 # change radio
-netedit.modifyAttribute(5, "2.3", False)
+netedit.modifyAttribute(netedit.attrs.junction.inspect.radius, "2.3", False)
 
 # rebuild network
 netedit.rebuildNetwork()

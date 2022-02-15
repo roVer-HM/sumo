@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -46,6 +46,10 @@ SystemFrame::addConfigurationOptions(OptionsCont& oc) {
     oc.doRegister("save-configuration", 'C', new Option_FileName());
     oc.addSynonyme("save-config", "save-configuration");
     oc.addDescription("save-configuration", "Configuration", "Saves current configuration into FILE");
+
+    oc.doRegister("save-configuration.relative", new Option_Bool(false));
+    oc.addSynonyme("save-config.relative", "save-configuration.relative");
+    oc.addDescription("save-configuration.relative", "Configuration", "Enforce relative paths when saving the configuration");
 
     oc.doRegister("save-template", new Option_FileName());
     oc.addDescription("save-template", "Configuration", "Saves a configuration template (empty) into FILE");

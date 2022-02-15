@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -38,7 +38,7 @@ netedit.vehicleMode()
 # netedit.changeElement("trip")
 
 # set invalid personNumber
-netedit.changeDefaultValue(14, "dummycontainerNumber")
+netedit.changeDefaultValue(netedit.attrs.tripFromToEdge.create.containerNumber, "dummycontainerNumber")
 
 # try to create trip
 netedit.leftClick(referencePosition, 274, 392)
@@ -48,7 +48,7 @@ netedit.leftClick(referencePosition, 280, 55)
 netedit.typeEnter()
 
 # set invalid personNumber
-netedit.changeDefaultValue(14, "-12")
+netedit.changeDefaultValue(netedit.attrs.tripFromToEdge.create.containerNumber, "-12")
 
 # try to create trip
 netedit.leftClick(referencePosition, 274, 392)
@@ -58,7 +58,7 @@ netedit.leftClick(referencePosition, 280, 55)
 netedit.typeEnter()
 
 # set invalid personNumber
-netedit.changeDefaultValue(14, "3.5")
+netedit.changeDefaultValue(netedit.attrs.tripFromToEdge.create.containerNumber, "3.5")
 
 # try to create trip
 netedit.leftClick(referencePosition, 274, 392)
@@ -68,7 +68,7 @@ netedit.leftClick(referencePosition, 280, 55)
 netedit.typeEnter()
 
 # set valid personNumber
-netedit.changeDefaultValue(14, "13")
+netedit.changeDefaultValue(netedit.attrs.tripFromToEdge.create.containerNumber, "13")
 
 # create trip
 netedit.leftClick(referencePosition, 274, 392)

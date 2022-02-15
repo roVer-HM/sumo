@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2004-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -21,18 +21,21 @@
 /****************************************************************************/
 #include <config.h>
 
+#ifdef HAVE_FOX
+#include <utils/common/ScopedLocker.h>
+#endif
+#include <utils/common/SUMOTime.h>
+#include <utils/common/ToString.h>
+#include <utils/iodevices/OutputDevice.h>
 #include <microsim/MSEdgeControl.h>
 #include <microsim/MSEdge.h>
 #include <microsim/MSLane.h>
 #include <microsim/MSVehicle.h>
-#include <utils/common/SUMOTime.h>
-#include <utils/common/ToString.h>
-#include <utils/iodevices/OutputDevice.h>
-#include "MSMeanData_Net.h"
-
 #include <microsim/MSGlobals.h>
 #include <mesosim/MELoop.h>
 #include <mesosim/MESegment.h>
+#include "MSMeanData_Net.h"
+
 
 // ===========================================================================
 // debug constants
@@ -181,7 +184,7 @@ MSMeanData_Net::MSLaneMeanDataValues::notifyLeave(SUMOTrafficObject& veh, double
     if ((myParent == nullptr || myParent->vehicleApplies(veh)) && (
                 getLane() == nullptr || !veh.isVehicle() || getLane() == static_cast<MSVehicle&>(veh).getLane())) {
 #ifdef HAVE_FOX
-        FXConditionalLock lock(myNotificationMutex, MSGlobals::gNumSimThreads > 1);
+        ScopedLocker<> lock(myNotificationMutex, MSGlobals::gNumSimThreads > 1);
 #endif
         if (MSGlobals::gUseMesoSim) {
             removeFromVehicleUpdateValues(veh);
@@ -216,7 +219,7 @@ MSMeanData_Net::MSLaneMeanDataValues::notifyEnter(SUMOTrafficObject& veh, MSMove
     if (myParent == nullptr || myParent->vehicleApplies(veh)) {
         if (getLane() == nullptr || !veh.isVehicle() || getLane() == static_cast<MSVehicle&>(veh).getLane()) {
 #ifdef HAVE_FOX
-            FXConditionalLock lock(myNotificationMutex, MSGlobals::gNumSimThreads > 1);
+            ScopedLocker<> lock(myNotificationMutex, MSGlobals::gNumSimThreads > 1);
 #endif
             if (reason == MSMoveReminder::NOTIFICATION_DEPARTED) {
                 ++nVehDeparted;
@@ -346,9 +349,11 @@ MSMeanData_Net::MSMeanData_Net(const std::string& id,
                                const double minSamples,
                                const double haltSpeed,
                                const std::string& vTypes,
-                               const std::string& writeAttributes) :
+                               const std::string& writeAttributes,
+                               const std::vector<MSEdge*>& edges,
+                               bool aggregate) :
     MSMeanData(id, dumpBegin, dumpEnd, useLanes, withEmpty, printDefaults,
-               withInternal, trackVehicles, detectPersons, maxTravelTime, minSamples, vTypes, writeAttributes),
+               withInternal, trackVehicles, detectPersons, maxTravelTime, minSamples, vTypes, writeAttributes, edges, aggregate),
     myHaltSpeed(haltSpeed)
 { }
 

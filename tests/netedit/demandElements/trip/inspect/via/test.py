@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -51,19 +51,19 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 91, 392)
 
 # change from with an invalid value
-netedit.modifyAttribute(4, "", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspect.via, "", False)
 
 # change from with an invalid value
-netedit.modifyAttribute(4, "dummyEdge", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspect.via, "dummyEdge", False)
 
 # change from with an valid value
-netedit.modifyAttribute(4, "gneE8", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspect.via, "gneE8", False)
 
 # change from with an valid value
-netedit.modifyAttribute(4, "gneE9", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspect.via, "gneE9", False)
 
 # change from with an valid value
-netedit.modifyAttribute(4, "gneE8 gneE9", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspect.via, "gneE8 gneE9", False)
 
 # Check undo redo
 netedit.undo(referencePosition, 5)

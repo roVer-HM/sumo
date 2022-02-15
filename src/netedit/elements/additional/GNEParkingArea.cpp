@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -92,9 +92,14 @@ GNEParkingArea::writeAdditional(OutputDevice& device) const {
     if (getAttribute(SUMO_ATTR_LENGTH) != myTagProperty.getDefaultValue(SUMO_ATTR_LENGTH)) {
         device.writeAttr(SUMO_ATTR_LENGTH, myLength);
     }
+    if (getAttribute(SUMO_ATTR_ANGLE) != myTagProperty.getDefaultValue(SUMO_ATTR_ANGLE)) {
+        device.writeAttr(SUMO_ATTR_ANGLE, myAngle);
+    }
     // write all parking spaces
-    for (const auto& access : getChildAdditionals()) {
-        access->writeAdditional(device);
+    for (const auto& space : getChildAdditionals()) {
+        if (space->getTagProperty().getTag() == SUMO_TAG_PARKING_SPACE) {
+            space->writeAdditional(device);
+        }
     }
     // write parameters (Always after children to avoid problems with additionals.xsd)
     writeParams(device);
@@ -370,7 +375,7 @@ GNEParkingArea::isValid(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_FRIENDLY_POS:
             return canParse<bool>(value);
         case SUMO_ATTR_ROADSIDE_CAPACITY:
-            return canParse<double>(value) && (parse<double>(value) >= 0);
+            return canParse<int>(value) && (parse<int>(value) >= 0);
         case SUMO_ATTR_ONROAD:
             return canParse<bool>(value);
         case SUMO_ATTR_WIDTH:
@@ -425,7 +430,7 @@ GNEParkingArea::setAttribute(SumoXMLAttr key, const std::string& value) {
                 parkingSpace->setMicrosimID(getID());
             }
             // enable save demand elements if there are stops
-            for (const auto &stop : getChildDemandElements()) {
+            for (const auto& stop : getChildDemandElements()) {
                 if (stop->getTagProperty().isStop() || stop->getTagProperty().isStopPerson()) {
                     myNet->requireSaveDemandElements(true);
                 }
@@ -478,7 +483,11 @@ GNEParkingArea::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         case SUMO_ATTR_LENGTH:
-            myLength = parse<double>(value);
+            if (value.empty()) {
+                myLength = 0;
+            } else {
+                myLength = parse<double>(value);
+            }
             // update geometry of all spaces
             for (const auto& space : getChildAdditionals()) {
                 space->updateGeometry();

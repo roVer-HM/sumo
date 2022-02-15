@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -332,7 +332,9 @@ NBPTStopCont::replaceEdge(const std::string& edgeID, const EdgeVector& replaceme
             myPTStopLookup[item.second->getEdgeId()].push_back(item.second);
         }
     }
-    for (NBPTStop* stop : myPTStopLookup[edgeID]) {
+    // make a copy because the vector gets modified
+    const std::vector<NBPTStop*> stops = myPTStopLookup[edgeID];
+    for (NBPTStop* stop : stops) {
         if (!stop->replaceEdge(edgeID, replacement)) {
             WRITE_WARNINGF("Could not re-assign pt stop '%' after replacing edge '%'.", stop->getID(), edgeID);
         } else {

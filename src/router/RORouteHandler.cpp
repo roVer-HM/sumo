@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -69,6 +69,7 @@ RORouteHandler::RORouteHandler(RONet& net, const std::string& file,
     myKeepVTypeDist(OptionsCont::getOptions().getBool("keep-vtype-distributions")),
     myMapMatchingDistance(OptionsCont::getOptions().getFloat("mapmatch.distance")),
     myMapMatchJunctions(OptionsCont::getOptions().getBool("mapmatch.junctions")),
+    myUnsortedInput(OptionsCont::getOptions().exists("unsorted-input") && OptionsCont::getOptions().getBool("unsorted-input")),
     myCurrentVTypeDistribution(nullptr),
     myCurrentAlternatives(nullptr),
     myLaneTree(nullptr) {
@@ -502,6 +503,7 @@ RORouteHandler::closeRouteDistribution() {
 
 void
 RORouteHandler::closeVehicle() {
+    checkLastDepart();
     // get the vehicle id
     if (myVehicleParameter->departProcedure == DEPART_GIVEN && myVehicleParameter->depart < myBegin) {
         return;
@@ -569,6 +571,7 @@ RORouteHandler::closePerson() {
             person->getPlan().push_back(item);
         }
         if (myNet.addPerson(person)) {
+            checkLastDepart();
             registerLastDepart();
         }
     }
@@ -589,6 +592,7 @@ RORouteHandler::closePersonFlow() {
     if (myActivePlan == nullptr || myActivePlan->empty()) {
         WRITE_WARNING("Discarding personFlow '" + myVehicleParameter->id + "' because it's plan is empty");
     } else {
+        checkLastDepart();
         // instantiate all persons of this flow
         int i = 0;
         std::string baseID = myVehicleParameter->id;
@@ -638,6 +642,7 @@ RORouteHandler::closeContainer() {
     myActiveContainerPlan->closeTag();
     if (myActiveContainerPlanSize > 0) {
         myNet.addContainer(myVehicleParameter->depart, myActiveContainerPlan->getString());
+        checkLastDepart();
         registerLastDepart();
     } else {
         WRITE_WARNING("Discarding container '" + myVehicleParameter->id + "' because it's plan is empty");
@@ -653,6 +658,7 @@ void RORouteHandler::closeContainerFlow() {
     myActiveContainerPlan->closeTag();
     if (myActiveContainerPlanSize > 0) {
         myNet.addContainer(myVehicleParameter->depart, myActiveContainerPlan->getString());
+        checkLastDepart();
         registerLastDepart();
     } else {
         WRITE_WARNING("Discarding containerFlow '" + myVehicleParameter->id + "' because it's plan is empty");
@@ -667,6 +673,7 @@ void RORouteHandler::closeContainerFlow() {
 
 void
 RORouteHandler::closeFlow() {
+    checkLastDepart();
     // @todo: consider myScale?
     if (myVehicleParameter->repetitionNumber == 0) {
         delete myVehicleParameter;
@@ -1260,5 +1267,12 @@ RORouteHandler::getLaneTree() {
     return myLaneTree;
 }
 
+bool
+RORouteHandler::checkLastDepart() {
+    if (!myUnsortedInput) {
+        return SUMORouteHandler::checkLastDepart();
+    }
+    return true;
+}
 
 /****************************************************************************/

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2008-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -27,6 +27,7 @@ import io
 from os.path import basename, commonprefix
 from datetime import datetime
 import logging
+import logging.handlers
 
 
 def killall(debugSuffix, binaries):
@@ -38,16 +39,31 @@ def killall(debugSuffix, binaries):
             bins.remove(task[0])
 
 
-def log_subprocess_output(process):
+def set_rotating_log(filename, remove=None):
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    try:
+        if remove:
+            logger.removeHandler(remove)
+        handler = logging.handlers.TimedRotatingFileHandler(filename, when="midnight", backupCount=5)
+        logger.addHandler(handler)
+        return handler
+    except Exception as e:
+        logger.error(e)
+        return None
+
+
+def log_subprocess(call, env=None, cwd=None):
+    process = subprocess.Popen(call, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                               shell=True, cwd=cwd, env=env)
     with process.stdout:
         for line in process.stdout:
-            logging.info(line)
-    process.wait()
+            logging.info(line.rstrip().decode("ascii", "ignore"))
+    return process.wait()
 
 
-def printLog(msg, log):
-    print(u"%s: %s" % (datetime.now(), msg), file=log)
-    log.flush()
+def printLog(msg):
+    logging.info(u"%s: %s" % (datetime.now(), msg))
 
 
 def findErrors(line, warnings, errors, failed):

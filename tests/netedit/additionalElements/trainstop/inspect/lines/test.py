@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,7 +35,7 @@ netedit.additionalMode()
 netedit.changeElement("trainStop")
 
 # change reference to center
-netedit.changeDefaultValue(11, "reference center")
+netedit.changeDefaultValue(netedit.attrs.trainStop.create.references, "reference center")
 
 # create trainStop in mode "reference center"
 netedit.leftClick(referencePosition, 250, 170)
@@ -47,10 +47,10 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 250, 190)
 
 # Change parameter 5 with a non valid value (throw warning)
-netedit.modifyAttribute(6, "line1, line2", True)
+netedit.modifyAttribute(netedit.attrs.trainStop.inspect.lines, "line1, line2", True)
 
 # Change parameter 5 with a valid value
-netedit.modifyAttribute(6, "line1 line2", True)
+netedit.modifyAttribute(netedit.attrs.trainStop.inspect.lines, "line1 line2", True)
 
 # Check undos and redos
 netedit.undo(referencePosition, 3)

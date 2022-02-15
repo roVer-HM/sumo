@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -32,6 +32,7 @@
 #include <microsim/MSNet.h>
 #include <microsim/MSEdge.h>
 #include <microsim/MSGlobals.h>
+#include <mesosim/MESegment.h>
 #include "MSTLLogicControl.h"
 #include "MSTrafficLightLogic.h"
 
@@ -443,7 +444,7 @@ void MSTrafficLightLogic::initMesoTLSPenalties() {
         for (int k = 0; k < (int)myLinks[j].size(); ++k) {
             MSLink* link = myLinks[j][k];
             MSEdge& edge = link->getLaneBefore()->getEdge();
-            const MSNet::MesoEdgeType& edgeType = MSNet::getInstance()->getMesoType(edge.getEdgeType());
+            const MESegment::MesoEdgeType& edgeType = MSNet::getInstance()->getMesoType(edge.getEdgeType());
             double greenFraction = (durationSeconds - totalRedDuration[j]) / durationSeconds;
             if (edgeType.tlsFlowPenalty == 0) {
                 greenFraction = 1;
@@ -519,5 +520,31 @@ MSTrafficLightLogic::getsMajorGreen(int linkIndex) const {
     return false;
 
 }
+
+
+SUMOTime
+MSTrafficLightLogic::getMinDur(int step) const {
+    const MSPhaseDefinition& p = step < 0 ? getCurrentPhaseDef() : getPhase(step);
+    return p.minDuration;
+}
+
+SUMOTime
+MSTrafficLightLogic::getMaxDur(int step) const {
+    const MSPhaseDefinition& p = step < 0 ? getCurrentPhaseDef() : getPhase(step);
+    return p.maxDuration;
+}
+
+SUMOTime
+MSTrafficLightLogic::getEarliestEnd(int step) const {
+    const MSPhaseDefinition& p = step < 0 ? getCurrentPhaseDef() : getPhase(step);
+    return p.earliestEnd;
+}
+
+SUMOTime
+MSTrafficLightLogic::getLatestEnd(int step) const {
+    const MSPhaseDefinition& p = step < 0 ? getCurrentPhaseDef() : getPhase(step);
+    return p.latestEnd;
+}
+
 
 /****************************************************************************/

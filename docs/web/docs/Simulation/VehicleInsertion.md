@@ -69,13 +69,13 @@ insertion delay:
 
 - Color vehicles *by insertion delay*
 - Color Streets *by insertion backlog*
-- Opening Vehicle statistics lists the number of *insertion-backloged
+- Opening Vehicle statistics lists the number of *insertion-backlogged
   vehicles* for the whole network.
 - The parameter Dialog for individual vehicles lists *desired depart*
   and *depart delay*
   
 ## Effect of simulation step-length
-Insertion attemps can only happen in every simulation step. This may cause artifacts in insertion spacing because at the default step-length of 1s is (usually) too short for vehicles to be inserted in successive steps on the same depart location.
+Insertion attempts can only happen in every simulation step. This may cause artifacts in insertion spacing because at the default step-length of 1s is (usually) too short for vehicles to be inserted in successive steps on the same depart location.
 By default, the next attempt happens 2 seconds after the first vehicle has departed and this gap may be much larger then mandated by the carFollowModel. There are multiple ways to avoid this effect:
 
 - the step-length can be reduced
@@ -96,6 +96,7 @@ By default, the next attempt happens 2 seconds after the first vehicle has depar
 - insert with a fixed departSpeed (numerical value) and set option **--ignore-route-errors**.
   Vehicles will be inserted with unsafe speeds at the specified time
   if emergency-braking would still allow collision-free dynamics
+- inserted vehicles with a homogeneous departSpeed by setting `departSpeed="last"` or departSpeed="avg"`
 - use
   [traci.vehicle.moveTo](../TraCI/Change_Vehicle_State.md#move_to_0x5c)
   or
@@ -127,3 +128,4 @@ By default, the next attempt happens 2 seconds after the first vehicle has depar
 - The departure edge can be determined at run-time when using [Traffic
   Assignment Zones
   (TAZ)](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#traffic_assignement_zones_taz)
+- [Table of insertion capacity achievable with different options and insertion attributes](RoadCapacity.md#further_headway_effects)

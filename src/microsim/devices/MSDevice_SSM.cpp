@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -28,9 +28,12 @@
 
 #include <iostream>
 #include <algorithm>
+#include <utils/common/FileHelpers.h>
 #include <utils/common/StringTokenizer.h>
-#include <utils/geom/GeomHelper.h>
 #include <utils/common/StringUtils.h>
+#include <utils/geom/GeoConvHelper.h>
+#include <utils/geom/GeomHelper.h>
+#include <utils/geom/Position.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/iodevices/OutputDevice.h>
 #include <utils/vehicle/SUMOVehicle.h>
@@ -43,8 +46,6 @@
 #include <microsim/MSVehicleControl.h>
 #include <microsim/MSJunctionControl.h>
 #include <microsim/lcmodels/MSAbstractLaneChangeModel.h>
-#include <utils/geom/Position.h>
-#include <utils/geom/GeoConvHelper.h>
 #include "MSDevice_SSM.h"
 
 // ===========================================================================
@@ -763,7 +764,7 @@ MSDevice_SSM::closeEncounter(Encounter* e) {
                 auto c = myPastConflicts.top();
                 myPastConflicts.pop();
                 if (DEBUG_COND(myHolderMS)) {
-                    std::cout << "  Conflict with foe '" << c->foe << "' (time " << c->begin << "-" << c->end << ")\n";
+                    std::cout << "  Conflict with foe '" << c->foe << "' (time=" << c->begin << "-" << c->end << ")\n";
                 }
                 if (c->begin < lastBegin) {
                     std::cout << "  Queue corrupt...\n";
@@ -1053,9 +1054,7 @@ MSDevice_SSM::estimateConflictTimes(EncounterApproachInfo& eInfo) {
     if (eInfo.egoEstimatedConflictEntryTime == 0. && eInfo.foeEstimatedConflictEntryTime == 0. &&
             eInfo.egoConflictExitDist >= 0 && eInfo.foeConflictExitDist >= 0) {
         type = ENCOUNTER_TYPE_COLLISION;
-        std::stringstream ss;
-        ss << "SSM device of vehicle '" << e->egoID << "' detected collision with vehicle '" << e->foeID << "' at time " << SIMTIME;
-        WRITE_WARNING(ss.str());
+        WRITE_WARNINGF("SSM device of vehicle '%' detected collision with vehicle '%' at time=%.", e->egoID, e->foeID, time2string(SIMSTEP));
     } else if (eInfo.egoEstimatedConflictEntryTime < eInfo.foeEstimatedConflictEntryTime) {
         // ego is estimated first at conflict point
 #ifdef DEBUG_SSM
@@ -2186,7 +2185,7 @@ MSDevice_SSM::classifyEncounter(const FoeInfo* foeInfo, EncounterApproachInfo& e
                     // (since they approach via the same link, findSurroundingVehicles() would have determined a
                     // different conflictLane if both are not on the junction)
                     if (egoLane != egoConflictLane || foeLane != foeConflictLane) {
-                        WRITE_WARNINGF("Cannot classify SSM encounter between ego vehicle % and foe vehicle % at time %\n", e->ego->getID(), e->foe->getID(), SIMTIME);
+                        WRITE_WARNINGF("Cannot classify SSM encounter between ego vehicle % and foe vehicle % at time=%\n", e->ego->getID(), e->foe->getID(), SIMTIME);
                         return ENCOUNTER_TYPE_NOCONFLICT_AHEAD;
                     }
                     if (egoLane == foeLane) {

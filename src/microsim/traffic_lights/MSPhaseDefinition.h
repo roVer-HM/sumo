@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -52,6 +52,7 @@ class MSPhaseDefinition {
 public:
 
     static const SUMOTime UNSPECIFIED_DURATION = -1;
+    static const SUMOTime OVERRIDE_DURATION = TIME2STEPS(-1);
 
     /// @brief The duration of the phase
     SUMOTime duration;
@@ -70,6 +71,12 @@ public:
 
     /// @brief The maximum time within the cycle for switching (for coordinated actuation)
     SUMOTime latestEnd;
+
+    /// @brief The condition expression for an early switch into this phase
+    std::string earlyTarget;
+
+    /// @brief The condition expression for switching into this phase when the active phase must end
+    std::string finalTarget;
 
     /// @brief Stores the timestep of the last on-switched of the phase
     SUMOTime myLastSwitch;
@@ -135,7 +142,7 @@ public:
         myCommit(false),
         myUndefined(false),
         myState(state)
-        {}
+    {}
 
 
     /// @brief Destructor
@@ -195,8 +202,8 @@ public:
         return (LinkState) myState[pos];
     }
 
-    inline bool isActuted() const {
-        return minDuration != maxDuration;
+    inline bool isActuated() const {
+        return minDuration != maxDuration || minDuration == OVERRIDE_DURATION;
     }
 
     /** @brief Comparison operator
@@ -206,7 +213,7 @@ public:
      * @return Whether the given phase definition differs
      */
     bool operator!=(const MSPhaseDefinition& pd) {
-        return myState != pd.myState;
+        return myState != pd.myState || name != pd.name;
     }
 
 

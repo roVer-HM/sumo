@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -92,6 +92,12 @@ public:
     /// @brief Callback: Selects to current item if enter is pressed
     long onListKeyPress(FXObject*, FXSelector, void*);
 
+    /// @brief Callback: Current list item has changed
+    long onChgList(FXObject*, FXSelector, void*);
+
+    /// @brief Callback: Current list item selection has changed
+    long onChgListSel(FXObject*, FXSelector, void*);
+
     /// @brief Callback: Hides unselected items if pressed
     long onCmdFilter(FXObject*, FXSelector, void*);
 
@@ -166,4 +172,11 @@ private:
 
     /// @brief label for declaring list size
     FXLabel* myCountLabel;
+
+    /// @brief Whether search is case sensitive
+    FXCheckButton* myCaseSensitive;
+
+    /// @brief Whether each change in the list should re-center the view
+    FXCheckButton* myInstantCenter;
+
 };

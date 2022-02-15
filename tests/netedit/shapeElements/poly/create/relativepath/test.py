@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,16 +35,16 @@ netedit.shapeMode()
 netedit.changeElement("poly")
 
 # change color manually
-netedit.changeDefaultValue(4, "white")
+netedit.changeDefaultValue(6, "white")
 
 # change fill
-netedit.changeDefaultBoolValue(5)
+netedit.changeDefaultBoolValue(7)
 
 # change imgfile (valid)
-netedit.changeDefaultValue(10, "berlin_icon.ico")
+netedit.changeDefaultValue(12, "berlin_icon.ico")
 
 # change relativePos
-netedit.changeDefaultBoolValue(11)
+netedit.changeDefaultBoolValue(13)
 
 # create polygon
 netedit.createSquaredTAZ(referencePosition, 182, 130, 200, True)

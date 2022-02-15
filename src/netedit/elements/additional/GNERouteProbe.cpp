@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -36,10 +36,10 @@
 
 GNERouteProbe::GNERouteProbe(GNENet* net) :
     GNEAdditional("", net, GLO_ROUTEPROBE, SUMO_TAG_ROUTEPROBE, "",
-        {}, {}, {}, {}, {}, {}, {}, {},
-    std::map<std::string, std::string>()),
+{}, {}, {}, {}, {}, {}, {}, {},
+std::map<std::string, std::string>()),
     myFrequency(0),
-    myBegin(0) {
+myBegin(0) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -48,11 +48,11 @@ GNERouteProbe::GNERouteProbe(GNENet* net) :
 GNERouteProbe::GNERouteProbe(const std::string& id, GNENet* net, GNEEdge* edge, const SUMOTime frequency, const std::string& name,
                              const std::string& filename, SUMOTime begin, const std::map<std::string, std::string>& parameters) :
     GNEAdditional(id, net, GLO_ROUTEPROBE, SUMO_TAG_ROUTEPROBE, name,
-        {}, {edge}, {}, {}, {}, {}, {}, {},
-    parameters),
-    myFrequency(frequency),
-    myFilename(filename),
-    myBegin(begin) {
+{}, {edge}, {}, {}, {}, {}, {}, {},
+parameters),
+myFrequency(frequency),
+myFilename(filename),
+myBegin(begin) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }

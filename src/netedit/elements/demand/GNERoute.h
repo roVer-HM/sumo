@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2016-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2016-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -76,7 +76,7 @@ public:
      * @param[in] vClass vehicle class
      * @param[in] edges route edges
      * @param[in] color route color
-     * @param[in] repea tthe number of times that the edges of this route shall be repeated
+     * @param[in] repeat the number of times that the edges of this route shall be repeated
      * @param[in] cycleType the times will be shifted forward by 'cycleTime' on each repeat
      * @param[in] parameters generic parameters
      */
@@ -88,7 +88,7 @@ public:
      * @param[in] vehicleParent vehicle parent of this embedded route
      * @param[in] edges route edges
      * @param[in] color route color
-     * @param[in] repea tthe number of times that the edges of this route shall be repeated
+     * @param[in] repeat the number of times that the edges of this route shall be repeated
      * @param[in] cycleType the times will be shifted forward by 'cycleTime' on each repeat
      * @param[in] parameters generic parameters
      */
@@ -112,7 +112,7 @@ public:
     void writeDemandElement(OutputDevice& device) const;
 
     /// @brief check if current demand element is valid to be writed into XML (by default true, can be reimplemented in children)
-    bool isDemandElementValid() const;
+    Problem isDemandElementValid() const;
 
     /// @brief return a string with the current demand element problem (by default empty, can be reimplemented in children)
     std::string getDemandElementProblem() const;
@@ -278,6 +278,9 @@ public:
 protected:
     /// @brief route color
     RGBColor myColor;
+
+    /// @brief flag for enable/disable color
+    bool myCustomColor;
 
     /// @brief repeat
     int myRepeat;

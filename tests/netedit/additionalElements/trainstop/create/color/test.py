@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,19 +35,19 @@ netedit.additionalMode()
 netedit.changeElement("trainStop")
 
 # set invalid person number
-netedit.changeColorUsingDialog(8, 5)
+netedit.changeColorUsingDialog(netedit.attrs.trainStop.create.colorDialog, 5)
 
 # try to create trainStop
 netedit.leftClick(referencePosition, 250, 250)
 
 # set invalid person number
-netedit.changeDefaultValue(9, "Vlue")
+netedit.changeDefaultValue(netedit.attrs.trainStop.create.color, "Vlue")
 
 # try to create trainStop
 netedit.leftClick(referencePosition, 250, 250)
 
 # set invalid person number
-netedit.changeDefaultValue(9, "red")
+netedit.changeDefaultValue(netedit.attrs.trainStop.create.color, "red")
 
 # create trainStop in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)

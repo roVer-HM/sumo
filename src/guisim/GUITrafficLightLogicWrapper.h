@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -116,14 +116,14 @@ public:
 
     int getCurrentPhase() const;
     std::string getCurrentPhaseName() const;
-    int getCurrentDuration() const;
-    int getCurrentMinDur() const;
-    int getCurrentMaxDur() const;
-    int getCurrentEarliestEnd() const;
-    int getCurrentLatestEnd() const;
-    int getDefaultCycleTime() const;
-    int getCurrentTimeInCycle() const;
-    int getRunningDuration() const;
+    int getCurrentDurationSeconds() const;
+    int getCurrentMinDurSeconds() const;
+    int getCurrentMaxDurSeconds() const;
+    int getCurrentEarliestEndSeconds() const;
+    int getCurrentLatestEndSeconds() const;
+    int getDefaultCycleTimeSeconds() const;
+    int getCurrentTimeInCycleSeconds() const;
+    int getRunningDurationSeconds() const;
 
 public:
     /**

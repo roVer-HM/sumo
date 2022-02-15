@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,31 +35,31 @@ netedit.additionalMode()
 netedit.changeElement("parkingArea")
 
 # set invalid angle (dummy)
-netedit.changeDefaultValue(10, "dummyHeight")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.angle, "dummyHeight")
 
 # create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)
 
 # set invalid angle (empty)
-netedit.changeDefaultValue(10, "")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.angle, "")
 
 # create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)
 
 # set valid angle (negative)
-netedit.changeDefaultValue(10, "-4")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.angle, "-4")
 
 # create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)
 
 # set valid angle (>360)
-netedit.changeDefaultValue(10, "500")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.angle, "500")
 
 # create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)
 
 # set valid angle
-netedit.changeDefaultValue(10, "120")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.angle, "120")
 
 # create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)

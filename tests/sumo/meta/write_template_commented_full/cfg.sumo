@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2021-11-14 16:54:27 by Eclipse SUMO sumo Version v1_10_0+2269-cf425462595
+<!-- generated on 2022-02-01 18:59:54 by Eclipse SUMO sumo Version v1_12_0+0179-34fe5c8
 -->
 
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
@@ -11,6 +11,9 @@
 
         <!-- Saves current configuration into FILE -->
         <save-configuration value="" synonymes="C save-config" type="FILE"/>
+
+        <!-- Enforce relative paths when saving the configuration -->
+        <save-configuration.relative value="false" synonymes="save-config.relative" type="BOOL"/>
 
         <!-- Saves a configuration template (empty) into FILE -->
         <save-template value="" type="FILE"/>
@@ -245,12 +248,6 @@
 
         <!-- Write overall statistics into FILE -->
         <statistic-output value="" synonymes="statistics-output" type="FILE"/>
-
-        <!-- Save movereminder states of selected vehicles into FILE -->
-        <movereminder-output value="" type="FILE"/>
-
-        <!-- List of vehicle ids which shall save their movereminder states -->
-        <movereminder-output.vehicles value="" type="STR[]"/>
 
         <!-- Use TIME[] as times at which a network state written -->
         <save-state.times value="" type="STR[]"/>
@@ -512,6 +509,9 @@
 
         <!-- Use FLOAT as a maximum train length when initializing the railway router -->
         <railway.max-train-length value="1000" type="FLOAT"/>
+
+        <!-- Replay exact rerouting sequence from vehroute-output -->
+        <replay-rerouting value="false" type="BOOL"/>
 
         <!-- The probability for a vehicle to have a &apos;rerouting&apos; device -->
         <device.rerouting.probability value="-1" type="FLOAT"/>
@@ -1016,6 +1016,9 @@
 
         <!-- Enable separate queues for every lane -->
         <meso-lane-queue value="false" type="BOOL"/>
+
+        <!-- Do not build queues (or reduce capacity) for lanes allowing only the given vclasses -->
+        <meso-ignore-lanes-by-vclass value="pedestrian,bicycle" synonymes="meso.ignore-lanes.by-vclass" type="STR[]"/>
 
         <!-- Enable mesoscopic traffic light and priority junction handling -->
         <meso-junction-control value="false" type="BOOL"/>

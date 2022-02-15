@@ -81,7 +81,7 @@ A vehicle may be defined using the following attributes:
 | **depart**      | float (s) or one of *triggered*, *containerTriggered*                         | The time step at which the vehicle shall enter the network; see [\#depart](#depart). Alternatively the vehicle departs once a [person enters](Specification/Persons.md#rides) or a [container is loaded](Specification/Containers.md) |
 | departLane      | int/string (≥0, "random", "free", "allowed", "best", "first")                 | The lane on which the vehicle shall be inserted; see [\#departLane](#departlane). *default: "first"*                                                                                                                                                  |
 | departPos       | float(m)/string ("random", "free", "random_free", "base", "last", "stop")            | The position at which the vehicle shall enter the net; see [\#departPos](#departpos). *default: "base"*                                                                                                                                               |
-| departSpeed     | float(m/s)/string (≥0, "random", "max", "desired", "speedLimit")              | The speed with which the vehicle shall enter the network; see [\#departSpeed](#departspeed). *default: 0*                                                                                                                                             |
+| departSpeed     | float(m/s)/string (≥0, "random", "max", "desired", "speedLimit", "last", "avg")              | The speed with which the vehicle shall enter the network; see [\#departSpeed](#departspeed). *default: 0*                                                                                                                                             |
 | departEdge     | int (index from \[0, routeLength\[ or "random"    | The initial edge along the route where the vehicle should enter the network (only supported if a complete route is defined); see [\#departEdge](#departEdge). *default: 0*                                                                                                                                             |
 | arrivalLane     | int/string (≥0,"current")                                                     | The lane at which the vehicle shall leave the network; see [\#arrivalLane](#arrivallane). *default: "current"*                                                                                                                                        |
 | arrivalPos      | float(m)/string (≥0<sup>(1)</sup>, "random", "max")                           | The position at which the vehicle shall leave the network; see [\#arrivalPos](#arrivalpos). *default: "max"*                                                                                                                                          |
@@ -323,6 +323,8 @@ vehicle.
 - "`max`": The maxSpeed is used, the speed may be adapted to ensure a safe distance to the leader vehicle.
 - "`desired`": The maxSpeed is used. If that speed is unsafe, departure is delayed.
 - "`speedLimit`": The speed limit of the lane is used. If that speed is unsafe, departure is delayed.
+- "`last`": The current speed of the last vehicle on the departure lane is used (or 'desired' speed if the lane is empty). If that speed is unsafe, departure is delayed.
+- "`avg`": The average speed on the departure lane is ised (or the minimum of 'speedLimit' and 'desired' if the lane is empty). If that speed is unsafe, departure is delayed.
 
 ### departEdge
 
@@ -457,9 +459,8 @@ These values have the following meanings:
 | containerCapacity | int                               | 0                                                                   | The number of containers the vehicle can transport.                                                                                                                                                                    |
 | boardingDuration  | float                             | 0.5                                                                 | The time required by a person to board the vehicle.                                                                                                                                                                    |
 | loadingDuration   | float                             | 90.0                                                                | The time required to load a container onto the vehicle.                                                                                                                                                                |
-| latAlignment      | float, "left", "right", "center", "compact", "nice", "arbitrary" | "center"                             | The preferred lateral alignment when using the [sublane-model](Simulation/SublaneModel.md). {{DT_FLOAT}} (in m from the center of the lane) or one of ("left", "right", "center", "compact", "nice", "arbitrary"). |
-| minGapLat         | float                             | 0.6                                                                 | The desired minimum lateral gap when using the [sublane-model](Simulation/SublaneModel.md)                                                                                                                     |
-| maxSpeedLat       | float                             | 1.0                                                                 | The maximum lateral speed when using the [sublane-model](Simulation/SublaneModel.md)                                                                                                                           |
+| latAlignment      | float, "left", "right", "center", "compact", "nice", "arbitrary" | "right" for bicycles, "center" otherwise                                            | The preferred lateral alignment when using the [sublane-model](Simulation/SublaneModel.md). {{DT_FLOAT}} (in m from the center of the lane) or one of ("left", "right", "center", "compact", "nice", "arbitrary"). |
+| maxSpeedLat       | float                             | 1.0                                                                 | The maximum lateral speed when using the [sublane-model or continuous lane change model](Simulation/SublaneModel.md)                                                                                                                           |
 | actionStepLength  | float                             | global default (defaults to the simulation step, configurable via **--default.action-step-length**) | The interval length for which vehicle performs its decision logic (acceleration and lane-changing). The given value is processed to the closest (if possible smaller) positive multiple of the simulation step length. See [actionStepLength details](Car-Following-Models.md#actionsteplength)|
 
 Besides values which describe the vehicle's car-following properties,
@@ -470,12 +471,42 @@ implemented car-following models in the subsection [\#Car-Following Models](#car
 
 ## Speed Distributions
 
+### Individual Speed Factor
 The desired driving speed usually varies among the vehicle of a fleet.
-In SUMO this is modeled by a speed distribution using the attributes
-**speedFactor** or **speedDev**. as explained below.
+In SUMO this is modeled by assigning to each vehicle an individual multiplier which gets applied to the road speed limit.
+This multiplier is called the *individual speedFactor* or in short the *speedFactor of a vehicle*.
+The product of road speed limit and the individual speed factor gives the desired free flow driving speed of a vehicle.
+If the individual speedFactor is larger than 1 vehicles can exceed edge speeds. However, vehicle speeds are still
+capped at the vehicle type's **maxSpeed**.
 
-!!! note
-    Since version 1.0.0 speed distributions are used by default (speedDev="0.1"). In older version, speed distributions had to be defined for every vehicle type to avoid homogeneous speeds (and consequently invalid driving behavior because vehicles would never catch up with their leader vehicle)
+While it is possible to assign the individual speedFactor value directly in a `<vehicle>`, `<trip>` or even `<flow>` definition using attribute `speedFactor`, a more common use case is to define the distribution of these factors for a `<vType>`.
+
+Having a distribution of speed factors (and hence of desired speeds) is beneficial to the realism of a simulation. If the desired speed is constant among a fleet of vehicles, this implies that gaps between vehicles will keep their size constant over a long time. For this reason, the individual speed factor for each simulated vehicle (whether defined as `<vehicle>`, `<trip>` or part of a `<flow>`) is drawn from a distribution by default. 
+
+The speedFactor of a vehicle is writen to various outputs ([tripinfo-output](Simulation/Output/TripInfo.md), [vehroute-output](https://sumo.dlr.de/docs/Simulation/Output/VehRoutes.md)) and can also be checked via the [vehicle parameter dialog](sumo-gui.md#object_properties_right-click-functions).
+
+### Defining a normal distribution for vehicle speeds
+
+Two types of distributions can be defined for sampling the individual speedFactor of each vehicl by giving one of the following attributes in the `<vType>` element:
+
+- normal distribution:  `speedFactor="norm(mean,deviation)"`
+- truncated normal distribution:   `speedFactor="normc(mean,deviation,lowerCutOff,upperCutOff)"`
+
+The default for passenger cars is `"normc(1, 0.1, 0.2, 2)"` which implies that ~95% of the vehicles drive between 80% and 120%
+of the legal speed limit.
+
+Instead of giving the multi-parameter definition above, a simpler definition style is also possible.
+
+- setting the deviation of the distribution directly: `speedDev="0.3"`
+- setting the mean of the distribution directly: `speedFactor="1.2"`
+
+When using the attributes in this way, the default cut-off range [0.2, 2] remains unchanged.
+
+!!! caution
+    The distribution mean must fall within the cut-off range. In order to use mean values below 0.2 or above 2.0, the 4-parameter version must be used to modify the cut-off parameters as well.
+
+!!! caution
+    Attribute `speedFactor` has three different meanings: in a `<vehicle>` it defines the individual speedFactor directly. In a `<vType>` if given as a single floating point value, it defines the mean of the speed distribution and when giving as `norm(...)` / `nomrc(...)`, it defines the whole distribution.
 
 ### Vehicle class specific defaults
 
@@ -489,56 +520,15 @@ When defining a vehicle type with a *vClass*, the following default speed-deviat
 - emergency: 0
 - everything else: 0.1
 
+!!! note
+    before version 1.0.0, the default speedDev values was 0
+
 ### Global Configuration
 
 Instead of configuring speed distributions in a `<vType>` definition (as
 explained below), the [sumo](sumo.md)-option **--default.speeddev** {{DT_FLOAT}} can be used to set
-a global default. Setting this value to 0 restores pre-1.0.0 behavior.
+a global default. The option value overrides all vClass-defaults. Setting **--default.speeddev 0** estores pre-1.0.0 behavior.
 
-### Defining speed limit violations explicitly
-
-Each vehicle has an individual speed factor which is multiplied with the
-speed limit (edge speed) to determine the desired driving speed (default
-1.0). A vehicle with speed factor 1.2 drives up to 20% above the speed
-limit whereas a vehicle with speed factor 0.8 would always stay below
-the speed limit by 20%. By setting attributes **speedFactor** and
-**speedDev** as show below this individual speed factor for all vehicles
-of a type can be set to a fixed value.
-
-```xml
-<vType id="example" speedFactor="1.2" speedDev="0"
-```
-
-### Defining a normal distribution for vehicle speeds
-
-The desired driving speed usually varies among the vehicle of a fleet.
-While this could be modeled by defining a new type for each vehicle and
-assigning a distinct speed factor for each type (as above) this would be
-quite cumbersome. Instead the attribute **speedFactor** can also be used
-to sample a vehicle specific speed factor from a normal distribution.
-The parameter can be given as "norm(mean, dev)" or "normc(mean, dev,
-min, max)". Using **speedFactor**="normc(1,0.1,0.2,2)" will result in a
-speed distribution where 95% of the vehicles drive between 80% and 120%
-of the legal speed limit. For flows, every inserted vehicle will draw an
-individual chosen speed multiplier as well. The resulting values in this
-example are capped at 20% of speedFactor at the low end to prevent
-extreme dawdling and at twice the recommended speed. A vehicle keeps its
-chosen speed multiplier for the whole simulation and multiplies it with
-edge speeds to compute the actual speed for driving on this edge. Thus
-vehicles can exceed edge speeds. However, vehicle speeds are still
-capped at the vehicle type's **maxSpeed**.
-
-!!! caution
-    In order to use mean values below 0.2 or above 2.0, the 4-parameter version must be used to modify the cut-off parameters as well.
-
-### Defining a normal distribution (old style)
-
-An alternative way to specify speed distributions is to use numerical
-values for **speedFactor** and **speedDev**. In this case
-**speedFactor** defines the expected value and **speedDev** defines the
-deviation. When using this style, capping cannot be controlled and will
-always default to 20% and 200%. Thus the above example can also be
-defined as **speedFactor**="1" **speedDev**="0.1".
 
 ### Different distributions for cars and trucks
 The center of the speed distribution is defined relative to the road speed limit. On some roads, different speed limits may apply to cars and trucks.
@@ -558,6 +548,21 @@ Note, that the given type id refers to an edge type rather than a vehicle type. 
 
 !!! note
     If the specified departSpeed of a vehicle exceeds the speed limit and it's vType has a speedFactor deviation > 0, the individual chosen speed multiplier is at least high enough to accommodate the stated depart speed.
+
+### Examples
+
+Define a flow of vehicles that desire to drive at 120% of the speed limit without any deviation:
+
+```xml
+  <vType id="example" speedFactor="1.2" speedDev="0"/>
+  <flow id="f" type="example" begin="0" end="3600" probability="0.2" from="A" to="B"/>
+```
+
+Define a vehicle type with high speed deviation and no cut-off
+
+```xml
+  <vType id="example2" speedFactor="norm(1.0, 0.5)"/>  
+```
 
 ## Vehicle Length
 
@@ -854,6 +859,7 @@ lists which parameter are used by which model(s).
 | lcSpeedGainLookahead    | Lookahead time in seconds for anticipating slow down. *default: 0 (LC2013), 5 (SL2015), range \[0-inf)* | LC2013, SL2015 |
 | lcCooperativeRoundabout | Factor that increases willingness to move to the inside lane in a multi-lane roundabout. *default: lcCooperative, range \[0-1\]* | LC2013, SL2015 |
 | lcCooperativeSpeed      | Factor for cooperative speed adjustments. *default: lcCooperative, range \[0-1\]* | LC2013, SL2015 |
+| minGapLat              | The desired minimum lateral gap when using the [sublane-model](Simulation/SublaneModel.md) , *default: 0.6* | SL2015 |
 | lcSublane               | The eagerness for using the configured lateral alignment within the lane. Higher values result in increased willingness to sacrifice speed for alignment. *default: 1.0, range \[0-inf)*                                                                | SL2015         |
 | lcPushy                 | Willingness to encroach laterally on other drivers. *default: 0, range \[0-1\]*                  | SL2015         |
 | lcPushyGap              | Minimum lateral gap when encroaching laterally on other drives (alternative way to define lcPushy). *default: minGapLat, range 0 to minGapLat*                                                                                               | SL2015         |
@@ -875,6 +881,9 @@ The parameters are set within the `<vType>`:
 
 !!! note
     parameter 'lcMaxSpeedLatStanding' will not be applied when a vehicle is at the end of its lane (to ensure that there are no deadlocks).
+
+!!! caution
+    Modifying and Retrieving lane change model attributes via TraCI [works different from other vType attributes](TraCI/Change_Vehicle_State.md#relationship_between_lanechange_model_attributes_and_vtypes)
 
 ## Junction Model Parameters
 
@@ -1190,6 +1199,12 @@ defining them for the vehicle or the vehicle type in the following way:
     </vType>
 
     <vehicle id="v1" route="route0" depart="0" type="t1"/>
+    
+    <vType id="t2">
+        <param key="device.<DEVICENAME>.probablity" value="0.5"/>
+    </vType>
+
+    <vehicle id="v2" route="route0" depart="0" type="t2"/>
 </routes>
 ```
 

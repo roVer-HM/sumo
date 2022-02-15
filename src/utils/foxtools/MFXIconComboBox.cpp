@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2006-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2006-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -37,6 +37,7 @@
 #define ICON_SPACING        4   // Spacing between icon and label
 #define COMBOBOX_INS_MASK   (COMBOBOX_REPLACE | COMBOBOX_INSERT_BEFORE | COMBOBOX_INSERT_AFTER | COMBOBOX_INSERT_FIRST | COMBOBOX_INSERT_LAST)
 #define COMBOBOX_MASK       (COMBOBOX_STATIC | COMBOBOX_INS_MASK)
+#define ICON_HEIGHT         20
 
 // Map
 FXDEFMAP(MFXIconComboBox) MFXIconComboBoxMap[] = {
@@ -132,7 +133,7 @@ MFXIconComboBox::MFXIconComboBox(FXComposite* p, FXint cols, FXObject* tgt, FXSe
         myTextFieldIcon->setEditable(FALSE);
     }
     myPane = new FXPopup(this, FRAME_LINE);
-    myList = new FXList(myPane, this, MFXIconComboBox::ID_LIST, LIST_BROWSESELECT | LIST_AUTOSELECT | LAYOUT_FILL_X | LAYOUT_FILL_Y | SCROLLERS_TRACK | HSCROLLER_NEVER);
+    myList = new FXList(myPane, this, MFXIconComboBox::ID_LIST, LIST_BROWSESELECT | LIST_AUTOSELECT | LAYOUT_FILL_X | LAYOUT_FIX_HEIGHT | SCROLLERS_TRACK | HSCROLLER_NEVER);
     if (options & COMBOBOX_STATIC) {
         myList->setScrollStyle(SCROLLERS_TRACK | HSCROLLING_OFF);
     }
@@ -274,6 +275,8 @@ MFXIconComboBox::getNumVisible() const {
 void
 MFXIconComboBox::setNumVisible(FXint nvis) {
     myList->setNumVisible(nvis);
+    // set height manually (due icons)
+    myList->setHeight(nvis * ICON_HEIGHT);
 }
 
 
@@ -394,9 +397,9 @@ MFXIconComboBox::prependItem(const FXString& text, void* ptr) {
     FXint index = myList->prependItem(text, NULL, ptr);
     if (isItemCurrent(0)) {
         myTextFieldIcon->setText(text);
-        myTextFieldIcon->setBackColor(FXRGB(255,255,255));
+        myTextFieldIcon->setBackColor(FXRGB(255, 255, 255));
         myIconLabel->setIcon(nullptr);
-        myIconLabel->setBackColor(FXRGB(255,255,255));
+        myIconLabel->setBackColor(FXRGB(255, 255, 255));
     }
     recalc();
     return index;
@@ -418,7 +421,7 @@ MFXIconComboBox::moveItem(FXint newindex, FXint oldindex) {
             myTextFieldIcon->setText(" ");
         }
         myIconLabel->setIcon(nullptr);
-        myIconLabel->setBackColor(FXRGB(255,255,255));
+        myIconLabel->setBackColor(FXRGB(255, 255, 255));
     }
     recalc();
     return newindex;
@@ -437,7 +440,7 @@ MFXIconComboBox::removeItem(FXint index) {
             myTextFieldIcon->setText(FXString::null);
         }
         myIconLabel->setIcon(nullptr);
-        myIconLabel->setBackColor(FXRGB(255,255,255));
+        myIconLabel->setBackColor(FXRGB(255, 255, 255));
     }
     recalc();
 }

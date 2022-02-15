@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -41,16 +41,16 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 250, 180)
 
 # Change parameter 18 with a non valid value (dummy)
-netedit.modifyAttribute(18, "dummyShapeStart", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeStart, "dummyShapeStart", False)
 
 # Change parameter 18 with a non valid value (incomplete)
-netedit.modifyAttribute(18, "34", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeStart, "34", False)
 
 # Change parameter 18 with a valid value (empty)
-netedit.modifyAttribute(18, "", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeStart, "", False)
 
 # Change parameter 18 with a valid value
-netedit.modifyAttribute(18, "14,15.5", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeStart, "14,15.5", False)
 
 # recompute
 netedit.rebuildNetwork()

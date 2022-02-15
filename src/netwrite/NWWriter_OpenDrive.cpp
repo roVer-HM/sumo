@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2011-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2011-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -88,20 +88,24 @@ NWWriter_OpenDrive::writeNetwork(const OptionsCont& oc, NBNetBuilder& nb) {
     device.writeAttr("maxJunc", nc.size());
     device.writeAttr("maxPrg", 0);
     */
-    device.closeTag();
     // write optional geo reference
     const GeoConvHelper& gch = GeoConvHelper::getFinal();
     if (gch.usingGeoProjection()) {
-        if (gch.getOffsetBase() == Position(0, 0)) {
-            device.openTag("geoReference");
-            device.writePreformattedTag(" <![CDATA[\n "
-                                        + gch.getProjString()
-                                        + "\n]]>\n");
+        device.openTag("geoReference");
+        device.writePreformattedTag(" <![CDATA[\n "
+                                    + gch.getProjString()
+                                    + "\n]]>\n");
+        device.closeTag();
+        if (gch.getOffsetBase() != Position(0, 0)) {
+            device.openTag("offset");
+            device.writeAttr("x", gch.getOffsetBase().x());
+            device.writeAttr("y", gch.getOffsetBase().y());
+            device.writeAttr("z", gch.getOffsetBase().z());
+            device.writeAttr("hdg", 0);
             device.closeTag();
-        } else {
-            WRITE_WARNING("Could not write OpenDRIVE geoReference. Only unshifted Coordinate systems are supported (offset=" + toString(gch.getOffsetBase()) + ")");
         }
     }
+    device.closeTag();
 
     // write normal edges (road)
     for (std::map<std::string, NBEdge*>::const_iterator i = ec.begin(); i != ec.end(); ++i) {
@@ -732,8 +736,9 @@ NWWriter_OpenDrive::writeGeomSmooth(const PositionVector& shape, double speed, O
         if (dAngle > straightThresh
                 && (length1 > longThresh || j == 1)
                 && (length2 > longThresh || j == (int)shape.size() - 2)) {
-            shape2.insertAtClosest(shape.positionAtOffset2D(offset + length1 - MIN2(length1 - POSITION_EPS, curveCutout)), false);
-            shape2.insertAtClosest(shape.positionAtOffset2D(offset + length1 + MIN2(length2 - POSITION_EPS, curveCutout)), false);
+            // NBNode::bezierControlPoints checks for minimum length of POSITION_EPS so we make sure there is no instability
+            shape2.insertAtClosest(shape.positionAtOffset2D(offset + length1 - MIN2(length1 - 2 * POSITION_EPS, curveCutout)), false);
+            shape2.insertAtClosest(shape.positionAtOffset2D(offset + length1 + MIN2(length2 - 2 * POSITION_EPS, curveCutout)), false);
             shape2.removeClosest(p1);
         }
         offset += length1;

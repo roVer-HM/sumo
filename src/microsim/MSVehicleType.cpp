@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -420,6 +420,13 @@ MSVehicleType::check() {
         myWarnedStepLengthTauOnce = true;
         WRITE_WARNINGF("Value of tau=% in vehicle type '%' lower than simulation step size may cause collisions.",
                        getCarFollowModel().getHeadwayTime(), getID());
+    }
+    if (MSGlobals::gUseMesoSim && getVehicleClass() != SVC_PEDESTRIAN && !OptionsCont::getOptions().getBool("meso-lane-queue")) {
+        SVCPermissions ignoreVClasses = parseVehicleClasses(OptionsCont::getOptions().getStringVector("meso-ignore-lanes-by-vclass"));
+        if ((ignoreVClasses & getVehicleClass()) != 0) {
+            WRITE_WARNINGF("Vehicle class '%' of vType '%' is set as ignored by option --meso-ignore-lanes-by-vclass to ensure default vehicle capacity. Set option --meso-lane-queue for multi-modal meso simulation",
+                    toString(getVehicleClass()), getID());
+        }
     }
 }
 

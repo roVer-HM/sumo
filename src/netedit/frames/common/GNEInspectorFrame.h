@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -195,7 +195,7 @@ public:
         void hideTemplateEditor();
 
         /// @brief get edge template (to copy attributes from)
-        GNEEdgeTemplate *getEdgeTemplate() const;
+        GNEEdgeTemplate* getEdgeTemplate() const;
 
         /// @brief set edge template
         void setEdgeTemplate(const GNEEdge* edge);
@@ -242,32 +242,32 @@ public:
         FXButton* myClearTemplateButton;
 
         /// @brief edge Template
-        GNEEdgeTemplate *myEdgeTemplate;
+        GNEEdgeTemplate* myEdgeTemplate;
     };
 
     // ===========================================================================
-    // class ParametersEditorInspector
+    // class ParametersEditor
     // ===========================================================================
 
-    class ParametersEditorInspector : public FXGroupBoxModule {
+    class ParametersEditor : public FXGroupBoxModule {
         /// @brief FOX-declaration
-        FXDECLARE(GNEInspectorFrame::ParametersEditorInspector)
+        FXDECLARE(GNEInspectorFrame::ParametersEditor)
 
     public:
         /// @brief constructor
-        ParametersEditorInspector(GNEInspectorFrame* inspectorFrameParent);
+        ParametersEditor(GNEInspectorFrame* inspectorFrameParent);
 
         /// @brief destructor
-        ~ParametersEditorInspector();
+        ~ParametersEditor();
 
         /// @brief show netedit attributes EditorInspector
-        void showParametersEditorInspector();
+        void showParametersEditor();
 
         /// @brief hide netedit attributes EditorInspector
-        void hideParametersEditorInspector();
+        void hideParametersEditor();
 
         /// @brief refresh netedit attributes
-        void refreshParametersEditorInspector();
+        void refreshParametersEditor();
 
         /// @brief get inspector frame parent
         GNEInspectorFrame* getInspectorFrameParent() const;
@@ -283,7 +283,7 @@ public:
 
     protected:
         /// @brief FOX need this
-        FOX_CONSTRUCTOR(ParametersEditorInspector)
+        FOX_CONSTRUCTOR(ParametersEditor)
 
     private:
         /// @brief current GNEInspectorFrame parent
@@ -438,7 +438,7 @@ private:
     GEOAttributesEditor* myGEOAttributesEditor;
 
     /// @brief Parameters editor inspector
-    ParametersEditorInspector* myParametersEditorInspector;
+    ParametersEditor* myParametersEditor;
 
     /// @brief Additional dialog
     AdditionalDialog* myAdditionalDialog;

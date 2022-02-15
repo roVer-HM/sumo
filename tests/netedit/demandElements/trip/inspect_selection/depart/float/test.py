@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -44,16 +44,16 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 330, 150)
 
 # change depart with an invalid value
-netedit.modifyAttribute(14, "", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspectSelection.depart, "", False)
 
 # change depart with an invalid value
-netedit.modifyAttribute(14, "dummyDepart", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspectSelection.depart, "dummyDepart", False)
 
 # change depart with an invalid value
-netedit.modifyAttribute(14, "-3", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspectSelection.depart, "-3", False)
 
 # change depart with an valid value
-netedit.modifyAttribute(14, "10.2", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspectSelection.depart, "10.2", False)
 
 # Check undo redo
 netedit.undo(referencePosition, 5)

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -34,11 +34,11 @@
 
 GNERerouter::GNERerouter(GNENet* net) :
     GNEAdditional("", net, GLO_REROUTER, SUMO_TAG_REROUTER, "",
-        {}, {}, {}, {}, {}, {}, {}, {},
-    std::map<std::string, std::string>()),
+{}, {}, {}, {}, {}, {}, {}, {},
+std::map<std::string, std::string>()),
     myProbability(0),
     myOff(false),
-    myTimeThreshold(0) {
+myTimeThreshold(0) {
     // reset default values
     resetDefaultValues();
 }
@@ -48,14 +48,14 @@ GNERerouter::GNERerouter(const std::string& id, GNENet* net, const Position& pos
                          const std::string& filename, double probability, bool off, SUMOTime timeThreshold, const std::vector<std::string>& vTypes,
                          const std::map<std::string, std::string>& parameters) :
     GNEAdditional(id, net, GLO_REROUTER, SUMO_TAG_REROUTER, name,
-        {}, {}, {}, {}, {}, {}, {}, {},
-    parameters),
-    myPosition(pos),
-    myFilename(filename),
-    myProbability(probability),
-    myOff(off),
-    myTimeThreshold(timeThreshold),
-    myVTypes(vTypes) {
+{}, {}, {}, {}, {}, {}, {}, {},
+parameters),
+myPosition(pos),
+myFilename(filename),
+myProbability(probability),
+myOff(off),
+myTimeThreshold(timeThreshold),
+myVTypes(vTypes) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }

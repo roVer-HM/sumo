@@ -3,12 +3,19 @@ triggered
 
 # tests for stopping on junction
 junction
+parking
+
+# stop at parkingArea with onRoad=true (no rerouting involved)
+parkingArea_onRoad
 
 # test invalid stop definitions
 errors
 
 # Tests whether stops can be handled
 simple_stop
+
+# define stop at start of edge
+close_to_start
 
 # tests  behavior when duration 0 is set
 duration_0
@@ -42,15 +49,6 @@ second_near_end2
 
 # stop on position 0 of a lane
 at_start
-
-# Tests whether parking can be handled
-parking
-
-# test stop timing
-parking_until
-
-# vehicle cannot resume from parking immediately due to traffic on the road
-parking_delay_insertion
 
 # Tests whether stopped vehicles can be overtaken
 overtaking
@@ -88,17 +86,8 @@ flow_until
 # Tests for flexible assignment of stopping positions (#3937)
 busstop_stopping_position_assignment
 
-# Tests for flexible assignment of stopping positions (#3937)
-busstop_stopping_position_assignment_parking
-
-# provide more parking length than the distance between endPos and startPos
-busstop_parkingLength
-
 # long stopping times should not trigger teleport, but teleports should possible after the stop
 long_stop
-
-# custom departPos at parkingArea
-parkingArea_departPos
 
 # stop with lateral offset
 posLat

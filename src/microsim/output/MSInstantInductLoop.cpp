@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2011-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2011-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -25,6 +25,9 @@
 #include <cassert>
 #include <numeric>
 #include <utility>
+#ifdef HAVE_FOX
+#include <utils/common/ScopedLocker.h>
+#endif
 #include <utils/common/WrappingCommand.h>
 #include <utils/common/ToString.h>
 #include <microsim/MSEventControl.h>
@@ -67,7 +70,7 @@ MSInstantInductLoop::notifyMove(SUMOTrafficObject& veh, double oldPos,
         return true;
     }
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myNotificationMutex, MSGlobals::gNumSimThreads > 1);
+    ScopedLocker<> lock(myNotificationMutex, MSGlobals::gNumSimThreads > 1);
 #endif
 
     const double oldSpeed = veh.getPreviousSpeed();

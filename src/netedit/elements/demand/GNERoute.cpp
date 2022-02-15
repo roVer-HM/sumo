@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -72,13 +72,14 @@ GNERoute::GNERoutePopupMenu::onCmdApplyDistance(FXObject*, FXSelector, void*) {
 
 GNERoute::GNERoute(SumoXMLTag tag, GNENet* net) :
     GNEDemandElement("", net, GLO_ROUTE, tag,
-        GNEPathManager::PathElement::Options::DEMAND_ELEMENT | GNEPathManager::PathElement::Options::ROUTE,
-        {}, {}, {}, {}, {}, {}, {}, {}),
-    Parameterised(),
-    myColor(RGBColor::YELLOW),
-    myRepeat(0),
-    myCycleTime(0),
-    myVClass(SVC_PASSENGER) {
+                     GNEPathManager::PathElement::Options::DEMAND_ELEMENT | GNEPathManager::PathElement::Options::ROUTE,
+{}, {}, {}, {}, {}, {}, {}, {}),
+Parameterised(),
+myColor(RGBColor::YELLOW),
+myCustomColor(false),
+myRepeat(0),
+myCycleTime(0),
+myVClass(SVC_PASSENGER) {
     // reset default values
     resetDefaultValues();
 }
@@ -86,13 +87,14 @@ GNERoute::GNERoute(SumoXMLTag tag, GNENet* net) :
 
 GNERoute::GNERoute(GNENet* net) :
     GNEDemandElement(net->getAttributeCarriers()->generateDemandElementID(SUMO_TAG_ROUTE), net, GLO_ROUTE, SUMO_TAG_ROUTE,
-        GNEPathManager::PathElement::Options::DEMAND_ELEMENT | GNEPathManager::PathElement::Options::ROUTE,
-        {}, {}, {}, {}, {}, {}, {}, {}),
-    Parameterised(),
-    myColor(RGBColor::YELLOW),
-    myRepeat(0),
-    myCycleTime(0),
-    myVClass(SVC_PASSENGER) {
+                     GNEPathManager::PathElement::Options::DEMAND_ELEMENT | GNEPathManager::PathElement::Options::ROUTE,
+{}, {}, {}, {}, {}, {}, {}, {}),
+Parameterised(),
+myColor(RGBColor::YELLOW),
+myCustomColor(false),
+myRepeat(0),
+myCycleTime(0),
+myVClass(SVC_PASSENGER) {
     // reset default values
     resetDefaultValues();
 }
@@ -101,38 +103,41 @@ GNERoute::GNERoute(GNENet* net) :
 GNERoute::GNERoute(GNENet* net, const std::string& id, SUMOVehicleClass vClass, const std::vector<GNEEdge*>& edges,
                    const RGBColor& color, const int repeat, const SUMOTime cycleTime, const std::map<std::string, std::string>& parameters) :
     GNEDemandElement(id, net, GLO_ROUTE, SUMO_TAG_ROUTE,
-        GNEPathManager::PathElement::Options::DEMAND_ELEMENT | GNEPathManager::PathElement::Options::ROUTE,
-        {}, edges, {}, {}, {}, {}, {}, {}),
-    Parameterised(parameters),
-    myColor(color),
-    myRepeat(repeat),
-    myCycleTime(cycleTime),
-    myVClass(vClass) {
+                     GNEPathManager::PathElement::Options::DEMAND_ELEMENT | GNEPathManager::PathElement::Options::ROUTE,
+{}, edges, {}, {}, {}, {}, {}, {}),
+Parameterised(parameters),
+myColor(color),
+myCustomColor(color != RGBColor(false)),
+myRepeat(repeat),
+myCycleTime(cycleTime),
+myVClass(vClass) {
 }
 
 
 GNERoute::GNERoute(GNENet* net, GNEDemandElement* vehicleParent, const std::vector<GNEEdge*>& edges,
                    const RGBColor& color, const int repeat, const SUMOTime cycleTime, const std::map<std::string, std::string>& parameters) :
     GNEDemandElement(vehicleParent, net, GLO_ROUTE, GNE_TAG_ROUTE_EMBEDDED,
-        GNEPathManager::PathElement::Options::DEMAND_ELEMENT | GNEPathManager::PathElement::Options::ROUTE,
-        {}, edges, {}, {}, {}, {}, {vehicleParent}, {}),
-    Parameterised(parameters),
-    myColor(color),
-    myRepeat(repeat),
-    myCycleTime(cycleTime),
-    myVClass(vehicleParent->getVClass()) {
+                     GNEPathManager::PathElement::Options::DEMAND_ELEMENT | GNEPathManager::PathElement::Options::ROUTE,
+{}, edges, {}, {}, {}, {}, {vehicleParent}, {}),
+Parameterised(parameters),
+myColor(color),
+myCustomColor(color != RGBColor::INVISIBLE),
+myRepeat(repeat),
+myCycleTime(cycleTime),
+myVClass(vehicleParent->getVClass()) {
 }
 
 
 GNERoute::GNERoute(GNEDemandElement* route) :
     GNEDemandElement(route, route->getNet(), GLO_ROUTE, SUMO_TAG_ROUTE,
                      GNEPathManager::PathElement::Options::DEMAND_ELEMENT | GNEPathManager::PathElement::Options::ROUTE,
-        {}, route->getParentEdges(), {}, {}, {}, {}, {}, {}),
-    Parameterised(),
-    myColor(route->getColor()),
-    myRepeat(parse<int>(route->getAttribute(SUMO_ATTR_REPEAT))),
-    myCycleTime(parse<SUMOTime>(route->getAttribute(SUMO_ATTR_CYCLETIME))),
-    myVClass(route->getVClass()) {
+{}, route->getParentEdges(), {}, {}, {}, {}, {}, {}),
+Parameterised(),
+myColor(route->getColor()),
+myCustomColor(!route->getAttribute(SUMO_ATTR_COLOR).empty()),
+myRepeat(parse<int>(route->getAttribute(SUMO_ATTR_REPEAT))),
+myCycleTime(parse<SUMOTime>(route->getAttribute(SUMO_ATTR_CYCLETIME))),
+myVClass(route->getVClass()) {
 }
 
 
@@ -180,19 +185,20 @@ GNERoute::writeDemandElement(OutputDevice& device) const {
         device.writeAttr(SUMO_ATTR_ID, getID());
     }
     device.writeAttr(SUMO_ATTR_EDGES, parseIDs(getParentEdges()));
-    device.writeAttr(SUMO_ATTR_COLOR, toString(myColor));
+    if (myCustomColor) {
+        device.writeAttr(SUMO_ATTR_COLOR, toString(myColor));
+    }
     if (myRepeat != 0) {
         device.writeAttr(SUMO_ATTR_REPEAT, toString(myRepeat));
     }
     if (myCycleTime != 0) {
         device.writeAttr(SUMO_ATTR_CYCLETIME, time2string(myCycleTime));
     }
-    // write stops associated to this route (not for embedded routes)
+    // write sorted stops
     if (myTagProperty.getTag() == SUMO_TAG_ROUTE) {
-        for (const auto& stop : getChildDemandElements()) {
-            if (stop->getTagProperty().isStop()) {
-                stop->writeDemandElement(device);
-            }
+        const auto sortedStops = getSortedStops(getParentEdges());
+        for (const auto& stop : sortedStops) {
+            stop->writeDemandElement(device);
         }
     }
     // write parameters
@@ -202,22 +208,49 @@ GNERoute::writeDemandElement(OutputDevice& device) const {
 }
 
 
-bool
+GNEDemandElement::Problem
 GNERoute::isDemandElementValid() const {
+    // get sorted stops and check number
+    std::vector<GNEDemandElement*> stops;
+    for (const auto& routeChild : getChildDemandElements()) {
+        if (routeChild->getTagProperty().isStop()) {
+            stops.push_back(routeChild);
+        }
+    }
+    const auto sortedStops = getSortedStops(getParentEdges());
+    if (sortedStops.size() != stops.size()) {
+        return Problem::STOP_DOWNSTREAM;
+    }
+    // check parent edges
     if ((getParentEdges().size() == 2) && (getParentEdges().at(0) == getParentEdges().at(1))) {
         // from and to are the same edges, then return true
-        return true;
+        return Problem::OK;
     } else if (getParentEdges().size() > 0) {
         // check that exist a connection between every edge
-        return isRouteValid(getParentEdges()).empty();
+        if (isRouteValid(getParentEdges()).size() > 0) {
+            return Problem::INVALID_PATH;
+        } else {
+            return Problem::OK;
+        }
     } else {
-        return false;
+        return Problem::INVALID_ELEMENT;
     }
 }
 
 
 std::string
 GNERoute::getDemandElementProblem() const {
+    // get sorted stops and check number
+    std::vector<GNEDemandElement*> stops;
+    for (const auto& routeChild : getChildDemandElements()) {
+        if (routeChild->getTagProperty().isStop()) {
+            stops.push_back(routeChild);
+        }
+    }
+    const auto sortedStops = getSortedStops(getParentEdges());
+    if (sortedStops.size() != stops.size()) {
+        return toString(stops.size() - sortedStops.size()) + " stops are outside of route (downstream)";
+    }
     // return string with the problem obtained from isRouteValid
     return isRouteValid(getParentEdges());
 }
@@ -237,7 +270,15 @@ GNERoute::getVClass() const {
 
 const RGBColor&
 GNERoute::getColor() const {
-    return myColor;
+    if (myCustomColor) {
+        return myColor;
+    } else if (myTagProperty.getTag() == GNE_TAG_ROUTE_EMBEDDED) {
+        return getParentDemandElements().front()->getColor();
+    } else if (getChildDemandElements().size() > 0) {
+        return getChildDemandElements().front()->getColor();
+    } else {
+        return RGBColor::YELLOW;
+    }
 }
 
 
@@ -513,7 +554,11 @@ GNERoute::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_EDGES:
             return parseIDs(getParentEdges());
         case SUMO_ATTR_COLOR:
-            return toString(myColor);
+            if (myCustomColor) {
+                return toString(myColor);
+            } else {
+                return "";
+            }
         case SUMO_ATTR_REPEAT:
             return toString(myRepeat);
         case SUMO_ATTR_CYCLETIME:
@@ -617,7 +662,11 @@ GNERoute::isValid(SumoXMLAttr key, const std::string& value) {
                 return false;
             }
         case SUMO_ATTR_COLOR:
-            return canParse<RGBColor>(value);
+            if (value.empty()) {
+                return true;
+            } else {
+                return canParse<RGBColor>(value);
+            }
         case SUMO_ATTR_REPEAT:
             return canParse<int>(value);
         case SUMO_ATTR_CYCLETIME:
@@ -720,7 +769,13 @@ GNERoute::setAttribute(SumoXMLAttr key, const std::string& value) {
             computePathElement();
             break;
         case SUMO_ATTR_COLOR:
-            myColor = parse<RGBColor>(value);
+            if (value.empty()) {
+                myCustomColor = false;
+                myColor = RGBColor::INVISIBLE;
+            } else {
+                myCustomColor = true;
+                myColor = parse<RGBColor>(value);
+            }
             break;
         case SUMO_ATTR_REPEAT:
             myRepeat = parse<int>(value);
@@ -746,7 +801,7 @@ GNERoute::setAttribute(SumoXMLAttr key, const std::string& value) {
 
 void
 GNERoute::toogleAttribute(SumoXMLAttr /*key*/, const bool /*value*/, const int /*previousParameters*/) {
-    throw InvalidArgument("Nothing to enable");
+    // nothing to toogle
 }
 
 

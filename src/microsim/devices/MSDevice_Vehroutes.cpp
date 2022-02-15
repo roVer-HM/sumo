@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -237,11 +237,15 @@ MSDevice_Vehroutes::writeXMLRoute(OutputDevice& os, int index) const {
         // write edge on which the vehicle was when the route was valid
         os.writeAttr("replacedOnEdge", (myReplacedRoutes[index].edge ?
                                         myReplacedRoutes[index].edge->getID() : ""));
+        if (myReplacedRoutes[index].lastRouteIndex > 0) {
+            // do not write the default
+            os.writeAttr(SUMO_ATTR_REPLACED_ON_INDEX, myReplacedRoutes[index].lastRouteIndex);
+        }
         // write the reason for replacement
         os.writeAttr("reason", myReplacedRoutes[index].info);
 
         // write the time at which the route was replaced
-        os.writeAttr("replacedAtTime", time2string(myReplacedRoutes[index].time));
+        os.writeAttr(SUMO_ATTR_REPLACED_AT_TIME, time2string(myReplacedRoutes[index].time));
         os.writeAttr(SUMO_ATTR_PROB, "0");
         OutputDevice_String edgesD;
         // always write the part that was actually driven and the rest of the current route that wasn't yet driven
@@ -402,18 +406,8 @@ MSDevice_Vehroutes::writeOutput(const bool hasArrived) const {
     od.closeTag();
     od.lf();
     if (mySorted) {
-        myRouteInfos[tmp.depart][myHolder.getID()] = od.getString();
-        myDepartureCounts[tmp.depart]--;
-        std::map<const SUMOTime, int>::iterator it = myDepartureCounts.begin();
-        while (it != myDepartureCounts.end() && it->second == 0) {
-            std::map<const std::string, std::string>& infos = myRouteInfos[it->first];
-            for (std::map<const std::string, std::string>::const_iterator it2 = infos.begin(); it2 != infos.end(); ++it2) {
-                routeOut << it2->second;
-            }
-            myRouteInfos.erase(it->first);
-            myDepartureCounts.erase(it);
-            it = myDepartureCounts.begin();
-        }
+        // numerical id reflects loading order
+        writeSortedOutput(routeOut, tmp.depart, toString(myHolder.getNumericalID()), od.getString());
     } else {
         routeOut << od.getString();
     }
@@ -468,6 +462,28 @@ MSDevice_Vehroutes::generateOutputForUnfinished() {
     }
 }
 
+
+void
+MSDevice_Vehroutes::registerTransportableDepart(SUMOTime depart) {
+    myDepartureCounts[depart]++;
+}
+
+
+void
+MSDevice_Vehroutes::writeSortedOutput(OutputDevice& routeOut, SUMOTime depart, const std::string& id, const std::string& xmlOutput) {
+    myRouteInfos[depart][id] = xmlOutput;
+    myDepartureCounts[depart]--;
+    std::map<const SUMOTime, int>::iterator it = myDepartureCounts.begin();
+    while (it != myDepartureCounts.end() && it->second == 0) {
+        std::map<const std::string, std::string>& infos = myRouteInfos[it->first];
+        for (std::map<const std::string, std::string>::const_iterator it2 = infos.begin(); it2 != infos.end(); ++it2) {
+            routeOut << it2->second;
+        }
+        myRouteInfos.erase(it->first);
+        myDepartureCounts.erase(it);
+        it = myDepartureCounts.begin();
+    }
+}
 
 void
 MSDevice_Vehroutes::saveState(OutputDevice& out) const {

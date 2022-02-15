@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -61,7 +61,7 @@ public:
 
     public:
         /// @brief constructor
-        ParametersValues(FXHorizontalFrame* frame);
+        ParametersValues(FXHorizontalFrame* frame, const std::string& name);
 
         /// @brief destructor
         ~ParametersValues();
@@ -230,11 +230,11 @@ public:
         FXButton* myHelpButton;
     };
 
-    /// @brief Constructor for parameter editor creator
-    GNESingleParametersDialog(GNEFrameAttributeModules::ParametersEditorCreator* parametersEditorCreator);
+    /// @brief Constructor for generic data attributes
+    GNESingleParametersDialog(GNEFrameAttributeModules::GenericDataAttributes* genericDataAttributes);
 
-    /// @brief Constructor for parameter editor inspector
-    GNESingleParametersDialog(GNEInspectorFrame::ParametersEditorInspector* parametersEditorInspector);
+    /// @brief Constructor for parameter editor
+    GNESingleParametersDialog(GNEInspectorFrame::ParametersEditor* parametersEditor);
 
     /// @brief Constructor for Vehicle Type Row (Vehicle Type Dialog)
     GNESingleParametersDialog(GNEVehicleTypeDialog::VTypeAtributes::VTypeAttributeRow* VTypeAttributeRow, GNEViewNet* viewNet);
@@ -264,11 +264,11 @@ protected:
     /// @brief FOX need this
     FOX_CONSTRUCTOR(GNESingleParametersDialog)
 
-    /// @brief pointer to ParametersEditorCreator
-    GNEFrameAttributeModules::ParametersEditorCreator* myParametersEditorCreator;
+    /// @brief pointer to GenericDataAttributes
+    GNEFrameAttributeModules::GenericDataAttributes* myGenericDataAttributes;
 
-    /// @brief pointer to ParametersEditorInspector
-    GNEInspectorFrame::ParametersEditorInspector* myParametersEditorInspector;
+    /// @brief pointer to ParametersEditor
+    GNEInspectorFrame::ParametersEditor* myParametersEditor;
 
     /// @brief pointer to VTypeAttributeRow
     GNEVehicleTypeDialog::VTypeAtributes::VTypeAttributeRow* VTypeAttributeRow;
@@ -296,7 +296,7 @@ protected:
 
 private:
     /// @brief auxiliar constructor
-    void constructor();
+    void constructor(const std::string& name);
 
     /// @brief Invalidated copy constructor.
     GNESingleParametersDialog(const GNESingleParametersDialog&) = delete;

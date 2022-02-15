@@ -1,11 +1,13 @@
-Eclipse SUMO sumo Version v1_10_0+2269-cf425462595
- Copyright (C) 2001-2021 German Aerospace Center (DLR) and others; https://sumo.dlr.de
+Eclipse SUMO sumo Version v1_12_0+0179-34fe5c8
+ Copyright (C) 2001-2022 German Aerospace Center (DLR) and others; https://sumo.dlr.de
 A microscopic, multi-modal traffic simulation.
 
 Usage: sumo [OPTION]*
 Configuration Options:
   -c, --configuration-file FILE        Loads the named config on startup
   -C, --save-configuration FILE        Saves current configuration into FILE
+  --save-configuration.relative        Enforce relative paths when saving the
+                                        configuration
   --save-template FILE                 Saves a configuration template (empty)
                                         into FILE
   --save-schema FILE                   Saves the configuration schema into FILE
@@ -144,10 +146,6 @@ Output Options:
                                         not ended at simulation end
   --collision-output FILE              Write collision information into FILE
   --statistic-output FILE              Write overall statistics into FILE
-  --movereminder-output FILE           Save movereminder states of selected
-                                        vehicles into FILE
-  --movereminder-output.vehicles STR[]  List of vehicle ids which shall save
-                                        their movereminder states
   --save-state.times STR[]             Use TIME[] as times at which a network
                                         state written
   --save-state.period TIME             save state repeatedly after TIME period
@@ -367,6 +365,8 @@ Routing Options:
   --persontrip.taxi.waiting-time TIME  Estimated time for taxi pickup
   --railway.max-train-length FLOAT     Use FLOAT as a maximum train length when
                                         initializing the railway router
+  --replay-rerouting                   Replay exact rerouting sequence from
+                                        vehroute-output
   --device.rerouting.probability FLOAT  The probability for a vehicle to have a
                                         'rerouting' device
   --device.rerouting.explicit STR[]    Assign a 'rerouting' device to named
@@ -713,6 +713,9 @@ Mesoscopic Options:
                                         (default)
   --meso-multi-queue                   Enable multiple queues at edge ends
   --meso-lane-queue                    Enable separate queues for every lane
+  --meso-ignore-lanes-by-vclass STR[]  Do not build queues (or reduce capacity)
+                                        for lanes allowing only the given
+                                        vclasses
   --meso-junction-control              Enable mesoscopic traffic light and
                                         priority junction handling
   --meso-junction-control.limited      Enable mesoscopic traffic light and

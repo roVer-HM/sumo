@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -53,16 +53,16 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 250, 95)
 
 # Change parameter 0 with a non valid value (empty speed)
-netedit.modifyAttribute(0, "", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspectSelection.speed, "", True)
 
 # Change parameter 0 with a non valid value (dummy speed)
-netedit.modifyAttribute(0, "dummySpeed", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspectSelection.speed, "dummySpeed", True)
 
 # Change parameter 0 with a non valid value (negative speed)
-netedit.modifyAttribute(0, "-13", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspectSelection.speed, "-13", True)
 
 # Change parameter 0 with a valid value
-netedit.modifyAttribute(0, "120.5", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspectSelection.speed, "120.5", True)
 
 # recompute
 netedit.rebuildNetwork()

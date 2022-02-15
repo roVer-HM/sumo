@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -145,10 +145,10 @@ private:
 
 private:
     // @brief collects all vehicleIDs which had to react to the emergency vehicle
-    std::set<std::string> influencedVehicles;
+    std::set<std::string> myInfluencedVehicles;
 
     // @brief collects all VehicleTypes of the vehicles which had to react to the emergency vehicle
-    std::map<std::string, std::string> influencedTypes;
+    std::map<std::string, std::string> myInfluencedTypes;
 
     /// @brief reaction distance of other vehicle (i.e. due to different noise levels of the siren)
     double myReactionDist;

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,7 +35,7 @@ netedit.additionalMode()
 netedit.changeElement("parkingArea")
 
 # change reference to center
-netedit.changeDefaultValue(12, "reference center")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.references, "reference center")
 
 # create parkingArea in mode "reference center"
 netedit.leftClick(referencePosition, 250, 170)
@@ -47,16 +47,16 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 250, 200)
 
 # Change parameter lane with a non valid value (dummy lane)
-netedit.modifyAttribute(1, "dummy lane", True)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspect.lane, "dummy lane", True)
 
 # Change parameter lane with a valid value (different edge)
-netedit.modifyAttribute(1, "gneE0_0", True)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspect.lane, "gneE0_0", True)
 
 # Change parameter lane with a valid value (original edge, same lane)
-netedit.modifyAttribute(1, "gneE2_1", True)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspect.lane, "gneE2_1", True)
 
 # Change parameter lane with a valid value (original edge, different lane)
-netedit.modifyAttribute(1, "gneE2_0", True)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspect.lane, "gneE2_0", True)
 
 # Check undos and redos
 netedit.undo(referencePosition, 3)

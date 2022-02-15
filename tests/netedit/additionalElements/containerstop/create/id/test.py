@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -38,22 +38,22 @@ netedit.changeElement("containerStop")
 netedit.leftClick(referencePosition, 250, 250)
 
 # enable ID
-netedit.changeDefaultBoolValue(2)
+netedit.changeDefaultBoolValue(netedit.attrs.containerStop.create.idEnable)
 
 # set invalid ID (duplicated
-netedit.changeDefaultValue(3, ";;;;;;;;;;;;;;;;")
+netedit.changeDefaultValue(netedit.attrs.containerStop.create.id, ";;;;;;;;;;;;;;;;")
 
 # create containerStop in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)
 
 # set invalid ID (duplicated
-netedit.changeDefaultValue(3, "containerStop_gneE0_0_0")
+netedit.changeDefaultValue(netedit.attrs.containerStop.create.id, "ct_0")
 
 # create containerStop in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)
 
 # set invalid ID (duplicated
-netedit.changeDefaultValue(3, "custom_ID")
+netedit.changeDefaultValue(netedit.attrs.containerStop.create.id, "custom_ID")
 
 # create containerStop in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)

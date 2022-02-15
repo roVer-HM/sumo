@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2008-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2008-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -56,7 +56,7 @@ SUMOVehicleParameter*
 SUMOVehicleParserHelper::parseFlowAttributes(SumoXMLTag tag, const SUMOSAXAttributes& attrs, const bool hardFail, const bool needID,
         const SUMOTime beginDefault, const SUMOTime endDefault) {
     // first parse ID
-    std::string id = parseID(attrs, tag);
+    const std::string id = attrs.hasAttribute(SUMO_ATTR_ID) ? parseID(attrs, tag) : "";
     // check if ID is valid
     if (!needID || !id.empty()) {
         if (needID && !SUMOXMLDefinitions::isValidVehicleID(id)) {
@@ -814,7 +814,7 @@ SUMOVehicleParserHelper::beginVTypeParsing(const SUMOSAXAttributes& attrs, const
         }
         if (attrs.hasAttribute(SUMO_ATTR_GUISHAPE)) {
             vType->shape = parseGuiShape(attrs, vType->id);
-            if (vType->shape != SVS_UNKNOWN) {
+            if (vType->shape != SUMOVehicleShape::UNKNOWN) {
                 vType->parametersSet |= VTYPEPARS_SHAPE_SET;
             }
         }
@@ -1407,7 +1407,7 @@ SUMOVehicleParserHelper::parseLCParams(SUMOVTypeParameter* into, LaneChangeModel
         lc2013Params.insert(SUMO_ATTR_LCA_SIGMA);
         lc2013Params.insert(SUMO_ATTR_LCA_KEEPRIGHT_ACCEPTANCE_TIME);
         lc2013Params.insert(SUMO_ATTR_LCA_EXPERIMENTAL1);
-        allowedLCModelAttrs[LCM_LC2013] = lc2013Params;
+        allowedLCModelAttrs[LaneChangeModel::LC2013] = lc2013Params;
         // sl2015 (extension of lc2013)
         std::set<SumoXMLAttr> sl2015Params = lc2013Params;
         sl2015Params.insert(SUMO_ATTR_LCA_PUSHY);
@@ -1418,13 +1418,13 @@ SUMOVehicleParserHelper::parseLCParams(SUMOVTypeParameter* into, LaneChangeModel
         sl2015Params.insert(SUMO_ATTR_LCA_ACCEL_LAT);
         sl2015Params.insert(SUMO_ATTR_LCA_TURN_ALIGNMENT_DISTANCE);
         sl2015Params.insert(SUMO_ATTR_LCA_LANE_DISCIPLINE);
-        allowedLCModelAttrs[LCM_SL2015] = sl2015Params;
+        allowedLCModelAttrs[LaneChangeModel::SL2015] = sl2015Params;
         // DK2008
         std::set<SumoXMLAttr> noParams;
-        allowedLCModelAttrs[LCM_DK2008] = noParams;
+        allowedLCModelAttrs[LaneChangeModel::DK2008] = noParams;
         // default model may be either LC2013 or SL2015
         // we allow both sets (sl2015 is a superset of lc2013Params)
-        allowedLCModelAttrs[LCM_DEFAULT] = sl2015Params;
+        allowedLCModelAttrs[LaneChangeModel::DEFAULT] = sl2015Params;
     }
     std::set<SumoXMLAttr> allowed = allowedLCModelAttrs[model];
     // iterate over LCM attributes
@@ -1580,7 +1580,7 @@ SUMOVehicleParserHelper::parseGuiShape(const SUMOSAXAttributes& attrs, const std
         return result;
     } else {
         WRITE_ERROR("The shape '" + vclassS + "' for " + attrs.getObjectType() + " '" + id + "' is not known.");
-        return SVS_UNKNOWN;
+        return SUMOVehicleShape::UNKNOWN;
     }
 }
 

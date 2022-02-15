@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -53,7 +53,7 @@ class FXMenuCheckIcon;
 /// @brief text field with thick frame and width 50 and limited to doubles
 #define GUIDesignTextFielWidth50Real    (FRAME_THICK | LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT | TEXTFIELD_REAL), 0, 0, 50, GUIDesignHeight, 2, 2, 2, 2
 
-/// @brief text field with thick frame, width of 180 (Used in GNEVehicleType)
+/// @brief text field with thick frame, width of 180 (Used in type frame)
 #define GUIDesignTextFielWidth180       (FRAME_THICK | LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT), 0, 0, 180, GUIDesignHeight, 2, 2, 2, 2
 
 /// @brief Num of column of text field
@@ -86,7 +86,7 @@ class FXMenuCheckIcon;
 #define GUIDesignButtonRectangular150   (FRAME_THICK | FRAME_RAISED | ICON_BEFORE_TEXT | JUSTIFY_CENTER_X | JUSTIFY_CENTER_Y | LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT), 0, 0, 150, GUIDesignHeight, 2, 2, 2, 2
 
 /// @brief button used in GroupBoxModule
-#define GUIDesignButtonFXGroupBoxModule (FRAME_LINE | LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT), 0, 0, GUIDesignHeight, GUIDesignHeight, 2, 2, 2, 2
+#define GUIDesignButtonFXGroupBoxModule (FRAME_LINE | LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT), 0, 0, GUIDesignHeight - 1, GUIDesignHeight - 1, 2, 2, 2, 2
 
 /// @}
 
@@ -156,6 +156,9 @@ class FXMenuCheckIcon;
 /// @brief CheckButton for Frames without thick extended over the frame
 #define GUIDesignCheckButtonViewSettings    (CHECKBUTTON_NORMAL | LAYOUT_CENTER_Y)
 
+/// @brief design for check button with fixed height (used in fix elements dialogs)
+#define GUIDesignCheckButtonFix          (CHECKBUTTON_NORMAL | JUSTIFY_CENTER_Y |  LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT | JUSTIFY_LEFT | ICON_BEFORE_TEXT), 0, 0, 200, GUIDesignHeight - 2, 2, 2, 2, 2
+
 /// @}
 
 
@@ -177,6 +180,9 @@ class FXMenuCheckIcon;
 
 /// @brief design for radio button with fixed height
 #define GUIDesignRadioButtonAttribute   (RADIOBUTTON_NORMAL | JUSTIFY_CENTER_Y |  LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT | JUSTIFY_LEFT | ICON_BEFORE_TEXT | FRAME_THICK), 0, 0, 100, GUIDesignHeight, 2, 2, 2, 2
+
+/// @brief design for radio button with fixed height (used in fix elements dialogs)
+#define GUIDesignRadioButtonFix         (RADIOBUTTON_NORMAL | JUSTIFY_CENTER_Y |  LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT | JUSTIFY_LEFT | ICON_BEFORE_TEXT), 0, 0, 200, GUIDesignHeight - 2, 2, 2, 2, 2
 
 /// @}
 
@@ -226,7 +232,10 @@ class FXMenuCheckIcon;
 #define GUIDesignLabelIcon64x32Thicked  (FRAME_THICK | ICON_BEFORE_TEXT | LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT), 0, 0, 94, 46, 2, 2, 2, 2
 
 /// @brief design for label with icon
-#define GUIDesignLabelIcon              (LAYOUT_CENTER_Y | LAYOUT_CENTER_X ), 0, 0, 0, 0, 2, 2, 0, 0
+#define GUIDesignLabelIcon              (LAYOUT_CENTER_Y | LAYOUT_CENTER_X), 0, 0, 0, 0, 2, 2, 0, 0
+
+/// @brief label with thick, text justify to left and extended with (used in selector frame)
+#define GUIDesignLabelThickCenter       (FRAME_THICK | ICON_BEFORE_TEXT | LAYOUT_FILL_X | LAYOUT_FIX_HEIGHT | LAYOUT_CENTER_Y | LAYOUT_CENTER_X), 0, 0, 0, GUIDesignHeight, 2, 2, 2, 2
 
 /// @brief label ticked filled extended over frame used for VClasses/VShapes. (can be used by icons of 64x32 pixels)
 #define GUIDesignLabelTickedIcon180x46  (FRAME_THICK | ICON_BEFORE_TEXT | LAYOUT_FILL_X | LAYOUT_FIX_HEIGHT | LAYOUT_FIX_WIDTH), 0, 0, 180, 46, 2, 2, 2, 2
@@ -266,7 +275,7 @@ class FXMenuCheckIcon;
 /// @brief Combo box static     (cannot be edited) extended over the matrix column
 #define GUIDesignComboBoxAttribute          (COMBOBOX_NORMAL | FRAME_THICK | LAYOUT_FILL_X | LAYOUT_FIX_HEIGHT), 0, 0, 0, GUIDesignHeight, 2, 2, 2, 2
 
-/// @brief comboBox with thick frame, width 180 (Used in GNEVehicleType)
+/// @brief comboBox with thick frame, width 180 (Used in GNEVType)
 #define GUIDesignComboBoxWidth180           (COMBOBOX_NORMAL | FRAME_THICK | LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT), 0, 0, 180, GUIDesignHeight, 2, 2, 2, 2
 
 /// @brief comboBox with thick frame, width 120
@@ -548,6 +557,9 @@ class FXMenuCheckIcon;
 
 /// @brief design for tables used in additional dialogs
 #define GUIDesignTableAdditionals       (LAYOUT_FILL_X | LAYOUT_FILL_Y | VSCROLLER_ALWAYS | HSCROLLER_NEVER | TABLE_NO_ROWSELECT | TABLE_NO_COLSELECT), 0, 0, 0, 0, 2, 2, 2, 2
+
+/// @brief design for tables used in GNEFixDemandElements dialogs
+#define GUIDesignTableFixElements       (LAYOUT_FILL_X | LAYOUT_FIX_HEIGHT | VSCROLLER_ALWAYS | HSCROLLER_NEVER | TABLE_NO_ROWSELECT | TABLE_NO_COLSELECT), 0, 0, 0, 200, 2, 2, 2, 2
 
 /// @}
 

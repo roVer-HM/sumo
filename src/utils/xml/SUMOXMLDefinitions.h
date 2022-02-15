@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -103,10 +103,10 @@ enum SumoXMLTag {
     SUMO_TAG_INSTANT_INDUCTION_LOOP,
     /// @brief A calibrator placed over edge
     SUMO_TAG_CALIBRATOR,
-    /// @brief A calibrator placed over lane (used in netedit)
-    SUMO_TAG_LANECALIBRATOR,
+    /// @brief A calibrator placed over lane
+    GNE_TAG_CALIBRATOR_LANE,
     /// @brief a flow definition within in Calibrator
-    GNE_TAG_FLOW_CALIBRATOR,
+    GNE_TAG_CALIBRATOR_FLOW,
     /// @brief  A rerouter
     SUMO_TAG_REROUTER,
     /// @brief an aggreagated-output interval
@@ -143,14 +143,18 @@ enum SumoXMLTag {
     SUMO_TAG_ROUTES,
     /// @brief a single trip definition (used by router)
     SUMO_TAG_TRIP,
+    /// @brief a trip between junctions (used in NETEDIT)
+    GNE_TAG_TRIP_JUNCTIONS,
     /// @brief description of a vehicle
     SUMO_TAG_VEHICLE,
-    /// @brief description of a vehicle type
+    /// @brief description of a vehicle with an embedded route (used in NETEDIT)
+    GNE_TAG_VEHICLE_WITHROUTE,
+    /// @brief description of a vehicle/person/container type
     SUMO_TAG_VTYPE,
-    /// @brief description of a person type (used in NETEDIT)
-    SUMO_TAG_PTYPE,
     /// @brief begin/end of the description of a route
     SUMO_TAG_ROUTE,
+    /// @brief embedded route (used in NETEDIT)
+    GNE_TAG_ROUTE_EMBEDDED,
     /// @brief description of a logic request within the junction
     SUMO_TAG_REQUEST,
     /// @brief a source
@@ -167,10 +171,16 @@ enum SumoXMLTag {
     SUMO_TAG_TLLOGIC,
     /// @brief a single phase description
     SUMO_TAG_PHASE,
+    /// @brief a condition for phase switching
+    SUMO_TAG_CONDITION,
+    /// @brief a conditional variable assignment for phase switching
+    SUMO_TAG_ASSIGNMENT,
     /// @brief a single trip definition that uses TAZs (used in NETEDIT)
     SUMO_TAG_TRIP_TAZ,
     /// @brief a flow definitio nusing a from-to edges instead of a route (used by router)
     SUMO_TAG_FLOW,
+    /// @brief a flow between junctions (used in NETEDIT)
+    GNE_TAG_FLOW_JUNCTIONS,
     /// @brief a flow state definition (used when saving and loading simulatino state)
     SUMO_TAG_FLOWSTATE,
     /// @brief a relation between two edges
@@ -394,36 +404,34 @@ enum SumoXMLTag {
     GNE_TAG_REROUTER_SYMBOL,
     /// @brief VSS Symbol
     GNE_TAG_VSS_SYMBOL,
-    /// @brief description of a vehicle with an embedded route (used in NETEDIT)
-    GNE_TAG_VEHICLE_WITHROUTE,
-    /// @brief embedded route (used in NETEDIT)
-    GNE_TAG_ROUTE_EMBEDDED,
     /// @brief a flow definition using a route instead of a from-to edges route (used in NETEDIT)
     GNE_TAG_FLOW_ROUTE,
     /// @brief description of a vehicle with an embedded route (used in NETEDIT)
     GNE_TAG_FLOW_WITHROUTE,
-    // person trips
+    // @brief person trips
     GNE_TAG_PERSONTRIP_EDGE,
     GNE_TAG_PERSONTRIP_BUSSTOP,
-    // walks
+    GNE_TAG_PERSONTRIP_JUNCTIONS,
+    // @brief walks
     GNE_TAG_WALK_EDGE,
     GNE_TAG_WALK_BUSSTOP,
     GNE_TAG_WALK_EDGES,
     GNE_TAG_WALK_ROUTE,
-    // rides
+    GNE_TAG_WALK_JUNCTIONS,
+    // @brief rides
     GNE_TAG_RIDE_EDGE,
     GNE_TAG_RIDE_BUSSTOP,
-    // person stops
+    // @brief person stops
     GNE_TAG_STOPPERSON_BUSSTOP,
     GNE_TAG_STOPPERSON_EDGE,
-    // person trips
+    // @brief person trips
     GNE_TAG_TRANSPORT_EDGE,
     GNE_TAG_TRANSPORT_CONTAINERSTOP,
-    // walks
+    // @brief walks
     GNE_TAG_TRANSHIP_EDGE,
     GNE_TAG_TRANSHIP_CONTAINERSTOP,
     GNE_TAG_TRANSHIP_EDGES,
-    // container stops
+    // @brief container stops
     GNE_TAG_STOPCONTAINER_CONTAINERSTOP,
     GNE_TAG_STOPCONTAINER_EDGE,
     /// @}
@@ -872,6 +880,8 @@ enum SumoXMLAttr {
     SUMO_ATTR_SAVINGS,
     SUMO_ATTR_EXITTIMES,
     SUMO_ATTR_PROB,
+    SUMO_ATTR_REPLACED_AT_TIME,
+    SUMO_ATTR_REPLACED_ON_INDEX,
     SUMO_ATTR_COUNT,
     SUMO_ATTR_PROBS,
     SUMO_ATTR_ROUTES,
@@ -993,6 +1003,12 @@ enum SumoXMLAttr {
     SUMO_ATTR_EARLIEST_END,
     /// @brief The maximum time within the cycle for switching (for coordinated actuation)
     SUMO_ATTR_LATEST_END,
+    /// @brief The condition expression for an early switch into this phase
+    SUMO_ATTR_EARLY_TARGET,
+    /// @brief The condition expression for switching into this phase when the active phase must end
+    SUMO_ATTR_FINAL_TARGET,
+    /// @brief The expression for a condition assignment
+    SUMO_ATTR_CHECK,
     /// @brief vehicle extension time of a phase
     SUMO_ATTR_VEHICLEEXTENSION,
     /// @brief yellow duration of a phase
@@ -1009,6 +1025,11 @@ enum SumoXMLAttr {
     SUMO_ATTR_FOES,
     /// @}
     SUMO_ATTR_CONSTRAINTS,
+
+    SUMO_ATTR_DETECTORS,
+    SUMO_ATTR_CONDITIONS,
+    SUMO_ATTR_SAVE_DETECTORS,
+    SUMO_ATTR_SAVE_CONDITIONS,
 
     /// @name Attributes for detectors
     /// @{
@@ -1087,6 +1108,9 @@ enum SumoXMLAttr {
     SUMO_ATTR_MAX_TRAVELTIME,
     SUMO_ATTR_MIN_SAMPLES,
     SUMO_ATTR_WRITE_ATTRIBUTES,
+    SUMO_ATTR_EDGESFILE,
+    SUMO_ATTR_AGGREGATE,
+    SUMO_ATTR_NUMEDGES,
 
     SUMO_ATTR_LON,
     SUMO_ATTR_LAT,
@@ -1159,6 +1183,7 @@ enum SumoXMLAttr {
     SUMO_ATTR_TLS_IGNORE_INTERNAL_JUNCTION_JAM,
     SUMO_ATTR_AVOID_OVERLAP,
     SUMO_ATTR_HIGHER_SPEED,
+    SUMO_ATTR_INTERNAL_JUNCTIONS_VEHICLE_WIDTH,
     SUMO_ATTR_COMMAND,
 
     SUMO_ATTR_ACTORCONFIG,
@@ -1262,6 +1287,8 @@ enum SumoXMLAttr {
     GNE_ATTR_DATASET,
     /// @brief parameters "key1=value1|key2=value2|...|keyN=valueN"
     GNE_ATTR_PARAMETERS,
+    /// @brief flow parameters (integer for mask end, number, etc...)
+    GNE_ATTR_FLOWPARAMETERS,
     /// @brief min source (used only by TAZs)
     GNE_ATTR_MIN_SOURCE,
     /// @brief min sink (used only by TAZs)
@@ -1294,6 +1321,8 @@ enum SumoXMLAttr {
     GNE_ATTR_STOPOFFSET,
     /// @brief stop exceptions (virtual, used by edge and lanes)
     GNE_ATTR_STOPOEXCEPTION,
+    /// @brief vehicle type distribution
+    GNE_ATTR_VTYPE_DISTRIBUTION,
 
     // @}
 
@@ -1615,24 +1644,24 @@ enum LaneChangeAction {
 
 
 /// @enum LaneChangeModel
-enum LaneChangeModel {
-    LCM_DK2008,
-    LCM_LC2013,
-    LCM_SL2015,
-    LCM_DEFAULT
+enum class LaneChangeModel {
+    DK2008,
+    LC2013,
+    SL2015,
+    DEFAULT
 };
 
 /// @enum train types
-enum TrainType {
-    TRAINTYPE_NGT400,
-    TRAINTYPE_NGT400_16,
-    TRAINTYPE_RB425,
-    TRAINTYPE_RB628,
-    TRAINTYPE_ICE1,
-    TRAINTYPE_REDOSTO7,
-    TRAINTYPE_FREIGHT,
-    TRAINTYPE_ICE3,
-    TRAINTYPE_UNKNOWN
+enum class TrainType {
+    NGT400,
+    NGT400_16,
+    RB425,
+    RB628,
+    ICE1,
+    REDOSTO7,
+    FREIGHT,
+    ICE3,
+    UNKNOWN
 };
 
 // @}

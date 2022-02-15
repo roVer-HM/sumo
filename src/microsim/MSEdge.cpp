@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -28,6 +28,9 @@
 #include <algorithm>
 #include <iostream>
 #include <cassert>
+#ifdef HAVE_FOX
+#include <utils/common/ScopedLocker.h>
+#endif
 #include <utils/common/StringTokenizer.h>
 #include <utils/options/OptionsCont.h>
 #include <microsim/devices/MSRoutingEngine.h>
@@ -55,6 +58,7 @@
 // ===========================================================================
 MSEdge::DictType MSEdge::myDict;
 MSEdgeVector MSEdge::myEdges;
+SVCPermissions MSEdge::myMesoIgnoredVClasses(0);
 
 
 // ===========================================================================
@@ -116,7 +120,7 @@ void MSEdge::recalcCache() {
     myLength = myLanes->front()->getLength();
     myEmptyTraveltime = myLength / MAX2(getSpeedLimit(), NUMERICAL_EPS);
     if (MSGlobals::gUseMesoSim) {
-        const MSNet::MesoEdgeType& edgeType = MSNet::getInstance()->getMesoType(getEdgeType());
+        const MESegment::MesoEdgeType& edgeType = MSNet::getInstance()->getMesoType(getEdgeType());
         if (edgeType.tlsPenalty > 0 || edgeType.minorPenalty > 0) {
             // add tls penalties to the minimum travel time
             SUMOTime minPenalty = -1;
@@ -196,7 +200,7 @@ void
 MSEdge::updateMesoType() {
     assert(MSGlobals::gUseMesoSim);
     if (!myLanes->empty()) {
-        MSGlobals::gMesoNet->updateSegementsForEdge(*this);
+        MSGlobals::gMesoNet->updateSegmentsForEdge(*this);
     }
 }
 
@@ -256,14 +260,25 @@ MSEdge::addToAllowed(const SVCPermissions permissions, std::shared_ptr<const std
 }
 
 
+SVCPermissions
+MSEdge::getMesoPermissions(SVCPermissions p, SVCPermissions ignoreIgnored) {
+    SVCPermissions ignored = myMesoIgnoredVClasses & ~ignoreIgnored;
+    return (p | ignored) == ignored ? 0 : p;
+}
+
+
 void
 MSEdge::rebuildAllowedLanes() {
     // rebuild myMinimumPermissions and myCombinedPermissions
     myMinimumPermissions = SVCAll;
     myCombinedPermissions = 0;
     for (MSLane* const lane : *myLanes) {
-        myMinimumPermissions &= lane->getPermissions();
-        myCombinedPermissions |= lane->getPermissions();
+        // same dedicated lanes are ignored in meso to avoid capacity errors.
+        // Here we have to make sure that vehicles which are set to depart on
+        // such lanes trigger an error.
+        SVCPermissions allow = getMesoPermissions(lane->getPermissions(), SVC_PEDESTRIAN);
+        myMinimumPermissions &= allow;
+        myCombinedPermissions |= allow;
     }
     // rebuild myAllowed
     myAllowed.clear();
@@ -284,6 +299,11 @@ MSEdge::rebuildAllowedLanes() {
     rebuildAllowedTargets(false);
     for (MSEdge* pred : myPredecessors) {
         pred->rebuildAllowedTargets(false);
+    }
+    if (MSGlobals::gUseMesoSim) {
+        for (MESegment* s = MSGlobals::gMesoNet->getSegmentForEdge(*this); s != nullptr; s = s->getNextSegment()) {
+            s->updatePermissions();
+        }
     }
 }
 
@@ -1066,7 +1086,7 @@ MSEdge::getSuccessors(SUMOVehicleClass vClass) const {
         return mySuccessors;
     }
 #ifdef HAVE_FOX
-    FXConditionalLock lock(mySuccessorMutex, MSGlobals::gNumThreads > 1);
+    ScopedLocker<> lock(mySuccessorMutex, MSGlobals::gNumThreads > 1);
 #endif
     std::map<SUMOVehicleClass, MSEdgeVector>::iterator i = myClassesSuccessorMap.find(vClass);
     if (i == myClassesSuccessorMap.end()) {
@@ -1096,7 +1116,7 @@ MSEdge::getViaSuccessors(SUMOVehicleClass vClass) const {
         return myViaSuccessors;
     }
 #ifdef HAVE_FOX
-    FXConditionalLock lock(mySuccessorMutex, MSGlobals::gNumThreads > 1);
+    ScopedLocker<> lock(mySuccessorMutex, MSGlobals::gNumThreads > 1);
 #endif
     auto i = myClassesViaSuccessorMap.find(vClass);
     if (i != myClassesViaSuccessorMap.end()) {
@@ -1209,7 +1229,7 @@ MSEdge::isSuperposable(const MSEdge* other) {
 void
 MSEdge::addWaiting(SUMOVehicle* vehicle) const {
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myWaitingMutex, MSGlobals::gNumSimThreads > 1);
+    ScopedLocker<> lock(myWaitingMutex, MSGlobals::gNumSimThreads > 1);
 #endif
     myWaiting.push_back(vehicle);
 }
@@ -1218,7 +1238,7 @@ MSEdge::addWaiting(SUMOVehicle* vehicle) const {
 void
 MSEdge::removeWaiting(const SUMOVehicle* vehicle) const {
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myWaitingMutex, MSGlobals::gNumSimThreads > 1);
+    ScopedLocker<> lock(myWaitingMutex, MSGlobals::gNumSimThreads > 1);
 #endif
     std::vector<SUMOVehicle*>::iterator it = std::find(myWaiting.begin(), myWaiting.end(), vehicle);
     if (it != myWaiting.end()) {
@@ -1230,7 +1250,7 @@ MSEdge::removeWaiting(const SUMOVehicle* vehicle) const {
 SUMOVehicle*
 MSEdge::getWaitingVehicle(MSTransportable* transportable, const double position) const {
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myWaitingMutex, MSGlobals::gNumSimThreads > 1);
+    ScopedLocker<> lock(myWaitingMutex, MSGlobals::gNumSimThreads > 1);
 #endif
     for (SUMOVehicle* const vehicle : myWaiting) {
         if (transportable->isWaitingFor(vehicle)) {

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -436,7 +436,7 @@ MSFrame::fillOptions() {
 
     oc.doRegister("default.carfollowmodel", new Option_String("Krauss"));
     oc.addDescription("default.carfollowmodel", "Processing", "Select default car following model (Krauss, IDM, ...)");
-    oc.addSynonyme("default.carfollowmodel", "carfollow.model", false);
+    oc.addSynonyme("default.carfollowmodel", "carfollow.model");
 
     oc.doRegister("default.speeddev", new Option_Float(-1));
     oc.addDescription("default.speeddev", "Processing", "Select default speed deviation. A negative value implies vClass specific defaults (0.1 for the default passenger class");
@@ -542,6 +542,9 @@ MSFrame::fillOptions() {
     oc.doRegister("railway.max-train-length", new Option_Float(1000.0));
     oc.addDescription("railway.max-train-length", "Routing", "Use FLOAT as a maximum train length when initializing the railway router");
 
+    oc.doRegister("replay-rerouting", new Option_Bool(false));
+    oc.addDescription("replay-rerouting", "Routing", "Replay exact rerouting sequence from vehroute-output");
+
     // devices
     oc.addOptionSubTopic("Emissions");
     oc.doRegister("phemlight-path", new Option_FileName(StringVector({ "./PHEMlight/" })));
@@ -592,6 +595,9 @@ MSFrame::fillOptions() {
     oc.addDescription("meso-multi-queue", "Mesoscopic", "Enable multiple queues at edge ends");
     oc.doRegister("meso-lane-queue", new Option_Bool(false));
     oc.addDescription("meso-lane-queue", "Mesoscopic", "Enable separate queues for every lane");
+    oc.doRegister("meso-ignore-lanes-by-vclass", new Option_StringVector(StringVector({ "pedestrian", "bicycle" })));
+    oc.addDescription("meso-ignore-lanes-by-vclass", "Mesoscopic", "Do not build queues (or reduce capacity) for lanes allowing only the given vclasses");
+    oc.addSynonyme("meso-ignore-lanes-by-vclass", "meso.ignore-lanes.by-vclass");
     oc.doRegister("meso-junction-control", new Option_Bool(false));
     oc.addDescription("meso-junction-control", "Mesoscopic", "Enable mesoscopic traffic light and priority junction handling");
     oc.doRegister("meso-junction-control.limited", new Option_Bool(false));
@@ -792,7 +798,7 @@ MSFrame::checkOptions() {
         try {
             const SUMOTime saveT = string2time(timeStr);
             if (end > 0 && saveT >= end) {
-                WRITE_WARNING("The save-state.time " + timeStr + " will not be used before simulation end at " + time2string(end));
+                WRITE_WARNING("The save-state time=" + timeStr + " will not be used before simulation end at " + time2string(end) + ".");
             } else {
                 checkStepLengthMultiple(saveT, " for save-state.times", deltaT);
             }

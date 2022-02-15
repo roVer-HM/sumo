@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -83,6 +83,7 @@ const RGBColor GUIVisualizationCandidateColorSettings::conflict(255, 255, 0, 255
 const double GUIVisualizationNeteditSizeSettings::junctionBubbleRadius(4);
 const double GUIVisualizationNeteditSizeSettings::junctionGeometryPointRadius(1);
 const double GUIVisualizationNeteditSizeSettings::edgeGeometryPointRadius(1.2);
+const double GUIVisualizationNeteditSizeSettings::laneGeometryPointRadius(1);
 const double GUIVisualizationNeteditSizeSettings::connectionGeometryPointRadius(0.8);
 const double GUIVisualizationNeteditSizeSettings::crossingGeometryPointRadius(1);
 const double GUIVisualizationNeteditSizeSettings::polygonGeometryPointRadius(1.2);
@@ -534,6 +535,7 @@ GUIVisualizationSettings::GUIVisualizationSettings(bool _netedit) :
     vehicleSize(1),
     vehicleName(false, 60, RGBColor(204, 153, 0, 255)),
     vehicleValue(false, 80, RGBColor::CYAN),
+    vehicleScaleValue(false, 80, RGBColor::GREY),
     vehicleText(false, 80, RGBColor::RED),
     personQuality(0),
     personSize(1),
@@ -1366,6 +1368,35 @@ GUIVisualizationSettings::initSumoGuiDefaults() {
         vehScheme.addColor(1, 1.);
         vehScheme.addColor(5, 10.);
         vehicleScaler.addScheme(vehScheme);
+        vehScheme = GUIScaleScheme("by offset from best lane", 0.8, "0", false, 0, COL_SCHEME_DYNAMIC);
+        vehScheme.addColor(5, -100, "opposite lane");
+        vehScheme.addColor(3, -3, "-3");
+        vehScheme.addColor(1.5, -1, "-1");
+        vehScheme.addColor(1.5,  1,  "1");
+        vehScheme.addColor(3,  3,  "3");
+        vehScheme.setAllowsNegativeValues(true);
+        vehicleScaler.addScheme(vehScheme);
+        vehScheme = GUIScaleScheme("by acceleration", 0.8, "0", false, 0, COL_SCHEME_DYNAMIC);
+        vehScheme.addColor(4, -9.0);
+        vehScheme.addColor(2, -4.5 /* -SUMOVTypeParameter::getDefaultDecel() */);
+        vehScheme.addColor(1, -0.1);
+        vehScheme.addColor(1,  0.1);
+        vehScheme.addColor(1,  2.6 /* SUMOVTypeParameter::getDefaultAccel() */);
+        vehScheme.addColor(3,  5.2);
+        vehScheme.setAllowsNegativeValues(true);
+        vehicleScaler.addScheme(vehScheme);
+        vehScheme = GUIScaleScheme("by time gap on lane", 5, "0", false, 0, COL_SCHEME_DYNAMIC);
+        vehScheme.addColor(1, -1);
+        vehScheme.addColor(1, 1);
+        vehScheme.addColor(0.5, 2);
+        vehScheme.setAllowsNegativeValues(true);
+        vehicleScaler.addScheme(vehScheme);
+        vehScheme = GUIScaleScheme("by depart delay", 0.8);
+        vehScheme.addColor(1, 10.);
+        vehScheme.addColor(2, 100.);
+        vehScheme.addColor(3, 200.);
+        vehScheme.addColor(5, 300.);
+        vehicleScaler.addScheme(vehScheme);
         vehScheme = GUIScaleScheme("by time loss", 1, "", false, 0, COL_SCHEME_DYNAMIC);
         vehScheme.addColor(1, 10.);
         vehScheme.addColor(2, 60.);
@@ -1695,6 +1726,9 @@ GUIVisualizationSettings::save(OutputDevice& dev) const {
     vehicleValue.print(dev, "vehicleValue");
     dev.lf();
     dev << "                 ";
+    vehicleScaleValue.print(dev, "vehicleScaleValue");
+    dev.lf();
+    dev << "                 ";
     vehicleText.print(dev, "vehicleText");
     vehicleColorer.save(dev);
     vehicleScaler.save(dev);
@@ -1990,6 +2024,9 @@ GUIVisualizationSettings::operator==(const GUIVisualizationSettings& v2) {
         return false;
     }
     if (vehicleValue != v2.vehicleValue) {
+        return false;
+    }
+    if (vehicleScaleValue != v2.vehicleScaleValue) {
         return false;
     }
     if (vehicleText != v2.vehicleText) {

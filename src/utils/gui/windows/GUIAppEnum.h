@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -608,7 +608,19 @@ enum {
     MID_CLOSE_EDGE,
     /// @brief add rerouter
     MID_ADD_REROUTER,
+    /// @brief toggle detector override
+    MID_VIRTUAL_DETECTOR,
 
+    /// @}
+
+    /// @name groupBoxModule messages
+    /// @{
+    /// @brief collapse groupBoxModule
+    MID_GROUPBOXMODULE_COLLAPSE,
+    /// @brief save contents
+    MID_GROUPBOXMODULE_SAVE,
+    /// @brief load contents
+    MID_GROUPBOXMODULE_LOAD,
     /// @}
 
     /// @name Toolbar file messages
@@ -885,6 +897,10 @@ enum {
     MID_GNE_SELECTORFRAME_SETBEGIN,
     /// @brief end text field
     MID_GNE_SELECTORFRAME_SETEND,
+    /// @brief select/unselect parents
+    MID_GNE_SELECTORFRAME_PARENTS,
+    /// @brief select/unselect children
+    MID_GNE_SELECTORFRAME_CHILDREN,
 
     /// @}
 
@@ -1122,6 +1138,8 @@ enum {
 
     /// @brief duplicate a lane
     MID_GNE_LANE_DUPLICATE,
+    /// @brief edit lane shape
+    MID_GNE_LANE_EDIT_SHAPE,
     /// @brief reset custom shape
     MID_GNE_LANE_RESET_CUSTOMSHAPE,
     /// @brief reset opposite lane

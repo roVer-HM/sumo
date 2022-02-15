@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -40,6 +40,7 @@
 class MSNet;
 class MSLink;
 class MSTLLogicControl;
+class MSDetectorFileOutput;
 class NLDetectorBuilder;
 
 
@@ -266,6 +267,10 @@ public:
      */
     virtual const MSPhaseDefinition& getCurrentPhaseDef() const = 0;
 
+    virtual SUMOTime getMinDur(int step = -1) const;
+    virtual SUMOTime getMaxDur(int step = -1) const;
+    virtual SUMOTime getEarliestEnd(int step = -1) const;
+    virtual SUMOTime getLatestEnd(int step = -1) const;
 
     /** @brief Returns the cycle time (in ms)
      * @return The (maybe changing) cycle time of this tls
@@ -366,6 +371,17 @@ public:
 
     /// @brief whether the given link index ever turns 'G'
     virtual bool getsMajorGreen(int linkIndex) const;
+
+
+    /// @brief return activation state of all detectors that affect this traffic light
+    virtual std::map<std::string, double> getDetectorStates() const {
+        return std::map<std::string, double>();
+    }
+
+    /// @brief return all named conditions defined for this traffic light
+    virtual std::map<std::string, double> getConditions() const {
+        return std::map<std::string, double>();
+    }
 
     /// @brief return vehicles that block the intersection/rail signal for vehicles that wish to pass the given linkIndex
     virtual VehicleVector getBlockingVehicles(int linkIndex) {

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -162,16 +162,16 @@ GNEPerson::GNESelectedPersonsPopupMenu::onCmdTransform(FXObject* obj, FXSelector
 
 GNEPerson::GNEPerson(SumoXMLTag tag, GNENet* net) :
     GNEDemandElement("", net, GLO_PERSON, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {}, {}) {
-        // reset default values
+{}, {}, {}, {}, {}, {}, {}, {}) {
+    // reset default values
     resetDefaultValues();
 }
 
 
 GNEPerson::GNEPerson(SumoXMLTag tag, GNENet* net, GNEDemandElement* pType, const SUMOVehicleParameter& personparameters) :
     GNEDemandElement(personparameters.id, net, (tag == SUMO_TAG_PERSONFLOW) ? GLO_PERSONFLOW : GLO_PERSON, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {pType}, {}),
-    SUMOVehicleParameter(personparameters) {
+{}, {}, {}, {}, {}, {}, {pType}, {}),
+SUMOVehicleParameter(personparameters) {
     // set manually vtypeID (needed for saving)
     vtypeid = pType->getID();
 }
@@ -262,10 +262,10 @@ GNEPerson::writeDemandElement(OutputDevice& device) const {
 }
 
 
-bool
+GNEDemandElement::Problem
 GNEPerson::isDemandElementValid() const {
     // a single person is always valid
-    return true;
+    return Problem::OK;
 }
 
 
@@ -395,7 +395,7 @@ GNEPerson::drawGL(const GUIVisualizationSettings& s) const {
             glScaled(exaggeration, exaggeration, 1);
             // draw person depending of detail level
             if (s.drawDetail(s.detailSettings.personShapes, exaggeration)) {
-                GUIBasePersonHelper::drawAction_drawAsImage(0, length, width, file, SVS_PEDESTRIAN, exaggeration);
+                GUIBasePersonHelper::drawAction_drawAsImage(0, length, width, file, SUMOVehicleShape::PEDESTRIAN, exaggeration);
             } else if (s.drawDetail(s.detailSettings.personCircles, exaggeration)) {
                 GUIBasePersonHelper::drawAction_drawAsCircle(length, width, s.scale * exaggeration);
             } else if (s.drawDetail(s.detailSettings.personTriangles, exaggeration)) {
@@ -535,6 +535,8 @@ GNEPerson::getAttributePosition(SumoXMLAttr key) const {
             // first check if first person plan is a stop
             if (personPlan->getTagProperty().isStopPerson()) {
                 return personPlan->getPositionInView();
+            } else if (personPlan->getParentJunctions().size() > 0) {
+                return personPlan->getParentJunctions().front()->getPositionInView();
             } else {
                 // declare lane lane
                 GNELane* lane = nullptr;
@@ -846,7 +848,7 @@ GNEPerson::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         case SUMO_ATTR_TYPE:
-            replaceDemandElementParent(SUMO_TAG_PTYPE, value, 0);
+            replaceDemandElementParent(SUMO_TAG_VTYPE, value, 0);
             // set manually vtypeID (needed for saving)
             vtypeid = value;
             break;

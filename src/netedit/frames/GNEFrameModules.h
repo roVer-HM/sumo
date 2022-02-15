@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -62,8 +62,11 @@ public:
         /// @brief hide item selector
         void hideTagSelector();
 
+        /// @brief get templateAC
+        GNEAttributeCarrier* getTemplateAC(SumoXMLTag ACTag) const;
+
         /// @brief get current templateAC
-        GNEAttributeCarrier *getCurrentTemplateAC() const;
+        GNEAttributeCarrier* getCurrentTemplateAC() const;
 
         /// @brief set current type manually
         void setCurrentTagType(GNETagProperties::TagType tagType, const bool onlyDrawables, const bool notifyFrameParent = true);
@@ -99,8 +102,8 @@ public:
 
         private:
             /// @brief editedAC
-            GNEAttributeCarrier *myAC;
-            
+            GNEAttributeCarrier* myAC;
+
             /// @brief Invalidated copy constructor.
             ACTemplate(const ACTemplate&) = delete;
 
@@ -118,7 +121,7 @@ public:
         MFXIconComboBox* myTagsMatchBox;
 
         /// @brief current templateAC;
-        GNEAttributeCarrier *myCurrentTemplateAC;
+        GNEAttributeCarrier* myCurrentTemplateAC;
 
         /// @brief list with ACTemplates
         std::vector<ACTemplate*> myACTemplates;
@@ -134,7 +137,7 @@ public:
 
     public:
         /// @brief constructor with a single tag
-        DemandElementSelector(GNEFrame* frameParent, SumoXMLTag demandElementTag);
+        DemandElementSelector(GNEFrame* frameParent, SumoXMLTag demandElementTag, GNEDemandElement* defaultElement = nullptr);
 
         /// @brief constructor with tag type
         DemandElementSelector(GNEFrame* frameParent, const std::vector<GNETagProperties::TagType>& tagTypes);
@@ -617,11 +620,17 @@ public:
         /// @brief set vClass
         void setVClass(SUMOVehicleClass vClass);
 
+        /// @brief add junction
+        bool addJunction(GNEJunction* junction, const bool shiftKeyPressed, const bool controlKeyPressed);
+
         /// @brief add edge
         bool addEdge(GNEEdge* edge, const bool shiftKeyPressed, const bool controlKeyPressed);
 
-        /// @brief get current selected additionals
-        std::vector<GNEEdge*> getSelectedEdges() const;
+        /// @brief get current selected edges
+        const std::vector<GNEEdge*>& getSelectedEdges() const;
+
+        /// @brief get current selected junctions
+        const std::vector<GNEJunction*>& getSelectedJunctions() const;
 
         /// @brief add stoppingPlace
         bool addStoppingPlace(GNEAdditional* stoppingPlace, const bool shiftKeyPressed, const bool controlKeyPressed);
@@ -644,8 +653,17 @@ public:
         /// @brief draw candidate edges with special color (Only for candidates, special and conflicted)
         bool drawCandidateEdgesWithSpecialColor() const;
 
+        /// @brief update junction colors
+        void updateJunctionColors();
+
         /// @brief update edge colors
         void updateEdgeColors();
+
+        /// @brief clear junction colors
+        void clearJunctionColors();
+
+        /// @brief clear edge colors
+        void clearEdgeColors();
 
         /// @brief draw temporal route
         void drawTemporalRoute(const GUIVisualizationSettings& s) const;
@@ -679,16 +697,19 @@ public:
 
         // @brief creation mode
         enum Mode {
-            CONSECUTIVE_EDGES       = 1 << 0,   // Path's edges are consecutives
-            NONCONSECUTIVE_EDGES    = 1 << 1,   // Path's edges aren't consecutives
-            START_EDGE              = 1 << 2,   // Path begins in an edge
-            END_EDGE                = 1 << 3,   // Path ends in an edge
-            SINGLE_ELEMENT          = 1 << 4,   // Path only had one element
-            ONLY_FROMTO             = 1 << 5,   // Path only had two elements (first and last)
-            END_BUSSTOP             = 1 << 6,   // Path ends in a busStop
-            ROUTE                   = 1 << 7,   // Path uses a route
-            REQUIRE_FIRSTELEMENT    = 1 << 8,   // Path start always in a previous element
-            SHOW_CANDIDATE_EDGES    = 1 << 9,   // disable candidate edges
+            CONSECUTIVE_EDGES        = 1 << 0,   // Path's edges are consecutives
+            NONCONSECUTIVE_EDGES     = 1 << 1,   // Path's edges aren't consecutives
+            START_EDGE               = 1 << 2,   // Path begins in an edge
+            END_EDGE                 = 1 << 3,   // Path ends in an edge
+            START_JUNCTION           = 1 << 4,   // Path begins in an edge
+            END_JUNCTION             = 1 << 5,   // Path ends in an edge
+            SINGLE_ELEMENT           = 1 << 6,   // Path only had one element
+            ONLY_FROMTO              = 1 << 7,   // Path only had two elements (first and last)
+            END_BUSSTOP              = 1 << 8,   // Path ends in a busStop
+            ROUTE                    = 1 << 9,   // Path uses a route
+            REQUIRE_FIRSTELEMENT     = 1 << 10,  // Path start always in a previous element
+            SHOW_CANDIDATE_EDGES     = 1 << 11,  // Show candidate edges
+            SHOW_CANDIDATE_JUNCTIONS = 1 << 12,  // show candidate junctions
         };
 
         /// @brief update InfoRouteLabel
@@ -714,6 +735,9 @@ public:
 
         /// @brief current creation mode
         int myCreationMode;
+
+        /// @brief vector with selected junctions
+        std::vector<GNEJunction*> mySelectedJunctions;
 
         /// @brief vector with selected edges
         std::vector<GNEEdge*> mySelectedEdges;

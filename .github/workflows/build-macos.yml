@@ -4,15 +4,26 @@ on:
   push:            # run on push events
     paths-ignore:  # but ignore everything in the docs subfolder 
       - 'docs/**'
+    branches:
+      - '**'
+    tags:
+      - '*'
   pull_request:    # run on pull requests
     paths-ignore:  # but ignore everything in the docs subfolder 
       - 'docs/**'
+  schedule:
+    - cron:  '5 2 * * *'
 
 jobs:
   build:
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        os: [macos-10.15, macos-11]
+#    runs-on: ${{ matrix.os }}
     runs-on: macos-10.15
-    steps:
 
+    steps:
     - name: Cloning SUMO
       uses: actions/checkout@v2
       with:
@@ -67,22 +78,6 @@ jobs:
       with:
         name: macOS
         path: sumo/bin
-
-    - name: Building FMU Compliance Checker
-      run: |
-        # Runs only in Clang11 - minizip fails due to -Werror 
-        sudo xcode-select -s "/Applications/Xcode_11.7.app"
-        git clone --depth 1 https://github.com/modelica-tools/FMUComplianceChecker.git fmuChecker    
-        cd fmuChecker
-        mkdir build
-        cd build
-        cmake -Wno-dev .. 
-        cmake --build . --target install
-
-    - name: Checking sumo-fmi2.fmu
-      run: |
-        cd sumo
-        ../fmuChecker/install/fmuCheck.darwin64  bin/sumo-fmi2-darwin64.fmu    
 
     - name: Uploading FMI 2.0 FMU artifacts
       uses: actions/upload-artifact@v1

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -59,7 +59,7 @@ public:
         void refreshEdgeTypeSelector();
 
         /// @brief update id in comboBox
-        void updateIDinComboBox(const std::string &oldID, const std::string &newID);
+        void updateIDinComboBox(const std::string& oldID, const std::string& newID);
 
         /// @brief check if we have to use edge template
         bool useEdgeTemplate() const;
@@ -111,7 +111,7 @@ public:
     private:
         /// @brief pointer to createEdgeFrameParent
         GNECreateEdgeFrame* myCreateEdgeFrameParent;
-    
+
         /// @brief default edge type
         GNEEdgeType* myDefaultEdgeType;
 
@@ -187,7 +187,7 @@ public:
     private:
         /// @brief pointer to createEdgeFrameParent
         GNECreateEdgeFrame* myCreateEdgeFrameParent;
-    
+
         /// @brief lane index
         int myLaneIndex;
         /// @brief ComboBox for lane types

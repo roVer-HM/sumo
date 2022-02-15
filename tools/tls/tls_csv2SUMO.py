@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -227,13 +227,11 @@ for logic in allLogics:
         for l in range(0, len(linkMap)):
             index = logic.links2index[linkMap[l]]
             d = logic.defs[index]
-            if d[i] == 'r':
-                state = state + "r"
-            elif d[i] == 'y' or d[i] == 'a':
+            if d[i] in 'rgyoOus':
+                state = state + d[i]
+            elif d[i] == 'a':
                 state = state + "y"
-            elif d[i] == 'g':
-                state = state + "g"
-            elif d[i] == 'o' or d[i] == 'x':
+            elif d[i] == 'x':
                 state = state + "o"
             else:
                 sys.stderr.write(

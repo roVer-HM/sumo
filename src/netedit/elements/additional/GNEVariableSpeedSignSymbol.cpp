@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -32,8 +32,8 @@
 
 GNEVariableSpeedSignSymbol::GNEVariableSpeedSignSymbol(GNEAdditional* VSSParent, GNELane* lane) :
     GNEAdditional(VSSParent->getNet(), GLO_VSS, GNE_TAG_VSS_SYMBOL, "",
-        {}, {}, {lane}, {VSSParent}, {}, {}, {}, {},
-    std::map<std::string, std::string>()) {
+{}, {}, {lane}, {VSSParent}, {}, {}, {}, {},
+std::map<std::string, std::string>()) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -74,17 +74,17 @@ MSAbstractLaneChangeModel::initGlobalOptions(const OptionsCont& oc) {
 
 MSAbstractLaneChangeModel*
 MSAbstractLaneChangeModel::build(LaneChangeModel lcm, MSVehicle& v) {
-    if (MSGlobals::gLateralResolution > 0 && lcm != LCM_SL2015 && lcm != LCM_DEFAULT) {
+    if (MSGlobals::gLateralResolution > 0 && lcm != LaneChangeModel::SL2015 && lcm != LaneChangeModel::DEFAULT) {
         throw ProcessError("Lane change model '" + toString(lcm) + "' is not compatible with sublane simulation");
     }
     switch (lcm) {
-        case LCM_DK2008:
+        case LaneChangeModel::DK2008:
             return new MSLCM_DK2008(v);
-        case LCM_LC2013:
+        case LaneChangeModel::LC2013:
             return new MSLCM_LC2013(v);
-        case LCM_SL2015:
+        case LaneChangeModel::SL2015:
             return new MSLCM_SL2015(v);
-        case LCM_DEFAULT:
+        case LaneChangeModel::DEFAULT:
             if (MSGlobals::gLateralResolution <= 0) {
                 return new MSLCM_LC2013(v);
             } else {

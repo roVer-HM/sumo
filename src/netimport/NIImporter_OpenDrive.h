@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -105,6 +105,7 @@ protected:
         OPENDRIVE_TAG_SPEED,
         OPENDRIVE_TAG_ELEVATION,
         OPENDRIVE_TAG_GEOREFERENCE,
+        OPENDRIVE_TAG_OFFSET,
         OPENDRIVE_TAG_OBJECT,
         OPENDRIVE_TAG_REPEAT
     };
@@ -360,6 +361,9 @@ protected:
         /// @brief the composite type built from all used lane types
         std::string rightType;
         std::string leftType;
+        /// @brief average width of removed inside lanes
+        double discardedInnerWidthLeft;
+        double discardedInnerWidthRight;
     };
 
 
@@ -602,6 +606,7 @@ private:
     ContactPoint myCurrentContactPoint;
     bool myConnectionWasEmpty;
     std::map<std::string, OpenDriveSignal> mySignals;
+    Position myOffset;
 
     static bool myImportAllTypes;
     static bool myImportWidths;
@@ -645,9 +650,9 @@ protected:
     static bool hasNonLinearElevation(OpenDriveEdge& e);
 
     /// transform Poly3 into a list of offsets, adding intermediate points to geom if needed
-    static std::vector<double> discretizeOffsets(PositionVector& geom, const std::vector<OpenDriveLaneOffset>& offsets, const std::string& id); 
+    static std::vector<double> discretizeOffsets(PositionVector& geom, const std::vector<OpenDriveLaneOffset>& offsets, const std::string& id);
 
-    static void addOffsets(bool left, PositionVector& geom, const std::vector<OpenDriveLaneOffset>& offsets, const std::string& id, std::vector<double>& result); 
+    static void addOffsets(bool left, PositionVector& geom, const std::vector<OpenDriveLaneOffset>& offsets, const std::string& id, std::vector<double>& result);
 
     /** @brief Rechecks lane sections of the given edges
      *

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -36,9 +36,9 @@
 
 GNETAZSourceSink::GNETAZSourceSink(SumoXMLTag tag, GNENet* net) :
     GNETAZElement("", net, GLO_TAZ, tag,
-        {}, {}, {}, {}, {}, {}, {}, {},
-    std::map<std::string, std::string>()),
-    myDepartWeight(0) {
+{}, {}, {}, {}, {}, {}, {}, {},
+std::map<std::string, std::string>()),
+myDepartWeight(0) {
     // reset default values
     resetDefaultValues();
 }
@@ -46,9 +46,9 @@ GNETAZSourceSink::GNETAZSourceSink(SumoXMLTag tag, GNENet* net) :
 
 GNETAZSourceSink::GNETAZSourceSink(SumoXMLTag sourceSinkTag, GNETAZElement* TAZParent, GNEEdge* edge, double departWeight) :
     GNETAZElement(TAZParent, TAZParent->getNet(), GLO_TAZ, sourceSinkTag,
-        {}, {edge}, {}, {}, {}, {TAZParent}, {}, {},
-    std::map<std::string, std::string>()),
-    myDepartWeight(departWeight) {
+{}, {edge}, {}, {}, {}, {TAZParent}, {}, {},
+std::map<std::string, std::string>()),
+myDepartWeight(departWeight) {
     //check that this is a TAZ Source OR a TAZ Sink
     if ((sourceSinkTag != SUMO_TAG_TAZSOURCE) && (sourceSinkTag != SUMO_TAG_TAZSINK)) {
         throw InvalidArgument("Invalid TAZ Child Tag");

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -818,8 +818,15 @@ GNETLSEditorFrame::buildInternalLanes(NBTrafficLightDefinition* tlDef) {
         // iterate over links
         for (const auto& link : links) {
             int tlIndex = link.getTLIndex();
-            PositionVector shape = link.getFrom()->getToNode()->computeInternalLaneShape(link.getFrom(), NBEdge::Connection(link.getFromLane(),
-                                   link.getTo(), link.getToLane()), NUM_POINTS);
+            PositionVector shape;
+            try {
+                const NBEdge::Connection& con = link.getFrom()->getConnectionRef(link.getFromLane(), link.getTo(), link.getToLane());
+                shape = con.shape;
+                shape.append(con.viaShape);
+            } catch (ProcessError&) {
+                shape = link.getFrom()->getToNode()->computeInternalLaneShape(link.getFrom(), NBEdge::Connection(link.getFromLane(),
+                        link.getTo(), link.getToLane()), NUM_POINTS);
+            }
             if (shape.length() < 2) {
                 // enlarge shape to ensure visibility
                 shape.clear();

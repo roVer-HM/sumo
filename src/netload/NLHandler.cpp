@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -46,6 +46,7 @@
 #include <microsim/traffic_lights/MSTrafficLightLogic.h>
 #include <microsim/traffic_lights/MSRailSignal.h>
 #include <microsim/traffic_lights/MSRailSignalConstraint.h>
+#include <mesosim/MESegment.h>
 #include <utils/iodevices/OutputDevice.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/geom/GeoConvHelper.h>
@@ -113,6 +114,12 @@ NLHandler::myStartElement(int element,
                 break;
             case SUMO_TAG_PHASE:
                 addPhase(attrs);
+                break;
+            case SUMO_TAG_CONDITION:
+                addCondition(attrs);
+                break;
+            case SUMO_TAG_ASSIGNMENT:
+                addAssignment(attrs);
                 break;
             case SUMO_TAG_CONNECTION:
                 addConnection(attrs);
@@ -278,6 +285,7 @@ NLHandler::myStartElement(int element,
                 break;
         }
     } catch (InvalidArgument& e) {
+        myCurrentIsBroken = true;
         WRITE_ERROR(e.what());
     }
     MSRouteHandler::myStartElement(element, attrs);
@@ -326,9 +334,21 @@ NLHandler::myEndElement(int element) {
         case SUMO_TAG_RAILSIGNAL_CONSTRAINTS:
             myConstrainedSignal = nullptr;
             break;
+        case SUMO_TAG_E1DETECTOR:
+        case SUMO_TAG_INDUCTION_LOOP:
+        case SUMO_TAG_INSTANT_INDUCTION_LOOP:
+        case SUMO_TAG_E2DETECTOR:
+        case SUMO_TAG_LANE_AREA_DETECTOR:
+            if (!myCurrentIsBroken) {
+                myLastParameterised.pop_back();
+            }
+            break;
         case SUMO_TAG_E3DETECTOR:
         case SUMO_TAG_ENTRY_EXIT_DETECTOR:
             endE3Detector();
+            if (!myCurrentIsBroken) {
+                myLastParameterised.pop_back();
+            }
             break;
         case SUMO_TAG_PARKING_AREA:
             myTriggerBuilder.endParkingArea();
@@ -790,10 +810,12 @@ NLHandler::addPhase(const SUMOSAXAttributes& attrs) {
     phase->earliestEnd = attrs.getOptSUMOTimeReporting(SUMO_ATTR_EARLIEST_END, id.c_str(), ok, tDefault);
     phase->latestEnd = attrs.getOptSUMOTimeReporting(SUMO_ATTR_LATEST_END, id.c_str(), ok, tDefault);
     phase->nextPhases = attrs.getOptIntVector(SUMO_ATTR_NEXT, id.c_str(), ok);
+    phase->earlyTarget = attrs.getOpt<std::string>(SUMO_ATTR_EARLY_TARGET, id.c_str(), ok, "");
+    phase->finalTarget = attrs.getOpt<std::string>(SUMO_ATTR_FINAL_TARGET, id.c_str(), ok, "");
     phase->name = attrs.getOpt<std::string>(SUMO_ATTR_NAME, id.c_str(), ok, "");
 
-    phase->vehext= attrs.getOptSUMOTimeReporting(SUMO_ATTR_VEHICLEEXTENSION, id.c_str(), ok, tDefault);
-    phase->yellow= attrs.getOptSUMOTimeReporting(SUMO_ATTR_YELLOW, id.c_str(), ok, tDefault);
+    phase->vehext = attrs.getOptSUMOTimeReporting(SUMO_ATTR_VEHICLEEXTENSION, id.c_str(), ok, tDefault);
+    phase->yellow = attrs.getOptSUMOTimeReporting(SUMO_ATTR_YELLOW, id.c_str(), ok, tDefault);
     phase->red = attrs.getOptSUMOTimeReporting(SUMO_ATTR_RED, id.c_str(), ok, tDefault);
 
     if (attrs.hasAttribute(SUMO_ATTR_TYPE)) {
@@ -842,11 +864,34 @@ NLHandler::addPhase(const SUMOSAXAttributes& attrs) {
 
 
 void
+NLHandler::addCondition(const SUMOSAXAttributes& attrs) {
+    bool ok = true;
+    const std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    const std::string value = attrs.get<std::string>(SUMO_ATTR_VALUE, id.c_str(), ok);
+    if (!myJunctionControlBuilder.addCondition(id, value)) {
+        WRITE_ERROR("Duplicate condition '" + id + "' in tlLogic '" + myJunctionControlBuilder.getActiveKey() + "'");
+    }
+}
+
+
+void
+NLHandler::addAssignment(const SUMOSAXAttributes& attrs) {
+    bool ok = true;
+    const std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    const std::string check = attrs.get<std::string>(SUMO_ATTR_CHECK, nullptr, ok);
+    const std::string value = attrs.get<std::string>(SUMO_ATTR_VALUE, id.c_str(), ok);
+    myJunctionControlBuilder.addAssignment(id, check, value);
+}
+
+
+void
 NLHandler::addE1Detector(const SUMOSAXAttributes& attrs) {
+    myCurrentIsBroken = false;
     bool ok = true;
     // get the id, report an error if not given or empty...
-    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    const std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
     if (!ok) {
+        myCurrentIsBroken = true;
         return;
     }
     const SUMOTime frequency = attrs.getSUMOTimeReporting(SUMO_ATTR_FREQUENCY, id.c_str(), ok);
@@ -862,19 +907,24 @@ NLHandler::addE1Detector(const SUMOSAXAttributes& attrs) {
             detectPersons |= (int)SUMOXMLDefinitions::PersonModeValues.get(mode);
         } else {
             WRITE_ERROR("Invalid person mode '" + mode + "' in E1 detector definition '" + id + "'");
+            myCurrentIsBroken = true;
             return;
         }
     }
     if (!ok) {
+        myCurrentIsBroken = true;
         return;
     }
     try {
-        myDetectorBuilder.buildInductLoop(id, lane, position, frequency,
-                                          FileHelpers::checkForRelativity(file, getFileName()),
-                                          friendlyPos, vTypes, detectPersons);
+        Parameterised* det = myDetectorBuilder.buildInductLoop(id, lane, position, frequency,
+                             FileHelpers::checkForRelativity(file, getFileName()),
+                             friendlyPos, vTypes, detectPersons);
+        myLastParameterised.push_back(det);
     } catch (InvalidArgument& e) {
+        myCurrentIsBroken = true;
         WRITE_ERROR(e.what());
     } catch (IOError& e) {
+        myCurrentIsBroken = true;
         WRITE_ERROR(e.what());
     }
 }
@@ -882,10 +932,12 @@ NLHandler::addE1Detector(const SUMOSAXAttributes& attrs) {
 
 void
 NLHandler::addInstantE1Detector(const SUMOSAXAttributes& attrs) {
+    myCurrentIsBroken = false;
     bool ok = true;
     // get the id, report an error if not given or empty...
     std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
     if (!ok) {
+        myCurrentIsBroken = true;
         return;
     }
     const double position = attrs.get<double>(SUMO_ATTR_POSITION, id.c_str(), ok);
@@ -894,15 +946,18 @@ NLHandler::addInstantE1Detector(const SUMOSAXAttributes& attrs) {
     const std::string file = attrs.get<std::string>(SUMO_ATTR_FILE, id.c_str(), ok);
     const std::string vTypes = attrs.getOpt<std::string>(SUMO_ATTR_VTYPES, id.c_str(), ok, "");
     if (!ok) {
+        myCurrentIsBroken = true;
         return;
     }
     try {
-        myDetectorBuilder.buildInstantInductLoop(id, lane, position, FileHelpers::checkForRelativity(file, getFileName()), friendlyPos, vTypes);
+        Parameterised* det = myDetectorBuilder.buildInstantInductLoop(id, lane, position, FileHelpers::checkForRelativity(file, getFileName()), friendlyPos, vTypes);
+        myLastParameterised.push_back(det);
     } catch (InvalidArgument& e) {
         WRITE_ERROR(e.what());
     } catch (IOError& e) {
         WRITE_ERROR(e.what());
     }
+    myCurrentIsBroken = true;
 }
 
 
@@ -953,7 +1008,7 @@ NLHandler::addRouteProbeDetector(const SUMOSAXAttributes& attrs) {
 
 void
 NLHandler::addE2Detector(const SUMOSAXAttributes& attrs) {
-
+    myCurrentIsBroken = false;
     // check whether this is a detector connected to a tls and optionally to a link
     bool ok = true;
     const std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
@@ -983,10 +1038,12 @@ NLHandler::addE2Detector(const SUMOSAXAttributes& attrs) {
             detectPersons |= (int)SUMOXMLDefinitions::PersonModeValues.get(mode);
         } else {
             WRITE_ERROR("Invalid person mode '" + mode + "' in E2 detector definition '" + id + "'");
+            myCurrentIsBroken = true;
             return;
         }
     }
     if (!ok) {
+        myCurrentIsBroken = true;
         return;
     }
 
@@ -1093,6 +1150,7 @@ NLHandler::addE2Detector(const SUMOSAXAttributes& attrs) {
     if (!lsaGiven) {
         frequency = attrs.getSUMOTimeReporting(SUMO_ATTR_FREQUENCY, id.c_str(), ok);
         if (!ok) {
+            myCurrentIsBroken = true;
             return;
         }
     } else {
@@ -1126,26 +1184,28 @@ NLHandler::addE2Detector(const SUMOSAXAttributes& attrs) {
         WRITE_ERROR(e.what());
     }
 
+    Parameterised* det;
     // Build detector
     if (lanesGiven) {
         // specification by a lane sequence
-        myDetectorBuilder.buildE2Detector(id, clanes, position, endPosition, filename, frequency,
-                                          haltingTimeThreshold, haltingSpeedThreshold, jamDistThreshold,
-                                          vTypes, detectPersons, friendlyPos, showDetector,
-                                          tlls, cToLane);
+        det = myDetectorBuilder.buildE2Detector(id, clanes, position, endPosition, filename, frequency,
+                                                haltingTimeThreshold, haltingSpeedThreshold, jamDistThreshold,
+                                                vTypes, detectPersons, friendlyPos, showDetector,
+                                                tlls, cToLane);
     } else {
         // specification by start or end lane
-        myDetectorBuilder.buildE2Detector(id, clane, position, endPosition, length, filename, frequency,
-                                          haltingTimeThreshold, haltingSpeedThreshold, jamDistThreshold,
-                                          vTypes, detectPersons, friendlyPos, showDetector,
-                                          tlls, cToLane);
+        det = myDetectorBuilder.buildE2Detector(id, clane, position, endPosition, length, filename, frequency,
+                                                haltingTimeThreshold, haltingSpeedThreshold, jamDistThreshold,
+                                                vTypes, detectPersons, friendlyPos, showDetector,
+                                                tlls, cToLane);
     }
-
+    myLastParameterised.push_back(det);
 }
 
 
 void
 NLHandler::beginE3Detector(const SUMOSAXAttributes& attrs) {
+    myCurrentIsBroken = false;
     bool ok = true;
     std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
     const SUMOTime frequency = attrs.getSUMOTimeReporting(SUMO_ATTR_FREQUENCY, id.c_str(), ok);
@@ -1161,19 +1221,24 @@ NLHandler::beginE3Detector(const SUMOSAXAttributes& attrs) {
             detectPersons |= (int)SUMOXMLDefinitions::PersonModeValues.get(mode);
         } else {
             WRITE_ERROR("Invalid person mode '" + mode + "' in E3 detector definition '" + id + "'");
+            myCurrentIsBroken = true;
             return;
         }
     }
     if (!ok) {
+        myCurrentIsBroken = true;
         return;
     }
     try {
-        myDetectorBuilder.beginE3Detector(id,
-                                          FileHelpers::checkForRelativity(file, getFileName()),
-                                          frequency, haltingSpeedThreshold, haltingTimeThreshold, vTypes, detectPersons, openEntry);
+        Parameterised* det = myDetectorBuilder.beginE3Detector(id,
+                             FileHelpers::checkForRelativity(file, getFileName()),
+                             frequency, haltingSpeedThreshold, haltingTimeThreshold, vTypes, detectPersons, openEntry);
+        myLastParameterised.push_back(det);
     } catch (InvalidArgument& e) {
+        myCurrentIsBroken = true;
         WRITE_ERROR(e.what());
     } catch (IOError& e) {
+        myCurrentIsBroken = true;
         WRITE_ERROR(e.what());
     }
 }
@@ -1223,6 +1288,9 @@ NLHandler::addEdgeLaneMeanData(const SUMOSAXAttributes& attrs, int objecttype) {
     const SUMOTime frequency = attrs.getOptSUMOTimeReporting(SUMO_ATTR_FREQUENCY, id.c_str(), ok, -1);
     const SUMOTime begin = attrs.getOptSUMOTimeReporting(SUMO_ATTR_BEGIN, id.c_str(), ok, string2time(OptionsCont::getOptions().getString("begin")));
     const SUMOTime end = attrs.getOptSUMOTimeReporting(SUMO_ATTR_END, id.c_str(), ok, string2time(OptionsCont::getOptions().getString("end")));
+    std::vector<std::string> edgeIDs = attrs.getOptStringVector(SUMO_ATTR_EDGES, id.c_str(), ok);
+    const std::string edgesFile = attrs.getOpt<std::string>(SUMO_ATTR_EDGESFILE, id.c_str(), ok, "");
+    const bool aggregate = attrs.getOpt<bool>(SUMO_ATTR_AGGREGATE, id.c_str(), ok, false);
     if (!ok) {
         return;
     }
@@ -1235,13 +1303,38 @@ NLHandler::addEdgeLaneMeanData(const SUMOSAXAttributes& attrs, int objecttype) {
             return;
         }
     }
+    if (edgesFile != "") {
+        std::ifstream strm(edgesFile.c_str());
+        if (!strm.good()) {
+            throw ProcessError("Could not load names of edges for edgeData defintion '" + id + "' from '" + edgesFile + "'.");
+        }
+        while (strm.good()) {
+            std::string name;
+            strm >> name;
+            // maybe we're loading an edge-selection
+            if (StringUtils::startsWith(name, "edge:")) {
+                edgeIDs.push_back(name.substr(5));
+            } else if (name != "") {
+                edgeIDs.push_back(name);
+            }
+        }
+    }
+    std::vector<MSEdge*> edges;
+    for (const std::string& edgeID : edgeIDs) {
+        MSEdge* edge = MSEdge::dictionary(edgeID);
+        if (edge == nullptr) {
+            WRITE_ERROR("Unknown edge '" + edgeID + "' in edgeData definition '" + id + "'");
+            return;
+        }
+        edges.push_back(edge);
+    }
     try {
         myDetectorBuilder.createEdgeLaneMeanData(id, frequency, begin, end,
                 type, objecttype == SUMO_TAG_MEANDATA_LANE,
                 // equivalent to TplConvert::_2bool used in SUMOSAXAttributes::getBool
                 excludeEmpty[0] != 't' && excludeEmpty[0] != 'T' && excludeEmpty[0] != '1' && excludeEmpty[0] != 'x',
                 excludeEmpty == "defaults", withInternal, trackVehicles, detectPersons,
-                maxTravelTime, minSamples, haltingSpeedThreshold, vtypes, writeAttributes,
+                maxTravelTime, minSamples, haltingSpeedThreshold, vtypes, writeAttributes, edges, aggregate,
                 FileHelpers::checkForRelativity(file, getFileName()));
     } catch (InvalidArgument& e) {
         WRITE_ERROR(e.what());
@@ -1501,7 +1594,7 @@ NLHandler::addRoundabout(const SUMOSAXAttributes& attrs) {
 void
 NLHandler::addMesoEdgeType(const SUMOSAXAttributes& attrs) {
     bool ok = true;
-    MSNet::MesoEdgeType edgeType = myNet.getMesoType(""); // init defaults
+    MESegment::MesoEdgeType edgeType = myNet.getMesoType(""); // init defaults
     edgeType.tauff = attrs.getOptSUMOTimeReporting(SUMO_ATTR_MESO_TAUFF, myCurrentTypeID.c_str(), ok, edgeType.tauff);
     edgeType.taufj = attrs.getOptSUMOTimeReporting(SUMO_ATTR_MESO_TAUFJ, myCurrentTypeID.c_str(), ok, edgeType.taufj);
     edgeType.taujf = attrs.getOptSUMOTimeReporting(SUMO_ATTR_MESO_TAUJF, myCurrentTypeID.c_str(), ok, edgeType.taujf);

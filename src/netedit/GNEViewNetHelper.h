@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -87,12 +87,10 @@ enum class DemandEditMode {
     DEMAND_ROUTE,
     ///@brief Mode for editing vehicles
     DEMAND_VEHICLE,
-    ///@brief Mode for editing vehicle types
-    DEMAND_VEHICLETYPES,
+    ///@brief Mode for editing types
+    DEMAND_TYPE,
     ///@brief Mode for editing stops
     DEMAND_STOP,
-    ///@brief Mode for editing person types
-    DEMAND_PERSONTYPES,
     ///@brief Mode for editing person
     DEMAND_PERSON,
     ///@brief Mode for editing person plan
@@ -1201,14 +1199,11 @@ struct GNEViewNetHelper {
         /// @brief chekable button for edit mode create vehicles
         MFXCheckableButton* vehicleButton;
 
-        /// @brief chekable button for edit mode create vehicle type
-        MFXCheckableButton* vehicleTypeButton;
+        /// @brief chekable button for edit mode create type
+        MFXCheckableButton* typeButton;
 
         /// @brief chekable button for edit mode create stops
         MFXCheckableButton* stopButton;
-
-        /// @brief chekable button for edit mode create person type
-        MFXCheckableButton* personTypeButton;
 
         /// @brief chekable button for edit mode create persons
         MFXCheckableButton* personButton;

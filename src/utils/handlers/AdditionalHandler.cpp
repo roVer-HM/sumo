@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -38,7 +38,7 @@ AdditionalHandler::AdditionalHandler() {}
 AdditionalHandler::~AdditionalHandler() {}
 
 
-void
+bool
 AdditionalHandler::beginParseAttributes(SumoXMLTag tag, const SUMOSAXAttributes& attrs) {
     // open SUMOBaseOBject
     myCommonXMLStructure.openSUMOBaseOBject();
@@ -108,7 +108,7 @@ AdditionalHandler::beginParseAttributes(SumoXMLTag tag, const SUMOSAXAttributes&
                 break;
             // Calibrator
             case SUMO_TAG_CALIBRATOR:
-            case SUMO_TAG_LANECALIBRATOR:
+            case GNE_TAG_CALIBRATOR_LANE:
                 parseCalibratorAttributes(attrs);
                 break;
             // flow (calibrator)
@@ -167,11 +167,14 @@ AdditionalHandler::beginParseAttributes(SumoXMLTag tag, const SUMOSAXAttributes&
                 parseParameters(attrs);
                 break;
             default:
+                // tag cannot be parsed in AdditionalHandler
+                return false;
                 break;
         }
     } catch (InvalidArgument& e) {
         WRITE_ERROR(e.what());
     }
+    return true;
 }
 
 
@@ -203,7 +206,7 @@ AdditionalHandler::endParseAttributes() {
         case SUMO_TAG_VSS:
         // Calibrator
         case SUMO_TAG_CALIBRATOR:
-        case SUMO_TAG_LANECALIBRATOR:
+        case GNE_TAG_CALIBRATOR_LANE:
         // Rerouter
         case SUMO_TAG_REROUTER:
         // Route probe
@@ -465,7 +468,7 @@ AdditionalHandler::parseSumoBaseObject(CommonXMLStructure::SumoBaseObject* obj) 
                                 obj->getStringListAttribute(SUMO_ATTR_VTYPES),
                                 obj->getParameters());
             break;
-        case SUMO_TAG_LANECALIBRATOR:
+        case GNE_TAG_CALIBRATOR_LANE:
             buildLaneCalibrator(obj,
                                 obj->getStringAttribute(SUMO_ATTR_ID),
                                 obj->getStringAttribute(SUMO_ATTR_LANE),
@@ -1248,7 +1251,7 @@ AdditionalHandler::parseCalibratorAttributes(const SUMOSAXAttributes& attrs) {
             myCommonXMLStructure.getCurrentSumoBaseObject()->setTag(SUMO_TAG_CALIBRATOR);
             myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_EDGE, edge);
         } else {
-            myCommonXMLStructure.getCurrentSumoBaseObject()->setTag(SUMO_TAG_LANECALIBRATOR);
+            myCommonXMLStructure.getCurrentSumoBaseObject()->setTag(GNE_TAG_CALIBRATOR_LANE);
             myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_LANE, lane);
         }
         myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_ID, id);

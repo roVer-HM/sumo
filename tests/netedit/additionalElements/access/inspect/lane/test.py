@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -44,12 +44,8 @@ netedit.leftClick(referencePosition, 375, 250)
 netedit.changeElement("access")
 
 # Create Access
-netedit.selectAdditionalChild(5, 0)
+netedit.selectAdditionalChild(netedit.attrs.access.create.parent, 0)
 netedit.leftClick(referencePosition, 200, 110)
-
-# Create second Access
-netedit.selectAdditionalChild(5, 0)
-netedit.leftClick(referencePosition, 200, 280)
 
 # go to inspect mode
 netedit.inspectMode()
@@ -58,16 +54,16 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 208, 280)
 
 # Change parameter lane with a non valid value (dummy Lane)
-netedit.modifyAttribute(0, "dummyLane", True)
+netedit.modifyAttribute(netedit.attrs.access.inspect.lane, "dummyLane", True)
 
 # Change parameter lane with a non valid value (Empty lane)
-netedit.modifyAttribute(0, "", True)
+netedit.modifyAttribute(netedit.attrs.access.inspect.lane, "", True)
 
 # Change parameter lane with a non valid value (There is another Access in the same edge)
-netedit.modifyAttribute(0, "gneE3_0", True)
+netedit.modifyAttribute(netedit.attrs.access.inspect.lane, "gneE3_0", True)
 
 # Change parameter lane with a valid value (other lane)
-netedit.modifyAttribute(0, "gneE1_0", True)
+netedit.modifyAttribute(netedit.attrs.access.inspect.lane, "gneE1_0", True)
 
 # Check undo redo
 netedit.undo(referencePosition, 4)

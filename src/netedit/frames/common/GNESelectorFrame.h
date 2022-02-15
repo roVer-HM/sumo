@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -256,6 +256,99 @@ public:
     };
 
     // ===========================================================================
+    // class SelectionHierarchy
+    // ===========================================================================
+
+    class SelectionHierarchy : public FXGroupBoxModule {
+        /// @brief FOX-declaration
+        FXDECLARE(GNESelectorFrame::SelectionHierarchy)
+
+    public:
+        /// @brief constructor
+        SelectionHierarchy(GNESelectorFrame* selectorFrameParent);
+
+        /// @brief destructor
+        ~SelectionHierarchy();
+
+        /// @name FOX-callbacks
+        /// @{
+
+        /// @brief called when user select an item in comboBox
+        long onCmdSelectItem(FXObject* obj, FXSelector, void*);
+
+        /// @brief called when user press select/unselect parents button
+        long onCmdParents(FXObject* obj, FXSelector, void*);
+
+        /// @brief called when user press select/unselect children button
+        long onCmdChildren(FXObject* obj, FXSelector, void*);
+
+        /// @}
+
+    protected:
+        /// @brief FOX need this
+        FOX_CONSTRUCTOR(SelectionHierarchy)
+
+    private:
+        /// @brief enum used in comboBox
+        enum class Selection {
+            ALL,
+            JUNCTION,
+            EDGE,
+            LANE,
+            ADDITIONAL,
+            SHAPE,
+            DEMAND,
+            DATA,
+            NOTHING,
+        };
+
+        /// @brief pointer to Selector Frame Parent
+        GNESelectorFrame* mySelectorFrameParent;
+
+        /// @brief comboBox for parents
+        FXComboBox* myParentsComboBox = nullptr;
+
+        /// @brief comboBox for children
+        FXComboBox* myChildrenComboBox = nullptr;
+
+        /// @brief select parents button
+        FXButton* mySelectParentsButton = nullptr;
+
+        /// @brief unselect parents button
+        FXButton* myUnselectParentsButton = nullptr;
+
+        /// @brief select children button
+        FXButton* mySelectChildrenButton = nullptr;
+
+        /// @brief unselect parents button
+        FXButton* myUnselectChildrenButton = nullptr;
+
+        // @brief items
+        const std::vector<std::pair<Selection, std::string> > myItems = {
+            std::make_pair(Selection::ALL, "all"),
+            std::make_pair(Selection::JUNCTION, "junction"),
+            std::make_pair(Selection::EDGE, "edge"),
+            std::make_pair(Selection::LANE, "lane"),
+            std::make_pair(Selection::ADDITIONAL, "additionalElements"),
+            std::make_pair(Selection::SHAPE, "shapeElements"),
+            std::make_pair(Selection::DEMAND, "demandElements"),
+            std::make_pair(Selection::DATA, "dataElements")
+        };
+
+        /// @brief current selected parent
+        Selection myCurrentSelectedParent;
+
+        /// @brief current selected child
+        Selection myCurrentSelectedChild;
+
+        /// @brief Invalidated copy constructor.
+        SelectionHierarchy(const SelectionHierarchy&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        SelectionHierarchy& operator=(const SelectionHierarchy&) = delete;
+    };
+
+    // ===========================================================================
     // class Legend
     // ===========================================================================
 
@@ -339,6 +432,9 @@ private:
 
     /// @brief modul for selection operations
     GNESelectorFrame::SelectionOperation* mySelectionOperation = nullptr;
+
+    /// @brief modul for selection hierarchy
+    GNESelectorFrame::SelectionHierarchy* mySelectionHierarchy = nullptr;
 
     /// @brief information modul
     GNESelectorFrame::Information* myInformation = nullptr;

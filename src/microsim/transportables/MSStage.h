@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -466,7 +466,8 @@ public:
     MSStageMoving(const std::vector<const MSEdge*>& route, MSStoppingPlace* toStop, const double speed,
                   const double departPos, const double arrivalPos, const double departPosLat, const int departLane, MSStageType type) :
         MSStage(route.back(), toStop, arrivalPos, type),
-        myState(nullptr), myRoute(route), mySpeed(speed), myDepartPos(departPos),
+        myState(nullptr), myRoute(route), myRouteStep(myRoute.begin()),
+        mySpeed(speed), myDepartPos(departPos),
         myDepartPosLat(departPosLat), myDepartLane(departLane) {}
 
     /// destructor

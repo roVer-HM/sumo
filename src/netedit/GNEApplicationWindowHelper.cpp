@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -416,9 +416,8 @@ GNEApplicationWindowHelper::ModesMenuCommands::DemandMenuCommands::DemandMenuCom
     moveMode(nullptr),
     routeMode(nullptr),
     vehicleMode(nullptr),
-    vehicleTypeMode(nullptr),
+    typeMode(nullptr),
     stopMode(nullptr),
-    personTypeMode(nullptr),
     personMode(nullptr),
     personPlanMode(nullptr),
     containerMode(nullptr),
@@ -432,9 +431,8 @@ GNEApplicationWindowHelper::ModesMenuCommands::DemandMenuCommands::showDemandMen
     moveMode->show();
     routeMode->show();
     vehicleMode->show();
-    vehicleTypeMode->show();
+    typeMode->show();
     stopMode->show();
-    personTypeMode->show();
     personMode->show();
     personPlanMode->show();
     containerMode->show();
@@ -447,9 +445,8 @@ GNEApplicationWindowHelper::ModesMenuCommands::DemandMenuCommands::hideDemandMen
     moveMode->hide();
     routeMode->hide();
     vehicleMode->hide();
-    vehicleTypeMode->hide();
+    typeMode->hide();
     stopMode->hide();
-    personTypeMode->hide();
     personMode->hide();
     personPlanMode->hide();
     containerMode->hide();
@@ -469,16 +466,12 @@ GNEApplicationWindowHelper::ModesMenuCommands::DemandMenuCommands::buildDemandMe
     vehicleMode = GUIDesigns::buildFXMenuCommandShortcut(modesMenu,
         "Vehicle mode", "V", "Create vehicles.",
         GUIIconSubSys::getIcon(GUIIcon::MODEVEHICLE), myModesMenuCommandsParent->myGNEApp, MID_HOTKEY_V_MODE_VEHICLE);
-    vehicleTypeMode = GUIDesigns::buildFXMenuCommandShortcut(modesMenu,
-        "Vehicle type mode", "T", "Create vehicle types.",
-        GUIIconSubSys::getIcon(GUIIcon::MODEVEHICLETYPE), myModesMenuCommandsParent->myGNEApp, MID_HOTKEY_T_MODE_TLS_TYPE);
+    typeMode = GUIDesigns::buildFXMenuCommandShortcut(modesMenu,
+        "Type mode", "T", "Create types (vehicles, person an containers).",
+        GUIIconSubSys::getIcon(GUIIcon::MODETYPE), myModesMenuCommandsParent->myGNEApp, MID_HOTKEY_T_MODE_TLS_TYPE);
     stopMode = GUIDesigns::buildFXMenuCommandShortcut(modesMenu,
         "Stop mode", "A", "Create stops.",
         GUIIconSubSys::getIcon(GUIIcon::MODESTOP), myModesMenuCommandsParent->myGNEApp, MID_HOTKEY_A_MODE_ADDITIONAL_STOP);
-    personTypeMode = GUIDesigns::buildFXMenuCommandShortcut(modesMenu,
-        "Person type mode", "W", "Create person types.",
-        GUIIconSubSys::getIcon(GUIIcon::MODEPERSONTYPE), myModesMenuCommandsParent->myGNEApp, MID_HOTKEY_W_MODE_WIRE);
-    personTypeMode->disable();
     personMode = GUIDesigns::buildFXMenuCommandShortcut(modesMenu,
         "Person mode", "P", "Create persons.",
         GUIIconSubSys::getIcon(GUIIcon::MODEPERSON), myModesMenuCommandsParent->myGNEApp, MID_HOTKEY_P_MODE_POLYGON_PERSON);

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -52,6 +52,19 @@ class GNEJunction;
 class GNEDemandElement : public GUIGlObject, public GNEHierarchicalElement, public GNEMoveElement, public GNEPathManager::PathElement {
 
 public:
+    /// @brief friend declaration (needed for vTypes)
+    friend class GNERouteHandler;
+
+    /// @brief enum class for demandElement problems
+    enum class Problem {
+        OK,                     // There is no problem
+        INVALID_ELEMENT,        // Element is invalid (for example, a route without edges)
+        INVALID_PATH,           // Path (route, trip... ) is not valid (i.e is empty)
+        DISCONNECTED_PLAN,      // Plan element (person, containers) is not connected with the previous or next plan
+        INVALID_STOPPOSITION,   // StopPosition is invalid (only used in stops over edges or lanes
+        STOP_DOWNSTREAM,        // Stops don't follow their route parent
+    };
+
     /**@brief Constructor
      * @param[in] id Gl-id of the demand element element (Must be unique)
      * @param[in] net pointer to GNEViewNet of this demand element element belongs
@@ -157,13 +170,13 @@ public:
     virtual void writeDemandElement(OutputDevice& device) const = 0;
 
     /// @brief check if current demand element is valid to be writed into XML (by default true, can be reimplemented in children)
-    virtual bool isDemandElementValid() const;
+    virtual Problem isDemandElementValid() const = 0;
 
     /// @brief return a string with the current demand element problem (by default empty, can be reimplemented in children)
-    virtual std::string getDemandElementProblem() const;
+    virtual std::string getDemandElementProblem() const = 0;
 
     /// @brief fix demand element problem (by default throw an exception, has to be reimplemented in children)
-    virtual void fixDemandElementProblem();
+    virtual void fixDemandElementProblem() = 0;
     /// @}
 
     /**@brief open DemandElement Dialog
@@ -340,6 +353,9 @@ public:
     /// @brief get personPlan start position
     const Position getBeginPosition(const double pedestrianDepartPos) const;
 
+    /// @brief get invalid stops
+    std::vector<GNEDemandElement*> getInvalidStops() const;
+
 protected:
     /// @brief demand element geometry (also called "stacked geometry")
     GUIGeometry myDemandElementGeometry;
@@ -370,7 +386,7 @@ protected:
                                const double offsetFront, const double personPlanWidth, const RGBColor& personPlanColor) const;
 
     /// @brief check if person plan is valid
-    bool isPersonPlanValid() const;
+    Problem isPersonPlanValid() const;
 
     /// @brief get person plan problem
     std::string getPersonPlanProblem() const;
@@ -380,11 +396,20 @@ protected:
 
     /// @}
 
+    /// @name replace parent elements
+    /// @{
+
     /// @brief replace demand parent edges
     void replaceDemandParentEdges(const std::string& value);
 
     /// @brief replace demand parent lanes
     void replaceDemandParentLanes(const std::string& value);
+
+    /// @brief replace the first parent junction
+    void replaceFirstParentJunction(const std::string& value);
+
+    /// @brief replace the last parent junction
+    void replaceLastParentJunction(const std::string& value);
 
     /// @brief replace the first parent edge
     void replaceFirstParentEdge(const std::string& value);
@@ -400,6 +425,29 @@ protected:
 
     /// @brief replace demand element parent
     void replaceDemandElementParent(SumoXMLTag tag, const std::string& value, const int parentIndex);
+
+    /// @brief set VTypeDistribution parent
+    void setVTypeDistributionParent(const std::string& value);
+
+    /// @}
+
+    /// @brief struct for writting sorted stops
+    struct SortedStops {
+        /// @brief constructor
+        SortedStops(GNEEdge* edge_);
+
+        /// @brief add (and sort) stop
+        void addStop(const GNEDemandElement* stop);
+
+        /// @brief route's edge
+        const GNEEdge* edge;
+
+        /// @brief stops sorted by end position
+        std::vector<std::pair<double, const GNEDemandElement*> > myStops;
+    };
+
+    /// @brief get sorted stops
+    std::vector<const GNEDemandElement*> getSortedStops(const std::vector<GNEEdge*>& edges) const;
 
 private:
     /**@brief check restriction with the number of children

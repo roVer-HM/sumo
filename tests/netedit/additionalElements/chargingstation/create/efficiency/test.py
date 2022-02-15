@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,25 +35,25 @@ netedit.additionalMode()
 netedit.changeElement("chargingStation")
 
 # set invalid efficiency (dummy)
-netedit.changeDefaultValue(6, "dummyEfficiency")
+netedit.changeDefaultValue(netedit.attrs.chargingStation.create.efficiency, "dummyEfficiency")
 
 # try to create chargingStation in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)
 
 # set invalid efficiency (negative)
-netedit.changeDefaultValue(6, "-50")
+netedit.changeDefaultValue(netedit.attrs.chargingStation.create.efficiency, "-50")
 
 # try to create chargingStation in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)
 
 # set invalid efficiency (> 1)
-netedit.changeDefaultValue(6, "30")
+netedit.changeDefaultValue(netedit.attrs.chargingStation.create.efficiency, "30")
 
 # try to create chargingStation in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)
 
 # set valid efficiency
-netedit.changeDefaultValue(6, "0.5")
+netedit.changeDefaultValue(netedit.attrs.chargingStation.create.efficiency, "0.5")
 
 # create chargingStation in mode "reference left"
 netedit.leftClick(referencePosition, 250, 250)

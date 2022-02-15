@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -53,19 +53,19 @@ netedit.forceSaveAdditionals()
 netedit.leftClick(referencePosition, 250, 180)
 
 # Change parameter 2 with a non valid value (empty lanes)
-netedit.modifyAttribute(2, "", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspectSelection.numLanes, "", False)
 
 # Change parameter 2 with a non valid value (dummy lanes)
-netedit.modifyAttribute(2, "dummyLanes", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspectSelection.numLanes, "dummyLanes", False)
 
 # Change parameter 2 with a non valid value (negative lanes)
-netedit.modifyAttribute(2, "-6", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspectSelection.numLanes, "-6", False)
 
 # Change parameter 2 with a non valid value (float)
-netedit.modifyAttribute(2, "3.5", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspectSelection.numLanes, "3.5", False)
 
 # Change parameter 2 with a valid value
-netedit.modifyAttribute(2, "4", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspectSelection.numLanes, "4", False)
 
 # recompute
 netedit.rebuildNetwork()

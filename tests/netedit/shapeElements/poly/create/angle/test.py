@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,25 +35,25 @@ netedit.shapeMode()
 netedit.changeElement("poly")
 
 # change angle (invalid)
-netedit.changeDefaultValue(12, "dummyAngle")
+netedit.changeDefaultValue(14, "dummyAngle")
 
 # try to create polygon
 netedit.createSquaredTAZ(referencePosition, 182, 130, 200, True)
 
 # change angle (valid, but > 360)
-netedit.changeDefaultValue(12, "365")
+netedit.changeDefaultValue(14, "365")
 
 # try to create polygon
 netedit.createSquaredPoly(referencePosition, 282, 130, 200, True)
 
 # change angle (valid, < 0)
-netedit.changeDefaultValue(12, "-5")
+netedit.changeDefaultValue(14, "-5")
 
 # create polygon
 netedit.createSquaredPoly(referencePosition, 382, 130, 200, True)
 
 # change angle (0 < angle < 360)
-netedit.changeDefaultValue(12, "5")
+netedit.changeDefaultValue(14, "5")
 
 # create polygon
 netedit.createSquaredPoly(referencePosition, 482, 130, 200, True)

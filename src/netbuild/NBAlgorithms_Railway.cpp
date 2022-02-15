@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2012-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -1192,16 +1192,19 @@ NBRailwayTopologyAnalyzer::extendDirectionPriority(NBNetBuilder& nb, bool fromUn
                 bidiPrio = 1;
             }
         }
+        if (bidiEdge == nullptr) {
+            WRITE_WARNINGF("Edge '%' was loaded with undefined priority (%) but has unambiguous main direction (no bidi edge)", edge->getID(), edge->getPriority());
+        }
         if (edge->getPriority() >= 0) {
             bidiPrio = 0;
         }
-        if (bidiEdge->getPriority() >= 0) {
+        if (bidiEdge != nullptr && bidiEdge->getPriority() >= 0) {
             prio = 0;
         }
         if (edge->getPriority() < 0) {
             edge->setPriority(prio);
         }
-        if (bidiEdge->getPriority() < 0) {
+        if (bidiEdge != nullptr && bidiEdge->getPriority() < 0) {
             bidiEdge->setPriority(bidiPrio);
         }
     }

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -250,7 +250,7 @@ GNEFixAdditionalElements::AdditionalList::AdditionalList(GNEFixAdditionalElement
 // ---------------------------------------------------------------------------
 
 GNEFixAdditionalElements::PositionOptions::PositionOptions(GNEFixAdditionalElements* fixAdditionalPositions) :
-    FXGroupBoxModule(fixAdditionalPositions->myMainFrame, "Select a solution for StoppingPlaces and E2 detectors", false) {
+    FXGroupBoxModule(fixAdditionalPositions->myMainFrame, "Select a solution for StoppingPlaces and E2 detectors", FXGroupBoxModule::Options::NOTHING) {
     // create horizontal frames for radio buttons
     FXHorizontalFrame* RadioButtons = new FXHorizontalFrame(this, GUIDesignHorizontalFrame);
     // create Vertical Frame for left options
@@ -318,7 +318,7 @@ GNEFixAdditionalElements::PositionOptions::disablePositionOptions() {
 // ---------------------------------------------------------------------------
 
 GNEFixAdditionalElements::ConsecutiveLaneOptions::ConsecutiveLaneOptions(GNEFixAdditionalElements* fixAdditionalPositions) :
-    FXGroupBoxModule(fixAdditionalPositions->myMainFrame, "Select a solution for Multilane E2 detectors", false) {
+    FXGroupBoxModule(fixAdditionalPositions->myMainFrame, "Select a solution for Multilane E2 detectors", FXGroupBoxModule::Options::NOTHING) {
     // create horizontal frames for radio buttons
     FXHorizontalFrame* RadioButtons = new FXHorizontalFrame(this, GUIDesignHorizontalFrame);
     // create Vertical Frame for left options

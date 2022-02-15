@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -34,11 +34,10 @@
 #include <netedit/frames/demand/GNEContainerPlanFrame.h>
 #include <netedit/frames/demand/GNEPersonFrame.h>
 #include <netedit/frames/demand/GNEPersonPlanFrame.h>
-#include <netedit/frames/demand/GNEPersonTypeFrame.h>
 #include <netedit/frames/demand/GNERouteFrame.h>
 #include <netedit/frames/demand/GNEStopFrame.h>
 #include <netedit/frames/demand/GNEVehicleFrame.h>
-#include <netedit/frames/demand/GNEVehicleTypeFrame.h>
+#include <netedit/frames/demand/GNETypeFrame.h>
 #include <netedit/frames/network/GNEAdditionalFrame.h>
 #include <netedit/frames/network/GNEConnectorFrame.h>
 #include <netedit/frames/network/GNECreateEdgeFrame.h>
@@ -272,8 +271,8 @@ GNEViewParent::getVehicleFrame() const {
 }
 
 
-GNEVehicleTypeFrame*
-GNEViewParent::getVehicleTypeFrame() const {
+GNETypeFrame*
+GNEViewParent::getTypeFrame() const {
     return myDemandFrames.vehicleTypeFrame;
 }
 
@@ -281,12 +280,6 @@ GNEViewParent::getVehicleTypeFrame() const {
 GNEStopFrame*
 GNEViewParent::getStopFrame() const {
     return myDemandFrames.stopFrame;
-}
-
-
-GNEPersonTypeFrame*
-GNEViewParent::getPersonTypeFrame() const {
-    return myDemandFrames.personTypeFrame;
 }
 
 
@@ -903,7 +896,6 @@ GNEViewParent::DemandFrames::DemandFrames() :
     vehicleFrame(nullptr),
     vehicleTypeFrame(nullptr),
     stopFrame(nullptr),
-    personTypeFrame(nullptr),
     personFrame(nullptr),
     personPlanFrame(nullptr),
     containerFrame(nullptr),
@@ -915,9 +907,8 @@ void
 GNEViewParent::DemandFrames::buildDemandFrames(GNEViewParent* viewParent, GNEViewNet* viewNet) {
     routeFrame = new GNERouteFrame(viewParent->myFramesArea, viewNet);
     vehicleFrame = new GNEVehicleFrame(viewParent->myFramesArea, viewNet);
-    vehicleTypeFrame = new GNEVehicleTypeFrame(viewParent->myFramesArea, viewNet);
+    vehicleTypeFrame = new GNETypeFrame(viewParent->myFramesArea, viewNet);
     stopFrame = new GNEStopFrame(viewParent->myFramesArea, viewNet);
-    personTypeFrame = new GNEPersonTypeFrame(viewParent->myFramesArea, viewNet);
     personFrame = new GNEPersonFrame(viewParent->myFramesArea, viewNet);
     personPlanFrame = new GNEPersonPlanFrame(viewParent->myFramesArea, viewNet);
     containerFrame = new GNEContainerFrame(viewParent->myFramesArea, viewNet);
@@ -931,7 +922,6 @@ GNEViewParent::DemandFrames::hideDemandFrames() {
     vehicleFrame->hide();
     vehicleTypeFrame->hide();
     stopFrame->hide();
-    personTypeFrame->hide();
     personFrame->hide();
     personPlanFrame->hide();
     containerFrame->hide();
@@ -946,7 +936,6 @@ GNEViewParent::DemandFrames::setDemandFramesWidth(int frameWidth) {
     vehicleFrame->setFrameWidth(frameWidth);
     vehicleTypeFrame->setFrameWidth(frameWidth);
     stopFrame->setFrameWidth(frameWidth);
-    personTypeFrame->setFrameWidth(frameWidth);
     personFrame->setFrameWidth(frameWidth);
     personPlanFrame->setFrameWidth(frameWidth);
     containerFrame->setFrameWidth(frameWidth);
@@ -964,8 +953,6 @@ GNEViewParent::DemandFrames::isDemandFrameShown() const {
     } else if (vehicleTypeFrame->shown()) {
         return true;
     } else if (stopFrame->shown()) {
-        return true;
-    } else if (personTypeFrame->shown()) {
         return true;
     } else if (personFrame->shown()) {
         return true;
@@ -990,8 +977,6 @@ GNEViewParent::DemandFrames::getCurrentShownFrame() const {
         return vehicleFrame;
     } else if (vehicleTypeFrame->shown()) {
         return vehicleTypeFrame;
-    } else if (personTypeFrame->shown()) {
-        return personTypeFrame;
     } else if (stopFrame->shown()) {
         return stopFrame;
     } else if (personFrame->shown()) {

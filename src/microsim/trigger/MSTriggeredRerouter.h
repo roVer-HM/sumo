@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -221,12 +221,12 @@ protected:
 
     /// determine attributes of candiate parking area for scoring
     bool addParkValues(SUMOVehicle& veh, double brakeGap, bool newDestination,
-            MSParkingArea* pa, double paOccupancy, double prob,
-            SUMOAbstractRouter<MSEdge, SUMOVehicle>& router,
-            MSParkingAreaMap_t& parkAreas,
-            std::map<MSParkingArea*, ConstMSEdgeVector>& newRoutes,
-            std::map<MSParkingArea*, ConstMSEdgeVector>& parkApproaches,
-            ParkingParamMap_t& maxValues) const;
+                       MSParkingArea* pa, double paOccupancy, double prob,
+                       SUMOAbstractRouter<MSEdge, SUMOVehicle>& router,
+                       MSParkingAreaMap_t& parkAreas,
+                       std::map<MSParkingArea*, ConstMSEdgeVector>& newRoutes,
+                       std::map<MSParkingArea*, ConstMSEdgeVector>& parkApproaches,
+                       ParkingParamMap_t& maxValues) const;
 
 protected:
     /// @brief edges where vehicles are notified

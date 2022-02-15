@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -53,8 +53,9 @@
 
 //#define DEBUG_REROUTE
 //#define DEBUG_ADD_STOP
-//#define DEBUG_COND (getID() == "follower")
+//#define DEBUG_COND (getID() == "")
 //#define DEBUG_COND (true)
+//#define DEBUG_REPLACE_ROUTE
 #define DEBUG_COND (isSelected())
 
 // ===========================================================================
@@ -235,7 +236,7 @@ MSBaseVehicle::reroute(SUMOTime t, const std::string& info, SUMOAbstractRouter<M
         if (stops.size() > 0) {
             const double sourcePos = onInit ? 0 : getPositionOnLane();
             // avoid superfluous waypoints for first and last edge
-            const bool skipFirst = stops.front() == source && sourcePos <= firstPos;
+            const bool skipFirst = stops.front() == source && (source != getEdge() || sourcePos + getBrakeGap() <= firstPos);
             const bool skipLast = stops.back() == sink && myArrivalPos >= lastPos;
 #ifdef DEBUG_REROUTE
             if (DEBUG_COND) {
@@ -451,7 +452,7 @@ MSBaseVehicle::replaceRoute(const MSRoute* newRoute, const std::string& info, bo
     } else {
         // recheck old stops
         MSRouteIterator searchStart = myCurrEdge;
-        double lastPos = getPositionOnLane();
+        double lastPos = getPositionOnLane() + getBrakeGap();
         if (getLane() != nullptr && getLane()->isInternal()
                 && myStops.size() > 0 && !myStops.front().lane->isInternal()) {
             // searchStart is still incoming to the intersection so lastPos
@@ -460,7 +461,7 @@ MSBaseVehicle::replaceRoute(const MSRoute* newRoute, const std::string& info, bo
         }
 #ifdef DEBUG_REPLACE_ROUTE
         if (DEBUG_COND) {
-            std::cout << "  replaceRoute on " << (*myCurrEdge)->getID() << " lane=" << myLane->getID() << " stopsFromScratch=" << stopsFromScratch << "\n";
+            std::cout << "  replaceRoute on " << (*myCurrEdge)->getID() << " lane=" << Named::getIDSecure(getLane()) << " stopsFromScratch=" << stopsFromScratch << "\n";
         }
 #endif
         for (std::list<MSStop>::iterator iter = myStops.begin(); iter != myStops.end();) {
@@ -868,12 +869,9 @@ MSBaseVehicle::saveState(OutputDevice& out) {
 
 
 bool
-MSBaseVehicle::handleCollisionStop(MSStop& stop, const bool collision, const double distToStop, const std::string& errorMsgStart, std::string& errorMsg) {
+MSBaseVehicle::handleCollisionStop(MSStop& stop, const double distToStop) {
     UNUSED_PARAMETER(stop);
-    UNUSED_PARAMETER(collision);
     UNUSED_PARAMETER(distToStop);
-    UNUSED_PARAMETER(errorMsgStart);
-    UNUSED_PARAMETER(errorMsg);
     return true;
 }
 
@@ -1073,26 +1071,38 @@ MSBaseVehicle::addStop(const SUMOVehicleParameter::Stop& stopPar, std::string& e
             stop.edge = std::find(prevStopEdge, myRoute->end(), stopEdge);
         }
     }
-    const bool sameEdgeAsLastStop = prevStopEdge == stop.edge && prevEdge == &stop.lane->getEdge();
-    if (stop.edge == myRoute->end() || prevStopEdge > stop.edge ||
+    const bool wasTooClose = errorMsg != "" && errorMsg.find("too close") != std::string::npos;
+    if (stop.edge == myRoute->end()) {
+        if (!wasTooClose) {
+            errorMsg = errorMsgStart + " for vehicle '" + myParameter->id + "' on lane '" + stop.lane->getID() + "' is not downstream the current route.";
+        }
+        return false;
+    }
+
+    const bool tooClose = (prevStopEdge == stop.edge && prevEdge == &stop.lane->getEdge() &&
+                           prevStopPos + (iter == myStops.begin() ? getBrakeGap() : 0) > stop.pars.endPos + POSITION_EPS);
+
+    if (prevStopEdge > stop.edge ||
             // a collision-stop happens after vehicle movement and may move the
             // vehicle backwards on it's lane (prevStopPos is the vehicle position)
-            (sameEdgeAsLastStop && prevStopPos > stop.pars.endPos && !collision)
+            (tooClose && !collision)
             || (stop.lane->getEdge().isInternal() && stop.lane->getNextNormal() != *(stop.edge + 1))) {
-        if (stop.edge != myRoute->end()) {
-            // check if the edge occurs again later in the route
-            MSRouteIterator next = stop.edge + 1;
-            return addStop(stopPar, errorMsg, untilOffset, collision, &next);
-        }
-        errorMsg = errorMsgStart + " for vehicle '" + myParameter->id + "' on lane '" + stop.lane->getID() + "' is not downstream the current route.";
+        // check if the edge occurs again later in the route
         //std::cout << " could not add stop " << errorMsgStart << " prevStops=" << myStops.size() << " searchStart=" << (*searchStart - myRoute->begin()) << " route=" << toString(myRoute->getEdges())  << "\n";
-        return false;
+        if (tooClose && prevStopPos <= stop.pars.endPos + POSITION_EPS) {
+            errorMsg = errorMsgStart + " for vehicle '" + myParameter->id + "' on lane '" + stop.pars.lane + "' is too close to brake.";
+        }
+        MSRouteIterator next = stop.edge + 1;
+        return addStop(stopPar, errorMsg, untilOffset, collision, &next);
+    }
+    if (wasTooClose) {
+        errorMsg = "";
     }
     // David.C:
     //if (!stop.parking && (myCurrEdge == stop.edge && myState.myPos > stop.endPos - getCarFollowModel().brakeGap(myState.mySpeed))) {
     const double endPosOffset = stop.lane->getEdge().isInternal() ? (*stop.edge)->getLength() : 0;
     const double distToStop = stop.pars.endPos + endPosOffset - getPositionOnLane();
-    if (!handleCollisionStop(stop, collision, distToStop, errorMsgStart, errorMsg)) {
+    if (collision && !handleCollisionStop(stop, distToStop)) {
         return false;
     }
     if (!hasDeparted() && myCurrEdge == stop.edge) {
@@ -1161,7 +1171,7 @@ MSBaseVehicle::addStops(const bool ignoreStopErrors, MSRouteIterator* searchStar
 bool
 MSBaseVehicle::haveValidStopEdges() const {
     MSRouteIterator start = myCurrEdge;
-    const std::string err = "for vehicle '" + getID() + "' at time " + time2string(MSNet::getInstance()->getCurrentTimeStep());
+    const std::string err = "for vehicle '" + getID() + "' at time=" + time2string(SIMSTEP);
     int i = 0;
     bool ok = true;
     double lastPos = getPositionOnLane();
@@ -1204,9 +1214,12 @@ MSBaseVehicle::haveValidStopEdges() const {
                 WRITE_ERROR(prefix + "used invalid (relative) route index " + toString(it2 - myCurrEdge) + " expected after " + toString(start - myCurrEdge) + " " + err);
                 ok = false;
             } else {
-                if (it != stop.edge && endPos >= lastPos) {
-                    WRITE_WARNING(prefix + "is used in " + toString(stop.edge - myCurrEdge) + " edges but first encounter is in "
-                                  + toString(it - myCurrEdge) + " edges " + err);
+                if (it != stop.edge) {
+                    double brakeGap = i == 0 ? getBrakeGap() : 0;
+                    if (endPos >= lastPos + brakeGap) {
+                        WRITE_WARNING(prefix + "is used in " + toString(stop.edge - myCurrEdge) + " edges but first encounter is in "
+                                      + toString(it - myCurrEdge) + " edges " + err);
+                    }
                 }
                 start = stop.edge;
             }
@@ -1266,6 +1279,7 @@ MSBaseVehicle::getStopIndices() const {
 
 MSStop&
 MSBaseVehicle::getNextStop() {
+    assert(myStops.size() > 0);
     return myStops.front();
 }
 

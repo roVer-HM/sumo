@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,7 +35,7 @@ netedit.additionalMode()
 netedit.changeElement("trainStop")
 
 # change reference to center
-netedit.changeDefaultValue(11, "reference center")
+netedit.changeDefaultValue(netedit.attrs.trainStop.create.references, "reference center")
 
 # create trainStop in mode "reference center"
 netedit.leftClick(referencePosition, 250, 170)
@@ -47,16 +47,16 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 250, 190)
 
 # Change parameter endpos with a valid value (empty)
-netedit.modifyAttribute(3, "", True)
+netedit.modifyAttribute(netedit.attrs.trainStop.inspect.endPos, "", True)
 
 # Change parameter endpos with a valid value (> lanelenght)
-netedit.modifyAttribute(3, "5000", True)
+netedit.modifyAttribute(netedit.attrs.trainStop.inspect.endPos, "5000", True)
 
 # Change parameter endpos with a non valid value (< startPos)
-netedit.modifyAttribute(3, "2", True)
+netedit.modifyAttribute(netedit.attrs.trainStop.inspect.endPos, "2", True)
 
 # Change parameter endpos with a valid value
-netedit.modifyAttribute(3, "30", True)
+netedit.modifyAttribute(netedit.attrs.trainStop.inspect.endPos, "30", True)
 
 # Check undos and redos
 netedit.undo(referencePosition, 4)

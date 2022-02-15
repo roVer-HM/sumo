@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -51,16 +51,16 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 91, 392)
 
 # change arrivalPosLat with an invalid value
-netedit.modifyAttribute(17, "", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspect.arrivalPosLat, "", False)
 
 # change arrivalPosLat with an invalid value
-netedit.modifyAttribute(17, "dummyPosLat", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspect.arrivalPosLat, "dummyPosLat", False)
 
 # change arrivalPosLat with an invalid valid value
-netedit.modifyAttribute(17, "-12", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspect.arrivalPosLat, "-12", False)
 
 # change arrivalPosLat with an valid value
-netedit.modifyAttribute(17, "4.2", False)
+netedit.modifyAttribute(netedit.attrs.tripFromToEdge.inspect.arrivalPosLat, "4.2", False)
 
 # Check undo redo
 netedit.undo(referencePosition, 3)

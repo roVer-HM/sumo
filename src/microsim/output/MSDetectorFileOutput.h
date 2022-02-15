@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -28,8 +28,8 @@
 #include <set>
 
 #include <utils/common/Named.h>
+#include <utils/common/Parameterised.h>
 #include <utils/common/SUMOTime.h>
-#include <utils/common/FileHelpers.h>
 #include <microsim/MSNet.h>
 
 
@@ -58,7 +58,7 @@ enum DetectorUsage {
  * Pure virtual base class for classes (e.g. MSInductLoop) that should produce
  *  XML-output.
  */
-class MSDetectorFileOutput : public Named {
+class MSDetectorFileOutput : public Named, public Parameterised {
 public:
     /// @brief Constructor
     MSDetectorFileOutput(const std::string& id, const std::string& vTypes, const int detectPersons = false);

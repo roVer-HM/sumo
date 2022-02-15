@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -327,7 +327,7 @@ MSSOTLTrafficLightLogic::isThresholdPassed() {
 #ifdef SWARM_DEBUG
             SUMOTime step = MSNet::getInstance()->getCurrentTimeStep();
             std::ostringstream threshold_str;
-            //	threshold_str <<"\tTL " +getID()<<" time " +time2string(step)<< "(getThreshold()= " << getThreshold()
+            //	threshold_str <<"\tTL " +getID()<<" time=" +time2string(step)<< "(getThreshold()= " << getThreshold()
             //		<< ", targetPhaseCTS= " << iterator->second << " )" << " phase="<<getPhase(iterator->first).getState();
             threshold_str << getCurrentPhaseDef().getState() << ";" << time2string(step) << ";" << getThreshold()
                           << ";" << iterator->second << ";" << getPhase(iterator->first).getState() << ";"

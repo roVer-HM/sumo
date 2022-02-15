@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -169,24 +169,6 @@ GNEDemandElement::updateDemandElementStackLabel(const int stack) {
 void
 GNEDemandElement::updateDemandElementSpreadGeometry(const GNELane* lane, const double posOverLane) {
     mySpreadGeometry.updateGeometry(lane->getLaneShape(), posOverLane, myMoveElementLateralOffset);
-}
-
-
-bool
-GNEDemandElement::isDemandElementValid() const {
-    return true;
-}
-
-
-std::string
-GNEDemandElement::getDemandElementProblem() const {
-    return "";
-}
-
-
-void
-GNEDemandElement::fixDemandElementProblem() {
-    throw InvalidArgument(getTagStr() + " cannot fix any problem");
 }
 
 
@@ -395,6 +377,40 @@ GNEDemandElement::getBeginPosition(const double pedestrianDepartPos) const {
         } else {
             return Position(0, 0);
         }
+    }
+}
+
+
+std::vector<GNEDemandElement*>
+GNEDemandElement::getInvalidStops() const {
+    // get stops
+    std::vector<GNEDemandElement*> stops;
+    for (const auto& stop : getChildDemandElements()) {
+        if (stop->getTagProperty().getTag() == SUMO_TAG_STOP_LANE) {
+            stops.push_back(stop);
+        }
+    }
+    // check stops
+    if (stops.empty()) {
+        return stops;
+    } else {
+        // get sorted stops
+        std::vector<const GNEDemandElement*> sortedStops;
+        // continue depending of route
+        if (getTagProperty().getTag() == SUMO_TAG_ROUTE) {
+            sortedStops = getSortedStops(getParentEdges());
+        } else if (getChildDemandElements().front()->getTagProperty().getTag() == GNE_TAG_ROUTE_EMBEDDED) {
+            sortedStops = getSortedStops(getChildDemandElements().front()->getParentEdges());
+        }
+        // iterate over sortedStops
+        for (const auto& sortedStop : sortedStops) {
+            const auto it = std::find(stops.begin(), stops.end(), sortedStop);
+            if (it != stops.end()) {
+                stops.erase(it);
+            }
+        }
+        // return stops not found in sortedStops
+        return stops;
     }
 }
 
@@ -628,7 +644,7 @@ GNEDemandElement::drawPersonPlanPartial(const bool drawPlan, const GUIVisualizat
         // Start with the drawing of the area traslating matrix to origin
         myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, getType(), offsetFront);
         // check if draw lane2lane connection or a red line
-        if (fromLane->getLane2laneConnections().exist(toLane)) {
+        if (fromLane && fromLane->getLane2laneConnections().exist(toLane)) {
             // obtain lane2lane geometry
             const GUIGeometry& lane2laneGeometry = fromLane->getLane2laneConnections().getLane2laneGeometry(toLane);
             // Set person plan color
@@ -664,7 +680,7 @@ GNEDemandElement::drawPersonPlanPartial(const bool drawPlan, const GUIVisualizat
 }
 
 
-bool 
+GNEDemandElement::Problem
 GNEDemandElement::isPersonPlanValid() const {
     // get previous child
     const auto previousChild = getParentDemandElements().at(0)->getPreviousChildDemandElement(this);
@@ -682,7 +698,7 @@ GNEDemandElement::isPersonPlanValid() const {
         }
         // get first edge
         GNEEdge* firstEdge = nullptr;
-        // check edge 
+        // check edge
         if (getParentLanes().size() == 1) {
             firstEdge = getParentLanes().front()->getParentEdge();
         } else if (getParentEdges().size() > 0) {
@@ -694,7 +710,7 @@ GNEDemandElement::isPersonPlanValid() const {
         }
         // compare both edges
         if (previousEdge != firstEdge) {
-            return false;
+            return Problem::DISCONNECTED_PLAN;
         }
     }
     // get next child
@@ -713,7 +729,7 @@ GNEDemandElement::isPersonPlanValid() const {
         }
         // get last edge
         GNEEdge* lastEdge = nullptr;
-        // check edge 
+        // check edge
         if (getParentLanes().size() == 1) {
             lastEdge = getParentLanes().front()->getParentEdge();
         } else if (getParentAdditionals().size() == 1) {
@@ -725,15 +741,15 @@ GNEDemandElement::isPersonPlanValid() const {
         }
         // compare both edges
         if (nextEdge != lastEdge) {
-            return false;
+            return Problem::DISCONNECTED_PLAN;
         }
     }
     // all ok, then return true
-    return true;
+    return Problem::OK;
 }
 
 
-std::string 
+std::string
 GNEDemandElement::getPersonPlanProblem() const {
     // get previous child
     const auto previousChild = getParentDemandElements().at(0)->getPreviousChildDemandElement(this);
@@ -751,7 +767,7 @@ GNEDemandElement::getPersonPlanProblem() const {
         }
         // get first edge
         GNEEdge* firstEdge = nullptr;
-        // check edge 
+        // check edge
         if (getParentLanes().size() == 1) {
             firstEdge = getParentLanes().front()->getParentEdge();
         } else if (getParentEdges().size() > 0) {
@@ -762,7 +778,7 @@ GNEDemandElement::getPersonPlanProblem() const {
             firstEdge = getParentDemandElements().at(1)->getParentEdges().front();
         }
         // compare both edges
-        if (previousEdge != firstEdge) {
+        if (previousEdge && firstEdge && (previousEdge != firstEdge)) {
             return "Edge '" + previousEdge->getID() + "' is not consecutive with edge '" + firstEdge->getID() + "'";
         }
     }
@@ -782,7 +798,7 @@ GNEDemandElement::getPersonPlanProblem() const {
         }
         // get last edge
         GNEEdge* lastEdge = nullptr;
-        // check edge 
+        // check edge
         if (getParentLanes().size() == 1) {
             lastEdge = getParentLanes().front()->getParentEdge();
         } else if (getParentAdditionals().size() == 1) {
@@ -793,7 +809,7 @@ GNEDemandElement::getPersonPlanProblem() const {
             lastEdge = getParentDemandElements().at(1)->getParentEdges().back();
         }
         // compare both edges
-        if (nextEdge != lastEdge) {
+        if (nextEdge && lastEdge && (nextEdge != lastEdge)) {
             return "Edge '" + lastEdge->getID() + "' is not consecutive with edge '" + nextEdge->getID() + "'";
         }
     }
@@ -811,6 +827,24 @@ GNEDemandElement::replaceDemandParentEdges(const std::string& value) {
 void
 GNEDemandElement::replaceDemandParentLanes(const std::string& value) {
     replaceParentElements(this, parse<std::vector<GNELane*> >(getNet(), value));
+}
+
+
+void
+GNEDemandElement::replaceFirstParentJunction(const std::string& value) {
+    std::vector<GNEJunction*> parentJunctions = getParentJunctions();
+    parentJunctions[0] = myNet->getAttributeCarriers()->retrieveJunction(value);
+    // replace parent junctions
+    replaceParentElements(this, parentJunctions);
+}
+
+
+void
+GNEDemandElement::replaceLastParentJunction(const std::string& value) {
+    std::vector<GNEJunction*> parentJunctions = getParentJunctions();
+    parentJunctions[(int)parentJunctions.size() - 1] = myNet->getAttributeCarriers()->retrieveJunction(value);
+    // replace parent junctions
+    replaceParentElements(this, parentJunctions);
 }
 
 
@@ -865,10 +899,73 @@ GNEDemandElement::replaceDemandElementParent(SumoXMLTag tag, const std::string& 
 }
 
 
+void
+GNEDemandElement::setVTypeDistributionParent(const std::string& value) {
+    std::vector<GNEDemandElement*> parents;
+    if (value.size() > 0) {
+        parents.push_back(myNet->getAttributeCarriers()->retrieveDemandElement(SUMO_TAG_VTYPE_DISTRIBUTION, value));
+    }
+    replaceParentElements(this, parents);
+}
+
+
 bool
 GNEDemandElement::checkChildDemandElementRestriction() const {
     // throw exception because this function mus be implemented in child (see GNEE3Detector)
     throw ProcessError("Calling non-implemented function checkChildDemandElementRestriction during saving of " + getTagStr() + ". It muss be reimplemented in child class");
 }
+
+
+GNEDemandElement::SortedStops::SortedStops(GNEEdge* edge_) :
+    edge(edge_) {
+}
+
+
+void
+GNEDemandElement::SortedStops::addStop(const GNEDemandElement* stop) {
+    myStops.push_back(std::make_pair(stop->getAttributeDouble(SUMO_ATTR_ENDPOS), stop));
+    // sort stops
+    std::sort(myStops.begin(), myStops.end());
+}
+
+
+std::vector<const GNEDemandElement*>
+GNEDemandElement::getSortedStops(const std::vector<GNEEdge*>& edges) const {
+    std::vector<GNEDemandElement*> stops;
+    // get stops
+    for (const auto& stop : getChildDemandElements()) {
+        if (stop->getTagProperty().isStop()) {
+            stops.push_back(stop);
+        }
+    }
+    // create SortedStops
+    std::vector<SortedStops> sortedStops;
+    for (const auto& edge : edges) {
+        sortedStops.push_back(SortedStops(edge));
+    }
+    // iterate over all stops and insert it in sortedStops
+    for (const auto& stop : stops) {
+        bool stopLoop = false;
+        // iterate over sortedStops
+        for (auto it = sortedStops.begin(); (it != sortedStops.end()) && !stopLoop; it++) {
+            if ((stop->getParentAdditionals().size() > 0) && (stop->getParentAdditionals().front()->getParentLanes().front()->getParentEdge() == it->edge)) {
+                it->addStop(stop);
+                stopLoop = true;
+            } else if ((stop->getParentLanes().size() > 0) && (stop->getParentLanes().front()->getParentEdge() == it->edge)) {
+                it->addStop(stop);
+                stopLoop = true;
+            }
+        }
+    }
+    // finally return sorted stops
+    std::vector<const GNEDemandElement*> solution;
+    for (const auto& sortedStop : sortedStops) {
+        for (const auto& stop : sortedStop.myStops) {
+            solution.push_back(stop.second);
+        }
+    }
+    return solution;
+}
+
 
 /****************************************************************************/

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2011-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2011-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -125,7 +125,7 @@ GNEConnectorFrame::ConnectionModifications::onCmdSaveModifications(FXObject*, FX
         // check if routes has to be protected
         if (myProtectRoutesCheckBox->isEnabled() && (myProtectRoutesCheckBox->getCheck() == TRUE)) {
             for (const auto& i : myConnectorFrameParent->myCurrentEditedLane->getParentEdge()->getChildDemandElements()) {
-                if (!i->isDemandElementValid()) {
+                if (i->isDemandElementValid() != GNEDemandElement::Problem::OK) {
                     FXMessageBox::warning(getApp(), MBOX_OK,
                                           "Error saving connection operations", "%s",
                                           ("Connection edition  cannot be saved because route '" + i->getID() + "' is broken.").c_str());

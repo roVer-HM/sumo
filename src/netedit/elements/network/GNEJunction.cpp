@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -367,6 +367,11 @@ GNEJunction::drawGL(const GUIVisualizationSettings& s) const {
     }
     if (myNet->getViewNet()->showJunctionAsBubbles()) {
         // force draw bubbles if we enabled option in checkbox of viewNet
+        drawBubble = true;
+    }
+    if ((myNBNode->getShape().area() < 4) && (mySourceCandidate || myTargetCandidate ||
+            mySpecialCandidate | myPossibleCandidate || myConflictedCandidate)) {
+        // force draw if this junction is a candidate
         drawBubble = true;
     }
     // only continue if exaggeration is greather than 0
@@ -1586,6 +1591,26 @@ GNEJunction::setColor(const GUIVisualizationSettings& s, bool bubble) const {
     // overwritte color if we're in data mode
     if (myNet->getViewNet()->getEditModes().isCurrentSupermodeData()) {
         color = s.junctionColorer.getScheme().getColor(6);
+    }
+    // special color for source candidate junction
+    if (mySourceCandidate) {
+        color = s.candidateColorSettings.source;
+    }
+    // special color for target candidate junction
+    if (myTargetCandidate) {
+        color = s.candidateColorSettings.target;
+    }
+    // special color for special candidate junction
+    if (mySpecialCandidate) {
+        color = s.candidateColorSettings.special;
+    }
+    // special color for possible candidate junction
+    if (myPossibleCandidate) {
+        color = s.candidateColorSettings.possible;
+    }
+    // special color for conflicted candidate junction
+    if (myConflictedCandidate) {
+        color = s.candidateColorSettings.conflict;
     }
     // return color
     return color;

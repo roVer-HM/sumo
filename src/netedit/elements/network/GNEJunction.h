@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,9 +20,11 @@
 /****************************************************************************/
 #pragma once
 #include <config.h>
-#include "GNENetworkElement.h"
 
+#include <netedit/elements/GNECandidateElement.h>
 #include <netbuild/NBNode.h>
+
+#include "GNENetworkElement.h"
 
 // ===========================================================================
 // class declarations
@@ -43,7 +45,7 @@ class GNEConnection;
  *  is computed using the junction's position to which an offset of 1m to each
  *  side is added.
  */
-class GNEJunction : public GNENetworkElement {
+class GNEJunction : public GNENetworkElement, public GNECandidateElement {
 
     /// @brief Declare friend class
     friend class GNEChange_TLS;

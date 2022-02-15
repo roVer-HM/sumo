@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -162,7 +162,7 @@ GNEContainer::GNESelectedContainersPopupMenu::onCmdTransform(FXObject* obj, FXSe
 
 GNEContainer::GNEContainer(SumoXMLTag tag, GNENet* net) :
     GNEDemandElement("", net, GLO_CONTAINER, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {}, {}) {
+{}, {}, {}, {}, {}, {}, {}, {}) {
     // reset default values
     resetDefaultValues();
 }
@@ -170,8 +170,8 @@ GNEContainer::GNEContainer(SumoXMLTag tag, GNENet* net) :
 
 GNEContainer::GNEContainer(SumoXMLTag tag, GNENet* net, GNEDemandElement* pType, const SUMOVehicleParameter& containerparameters) :
     GNEDemandElement(containerparameters.id, net, (tag == SUMO_TAG_CONTAINERFLOW) ? GLO_CONTAINERFLOW : GLO_CONTAINER, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {pType}, {}),
-    SUMOVehicleParameter(containerparameters) {
+{}, {}, {}, {}, {}, {}, {pType}, {}),
+SUMOVehicleParameter(containerparameters) {
     // set manually vtypeID (needed for saving)
     vtypeid = pType->getID();
 }
@@ -262,10 +262,10 @@ GNEContainer::writeDemandElement(OutputDevice& device) const {
 }
 
 
-bool
+GNEDemandElement::Problem
 GNEContainer::isDemandElementValid() const {
     // a single container is always valid
-    return true;
+    return Problem::OK;
 }
 
 
@@ -395,7 +395,7 @@ GNEContainer::drawGL(const GUIVisualizationSettings& s) const {
             glScaled(exaggeration, exaggeration, 1);
             // draw container depending of detail level
             if (s.drawDetail(s.detailSettings.personShapes, exaggeration)) {
-                GUIBasePersonHelper::drawAction_drawAsImage(0, length, width, file, SVS_PEDESTRIAN, exaggeration);
+                GUIBasePersonHelper::drawAction_drawAsImage(0, length, width, file, SUMOVehicleShape::PEDESTRIAN, exaggeration);
             } else if (s.drawDetail(s.detailSettings.personCircles, exaggeration)) {
                 GUIBasePersonHelper::drawAction_drawAsCircle(length, width, s.scale * exaggeration);
             } else if (s.drawDetail(s.detailSettings.personTriangles, exaggeration)) {
@@ -846,7 +846,7 @@ GNEContainer::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         case SUMO_ATTR_TYPE:
-            replaceDemandElementParent(SUMO_TAG_PTYPE, value, 0);
+            replaceDemandElementParent(SUMO_TAG_VTYPE, value, 0);
             // set manually vtypeID (needed for saving)
             vtypeid = value;
             break;

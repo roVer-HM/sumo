@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -41,20 +41,20 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 250, 180)
 
 # Change parameter 10 with an non valid value
-netedit.modifyAttribute(10, "DummyDisallowed", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.disallowed, "DummyDisallowed", False)
 
 # Change parameter 10 with a valid value (empty)
-netedit.modifyAttribute(10, "", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.disallowed, "", False)
 
 # Change parameter 10 with a valid value (different separators)
-netedit.modifyAttribute(10, "authority  army, passenger; taxi. tram", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.disallowed, "authority  army, passenger; taxi. tram", False)
 
 # Change parameter 10 with a valid value (empty)
-netedit.modifyAttribute(10, "", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.disallowed, "", False)
 
 # Change parameter 10 with a valid value (empty)
-netedit.modifyAttribute(
-    10, "emergency authority army vip passenger hov bus coach tram rail_urban rail " +
+netedit.modifyAttribute(netedit.attrs.edge.inspect.disallowed, 
+    "emergency authority army vip passenger hov bus coach tram rail_urban rail " +
     "rail_electric motorcycle moped pedestrian custom1", False)
 
 # recompute

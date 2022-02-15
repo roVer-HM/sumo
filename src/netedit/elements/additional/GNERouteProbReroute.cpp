@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -31,9 +31,9 @@
 
 GNERouteProbReroute::GNERouteProbReroute(GNENet* net) :
     GNEAdditional("", net, GLO_REROUTER_ROUTEPROBREROUTE, SUMO_TAG_ROUTE_PROB_REROUTE, "",
-        {}, {}, {}, {}, {}, {}, {}, {},
-    std::map<std::string, std::string>()),
-    myProbability(0) {
+{}, {}, {}, {}, {}, {}, {}, {},
+std::map<std::string, std::string>()),
+myProbability(0) {
     // reset default values
     resetDefaultValues();
 }
@@ -41,9 +41,9 @@ GNERouteProbReroute::GNERouteProbReroute(GNENet* net) :
 
 GNERouteProbReroute::GNERouteProbReroute(GNEAdditional* rerouterIntervalParent, GNEDemandElement* route, double probability) :
     GNEAdditional(rerouterIntervalParent->getNet(), GLO_REROUTER_ROUTEPROBREROUTE, SUMO_TAG_ROUTE_PROB_REROUTE, "",
-        {}, {}, {}, {rerouterIntervalParent}, {}, {}, {route}, {},
-    std::map<std::string, std::string>()),
-    myProbability(probability) {
+{}, {}, {}, {rerouterIntervalParent}, {}, {}, {route}, {},
+std::map<std::string, std::string>()),
+myProbability(probability) {
     // update boundary of rerouter parent
     rerouterIntervalParent->getParentAdditionals().front()->updateCenteringBoundary(true);
 }

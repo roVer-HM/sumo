@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -230,6 +230,7 @@ GUIVehicle::getTypeParameterWindow(GUIMainWindow& app,
     ret->mkItem("apparent deceleration [m/s^2]", false, getCarFollowModel().getApparentDecel());
     ret->mkItem("imperfection (sigma)", false, getCarFollowModel().getImperfection());
     ret->mkItem("desired headway (tau)", false, getCarFollowModel().getHeadwayTime());
+    ret->mkItem("speedFactor", false, myType->getParameter().speedFactor.toStr(gPrecision));
     if (myType->getParameter().wasSet(VTYPEPARS_ACTIONSTEPLENGTH_SET)) {
         ret->mkItem("action step length [s]", false, myType->getActionStepLengthSecs());
     }
@@ -296,7 +297,7 @@ GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool
     RGBColor current = GLHelper::getColor();
     RGBColor darker = current.changedBrightness(-51);
     const double exaggeration = (s.vehicleSize.getExaggeration(s, this)
-            * s.vehicleScaler.getScheme().getColor(getScaleValue(s, s.vehicleScaler.getActive())));
+                                 * s.vehicleScaler.getScheme().getColor(getScaleValue(s, s.vehicleScaler.getActive())));
     const double totalLength = getVType().getLength();
     double upscaleLength = exaggeration;
     if (exaggeration > 1 && totalLength > 5) {
@@ -328,8 +329,8 @@ GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool
         carriageLength = carriageLengthWithGap - carriageGap;
     }
     const int firstPassengerCarriage = defaultLength == locomotiveLength || numCarriages == 1 || (getVClass() & SVC_RAIL_CLASSES) == 0 ? 0 : 1;
-    const int noPersonsBackCarriages = (getVehicleType().getGuiShape() == SVS_TRUCK_SEMITRAILER || getVehicleType().getGuiShape() == SVS_TRUCK_1TRAILER) && numCarriages > 1 ? 1 : 0;
-    const int firstContainerCarriage = numCarriages == 1 || getVehicleType().getGuiShape() == SVS_TRUCK_1TRAILER ? 0 : 1;
+    const int noPersonsBackCarriages = (getVehicleType().getGuiShape() == SUMOVehicleShape::TRUCK_SEMITRAILER || getVehicleType().getGuiShape() == SUMOVehicleShape::TRUCK_1TRAILER) && numCarriages > 1 ? 1 : 0;
+    const int firstContainerCarriage = numCarriages == 1 || getVehicleType().getGuiShape() == SUMOVehicleShape::TRUCK_1TRAILER ? 0 : 1;
     const int seatsPerCarriage = (int)ceil(getVType().getPersonCapacity() / (numCarriages - firstPassengerCarriage - noPersonsBackCarriages));
     const int containersPerCarriage = (int)ceil(getVType().getContainerCapacity() / (numCarriages - firstContainerCarriage));
     // lane on which the carriage front is situated
@@ -401,8 +402,8 @@ GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool
         glRotated(angle, 0, 0, 1);
         if (!asImage || !GUIBaseVehicleHelper::drawAction_drawVehicleAsImage(s, getVType().getImgFile(), this, getVType().getWidth(), curCLength / exaggeration)) {
             switch (getVType().getGuiShape()) {
-                case SVS_TRUCK_SEMITRAILER:
-                case SVS_TRUCK_1TRAILER:
+                case SUMOVehicleShape::TRUCK_SEMITRAILER:
+                case SUMOVehicleShape::TRUCK_1TRAILER:
                     if (i == 0) {
                         GUIBaseVehicleHelper::drawAction_drawVehicleAsPoly(s, getVType().getGuiShape(), getVType().getWidth() * exaggeration, curCLength, i);
                     } else {
@@ -434,7 +435,7 @@ GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool
         carriageOffset -= (curCLength + carriageGap);
         carriageBackOffset -= carriageLengthWithGap;
     }
-    if (getVType().getGuiShape() == SVS_RAIL_CAR) {
+    if (getVType().getGuiShape() == SUMOVehicleShape::RAIL_CAR) {
         GLHelper::pushMatrix();
         glTranslated(front.x(), front.y(), getType());
         glRotated(angle, 0, 0, 1);

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -29,10 +29,9 @@
 // ===========================================================================
 // static member variables
 // ===========================================================================
-SumoRNG RandHelper::myRandomNumberGenerator;
+SumoRNG RandHelper::myRandomNumberGenerator("default");
 #ifdef DEBUG_RANDCALLS
-std::map<SumoRNG*, int> RandHelper::myRngId;
-int RandHelper::myDebugIndex(7);
+unsigned long long int RandHelper::myDebugIndex(7);
 #endif
 
 
@@ -60,9 +59,6 @@ RandHelper::initRand(SumoRNG* which, const bool random, const int seed) {
     if (which == nullptr) {
         which = &myRandomNumberGenerator;
     }
-#ifdef DEBUG_RANDCALLS
-    myRngId[which] = myRngId.size();
-#endif
     if (random) {
         which->seed((unsigned long)time(nullptr));
     } else {

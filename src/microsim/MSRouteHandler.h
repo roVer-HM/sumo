@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -190,6 +190,12 @@ protected:
     int myActiveRouteRepeat;
     SUMOTime myActiveRoutePeriod;
 
+    /// @brief The time at which this route was replaced (from vehroute-output)
+    SUMOTime myActiveRouteReplacedAtTime;
+
+    /// @brief The index at which this route was replaced (from vehroute-output)
+    int myActiveRouteReplacedIndex;
+
     /// @brief The type of the current object
     ObjectTypeEnum myActiveType;
 
@@ -219,6 +225,9 @@ protected:
 
     /// @brief prefix when copying vehicles with --scale
     std::string myScaleSuffix;
+
+    /// @brief whether loaded rerouting events shall be replayed
+    bool myReplayRerouting;
 
     /// @brief A random number generator used to choose from vtype/route distributions and computing the speed factors
     static SumoRNG myParsingRNG;

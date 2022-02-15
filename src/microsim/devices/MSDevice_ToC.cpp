@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -98,7 +98,7 @@
 std::set<MSDevice_ToC*, ComparatorNumericalIdLess> MSDevice_ToC::myInstances = std::set<MSDevice_ToC*, ComparatorNumericalIdLess>();
 std::set<std::string> MSDevice_ToC::createdOutputFiles;
 int MSDevice_ToC::LCModeMRM = 768; // = 0b001100000000 - no autonomous changes, no speed adaptation
-SumoRNG MSDevice_ToC::myResponseTimeRNG;
+SumoRNG MSDevice_ToC::myResponseTimeRNG("toc");
 
 
 // ===========================================================================

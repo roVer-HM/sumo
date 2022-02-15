@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -38,25 +38,25 @@ netedit.changeElement("poly")
 netedit.createSquaredTAZ(referencePosition, 182, 130, 200, True)
 
 # enable ID
-netedit.changeDefaultBoolValue(2)
+netedit.changeDefaultBoolValue(4)
 
 # try to create polygon
 netedit.createSquaredPoly(referencePosition, 282, 130, 200, True)
 
 # set invalid ID
-netedit.changeDefaultValue(3, ";;;;;;")
+netedit.changeDefaultValue(5, ";;;;;;")
 
 # try to create polygon
 netedit.createSquaredPoly(referencePosition, 382, 130, 200, True)
 
 # set invalid ID
-netedit.changeDefaultValue(3, "poly_0")
+netedit.changeDefaultValue(5, "poly_0")
 
 # try to create polygon
 netedit.createSquaredPoly(referencePosition, 382, 130, 200, True)
 
 # set invalid ID
-netedit.changeDefaultValue(3, "custom_ID")
+netedit.changeDefaultValue(5, "custom_ID")
 
 # try to create polygon
 netedit.createSquaredPoly(referencePosition, 382, 130, 200, True)

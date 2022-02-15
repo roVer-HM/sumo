@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -106,6 +106,7 @@ MSLink::MSLink(MSLane* predLane, MSLane* succLane, MSLane* via, LinkDirection di
     myParallelRight(nullptr),
     myParallelLeft(nullptr),
     myAmIndirect(indirect),
+    myRadius(std::numeric_limits<double>::max()),
     myJunction(nullptr) {
 
     if (MSGlobals::gLateralResolution > 0) {
@@ -322,6 +323,27 @@ MSLink::setRequestInformation(int index, bool hasFoes, bool isCont,
                     mySublaneFoeLanes.push_back(link->getViaLane());
                 }
             }
+        }
+    }
+    if (myInternalLaneBefore != nullptr
+            && myDirection != LinkDirection::STRAIGHT
+            // for right turns, the curvature helps rather than restricts the linkLeader check
+            && (
+                (!MSGlobals::gLefthand && myDirection != LinkDirection::RIGHT)
+                || (MSGlobals::gLefthand && myDirection != LinkDirection::LEFT))) {
+        const double angle = fabs(GeomHelper::angleDiff(
+                                      myLaneBefore->getNormalPredecessorLane()->getShape().angleAt2D(-2),
+                                      myLane->getShape().angleAt2D(0)));
+        if (angle > 0) {
+            double length = myInternalLaneBefore->getShape().length2D();
+            if (myInternalLaneBefore->getIncomingLanes().size() == 1 &&
+                    myInternalLaneBefore->getIncomingLanes()[0].lane->isInternal()) {
+                length += myInternalLaneBefore->getIncomingLanes()[0].lane->getShape().length2D();
+            } else if (myInternalLane != nullptr) {
+                length += myInternalLane->getShape().length2D();
+            }
+            myRadius = length / angle;
+            //std::cout << getDescription() << " a=" << RAD2DEG(angle) << " l=" << length << " r=" << myRadius << "\n";
         }
     }
 }
@@ -1111,7 +1133,9 @@ MSLink::getLeaderInfo(const MSVehicle* ego, double dist, std::vector<const MSPer
             MSVehicle* leader = (MSVehicle*)*it_veh;
             const double leaderBack = leader->getBackPositionOnLane(foeLane);
             const double leaderBackDist = foeDistToCrossing - leaderBack;
-            const bool pastTheCrossingPoint = leaderBackDist + foeCrossingWidth < 0;
+            const double l2 = ego != nullptr ? ego->getLength() + 2 : 0; // add some slack to account for further meeting-angle effects
+            const double sagitta = ego != nullptr && myRadius != std::numeric_limits<double>::max() ? myRadius - sqrt(myRadius * myRadius - 0.25 * l2 * l2) : 0;
+            const bool pastTheCrossingPoint = leaderBackDist + foeCrossingWidth  + sagitta < 0;
             const bool foeIsBicycleTurn = (leader->getVehicleType().getVehicleClass() == SVC_BICYCLE
                                            && foeLane->getIncomingLanes().front().viaLink->getDirection() == LinkDirection::LEFT);
             const bool ignoreIndirectBicycleTurn = pastTheCrossingPoint && foeIsBicycleTurn;
@@ -1130,6 +1154,8 @@ MSLink::getLeaderInfo(const MSVehicle* ego, double dist, std::vector<const MSPer
                           << " lb=" << leaderBack
                           << " lbd=" << leaderBackDist
                           << " fcwidth=" << foeCrossingWidth
+                          << " r=" << myRadius
+                          << " sagitta=" << sagitta
                           << " foePastCP=" << pastTheCrossingPoint
                           << " inTheWay=" << inTheWay
                           << " willPass=" << willPass
@@ -1270,7 +1296,7 @@ MSLink::getLeaderInfo(const MSVehicle* ego, double dist, std::vector<const MSPer
                                   //<< " stateRight=" << toString((LaneChangeAction)leader->getLaneChangeModel().getSavedState(-1).second)
                                   << "\n";
                     }
-                    if (leaderBackDist + foeCrossingWidth < 0 && !sameTarget) {
+                    if (pastTheCrossingPoint && !sameTarget) {
                         // leader is completely past the crossing point
                         // or there is no crossing point
                         continue; // next vehicle

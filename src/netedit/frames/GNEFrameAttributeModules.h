@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -162,7 +162,7 @@ public:
         ~AttributesCreator();
 
         /// @brief show AttributesCreator modul
-        void showAttributesCreatorModule(GNEAttributeCarrier *templateAC, const std::vector<SumoXMLAttr>& hiddenAttributes);
+        void showAttributesCreatorModule(GNEAttributeCarrier* templateAC, const std::vector<SumoXMLAttr>& hiddenAttributes);
 
         /// @brief hide group box
         void hideAttributesCreatorModule();
@@ -174,7 +174,7 @@ public:
         void getAttributesAndValues(CommonXMLStructure::SumoBaseObject* baseObject, bool includeAll) const;
 
         /// @brief get current template AC
-        GNEAttributeCarrier *getCurrentTemplateAC() const;
+        GNEAttributeCarrier* getCurrentTemplateAC() const;
 
         /// @brief check if parameters of attributes are valid
         bool areValuesValid() const;
@@ -212,7 +212,7 @@ public:
         AttributesCreatorFlow* myAttributesCreatorFlow = nullptr;
 
         /// @brief current templateAC
-        GNEAttributeCarrier *myTemplateAC;
+        GNEAttributeCarrier* myTemplateAC;
 
         /// @brief hidden attributes
         std::vector<SumoXMLAttr> myHiddenAttributes;
@@ -243,10 +243,13 @@ public:
         ~AttributesCreatorFlow();
 
         /// @brief show AttributesCreatorFlow modul
-        void showAttributesCreatorFlowModule(const bool persons);
+        void showAttributesCreatorFlowModule();
 
         /// @brief hide group box
         void hideAttributesCreatorFlowModule();
+
+        /// @brief shown AttributesCreatorFlow modul
+        bool shownAttributesCreatorFlowModule() const;
 
         /// @brief refresh AttributesCreatorFlow
         void refreshAttributesCreatorFlow();
@@ -306,8 +309,8 @@ public:
         /// @brief textField for 'probability' attribute
         FXTextField* myValueProbabilityTextField = nullptr;
 
-        /// @brief variable used to save current flow configuration
-        int myFlowParameters;
+        /// @brief per hours attr
+        SumoXMLAttr myPerHourAttr = SUMO_ATTR_NOTHING;
     };
 
     // ===========================================================================
@@ -560,28 +563,28 @@ public:
     };
 
     // ===========================================================================
-    // class ParametersEditorCreator
+    // class GenericDataAttributes
     // ===========================================================================
 
-    class ParametersEditorCreator : public FXGroupBoxModule {
+    class GenericDataAttributes : public FXGroupBoxModule {
         /// @brief FOX-declaration
-        FXDECLARE(GNEFrameAttributeModules::ParametersEditorCreator)
+        FXDECLARE(GNEFrameAttributeModules::GenericDataAttributes)
 
     public:
         /// @brief constructor
-        ParametersEditorCreator(GNEFrame* frameParent);
+        GenericDataAttributes(GNEFrame* frameParent);
 
         /// @brief destructor
-        ~ParametersEditorCreator();
+        ~GenericDataAttributes();
 
         /// @brief show netedit attributes EditorCreator
-        void showParametersEditorCreator();
+        void showGenericDataAttributes();
 
         /// @brief hide netedit attributes EditorCreator
-        void hideParametersEditorCreator();
+        void hideGenericDataAttributes();
 
         /// @brief refresh netedit attributes
-        void refreshParametersEditorCreator();
+        void refreshGenericDataAttributes();
 
         /// @brief get parameters as map
         const std::map<std::string, std::string>& getParametersMap() const;
@@ -608,7 +611,7 @@ public:
         /// @}
 
     protected:
-        FOX_CONSTRUCTOR(ParametersEditorCreator)
+        FOX_CONSTRUCTOR(GenericDataAttributes)
 
     private:
         /// @brief pointer to frame parent

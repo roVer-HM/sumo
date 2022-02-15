@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -117,7 +117,9 @@ public:
 
     /// @brief called on a simulation step
     long onSimStep(FXObject* sender, FXSelector sel, void* ptr);
+
     /// }
+
 
 
 public:
@@ -129,6 +131,9 @@ public:
 
     /// @brief Definition of a storage for indices
     typedef std::vector<int> IndexVector;
+
+    /// @brief Definition of a storage for detector and condition states
+    typedef std::vector<std::vector<double > > AdditionalStatesVector;
 
     /**
      * @class GUITLLogicPhasesTrackerPanel
@@ -162,12 +167,20 @@ public:
 
         /// @brief called if the widget shall be repainted
         long onPaint(FXObject*, FXSelector, void*);
+
+        /// @brief called on mouse movement (for updating tooltip)
+        long onMouseMove(FXObject*, FXSelector, void*);
         /// }
 
+        const Position& getMousePos() const {
+            return myMousePos;
+        };
 
     private:
         /// @brief The parent window
         GUITLLogicPhasesTrackerWindow* myParent;
+
+        Position myMousePos;
 
     protected:
         /// @brief protected constructor for FOX
@@ -201,6 +214,14 @@ private:
     /// @brief The index of the current phase
     IndexVector myPhaseIndex;
 
+    /// @brief The state of all used detectors of the current phase
+    AdditionalStatesVector myDetectorStates;
+    AdditionalStatesVector myConditionStates;
+
+    /// @brief The list of detector state durations
+    DurationsVector myDetectorDurations;
+    DurationsVector myConditionDurations;
+
     /// @brief The panel to draw on
     GUITLLogicPhasesTrackerPanel* myPanel;
 
@@ -211,12 +232,18 @@ private:
      *
      * This holds an enumeration only - used to avoid time consuming string representation of ints */
     std::vector<std::string> myLinkNames;
+    std::vector<std::string> myDetectorNames;
+    std::vector<std::string> myConditionNames;
 
     /// @brief The index of the first phase that fits into the window
     int myFirstPhase2Show;
+    int myFirstDet2Show;
+    int myFirstCond2Show;
 
     /// @brief The offset to draw the first phase (left offset)
     SUMOTime myFirstPhaseOffset;
+    SUMOTime myFirstDetOffset;
+    SUMOTime myFirstCondOffset;
 
     /// @brief The time the diagram begins at
     SUMOTime myFirstTime2Show;
@@ -246,10 +273,16 @@ private:
     FXComboBox* myTimeMode;
 
     /// @brief Whether green durations are printed
-    FXCheckButton* myGreenMode;
+    FXComboBox* myGreenMode;
 
     /// @brief Whether phase names shall be printed instead of indices
     FXCheckButton* myIndexMode;
+
+    /// @brief Whether detector states are drawn
+    FXCheckButton* myDetectorMode;
+
+    /// @brief Whether detector states are drawn
+    FXCheckButton* myConditionMode;
 
     /// @brief y-Position of previously opened window
     static int myLastY;
@@ -257,12 +290,24 @@ private:
 private:
 
     void initToolBar();
-    void initTimeMode();
-    void initGreenMode();
-    void initIndexMode();
 
     void saveSettings();
     void loadSettings();
+
+    /// @brief compute required windowHeight
+    int computeHeight();
+
+    /// @brief draw row title
+    void drawNames(const std::vector<std::string>& names, double fontHeight, double fontWidth, double divHeight, double divWidth, double& h, int extraLines);
+
+    /// @brief draw detector and condition states
+    void drawAdditionalStates(GUITLLogicPhasesTrackerPanel& caller,
+                              const AdditionalStatesVector& states, const DurationsVector& durations,
+                              SUMOTime firstOffset, int first2Show, double hStart,
+                              double panelWidth, double leftOffset, double barWidth, double stateHeight, double h20, double& h);
+
+    /// @brief find time in cycle based on myTimeInCycle
+    SUMOTime findTimeInCycle(SUMOTime t);
 
 protected:
     /// protected constructor for FOX

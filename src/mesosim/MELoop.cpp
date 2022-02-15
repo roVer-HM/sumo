@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -86,7 +86,7 @@ MELoop::changeSegment(MEVehicle* veh, SUMOTime leaveTime, MESegment* const toSeg
         if (onSegment != nullptr) {
             onSegment->send(veh, toSegment, qIdx, leaveTime, reason);
         } else {
-            WRITE_WARNINGF("Vehicle '%' teleports beyond arrival edge '%', time %.",
+            WRITE_WARNINGF("Vehicle '%' teleports beyond arrival edge '%', time=%.",
                            veh->getID(), veh->getEdge()->getID(), time2string(leaveTime));
         }
         veh->setSegment(toSegment); // signal arrival
@@ -106,7 +106,7 @@ MELoop::changeSegment(MEVehicle* veh, SUMOTime leaveTime, MESegment* const toSeg
             }
             toSegment->receive(veh, qIdx, leaveTime, false, ignoreLink, &onSegment->getEdge() != &toSegment->getEdge());
         } else {
-            WRITE_WARNINGF("Vehicle '%' ends teleporting on edge '%':%, time %.",
+            WRITE_WARNINGF("Vehicle '%' ends teleporting on edge '%':%, time=%.",
                            veh->getID(), toSegment->getEdge().getID(), toSegment->getIndex(), time2string(leaveTime));
             // this is not quite correct but suffices for interrogation by
             // subsequent methods (veh->getSpeed() needs segment != 0)
@@ -173,7 +173,7 @@ MELoop::teleportVehicle(MEVehicle* veh, MESegment* const toSegment) {
     if (teleSegment != nullptr) {
         if (!teleporting) {
             // we managed to teleport in a single jump
-            WRITE_WARNINGF("Teleporting vehicle '%'; waited too long, from edge '%':% to edge '%':%, time %.",
+            WRITE_WARNINGF("Teleporting vehicle '%'; waited too long, from edge '%':% to edge '%':%, time=%.",
                            veh->getID(), onSegment->getEdge().getID(), onSegment->getIndex(),
                            teleSegment->getEdge().getID(), teleSegment->getIndex(), time2string(leaveTime));
             MSNet::getInstance()->getVehicleControl().registerTeleportJam();
@@ -183,7 +183,7 @@ MELoop::teleportVehicle(MEVehicle* veh, MESegment* const toSegment) {
         if (!teleporting) {
             int qIdx = 0;
             // announce start of multi-step teleport, arrival will be announced in changeSegment()
-            WRITE_WARNINGF("Teleporting vehicle '%'; waited too long, from edge '%':%, time %.",
+            WRITE_WARNINGF("Teleporting vehicle '%'; waited too long, from edge '%':%, time=%.",
                            veh->getID(), onSegment->getEdge().getID(), onSegment->getIndex(), time2string(leaveTime));
             MSNet::getInstance()->getVehicleControl().registerTeleportJam();
             // remove from current segment
@@ -276,7 +276,7 @@ MELoop::numSegmentsFor(const double length, const double sLength) {
 
 void
 MELoop::buildSegmentsFor(const MSEdge& e, const OptionsCont& oc) {
-    const MSNet::MesoEdgeType& edgeType = MSNet::getInstance()->getMesoType(e.getEdgeType());
+    const MESegment::MesoEdgeType& edgeType = MSNet::getInstance()->getMesoType(e.getEdgeType());
     const double length = e.getLength();
     const int numSegments = numSegmentsFor(length, oc.getFloat("meso-edgelength"));
     const double slength = length / (double)numSegments;
@@ -298,12 +298,12 @@ MELoop::buildSegmentsFor(const MSEdge& e, const OptionsCont& oc) {
 
 
 void
-MELoop::updateSegementsForEdge(const MSEdge& e) {
+MELoop::updateSegmentsForEdge(const MSEdge& e) {
     if (e.getNumericalID() < (int)myEdges2FirstSegments.size()) {
-        const MSNet::MesoEdgeType& edgeType = MSNet::getInstance()->getMesoType(e.getEdgeType());
+        const MESegment::MesoEdgeType& edgeType = MSNet::getInstance()->getMesoType(e.getEdgeType());
         MESegment* s = myEdges2FirstSegments[e.getNumericalID()];
         while (s != nullptr) {
-            s->initSegment(edgeType, e);
+            s->initSegment(edgeType, e, s->getCapacity());
             s = s->getNextSegment();
         }
     }

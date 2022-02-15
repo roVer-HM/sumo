@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -199,12 +199,24 @@ public:
     virtual SUMOTime mapTimeInCycle(SUMOTime t) const;
 
 protected:
+
+    /// @brief the minimum duration for keeping the current phase when considering 'earliestEnd'
+    SUMOTime getEarliest(SUMOTime prevStart) const;
+
+    /// @brief the maximum duratin for keeping the current phase when considering 'latestEnd'
+    SUMOTime getLatest() const;
+
+
+protected:
     /// @brief The list of phases this logic uses
     Phases myPhases;
 
     /// @brief The current step
     int myStep;
 
+    /// @brief whether coordination parameters earliestEnd, latestEnd are
+    //compared to absolute simulation time or timeInCycle
+    bool myCoordinated;
 
 private:
     /// @brief frees memory responsibilities

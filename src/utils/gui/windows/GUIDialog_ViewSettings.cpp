@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -145,6 +145,7 @@ GUIDialog_ViewSettings::~GUIDialog_ViewSettings() {
     delete myJunctionNamePanel;
     delete myVehicleNamePanel;
     delete myVehicleValuePanel;
+    delete myVehicleScaleValuePanel;
     delete myVehicleTextPanel;
     delete myPersonNamePanel;
     delete myPersonValuePanel;
@@ -303,6 +304,7 @@ GUIDialog_ViewSettings::onCmdNameChange(FXObject*, FXSelector, void* ptr) {
     */
     myVehicleNamePanel->update(mySettings->vehicleName);
     myVehicleValuePanel->update(mySettings->vehicleValue);
+    myVehicleScaleValuePanel->update(mySettings->vehicleScaleValue);
     myVehicleTextPanel->update(mySettings->vehicleText);
     myVehicleSizePanel->update(mySettings->vehicleSize);
 
@@ -584,6 +586,7 @@ GUIDialog_ViewSettings::onCmdColorChange(FXObject* sender, FXSelector, void* /*v
     */
     tmpSettings.vehicleName = myVehicleNamePanel->getSettings();
     tmpSettings.vehicleValue = myVehicleValuePanel->getSettings();
+    tmpSettings.vehicleScaleValue = myVehicleScaleValuePanel->getSettings();
     tmpSettings.vehicleText = myVehicleTextPanel->getSettings();
     tmpSettings.vehicleSize = myVehicleSizePanel->getSettings();
 
@@ -943,7 +946,7 @@ GUIDialog_ViewSettings::onCmdSaveSetting(FXObject*, FXSelector, void* /*data*/) 
         index = mySchemeName->appendItem(name.c_str());
         myParent->getColoringSchemesCombo()->appendItem(name.c_str());
         myParent->getColoringSchemesCombo()->setCurrentItem(
-                myParent->getColoringSchemesCombo()->findItem(name.c_str()));
+            myParent->getColoringSchemesCombo()->findItem(name.c_str()));
     }
     gSchemeStorage.add(tmpSettings);
     mySchemeName->setItemText(index, name.c_str());
@@ -1014,7 +1017,7 @@ GUIDialog_ViewSettings::onCmdExportSetting(FXObject*, FXSelector, void* /*data*/
         if (!mySettings->netedit && mySaveBreakpoints->getCheck()) {
             for (SUMOTime t : myParent->retrieveBreakpoints()) {
                 dev.openTag(SUMO_TAG_BREAKPOINT);
-                dev.writeAttr(SUMO_ATTR_VALUE, time2string(t));
+                dev.writeAttr(SUMO_ATTR_TIME, time2string(t));
                 dev.closeTag();
             }
         }
@@ -1888,6 +1891,7 @@ GUIDialog_ViewSettings::buildVehiclesFrame(FXTabBook* tabbook) {
     FXMatrix* matrixVehicle = new FXMatrix(verticalframe, 2, GUIDesignMatrixViewSettings);
     myVehicleNamePanel = new NamePanel(matrixVehicle, this, "Show vehicle id", mySettings->vehicleName);
     myVehicleValuePanel = new NamePanel(matrixVehicle, this, "Show vehicle color value", mySettings->vehicleValue);
+    myVehicleScaleValuePanel = new NamePanel(matrixVehicle, this, "Show vehicle scale value", mySettings->vehicleScaleValue);
     myVehicleTextPanel = new NamePanel(matrixVehicle, this, "Show vehicle text param", mySettings->vehicleText);
     myVehicleTextParamKey = new FXComboBox(myVehicleTextPanel->myMatrix0, 1, this, MID_SIMPLE_VIEW_COLORCHANGE, GUIDesignComboBoxStatic);
     myVehicleTextParamKey->setEditable(true);

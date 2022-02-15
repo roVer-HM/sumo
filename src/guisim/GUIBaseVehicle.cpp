@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -442,7 +442,7 @@ GUIBaseVehicle::drawOnPos(const GUIVisualizationSettings& s, const Position& pos
     }
     glScaled(upscale, upscaleLength, 1);
     /*
-        MSLCM_DK2004 &m2 = static_cast<MSLCM_DK2004&>(veh->getLaneChangeModel());
+        MSLaneChangeModel::DK2004 &m2 = static_cast<MSLaneChangeModel::DK2004&>(veh->getLaneChangeModel());
         if((m2.getState()&LCA_URGENT)!=0) {
             glColor3d(1, .4, .4);
         } else if((m2.getState()&LCA_SPEEDGAIN)!=0) {
@@ -470,7 +470,7 @@ GUIBaseVehicle::drawOnPos(const GUIVisualizationSettings& s, const Position& pos
             case 2:
                 drawCarriages = drawAction_drawVehicleAsPolyWithCarriagges(s, scaledLength);
                 // draw flashing blue light for emergency vehicles
-                if (getVType().getGuiShape() == SVS_EMERGENCY) {
+                if (getVType().getGuiShape() == SUMOVehicleShape::EMERGENCY) {
                     glTranslated(0, 0, .1);
                     drawAction_drawVehicleBlueLight();
                 }
@@ -517,22 +517,22 @@ GUIBaseVehicle::drawOnPos(const GUIVisualizationSettings& s, const Position& pos
         if (s.showBlinker) {
             glTranslated(0, 0, .1);
             switch (getVType().getGuiShape()) {
-                case SVS_PEDESTRIAN:
-                case SVS_BICYCLE:
-                case SVS_SCOOTER:
-                case SVS_ANT:
-                case SVS_SHIP:
-                case SVS_RAIL:
-                case SVS_RAIL_CARGO:
-                case SVS_RAIL_CAR:
+                case SUMOVehicleShape::PEDESTRIAN:
+                case SUMOVehicleShape::BICYCLE:
+                case SUMOVehicleShape::SCOOTER:
+                case SUMOVehicleShape::ANT:
+                case SUMOVehicleShape::SHIP:
+                case SUMOVehicleShape::RAIL:
+                case SUMOVehicleShape::RAIL_CARGO:
+                case SUMOVehicleShape::RAIL_CAR:
                     break;
-                case SVS_MOTORCYCLE:
-                case SVS_MOPED:
+                case SUMOVehicleShape::MOTORCYCLE:
+                case SUMOVehicleShape::MOPED:
                     drawAction_drawVehicleBlinker(scaledLength);
                     drawAction_drawVehicleBrakeLight(scaledLength, true);
                     break;
                 default:
-                    // only SVS_RAIL_CAR has blinkers and brake lights but they are drawn along with the carriages
+                    // only SUMOVehicleShape::RAIL_CAR has blinkers and brake lights but they are drawn along with the carriages
                     if (!drawCarriages) {
                         drawAction_drawVehicleBlinker(scaledLength);
                         drawAction_drawVehicleBrakeLight(scaledLength);
@@ -544,7 +544,7 @@ GUIBaseVehicle::drawOnPos(const GUIVisualizationSettings& s, const Position& pos
         if (s.drawLaneChangePreference) {
             /*
                if(gSelected.isSelected(GLO_VEHICLE, veh->getGlID())) {
-               MSLCM_DK2004 &m = static_cast<MSLCM_DK2004&>(veh->getLaneChangeModel());
+               MSLaneChangeModel::DK2004 &m = static_cast<MSLaneChangeModel::DK2004&>(veh->getLaneChangeModel());
                glColor3d(.5, .5, 1);
                glBegin(GL_LINES);
                glVertex2f(0, 0);
@@ -582,6 +582,13 @@ GUIBaseVehicle::drawOnPos(const GUIVisualizationSettings& s, const Position& pos
         glRotated(s.angle, 0, 0, 1);
         const double value = getColorValue(s, s.vehicleColorer.getActive());
         GLHelper::drawTextSettings(s.vehicleValue, toString(value), Position(0, 0), s.scale, s.angle);
+    }
+    if (s.vehicleScaleValue.show(this)) {
+        glRotated(-s.angle, 0, 0, 1);
+        glTranslated(0, 0.7 * s.vehicleName.scaledSize(s.scale), 0);
+        glRotated(s.angle, 0, 0, 1);
+        const double value = getScaleValue(s, s.vehicleScaler.getActive());
+        GLHelper::drawTextSettings(s.vehicleScaleValue, toString(value), Position(0, 0), s.scale, s.angle);
     }
     if (s.vehicleText.show(this)) {
         std::string error;
@@ -694,17 +701,17 @@ GUIBaseVehicle::setFunctionalColor(int activeScheme, const MSBaseVehicle* veh, R
     switch (activeScheme) {
         case 0: {
             //test for emergency vehicle
-            if (veh->getVehicleType().getGuiShape() == SVS_EMERGENCY) {
+            if (veh->getVehicleType().getGuiShape() == SUMOVehicleShape::EMERGENCY) {
                 col = RGBColor::WHITE;
                 return true;
             }
             //test for firebrigade
-            if (veh->getVehicleType().getGuiShape() == SVS_FIREBRIGADE) {
+            if (veh->getVehicleType().getGuiShape() == SUMOVehicleShape::FIREBRIGADE) {
                 col = RGBColor::RED;
                 return true;
             }
             //test for police car
-            if (veh->getVehicleType().getGuiShape() == SVS_POLICE) {
+            if (veh->getVehicleType().getGuiShape() == SUMOVehicleShape::POLICE) {
                 col = RGBColor::BLUE;
                 return true;
             }
@@ -810,16 +817,30 @@ GUIBaseVehicle::getScaleValue(const GUIVisualizationSettings& s, int activeSchem
         case 5: {
             MSVehicle* microVeh = dynamic_cast<MSVehicle*>(&myVehicle);
             return (microVeh != nullptr ? microVeh->getLane()->getVehicleMaxSpeed(microVeh) : myVehicle.getEdge()->getVehicleMaxSpeed(&myVehicle));
-            }
+        }
         case 6:
             return myVehicle.getNumberReroutes();
-        case 7:
-            return myVehicle.getTimeLossSeconds();
+        case 7: {
+            MSVehicle* microVeh = dynamic_cast<MSVehicle*>(&myVehicle);
+            return (microVeh != nullptr
+                    ? (microVeh->getLaneChangeModel().isOpposite() ? -100 : microVeh->getBestLaneOffset())
+                    : 0);
+        }
         case 8:
+            return myVehicle.getAcceleration();
+        case 9: {
+            MSVehicle* microVeh = dynamic_cast<MSVehicle*>(&myVehicle);
+            return (microVeh != nullptr ? microVeh->getTimeGapOnLane() : 0);
+        }
+        case 10:
+            return STEPS2TIME(myVehicle.getDepartDelay());
+        case 11:
+            return myVehicle.getTimeLossSeconds();
+        case 12:
             return myVehicle.getStopDelay();
-        case 9:
+        case 13:
             return myVehicle.getStopArrivalDelay();
-        case 10: // by numerical param value
+        case 14: // by numerical param value
             std::string error;
             std::string val = myVehicle.getPrefixedParameter(s.vehicleScaleParam, error);
             try {
@@ -833,7 +854,7 @@ GUIBaseVehicle::getScaleValue(const GUIVisualizationSettings& s, int activeSchem
                     return StringUtils::toBool(val);
                 } catch (BoolFormatException&) {
                     WRITE_WARNING("Vehicle parameter '" + myVehicle.getParameter().getParameter(s.vehicleScaleParam, "0")
-                            + "' key '" + s.vehicleScaleParam + "' is not a number for vehicle '" + myVehicle.getID() + "'");
+                                  + "' key '" + s.vehicleScaleParam + "' is not a number for vehicle '" + myVehicle.getID() + "'");
                     return -1;
                 }
             }
@@ -1028,19 +1049,22 @@ GUIBaseVehicle::drawAction_drawPersonsAndContainers(const GUIVisualizationSettin
         }
     }
 #ifdef DRAW_BOUNDING_BOX
-    GLHelper::pushName(getGlID());
-    GLHelper::pushMatrix();
-    glTranslated(0, 0, getType());
-    PositionVector boundingBox = getBoundingBox();
-    boundingBox.push_back(boundingBox.front());
-    PositionVector smallBB = getBoundingPoly();
-    glColor3d(0, .8, 0);
-    GLHelper::drawLine(boundingBox);
-    glColor3d(0.5, .8, 0);
-    GLHelper::drawLine(smallBB);
-    //GLHelper::drawBoxLines(getBoundingBox(), 0.5);
-    GLHelper::popMatrix();
-    GLHelper::popName();
+    if (!MSGlobals::gUseMesoSim) {
+        MSVehicle& microVeh = dynamic_cast<MSVehicle&>(myVehicle);
+        GLHelper::pushName(getGlID());
+        GLHelper::pushMatrix();
+        glTranslated(0, 0, getType());
+        PositionVector smallBB = microVeh.getBoundingPoly();
+        glColor3d(0.5, .8, 0);
+        GLHelper::drawBoxLines(smallBB, 0.3);
+        glTranslated(0, 0, 0.1);
+        PositionVector boundingBox = microVeh.getBoundingBox();
+        boundingBox.push_back(boundingBox.front());
+        glColor3d(1, 0, 0);
+        GLHelper::drawBoxLines(boundingBox, 0.15);
+        GLHelper::popMatrix();
+        GLHelper::popName();
+    }
 #endif
 }
 

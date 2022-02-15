@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -915,7 +915,8 @@ GNENet::splitEdge(GNEEdge* edge, const Position& pos, GNEUndoList* undoList, GNE
         undoList->add(new GNEChange_Crossing(secondPart->getToJunction(), nbC, true), true);
     }
     // Split geometry of all child additional
-    for (const auto& additional : edge->getChildAdditionals()) {
+    auto childAdditionals = edge->getChildAdditionals();
+    for (const auto& additional : childAdditionals) {
         additional->splitEdgeGeometry(edgeSplitPosition, edge, secondPart, undoList);
     }
     // Split geometry of all child lane additional
@@ -925,7 +926,8 @@ GNENet::splitEdge(GNEEdge* edge, const Position& pos, GNEUndoList* undoList, GNE
         }
     }
     // Split geometry of all child demand elements
-    for (const auto& demandElement : edge->getChildDemandElements()) {
+    auto childDemandElements = edge->getChildDemandElements();
+    for (const auto& demandElement : childDemandElements) {
         demandElement->splitEdgeGeometry(edgeSplitPosition, edge, secondPart, undoList);
     }
     // Split geometry of all child lane demand elements
@@ -1709,19 +1711,19 @@ GNENet::cleanInvalidDemandElements(GNEUndoList* undoList) {
                                   myAttributeCarriers->getDemandElements().at(SUMO_TAG_TRIP).size());
     // iterate over routes
     for (const auto& route : myAttributeCarriers->getDemandElements().at(SUMO_TAG_ROUTE)) {
-        if (!route->isDemandElementValid()) {
+        if (route->isDemandElementValid() != GNEDemandElement::Problem::OK) {
             invalidDemandElements.push_back(route);
         }
     }
     // iterate over flows
     for (const auto& flow : myAttributeCarriers->getDemandElements().at(SUMO_TAG_FLOW)) {
-        if (!flow->isDemandElementValid()) {
+        if (flow->isDemandElementValid() != GNEDemandElement::Problem::OK) {
             invalidDemandElements.push_back(flow);
         }
     }
     // iterate over trip
     for (const auto& trip : myAttributeCarriers->getDemandElements().at(SUMO_TAG_TRIP)) {
-        if (!trip->isDemandElementValid()) {
+        if (trip->isDemandElementValid() != GNEDemandElement::Problem::OK) {
             invalidDemandElements.push_back(trip);
         }
     }
@@ -2077,7 +2079,7 @@ GNENet::saveDemandElements(const std::string& filename) {
             // compute before check if demand element is valid
             demandElement->computePathElement();
             // check if has to be fixed
-            if (!demandElement->isDemandElementValid()) {
+            if (demandElement->isDemandElementValid() != GNEDemandElement::Problem::OK) {
                 invalidSingleLaneDemandElements.push_back(demandElement);
             }
         }
@@ -2209,9 +2211,9 @@ GNENet::saveAdditionalsConfirmed(const std::string& filename) {
     for (const auto& calibrator : myAttributeCarriers->getAdditionals().at(SUMO_TAG_CALIBRATOR)) {
         sortedAdditionals.back()[calibrator->getID()] = calibrator;
     }
-    // laneCalibrator
-    for (const auto& laneCalibrator : myAttributeCarriers->getAdditionals().at(SUMO_TAG_LANECALIBRATOR)) {
-        sortedAdditionals.back()[laneCalibrator->getID()] = laneCalibrator;
+    // calibratorLane
+    for (const auto& calibratorLane : myAttributeCarriers->getAdditionals().at(GNE_TAG_CALIBRATOR_LANE)) {
+        sortedAdditionals.back()[calibratorLane->getID()] = calibratorLane;
     }
     // busStop
     sortedAdditionals.push_back(std::map<std::string, GNEAdditional*>());
@@ -2324,17 +2326,19 @@ GNENet::saveDemandElementsConfirmed(const std::string& filename) {
     device.writeXMLHeader("routes", "routes_file.xsd", std::map<SumoXMLAttr, std::string>(), false);
     // declare map for saving demand elements sorted by ID
     std::map<std::string, GNEDemandElement*> sortedDemandElements;
-    // first  write all vehicle types
-    for (const auto& vType : myAttributeCarriers->getDemandElements().at(SUMO_TAG_VTYPE)) {
-        sortedDemandElements[vType->getID()] = vType;
+    // first  write all vTypeDistributions (and their vTypes)
+    for (const auto& vTypeDistribution : myAttributeCarriers->getDemandElements().at(SUMO_TAG_VTYPE_DISTRIBUTION)) {
+        sortedDemandElements[vTypeDistribution->getID()] = vTypeDistribution;
     }
     for (const auto& demandElement : sortedDemandElements) {
         demandElement.second->writeDemandElement(device);
     }
     sortedDemandElements.clear();
-    // first  write all person types
-    for (const auto& pType : myAttributeCarriers->getDemandElements().at(SUMO_TAG_PTYPE)) {
-        sortedDemandElements[pType->getID()] = pType;
+    // now write all vType without vTypeDistributions
+    for (const auto& vType : myAttributeCarriers->getDemandElements().at(SUMO_TAG_VTYPE)) {
+        if (vType->getParentDemandElements().empty()) {
+            sortedDemandElements[vType->getID()] = vType;
+        }
     }
     for (const auto& demandElement : sortedDemandElements) {
         demandElement.second->writeDemandElement(device);

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -30,12 +30,12 @@
 
 GNEDetectorE3::GNEDetectorE3(GNENet* net) :
     GNEAdditional("", net, GLO_E3DETECTOR, SUMO_TAG_E3DETECTOR, "",
-        {}, {}, {}, {}, {}, {}, {}, {},
-    std::map<std::string, std::string>()),
+{}, {}, {}, {}, {}, {}, {}, {},
+std::map<std::string, std::string>()),
     myFreq(0),
     myFilename(""),
     myTimeThreshold(0),
-    mySpeedThreshold(0) {
+mySpeedThreshold(0) {
     // reset default values
     resetDefaultValues();
 }
@@ -45,14 +45,14 @@ GNEDetectorE3::GNEDetectorE3(const std::string& id, GNENet* net, const Position 
                              const std::vector<std::string>& vehicleTypes, const std::string& name, SUMOTime timeThreshold, double speedThreshold,
                              const std::map<std::string, std::string>& parameters) :
     GNEAdditional(id, net, GLO_E3DETECTOR, SUMO_TAG_E3DETECTOR, name,
-        {}, {}, {}, {}, {}, {}, {}, {},
-    parameters),
-    myPosition(pos),
-    myFreq(freq),
-    myFilename(filename),
-    myVehicleTypes(vehicleTypes),
-    myTimeThreshold(timeThreshold),
-    mySpeedThreshold(speedThreshold) {
+{}, {}, {}, {}, {}, {}, {}, {},
+parameters),
+myPosition(pos),
+myFreq(freq),
+myFilename(filename),
+myVehicleTypes(vehicleTypes),
+myTimeThreshold(timeThreshold),
+mySpeedThreshold(speedThreshold) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -68,7 +68,7 @@ GNEDetectorE3::getMoveOperation() {
 }
 
 
-void 
+void
 GNEDetectorE3::writeAdditional(OutputDevice& device) const {
     device.openTag(getTagProperty().getTag());
     device.writeAttr(SUMO_ATTR_ID, getID());
@@ -88,6 +88,10 @@ GNEDetectorE3::writeAdditional(OutputDevice& device) const {
     }
     if (getAttribute(SUMO_ATTR_HALTING_SPEED_THRESHOLD) != myTagProperty.getDefaultValue(SUMO_ATTR_HALTING_SPEED_THRESHOLD)) {
         device.writeAttr(SUMO_ATTR_HALTING_SPEED_THRESHOLD, mySpeedThreshold);
+    }
+    // write all entry/exits
+    for (const auto& access : getChildAdditionals()) {
+        access->writeAdditional(device);
     }
     // write parameters (Always after children to avoid problems with additionals.xsd)
     writeParams(device);

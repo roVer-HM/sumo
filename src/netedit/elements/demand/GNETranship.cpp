@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -36,10 +36,10 @@
 
 GNETranship::GNETranship(SumoXMLTag tag, GNENet* net) :
     GNEDemandElement("", net, GLO_TRANSHIP, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {}, {}),
-    mySpeed(0),
-    myDepartPosition(0),
-    myArrivalPosition(0) {
+{}, {}, {}, {}, {}, {}, {}, {}),
+mySpeed(0),
+myDepartPosition(0),
+myArrivalPosition(0) {
     // reset default values
     resetDefaultValues();
 }
@@ -48,20 +48,20 @@ GNETranship::GNETranship(SumoXMLTag tag, GNENet* net) :
 GNETranship::GNETranship(GNENet* net, GNEDemandElement* containerParent, GNEEdge* fromEdge, GNEEdge* toEdge,
                          const double speed, const double departPosition, const double arrivalPosition) :
     GNEDemandElement(containerParent, net, GLO_TRANSHIP, GNE_TAG_TRANSHIP_EDGE, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {fromEdge, toEdge}, {}, {}, {}, {}, {containerParent}, {}),
-    mySpeed(speed),
-    myDepartPosition(departPosition),
-    myArrivalPosition(arrivalPosition) {
+{}, {fromEdge, toEdge}, {}, {}, {}, {}, {containerParent}, {}),
+mySpeed(speed),
+myDepartPosition(departPosition),
+myArrivalPosition(arrivalPosition) {
 }
 
 
 GNETranship::GNETranship(GNENet* net, GNEDemandElement* containerParent, GNEEdge* fromEdge, GNEAdditional* toContainerStop,
                          const double speed, const double departPosition, const double arrivalPosition) :
     GNEDemandElement(containerParent, net, GLO_TRANSHIP, GNE_TAG_TRANSHIP_CONTAINERSTOP, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {fromEdge}, {}, {toContainerStop}, {}, {}, {containerParent}, {}),
-    mySpeed(speed),
-    myDepartPosition(departPosition),
-    myArrivalPosition(arrivalPosition) {
+{}, {fromEdge}, {}, {toContainerStop}, {}, {}, {containerParent}, {}),
+mySpeed(speed),
+myDepartPosition(departPosition),
+myArrivalPosition(arrivalPosition) {
 }
 
 
@@ -157,23 +157,22 @@ GNETranship::writeDemandElement(OutputDevice& device) const {
 }
 
 
-bool
+GNEDemandElement::Problem
 GNETranship::isDemandElementValid() const {
     if (getParentEdges().size() == 2) {
         if (getParentEdges().at(0) == getParentEdges().at(1)) {
             // from and to are the same edges, then path is valid
-            return true;
+            return Problem::OK;
         } else {
             // check if exist a route between parent edges
-            return (myNet->getPathManager()->getPathCalculator()->calculateDijkstraPath(getParentDemandElements().at(0)->getVClass(), getParentEdges()).size() > 0);
+            if (myNet->getPathManager()->getPathCalculator()->calculateDijkstraPath(getParentDemandElements().at(0)->getVClass(), getParentEdges()).size() > 0) {
+                return Problem::OK;
+            } else {
+                return Problem::INVALID_PATH;
+            }
         }
-        /*
-            } else if (getPath().size() > 0) {
-                // if path edges isn't empty, then there is a valid route
-                return true;
-        */
     } else {
-        return false;
+        return Problem::INVALID_ELEMENT;
     }
 }
 
@@ -638,7 +637,7 @@ GNETranship::setAttribute(SumoXMLAttr key, const std::string& value) {
 
 void
 GNETranship::toogleAttribute(SumoXMLAttr /*key*/, const bool /*value*/, const int /*previousParameters*/) {
-    throw InvalidArgument("Nothing to enable");
+    // nothing to toogle
 }
 
 

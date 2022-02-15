@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -129,7 +129,7 @@ GNETAZRelDataFrame::buildTAZRelationData() {
             // create TAZRelData
             CommonXMLStructure::SumoBaseObject* TAZRelData = new CommonXMLStructure::SumoBaseObject(dataIntervalObject);
             // finally create TAZRelationData
-            dataHandler.buildTAZRelationData(TAZRelData, myFirstTAZ->getID(), mySecondTAZ->getID(), myParametersEditorCreator->getParametersMap());
+            dataHandler.buildTAZRelationData(TAZRelData, myFirstTAZ->getID(), mySecondTAZ->getID(), myGenericDataAttributes->getParametersMap());
             delete dataIntervalObject;
             // reset both TAZs
             myFirstTAZ = nullptr;

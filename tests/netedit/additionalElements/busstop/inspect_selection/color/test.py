@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -41,16 +41,16 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 160, 270)
 
 # Change parameter 2 with a non valid value (dummy)
-netedit.modifyAttribute(6, "dummyColor", False)
+netedit.modifyAttribute(netedit.attrs.busStop.inspectSelection.color, "dummyColor", False)
 
 # Change parameter 2 with a non valid value (invalid format)
-netedit.modifyAttribute(6, "255,255,500", False)
+netedit.modifyAttribute(netedit.attrs.busStop.inspectSelection.color, "255,255,500", False)
 
 # Change parameter 2 with a valid value (valid format)
-netedit.modifyAttribute(6, "blue", False)
+netedit.modifyAttribute(netedit.attrs.busStop.inspectSelection.color, "blue", False)
 
 # Change parameter 2 with a valid value (valid format)
-netedit.modifyAttribute(6, "125,60,200", False)
+netedit.modifyAttribute(netedit.attrs.busStop.inspectSelection.color, "125,60,200", False)
 
 # Check undo redo
 netedit.undo(referencePosition, 3)

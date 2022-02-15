@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -224,7 +224,7 @@ GNEAdditionalHandler::buildContainerStop(const CommonXMLStructure::SumoBaseObjec
         } else if (!checkDoublePositionOverLane(startPos, endPos, lane->getParentEdge()->getNBEdge()->getFinalLength(), friendlyPosition)) {
             writeErrorInvalidPosition(SUMO_TAG_CONTAINER_STOP, id);
         } else if (containerCapacity < 0) {
-            writeErrorInvalidNegativeValue(SUMO_TAG_CONTAINER_STOP, id, SUMO_ATTR_PERSON_CAPACITY);
+            writeErrorInvalidNegativeValue(SUMO_TAG_CONTAINER_STOP, id, SUMO_ATTR_CONTAINER_CAPACITY);
         } else if (parkingLength < 0) {
             writeErrorInvalidNegativeValue(SUMO_TAG_CONTAINER_STOP, id, SUMO_ATTR_PARKING_LENGTH);
         } else {
@@ -706,7 +706,7 @@ GNEAdditionalHandler::buildLaneCalibrator(const CommonXMLStructure::SumoBaseObje
     if (!SUMOXMLDefinitions::isValidAdditionalID(id)) {
         writeInvalidID(SUMO_TAG_CALIBRATOR, id);
     } else if ((myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_CALIBRATOR, id, false) != nullptr) ||
-               (myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_LANECALIBRATOR, id, false) != nullptr)) {
+               (myNet->getAttributeCarriers()->retrieveAdditional(GNE_TAG_CALIBRATOR_LANE, id, false) != nullptr)) {
         writeErrorDuplicated(SUMO_TAG_CALIBRATOR, id);
     } else if ((routeprobeID.size() > 0) && (routeProbe == nullptr)) {
         writeErrorInvalidParent(SUMO_TAG_CALIBRATOR, SUMO_TAG_ROUTEPROBE);
@@ -761,7 +761,7 @@ GNEAdditionalHandler::buildEdgeCalibrator(const CommonXMLStructure::SumoBaseObje
     if (!SUMOXMLDefinitions::isValidAdditionalID(id)) {
         writeInvalidID(SUMO_TAG_CALIBRATOR, id);
     } else if ((myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_CALIBRATOR, id, false) != nullptr) ||
-               (myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_LANECALIBRATOR, id, false) != nullptr)) {
+               (myNet->getAttributeCarriers()->retrieveAdditional(GNE_TAG_CALIBRATOR_LANE, id, false) != nullptr)) {
         writeErrorDuplicated(SUMO_TAG_CALIBRATOR, id);
     } else if ((routeprobeID.size() > 0) && (routeProbe == nullptr)) {
         writeErrorInvalidParent(SUMO_TAG_CALIBRATOR, SUMO_TAG_ROUTEPROBE);

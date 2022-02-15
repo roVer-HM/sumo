@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -182,7 +182,7 @@ MSStageDriving::getStageSummary(const bool isPerson) const {
                               " stop '" + getDestinationStop()->getID() + "'" + (
                                   getDestinationStop()->getMyName() != "" ? " (" + getDestinationStop()->getMyName() + ")" : ""));
     const std::string intended = myIntendedVehicleID != "" ?
-                                 " (vehicle " + myIntendedVehicleID + " at time " + time2string(myIntendedDepart) + ")" :
+                                 " (vehicle " + myIntendedVehicleID + " at time=" + time2string(myIntendedDepart) + ")" :
                                  "";
     const std::string modeName = isPerson ? "driving" : "transported";
     return isWaiting4Vehicle() ?
@@ -298,10 +298,10 @@ MSStageDriving::tripInfoOutput(OutputDevice& os, const MSTransportable* const tr
     os.writeAttr("vehicle", myVehicleID);
     os.writeAttr("depart", myDeparted >= 0 ? time2string(myDeparted) : "-1");
     os.writeAttr("arrival", myArrived >= 0 ? time2string(myArrived) : "-1");
-    os.writeAttr("arrivalPos", toString(getArrivalPos()));
+    os.writeAttr("arrivalPos", myArrived >= 0 ? toString(getArrivalPos()) : "-1");
     os.writeAttr("duration", myArrived >= 0 ? time2string(duration) :
                  (myDeparted >= 0 ? time2string(now - myDeparted) : "-1"));
-    os.writeAttr("routeLength", myVehicleDistance);
+    os.writeAttr("routeLength", myArrived >= 0 || myVehicle != nullptr ? toString(getDistance()) : "-1");
     os.writeAttr("timeLoss", myArrived >= 0 ? time2string(myTimeLoss) : "-1");
     os.closeTag();
 }

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2007-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2007-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -725,6 +725,9 @@ TRACI_CONST int VAR_LAST_INTERVAL_MEAN_HALTING_NUMBER = 0x20;
 
 // last interval vehicle count(get: e3)
 TRACI_CONST int VAR_LAST_INTERVAL_VEHICLE_NUMBER = 0x21;
+
+// last interval vehicle count(set, get: e1, e2)
+TRACI_CONST int VAR_VIRTUAL_DETECTION = 0x22;
 
 // last step person list (get: edges, vehicles)
 TRACI_CONST int LAST_STEP_PERSON_ID_LIST = 0x1a;

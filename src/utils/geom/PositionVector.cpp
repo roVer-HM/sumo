@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -37,6 +37,8 @@
 #include "PositionVector.h"
 #include "GeomHelper.h"
 #include "Boundary.h"
+
+//#define DEBUG_MOVE2SIDE
 
 // ===========================================================================
 // static members
@@ -631,15 +633,7 @@ PositionVector::add(double xoff, double yoff, double zoff) {
 
 void
 PositionVector::sub(const Position& offset) {
-    sub(offset.x(), offset.y(), offset.z());
-}
-
-
-void
-PositionVector::sub(double xoff, double yoff, double zoff) {
-    for (int i = 0; i < (int)size(); i++) {
-        (*this)[i].add(-xoff, -yoff, -zoff);
-    }
+    add(-offset.x(), -offset.y(), -offset.z());
 }
 
 
@@ -1124,22 +1118,29 @@ PositionVector::move2side(double amount, double maxExtension) {
         return;
     }
     removeDoublePoints(POSITION_EPS, true);
-    if (length2D() == 0) {
+    if (length2D() == 0 || amount == 0) {
         return;
     }
     PositionVector shape;
+    std::vector<int>  recheck;
     for (int i = 0; i < static_cast<int>(size()); i++) {
         if (i == 0) {
             const Position& from = (*this)[i];
             const Position& to = (*this)[i + 1];
             if (from != to) {
                 shape.push_back(from - sideOffset(from, to, amount));
+#ifdef DEBUG_MOVE2SIDE
+                if (gDebugFlag1) std::cout << " " << i << "a=" << shape.back() << "\n";
+#endif
             }
         } else if (i == static_cast<int>(size()) - 1) {
             const Position& from = (*this)[i - 1];
             const Position& to = (*this)[i];
             if (from != to) {
                 shape.push_back(to - sideOffset(from, to, amount));
+#ifdef DEBUG_MOVE2SIDE
+                if (gDebugFlag1) std::cout << " " << i << "b=" << shape.back() << "\n";
+#endif
             }
         } else {
             const Position& from = (*this)[i - 1];
@@ -1151,11 +1152,17 @@ PositionVector::move2side(double amount, double maxExtension) {
             if (fabs(extrapolateDev) < POSITION_EPS) {
                 // parallel case, just shift the middle point
                 shape.push_back(me - sideOffset(from, to, amount));
+#ifdef DEBUG_MOVE2SIDE
+                if (gDebugFlag1) std::cout << " " << i << "c=" << shape.back() << "\n";
+#endif
             } else if (fabs(extrapolateDev - 2 * me.distanceTo2D(to)) < POSITION_EPS) {
                 // counterparallel case, just shift the middle point
                 PositionVector fromMe2(from, me);
                 fromMe2.extrapolate2D(amount);
                 shape.push_back(fromMe2[1]);
+#ifdef DEBUG_MOVE2SIDE
+                if (gDebugFlag1) std::cout << " " << i << "d=" << shape.back() << " " << i << "_from=" << from << " " << i << "_me=" << me << " " << i << "_to=" << to << "\n";
+#endif
             } else {
                 Position offsets = sideOffset(from, me, amount);
                 Position offsets2 = sideOffset(me, to, amount);
@@ -1163,21 +1170,46 @@ PositionVector::move2side(double amount, double maxExtension) {
                 PositionVector l2(me - offsets2, to - offsets2);
                 Position meNew  = l1.intersectionPosition2D(l2[0], l2[1], maxExtension);
                 if (meNew == Position::INVALID) {
-                    throw InvalidArgument("no line intersection");
+                    recheck.push_back(i);
+                    continue;
                 }
                 meNew = meNew + Position(0, 0, me.z());
                 shape.push_back(meNew);
+#ifdef DEBUG_MOVE2SIDE
+                if (gDebugFlag1) std::cout << " " << i << "e=" << shape.back() << "\n";
+#endif
             }
             // copy original z value
             shape.back().set(shape.back().x(), shape.back().y(), me.z());
+            const double angle = localAngle(from, me, to);
+            if (fabs(angle) > NUMERICAL_EPS) {
+                const double length = (i == 1 || i + 2 == (int)size()
+                                       ? MIN2(from.distanceTo2D(me), me.distanceTo2D(to)) * 2
+                                       : (from.distanceTo2D(me) + me.distanceTo2D(to)));
+                const double radius = length / angle;
+#ifdef DEBUG_MOVE2SIDE
+                if (gDebugFlag1) std::cout << " i=" << i << " a=" << RAD2DEG(angle) << " l=" << length << " r=" << radius << " t=" << amount * 1.8 << "\n";
+#endif
+                if ((radius < 0 && -radius < amount * 1.8) || fabs(RAD2DEG(angle)) > 170)  {
+                    recheck.push_back(i);
+                }
+            }
         }
+    }
+    if (!recheck.empty()) {
+        // try to adjust positions to avoid clipping
+        shape = *this;
+        for (int i = (int)recheck.size() - 1; i >= 0; i--) {
+            shape.erase(shape.begin() + recheck[i]);
+        }
+        shape.move2side(amount, maxExtension);
     }
     *this = shape;
 }
 
 
 void
-PositionVector::move2side(std::vector<double> amount, double maxExtension) {
+PositionVector::move2sideCustom(std::vector<double> amount, double maxExtension) {
     if (size() < 2) {
         return;
     }
@@ -1224,7 +1256,7 @@ PositionVector::move2side(std::vector<double> amount, double maxExtension) {
                 PositionVector l2(me - offsets2, to - offsets2);
                 Position meNew  = l1.intersectionPosition2D(l2[0], l2[1], maxExtension);
                 if (meNew == Position::INVALID) {
-                    throw InvalidArgument("no line intersection");
+                    continue;
                 }
                 meNew = meNew + Position(0, 0, me.z());
                 shape.push_back(meNew);
@@ -1234,6 +1266,11 @@ PositionVector::move2side(std::vector<double> amount, double maxExtension) {
         }
     }
     *this = shape;
+}
+
+double
+PositionVector::localAngle(const Position& from, const Position& pos, const Position& to) {
+    return GeomHelper::angleDiff(from.angleTo2D(pos), pos.angleTo2D(to));
 }
 
 double
@@ -1360,7 +1397,7 @@ PositionVector::isNAN() const {
 
 
 void
-PositionVector::removeDoublePoints(double minDist, bool assertLength, int beginOffset, int endOffset) {
+PositionVector::removeDoublePoints(double minDist, bool assertLength, int beginOffset, int endOffset, bool resample) {
     int curSize = (int)size() - beginOffset - endOffset;
     if (curSize > 1) {
         iterator last = begin() + beginOffset;
@@ -1368,10 +1405,30 @@ PositionVector::removeDoublePoints(double minDist, bool assertLength, int beginO
             if (last->almostSame(*i, minDist)) {
                 if (i + 1 == end() - endOffset) {
                     // special case: keep the last point and remove the next-to-last
-                    erase(last);
-                    i = end() - endOffset;
+                    if (resample && last > begin() && (last - 1)->distanceTo(*i) >= 2 * minDist) {
+                        // resample rather than remove point after a long segment
+                        const double shiftBack = minDist - last->distanceTo(*i);
+                        //if (gDebugFlag1) std::cout << " resample endOffset beforeLast=" << *(last - 1) << " last=" << *last << " i=" << *i;
+                        (*last) = positionAtOffset(*(last - 1), *last, (last - 1)->distanceTo(*last) - shiftBack);
+                        //if (gDebugFlag1) std::cout << " lastNew=" << *last;
+                        last = i;
+                        ++i;
+                    } else {
+                        erase(last);
+                        i = end() - endOffset;
+                    }
                 } else {
-                    i = erase(i);
+                    if (resample && i + 1 != end() && last->distanceTo(*(i + 1)) >= 2 * minDist) {
+                        // resample rather than remove points before a long segment
+                        const double shiftForward = minDist - last->distanceTo(*i);
+                        //if (gDebugFlag1) std::cout << " resample last=" << *last << " i=" << *i << " next=" << *(i + 1);
+                        (*i) = positionAtOffset(*i, *(i + 1), shiftForward);
+                        //if (gDebugFlag1) std::cout << " iNew=" << *i << "\n";
+                        last = i;
+                        ++i;
+                    } else {
+                        i = erase(i);
+                    }
                 }
                 curSize--;
             } else {

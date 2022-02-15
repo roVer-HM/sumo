@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,31 +35,31 @@ netedit.additionalMode()
 netedit.changeElement("parkingArea")
 
 # set invalid roadSideCapacity (dummy)
-netedit.changeDefaultValue(5, "dummyRoadSideCapacity")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.roadSideCapacity, "dummyRoadSideCapacity")
 
 # try to create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)
 
 # set invalid roadSideCapacity (empty"
-netedit.changeDefaultValue(5, "")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.roadSideCapacity, "")
 
 # try to create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)
 
 # set invalid roadSideCapacity (negative)
-netedit.changeDefaultValue(5, "-3")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.roadSideCapacity, "-3")
 
 # try to create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)
 
 # set invalid roadSideCapacity (double)
-netedit.changeDefaultValue(5, "2.5")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.roadSideCapacity, "2.5")
 
 # create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)
 
 # set valid roadSideCapacity
-netedit.changeDefaultValue(5, "3")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.roadSideCapacity, "3")
 
 # create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)

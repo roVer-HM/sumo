@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -41,16 +41,16 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 150, 290)
 
 # Change parameter RoadSideCapacity with a non valid value (dummy)
-netedit.modifyAttribute(2, "dummyRoadSideCapacity", False)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspectSelection.roadSideCapacity, "dummyRoadSideCapacity", False)
 
 # Change parameter RoadSideCapacity with a non valid value (double)
-netedit.modifyAttribute(2, "2.3", False)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspectSelection.roadSideCapacity, "2.3", False)
 
 # Change parameter RoadSideCapacity with a non valid value (negative)
-netedit.modifyAttribute(2, "-5", False)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspectSelection.roadSideCapacity, "-5", False)
 
 # Change parameter RoadSideCapacity with a non valid value (negative)
-netedit.modifyAttribute(2, "7", False)
+netedit.modifyAttribute(netedit.attrs.parkingArea.inspectSelection.roadSideCapacity, "7", False)
 
 # Check undos and redos
 netedit.undo(referencePosition, 3)

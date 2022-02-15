@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -53,6 +53,7 @@
 
 #include <utils/common/ToString.h>
 #include <utils/common/RandHelper.h>
+#include <utils/common/Command.h>
 #include <utils/foxtools/MFXUtils.h>
 #include <utils/foxtools/FXLCDLabel.h>
 #include <utils/foxtools/FXThreadEvent.h>
@@ -365,6 +366,12 @@ GUIApplicationWindow::~GUIApplicationWindow() {
         GUIEvent* e = myEvents.top();
         myEvents.pop();
         delete e;
+    }
+    for (auto item : myHotkeyPress) {
+        delete item.second;
+    }
+    for (auto item : myHotkeyRelease) {
+        delete item.second;
     }
 }
 
@@ -1434,23 +1441,23 @@ GUIApplicationWindow::eventOccurred() {
         myEvents.pop();
         // process
         switch (e->getOwnType()) {
-            case EVENT_SIMULATION_LOADED:
+            case GUIEventType::SIMULATION_LOADED:
                 handleEvent_SimulationLoaded(e);
                 break;
-            case EVENT_SIMULATION_STEP:
+            case GUIEventType::SIMULATION_STEP:
                 if (myRunThread->simulationAvailable()) { // avoid race-condition related crash if reload was pressed
                     handleEvent_SimulationStep(e);
                 }
                 break;
-            case EVENT_MESSAGE_OCCURRED:
-            case EVENT_WARNING_OCCURRED:
-            case EVENT_ERROR_OCCURRED:
-            case EVENT_DEBUG_OCCURRED:
-            case EVENT_GLDEBUG_OCCURRED:
-            case EVENT_STATUS_OCCURRED:
+            case GUIEventType::MESSAGE_OCCURRED:
+            case GUIEventType::WARNING_OCCURRED:
+            case GUIEventType::ERROR_OCCURRED:
+            case GUIEventType::DEBUG_OCCURRED:
+            case GUIEventType::GLDEBUG_OCCURRED:
+            case GUIEventType::STATUS_OCCURRED:
                 handleEvent_Message(e);
                 break;
-            case EVENT_SIMULATION_ENDED:
+            case GUIEventType::SIMULATION_ENDED:
                 handleEvent_SimulationEnded(e);
                 break;
             default:
@@ -1645,7 +1652,7 @@ GUIApplicationWindow::handleEvent_SimulationStep(GUIEvent*) {
 void
 GUIApplicationWindow::handleEvent_Message(GUIEvent* e) {
     GUIEvent_Message* ec = static_cast<GUIEvent_Message*>(e);
-    if (ec->getOwnType() == EVENT_STATUS_OCCURRED) {
+    if (ec->getOwnType() == GUIEventType::STATUS_OCCURRED) {
         setStatusBarText(ec->getMsg());
     } else {
         myMessageWindow->appendMsg(ec->getOwnType(), ec->getMsg());
@@ -1921,11 +1928,25 @@ GUIApplicationWindow::updateTimeLCD(SUMOTime time) {
     myLCDLabel->setText(str.str().c_str());
 }
 
+void
+GUIApplicationWindow::addHotkey(int key, Command* press, Command* release) {
+    if (press != nullptr) {
+        myHotkeyPress[key] = press;
+    }
+    if (release != nullptr) {
+        myHotkeyRelease[key] = release;
+    }
+}
 
 long
 GUIApplicationWindow::onKeyPress(FXObject* o, FXSelector sel, void* ptr) {
     const long handled = FXMainWindow::onKeyPress(o, sel, ptr);
     if (handled == 0 && myMDIClient->numChildren() > 0) {
+        FXEvent* e = (FXEvent*) ptr;
+        auto it = myHotkeyPress.find(e->code);
+        if (it != myHotkeyPress.end()) {
+            it->second->execute(SIMSTEP);
+        }
         GUISUMOViewParent* w = dynamic_cast<GUISUMOViewParent*>(myMDIClient->getActiveChild());
         if (w != nullptr) {
             w->onKeyPress(nullptr, sel, ptr);
@@ -1939,6 +1960,11 @@ long
 GUIApplicationWindow::onKeyRelease(FXObject* o, FXSelector sel, void* ptr) {
     const long handled = FXMainWindow::onKeyRelease(o, sel, ptr);
     if (handled == 0 && myMDIClient->numChildren() > 0) {
+        FXEvent* e = (FXEvent*) ptr;
+        auto it = myHotkeyRelease.find(e->code);
+        if (it != myHotkeyRelease.end()) {
+            it->second->execute(SIMSTEP);
+        }
         GUISUMOViewParent* w = dynamic_cast<GUISUMOViewParent*>(myMDIClient->getActiveChild());
         if (w != nullptr) {
             w->onKeyRelease(nullptr, sel, ptr);

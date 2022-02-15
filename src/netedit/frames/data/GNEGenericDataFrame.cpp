@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -555,7 +555,7 @@ GNEGenericDataFrame::GNEGenericDataFrame(FXHorizontalFrame* horizontalFrameParen
     myDataSetSelector(nullptr),
     myIntervalSelector(nullptr),
     myAttributeSelector(nullptr),
-    myParametersEditorCreator(nullptr),
+    myGenericDataAttributes(nullptr),
     myPathCreator(nullptr),
     myGenericDataTag(tag) {
     // create DataSetSelector
@@ -565,7 +565,7 @@ GNEGenericDataFrame::GNEGenericDataFrame(FXHorizontalFrame* horizontalFrameParen
     // create AttributeSelector modul
     myAttributeSelector = new AttributeSelector(this, tag);
     // create parameter editor modul
-    myParametersEditorCreator = new GNEFrameAttributeModules::ParametersEditorCreator(this);
+    myGenericDataAttributes = new GNEFrameAttributeModules::GenericDataAttributes(this);
     // create PathCreator modul
     if (pathCreator) {
         myPathCreator = new GNEFrameModules::PathCreator(this);

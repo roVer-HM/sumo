@@ -191,27 +191,31 @@ always use the latest version of SUMO.
   See above but **please** give enough details when asking on the
   mailing list.
 
-### What should I do to get helpful answers on the mailing list?
+### What should I do to get helpful answers on the mailing list or on the issue tracker?
 
 - Make your question specific
   - avoid vague terms.
   - Always name the SUMO version to which your question applies
   - Include relevant warnings/errors/stack-traces in your question
-    (please copy the text and avoid screenshots to reproduce text
-    messages). When sending screenshots of sumo-gui, please include the whole screen so the application version and simulation time are visible.
+- whenever possible copy text rather than screenshots of text
+- When sending screenshots of sumo-gui or netedit, please include the whole screen so the application version and simulation time are visible.
+- Attach scenario files including .sumocfg as a zip archive
+- describe what you are trying to accomplish
+- describe how what you see differs from your expectations
 - Phrase your question using familiar terms (not everyone is an expert
 in your domain).
-- Don't ask for too many things in a single post.
+- Don't ask for too many things in a single post / issue.
 - Do some research on your own before you post the question (otherwise
 you may appear to be lazy).
   - read the FAQ
   - read the documentation
   - check out the [Tutorials](Tutorials/index.md)
-  - do a web search (past questions and answers from the mailing
-    list can be found by google)
+  - do a web search (past questions and answers from the mailing list can be found by google)
+  - describe which documentation you used, especially when [your experience doesn't match the documentation](#why_does_sumo_not_behave_as_documented_in_this_wiki)
 - Do not ask the same thing twice in a short span of time. If you are
 in a hurry and cannot get an answer, try to change your question
 according to the above suggestions.
+- if you put your question into an issue an the issue was closed, put your follow-up questions into the closed issue rather than open an new issue
 - Be polite
 - Good Example questions:
   - How can I get data X out of SUMO?
@@ -243,6 +247,15 @@ according to the above suggestions.
   our spare time.
 
 ## TraCI
+
+### My [TraCI](TraCI.md)-program is to slow. What can I do?
+
+  TraCI communicates over sockets and this communication is slow. You can often reduce the number of TraCI commands via the following strategies.
+  
+  - store results that do not change (i.e. vehicle length) rather than retrieving them again repeatedly
+  - use [subscriptions](TraCI/Object_Variable_Subscription.md) or [context subscriptions](TraCI/Object_Context_Subscription.md) to reduce the number of 'get' commmands for things that you need in every step
+
+   Even larger gains can be hand by switching to [libsumo](Libsumo.md). This can be done with a single line of code and completely eliminates the slow socket communication. 
 
 ### My [TraCI](TraCI.md)-program is not working as intended. Can you help me debug it?
 
@@ -869,6 +882,16 @@ The best course of action typically is to observe the simulation using
 [sumo-gui](sumo-gui.md) and figure out where the first jam
 develops.
 
+### Two vehicles want to change lanes in opposite directions and are blocking each other. How to prevent this?
+
+Drivers are highly conscious of strategic lane choice requirements and try to change onto the needed lane well in advance.
+There are several reasons why a counter-lane-change-deadlock can happen:
+
+- Vehicles are unable to enter the desired lane because the connection layout at preceeding junctions prevents it. This can be fixed by closely examining the connections ahead of the deadlock.
+- Vehicles are inserted on the wrong lane close to an intersection where they need to change lanes. To fix this, set the vehicle attribute `departLane="best"`
+- Vehicle streams must perform at weaving maneuver where they are forced to change lanes with limited space to do so. This often occurs at motorway ramps that compbine an on-ramp with an off-ramp with little distance in between. The danger of deadlocks can be removed by adding an additional network connection [as explained here](Simulation/Motorways.md#combined_on-off-ramps). Similar deadlocks may also occur at multi-lane roundabouts and the same solution of adding an extra connection (from the inside lane to the outside) applies.
+
+
 ### Why do the vehicles perform unexpected lane-changing maneuvers?
 
   This may be caused by invalid lane-to-lane connections. Check the
@@ -893,6 +916,8 @@ To increase flows even further the following settings can be used
 
 - `<vType sigma="0" minGap="1" length="3" .../>`
 - `<vType tau="0.5" .../>` (should not be lower than step-length)
+
+See [table of insertion capacity achievable with different options and insertion attributes](Simulation/RoadCapacity.md#further_headway_effects).
 
 ### How do I insert vehicles with a fixed density?
 
@@ -1058,7 +1083,8 @@ to set the integrated graphics as preferred. (Thanks @palvarezlopez for finding 
 
 There is a know problem in Windows 10 with scaling and flickering in certain applications. 
 If scaling is greater than 100%, a flickering may appear in SUMO-GUI and NETEDIT during mouse movement.
-The only known solution is leaving Scaling at 100%
+The only known solution is leaving Scaling at 100%. Another cause is the use of a modern graphics card. 
+If your computer supports it, run SUMO using the integrated graphics card (Control panel->NVidia Control Panel->Select integrated graphid card->apply)
 
 ### Missing Characters in Parameter Dialogs (i.e. Chinese Street names) on Linux
 

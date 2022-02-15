@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,19 +35,19 @@ netedit.shapeMode()
 netedit.changeElement("poly")
 
 # change line width (invalid)
-netedit.changeDefaultValue(6, "dummyLineWidth")
+netedit.changeDefaultValue(8, "dummyLineWidth")
 
 # try to create polygon
 netedit.createSquaredTAZ(referencePosition, 182, 130, 200, True)
 
 # change line width (invalid, negative)
-netedit.changeDefaultValue(6, "-2.5")
+netedit.changeDefaultValue(8, "-2.5")
 
 # create polygon
 netedit.createSquaredPoly(referencePosition, 282, 130, 200, True)
 
 # change line width (valid)
-netedit.changeDefaultValue(6, "3.2")
+netedit.changeDefaultValue(8, "3.2")
 
 # create polygon
 netedit.createSquaredPoly(referencePosition, 382, 130, 200, True)

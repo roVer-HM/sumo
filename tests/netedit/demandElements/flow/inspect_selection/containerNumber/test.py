@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -44,19 +44,19 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 330, 150)
 
 # change containerNumber with an invalid value
-netedit.modifyAttribute(11, "", False)
+netedit.modifyAttribute(netedit.attrs.flowFromToEdge.inspectSelection.containerNumber, "", False)
 
 # change containerNumber with an invalid value
-netedit.modifyAttribute(11, "dummyNumber", False)
+netedit.modifyAttribute(netedit.attrs.flowFromToEdge.inspectSelection.containerNumber, "dummyNumber", False)
 
 # change containerNumber with an invalid value
-netedit.modifyAttribute(11, "-5", False)
+netedit.modifyAttribute(netedit.attrs.flowFromToEdge.inspectSelection.containerNumber, "-5", False)
 
 # change containerNumber with an invalid value
-netedit.modifyAttribute(11, "2.5", False)
+netedit.modifyAttribute(netedit.attrs.flowFromToEdge.inspectSelection.containerNumber, "2.5", False)
 
 # change containerNumber with an invalid value
-netedit.modifyAttribute(11, "3", False)
+netedit.modifyAttribute(netedit.attrs.flowFromToEdge.inspectSelection.containerNumber, "3", False)
 
 # Check undo redo
 netedit.undo(referencePosition, 5)

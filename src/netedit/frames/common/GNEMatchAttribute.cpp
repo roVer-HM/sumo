@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -114,7 +114,7 @@ GNEMatchAttribute::showMatchAttribute(const GNEElementSet::Type type) {
     }
     // now filter to allow only drawables and proj
     myTagPropertiesString.clear();
-    for (const auto &tagProperty : tagPropertiesStrings) {
+    for (const auto& tagProperty : tagPropertiesStrings) {
         if (tagProperty.isDrawable() && (!tagProperty.requireProj() || proj)) {
             myTagPropertiesString.push_back(tagProperty);
         }

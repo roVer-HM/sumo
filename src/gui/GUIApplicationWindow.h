@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -42,6 +42,7 @@
 // ===========================================================================
 // class declarations
 // ===========================================================================
+class Command;
 class GUILoadThread;
 class GUIRunThread;
 class GUIMessageWindow;
@@ -300,6 +301,9 @@ public:
 
     const std::vector<SUMOTime> retrieveBreakpoints() const;
 
+    /// @brief register custom hotkey action
+    void addHotkey(int key, Command* press, Command* release);
+
 protected:
     virtual void addToWindowsMenu(FXMenuPane*) { }
 
@@ -455,4 +459,7 @@ protected:
     /// last time the simulation view was redrawn due to a simStep
     long myLastStepEventMillis;
 
+    /// @brief custom hotkeys
+    std::map<int, Command*> myHotkeyPress;
+    std::map<int, Command*> myHotkeyRelease;
 };

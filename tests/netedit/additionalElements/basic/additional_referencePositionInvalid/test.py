@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -38,13 +38,13 @@ netedit.additionalMode()
 netedit.changeElement("busStop")
 
 # set invalid reference (dummy)
-netedit.changeDefaultValue(11, "dummy reference")
+netedit.changeDefaultValue(netedit.attrs.busStop.create.references, "dummy reference")
 
 # try to create busStop with the dummy reference
 netedit.leftClick(referencePosition, 240, 250)
 
 # set valid reference
-netedit.changeDefaultValue(11, "reference right")
+netedit.changeDefaultValue(netedit.attrs.busStop.create.references, "reference right")
 
 # create busStop with the valid reference
 netedit.leftClick(referencePosition, 300, 250)

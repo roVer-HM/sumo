@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -113,6 +113,10 @@ GNETagProperties::checkTagIntegrity() const {
     if (!isChild() && canBeReparent()) {
         throw FormatException("Only Child elements can be reparent");
     }
+    // check vClass icons
+    if (vClassIcon() && !hasAttribute(SUMO_ATTR_VCLASS)) {
+        throw FormatException("Tag requiere attribute SUMO_ATTR_VCLASS");
+    }
     // check integrity of all attributes
     for (const auto& attributeProperty : myAttributeProperties) {
         attributeProperty.checkAttributeIntegrity();
@@ -188,7 +192,7 @@ GNETagProperties::getFieldString() const {
 
 
 void
-GNETagProperties::setFieldString(const std::string &fieldString) {
+GNETagProperties::setFieldString(const std::string& fieldString) {
     myFieldString = fieldString;
 }
 
@@ -341,6 +345,12 @@ GNETagProperties::isRoute() const {
 bool
 GNETagProperties::isStop() const {
     return (myTagType & STOP) != 0;
+}
+
+
+bool
+GNETagProperties::isFlow() const {
+    return (myTagType & FLOW) != 0;
 }
 
 
@@ -517,6 +527,12 @@ GNETagProperties::embebbedRoute() const {
 bool
 GNETagProperties::requireProj() const {
     return (myTagProperty & REQUIERE_PROJ) != 0;
+}
+
+
+bool
+GNETagProperties::vClassIcon() const {
+    return (myTagProperty & VCLASS_ICON) != 0;
 }
 
 

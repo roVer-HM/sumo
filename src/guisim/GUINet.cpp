@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -683,7 +683,8 @@ GUINet::isSelected(const MSTrafficLightLogic* tll) const {
     return it != myLogics2Wrapper.end() && gSelected.isSelected(GLO_TLLOGIC, it->second->getGlID());
 }
 
-void GUINet::updateGUI() const {
+void
+GUINet::updateGUI() const {
     try {
         // gui only
         GUIApplicationWindow* aw = static_cast<GUIApplicationWindow*>(GUIMainWindow::getInstance());
@@ -692,6 +693,15 @@ void GUINet::updateGUI() const {
     } catch (ProcessError&) { }
 }
 
+void
+GUINet::addHotkey(int key, Command* press, Command* release) {
+    try {
+        // gui only
+        GUIApplicationWindow* aw = static_cast<GUIApplicationWindow*>(GUIMainWindow::getInstance());
+        // update the view
+        aw->addHotkey(key, press, release);
+    } catch (ProcessError&) { }
+}
 
 
 #ifdef HAVE_OSG

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,25 +35,25 @@ netedit.additionalMode()
 netedit.changeElement("parkingArea")
 
 # set invalid width (dummy)
-netedit.changeDefaultValue(8, "dummyWidth")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.width, "dummyWidth")
 
 # try to create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)
 
 # set invalid width (empty)
-netedit.changeDefaultValue(8, "")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.width, "")
 
 # try to create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)
 
 # set invalid width (negative)
-netedit.changeDefaultValue(8, "-3")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.width, "-3")
 
 # try to create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)
 
 # set valid width
-netedit.changeDefaultValue(8, "2.5")
+netedit.changeDefaultValue(netedit.attrs.parkingArea.create.width, "2.5")
 
 # create parkingArea in mode "reference left"
 netedit.leftClick(referencePosition, 220, 250)

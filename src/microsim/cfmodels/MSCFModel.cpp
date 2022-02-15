@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -198,7 +198,7 @@ MSCFModel::finalizeSpeed(MSVehicle* const veh, double vPos) const {
     assert(vNext <= vMax);
     // apply lane-changing related speed adaptations
     vNext = veh->getLaneChangeModel().patchSpeed(vMin, vNext, vMax, *this);
-    assert(vNext >= vMin);
+    assert(vNext >= vMinEmergency); // stronger braking is permitted in lane-changing related emergencies
     assert(vNext <= vMax);
 
 #ifdef DEBUG_FINALIZE_SPEED

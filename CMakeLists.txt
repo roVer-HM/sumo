@@ -414,6 +414,13 @@ if (MSVC)
     if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
         set(CMAKE_INSTALL_PREFIX "sumo-${PACKAGE_VERSION}")
     endif()
+    install(DIRECTORY bin/ DESTINATION bin
+            FILES_MATCHING
+            PATTERN "*.bat"
+            PATTERN "*.dll"
+            PATTERN "*d.dll" EXCLUDE
+            PATTERN "gtest*.dll" EXCLUDE
+            PATTERN "FOXDLLD-1.6.dll" EXCLUDE)
 else ()
     include(GNUInstallDirs)
 endif ()
@@ -422,11 +429,10 @@ if (SKBUILD OR MSVC)
 else ()
     set(DATA_PATH "share/sumo/")
 endif ()
-install(DIRECTORY bin/ DESTINATION bin
-        FILES_MATCHING PATTERN "*.dll"
-        PATTERN "*d.dll" EXCLUDE
-        PATTERN "gtest*.dll" EXCLUDE
-        PATTERN "FOXDLLD-1.6.dll" EXCLUDE)
+if (SKBUILD)
+    set(EXCLUDE_LIBSUMO "libsumo")
+    set(EXCLUDE_LIBTRACI "libtraci")
+endif ()
 install(DIRECTORY data/ DESTINATION ${DATA_PATH}data)
 install(DIRECTORY tools/ DESTINATION ${DATA_PATH}tools
         USE_SOURCE_PERMISSIONS
@@ -435,6 +441,8 @@ install(DIRECTORY tools/ DESTINATION ${DATA_PATH}tools
         PATTERN "lisum-core" EXCLUDE
         PATTERN "lisum-gui" EXCLUDE
         PATTERN "sumolib4matlab/src" EXCLUDE
+        PATTERN "${EXCLUDE_LIBSUMO}" EXCLUDE
+        PATTERN "${EXCLUDE_LIBTRACI}" EXCLUDE
         PATTERN "traas" EXCLUDE
         PATTERN "traci4matlab/src" EXCLUDE
         PATTERN "__pycache__" EXCLUDE
@@ -639,7 +647,7 @@ add_test(exampletest ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/examples/runA
 find_package(Git)
 if (GIT_FOUND)
     add_custom_target(dist
-        COMMAND rm -rf sumo-${PACKAGE_VERSION} sumo-${PACKAGE_VERSION}.zip sumo-src-${PACKAGE_VERSION}.tar.gz sumo-src-${PACKAGE_VERSION}.zip sumo-all-${PACKAGE_VERSION}.tar.gz sumo-all-${PACKAGE_VERSION}.zip sumo-gui-macos-${PACKAGE_VERSION}.zip
+        COMMAND rm -rf sumo-${PACKAGE_VERSION} sumo-${PACKAGE_VERSION}.zip sumo-src-${PACKAGE_VERSION}.tar.gz sumo-src-${PACKAGE_VERSION}.zip sumo-gui-macos-${PACKAGE_VERSION}.zip
         COMMAND ${GIT_EXECUTABLE} archive --prefix sumo-${PACKAGE_VERSION}/ -o sumo-${PACKAGE_VERSION}.zip HEAD
         COMMAND unzip -q sumo-${PACKAGE_VERSION}.zip
         COMMAND cp -a docs/tutorial docs/examples sumo-${PACKAGE_VERSION}/docs
@@ -649,6 +657,8 @@ if (GIT_FOUND)
         COMMAND zip -rq sumo-src-${PACKAGE_VERSION}.zip sumo-${PACKAGE_VERSION}
         COMMAND tar -czf sumo-src-${PACKAGE_VERSION}.tar.gz sumo-${PACKAGE_VERSION}
         COMMAND cp -a docs/userdoc docs/pydoc docs/javadoc docs/man sumo-${PACKAGE_VERSION}/docs
+        COMMAND rm -r sumo-${PACKAGE_VERSION}/docs/web/docs/images
+        COMMAND ln -s ../../userdoc/images sumo-${PACKAGE_VERSION}/docs/web/docs/images
         COMMAND tar -czf sumo_${PACKAGE_VERSION}.orig.tar.gz --exclude "*.jar" sumo-${PACKAGE_VERSION}
         COMMAND mkdir sumo-${PACKAGE_VERSION}/sumo-gui-macos
         COMMAND cp -a build/macos/*/*.app sumo-${PACKAGE_VERSION}/sumo-gui-macos

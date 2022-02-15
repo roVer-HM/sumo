@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -44,7 +44,7 @@ netedit.leftClick(referencePosition, 375, 250)
 netedit.changeElement("access")
 
 # Create Access
-netedit.selectAdditionalChild(5, 0)
+netedit.selectAdditionalChild(netedit.attrs.access.create.parent, 0)
 netedit.leftClick(referencePosition, 200, 280)
 
 # go to inspect mode
@@ -54,19 +54,19 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 208, 280)
 
 # Change parameter pos with a non valid value (dummy position X)
-netedit.modifyAttribute(1, "dummy position", True)
+netedit.modifyAttribute(netedit.attrs.access.inspect.pos, "dummy position", True)
 
 # Change parameter pos with a valid value (empty)
-netedit.modifyAttribute(1, "", True)
+netedit.modifyAttribute(netedit.attrs.access.inspect.pos, "", True)
 
 # Change parameter pos with a valid value (negativ)
-netedit.modifyAttribute(1, "-1000", True)
+netedit.modifyAttribute(netedit.attrs.access.inspect.pos, "-1000", True)
 
 # Change parameter pos with a valid value (greather than lane lenght)
-netedit.modifyAttribute(1, "1000", True)
+netedit.modifyAttribute(netedit.attrs.access.inspect.pos, "1000", True)
 
 # Change parameter pos with a valid value (middle lane)
-netedit.modifyAttribute(1, "25", True)
+netedit.modifyAttribute(netedit.attrs.access.inspect.pos, "25", True)
 
 # Check undo redo
 netedit.undo(referencePosition, 6)

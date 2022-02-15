@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -33,6 +33,7 @@
 #include <microsim/MSEdgeControl.h>
 #include <utils/common/StringTokenizer.h>
 #include <utils/common/UtilExceptions.h>
+#include <utils/options/OptionsCont.h>
 #include "NLBuilder.h"
 #include "NLEdgeControlBuilder.h"
 #include <utils/iodevices/OutputDevice.h>
@@ -178,6 +179,9 @@ NLEdgeControlBuilder::closeLane() {
 
 MSEdgeControl*
 NLEdgeControlBuilder::build(double networkVersion) {
+    if (MSGlobals::gUseMesoSim && !OptionsCont::getOptions().getBool("meso-lane-queue")) {
+        MSEdge::setMesoIgnoredVClasses(parseVehicleClasses(OptionsCont::getOptions().getStringVector("meso-ignore-lanes-by-vclass")));
+    }
     for (MSEdgeVector::iterator i1 = myEdges.begin(); i1 != myEdges.end(); i1++) {
         (*i1)->closeBuilding();
     }

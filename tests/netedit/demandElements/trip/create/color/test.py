@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -38,7 +38,7 @@ netedit.vehicleMode()
 # netedit.changeElement("trip")
 
 # set invalid color
-netedit.changeDefaultValue(6, "dummyColor")
+netedit.changeDefaultValue(netedit.attrs.tripFromToEdge.create.color, "dummyColor")
 
 # try to create trip
 netedit.leftClick(referencePosition, 274, 392)
@@ -48,7 +48,7 @@ netedit.leftClick(referencePosition, 280, 55)
 netedit.typeEnter()
 
 # set valid color
-netedit.changeDefaultValue(6, "cyan")
+netedit.changeDefaultValue(netedit.attrs.tripFromToEdge.create.color, "cyan")
 
 # create trip
 netedit.leftClick(referencePosition, 274, 392)
@@ -58,7 +58,7 @@ netedit.leftClick(referencePosition, 280, 55)
 netedit.typeEnter()
 
 # set valid color
-netedit.changeDefaultValue(6, "12,13,14")
+netedit.changeDefaultValue(netedit.attrs.tripFromToEdge.create.color, "12,13,14")
 
 # create trip
 netedit.leftClick(referencePosition, 274, 392)

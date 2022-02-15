@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2010-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2010-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -538,7 +538,7 @@ public:
 
     //@}
 
-    virtual bool handleCollisionStop(MSStop& stop, const bool collision, const double distToStop, const std::string& errorMsgStart, std::string& errorMsg);
+    virtual bool handleCollisionStop(MSStop& stop, const double distToStop);
 
     /** @brief Returns whether the vehicle is at a stop
      * @return Whether the vehicle has stopped
@@ -848,7 +848,7 @@ public:
     SUMOTime sawBlockedParkingArea(const MSParkingArea* pa, bool local) const;
 
     /// @brief score only needed when running with gui
-    void rememberParkingAreaScore(const MSParkingArea* pa, const std::string& score); 
+    void rememberParkingAreaScore(const MSParkingArea* pa, const std::string& score);
     void resetParkingAreaScores();
 
     /// @brief store information for a single parking area
@@ -867,7 +867,7 @@ public:
         myNumberParkingReroutes = value;
     }
 
-    typedef std::map<const MSParkingArea*, PaMemory> ParkingMemory;
+    typedef std::map<const MSParkingArea*, PaMemory, ComparatorIdLess> ParkingMemory;
     const ParkingMemory* getParkingMemory() const {
         return myParkingMemory;
     }

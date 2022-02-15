@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -134,7 +134,7 @@ METriggeredCalibrator::execute(SUMOTime currentTime) {
     while ((calibrateFlow || calibrateSpeed) && invalidJam()) {
         hadInvalidJam = true;
         if (!myHaveWarnedAboutClearingJam) {
-            WRITE_WARNING("Clearing jam at calibrator '" + getID() + "' at time " + time2string(currentTime));
+            WRITE_WARNINGF("Clearing jam at calibrator '%' at time=%.", getID(), time2string(currentTime));
         }
         // remove one vehicle currently on the segment
         if (mySegment->vaporizeAnyCar(currentTime, this)) {
@@ -142,7 +142,7 @@ METriggeredCalibrator::execute(SUMOTime currentTime) {
         } else {
             if (!myHaveWarnedAboutClearingJam) {
                 // this frequenly happens for very short edges
-                WRITE_WARNING("Could not clear jam at calibrator '" + getID() + "' at time " + time2string(currentTime));
+                WRITE_WARNINGF("Could not clear jam at calibrator '%' at time=%.", getID(), time2string(currentTime));
             }
             break;
         }
@@ -237,7 +237,7 @@ METriggeredCalibrator::execute(SUMOTime currentTime) {
     }
     //assert(!invalidJam());
     if (invalidJam()) {
-        WRITE_WARNING("DEBUG: Could not clear jam at calibrator '" + getID() + "' at time " + time2string(currentTime));
+        WRITE_WARNINGF("DEBUG: Could not clear jam at calibrator '%' at time=%.", getID(), time2string(currentTime));
     }
     return myFrequency;
 }

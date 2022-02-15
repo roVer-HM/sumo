@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -31,10 +31,10 @@
 
 GNEParkingAreaReroute::GNEParkingAreaReroute(GNENet* net):
     GNEAdditional("", net, GLO_REROUTER, SUMO_TAG_PARKING_AREA_REROUTE, "",
-        {}, {}, {}, {}, {}, {}, {}, {},
-    std::map<std::string, std::string>()),
+{}, {}, {}, {}, {}, {}, {}, {},
+std::map<std::string, std::string>()),
     myProbability(0),
-    myVisible(0) {
+myVisible(0) {
     // reset default values
     resetDefaultValues();
 }
@@ -42,10 +42,10 @@ GNEParkingAreaReroute::GNEParkingAreaReroute(GNENet* net):
 
 GNEParkingAreaReroute::GNEParkingAreaReroute(GNEAdditional* rerouterIntervalParent, GNEAdditional* newParkingArea, double probability, bool visible):
     GNEAdditional(rerouterIntervalParent->getNet(), GLO_REROUTER, SUMO_TAG_PARKING_AREA_REROUTE, "",
-        {}, {}, {}, {rerouterIntervalParent, newParkingArea}, {}, {}, {}, {},
-    std::map<std::string, std::string>()),
-    myProbability(probability),
-    myVisible(visible) {
+{}, {}, {}, {rerouterIntervalParent, newParkingArea}, {}, {}, {}, {},
+std::map<std::string, std::string>()),
+myProbability(probability),
+myVisible(visible) {
     // update boundary of rerouter parent
     rerouterIntervalParent->getParentAdditionals().front()->updateCenteringBoundary(true);
 }
@@ -54,7 +54,7 @@ GNEParkingAreaReroute::GNEParkingAreaReroute(GNEAdditional* rerouterIntervalPare
 GNEParkingAreaReroute::~GNEParkingAreaReroute() {}
 
 
-void 
+void
 GNEParkingAreaReroute::writeAdditional(OutputDevice& device) const {
     device.openTag(SUMO_TAG_PARKING_AREA_REROUTE);
     device.writeAttr(SUMO_ATTR_ID, getAttribute(SUMO_ATTR_PARKING));
@@ -226,7 +226,11 @@ GNEParkingAreaReroute::setAttribute(SumoXMLAttr key, const std::string& value) {
             myVisible = parse<bool>(value);
             break;
         case GNE_ATTR_SELECTED:
-            setParametersStr(value);
+            if (parse<bool>(value)) {
+                selectAttributeCarrier();
+            } else {
+                unselectAttributeCarrier();
+            }
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");

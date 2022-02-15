@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,10 +35,10 @@ netedit.supermodeDemand()
 netedit.vehicleMode()
 
 # select flow
-netedit.changeElement("flow (from-to)")
+netedit.changeElement("flow (from-to edges)")
 
 # set invalid vType
-netedit.changeDefaultValue(2, "blue")
+netedit.changeDefaultValue(netedit.attrs.flowFromToEdge.create.type, "blue")
 
 # try to create flow
 netedit.leftClick(referencePosition, 274, 392)
@@ -48,7 +48,7 @@ netedit.leftClick(referencePosition, 280, 55)
 netedit.typeEnter()
 
 # set valid vType
-netedit.changeDefaultValue(2, "custom_vType")
+netedit.changeDefaultValue(netedit.attrs.flowFromToEdge.create.type, "custom_vType")
 
 # create flow
 netedit.leftClick(referencePosition, 274, 392)

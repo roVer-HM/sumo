@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -38,13 +38,13 @@ netedit.forceSaveAdditionals()
 netedit.leftClick(referencePosition, 325, 250)
 
 # change ID (Duplicated)
-netedit.modifyAttribute(0, "gneJ1", False)
+netedit.modifyAttribute(netedit.attrs.junction.inspect.id, "gneJ1", False)
 
 # change ID empty)
-netedit.modifyAttribute(0, "", False)
+netedit.modifyAttribute(netedit.attrs.junction.inspect.id, "", False)
 
 # change ID
-netedit.modifyAttribute(0, "OwnID", False)
+netedit.modifyAttribute(netedit.attrs.junction.inspect.id, "OwnID", False)
 
 # rebuild network
 netedit.rebuildNetwork()

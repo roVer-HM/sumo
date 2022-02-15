@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2005-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,6 +20,7 @@
 /****************************************************************************/
 #include <config.h>
 
+#include <mesosim/MESegment.h>
 #include "MSLane.h"
 #include "MSParkingArea.h"
 #include "MSStoppingPlace.h"
@@ -31,12 +32,13 @@
 // ===========================================================================
 double
 MSStop::getEndPos(const SUMOVehicle& veh) const {
+    const double brakePos = veh.getEdge() == getEdge() ? veh.getPositionOnLane() + veh.getBrakeGap() : 0;
     if (busstop != nullptr) {
-        return busstop->getLastFreePos(veh);
+        return busstop->getLastFreePos(veh, brakePos);
     } else if (containerstop != nullptr) {
-        return containerstop->getLastFreePos(veh);
+        return containerstop->getLastFreePos(veh, brakePos);
     } else if (parkingarea != nullptr) {
-        return parkingarea->getLastFreePos(veh);
+        return parkingarea->getLastFreePos(veh, brakePos);
     } else if (chargingStation != nullptr) {
         return chargingStation->getLastFreePos(veh);
     } else if (overheadWireSegment != nullptr) {
@@ -45,6 +47,15 @@ MSStop::getEndPos(const SUMOVehicle& veh) const {
     return pars.endPos;
 }
 
+const MSEdge*
+MSStop::getEdge() const {
+    if (lane != nullptr) {
+        return &lane->getEdge();
+    } else if (segment != nullptr) {
+        return &segment->getEdge();
+    }
+    return nullptr;
+}
 
 double
 MSStop::getReachedThreshold() const {

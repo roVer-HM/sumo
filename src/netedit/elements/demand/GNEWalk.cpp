@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -36,8 +36,8 @@
 
 GNEWalk::GNEWalk(SumoXMLTag tag, GNENet* net) :
     GNEDemandElement("", net, GLO_WALK, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {}, {}),
-    myArrivalPosition(0) {
+{}, {}, {}, {}, {}, {}, {}, {}),
+myArrivalPosition(0) {
     // reset default values
     resetDefaultValues();
 }
@@ -45,29 +45,37 @@ GNEWalk::GNEWalk(SumoXMLTag tag, GNENet* net) :
 
 GNEWalk::GNEWalk(GNENet* net, GNEDemandElement* personParent, GNEEdge* fromEdge, GNEEdge* toEdge, double arrivalPosition) :
     GNEDemandElement(personParent, net, GLO_WALK, GNE_TAG_WALK_EDGE, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {fromEdge, toEdge}, {}, {}, {}, {}, {personParent}, {}),
-    myArrivalPosition(arrivalPosition) {
+{}, {fromEdge, toEdge}, {}, {}, {}, {}, {personParent}, {}),
+myArrivalPosition(arrivalPosition) {
 }
 
 
 GNEWalk::GNEWalk(GNENet* net, GNEDemandElement* personParent, GNEEdge* fromEdge, GNEAdditional* toBusStop, double arrivalPosition) :
     GNEDemandElement(personParent, net, GLO_WALK, GNE_TAG_WALK_BUSSTOP, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {fromEdge}, {}, {toBusStop}, {}, {}, {personParent}, {}),
-    myArrivalPosition(arrivalPosition) {
+{}, {fromEdge}, {}, {toBusStop}, {}, {}, {personParent}, {}),
+myArrivalPosition(arrivalPosition) {
 }
 
 
 GNEWalk::GNEWalk(GNENet* net, GNEDemandElement* personParent, std::vector<GNEEdge*> edges, double arrivalPosition) :
     GNEDemandElement(personParent, net, GLO_WALK, GNE_TAG_WALK_EDGES, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {edges}, {}, {}, {}, {}, {personParent}, {}),
-    myArrivalPosition(arrivalPosition) {
+{}, {edges}, {}, {}, {}, {}, {personParent}, {}),
+myArrivalPosition(arrivalPosition) {
 }
 
 
 GNEWalk::GNEWalk(GNENet* net, GNEDemandElement* personParent, GNEDemandElement* route, double arrivalPosition) :
     GNEDemandElement(personParent, net, GLO_WALK, GNE_TAG_WALK_ROUTE, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {personParent, route}, {}),
-    myArrivalPosition(arrivalPosition) {
+{}, {}, {}, {}, {}, {}, {personParent, route}, {}),
+myArrivalPosition(arrivalPosition) {
+}
+
+
+GNEWalk::GNEWalk(GNENet* net, GNEDemandElement* personParent, GNEJunction* fromJunction, GNEJunction* toJunction, double arrivalPosition) :
+    GNEDemandElement(personParent, net, GLO_WALK, GNE_TAG_WALK_JUNCTIONS, GNEPathManager::PathElement::Options::DEMAND_ELEMENT, {
+    fromJunction, toJunction
+}, {}, {}, {}, {}, {}, {personParent}, {}),
+myArrivalPosition(arrivalPosition) {
 }
 
 
@@ -76,8 +84,8 @@ GNEWalk::~GNEWalk() {}
 
 GNEMoveOperation*
 GNEWalk::getMoveOperation() {
-    // avoid move person plan that ends in busStop
-    if (getParentAdditionals().size() > 0) {
+    // avoid move person plan that ends in busStop or junction
+    if ((getParentAdditionals().size() > 0) || (getParentJunctions().size() > 0)) {
         return nullptr;
     }
     // get geometry end pos
@@ -136,12 +144,16 @@ GNEWalk::writeDemandElement(OutputDevice& device) const {
         // check if from attribute is enabled
         if (isAttributeEnabled(SUMO_ATTR_FROM)) {
             device.writeAttr(SUMO_ATTR_FROM, getParentEdges().front()->getID());
+        } else if (isAttributeEnabled(SUMO_ATTR_FROMJUNCTION)) {
+            device.writeAttr(SUMO_ATTR_FROMJUNCTION, getParentJunctions().front()->getID());
         }
-        // write to depending if personplan ends in a busStop
+        // write to depending if personplan ends in a busStop, edge or junction
         if (getParentAdditionals().size() > 0) {
             device.writeAttr(SUMO_ATTR_BUS_STOP, getParentAdditionals().back()->getID());
-        } else {
+        } else if (getParentEdges().size() > 0) {
             device.writeAttr(SUMO_ATTR_TO, getParentEdges().back()->getID());
+        } else {
+            device.writeAttr(SUMO_ATTR_TOJUNCTION, getParentJunctions().back()->getID());
         }
     }
     // avoid writte arrival positions in walk to busStop
@@ -158,7 +170,7 @@ GNEWalk::writeDemandElement(OutputDevice& device) const {
 }
 
 
-bool
+GNEDemandElement::Problem
 GNEWalk::isDemandElementValid() const {
     return isPersonPlanValid();
 }
@@ -253,25 +265,36 @@ void
 GNEWalk::drawGL(const GUIVisualizationSettings& s) const {
     // force draw path
     myNet->getPathManager()->forceDrawPath(s, this);
+    // special case for junction walks
+    if (getParentJunctions().size() > 0) {
+        // get person parent
+        const GNEDemandElement* personParent = getParentDemandElements().front();
+        if ((personParent->getChildDemandElements().size() > 0) && (personParent->getChildDemandElements().front() == this)) {
+            personParent->drawGL(s);
+        }
+    }
 }
 
 
 void
 GNEWalk::computePathElement() {
-    // declare lane vector
-    std::vector<GNELane*> lanes;
-    // update lanes depending of walk tag
-    if (myTagProperty.getTag() == GNE_TAG_WALK_EDGES) {
-        // calculate consecutive path using parent edges
-        myNet->getPathManager()->calculateConsecutivePathEdges(this, getVClass(), getParentEdges());
-    } else if (myTagProperty.getTag() == GNE_TAG_WALK_ROUTE) {
-        // calculate consecutive path using route edges
-        myNet->getPathManager()->calculateConsecutivePathEdges(this, getVClass(), getParentDemandElements().back()->getParentEdges());
-    } else {
-        // get first and last person plane
-        lanes = {getFirstPathLane(), getLastPathLane()};
-        // calculate path
-        myNet->getPathManager()->calculatePathLanes(this, getVClass(), lanes);
+    // avoid calculate for junctions
+    if (getParentJunctions().empty()) {
+        // declare lane vector
+        std::vector<GNELane*> lanes;
+        // update lanes depending of walk tag
+        if (myTagProperty.getTag() == GNE_TAG_WALK_EDGES) {
+            // calculate consecutive path using parent edges
+            myNet->getPathManager()->calculateConsecutivePathEdges(this, getVClass(), getParentEdges());
+        } else if (myTagProperty.getTag() == GNE_TAG_WALK_ROUTE) {
+            // calculate consecutive path using route edges
+            myNet->getPathManager()->calculateConsecutivePathEdges(this, getVClass(), getParentDemandElements().back()->getParentEdges());
+        } else if (getParentEdges().size() > 0) {
+            // get first and last person plane
+            lanes = {getFirstPathLane(), getLastPathLane()};
+            // calculate path
+            myNet->getPathManager()->calculatePathLanes(this, getVClass(), lanes);
+        }
     }
     // update geometry
     updateGeometry();
@@ -297,6 +320,8 @@ GNEWalk::getFirstPathLane() const {
     // check if this walk is over a route
     if (myTagProperty.getTag() == GNE_TAG_WALK_ROUTE) {
         return getParentDemandElements().at(1)->getParentEdges().front()->getLaneByAllowedVClass(SVC_PEDESTRIAN);
+    } else if (getParentJunctions().size() > 0) {
+        throw ProcessError("This walk use junctions");
     } else {
         return getParentEdges().front()->getLaneByAllowedVClass(SVC_PEDESTRIAN);
     }
@@ -310,6 +335,8 @@ GNEWalk::getLastPathLane() const {
         return getParentDemandElements().at(1)->getParentEdges().back()->getLaneByAllowedVClass(SVC_PEDESTRIAN);
     } else if (getParentAdditionals().size() > 0) {
         return getParentAdditionals().front()->getParentLanes().front();
+    } else if (getParentJunctions().size() > 0) {
+        throw ProcessError("This walk use junctions");
     } else {
         return getParentEdges().back()->getLaneByDisallowedVClass(SVC_PEDESTRIAN);
     }
@@ -334,6 +361,10 @@ GNEWalk::getAttribute(SumoXMLAttr key) const {
             } else {
                 return getParentEdges().back()->getID();
             }
+        case SUMO_ATTR_FROMJUNCTION:
+            return getParentJunctions().front()->getID();
+        case SUMO_ATTR_TOJUNCTION:
+            return getParentJunctions().back()->getID();
         case GNE_ATTR_TO_BUSSTOP:
             return getParentAdditionals().back()->getID();
         case SUMO_ATTR_EDGES:
@@ -363,7 +394,9 @@ double
 GNEWalk::getAttributeDouble(SumoXMLAttr key) const {
     switch (key) {
         case SUMO_ATTR_ARRIVALPOS:
-            if (myArrivalPosition != -1) {
+            if (getParentJunctions().size() > 0) {
+                return 0;
+            } else if (myArrivalPosition != -1) {
                 return myArrivalPosition;
             } else {
                 return (getLastPathLane()->getLaneShape().length() - POSITION_EPS);
@@ -378,15 +411,19 @@ Position
 GNEWalk::getAttributePosition(SumoXMLAttr key) const {
     switch (key) {
         case SUMO_ATTR_ARRIVALPOS: {
-            // get lane shape
-            const PositionVector& laneShape = getLastPathLane()->getLaneShape();
-            // continue depending of arrival position
-            if (myArrivalPosition == 0) {
-                return laneShape.front();
-            } else if ((myArrivalPosition == -1) || (myArrivalPosition >= laneShape.length2D())) {
-                return laneShape.back();
+            if (getParentJunctions().size() > 0) {
+                return getParentJunctions().back()->getPositionInView();
             } else {
-                return laneShape.positionAtOffset2D(myArrivalPosition);
+                // get lane shape
+                const PositionVector& laneShape = getLastPathLane()->getLaneShape();
+                // continue depending of arrival position
+                if (myArrivalPosition == 0) {
+                    return laneShape.front();
+                } else if ((myArrivalPosition == -1) || (myArrivalPosition >= laneShape.length2D())) {
+                    return laneShape.back();
+                } else {
+                    return laneShape.positionAtOffset2D(myArrivalPosition);
+                }
             }
         }
         default:
@@ -403,14 +440,16 @@ GNEWalk::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* un
             if (myTagProperty.getTag() != GNE_TAG_WALK_ROUTE) {
                 undoList->changeAttribute(new GNEChange_Attribute(this, key, value));
             }
-        break;
+            break;
+        case SUMO_ATTR_FROMJUNCTION:
         case SUMO_ATTR_ARRIVALPOS:
         case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
             undoList->changeAttribute(new GNEChange_Attribute(this, key, value));
             break;
         // special case for "to" attributes
-        case SUMO_ATTR_TO: {
+        case SUMO_ATTR_TO:
+        case SUMO_ATTR_TOJUNCTION: {
             if (myTagProperty.getTag() != GNE_TAG_WALK_ROUTE) {
                 // get next personPlan
                 GNEDemandElement* nextPersonPlan = getParentDemandElements().at(0)->getNextChildDemandElement(this);
@@ -494,6 +533,9 @@ GNEWalk::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return false;
             }
+        case SUMO_ATTR_FROMJUNCTION:
+        case SUMO_ATTR_TOJUNCTION:
+            return SUMOXMLDefinitions::isValidNetID(value) && (myNet->getAttributeCarriers()->retrieveEdge(value, false) != nullptr);
         case GNE_ATTR_TO_BUSSTOP:
             return (myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_BUS_STOP, value, false) != nullptr);
         case SUMO_ATTR_EDGES:
@@ -543,10 +585,12 @@ GNEWalk::disableAttribute(SumoXMLAttr /*key*/, GNEUndoList* /*undoList*/) {
 
 bool
 GNEWalk::isAttributeEnabled(SumoXMLAttr key) const {
-    if (key == SUMO_ATTR_FROM) {
-        return (getParentDemandElements().at(0)->getPreviousChildDemandElement(this) == nullptr);
-    } else {
-        return true;
+    switch (key) {
+        case SUMO_ATTR_FROM:
+        case SUMO_ATTR_FROMJUNCTION:
+            return (getParentDemandElements().at(0)->getPreviousChildDemandElement(this) == nullptr);
+        default:
+            return true;
     }
 }
 
@@ -561,6 +605,8 @@ std::string
 GNEWalk::getHierarchyName() const {
     if (myTagProperty.getTag() == GNE_TAG_WALK_EDGE) {
         return "walk: " + getParentEdges().front()->getID() + " -> " + getParentEdges().back()->getID();
+    } else if (myTagProperty.getTag() == GNE_TAG_WALK_JUNCTIONS) {
+        return "walk: " + getParentJunctions().front()->getID() + " -> " + getParentJunctions().back()->getID();
     } else if (myTagProperty.getTag() == GNE_TAG_WALK_BUSSTOP) {
         return "walk: " + getParentEdges().front()->getID() + " -> " + getParentAdditionals().back()->getID();
     } else if (myTagProperty.getTag() == GNE_TAG_WALK_EDGES) {
@@ -595,6 +641,18 @@ GNEWalk::setAttribute(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_TO:
             // change last edge
             replaceLastParentEdge(value);
+            // compute walk
+            computePathElement();
+            break;
+        case SUMO_ATTR_FROMJUNCTION:
+            // change first junction
+            replaceFirstParentJunction(value);
+            // compute walk
+            computePathElement();
+            break;
+        case SUMO_ATTR_TOJUNCTION:
+            // change last junction
+            replaceLastParentJunction(value);
             // compute walk
             computePathElement();
             break;
@@ -640,7 +698,7 @@ GNEWalk::setAttribute(SumoXMLAttr key, const std::string& value) {
 
 void
 GNEWalk::toogleAttribute(SumoXMLAttr /*key*/, const bool /*value*/, const int /*previousParameters*/) {
-    throw InvalidArgument("Nothing to enable");
+    // nothing to toogle
 }
 
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -44,19 +44,19 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 250, 165)
 
 # Change parameter 1 with an non valid value (dummy)
-netedit.modifyAttribute(2, "DummyAllowed", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspect.allow, "DummyAllowed", True)
 
 # Change parameter 1 with a valid value (empty)
-netedit.modifyAttribute(2, "", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspect.allow, "", True)
 
 # Change parameter 1 with a valid value (different separators)
-netedit.modifyAttribute(2, "authority  army, passenger; taxi. tram", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspect.allow, "authority  army, passenger; taxi. tram", True)
 
 # Change parameter 1 with a valid value (empty)
-netedit.modifyAttribute(2, "", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspect.allow, "", True)
 
 # Change parameter 1 with a valid value (empty)
-netedit.modifyAttribute(2, "authority army vip passenger hov taxi bus coach tram bicycle", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspect.allow, "authority army vip passenger hov taxi bus coach tram bicycle", True)
 
 # recompute
 netedit.rebuildNetwork()

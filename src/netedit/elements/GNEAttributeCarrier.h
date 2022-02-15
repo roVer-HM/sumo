@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -78,7 +78,10 @@ public:
     /// @brief check if attribute carrier must be drawn using selecting color.
     bool drawUsingSelectColor() const;
 
-    /// @name Function related with graphics (must be implemented in all childs)
+    /// @brief get GNEHierarchicalElement associated with this AttributeCarrier
+    virtual GNEHierarchicalElement* getHierarchicalElement() = 0;
+
+    /// @name Function related with graphics (must be implemented in all children)
     /// @{
     /// @brief get ID (all Attribute Carriers have one)
     virtual const std::string& getID() const = 0;
@@ -187,12 +190,11 @@ public:
     /// @brief get FXIcon associated to this AC
     FXIcon* getIcon() const;
 
+    /// @brief check if this AC is template
+    bool isTemplate() const;
+
     /// @brief get tagProperty associated with this Attribute Carrier
     const GNETagProperties& getTagProperty() const;
-
-    bool isTemplate() const {
-        return myIsTemplate;
-    }
 
     /// @brief get tagProperty associated to the given tag
     static const GNETagProperties& getTagProperty(SumoXMLTag tag);
@@ -205,13 +207,20 @@ public:
     static bool canParse(const std::string& string) {
         try {
             GNEAttributeCarrier::parse<T>(string);
+        } catch (EmptyData&) {
+            // general
+            return false;
         } catch (NumberFormatException&) {
+            // numbers
             return false;
         } catch (TimeFormatException&) {
-            return false;
-        } catch (EmptyData&) {
+            // time
             return false;
         } catch (BoolFormatException&) {
+            // booleans
+            return false;
+        } catch (InvalidArgument&) {
+            // colors
             return false;
         }
         return true;
@@ -364,6 +373,9 @@ private:
 
     /// @brief fill Data elements
     static void fillDataElements();
+
+    /// @brief returns icon associated to the given vClass
+    static FXIcon* getVClassIcon(const SUMOVehicleClass vc);
 
     /// @brief map with the tags properties
     static std::map<SumoXMLTag, GNETagProperties> myTagProperties;

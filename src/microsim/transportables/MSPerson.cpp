@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -223,13 +223,13 @@ MSPerson::MSPersonStage_Walking::tripInfoOutput(OutputDevice& os, const MSTransp
     }
     MSDevice_Tripinfo::addPedestrianData(distance, duration, timeLoss);
     os.openTag("walk");
-    os.writeAttr("depart", time2string(myDeparted));
+    os.writeAttr("depart", myDeparted >= 0 ? time2string(myDeparted) : "-1");
     os.writeAttr("departPos", myDepartPos);
     os.writeAttr("arrival", myArrived >= 0 ? time2string(myArrived) : "-1");
-    os.writeAttr("arrivalPos", myArrivalPos);
+    os.writeAttr("arrivalPos", myArrived >= 0 ? toString(myArrivalPos) : "-1");
     os.writeAttr("duration", myDeparted < 0 ? "-1" :
                  time2string(myArrived >= 0 ? duration : MSNet::getInstance()->getCurrentTimeStep() - myDeparted));
-    os.writeAttr("routeLength", distance);
+    os.writeAttr("routeLength", myArrived >= 0 ? toString(distance) : "-1");
     os.writeAttr("timeLoss", time2string(timeLoss));
     os.writeAttr("maxSpeed", maxSpeed);
     os.closeTag();
@@ -452,7 +452,10 @@ MSPerson::~MSPerson() {
 
 bool
 MSPerson::checkAccess(const MSStage* const prior, const bool waitAtStop) {
-    MSStoppingPlace* const prevStop = prior->getDestinationStop();
+    MSStoppingPlace* prevStop = prior->getDestinationStop();
+    if (!waitAtStop && prior->getStageType() == MSStageType::TRIP) {
+        prevStop = dynamic_cast<const MSStageTrip*>(prior)->getOriginStop();
+    }
     if (prevStop != nullptr) {
         if (waitAtStop) {
             const double accessDist = prevStop->getAccessDistance(prior->getDestination());
@@ -462,12 +465,10 @@ MSPerson::checkAccess(const MSStage* const prior, const bool waitAtStop) {
                 return true;
             }
         } else {
-            if (prior->getStageType() != MSStageType::TRIP) {
-                const double accessDist = prevStop->getAccessDistance((*myStep)->getFromEdge());
-                if (accessDist > 0.) {
-                    myStep = myPlan->insert(myStep, new MSPersonStage_Access((*myStep)->getFromEdge(), prevStop, prevStop->getAccessPos((*myStep)->getFromEdge()), accessDist, true));
-                    return true;
-                }
+            const double accessDist = prevStop->getAccessDistance((*myStep)->getFromEdge());
+            if (accessDist > 0.) {
+                myStep = myPlan->insert(myStep, new MSPersonStage_Access((*myStep)->getFromEdge(), prevStop, prevStop->getAccessPos((*myStep)->getFromEdge()), accessDist, true));
+                return true;
             }
         }
     }

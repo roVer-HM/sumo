@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -222,7 +222,7 @@ ROVehicle::saveAsXML(OutputDevice& os, OutputDevice* const typeos, bool asAltern
         if (it == mySavedRoutes.end()) {
             routeID = "r" + toString(mySavedRoutes.size());
             myRoute->getUsedRoute()->writeXMLDefinition(os, this, writeCosts, false, writeExit,
-                                                        writeLength, routeID);
+                    writeLength, routeID);
             mySavedRoutes[edges] = routeID;
         } else {
             routeID = it->second;

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -100,6 +100,9 @@ NWWriter_SUMO::writeNetwork(const OptionsCont& oc, NBNetBuilder& nb) {
     }
     if (oc.exists("junctions.higher-speed") && oc.getBool("junctions.higher-speed")) {
         attrs[SUMO_ATTR_HIGHER_SPEED] = toString(oc.getBool("junctions.higher-speed"));
+    }
+    if (oc.exists("internal-junctions.vehicle-width") && !oc.isDefault("internal-junctions.vehicle-width")) {
+        attrs[SUMO_ATTR_INTERNAL_JUNCTIONS_VEHICLE_WIDTH] = toString(oc.getFloat("internal-junctions.vehicle-width"));
     }
     device.writeXMLHeader("net", "net_file.xsd", attrs); // street names may contain non-ascii chars
     device.lf();
@@ -357,7 +360,7 @@ NWWriter_SUMO::writeInternalEdges(OutputDevice& into, const NBEdgeCont& ec, cons
                                                  successor.permissions & e->getPermissions(k.fromLane));
                 SVCPermissions changeLeft = k.changeLeft != SVC_UNSPECIFIED ? k.changeLeft : SVCAll;
                 SVCPermissions changeRight = k.changeRight != SVC_UNSPECIFIED ? k.changeRight : SVCAll;
-                const double width = n.isConstantWidthTransition() && e->getNumLanes() > k.toEdge->getNumLanes() ? e->getLaneWidth(k.fromLane) : successor.width;
+                const double width = e->getInternalLaneWidth(n, k, successor, false);
                 writeLane(into, k.getInternalLaneID(), k.vmax,
                           permissions, successor.preferred,
                           changeLeft, changeRight,
@@ -387,10 +390,11 @@ NWWriter_SUMO::writeInternalEdges(OutputDevice& into, const NBEdgeCont& ec, cons
                     }
                     SVCPermissions permissions = (k.permissions != SVC_UNSPECIFIED) ? k.permissions : (
                                                      successor.permissions & e->getPermissions(k.fromLane));
+                    const double width = e->getInternalLaneWidth(n, k, successor, true);
                     writeLane(into, k.viaID + "_0", k.vmax, permissions, successor.preferred,
                               SVCAll, SVCAll, // #XXX todo
                               NBEdge::UNSPECIFIED_OFFSET, NBEdge::UNSPECIFIED_OFFSET,
-                              StopOffset(), successor.width, k.viaShape, &k,
+                              StopOffset(), width, k.viaShape, &k,
                               MAX2(k.viaLength, POSITION_EPS), // microsim needs positive length
                               0, "", "");
                     into.closeTag();

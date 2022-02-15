@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -335,6 +335,21 @@ MSLeaderDistanceInfo::getClosest() const {
         }
     }
     return std::make_pair(veh, minGap);
+}
+
+
+void
+MSLeaderDistanceInfo::moveSamePosTo(const MSVehicle* ego, MSLeaderDistanceInfo& other) {
+    const double pos = ego->getPositionOnLane();
+    for (int i = 0; i < (int)myVehicles.size(); ++i) {
+        if (myVehicles[i] != nullptr && myDistances[i] < 0 && myVehicles[i]->getPositionOnLane() == pos
+                && &myVehicles[i]->getLane()->getEdge() == &ego->getLane()->getEdge()) {
+            other.myVehicles[i] = myVehicles[i];
+            other.myDistances[i] = myDistances[i];
+            myVehicles[i] = nullptr;
+            myDistances[i] = -1;
+        }
+    }
 }
 
 // ===========================================================================

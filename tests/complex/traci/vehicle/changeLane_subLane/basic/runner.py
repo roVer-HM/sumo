@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2008-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -63,5 +63,9 @@ traci.vehicle.changeLane(vehID, 2, 7)
 for i in range(10):
     reportState(vehID, 1)
     traci.simulationStep()
+
+print(traci.vehicle.getParameter(vehID, "laneChangeModel.minGapLat"))
+traci.vehicle.setParameter(vehID, "laneChangeModel.minGapLat", "0.1")
+print(traci.vehicle.getParameter(vehID, "laneChangeModel.minGapLat"))
 
 traci.close()

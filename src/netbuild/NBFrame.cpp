@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -366,6 +366,10 @@ NBFrame::fillOptions(bool forNetgen) {
     oc.doRegister("junctions.higher-speed", new Option_Bool(false));
     oc.addDescription("junctions.higher-speed", "Junctions",
                       "Use maximum value of incoming and outgoing edge speed on junction instead of average");
+
+    oc.doRegister("internal-junctions.vehicle-width", new Option_Float(1.8));
+    oc.addDescription("internal-junctions.vehicle-width", "Junctions",
+                      "Assumed vehicle width for computing internal junction positions");
 
     oc.doRegister("rectangular-lane-cut", new Option_Bool(false));
     oc.addDescription("rectangular-lane-cut", "Junctions", "Forces rectangular cuts between lanes and intersections");

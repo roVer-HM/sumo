@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -52,7 +52,6 @@ class GNEWireFrame;
 class GNETAZFrame;
 class GNETLSEditorFrame;
 // demand frames
-class GNEPersonTypeFrame;
 class GNEPersonFrame;
 class GNEPersonPlanFrame;
 class GNEContainerFrame;
@@ -60,7 +59,7 @@ class GNEContainerPlanFrame;
 class GNERouteFrame;
 class GNEStopFrame;
 class GNEVehicleFrame;
-class GNEVehicleTypeFrame;
+class GNETypeFrame;
 // data frames
 class GNEGenericDataFrame;
 class GNEEdgeDataFrame;
@@ -162,13 +161,10 @@ public:
     GNEVehicleFrame* getVehicleFrame() const;
 
     /// @brief get frame for DEMAND_VEHICLETYPE
-    GNEVehicleTypeFrame* getVehicleTypeFrame() const;
+    GNETypeFrame* getTypeFrame() const;
 
     /// @brief get frame for DEMAND_STOP
     GNEStopFrame* getStopFrame() const;
-
-    /// @brief get frame for DEMAND_PERSONTYPE
-    GNEPersonTypeFrame* getPersonTypeFrame() const;
 
     /// @brief get frame for DEMAND_PERSON
     GNEPersonFrame* getPersonFrame() const;
@@ -352,13 +348,10 @@ protected:
         GNEVehicleFrame* vehicleFrame;
 
         /// @brief frame for DEMAND_VEHICLETYPE
-        GNEVehicleTypeFrame* vehicleTypeFrame;
+        GNETypeFrame* vehicleTypeFrame;
 
         /// @brief frame for DEMAND_STOP
         GNEStopFrame* stopFrame;
-
-        /// @brief frame for DEMAND_PERSONTYPE
-        GNEPersonTypeFrame* personTypeFrame;
 
         /// @brief frame for DEMAND_PERSON
         GNEPersonFrame* personFrame;

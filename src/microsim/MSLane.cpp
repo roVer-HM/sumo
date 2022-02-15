@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -42,7 +42,7 @@
 #include <utils/common/MsgHandler.h>
 #include <utils/common/ToString.h>
 #ifdef HAVE_FOX
-#include <utils/foxtools/FXConditionalLock.h>
+#include <utils/common/ScopedLocker.h>
 #endif
 #include <utils/options/OptionsCont.h>
 #include <utils/emissions/HelpersHarmonoise.h>
@@ -86,9 +86,9 @@
 //#define DEBUG_COND (getID() == "undefined")
 #define DEBUG_COND (isSelected())
 //#define DEBUG_COND2(obj) ((obj != 0 && (obj)->getID() == "disabled"))
-#define DEBUG_COND2(obj) ((obj != 0 && (obj)->isSelected()))
+//#define DEBUG_COND2(obj) ((obj != 0 && (obj)->isSelected()))
 //#define DEBUG_COND (getID() == "ego")
-//#define DEBUG_COND2(obj) ((obj != 0 && (obj)->getID() == "ego"))
+#define DEBUG_COND2(obj) ((obj != 0 && (obj)->getID() == "ego"))
 //#define DEBUG_COND2(obj) (true)
 
 
@@ -284,7 +284,7 @@ MSLane::setPartialOccupation(MSVehicle* v) {
 #endif
     // XXX update occupancy here?
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myPartialOccupatorMutex, MSGlobals::gNumSimThreads > 1);
+    ScopedLocker<> lock(myPartialOccupatorMutex, MSGlobals::gNumSimThreads > 1);
 #endif
     //assert(std::find(myPartialVehicles.begin(), myPartialVehicles.end(), v) == myPartialVehicles.end());
     myPartialVehicles.push_back(v);
@@ -295,7 +295,7 @@ MSLane::setPartialOccupation(MSVehicle* v) {
 void
 MSLane::resetPartialOccupation(MSVehicle* v) {
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myPartialOccupatorMutex, MSGlobals::gNumSimThreads > 1);
+    ScopedLocker<> lock(myPartialOccupatorMutex, MSGlobals::gNumSimThreads > 1);
 #endif
 #ifdef DEBUG_CONTEXT
     if (DEBUG_COND2(v)) {
@@ -705,7 +705,9 @@ MSLane::isInsertionSuccess(MSVehicle* aVehicle,
     if (DEBUG_COND2(aVehicle)) {
         std::cout << "\nIS_INSERTION_SUCCESS\n"
                   << SIMTIME  << " lane=" << getID()
-                  << " veh '" << aVehicle->getID() << "'\n";
+                  << " veh '" << aVehicle->getID()
+                  << " bestLanes=" << toString(aVehicle->getBestLanesContinuation(this))
+                  << "'\n";
     }
 #endif
 
@@ -1168,7 +1170,7 @@ MSLane::getLastVehicleInformation(const MSVehicle* ego, double latOffset, double
         }
         if (ego == nullptr && minPos == 0) {
 #ifdef HAVE_FOX
-            FXConditionalLock lock(myLeaderInfoMutex, MSGlobals::gNumSimThreads > 1);
+            ScopedLocker<> lock(myLeaderInfoMutex, MSGlobals::gNumSimThreads > 1);
 #endif
             // update cached value
             myLeaderInfo = leaderTmp;
@@ -1197,7 +1199,7 @@ MSLane::getLastVehicleInformation(const MSVehicle* ego, double latOffset, double
 const MSLeaderInfo
 MSLane::getFirstVehicleInformation(const MSVehicle* ego, double latOffset, bool onlyFrontOnLane, double maxPos, bool allowCached) const {
 #ifdef HAVE_FOX
-    FXConditionalLock lock(myFollowerInfoMutex, MSGlobals::gNumSimThreads > 1);
+    ScopedLocker<> lock(myFollowerInfoMutex, MSGlobals::gNumSimThreads > 1);
 #endif
     if (myFollowerInfoTime < MSNet::getInstance()->getCurrentTimeStep() || ego != nullptr || maxPos < myLength || !allowCached || onlyFrontOnLane) {
         // XXX separate cache for onlyFrontOnLane = true
@@ -1420,9 +1422,9 @@ MSLane::detectCollisions(SUMOTime timestep, const std::string& stage) {
                         // make a detailed check
                         PositionVector boundingPoly = collider->getBoundingPoly();
                         if (collider->getBoundingPoly(myCheckJunctionCollisionMinGap).overlapsWith(victim->getBoundingPoly())) {
-                            // junction leader is the victim
+                            // junction leader is the victim (collider must still be on junction)
                             assert(isInternal());
-                            if (victim->isLeader(myLinks.front(), collider)) {
+                            if (victim->getLane()->isInternal() && victim->isLeader(myLinks.front(), collider)) {
                                 foeLane->handleCollisionBetween(timestep, stage, victim, collider, -1, 0, toRemove, toTeleport);
                             } else {
                                 handleCollisionBetween(timestep, stage, collider, victim, -1, 0, toRemove, toTeleport);
@@ -2692,7 +2694,7 @@ MSLane::getCanonicalPredecessorLane() const {
     const auto bestLane = std::min_element(myIncomingLanes.begin(), myIncomingLanes.end(), incoming_lane_priority_sorter(this));
     {
 #ifdef HAVE_FOX
-        FXConditionalLock lock(myLeaderInfoMutex, MSGlobals::gNumSimThreads > 1);
+        ScopedLocker<> lock(myLeaderInfoMutex, MSGlobals::gNumSimThreads > 1);
 #endif
         myCanonicalPredecessorLane = bestLane->lane;
     }
@@ -3096,8 +3098,9 @@ MSLane::incoming_lane_priority_sorter::operator()(const IncomingLaneInfo& laneIn
             break;
         }
     }
-    // if one link is subordinate, the other must be priorized
-    assert(priorized1 || priorized2);
+    // if one link is subordinate, the other must be priorized (except for
+    // traffic lights where mutual response is permitted to handle stuck-on-red
+    // situation)
     if (priorized1 != priorized2) {
         return priorized1;
     }
@@ -4022,7 +4025,7 @@ MSLane::initRNGs(const OptionsCont& oc) {
     int seed = oc.getInt("seed");
     myRNGs.reserve(numRNGs); // this is needed for stable pointers on debugging
     for (int i = 0; i < numRNGs; i++) {
-        myRNGs.push_back(SumoRNG());
+        myRNGs.push_back(SumoRNG("lanes_" + toString(i)));
         RandHelper::initRand(&myRNGs.back(), random, seed++);
     }
 }

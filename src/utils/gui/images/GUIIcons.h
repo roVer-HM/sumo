@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -51,11 +51,27 @@ enum class GUIIcon {
     CLEARMESSAGEWINDOW,
     /// @}
 
+    /// @brief basic operations
+    /// @{
+
+    CUT,
+    COPY,
+    PASTE,
+
+    /// @}
+
+
     /// @name simulation control icons
     /// @{
     START,
     STOP,
     STEP,
+    /// @}
+
+    /// @name select icons
+    /// @{
+    SELECT,
+    UNSELECT,
     /// @}
 
     /// @name simulation view icons
@@ -302,9 +318,8 @@ enum class GUIIcon {
     /// @{
     MODEROUTE,
     MODEVEHICLE,
-    MODEVEHICLETYPE,
+    MODETYPE,
     MODESTOP,
-    MODEPERSONTYPE,
     MODEPERSON,
     MODEPERSONPLAN,
     MODECONTAINER,
@@ -333,7 +348,7 @@ enum class GUIIcon {
     /// @name network elements icons
     /// @{
     JUNCTION,
-    TYPE,
+    EDGETYPE,
     LANETYPE,
     EDGE,
     LANE,
@@ -397,20 +412,24 @@ enum class GUIIcon {
     /// @{
     ROUTE,
     VTYPE,
-    PTYPE,
+    VTYPEDISTRIBUTION,
     VEHICLE,
     TRIP,
+    TRIP_JUNCTIONS,
     FLOW,
+    FLOW_JUNCTIONS,
     ROUTEFLOW,
     STOPELEMENT,
     PERSON,
     PERSONFLOW,
     PERSONTRIP_FROMTO,
     PERSONTRIP_BUSSTOP,
+    PERSONTRIP_JUNCTIONS,
     WALK_EDGES,
     WALK_FROMTO,
     WALK_BUSSTOP,
     WALK_ROUTE,
+    WALK_JUNCTIONS,
     RIDE_FROMTO,
     RIDE_BUSSTOP,
     CONTAINER,
@@ -431,7 +450,7 @@ enum class GUIIcon {
     TAZRELDATA,
     /// @}
 
-    /// @name vehicle Class icons
+    /// @name vehicle Class icons (big, used in vType Dialog)
     /// @{
     VCLASS_IGNORING,
     VCLASS_PRIVATE,
@@ -451,6 +470,7 @@ enum class GUIIcon {
     VCLASS_RAIL_URBAN,
     VCLASS_RAIL,
     VCLASS_RAIL_ELECTRIC,
+    VCLASS_RAIL_FAST,
     VCLASS_MOTORCYCLE,
     VCLASS_MOPED,
     VCLASS_BICYCLE,
@@ -459,6 +479,37 @@ enum class GUIIcon {
     VCLASS_SHIP,
     VCLASS_CUSTOM1,
     VCLASS_CUSTOM2,
+    /// @}
+
+    /// @name small vehicle Class icons (used in comboBox)
+    /// @{
+    VCLASS_SMALL_IGNORING,
+    VCLASS_SMALL_PRIVATE,
+    VCLASS_SMALL_EMERGENCY,
+    VCLASS_SMALL_AUTHORITY,
+    VCLASS_SMALL_ARMY,
+    VCLASS_SMALL_VIP,
+    VCLASS_SMALL_PASSENGER,
+    VCLASS_SMALL_HOV,
+    VCLASS_SMALL_TAXI,
+    VCLASS_SMALL_BUS,
+    VCLASS_SMALL_COACH,
+    VCLASS_SMALL_DELIVERY,
+    VCLASS_SMALL_TRUCK,
+    VCLASS_SMALL_TRAILER,
+    VCLASS_SMALL_TRAM,
+    VCLASS_SMALL_RAIL_URBAN,
+    VCLASS_SMALL_RAIL,
+    VCLASS_SMALL_RAIL_ELECTRIC,
+    VCLASS_SMALL_RAIL_FAST,
+    VCLASS_SMALL_MOTORCYCLE,
+    VCLASS_SMALL_MOPED,
+    VCLASS_SMALL_BICYCLE,
+    VCLASS_SMALL_PEDESTRIAN,
+    VCLASS_SMALL_EVEHICLE,
+    VCLASS_SMALL_SHIP,
+    VCLASS_SMALL_CUSTOM1,
+    VCLASS_SMALL_CUSTOM2,
     /// @}
 
     /// @name vehicle Shape icons

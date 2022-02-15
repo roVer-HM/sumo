@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2011-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2011-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -689,13 +689,25 @@ NBLoadedSUMOTLDef::groupSignals() {
     cleanupStates();
     //std::cout << "oldMaxIndex=" << maxIndex << " newMaxIndex=" << getMaxIndex() << " unused=" << toString(unusedIndices) << "\n";
     setTLControllingInformation();
+    // patch crossing indices
+    for (NBNode* n : myControlledNodes) {
+        for (NBNode::Crossing* c : n->getCrossings()) {
+            for (int i = (int)unusedIndices.size() - 1; i >= 0; i--) {
+                if (c->customTLIndex > i) {
+                    c->customTLIndex--;
+                }
+                if (c->customTLIndex2 > i) {
+                    c->customTLIndex2--;
+                }
+            }
+        }
+    }
 }
 
 void
 NBLoadedSUMOTLDef::ungroupSignals() {
     NBConnectionVector defaultOrdering;
     collectAllLinks(defaultOrdering);
-    myTLLogic->setStateLength((int)myControlledLinks.size());
     std::vector<std::string> states; // organized per link rather than phase
     int index = 0;
     for (NBConnection& c : defaultOrdering) {
@@ -706,13 +718,14 @@ NBLoadedSUMOTLDef::ungroupSignals() {
     for (NBNode* n : myControlledNodes) {
         for (NBNode::Crossing* c : n->getCrossings()) {
             states.push_back(getStates(c->tlLinkIndex));
-            c->tlLinkIndex = index++;
+            c->customTLIndex = index++;
             if (c->tlLinkIndex2 != NBConnection::InvalidTlIndex) {
                 states.push_back(getStates(c->tlLinkIndex2));
-                c->tlLinkIndex2 = index++;
+                c->customTLIndex2 = index++;
             }
         }
     }
+    myTLLogic->setStateLength(index);
     for (int i = 0; i < (int)states.size(); i++) {
         for (int p = 0; p < (int)states[i].size(); p++) {
             myTLLogic->setPhaseState(p, i, (LinkState)states[i][p]);

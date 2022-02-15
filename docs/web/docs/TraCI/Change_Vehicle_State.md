@@ -30,6 +30,7 @@ won't be affected by further changes to the original type.
 | resume (0x19) | compound (), see below | Resumes from a stop  | [resume](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-resume) |
 | change target (0x31) | string (destination edge id)  | The vehicle's destination edge is set to the given. The route is rebuilt. | [changeTarget](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-changeTarget) |
 | speed (0x40) | double (new speed) | Sets the vehicle speed to the given value. The speed will be followed according to the current [speed mode](../TraCI/Change_Vehicle_State.md#speed_mode_0xb3). By default the vehicle may drive slower than the set speed according to the safety rules of the car-follow model. When sending a value of -1 the vehicle will revert to its original behavior (using the *maxSpeed* of its vehicle type and following all safety rules).  | [setSpeed](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-setSpeed) |
+| previous speed (0x3c) | double (previous speed) | Retroactively sets the vehicle speed for the previous simulation step to the given value and also updates the previous acceleration. This speed value will be used when computing [ballistic position updates](../Simulation/Basic_Definition.md#defining_the_integration_method). Also, other vehicles will react to ego in the current step as if it had driven with the given speed in the previous step. | [setPreviousSpeed](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-setPreviousSpeed) |
 | color (0x45)  | ubyte,ubyte,ubyte,ubyte (RGBA) |  Sets the vehicle's color.  | [setColor](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-setColor) |
 | change route by id (0x53) | string (route id)  | Assigns the named route to the vehicle, assuming a) the named route exists, and b) it starts on the edge the vehicle is currently at<sup>(1)(2)</sup>.  | [setRouteID](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-setRouteID) |
 | change route (0x57)  | stringList (ids of edges to pass) | Assigns the list of edges as the vehicle's new route assuming the first edge given is the one the vehicle is curently at<sup>(1)(2)</sup>.  | [setRoute](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-setRoute) |
@@ -44,7 +45,7 @@ won't be affected by further changes to the original type.
 | replaceStop (0x17) | compound (edgeID, vehID, nextStopIndex, edgeID, pos, laneIndex, duration, flags, startPos, until, teleport) (see below)  | Replaces stop at the given index with a new stop. Automatically modifies the route if the replacement stop is at another location. [See below for additional details](../TraCI/Change_Vehicle_State.md#replaceStop-0x17) | [replaceStop](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-replaceStop) |
 | reroute (compute new route) by travel time (0x90)  | compound (<empty\>), see below  | Computes a new route to the current destination that minimizes travel time. The assumed values for each edge in the network can be customized in various ways. See [Simulation/Routing#Travel-time_values_for_routing](../Simulation/Routing.md#travel-time_values_for_routing). Replaces the current route by the found<sup>(2)</sup>.  | [rerouteTraveltime](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-rerouteTraveltime) |
 | reroute (compute new route) by effort (0x91) | compound (<empty\>), see below  | Computes a new route using the vehicle's internal and the global edge effort information. Replaces the current route by the found<sup(2)</sup>. | [rerouteEffort](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-rerouteEffort) |
-| speed mode (0xb3) | int bitset (see below)  | Sets how the values set by speed (0x40) and slowdown (0x14) shall be treated. Also allows to configure the behavior at junctions. See below.  | [setSpeedMode](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-setSpeedMode) |
+| speed mode (0xb3) | int bitset (see below)  | Sets how the values set by speed (0x40) and slowdown (0x14) shall be treated. Also allows to configure the behavior at junctions. [See below](#speed_mode_0xb3).  | [setSpeedMode](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-setSpeedMode) |
 | speed factor (0x5e)  |  double  | Sets the vehicle's speed factor to the given value | [setSpeedFactor](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-setSpeedFactor) |
 | max speed (0x41)  | double  | Sets the vehicle's maximum speed to the given value  | [setMaxSpeed](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-setMaxSpeed) |
 | lane change mode (0xb6)  | int bitset (see [below](../TraCI/Change_Vehicle_State.md#lane_change_mode_0xb6))  | Sets how lane changing in general and lane changing requests by TraCI are performed. See below.  | [setLaneChangeMode](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-setLaneChangeMode) |
@@ -533,6 +534,17 @@ call](../TraCI/GenericParameters.md#set_parameter).
   one of the [parameters supported by the
   laneChangeModel](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#lane-changing_models)
   of the vehicle. i.e. *lcStrategic*)
+
+# Relationship between lanechange model attributes and vTypes
+
+All [lanechange model attributes](../Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#lane-changing_models) are initialized from the vehicles vType and then stored in the individual lane change model instance of each vehicle. This has important consequences
+
+- setting a new vType for a vehicle doesn't affect lane change model attributes (the vehicle keeps using it's individual values)
+- changing lane change model attributes on the vType of a vehicle does not affect the vehicle (the vehicle keeps using it's individual values)
+- changing lane change model attributes for a vehicle does not affect it's vType (and instead changes the individual values of the vehicle)
+
+!!! caution
+    Attribute 'minGapLat' also counts as a lanechange model attribute since version 1.12.0
 
 # Application order of traci commands and simulation step
 

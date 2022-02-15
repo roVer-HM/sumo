@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -168,6 +168,20 @@ public:
      */
     void addPhase(MSPhaseDefinition* phase);
 
+    /** @brief Adds a condition to the currently built traffic lights logic
+     *
+     * @param[in] id the condition id
+     * @param[in] value the condition expression
+     */
+    bool addCondition(const std::string& id, const std::string& value);
+
+    /** @brief Adds a condition to the currently built traffic lights logic
+     *
+     * @param[in] id the condition id
+     * @param[in] value the condition expression
+     */
+    void addAssignment(const std::string& id, const std::string& check, const std::string& value);
+
     /** @brief Returns a previously build tls logic
      *
      * @param[in] id The ID of the tls logic to return
@@ -328,6 +342,12 @@ protected:
 
     /// @brief The current phase definitions for a simple traffic light
     MSSimpleTrafficLightLogic::Phases myActivePhases;
+
+    /// @brief The current switching conditions for an actuated traffic light
+    MSActuatedTrafficLightLogic::ConditionMap myActiveConditions;
+
+    /// @brief The current assignments for an actuated traffic light
+    MSActuatedTrafficLightLogic::AssignmentMap myActiveAssignments;
 
     /// @brief The size of the request
     int myRequestSize;

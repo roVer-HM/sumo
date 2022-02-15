@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,7 +35,7 @@ netedit.supermodeDemand()
 netedit.vehicleMode()
 
 # change vehicle
-netedit.changeElement("flow (from-to)")
+netedit.changeElement("flow (from-to edges)")
 
 # create flow using two edges
 netedit.leftClick(referencePosition, 274, 392)
@@ -51,19 +51,19 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 91, 392)
 
 # change arrivalPos with an invalid value
-netedit.modifyAttribute(11, "", False)
+netedit.modifyAttribute(netedit.attrs.flowFromToEdge.inspect.arrivalPos, "", False)
 
 # change arrivalPos with an invalid value
-netedit.modifyAttribute(11, "dummyPos", False)
+netedit.modifyAttribute(netedit.attrs.flowFromToEdge.inspect.arrivalPos, "dummyPos", False)
 
 # change departColor with a valid value
-netedit.modifyAttribute(11, "500", False)
+netedit.modifyAttribute(netedit.attrs.flowFromToEdge.inspect.arrivalPos, "500", False)
 
 # change arrivalPos with an invalid value
-netedit.modifyAttribute(11, "-10", False)
+netedit.modifyAttribute(netedit.attrs.flowFromToEdge.inspect.arrivalPos, "-10", False)
 
 # change arrivalPos with a valid value
-netedit.modifyAttribute(11, "15.5", False)
+netedit.modifyAttribute(netedit.attrs.flowFromToEdge.inspect.arrivalPos, "15.5", False)
 
 # Check undo redo
 netedit.undo(referencePosition, 3)

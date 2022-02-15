@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -199,7 +199,7 @@ ROEdge::getTravelTime(const ROVehicle* const veh, double time) const {
             return MAX2(getMinimumTravelTime(veh), lineTT);
         } else {
             if (!myHaveTTWarned) {
-                WRITE_WARNING("No interval matches passed time " + toString(time)  + " in edge '" + myID + "'.\n Using edge's length / max speed.");
+                WRITE_WARNINGF("No interval matches passed time=% in edge '%'.\n Using edge's length / max speed.", time, myID);
                 myHaveTTWarned = true;
             }
         }
@@ -225,7 +225,7 @@ ROEdge::getStoredEffort(double time, double& ret) const {
     if (myUsingETimeLine) {
         if (!myEfforts.describesTime(time)) {
             if (!myHaveEWarned) {
-                WRITE_WARNING("No interval matches passed time " + toString(time)  + " in edge '" + myID + "'.\n Using edge's length / edge's speed.");
+                WRITE_WARNINGF("No interval matches passed time=% in edge '%'.\n Using edge's length / edge's speed.", time, myID);
                 myHaveEWarned = true;
             }
             return false;

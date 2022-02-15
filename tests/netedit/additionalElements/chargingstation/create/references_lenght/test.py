@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2021 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2022 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,31 +35,31 @@ netedit.additionalMode()
 netedit.changeElement("chargingStation")
 
 # set invalid lenght (dummy)
-netedit.changeDefaultValue(12, "dummyLenght")
+netedit.changeDefaultValue(netedit.attrs.chargingStation.create.length, "dummyLenght")
 
 # try to create chargingStation with invalid lenght
 netedit.leftClick(referencePosition, 500, 250)
 
 # set invalid lenght (negative)
-netedit.changeDefaultValue(12, "-20")
+netedit.changeDefaultValue(netedit.attrs.chargingStation.create.length, "-20")
 
 # try to create chargingStation with invalid lenght
 netedit.leftClick(referencePosition, 500, 250)
 
 # Change length
-netedit.changeDefaultValue(12, "5")
+netedit.changeDefaultValue(netedit.attrs.chargingStation.create.length, "5")
 
 # create chargingStation in mode "reference left"
 netedit.leftClick(referencePosition, 500, 250)
 
 # change reference to right
-netedit.changeDefaultValue(10, "reference right")
+netedit.changeDefaultValue(netedit.attrs.chargingStation.create.references, "reference right")
 
 # create chargingStation in mode "reference right"
 netedit.leftClick(referencePosition, 230, 250)
 
 # change reference to center
-netedit.changeDefaultValue(10, "reference center")
+netedit.changeDefaultValue(netedit.attrs.chargingStation.create.references, "reference center")
 
 # create chargingStation in mode "reference center"
 netedit.leftClick(referencePosition, 425, 250)

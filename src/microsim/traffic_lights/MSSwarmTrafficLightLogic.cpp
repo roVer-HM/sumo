@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2010-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2010-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -717,7 +717,7 @@ void MSSwarmTrafficLightLogic::decidePolicy() {
             SUMOTime step = MSNet::getInstance()->getCurrentTimeStep();
             std::ostringstream phero_str;
             phero_str << " (pheroIn= " << pheroIn << " ,pheroOut= " << pheroOut << " )";
-            WRITE_MESSAGE("TL " + getID() + " time " + time2string(step) + " Policy: " + newPolicy->getName() + phero_str.str() + " OldPolicy: " + oldPolicy->getName() + " id " + getID() + " .");
+            WRITE_MESSAGE("TL " + getID() + " time=" + time2string(step) + " Policy: " + newPolicy->getName() + phero_str.str() + " OldPolicy: " + oldPolicy->getName() + " id " + getID() + " .");
 #endif
             if (oldPolicy->getName().compare("Congestion") == 0) {
                 congestion_steps = 0;
@@ -727,7 +727,7 @@ void MSSwarmTrafficLightLogic::decidePolicy() {
             std::ostringstream phero_str;
             phero_str << " (pheroIn= " << pheroIn << " ,pheroOut= " << pheroOut << " )";
             SUMOTime step = MSNet::getInstance()->getCurrentTimeStep();
-            WRITE_MESSAGE("TL " + getID() + " time " + time2string(step) + " Policy: Nochanges" + phero_str.str() + " OldPolicy: " + oldPolicy->getName() + " id " + getID() + " .");
+            WRITE_MESSAGE("TL " + getID() + " time=" + time2string(step) + " Policy: Nochanges" + phero_str.str() + " OldPolicy: " + oldPolicy->getName() + " id " + getID() + " .");
 #endif
         }
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2021 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2022 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -656,24 +656,24 @@ public:
             }
         } else {
             if (validStops.size() != lineEdges.size() + 1) {
-                WRITE_WARNING("Number of stops for public transport line '" + pars.line + "' does not match earlier definitions, ignoring schedule.");
+                WRITE_WARNINGF("Number of stops for public transport line '%' does not match earlier definitions, ignoring schedule.", pars.line);
                 return;
             }
             if (lineEdges.front()->getEntryStop() != myStopConnections[validStops.front().busstop]) {
-                WRITE_WARNING("Different stop for '" + pars.line + "' compared to earlier definitions, ignoring schedule.");
+                WRITE_WARNINGF("Different stop for '%' compared to earlier definitions, ignoring schedule.", pars.line);
                 return;
             }
             typename std::vector<_PTEdge*>::const_iterator lineEdge = lineEdges.begin();
             typename std::vector<SUMOVehicleParameter::Stop>::const_iterator s = validStops.begin() + 1;
             for (; s != validStops.end(); ++s, ++lineEdge) {
                 if ((*lineEdge)->getSuccessors(SVC_IGNORING)[0] != myStopConnections[s->busstop]) {
-                    WRITE_WARNING("Different stop for '" + pars.line + "' compared to earlier definitions, ignoring schedule.");
+                    WRITE_WARNINGF("Different stop for '%' compared to earlier definitions, ignoring schedule.", pars.line);
                     return;
                 }
             }
             SUMOTime lastTime = validStops.front().until;
             if (lineEdges.front()->hasSchedule(lastTime)) {
-                WRITE_WARNING("Duplicate schedule for '" + pars.line + "' at time " + time2string(lastTime) + ".");
+                WRITE_WARNINGF("Duplicate schedule for '%' at time=%.", pars.line, time2string(lastTime));
             }
             for (lineEdge = lineEdges.begin(), s = validStops.begin() + 1; lineEdge != lineEdges.end(); ++lineEdge, ++s) {
                 (*lineEdge)->addSchedule(pars.id, lastTime, pars.repetitionNumber, pars.repetitionOffset, s->until - lastTime);
