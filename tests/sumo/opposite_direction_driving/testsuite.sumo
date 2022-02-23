@@ -84,6 +84,9 @@ return_no_opposite_leader
 # do not overtake long queue
 long_queue
 
+# lane number changes during opposite direction driving
+lane_drop
+
 # emergency vehicle may overtake long queue
 long_queue_emergency
 

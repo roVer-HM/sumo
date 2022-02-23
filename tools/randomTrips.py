@@ -136,6 +136,9 @@ def get_options(args=None):
                            "to the output file).")
     optParser.add_argument("--remove-loops", dest="remove_loops", action="store_true",
                            default=False, help="Remove loops at route start and end")
+    optParser.add_argument("--random-routing-factor", dest="randomRoutingFactor", type=float, default=1,
+                           help="Edge weights for routing are dynamically disturbed "
+                           "by a random factor drawn uniformly from [1,FLOAT)")
     optParser.add_argument("--junction-taz", dest="junctionTaz", action="store_true",
                            default=False, help="Write trips with fromJunction and toJunction")
     optParser.add_argument("--via-edge-types", dest="viaEdgeTypes",
@@ -544,7 +547,7 @@ def main(options):
         return idx + 1
 
     with open(options.tripfile, 'w') as fouttrips:
-        sumolib.writeXMLHeader(fouttrips, "$Id$", "routes", options=options)  # noqa
+        sumolib.writeXMLHeader(fouttrips, "$Id$", "routes", options=options)
         if options.vehicle_class:
             vTypeDef = '    <vType id="%s" vClass="%s"%s/>\n' % (
                 options.vtypeID, options.vehicle_class, vtypeattrs)
@@ -556,7 +559,7 @@ def main(options):
                 else:
                     options.additional += ",options.vtypeout"
                 with open(options.vtypeout, 'w') as fouttype:
-                    sumolib.writeXMLHeader(fouttype, "$Id$", "additional", options=options)  # noqa
+                    sumolib.writeXMLHeader(fouttype, "$Id$", "additional", options=options)
                     fouttype.write(vTypeDef)
                     fouttype.write("</additional>\n")
             else:
@@ -616,6 +619,8 @@ def main(options):
         args += ['--persontrip.walk-opposite-factor', options.walkoppositefactor]
     if options.remove_loops:
         args += ['--remove-loops']
+    if options.randomRoutingFactor != 1:
+        args += ['--weights.random-factor', str(options.randomRoutingFactor)]
     if options.vtypeout is not None:
         args += ['--vtype-output', options.vtypeout]
     if options.junctionTaz:
@@ -625,12 +630,11 @@ def main(options):
     else:
         args += ['-v']
 
-    route_proc = None
     if options.routefile:
         args2 = args + ['-o', options.routefile]
         print("calling", " ".join(args2))
         sys.stdout.flush()
-        route_proc = subprocess.Popen(args2)
+        subprocess.call(args2)
         sys.stdout.flush()
 
     if options.validate:
@@ -645,10 +649,6 @@ def main(options):
         sys.stdout.flush()
         os.remove(options.tripfile)  # on windows, rename does not overwrite
         os.rename(tmpTrips, options.tripfile)
-
-    if route_proc:
-        route_proc.wait()
-        sys.stdout.flush()
 
     if options.weights_outprefix:
         idPrefix = ""

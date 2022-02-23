@@ -166,7 +166,7 @@ Each phase is defined using the following attributes:
 | **duration**   | time (int)            | The duration of the phase                                                                                                                                    |
 | **state**      | list of signal states | The traffic light states for this phase, see below                                                                                                           |
 | minDur         | time (int)            | The minimum duration of the phase when using type **actuated**. Optional, defaults to duration.                                                              |
-| maxDur         | time (int)            | The maximum duration of the phase when using type **actuated**. Optional, defaults to duration.                                                              |
+| maxDur         | time (int)            | The maximum duration of the phase when using type **actuated**. Optional, if minDur is not set it defaults to duration , otherwise to 2147483.                                                              |
 | name           | string                | An optional description for the phase. This can be used to establish the correspondence between SUMO-phase-indexing and traffic engineering phase names.     |
 | next           | list of phase indices (int ...)           | The next phase in the cycle after the current. This is useful when adding extra transition phases to a traffic light plan which are not part of every cycle. Traffic lights of type 'actuated' can make use of a list of indices for selecting among alternative successor phases. |
 
@@ -448,8 +448,7 @@ The following elements are permitted in an expression for attributes
 - parentheses (,)
 - pre-defined functions:
   - 'z:DETID': returns the time gap since the last vehicle detection for inductionLoop detector with id 'DETID' or id 'TLSID_PROGRAMID_DETID' (DETID may omit the the [prefix 'TLSID_PROGRAMID_'](#detectors))
-  - 'a:DETID': returns true (1) if a vehicle is on detector with id 'DETID' and
-    false (0) otherwise. Supports inductionLoop and laneAreaDetectors. Also supports omitting the prefix of the detector id. (see 'z:')
+  - 'a:DETID': returns number of vehicles on detector with id 'DETID'. Supports inductionLoop and laneAreaDetectors. Also supports omitting the prefix of the detector id. (see 'z:')
   - 'g:TLSINDEX': returns current green duration in seconds for link with the given index
   - 'r:TLSINDEX': returns current red duration in seconds for link with the given index
   - 'c:': returns the time within the current cycle
@@ -590,7 +589,7 @@ They are defined with the `<function>` element within a `<tlLogic>` as shown bel
 ```
 <tlLogic id="example" type="actuated" ...>
 
-  <function id="FNAME" numArgs="2">
+  <function id="FNAME" nArgs="2">
      <assignment id="COND1" check="1" value="$1 + $2"/>
      <assignment id="$0" check="1" value="COND1 * COND1"/>
   </function>

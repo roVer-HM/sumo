@@ -414,6 +414,18 @@ enum SumoXMLTag {
     GNE_TAG_PERSONTRIP_EDGE,
     GNE_TAG_PERSONTRIP_BUSSTOP,
     GNE_TAG_PERSONTRIP_JUNCTIONS,
+    /// @brief waypoint for vehicles (used in netedit)
+    GNE_TAG_WAYPOINT,
+    /// @brief waypoint placed over a lane (used in netedit)
+    GNE_TAG_WAYPOINT_LANE,
+    /// @brief waypoint placed over a busStop (used in netedit)
+    GNE_TAG_WAYPOINT_BUSSTOP,
+    /// @brief waypoint placed over a containerStop (used in netedit)
+    GNE_TAG_WAYPOINT_CONTAINERSTOP,
+    /// @brief waypoint placed over a charging station (used in netedit)
+    GNE_TAG_WAYPOINT_CHARGINGSTATION,
+    /// @brief waypoint placed over a parking area (used in netedit)
+    GNE_TAG_WAYPOINT_PARKINGAREA,
     // @brief walks
     GNE_TAG_WALK_EDGE,
     GNE_TAG_WALK_BUSSTOP,
@@ -604,6 +616,7 @@ enum SumoXMLAttr {
     SUMO_ATTR_COLLISION_MINGAP_FACTOR,
     SUMO_ATTR_BOARDING_DURATION,
     SUMO_ATTR_LOADING_DURATION,
+    SUMO_ATTR_SCALE,
     SUMO_ATTR_INSERTIONCHECKS,
     /// @brief Class specific timing values for vehicle manoeuvering through angle ranges
     SUMO_ATTR_MANEUVER_ANGLE_TIMES,

@@ -876,8 +876,11 @@ TRACI_CONST int VAR_SPEED_LAT = 0x32;
 // maximum allowed/possible speed (get: vehicle types, lanes, set: edges, lanes)
 TRACI_CONST int VAR_MAXSPEED = 0x41;
 
-// position (2D) (get: vehicle, poi, inductionloop, lane area detector; set: poi)
+// position (2D) (get: vehicle, poi, inductionloop, lane area detector, multi-entry/multi-exit detector; set: poi)
 TRACI_CONST int VAR_POSITION = 0x42;
+
+// position (2D) (get: multi-entry/multi-exit detector)
+TRACI_CONST int VAR_EXIT_POSITIONS = 0x43;
 
 // position (3D) (get: vehicle, poi, set: poi)
 TRACI_CONST int VAR_POSITION3D = 0x39;
@@ -948,8 +951,14 @@ TRACI_CONST int VAR_ROUTE_ID = 0x53;
 // edges (get: routes, vehicles)
 TRACI_CONST int VAR_EDGES = 0x54;
 
-// lanes (get: variablespeedsign)
+// filled? (set: vehicles)
+TRACI_CONST int VAR_STOP_PARAMETER = 0x55;
+
+// lanes (get: variablespeedsign, multi-entry/multi-exit detector)
 TRACI_CONST int VAR_LANES = 0x30;
+
+// exit lanes (get: multi-entry/multi-exit detector)
+TRACI_CONST int VAR_EXIT_LANES = 0x31;
 
 // update bestLanes (set: vehicle)
 TRACI_CONST int VAR_UPDATE_BESTLANES = 0x6a;
@@ -1220,6 +1229,9 @@ TRACI_CONST int VAR_EMERGENCYSTOPPING_VEHICLES_NUMBER = 0x89;
 
 // ids of vehicles involved in a collision (get: simulation)
 TRACI_CONST int VAR_EMERGENCYSTOPPING_VEHICLES_IDS = 0x8a;
+
+// scale traffic (set, get: simulation, vehicle)
+TRACI_CONST int VAR_SCALE = 0x8e;
 
 // clears the simulation of all not inserted vehicles (set: simulation)
 TRACI_CONST int CMD_CLEAR_PENDING_VEHICLES = 0x94;

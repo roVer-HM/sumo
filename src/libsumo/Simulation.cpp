@@ -101,8 +101,7 @@ Simulation::isLoaded() {
 
 void
 Simulation::step(const double time) {
-    Helper::clearVehicleStates();
-    Helper::clearTransportableStates();
+    Helper::clearStateChanges();
     const SUMOTime t = TIME2STEPS(time);
     if (t == 0) {
         MSNet::getInstance()->simulationStep();
@@ -380,6 +379,11 @@ Simulation::getCollisions() {
         }
     }
     return result;
+}
+
+double
+Simulation::getScale() {
+    return MSNet::getInstance()->getVehicleControl().getScale();
 }
 
 double
@@ -775,6 +779,11 @@ Simulation::setParameter(const std::string& objectID, const std::string& param, 
 }
 
 void
+Simulation::setScale(double value) {
+    MSNet::getInstance()->getVehicleControl().setScale(value);
+}
+
+void
 Simulation::clearPending(const std::string& routeID) {
     MSNet::getInstance()->getInsertionControl().clearPendingVehicles(routeID);
 }
@@ -788,23 +797,15 @@ Simulation::saveState(const std::string& fileName) {
 double
 Simulation::loadState(const std::string& fileName) {
     long before = PROGRESS_BEGIN_TIME_MESSAGE("Loading state from '" + fileName + "'");
-    // XXX reset transportable state
-    // load time only
-    const SUMOTime newTime = MSStateHandler::MSStateTimeHandler::getTime(fileName);
-    // clean up state
-    MSNet::getInstance()->clearState(newTime);
-    // load state
-    MSStateHandler h(fileName, 0);
-    XMLSubSys::runParser(h, fileName);
-    if (MsgHandler::getErrorInstance()->wasInformed()) {
+    try {
+        const SUMOTime newTime = MSNet::getInstance()->loadState(fileName);
+        Helper::clearStateChanges();
+        Helper::clearSubscriptions();
+        PROGRESS_TIME_MESSAGE(before);
+        return STEPS2TIME(newTime);
+    } catch (ProcessError&) {
         throw TraCIException("Loading state from '" + fileName + "' failed.");
     }
-    Helper::clearVehicleStates();
-    Helper::clearTransportableStates();
-    Helper::clearSubscriptions();
-    PROGRESS_TIME_MESSAGE(before);
-    MSNet::getInstance()->updateGUI();
-    return STEPS2TIME(newTime);
 }
 
 void
@@ -815,18 +816,7 @@ Simulation::writeMessage(const std::string& msg) {
 
 void
 Simulation::storeShape(PositionVector& shape) {
-    const TraCIPositionVector tpv = getNetBoundary();
-    TraCIPosition minV = tpv.value.front();
-    TraCIPosition maxV = tpv.value.back();
-    const Position lowerLeft = Position(minV.x, minV.y, minV.z);
-    const Position upperLeft = Position(minV.x, maxV.y, minV.z);
-    const Position upperRight = Position(maxV.x, maxV.y, minV.z);
-    const Position lowerRight = Position(maxV.x, minV.y, minV.z);
-    shape.push_back(lowerLeft);
-    shape.push_back(upperLeft);
-    shape.push_back(upperRight);
-    shape.push_back(lowerRight);
-    shape.push_back(lowerLeft);
+    shape = GeoConvHelper::getFinal().getConvBoundary().getShape(true);
 }
 
 
@@ -897,6 +887,8 @@ Simulation::handleVariable(const std::string& objID, const int variable, Variabl
             return wrapper->wrapInt(objID, variable, getArrivedPersonNumber());
         case VAR_ARRIVED_PERSONS_IDS:
             return wrapper->wrapStringList(objID, variable, getArrivedPersonIDList());
+        case VAR_SCALE:
+            return wrapper->wrapDouble(objID, variable, getScale());
         case VAR_DELTA_T:
             return wrapper->wrapDouble(objID, variable, getDeltaT());
         case VAR_MIN_EXPECTED_VEHICLES:

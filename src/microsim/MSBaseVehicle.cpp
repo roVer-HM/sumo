@@ -469,7 +469,7 @@ MSBaseVehicle::replaceRoute(const MSRoute* newRoute, const std::string& info, bo
         }
 #ifdef DEBUG_REPLACE_ROUTE
         if (DEBUG_COND) {
-            std::cout << "  replaceRoute on " << (*myCurrEdge)->getID() << " lane=" << Named::getIDSecure(getLane()) << " stopsFromScratch=" << stopsFromScratch << "\n";
+            std::cout << SIMTIME << " replaceRoute info=" << info << " on " << (*myCurrEdge)->getID() << " lane=" << Named::getIDSecure(getLane()) << " stopsFromScratch=" << stopsFromScratch << "\n";
         }
 #endif
         for (std::list<MSStop>::iterator iter = myStops.begin(); iter != myStops.end();) {
@@ -494,12 +494,11 @@ MSBaseVehicle::replaceRoute(const MSRoute* newRoute, const std::string& info, bo
             }
 #endif
             if (iter->edge == edges.end()) {
-                if (removeStops) {
-                    iter = myStops.erase(iter);
-                    continue;
-                } else {
-                    assert(false);
+                if (!removeStops) {
+                    WRITE_ERROR("Vehicle '" + getID() + "' could not assign stop '" + iter->getDescription() + "' after rerouting (" + info + ") at time=" + time2string(SIMSTEP) + ".");
                 }
+                iter = myStops.erase(iter);
+                continue;
             } else {
                 searchStart = iter->edge;
             }
@@ -1028,7 +1027,7 @@ MSBaseVehicle::addStop(const SUMOVehicleParameter::Stop& stopPar, std::string& e
     }
 #ifdef DEBUG_ADD_STOP
     if (DEBUG_COND) {
-        std::cout << " stopEdge=" << stopEdge->getID() << " searchStart=" << (**searchStart)->getID() << " index=" << (int)((*searchStart) - myRoute->begin()) << " route=" << toString(myRoute->getEdges()) << "\n";
+        std::cout << "addStop desc=" << stop.getDescription() << " stopEdge=" << stopEdge->getID() << " searchStart=" << (**searchStart)->getID() << " index=" << (int)((*searchStart) - myRoute->begin()) << " route=" << toString(myRoute->getEdges()) << "\n";
     }
 #endif
     stop.edge = std::find(*searchStart, myRoute->end(), stopEdge);
@@ -1292,6 +1291,17 @@ MSBaseVehicle::getNextStop() {
 }
 
 
+MSStop&
+MSBaseVehicle::getStop(int nextStopIndex) {
+    if (nextStopIndex < 0 || (int)myStops.size() <= nextStopIndex) {
+        throw InvalidArgument("Invalid stop index " + toString(nextStopIndex) + " (has " + toString(myStops.size()) + " stops)");
+    }
+    auto stopIt = myStops.begin();
+    std::advance(stopIt, nextStopIndex);
+    return *stopIt;
+}
+
+
 const SUMOVehicleParameter::Stop*
 MSBaseVehicle::getNextStopParameter() const {
     if (hasStops()) {
@@ -1338,6 +1348,12 @@ MSBaseVehicle::abortNextStop(int nextStopIndex) {
             auto stopIt = myStops.begin();
             std::advance(stopIt, nextStopIndex);
             myStops.erase(stopIt);
+        }
+        if (!hasDeparted() && (int)myParameter->stops.size() > nextStopIndex) {
+            // stops will be rebuilt from scratch on rerouting so we must patch the stops in myParameter
+            auto stopIt2 = myParameter->stops.begin();
+            std::advance(stopIt2, nextStopIndex);
+            const_cast<SUMOVehicleParameter*>(myParameter)->stops.erase(stopIt2);
         }
         return true;
     } else {

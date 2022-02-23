@@ -291,7 +291,7 @@ private:
     virtual void setAttribute(SumoXMLAttr key, const std::string& value) = 0;
 
     /// @brief method for enable or disable the attribute and nothing else (used in GNEChange_EnableAttribute)
-    virtual void toogleAttribute(SumoXMLAttr key, const bool value, const int previousParameters) = 0;
+    virtual void toogleAttribute(SumoXMLAttr key, const bool value) = 0;
 
     /// @brief reset attributes to their default values without undo-redo (used in GNEFrameAttributeModules)
     void resetAttributes();
@@ -319,6 +319,9 @@ private:
 
     /// @brief fill stop elements
     static void fillStopElements();
+
+    /// @brief fill waypoint elements
+    static void fillWaypointElements();
 
     /// @brief fill person elements
     static void fillPersonElements();
@@ -369,7 +372,7 @@ private:
     static void fillCommonContainerAttributes(SumoXMLTag currentTag);
 
     /// @brief fill stop person attributes
-    static void fillCommonStopAttributes(SumoXMLTag currentTag);
+    static void fillCommonStopAttributes(SumoXMLTag currentTag, const bool waypoint);
 
     /// @brief fill Data elements
     static void fillDataElements();

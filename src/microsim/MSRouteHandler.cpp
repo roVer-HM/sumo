@@ -625,7 +625,7 @@ MSRouteHandler::closeVehicle() {
         }
         const SUMOTime origDepart = myVehicleParameter->depart;
         // maybe we do not want this vehicle to be inserted due to scaling
-        int quota = myAmLoadingState ? 1 : vehControl.getQuota();
+        int quota = myAmLoadingState ? 1 : vehControl.getQuota(vehControl.getScale() * vtype->getParameter().scale);
         if (quota > 0) {
             registerLastDepart();
             myVehicleParameter->depart += MSNet::getInstance()->getInsertionControl().computeRandomDepartOffset();
@@ -657,6 +657,10 @@ MSRouteHandler::closeVehicle() {
                     newPars->id = myVehicleParameter->id + myScaleSuffix + toString(i + offset);
                 }
                 newPars->depart = origDepart + MSNet::getInstance()->getInsertionControl().computeRandomDepartOffset();
+                if (vehControl.hasVTypeDistribution(myVehicleParameter->vtypeid)) {
+                    // resample type
+                    vtype = vehControl.getVType(myVehicleParameter->vtypeid, &myParsingRNG);
+                }
                 vehicle = vehControl.buildVehicle(newPars, route, vtype, !MSGlobals::gCheckRoutes);
                 vehControl.addVehicle(newPars->id, vehicle);
             }
@@ -674,7 +678,7 @@ MSRouteHandler::closeVehicle() {
             std::string veh_id = myVehicleParameter->id;
             deleteActivePlanAndVehicleParameter();
             std::string scaleWarning = "";
-            if (vehControl.getScale() > 0 && veh_id.find(myScaleSuffix) != std::string::npos) {
+            if (vehControl.getScale() * vtype->getParameter().scale > 1 && veh_id.find(myScaleSuffix) != std::string::npos) {
                 scaleWarning = "\n   (Possibly duplicate id due to using option --scale. Set option --scale-suffix to prevent this)";
             }
             throw ProcessError("Another vehicle with the id '" + veh_id + "' exists." + scaleWarning);
@@ -833,8 +837,9 @@ MSRouteHandler::addFlowTransportable(SUMOTime depart, MSVehicleType* type, const
     try {
         MSNet* const net = MSNet::getInstance();
         MSTransportableControl& tc = myActiveType == ObjectTypeEnum::PERSON ? net->getPersonControl() : net->getContainerControl();
+        const MSVehicleControl& vc = MSNet::getInstance()->getVehicleControl();
         //MSTransportableControl& pc = net->getPersonControl();
-        const int quota = MSNet::getInstance()->getVehicleControl().getQuota(-1, tc.getLoadedNumber());
+        const int quota = vc.getQuota(vc.getScale() * type->getParameter().scale, tc.getLoadedNumber());
         if (quota == 0) {
             tc.addDiscarded();
         }

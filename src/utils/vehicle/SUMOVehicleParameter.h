@@ -344,7 +344,7 @@ public:
         void write(OutputDevice& dev, const bool close = true, const bool writeTagAndParents = true) const;
 
         /// @brief write trigger attribute
-        void writeTriggers(OutputDevice& dev) const;
+        std::vector<std::string> getTriggers() const;
 
         /// @brief The edge to stop at (used only in NETEDIT)
         std::string edge;
@@ -445,6 +445,8 @@ public:
         /// @brief Information for the output which parameter were set
         int parametersSet = 0;
 
+        /// @brief return flags as per Vehicle::getStops
+        int getFlags() const;
     };
 
 

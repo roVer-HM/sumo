@@ -197,9 +197,6 @@ public:
 
     /// @}
 
-    /// @brief set flow parameters
-    static void setFlowParameters(const SumoXMLAttr attribute, int& parameters);
-
 protected:
     /// @brief parse junction
     GNEJunction* parseJunction(const SumoXMLTag tag, const std::string& junctionID) const;

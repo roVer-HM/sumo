@@ -20,13 +20,14 @@
 #pragma once
 #include <config.h>
 
-#include <netedit/elements/GNEHierarchicalElement.h>
-#include <utils/gui/div/GUIGeometry.h>
 #include <netedit/GNEMoveElement.h>
 #include <netedit/GNEPathManager.h>
+#include <netedit/elements/GNEHierarchicalElement.h>
 #include <utils/common/Parameterised.h>
 #include <utils/geom/PositionVector.h>
+#include <utils/gui/div/GUIGeometry.h>
 #include <utils/gui/globjects/GUIGlObject.h>
+#include <utils/vehicle/SUMOVehicleParameter.h>
 
 // ===========================================================================
 // class declarations
@@ -449,6 +450,12 @@ protected:
     /// @brief get sorted stops
     std::vector<const GNEDemandElement*> getSortedStops(const std::vector<GNEEdge*>& edges) const;
 
+    /// @brief set flow parameters (used in toogleAttribute(...) function of vehicles, persons and containers
+    void setFlowParameters(SUMOVehicleParameter *vehicleParameters, const SumoXMLAttr attribute, const bool value);
+
+    /// @brief adjust flow default attributes (called in vehicle/person/flow constructors)
+    void adjustDefaultFlowAttributes(SUMOVehicleParameter *vehicleParameters);
+
 private:
     /**@brief check restriction with the number of children
      * @throw ProcessError if itis called without be reimplemented in child class
@@ -459,7 +466,7 @@ private:
     virtual void setAttribute(SumoXMLAttr key, const std::string& value) = 0;
 
     /// @brief method for enable or disable the attribute and nothing else (used in GNEChange_EnableAttribute)
-    virtual void toogleAttribute(SumoXMLAttr key, const bool value, const int previousParameters) = 0;
+    virtual void toogleAttribute(SumoXMLAttr key, const bool value) = 0;
 
     /// @brief set move shape
     virtual void setMoveShape(const GNEMoveResult& moveResult) = 0;

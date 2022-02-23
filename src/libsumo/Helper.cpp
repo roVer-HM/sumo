@@ -298,9 +298,9 @@ Helper::handleSingleSubscription(const Subscription& s) {
             throw TraCIException("Unsupported domain specified");
         }
         container = containerWrapper->second.get();
-        container->setContext(s.id);
+        container->setContext(&s.id);
     } else {
-        container->setContext("");
+        container->setContext(nullptr);
     }
     for (const std::string& objID : objIDs) {
         if (!s.variables.empty()) {
@@ -655,21 +655,12 @@ Helper::buildStopData(const SUMOVehicleParameter::Stop& stopPar) {
     if (stopPar.overheadWireSegment != "") {
         stoppingPlaceID = stopPar.overheadWireSegment;
     }
-    int stopFlags = (
-                        (stopPar.parking ? 1 : 0) +
-                        (stopPar.triggered ? 2 : 0) +
-                        (stopPar.containerTriggered ? 4 : 0) +
-                        (stopPar.busstop != "" ? 8 : 0) +
-                        (stopPar.containerstop != "" ? 16 : 0) +
-                        (stopPar.chargingStation != "" ? 32 : 0) +
-                        (stopPar.parkingarea != "" ? 64 : 0) +
-                        (stopPar.overheadWireSegment != "" ? 128 : 0));
 
     return TraCINextStopData(stopPar.lane,
                              stopPar.startPos,
                              stopPar.endPos,
                              stoppingPlaceID,
-                             stopFlags,
+                             stopPar.getFlags(),
                              // negative duration is permitted to indicate that a vehicle cannot
                              // re-enter traffic after parking
                              stopPar.duration != -1 ? STEPS2TIME(stopPar.duration) : INVALID_DOUBLE_VALUE,
@@ -693,8 +684,7 @@ Helper::cleanup() {
     POI::cleanup();
     InductionLoop::cleanup();
     Junction::cleanup();
-    Helper::clearVehicleStates();
-    Helper::clearTransportableStates();
+    Helper::clearStateChanges();
     Helper::clearSubscriptions();
     delete myLaneTree;
     myLaneTree = nullptr;
@@ -702,9 +692,10 @@ Helper::cleanup() {
 
 
 void
-Helper::registerVehicleStateListener() {
+Helper::registerStateListener() {
     if (MSNet::hasInstance()) {
         MSNet::getInstance()->addVehicleStateListener(&myVehicleStateListener);
+        MSNet::getInstance()->addTransportableStateListener(&myTransportableStateListener);
     }
 }
 
@@ -715,22 +706,6 @@ Helper::getVehicleStateChanges(const MSNet::VehicleState state) {
 }
 
 
-void
-Helper::clearVehicleStates() {
-    for (auto& i : myVehicleStateListener.myVehicleStateChanges) {
-        i.second.clear();
-    }
-}
-
-
-void
-Helper::registerTransportableStateListener() {
-    if (MSNet::hasInstance()) {
-        MSNet::getInstance()->addTransportableStateListener(&myTransportableStateListener);
-    }
-}
-
-
 const std::vector<std::string>&
 Helper::getTransportableStateChanges(const MSNet::TransportableState state) {
     return myTransportableStateListener.myTransportableStateChanges[state];
@@ -738,7 +713,10 @@ Helper::getTransportableStateChanges(const MSNet::TransportableState state) {
 
 
 void
-Helper::clearTransportableStates() {
+Helper::clearStateChanges() {
+    for (auto& i : myVehicleStateListener.myVehicleStateChanges) {
+        i.second.clear();
+    }
     for (auto& i : myTransportableStateListener.myTransportableStateChanges) {
         i.second.clear();
     }
@@ -1793,8 +1771,8 @@ Helper::SubscriptionWrapper::SubscriptionWrapper(VariableWrapper::SubscriptionHa
 
 
 void
-Helper::SubscriptionWrapper::setContext(const std::string& refID) {
-    myActiveResults = refID == "" ? &myResults : &myContextResults[refID];
+Helper::SubscriptionWrapper::setContext(const std::string* const refID) {
+    myActiveResults = refID == nullptr ? &myResults : &myContextResults[*refID];
 }
 
 
@@ -1830,6 +1808,15 @@ Helper::SubscriptionWrapper::wrapString(const std::string& objID, const int vari
 bool
 Helper::SubscriptionWrapper::wrapStringList(const std::string& objID, const int variable, const std::vector<std::string>& value) {
     auto sl = std::make_shared<TraCIStringList>();
+    sl->value = value;
+    (*myActiveResults)[objID][variable] = sl;
+    return true;
+}
+
+
+bool
+Helper::SubscriptionWrapper::wrapDoubleList(const std::string& objID, const int variable, const std::vector<double>& value) {
+    auto sl = std::make_shared<TraCIDoubleList>();
     sl->value = value;
     (*myActiveResults)[objID][variable] = sl;
     return true;

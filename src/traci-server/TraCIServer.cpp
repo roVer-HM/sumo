@@ -149,6 +149,14 @@ TraCIServer::wrapStringList(const std::string& /* objID */, const int /* variabl
 
 
 bool
+TraCIServer::wrapDoubleList(const std::string& /* objID */, const int /* variable */, const std::vector<double>& value) {
+    myWrapperStorage.writeUnsignedByte(libsumo::TYPE_DOUBLELIST);
+    myWrapperStorage.writeDoubleList(value);
+    return true;
+}
+
+
+bool
 TraCIServer::wrapPosition(const std::string& /* objID */, const int variable, const libsumo::TraCIPosition& value) {
     const bool includeZ = variable == libsumo::VAR_POSITION3D;
     myWrapperStorage.writeUnsignedByte(includeZ ? libsumo::POSITION_3D : libsumo::POSITION_2D);
@@ -1237,12 +1245,9 @@ TraCIServer::processSingleSubscription(const libsumo::Subscription& s, tcpip::St
     if (s.contextDomain > 0) {
         length += 1 + 4;  // context domain and number of objects
     }
-    if (length > 255) {
-        writeInto.writeUnsignedByte(0); // command length -> extended
-        writeInto.writeInt(length);
-    } else {
-        writeInto.writeUnsignedByte(length);
-    }
+    // we always write extended command length here for backward compatibility
+    writeInto.writeUnsignedByte(0); // command length -> extended
+    writeInto.writeInt(length);
     writeInto.writeUnsignedByte(s.commandId + 0x10);
     writeInto.writeString(s.id);
     if (s.contextDomain > 0) {

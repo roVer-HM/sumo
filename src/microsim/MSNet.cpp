@@ -599,7 +599,7 @@ MSNet::simulationStep() {
         if (myLogExecutionTime) {
             myTraCIStepDuration = SysUtils::getCurrentMillis() - myTraCIStepDuration;
         }
-        if (TraCIServer::wasClosed()) {
+        if (TraCIServer::wasClosed() || !t->getLoadArgs().empty()) {
             return;
         }
     }
@@ -1514,5 +1514,21 @@ MSNet::warnOnce(const std::string& typeAndID) {
     return false;
 }
 
+
+SUMOTime
+MSNet::loadState(const std::string& fileName) {
+    // load time only
+    const SUMOTime newTime = MSStateHandler::MSStateTimeHandler::getTime(fileName);
+    // clean up state
+    clearState(newTime);
+    // load state
+    MSStateHandler h(fileName, 0);
+    XMLSubSys::runParser(h, fileName);
+    if (MsgHandler::getErrorInstance()->wasInformed()) {
+        throw ProcessError("Loading state from '" + fileName + "' failed.");
+    }
+    updateGUI();
+    return newTime;
+}
 
 /****************************************************************************/

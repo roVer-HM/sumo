@@ -29,15 +29,13 @@ import pyperclip
 import attributesEnum as attrs  # noqa
 
 # define delay before every operation
-DELAY_KEY = 0.1
-DELAY_KEY_TAB = 0.1
-DELAY_MOUSE_MOVE = 0.3
+DELAY_KEY = 0.2
+DELAY_KEY_TAB = 0.2
+DELAY_MOUSE_MOVE = 0.5
 DELAY_MOUSE_CLICK = 1
 DELAY_QUESTION = 3
 DELAY_RELOAD = 5
-DELAY_START_NETEDIT = 3
 DELAY_QUIT_NETEDIT = 5
-DELAY_QUIT_SUMOGUI = 3
 DELAY_UNDOREDO = 1
 DELAY_SELECT = 1
 DELAY_RECOMPUTE = 3
@@ -378,11 +376,13 @@ def getReferenceMatch(neProcess):
     """
     # show information
     print("Finding reference")
+    # make a screenshot
+    errorScreenshot = pyautogui.screenshot()
     try:
         # wait for reference
         time.sleep(DELAY_REFERENCE)
         # capture screen and search reference
-        positionOnScreen = pyautogui.locateOnScreen(_REFERENCE_PNG, 1)
+        positionOnScreen = pyautogui.locateOnScreen(_REFERENCE_PNG, minSearchTime=3)
     except Exception as e:
         # we cannot specify the exception here because some versions of pyautogui use one and some don't
         print(e)
@@ -410,7 +410,9 @@ def getReferenceMatch(neProcess):
         time.sleep(DELAY_MOUSE_CLICK)
         # return reference position
         return referencePosition
-    # reference not found, then kill netedit process
+    # referente not found, then write screenshot
+    errorScreenshot.save("errorScreenshot.png")
+    # kill netedit process
     neProcess.kill()
     # print debug information
     sys.exit("TestFunctions: Killed Netedit process. 'reference.png' not found")
@@ -698,6 +700,10 @@ def quit(NeteditProcess, openNetNonSavedDialog=False, saveNet=False,
                 typeKeyUp("alt")
                 # exit
                 return
+        # error closing NETEDIT then make a screenshot
+        errorScreenshot = pyautogui.screenshot()
+        errorScreenshot.save("errorScreenshot.png")
+        # kill netedit
         NeteditProcess.kill()
         print("TestFunctions: Error closing Netedit")
         # all keys up
@@ -1261,20 +1267,6 @@ def changeDefaultBoolValue(numTabs):
     typeSpace()
 
 
-def modifyStoppingPlaceLines(numTabs, numLines):
-    """
-    @brief modify number of stopping place lines
-    """
-    # focus current frame
-    focusOnFrame()
-    # go to add line
-    for _ in range(numTabs + 1):
-        typeTab()
-    # add lines using space
-    for _ in range(numLines):
-        typeSpace()
-
-
 def selectAdditionalChild(numTabs, childNumber):
     """
     @brief select child of additional
@@ -1415,42 +1407,32 @@ def changePersonVClass(value):
     typeEnter()
 
 
-def changePersonPlan(personPlan, subPersonPlan):
+def changePersonPlan(personPlan):
     """
     @brief change personPlan
     """
     # focus current frame
     focusOnFrame()
     # jump to person plan
-    for _ in range(11):
+    for _ in range(16):
         typeTab()
     # paste the new personPlan
     pasteIntoTextField(personPlan)
-    # jump to person plan
-    for _ in range(2):
-        typeTab()
-    # paste the new subPersonPlan
-    pasteIntoTextField(subPersonPlan)
     # type enter to save change
     typeEnter()
 
 
-def changePersonFlowPlan(personFlowPlan, subPersonFlowPlan):
+def changePersonFlowPlan(personFlowPlan):
     """
     @brief change personFlowPlan
     """
     # focus current frame
     focusOnFrame()
     # jump to personFlow plan
-    for _ in range(18):
+    for _ in range(23):
         typeTab()
     # paste the new personFlowPlan
     pasteIntoTextField(personFlowPlan)
-    # jump to personFlow plan
-    for _ in range(2):
-        typeTab()
-    # paste the new subPersonFlowPlan
-    pasteIntoTextField(subPersonFlowPlan)
     # type enter to save change
     typeEnter()
 
