@@ -26,6 +26,7 @@
 #include <netedit/elements/data/GNEDataHandler.h>
 #include <netedit/elements/GNEGeneralHandler.h>
 #include <netedit/frames/common/GNEInspectorFrame.h>
+#include <netedit/frames/common/GNESelectorFrame.h>
 #include <netedit/frames/network/GNECreateEdgeFrame.h>
 #include <netedit/frames/network/GNETAZFrame.h>
 #include <netedit/frames/network/GNETLSEditorFrame.h>
@@ -256,6 +257,7 @@ FXDEFMAP(GNEApplicationWindow) GNEApplicationWindowMap[] = {
     FXMAPFUNC(SEL_UPDATE,   MID_GNE_TOOLBAREDIT_LOADADDITIONALS,            GNEApplicationWindow::onUpdNeedsNetwork),
     FXMAPFUNC(SEL_COMMAND,  MID_GNE_TOOLBAREDIT_LOADDEMAND,                 GNEApplicationWindow::onCmdLoadDemandInSUMOGUI),
     FXMAPFUNC(SEL_UPDATE,   MID_GNE_TOOLBAREDIT_LOADDEMAND,                 GNEApplicationWindow::onUpdNeedsNetwork),
+
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_T_OPENSUMONETEDIT,              GNEApplicationWindow::onCmdOpenSUMOGUI),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_T_OPENSUMONETEDIT,              GNEApplicationWindow::onUpdNeedsNetwork),
     /* Prepared for #6042
@@ -1106,8 +1108,6 @@ GNEApplicationWindow::handleEvent_NetworkLoaded(GUIEvent* e) {
     if (oc.isSet("data-files") && !oc.getString("data-files").empty() && myNet) {
         // obtain vector of data files
         std::vector<std::string> dataElementsFiles = oc.getStringVector("data-files");
-        // disable interval bar update
-        myViewNet->getIntervalBar().disableIntervalBarUpdate();
         // disable update data
         myViewNet->getNet()->disableUpdateData();
         // begin undolist
@@ -1130,8 +1130,6 @@ GNEApplicationWindow::handleEvent_NetworkLoaded(GUIEvent* e) {
         myNet->requireSaveDataElements(false);
         // enable update data
         myViewNet->getNet()->enableUpdateData();
-        // enable interval bar update
-        myViewNet->getIntervalBar().enableIntervalBarUpdate();
     }
     // check if additionals output must be changed
     if (oc.isSet("additionals-output")) {
@@ -1222,6 +1220,8 @@ GNEApplicationWindow::fillMenuBar() {
     new FXMenuSeparator(myEditMenu);
     // build front element menu commands
     myEditMenuCommands.buildFrontElementMenuCommand(myEditMenu);
+    // build separator
+    new FXMenuSeparator(myEditMenu);
     // build separator
     new FXMenuSeparator(myEditMenu);
     // build open in sumo menu commands
@@ -2103,7 +2103,7 @@ GNEApplicationWindow::onCmdToggleGrid(FXObject* obj, FXSelector sel, void* ptr) 
 
 
 long
-GNEApplicationWindow::onCmdSetFrontElement(FXObject* /*obj*/, FXSelector /*sel*/, void* /*ptr*/) {
+GNEApplicationWindow::onCmdSetFrontElement(FXObject*, FXSelector, void*) {
     if (myViewNet) {
         if (myViewNet->getViewParent()->getInspectorFrame()->shown()) {
             // get inspected AC
@@ -2506,7 +2506,11 @@ GNEApplicationWindow::onUpdNeedsFrontElement(FXObject* sender, FXSelector, void*
 
 long
 GNEApplicationWindow::onUpdReload(FXObject* sender, FXSelector, void*) {
-    sender->handle(this, ((myNet == nullptr) || !OptionsCont::getOptions().isSet("sumo-net-file")) ? FXSEL(SEL_COMMAND, ID_DISABLE) : FXSEL(SEL_COMMAND, ID_ENABLE), nullptr);
+    if ((myNet == nullptr) || !OptionsCont::getOptions().isSet("sumo-net-file")) {
+        sender->handle(this, FXSEL(SEL_COMMAND, ID_DISABLE), nullptr);
+    } else {
+        sender->handle(this, FXSEL(SEL_COMMAND, ID_ENABLE), nullptr);
+    }
     return 1;
 }
 
@@ -3501,8 +3505,6 @@ GNEApplicationWindow::onCmdOpenDataElements(FXObject*, FXSelector, void*) {
         // udpate current folder
         gCurrentFolder = opendialog.getDirectory();
         std::string file = opendialog.getFilename().text();
-        // disable interval bar update
-        myViewNet->getIntervalBar().disableIntervalBarUpdate();
         // disable update data
         myViewNet->getNet()->disableUpdateData();
         // disable validation for data elements
@@ -3521,8 +3523,6 @@ GNEApplicationWindow::onCmdOpenDataElements(FXObject*, FXSelector, void*) {
         myUndoList->end();
         // enable update data
         myViewNet->getNet()->enableUpdateData();
-        // enable interval bar update
-        myViewNet->getIntervalBar().enableIntervalBarUpdate();
         // update
         update();
     } else {
@@ -3537,8 +3537,6 @@ long
 GNEApplicationWindow::onCmdReloadDataElements(FXObject*, FXSelector, void*) {
     // get file
     const std::string file = OptionsCont::getOptions().getString("data-files");
-    // disable interval bar update
-    myViewNet->getIntervalBar().disableIntervalBarUpdate();
     // disable update data
     myViewNet->getNet()->disableUpdateData();
     // disable validation for additionals
@@ -3559,8 +3557,6 @@ GNEApplicationWindow::onCmdReloadDataElements(FXObject*, FXSelector, void*) {
     myUndoList->end();
     // enable update data
     myViewNet->getNet()->enableUpdateData();
-    // enable interval bar update
-    myViewNet->getIntervalBar().enableIntervalBarUpdate();
     // update
     update();
     return 1;

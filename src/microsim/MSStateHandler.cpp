@@ -48,6 +48,7 @@
 #include <microsim/MSNet.h>
 #include <microsim/MSVehicleTransfer.h>
 #include <microsim/MSInsertionControl.h>
+#include <microsim/MSEdgeControl.h>
 #include <microsim/MSRoute.h>
 #include <microsim/MSVehicleControl.h>
 #include <microsim/MSDriverState.h>
@@ -130,10 +131,11 @@ MSStateHandler::saveState(const std::string& file, SUMOTime step) {
     }
     if (OptionsCont::getOptions().getBool("save-state.rng")) {
         saveRNGs(out);
+        MSNet::getInstance()->getEdgeControl().saveState(out);
     }
     MSRoute::dict_saveState(out);
-    MSNet::getInstance()->getInsertionControl().saveState(out);
     MSNet::getInstance()->getVehicleControl().saveState(out);
+    MSNet::getInstance()->getInsertionControl().saveState(out);
     if (OptionsCont::getOptions().getBool("save-state.transportables")) {
         if (MSNet::getInstance()->hasPersons()) {
             out.openTag(SUMO_TAG_TRANSPORTABLES).writeAttr(SUMO_ATTR_TYPE, "person");
@@ -210,6 +212,20 @@ MSStateHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
             MSLane::loadRNGState(index, state);
             break;
         }
+        case SUMO_TAG_EDGECONTROL: {
+            bool ok;
+            std::list<MSLane*> activeLanes;
+            const std::vector<std::string>& laneIDs = attrs.get<std::vector<std::string> >(SUMO_ATTR_LANES, nullptr, ok, false);
+            for (const std::string& laneID : laneIDs) {
+                MSLane* lane = MSLane::dictionary(laneID);
+                if (lane == nullptr) {
+                    throw ProcessError("Unknown lane '" + laneID + "' in loaded state.");
+                }
+                activeLanes.push_back(lane);
+            }
+            MSNet::getInstance()->getEdgeControl().setActiveLanes(activeLanes);
+            break;
+        }
         case SUMO_TAG_DELAY: {
             if (myVCAttrs != nullptr) {
                 delete myVCAttrs;
@@ -218,14 +234,11 @@ MSStateHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
             break;
         }
         case SUMO_TAG_FLOWSTATE: {
-            SUMOVehicleParameter* pars = new SUMOVehicleParameter();
-            pars->id = attrs.getString(SUMO_ATTR_ID);
             bool ok;
-            if (attrs.getOpt<bool>(SUMO_ATTR_REROUTE, nullptr, ok, false)) {
-                pars->parametersSet |= VEHPARS_FORCE_REROUTE;
-            }
-            MSNet::getInstance()->getInsertionControl().addFlow(pars,
-                    attrs.getInt(SUMO_ATTR_INDEX));
+            SUMOVehicleParameter* pars = SUMOVehicleParserHelper::parseFlowAttributes(SUMO_TAG_FLOWSTATE, attrs, true, true, -1, -1);
+            pars->repetitionsDone = attrs.get<int>(SUMO_ATTR_DONE, pars->id.c_str(), ok);
+            int index = attrs.getInt(SUMO_ATTR_INDEX);
+            MSNet::getInstance()->getInsertionControl().addFlow(pars, index);
             break;
         }
         case SUMO_TAG_VTYPE: {
@@ -371,10 +384,8 @@ MSStateHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
             if (phase >= tl->getPhaseNumber()) {
                 throw ProcessError("Invalid phase '" + toString(phase) + "' for traffic light '" + tlID + "'");
             }
-            const SUMOTime remaining = tl->getPhase(phase).duration - spentDuration;
-            tl->changeStepAndDuration(tlc, myTime, phase, remaining);
             // might not be set if the phase happens to match and there are multiple programs
-            tl->setTrafficLightSignals(myTime - spentDuration);
+            tl->loadState(tlc, myTime, phase, spentDuration);
             break;
         }
         default:
@@ -390,8 +401,9 @@ MSStateHandler::myEndElement(int element) {
         case SUMO_TAG_PERSON:
         case SUMO_TAG_CONTAINER: {
             MSTransportableControl& tc = (element == SUMO_TAG_PERSON ? MSNet::getInstance()->getPersonControl() : MSNet::getInstance()->getContainerControl());
-            tc.get(myAttrs->getString(SUMO_ATTR_ID))->loadState(myAttrs->getString(SUMO_ATTR_STATE));
-            tc.fixLoadCount();
+            MSTransportable* transportable = tc.get(myAttrs->getString(SUMO_ATTR_ID));
+            transportable->loadState(myAttrs->getString(SUMO_ATTR_STATE));
+            tc.fixLoadCount(transportable);
             delete myAttrs;
             myAttrs = nullptr;
             break;

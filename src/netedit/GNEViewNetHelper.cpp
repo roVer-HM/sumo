@@ -21,6 +21,7 @@
 #include <netedit/elements/additional/GNEPOI.h>
 #include <netedit/elements/additional/GNEPoly.h>
 #include <netedit/elements/additional/GNETAZ.h>
+#include <netedit/elements/data/GNEDataInterval.h>
 #include <netedit/elements/data/GNEDataSet.h>
 #include <netedit/elements/data/GNEEdgeData.h>
 #include <netedit/elements/data/GNEEdgeRelData.h>
@@ -85,12 +86,15 @@ GNEViewNetHelper::ObjectsUnderCursor::updateObjectUnderCursor(const std::vector<
             } else if (AC->getTagProperty().isAdditionalElement()) {
                 // update additional elements
                 updateAdditionalElements(myEdgeObjects, AC);
-            } else if (AC->getTagProperty().isTAZElement()) {
-                // update TAZ elements
-                updateTAZElements(myEdgeObjects, AC);
-            } else if (AC->getTagProperty().isShape()) {
-                // update shape elements
-                updateShapeElements(myEdgeObjects, AC);
+                // update shapes and TAZs
+                if (AC->getTagProperty().isShape()) {
+                    // update shape elements
+                    updateShapeElements(myEdgeObjects, AC);
+                }
+                if (AC->getTagProperty().isTAZElement()) {
+                    // update TAZ elements
+                    updateTAZElements(myEdgeObjects, AC);
+                }
             } else if (AC->getTagProperty().isDemandElement()) {
                 // update demand elements
                 updateDemandElements(myEdgeObjects, AC);
@@ -117,9 +121,6 @@ GNEViewNetHelper::ObjectsUnderCursor::updateObjectUnderCursor(const std::vector<
             } else if (AC->getTagProperty().isAdditionalElement()) {
                 // update additional elements
                 updateAdditionalElements(myLaneObjects, AC);
-            } else if (AC->getTagProperty().isTAZElement()) {
-                // update TAZ elements
-                updateTAZElements(myLaneObjects, AC);
             } else if (AC->getTagProperty().isShape()) {
                 // update shape elements
                 updateShapeElements(myLaneObjects, AC);
@@ -229,42 +230,6 @@ GNEViewNetHelper::ObjectsUnderCursor::getAdditionalFront() const {
     } else {
         if (myLaneObjects.additionals.size() > 0) {
             return myLaneObjects.additionals.front();
-        } else {
-            return nullptr;
-        }
-    }
-}
-
-
-GNEShape*
-GNEViewNetHelper::ObjectsUnderCursor::getShapeFront() const {
-    if (mySwapLane2edge) {
-        if (myEdgeObjects.shapes.size() > 0) {
-            return myEdgeObjects.shapes.front();
-        } else {
-            return nullptr;
-        }
-    } else {
-        if (myLaneObjects.shapes.size() > 0) {
-            return myLaneObjects.shapes.front();
-        } else {
-            return nullptr;
-        }
-    }
-}
-
-
-GNETAZElement*
-GNEViewNetHelper::ObjectsUnderCursor::getTAZElementFront() const {
-    if (mySwapLane2edge) {
-        if (myEdgeObjects.TAZElements.size() > 0) {
-            return myEdgeObjects.TAZElements.front();
-        } else {
-            return nullptr;
-        }
-    } else {
-        if (myLaneObjects.TAZElements.size() > 0) {
-            return myLaneObjects.TAZElements.front();
         } else {
             return nullptr;
         }
@@ -536,8 +501,6 @@ GNEViewNetHelper::ObjectsUnderCursor::ObjectsContainer::clearElements() {
     attributeCarriers.clear();
     networkElements.clear();
     additionals.clear();
-    shapes.clear();
-    TAZElements.clear();
     demandElements.clear();
     junctions.clear();
     edges.clear();
@@ -715,51 +678,11 @@ GNEViewNetHelper::ObjectsUnderCursor::updateAdditionalElements(ObjectsContainer&
 
 
 void
-GNEViewNetHelper::ObjectsUnderCursor::updateTAZElements(ObjectsContainer& container, GNEAttributeCarrier* AC) {
-    // get TAZ element
-    GNETAZElement* TAZElement = myViewNet->getNet()->getAttributeCarriers()->retrieveTAZElement(AC);
-    // insert depending if is the front attribute carrier
-    if (TAZElement == myViewNet->getFrontAttributeCarrier()) {
-        // insert at front
-        container.TAZElements.insert(container.TAZElements.begin(), TAZElement);
-    } else {
-        // insert at back
-        container.TAZElements.push_back(TAZElement);
-    }
-    // cast specific TAZ
-    if (AC->getGUIGlObject()->getType() == GLO_TAZ) {
-        // cast TAZ
-        GNETAZ* TAZ = dynamic_cast<GNETAZ*>(TAZElement);
-        if (TAZ) {
-            // check front element
-            if (AC == myViewNet->getFrontAttributeCarrier()) {
-                // insert at front
-                container.TAZs.insert(container.TAZs.begin(), TAZ);
-            } else {
-                // insert at back
-                container.TAZs.push_back(TAZ);
-            }
-        }
-    }
-}
-
-
-void
 GNEViewNetHelper::ObjectsUnderCursor::updateShapeElements(ObjectsContainer& container, GNEAttributeCarrier* AC) {
-    // get shape element
-    GNEShape* shapeElement = myViewNet->getNet()->getAttributeCarriers()->retrieveShape(AC);
-    // insert depending if is the front attribute carrier
-    if (shapeElement == myViewNet->getFrontAttributeCarrier()) {
-        // insert at front
-        container.shapes.insert(container.shapes.begin(), shapeElement);
-    } else {
-        // insert at back
-        container.shapes.push_back(shapeElement);
-    }
     // cast specific shape
     if (AC->getGUIGlObject()->getType() == GLO_POI) {
         // cast POI
-        GNEPOI* POI = dynamic_cast<GNEPOI*>(shapeElement);
+        GNEPOI* POI = dynamic_cast<GNEPOI*>(AC);
         if (POI) {
             // check front element
             if (AC == myViewNet->getFrontAttributeCarrier()) {
@@ -772,7 +695,7 @@ GNEViewNetHelper::ObjectsUnderCursor::updateShapeElements(ObjectsContainer& cont
         }
     } else if (AC->getGUIGlObject()->getType() == GLO_POLYGON) {
         // cast poly
-        GNEPoly* poly = dynamic_cast<GNEPoly*>(shapeElement);
+        GNEPoly* poly = dynamic_cast<GNEPoly*>(AC);
         if (poly) {
             // check front element
             if (AC == myViewNet->getFrontAttributeCarrier()) {
@@ -781,6 +704,26 @@ GNEViewNetHelper::ObjectsUnderCursor::updateShapeElements(ObjectsContainer& cont
             } else {
                 // insert at back
                 container.polys.push_back(poly);
+            }
+        }
+    }
+}
+
+
+void
+GNEViewNetHelper::ObjectsUnderCursor::updateTAZElements(ObjectsContainer& container, GNEAttributeCarrier* AC) {
+    // cast specific TAZ
+    if (AC->getGUIGlObject()->getType() == GLO_TAZ) {
+        // cast TAZ
+        GNETAZ* TAZ = dynamic_cast<GNETAZ*>(AC);
+        if (TAZ) {
+            // check front element
+            if (AC == myViewNet->getFrontAttributeCarrier()) {
+                // insert at front
+                container.TAZs.insert(container.TAZs.begin(), TAZ);
+            } else {
+                // insert at back
+                container.TAZs.push_back(TAZ);
             }
         }
     }
@@ -1018,16 +961,6 @@ GNEViewNetHelper::MoveSingleElementValues::beginMoveSingleElementNetworkMode() {
     } else if (myViewNet->myObjectsUnderCursor.getAdditionalFront() && (frontAC == myViewNet->myObjectsUnderCursor.getAdditionalFront())) {
         // get move operation
         GNEMoveOperation* moveOperation = myViewNet->myObjectsUnderCursor.getAdditionalFront()->getMoveOperation();
-        // continue if move operation is valid
-        if (moveOperation) {
-            myMoveOperations.push_back(moveOperation);
-            return true;
-        } else {
-            return false;
-        }
-    } else if (myViewNet->myObjectsUnderCursor.getTAZFront() && (frontAC == myViewNet->myObjectsUnderCursor.getTAZFront())) {
-        // get move operation
-        GNEMoveOperation* moveOperation = myViewNet->myObjectsUnderCursor.getTAZFront()->getMoveOperation();
         // continue if move operation is valid
         if (moveOperation) {
             myMoveOperations.push_back(moveOperation);
@@ -2689,18 +2622,13 @@ GNEViewNetHelper::DataViewOptions::TAZRelOnlyTo() const {
 
 GNEViewNetHelper::IntervalBar::IntervalBar(GNEViewNet* viewNet) :
     myViewNet(viewNet),
-    myIntervalBarUpdate(true),
+    myUpdateInterval(true),
     myGenericDataTypesComboBox(nullptr),
     myDataSetsComboBox(nullptr),
-    myLimitByIntervalCheckBox(nullptr),
+    myIntervalCheckBox(nullptr),
     myBeginTextField(nullptr),
     myEndTextField(nullptr),
-    myFilteredAttributesComboBox(nullptr),
-    myNoGenericDatas("<no types>"),
-    myAllGenericDatas("<all types>"),
-    myNoDataSets("<no dataSets>"),
-    myAllDataSets("<all dataSets>"),
-    myAllAttributes("<all attributes>") {
+    myParametersComboBox(nullptr) {
 }
 
 
@@ -2712,19 +2640,26 @@ GNEViewNetHelper::IntervalBar::buildIntervalBarElements() {
     genericDataLabel->create();
     // create combo box for generic datas
     myGenericDataTypesComboBox = new FXComboBox(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().intervalBar,
-            GUIDesignComboBoxNCol, myViewNet, MID_GNE_INTERVALBAR_GENERICDATATYPE, GUIDesignComboBoxWidth120);
+            GUIDesignComboBoxNCol, myViewNet, MID_GNE_INTERVALBAR_GENERICDATATYPE, GUIDesignComboBoxWidth180);
     myGenericDataTypesComboBox->create();
+    // fill combo box
+    myGenericDataTypesComboBox->appendItem("<all>");
+    myGenericDataTypesComboBox->appendItem(toString(SUMO_TAG_MEANDATA_EDGE).c_str());
+    myGenericDataTypesComboBox->appendItem(toString(SUMO_TAG_EDGEREL).c_str());
+    myGenericDataTypesComboBox->appendItem(toString(SUMO_TAG_TAZREL).c_str());
+    myGenericDataTypesComboBox->setNumVisible(myGenericDataTypesComboBox->getNumItems());
+    // create dataSet label
     FXLabel* dataSetLabel = new FXLabel(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().intervalBar,
                                         "Data sets", 0, GUIDesignLabelAttribute);
     dataSetLabel->create();
     // create combo box for sets
     myDataSetsComboBox = new FXComboBox(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().intervalBar,
-                                        GUIDesignComboBoxNCol, myViewNet, MID_GNE_INTERVALBAR_DATASET, GUIDesignComboBoxWidth120);
+                                        GUIDesignComboBoxNCol, myViewNet, MID_GNE_INTERVALBAR_DATASET, GUIDesignComboBoxWidth180);
     myDataSetsComboBox->create();
     // create checkbutton for myLimitByInterval
-    myLimitByIntervalCheckBox = new FXCheckButton(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().intervalBar,
+    myIntervalCheckBox = new FXCheckButton(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().intervalBar,
             "Interval", myViewNet, MID_GNE_INTERVALBAR_LIMITED, GUIDesignCheckButtonAttribute);
-    myLimitByIntervalCheckBox->create();
+    myIntervalCheckBox->create();
     // create textfield for begin
     myBeginTextField = new FXTextField(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().intervalBar,
                                        GUIDesignTextFieldNCol, myViewNet, MID_GNE_INTERVALBAR_BEGIN, GUIDesignTextFielWidth50Real);
@@ -2733,71 +2668,21 @@ GNEViewNetHelper::IntervalBar::buildIntervalBarElements() {
     myEndTextField = new FXTextField(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().intervalBar,
                                      GUIDesignTextFieldNCol, myViewNet, MID_GNE_INTERVALBAR_END, GUIDesignTextFielWidth50Real);
     myEndTextField->create();
-    // create attribute label
-    FXLabel* attributeLabel = new FXLabel(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().intervalBar,
-                                          "Attribute", 0, GUIDesignLabelAttribute);
-    attributeLabel->create();
+    // create parameter label
+    FXLabel* parameterLabel = new FXLabel(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().intervalBar,
+                                          "Parameter", 0, GUIDesignLabelAttribute);
+    parameterLabel->create();
     // create combo box for attributes
-    myFilteredAttributesComboBox = new FXComboBox(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().intervalBar,
-            GUIDesignComboBoxNCol, myViewNet, MID_GNE_INTERVALBAR_ATTRIBUTE, GUIDesignComboBoxWidth180);
-    myFilteredAttributesComboBox->create();
+    myParametersComboBox = new FXComboBox(myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().intervalBar,
+            GUIDesignComboBoxNCol, myViewNet, MID_GNE_INTERVALBAR_PARAMETER, GUIDesignComboBoxWidth180);
+    myParametersComboBox->create();
     // always recalc after creating new elements
     myViewNet->myViewParent->getGNEAppWindows()->getToolbarsGrip().intervalBar->recalc();
 }
 
 
 void
-GNEViewNetHelper::IntervalBar::enableIntervalBar() {
-    // enable elements
-    myGenericDataTypesComboBox->enable();
-    myDataSetsComboBox->enable();
-    myLimitByIntervalCheckBox->enable();
-    if (myLimitByIntervalCheckBox->getCheck() == TRUE) {
-        myBeginTextField->enable();
-        myEndTextField->enable();
-    } else {
-        myBeginTextField->disable();
-        myEndTextField->disable();
-    }
-    myFilteredAttributesComboBox->enable();
-}
-
-
-void
-GNEViewNetHelper::IntervalBar::disableIntervalBar() {
-    // disable all elements
-    myGenericDataTypesComboBox->disable();
-    myDataSetsComboBox->disable();
-    myLimitByIntervalCheckBox->disable();
-    myBeginTextField->disable();
-    myEndTextField->disable();
-    myFilteredAttributesComboBox->disable();
-}
-
-
-void
-GNEViewNetHelper::IntervalBar::enableIntervalBarUpdate() {
-    myIntervalBarUpdate = true;
-    // now update interval bar
-    updateIntervalBar();
-}
-
-
-void
-GNEViewNetHelper::IntervalBar::disableIntervalBarUpdate() {
-    myIntervalBarUpdate = false;
-}
-
-
-void
 GNEViewNetHelper::IntervalBar::showIntervalBar() {
-    // check if begin and end textFields has to be updated (only once)
-    if (myBeginTextField->getText().empty()) {
-        setBegin();
-    }
-    if (myEndTextField->getText().empty()) {
-        setEnd();
-    }
     // first update interval bar
     updateIntervalBar();
     // show toolbar grip
@@ -2814,130 +2699,174 @@ GNEViewNetHelper::IntervalBar::hideIntervalBar() {
 
 void
 GNEViewNetHelper::IntervalBar::updateIntervalBar() {
-    if (myIntervalBarUpdate) {
-        // first save current data set
-        const std::string previousDataSet = myDataSetsComboBox->getNumItems() > 0 ? myDataSetsComboBox->getItem(myDataSetsComboBox->getCurrentItem()).text() : "";
-        // first clear items
-        myDataSetsComboBox->clearItems();
-        myGenericDataTypesComboBox->clearItems();
-        if (myViewNet->getNet()) {
-            if (myViewNet->getNet()->getAttributeCarriers()->getDataSets().size() > 0) {
-                myGenericDataTypesComboBox->appendItem(myNoGenericDatas);
-                myDataSetsComboBox->appendItem(myNoDataSets);
-                // disable elements
-                disableIntervalBar();
-            } else {
-                // declare integer to save previous data set index
-                int previousDataSetIndex = 0;
-                // enable elements
-                enableIntervalBar();
-                // add "<all>" item
-                myGenericDataTypesComboBox->appendItem(myAllGenericDatas);
-                myDataSetsComboBox->appendItem(myAllDataSets);
-                // get all generic data types
-                const auto genericDataTags = GNEAttributeCarrier::getTagPropertiesByType(GNETagProperties::GENERICDATA);
-                // add all generic data types
-                for (const auto& dataTag : genericDataTags) {
-                    myGenericDataTypesComboBox->appendItem(dataTag.getFieldString().c_str());
+    // check if intervalBar has to be updated
+    if (myUpdateInterval && myViewNet->getNet()) {
+        // clear data sets
+        myDataSets.clear();
+        // declare intervals
+        double begin = INVALID_DOUBLE;
+        double end = INVALID_DOUBLE;
+        // clear parameters
+        myParameters.clear();
+        // iterate over all data elements
+        for (const auto &dataSet : myViewNet->getNet()->getAttributeCarriers()->getDataSets()) {
+            // add data set ID
+            myDataSets.push_back(dataSet->getID());
+            // iterate over all intervals
+            for (const auto &interval : dataSet->getDataIntervalChildren()) {
+                // set intervals
+                if ((begin == INVALID_DOUBLE) || (interval.first < begin)) {
+                    begin = interval.first;
                 }
-                myGenericDataTypesComboBox->setNumVisible(myGenericDataTypesComboBox->getNumItems());
-                // add data sets
-                for (const auto& dataSet : myViewNet->getNet()->getAttributeCarriers()->getDataSets()) {
-                    // check if current data set is the previous data set
-                    if (dataSet->getID() == previousDataSet) {
-                        previousDataSetIndex = myDataSetsComboBox->getNumItems();
+                if ((end == INVALID_DOUBLE) || (interval.first > end)) {
+                    end = interval.first;
+                }
+                // iterate over all generic datas
+                for (const auto &genericData : interval.second->getGenericDataChildren()) {
+                    // iterate over parameters
+                    for (const auto &parameter : genericData->getParametersMap()) {
+                        myParameters.insert(parameter.first);
                     }
-                    myDataSetsComboBox->appendItem(dataSet->getID().c_str());
                 }
-                // set visible elements
-                if (myDataSetsComboBox->getNumItems() < 10) {
-                    myDataSetsComboBox->setNumVisible(myDataSetsComboBox->getNumItems());
-                } else {
-                    myDataSetsComboBox->setNumVisible(10);
-                }
-                // set current data set
-                myDataSetsComboBox->setCurrentItem(previousDataSetIndex);
             }
-            // update limit by interval
-            setInterval();
+        }
+        // get previous dataSet
+        const std::string previousDataSet = ((myDataSetsComboBox->getNumItems() > 1) && (myDataSetsComboBox->getCurrentItem() != 0)) ? myDataSetsComboBox->getItem(myDataSetsComboBox->getCurrentItem()).text() : "";
+        // get previous interval
+        const std::string previousBegin = (myIntervalCheckBox->getCheck() == TRUE)? myBeginTextField->getText().text() : "";
+        const std::string previousEnd = (myIntervalCheckBox->getCheck() == TRUE)? myEndTextField->getText().text() : "";
+        // get previous parameter
+        const std::string previousParameter = ((myParametersComboBox->getNumItems() > 1) && (myParametersComboBox->getCurrentItem() != 0)) ? myParametersComboBox->getItem(myParametersComboBox->getCurrentItem()).text() : "";
+        // clear comboBoxes
+        myDataSetsComboBox->clearItems();
+        myParametersComboBox->clearItems();
+        // add first item (all)
+        myDataSetsComboBox->appendItem("<all>");
+        myParametersComboBox->appendItem("<all>");
+        // fill dataSet comboBox
+        for (const auto &dataSet : myDataSets) {
+            myDataSetsComboBox->appendItem(dataSet.c_str());
+        }
+        // set begin/end
+        myBeginTextField->setText(toString(begin).c_str());
+        myEndTextField->setText(toString(end).c_str());
+        // fill parameter comboBox
+        for (const auto &parameter : myParameters) {
+            myParametersComboBox->appendItem(parameter.c_str());
+        }
+        // check previous dataSet
+        if (!previousDataSet.empty()) {
+            myDataSetsComboBox->setText(previousDataSet.c_str());
+        }
+        // set previous interval
+        if (myIntervalCheckBox->getCheck() == TRUE) {
+            myBeginTextField->setText(previousBegin.c_str());
+            myEndTextField->setText(previousEnd.c_str());
+        }
+        // check previous parameter
+        if (!previousParameter.empty()) {
+            myParametersComboBox->setText(previousParameter.c_str());
+        }
+        // set visible elements
+        if (myDataSetsComboBox->getNumItems() < 10) {
+            myDataSetsComboBox->setNumVisible(myDataSetsComboBox->getNumItems());
+        } else {
+            myDataSetsComboBox->setNumVisible(10);
+        }
+        if (myParametersComboBox->getNumItems() < 10) {
+            myParametersComboBox->setNumVisible(myParametersComboBox->getNumItems());
+        } else {
+            myParametersComboBox->setNumVisible(10);
+        }
+        // check if enable or disable
+        if ((myViewNet->getEditModes().dataEditMode == DataEditMode::DATA_INSPECT) || 
+            (myViewNet->getEditModes().dataEditMode == DataEditMode::DATA_SELECT) ||
+            (myViewNet->getEditModes().dataEditMode == DataEditMode::DATA_DELETE)) {
+            enableIntervalBar();
+        } else {
+            disableIntervalBar();
+        }
+        // intervalBar updated, then change flag
+        myUpdateInterval = false;
+    }
+}
+
+
+void
+GNEViewNetHelper::IntervalBar::markForUpdate() {
+    myUpdateInterval = true;
+}
+
+
+SumoXMLTag
+GNEViewNetHelper::IntervalBar::getGenericDataType() const {
+    if (myGenericDataTypesComboBox->isEnabled() && (myGenericDataTypesComboBox->getTextColor() == FXRGB(0, 0, 0))) {
+        if (myGenericDataTypesComboBox->getText() == toString(SUMO_TAG_MEANDATA_EDGE).c_str()) {
+            return SUMO_TAG_MEANDATA_EDGE;
+        } else if (myGenericDataTypesComboBox->getText() == toString(SUMO_TAG_EDGEREL).c_str()) {
+            return SUMO_TAG_EDGEREL;
+        } else if (myGenericDataTypesComboBox->getText() == toString(SUMO_TAG_TAZREL).c_str()) {
+            return SUMO_TAG_TAZREL;
         }
     }
+    return SUMO_TAG_NOTHING;
 }
 
 
-std::string
-GNEViewNetHelper::IntervalBar::getGenericDataTypeStr() const {
-    if (myGenericDataTypesComboBox->isEnabled() && (myGenericDataTypesComboBox->getText() == myAllGenericDatas)) {
-        return "";
+GNEDataSet*
+GNEViewNetHelper::IntervalBar::getDataSet() const {
+    if (!myDataSetsComboBox->isEnabled() || 
+        (myDataSetsComboBox->getCurrentItem() == 0) || 
+        (myDataSetsComboBox->getTextColor() == FXRGB(255, 0, 0))) {
+        return nullptr;
     } else {
-        return myGenericDataTypesComboBox->getText().text();
+        return myViewNet->getNet()->getAttributeCarriers()->retrieveDataSet(myDataSetsComboBox->getText().text());
+    }
+}
+
+
+double
+GNEViewNetHelper::IntervalBar::getBegin() const {
+    if (!myIntervalCheckBox->isEnabled() || (myIntervalCheckBox->getCheck() == FALSE)) {
+        return INVALID_DOUBLE;
+    } else {
+        return GNEAttributeCarrier::parse<double>(myBeginTextField->getText().text());
+    }
+}
+
+
+double
+GNEViewNetHelper::IntervalBar::getEnd() const {
+    if (!myIntervalCheckBox->isEnabled() || (myIntervalCheckBox->getCheck() == FALSE)) {
+        return INVALID_DOUBLE;
+    } else {
+        return GNEAttributeCarrier::parse<double>(myEndTextField->getText().text());
     }
 }
 
 
 std::string
-GNEViewNetHelper::IntervalBar::getDataSetStr() const {
-    if (myDataSetsComboBox->isEnabled() && (myDataSetsComboBox->getText() == myAllDataSets)) {
+GNEViewNetHelper::IntervalBar::getParameter() const {
+    if (!myParametersComboBox->isEnabled() || 
+        (myParametersComboBox->getCurrentItem() == 0) || 
+        (myParametersComboBox->getTextColor() == FXRGB(255, 0, 0))) {
         return "";
     } else {
-        return myDataSetsComboBox->getText().text();
-    }
-}
-
-
-std::string
-GNEViewNetHelper::IntervalBar::getBeginStr() const {
-    if (myBeginTextField->isEnabled() && GNEAttributeCarrier::canParse<double>(myBeginTextField->getText().text())) {
-        return myBeginTextField->getText().text();
-    } else {
-        return "";
-    }
-}
-
-
-std::string
-GNEViewNetHelper::IntervalBar::getEndStr() const {
-    if (myEndTextField->isEnabled() && GNEAttributeCarrier::canParse<double>(myEndTextField->getText().text())) {
-        return myEndTextField->getText().text();
-    } else {
-        return "";
-    }
-}
-
-
-std::string
-GNEViewNetHelper::IntervalBar::getAttributeStr() const {
-    if (myFilteredAttributesComboBox->isEnabled() &&
-            ((myFilteredAttributesComboBox->getText() == myAllAttributes) || (myFilteredAttributesComboBox->getTextColor() != FXRGB(0, 0, 0)))) {
-        return "";
-    } else {
-        return myFilteredAttributesComboBox->getText().text();
+        return myParametersComboBox->getText().text();
     }
 }
 
 
 void
 GNEViewNetHelper::IntervalBar::setGenericDataType() {
-    // check if data set is correct
-    if (myGenericDataTypesComboBox->getText() == myAllGenericDatas) {
+    if ((myGenericDataTypesComboBox->getText() == "<all>") ||
+        (myGenericDataTypesComboBox->getText() == toString(SUMO_TAG_MEANDATA_EDGE).c_str()) ||
+        (myGenericDataTypesComboBox->getText() == toString(SUMO_TAG_EDGEREL).c_str()) ||
+        (myGenericDataTypesComboBox->getText() == toString(SUMO_TAG_TAZREL).c_str())) {
         myGenericDataTypesComboBox->setTextColor(FXRGB(0, 0, 0));
-    } else if (myGenericDataTypesComboBox->getText().empty()) {
-        myGenericDataTypesComboBox->setTextColor(FXRGB(0, 0, 0));
-        myGenericDataTypesComboBox->setText(myAllGenericDatas);
     } else {
-        // get all generic data types
-        const auto genericDataTags = GNEAttributeCarrier::getTagPropertiesByType(GNETagProperties::GENERICDATA);
-        // set invalid color
         myGenericDataTypesComboBox->setTextColor(FXRGB(255, 0, 0));
-        // set valid color depending of myGenericDataTypesComboBox
-        for (const auto& genericDataTag : genericDataTags) {
-            if (genericDataTag.getFieldString() == myGenericDataTypesComboBox->getText().text()) {
-                myGenericDataTypesComboBox->setTextColor(FXRGB(0, 0, 0));
-            }
-        }
     }
-    // update comboBox attributes
-    updateComboBoxAttributes();
     // update view net
     myViewNet->updateViewNet();
 }
@@ -2945,19 +2874,12 @@ GNEViewNetHelper::IntervalBar::setGenericDataType() {
 
 void
 GNEViewNetHelper::IntervalBar::setDataSet() {
-    // check if data set is correct
-    if (myDataSetsComboBox->getText() == myAllDataSets) {
-        myDataSetsComboBox->setTextColor(FXRGB(0, 0, 0));
-    } else if (myDataSetsComboBox->getText().empty()) {
-        myDataSetsComboBox->setTextColor(FXRGB(0, 0, 0));
-        myDataSetsComboBox->setText(myAllDataSets);
-    } else if (myViewNet->getNet()->getAttributeCarriers()->retrieveDataSet(myDataSetsComboBox->getText().text(), false)) {
+    // check if exist
+    if (std::find(myDataSets.begin(), myDataSets.end(), myDataSetsComboBox->getText().text()) != myDataSets.end()) {
         myDataSetsComboBox->setTextColor(FXRGB(0, 0, 0));
     } else {
         myDataSetsComboBox->setTextColor(FXRGB(255, 0, 0));
     }
-    // update comboBox attributes
-    updateComboBoxAttributes();
     // update view net
     myViewNet->updateViewNet();
 }
@@ -2966,15 +2888,13 @@ GNEViewNetHelper::IntervalBar::setDataSet() {
 void
 GNEViewNetHelper::IntervalBar::setInterval() {
     // enable or disable text fields
-    if (myLimitByIntervalCheckBox->isEnabled() && (myLimitByIntervalCheckBox->getCheck() == TRUE)) {
+    if (myIntervalCheckBox->isEnabled() && (myIntervalCheckBox->getCheck() == TRUE)) {
         myBeginTextField->enable();
         myEndTextField->enable();
     } else {
         myBeginTextField->disable();
         myEndTextField->disable();
     }
-    // update comboBox attributes
-    updateComboBoxAttributes();
     // update view net
     myViewNet->updateViewNet();
 }
@@ -2990,8 +2910,6 @@ GNEViewNetHelper::IntervalBar::setBegin() {
     } else {
         myBeginTextField->setTextColor(FXRGB(255, 0, 0));
     }
-    // update comboBox attributes
-    updateComboBoxAttributes();
     // update view net
     myViewNet->updateViewNet();
 }
@@ -3007,44 +2925,51 @@ GNEViewNetHelper::IntervalBar::setEnd() {
     } else {
         myEndTextField->setTextColor(FXRGB(255, 0, 0));
     }
-    // update comboBox attributes
-    updateComboBoxAttributes();
     // update view net
     myViewNet->updateViewNet();
 }
 
 
 void
-GNEViewNetHelper::IntervalBar::setAttribute() {
-    //
+GNEViewNetHelper::IntervalBar::setParameter() {
+    // check if exist
+    if (myParameters.count(myParametersComboBox->getText().text()) > 0) {
+        myParametersComboBox->setTextColor(FXRGB(0, 0, 0));
+    } else {
+        myParametersComboBox->setTextColor(FXRGB(255, 0, 0));
+    }
+    // update view net
+    myViewNet->updateViewNet();
+}
+
+
+
+void
+GNEViewNetHelper::IntervalBar::enableIntervalBar() {
+    // enable elements
+    myGenericDataTypesComboBox->enable();
+    myDataSetsComboBox->enable();
+    myIntervalCheckBox->enable();
+    if (myIntervalCheckBox->getCheck() == TRUE) {
+        myBeginTextField->enable();
+        myEndTextField->enable();
+    } else {
+        myBeginTextField->disable();
+        myEndTextField->disable();
+    }
+    myParametersComboBox->enable();
 }
 
 
 void
-GNEViewNetHelper::IntervalBar::updateComboBoxAttributes() {
-    // update attributes
-    myFilteredAttributes = myViewNet->getNet()->getAttributeCarriers()->retrieveGenericDataParameters(
-                               getDataSetStr(), getGenericDataTypeStr(), getBeginStr(), getEndStr());
-    // clear combo box
-    myFilteredAttributesComboBox->clearItems();
-    // check if there is dataSets
-    if (myDataSetsComboBox->isEnabled()) {
-        // add wildcard for all attributes
-        myFilteredAttributesComboBox->appendItem(myAllAttributes);
-        // add all atributes in ComboBox
-        for (const auto& attribute : myFilteredAttributes) {
-            myFilteredAttributesComboBox->appendItem(attribute.c_str());
-        }
-        // set visible elements
-        if (myFilteredAttributesComboBox->getNumItems() < 10) {
-            myFilteredAttributesComboBox->setNumVisible(myFilteredAttributesComboBox->getNumItems());
-        } else {
-            myFilteredAttributesComboBox->setNumVisible(10);
-        }
-    } else {
-        // add wildcard for all attributes
-        myFilteredAttributesComboBox->appendItem(myNoDataSets);
-    }
+GNEViewNetHelper::IntervalBar::disableIntervalBar() {
+    // disable all elements
+    myGenericDataTypesComboBox->disable();
+    myDataSetsComboBox->disable();
+    myIntervalCheckBox->disable();
+    myBeginTextField->disable();
+    myEndTextField->disable();
+    myParametersComboBox->disable();
 }
 
 // ---------------------------------------------------------------------------

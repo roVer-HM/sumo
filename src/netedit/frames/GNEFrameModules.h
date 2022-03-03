@@ -286,12 +286,6 @@ public:
         /// @brief junction (casted from myClickedAC)
         GNEConnection* myClickedConnection;
 
-        /// @brief shape (casted from myClickedAC)
-        GNEShape* myClickedShape;
-
-        /// @brief TAZElement (casted from myClickedAC)
-        GNETAZElement* myClickedTAZElement;
-
         /// @brief additional (casted from myClickedAC)
         GNEAdditional* myClickedAdditional;
 

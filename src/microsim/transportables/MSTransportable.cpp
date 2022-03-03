@@ -333,7 +333,7 @@ MSTransportable::hasArrived() const {
 
 bool
 MSTransportable::hasDeparted() const {
-    return myPlan->size() > 0 && myPlan->front()->getDeparted() >= 0;
+    return myPlan->size() > 0 && (myPlan->front()->getDeparted() >= 0 || myStep > myPlan->begin());
 }
 
 
@@ -460,13 +460,19 @@ MSTransportable::saveState(OutputDevice& out) {
     // this saves lots of departParameters which are only needed for transportables that did not yet depart
     // the parameters may hold the name of a vTypeDistribution but we are interested in the actual type
     myParameter->write(out, OptionsCont::getOptions(), myAmPerson ? SUMO_TAG_PERSON : SUMO_TAG_CONTAINER, getVehicleType().getID());
-    std::ostringstream state;
+    if (!myParameter->wasSet(VEHPARS_SPEEDFACTOR_SET) && getSpeedFactor() != 1) {
+        out.setPrecision(MAX2(gPrecisionRandom, gPrecision));
+        out.writeAttr(SUMO_ATTR_SPEEDFACTOR, getSpeedFactor());
+        out.setPrecision(gPrecision);
+    }
     int stepIdx = (int)(myStep - myPlan->begin());
     for (auto it = myPlan->begin(); it != myStep; ++it) {
-        if ((*it)->getStageType() == MSStageType::TRIP) {
+        const MSStageType st = (*it)->getStageType();
+        if (st == MSStageType::TRIP || st == MSStageType::ACCESS) {
             stepIdx--;
         }
     }
+    std::ostringstream state;
     state << myParameter->parametersSet << " " << stepIdx;
     (*myStep)->saveState(state);
     out.writeAttr(SUMO_ATTR_STATE, state.str());

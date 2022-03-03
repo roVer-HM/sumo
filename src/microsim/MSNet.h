@@ -303,7 +303,7 @@ public:
      * @return The new simulation state
      * @see SimulationState
      */
-    SimulationState adaptToState(const SimulationState state) const;
+    SimulationState adaptToState(const SimulationState state, const bool isLibsumo=false) const;
 
 
     /** @brief Returns the message to show if a certain state occurs
@@ -589,6 +589,9 @@ public:
 
     /// @brief load state from file and return new time
     SUMOTime loadState(const std::string& fileName);
+
+    /// @brief reset state to the beginning without reloading the network
+    void quickReload();
 
     /// @name Notification about vehicle state changes
     /// @{

@@ -79,8 +79,11 @@ SUMOVehicleParameter::write(OutputDevice& dev, const OptionsCont& oc, const Sumo
         dev.writeAttr(SUMO_ATTR_TYPE, typeID);
     }
     // write depart depending of tag
-    if ((altTag == SUMO_TAG_FLOW) || (altTag == SUMO_TAG_PERSONFLOW) ||
-            (altTag == GNE_TAG_FLOW_ROUTE) || (altTag == GNE_TAG_FLOW_WITHROUTE)) {
+    if (altTag == SUMO_TAG_FLOW
+            || altTag == SUMO_TAG_PERSONFLOW
+            || altTag == GNE_TAG_FLOW_ROUTE
+            || altTag == GNE_TAG_FLOW_WITHROUTE
+            || altTag == SUMO_TAG_FLOWSTATE) {
         dev.writeAttr(SUMO_ATTR_BEGIN, getDepart());
     } else {
         dev.writeAttr(SUMO_ATTR_DEPART, getDepart());
@@ -168,9 +171,11 @@ SUMOVehicleParameter::write(OutputDevice& dev, const OptionsCont& oc, const Sumo
     }
     // individual speedFactor
     if (wasSet(VEHPARS_SPEEDFACTOR_SET)) {
-        dev.setPrecision(MAX2(gPrecisionRandom, gPrecision));
+        // might be saving state with custom precision
+        const int precision = dev.precision();
+        dev.setPrecision(MAX2(gPrecisionRandom, precision));
         dev.writeAttr(SUMO_ATTR_SPEEDFACTOR, speedFactor);
-        dev.setPrecision(gPrecision);
+        dev.setPrecision(precision);
     }
     // speed (only used by calibrators)
     if (wasSet(VEHPARS_CALIBRATORSPEED_SET)) {
@@ -852,6 +857,9 @@ SUMOVehicleParameter::getDepartSpeed() const {
             break;
         case DepartSpeedDefinition::LAST:
             val = "last";
+            break;
+        case DepartSpeedDefinition::AVG:
+            val = "avg";
             break;
         case DepartSpeedDefinition::DEFAULT:
         default:

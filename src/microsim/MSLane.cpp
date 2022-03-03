@@ -2153,6 +2153,12 @@ MSLane::isInternal() const {
 }
 
 
+bool
+MSLane::isNormal() const {
+    return myEdge->isNormal();
+}
+
+
 MSVehicle*
 MSLane::getLastFullVehicle() const {
     if (myVehicles.size() == 0) {
@@ -3266,8 +3272,11 @@ MSLane::loadState(const std::vector<std::string>& vehIds, MSVehicleControl& vc) 
         // vehicle could be removed due to options
         if (v != nullptr) {
             v->updateBestLanes(false, this);
+            // incorporateVehicle resets the lastActionTime (which has just been loaded from state) so we must restore it
+            const SUMOTime lastActionTime = v->getLastActionTime();
             incorporateVehicle(v, v->getPositionOnLane(), v->getSpeed(), v->getLateralPositionOnLane(), myVehicles.end(),
                                MSMoveReminder::NOTIFICATION_LOAD_STATE);
+            v->resetActionOffset(lastActionTime - MSNet::getInstance()->getCurrentTimeStep());
             v->processNextStop(v->getSpeed());
         }
     }

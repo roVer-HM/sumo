@@ -30,12 +30,11 @@
 
 GNEDetectorE3::GNEDetectorE3(GNENet* net) :
     GNEAdditional("", net, GLO_E3DETECTOR, SUMO_TAG_E3DETECTOR, "",
-{}, {}, {}, {}, {}, {}, {}, {},
-std::map<std::string, std::string>()),
+        {}, {}, {}, {}, {}, {}),
     myFreq(0),
     myFilename(""),
     myTimeThreshold(0),
-mySpeedThreshold(0) {
+    mySpeedThreshold(0) {
     // reset default values
     resetDefaultValues();
 }
@@ -45,14 +44,14 @@ GNEDetectorE3::GNEDetectorE3(const std::string& id, GNENet* net, const Position 
                              const std::vector<std::string>& vehicleTypes, const std::string& name, SUMOTime timeThreshold, double speedThreshold,
                              const std::map<std::string, std::string>& parameters) :
     GNEAdditional(id, net, GLO_E3DETECTOR, SUMO_TAG_E3DETECTOR, name,
-{}, {}, {}, {}, {}, {}, {}, {},
-parameters),
-myPosition(pos),
-myFreq(freq),
-myFilename(filename),
-myVehicleTypes(vehicleTypes),
-myTimeThreshold(timeThreshold),
-mySpeedThreshold(speedThreshold) {
+        {}, {}, {}, {}, {}, {}),
+    Parameterised(parameters),
+    myPosition(pos),
+    myFreq(freq),
+    myFilename(filename),
+    myVehicleTypes(vehicleTypes),
+    myTimeThreshold(timeThreshold),
+    mySpeedThreshold(speedThreshold) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -206,6 +205,12 @@ GNEDetectorE3::getAttributeDouble(SumoXMLAttr key) const {
 }
 
 
+const std::map<std::string, std::string>&
+GNEDetectorE3::getACParametersMap() const {
+    return getParametersMap();
+}
+
+
 void
 GNEDetectorE3::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList) {
     if (value == getAttribute(key)) {
@@ -256,7 +261,7 @@ GNEDetectorE3::isValid(SumoXMLAttr key, const std::string& value) {
         case GNE_ATTR_SELECTED:
             return canParse<bool>(value);
         case GNE_ATTR_PARAMETERS:
-            return Parameterised::areParametersValid(value);
+            return areParametersValid(value);
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
     }

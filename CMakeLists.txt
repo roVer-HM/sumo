@@ -167,7 +167,6 @@ if (CMAKE_GENERATOR MATCHES Xcode)
 endif ()
 message(STATUS "")
 
-#set(Python_ADDITIONAL_VERSIONS 3.7 3.6 3.5 3.4 3.3 2.7) # it may help in finding the correct python for libsumo
 find_package(PythonInterp REQUIRED)
 message(STATUS "Found Python: " ${PYTHON_EXECUTABLE})
 execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import setuptools" RESULT_VARIABLE SETUPTOOLS_MISSING)
@@ -395,7 +394,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(commonlibs
         utils_distribution utils_handlers utils_shapes utils_options
         utils_xml utils_geom utils_common utils_importio utils_iodevices utils_traction_wire foreign_tcpip
-        ${XercesC_LIBRARIES} ${ZLIB_LIBRARIES} ${PROJ_LIBRARY} ${TCMALLOC_LIBRARY})
+        ${XercesC_LIBRARIES} ${ZLIB_LIBRARIES} ${PROJ_LIBRARY})
 if (MSVC)
     set(commonlibs ${commonlibs} ws2_32)
 endif ()

@@ -199,7 +199,9 @@ MSRouteHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
                 addContainer(attrs);
                 break;
             case SUMO_TAG_FLOW:
-                parseFromViaTo((SumoXMLTag)element, attrs);
+                if (myVehicleParameter) {
+                    parseFromViaTo((SumoXMLTag)element, attrs);
+                }
                 break;
             case SUMO_TAG_TRIP:
                 parseFromViaTo((SumoXMLTag)element, attrs);
@@ -611,7 +613,7 @@ MSRouteHandler::closeVehicle() {
     SUMOVehicle* vehicle = nullptr;
     if (vehControl.getVehicle(myVehicleParameter->id) == nullptr) {
         try {
-            vehicle = vehControl.buildVehicle(myVehicleParameter, route, vtype, !MSGlobals::gCheckRoutes);
+            vehicle = vehControl.buildVehicle(myVehicleParameter, route, vtype, !MSGlobals::gCheckRoutes, true, !myAmLoadingState);
         } catch (const ProcessError& e) {
             if (!MSGlobals::gCheckRoutes) {
                 WRITE_WARNING(e.what());
@@ -661,7 +663,7 @@ MSRouteHandler::closeVehicle() {
                     // resample type
                     vtype = vehControl.getVType(myVehicleParameter->vtypeid, &myParsingRNG);
                 }
-                vehicle = vehControl.buildVehicle(newPars, route, vtype, !MSGlobals::gCheckRoutes);
+                vehicle = vehControl.buildVehicle(newPars, route, vtype, !MSGlobals::gCheckRoutes, true, !myAmLoadingState);
                 vehControl.addVehicle(newPars->id, vehicle);
             }
             myVehicleParameter = nullptr;
@@ -875,7 +877,7 @@ MSRouteHandler::addFlowTransportable(SUMOTime depart, MSVehicleType* type, const
                 }
             } else if ((net->hasPersons() && net->getPersonControl().get(myVehicleParameter->id) != nullptr)
                        && (net->hasContainers() && net->getContainerControl().get(myVehicleParameter->id) != nullptr)) {
-                WRITE_WARNINGF("There exists a person and a container with the same id '%'. Starting with SUMO 1.9.0 this will be an error.", myVehicleParameter->id);
+                WRITE_WARNINGF("There exists a person and a container with the same id '%'. Starting with SUMO 1.9.0 this is an error.", myVehicleParameter->id);
             }
         }
     } catch (ProcessError&) {
@@ -966,7 +968,11 @@ MSRouteHandler::closeFlow() {
         if (MSNet::getInstance()->getInsertionControl().addFlow(myVehicleParameter)) {
             registerLastDepart();
         } else {
-            throw ProcessError("Another flow with the id '" + myVehicleParameter->id + "' exists.");
+            if (MSGlobals::gStateLoaded) {
+                delete myVehicleParameter;
+            } else {
+                throw ProcessError("Another flow with the id '" + myVehicleParameter->id + "' exists.");
+            }
         }
     }
     myVehicleParameter = nullptr;
@@ -1406,6 +1412,9 @@ MSRouteHandler::addPersonTrip(const SUMOSAXAttributes& attrs) {
             myActiveTransportablePlan->push_back(new MSStageTrip(from, fromStop, to == nullptr ? &stoppingPlace->getLane().getEdge() : to,
                                                  stoppingPlace, duration, modeSet, types, speed, walkFactor, group,
                                                  departPosLat, attrs.hasAttribute(SUMO_ATTR_ARRIVALPOS), arrivalPos));
+            if (attrs.hasAttribute(SUMO_ATTR_ARRIVALPOS)) {
+                myActiveTransportablePlan->back()->markSet(VEHPARS_ARRIVALPOS_SET);
+            }
         }
         myActiveRoute.clear();
     } catch (ProcessError&) {
@@ -1466,6 +1475,9 @@ MSRouteHandler::addWalk(const SUMOSAXAttributes& attrs) {
             const double departPosLat = attrs.getOpt<double>(SUMO_ATTR_DEPARTPOS_LAT, nullptr, ok, 0);
             const int departLane =  attrs.getOpt<int>(SUMO_ATTR_DEPARTLANE, nullptr, ok, -1);
             myActiveTransportablePlan->push_back(new MSPerson::MSPersonStage_Walking(myVehicleParameter->id, myActiveRoute, bs, duration, speed, departPos, arrivalPos, departPosLat, departLane));
+            if (attrs.hasAttribute(SUMO_ATTR_ARRIVALPOS)) {
+                myActiveTransportablePlan->back()->markSet(VEHPARS_ARRIVALPOS_SET);
+            }
             myActiveRoute.clear();
         } catch (ProcessError&) {
             deleteActivePlanAndVehicleParameter();

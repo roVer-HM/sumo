@@ -182,18 +182,6 @@ public:
      */
     void deleteAdditional(GNEAdditional* additional, GNEUndoList* undoList);
 
-    /**@brief remove shape
-     * @param[in] shape The Shape to be removed
-     * @param[in] undoList The undolist in which to mark changes
-     */
-    void deleteShape(GNEShape* shape, GNEUndoList* undoList);
-
-    /**@brief remove TAZElement
-     * @param[in] TAZElement The TAZElement to be removed
-     * @param[in] undoList The undolist in which to mark changes
-     */
-    void deleteTAZElement(GNETAZElement* TAZElement, GNEUndoList* undoList);
-
     /**@brief remove demand element
      * @param[in] demandElement The Shape to be removed
      * @param[in] undoList The undolist in which to mark changes
@@ -498,7 +486,7 @@ public:
 
     /// @}
 
-    /// @name Functions related to Enable or disable update data of elements after insertio
+    /// @name Functions related to Enable or disable update data of elements after insertion
     /// @{
     /// @brief enable update data elements after inserting or removing an element in net
     void enableUpdateData();
@@ -581,11 +569,14 @@ private:
     /// @brief the z boundary (stored in the x-coordinate), values of 0 are ignored
     Boundary myZBoundary;
 
+    /// @brief map with the Edges and their number of lanes
+    std::map<std::string, int> myEdgesAndNumberOfLanes;
+
     /// @brief marker for whether the z-boundary is initialized
     static const double Z_INITIALIZED;
 
-    /// @brief map with the Edges and their number of lanes
-    std::map<std::string, int> myEdgesAndNumberOfLanes;
+    /// @brief variable used for write headers in additional, demand and data elements
+    static const std::map<SumoXMLAttr, std::string> EMPTY_HEADER;
 
     /// @brief Invalidated copy constructor.
     GNENet(const GNENet&) = delete;

@@ -22,6 +22,7 @@
 #include <foreign/fontstash/fontstash.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNEViewNet.h>
+#include <netedit/elements/network/GNEConnection.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/div/GUIParameterTableWindow.h>
@@ -40,15 +41,11 @@ GNEAdditional::GNEAdditional(const std::string& id, GNENet* net, GUIGlObjectType
                              const std::vector<GNEEdge*>& edgeParents,
                              const std::vector<GNELane*>& laneParents,
                              const std::vector<GNEAdditional*>& additionalParents,
-                             const std::vector<GNEShape*>& shapeParents,
-                             const std::vector<GNETAZElement*>& TAZElementParents,
                              const std::vector<GNEDemandElement*>& demandElementParents,
-                             const std::vector<GNEGenericData*>& genericDataParents,
-                             const std::map<std::string, std::string>& parameters) :
+                             const std::vector<GNEGenericData*>& genericDataParents) :
     GUIGlObject(type, id),
-    GNEHierarchicalElement(net, tag, junctionParents, edgeParents, laneParents, additionalParents, shapeParents, TAZElementParents, demandElementParents, genericDataParents),
+    GNEHierarchicalElement(net, tag, junctionParents, edgeParents, laneParents, additionalParents, demandElementParents, genericDataParents),
     GNEPathManager::PathElement(GNEPathManager::PathElement::Options::ADDITIONAL_ELEMENT),
-    Parameterised(parameters),
     myAdditionalName(additionalName) {
     // check if is template
     myIsTemplate = (id == "");
@@ -60,15 +57,11 @@ GNEAdditional::GNEAdditional(GNENet* net, GUIGlObjectType type, SumoXMLTag tag, 
                              const std::vector<GNEEdge*>& edgeParents,
                              const std::vector<GNELane*>& laneParents,
                              const std::vector<GNEAdditional*>& additionalParents,
-                             const std::vector<GNEShape*>& shapeParents,
-                             const std::vector<GNETAZElement*>& TAZElementParents,
                              const std::vector<GNEDemandElement*>& demandElementParents,
-                             const std::vector<GNEGenericData*>& genericDataParents,
-                             const std::map<std::string, std::string>& parameters) :
+                             const std::vector<GNEGenericData*>& genericDataParents) :
     GUIGlObject(type, additionalParents.front()->getID()),
-    GNEHierarchicalElement(net, tag, junctionParents, edgeParents, laneParents, additionalParents, shapeParents, TAZElementParents, demandElementParents, genericDataParents),
+    GNEHierarchicalElement(net, tag, junctionParents, edgeParents, laneParents, additionalParents, demandElementParents, genericDataParents),
     GNEPathManager::PathElement(GNEPathManager::PathElement::Options::ADDITIONAL_ELEMENT),
-    Parameterised(parameters),
     myAdditionalName(additionalName) {
 }
 
@@ -105,108 +98,6 @@ GNEAdditional::setSpecialColor(const RGBColor* color) {
     mySpecialColor = color;
 }
 
-/*
-void
-GNEAdditional::writeAdditional(OutputDevice& device) const {
-    // first check if minimum number of children is correct
-    if ((myTagProperty.hasMinimumNumberOfChildren() || myTagProperty.hasMinimumNumberOfChildren()) && !checkChildAdditionalRestriction()) {
-        WRITE_WARNING(getTagStr() + " with ID='" + getID() + "' cannot be written");
-    } else {
-        // Open XML Tag or synonym Tag
-        device.openTag(myTagProperty.getXMLTag());
-        // iterate over attribute properties
-        for (const auto& attrProperty : myTagProperty) {
-            // obtain attribute value
-            const std::string attributeValue = getAttribute(attrProperty.getAttr());
-            //  first check if attribute is optional but not vehicle classes
-            if (attrProperty.isOptional() && !attrProperty.isVClasses()) {
-                // Only write attributes with default value if is different from original
-                if (attrProperty.getDefaultValue() != attributeValue) {
-                    // check if attribute must be written using a synonim
-                    if (attrProperty.hasAttrSynonym()) {
-                        device.writeAttr(attrProperty.getAttrSynonym(), attributeValue);
-                    } else {
-                        // SVC permissions uses their own writting function
-                        if (attrProperty.isSVCPermission()) {
-                            // disallow attribute musn't be written
-                            if (attrProperty.getAttr() != SUMO_ATTR_DISALLOW) {
-                                writePermissions(device, parseVehicleClasses(attributeValue));
-                            }
-                        } else if (myTagProperty.canMaskXYZPositions() && (attrProperty.getAttr() == SUMO_ATTR_POSITION)) {
-                            // get position attribute and write it separate
-                            Position pos = parse<Position>(getAttribute(SUMO_ATTR_POSITION));
-                            device.writeAttr(SUMO_ATTR_X, toString(pos.x()));
-                            device.writeAttr(SUMO_ATTR_Y, toString(pos.y()));
-                            // write 0 only if is different from 0 (the default value)
-                            if (pos.z() != 0) {
-                                device.writeAttr(SUMO_ATTR_Z, toString(pos.z()));
-                            }
-                        } else {
-                            device.writeAttr(attrProperty.getAttr(), attributeValue);
-                        }
-                    }
-                }
-            } else {
-                // Attributes without default values are always writted
-                if (attrProperty.hasAttrSynonym()) {
-                    device.writeAttr(attrProperty.getAttrSynonym(), attributeValue);
-                } else {
-                    // SVC permissions uses their own writting function
-                    if (attrProperty.isSVCPermission()) {
-                        // disallow attribute musn't be written
-                        if (attrProperty.getAttr() != SUMO_ATTR_DISALLOW) {
-                            writePermissions(device, parseVehicleClasses(attributeValue));
-                        }
-                    } else if (myTagProperty.canMaskXYZPositions() && (attrProperty.getAttr() == SUMO_ATTR_POSITION)) {
-                        // get position attribute and write it separate
-                        Position pos = parse<Position>(getAttribute(SUMO_ATTR_POSITION));
-                        device.writeAttr(SUMO_ATTR_X, toString(pos.x()));
-                        device.writeAttr(SUMO_ATTR_Y, toString(pos.y()));
-                        // write 0 only if is different from 0 (the default value)
-                        if (pos.z() != 0) {
-                            device.writeAttr(SUMO_ATTR_Z, toString(pos.z()));
-                        }
-                    } else {
-                        device.writeAttr(attrProperty.getAttr(), attributeValue);
-                    }
-                }
-            }
-        }
-        // iterate over children and write it in XML (or in a different file)
-        if (myTagProperty.canWriteChildrenSeparate() && myTagProperty.hasAttribute(SUMO_ATTR_FILE) && !getAttribute(SUMO_ATTR_FILE).empty()) {
-            // we assume that rerouter values files is placed in the same folder as the additional file
-            OutputDevice& deviceChildren = OutputDevice::getDevice(FileHelpers::getFilePath(OptionsCont::getOptions().getString("additional-files")) + getAttribute(SUMO_ATTR_FILE));
-            deviceChildren.writeXMLHeader("rerouterValue", "additional_file.xsd");
-            // save children in a different filename
-            for (const auto& additionalChild : getChildAdditionals()) {
-                // avoid to write two times additionals that haben two parents (Only write as child of first parent)
-                if (additionalChild->getParentAdditionals().size() < 1) {
-                    additionalChild->writeAdditional(deviceChildren);
-                } else if (myTagProperty.getTag() == additionalChild->getTagProperty().getParentTags().front()) {
-                    additionalChild->writeAdditional(deviceChildren);
-                }
-            }
-            deviceChildren.close();
-        } else {
-            for (const auto& additionalChild : getChildAdditionals()) {
-                // avoid write symbols
-                if (!additionalChild->getTagProperty().isSymbol()) {
-                    // avoid to write two times additionals that haben two parents (Only write as child of first parent)
-                    if (additionalChild->getParentAdditionals().size() < 2) {
-                        additionalChild->writeAdditional(device);
-                    } else if (myTagProperty.getTag() == additionalChild->getTagProperty().getParentTags().front()) {
-                        additionalChild->writeAdditional(device);
-                    }
-                }
-            }
-        }
-        // write parameters (Always after children to avoid problems with additionals.xsd)
-        writeParams(device);
-        // Close tag
-        device.closeTag();
-    }
-}
-*/
 
 bool
 GNEAdditional::isAdditionalValid() const {
@@ -841,9 +732,9 @@ GNEAdditional::getPathElementArrivalPos() const {
 }
 
 
-const std::map<std::string, std::string>&
-GNEAdditional::getACParametersMap() const {
-    return getParametersMap();
+Position 
+GNEAdditional::getAttributePosition(SumoXMLAttr key) const {
+    throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
 }
 
 
@@ -945,6 +836,34 @@ GNEAdditional::getDrawPositionIndex() const {
         }
     }
     return 0;
+}
+
+
+bool 
+GNEAdditional::areLaneConsecutives(const std::vector<GNELane*>& lanes) {
+    // declare lane iterator
+    int laneIt = 0;
+    // iterate over all lanes, and stop if myE2valid is false
+    while (laneIt < ((int)lanes.size() - 1)) {
+        // we assume that E2 is invalid
+        bool connectionFound = false;
+        // if there is a connection betwen "from" lane and "to" lane of connection, change connectionFound to true
+        for (const auto &connection : lanes.at(laneIt)->getParentEdge()->getNBEdge()->getConnections()) {
+            if ((connection.toEdge == lanes.at(laneIt + 1)->getParentEdge()->getNBEdge()) &&
+                (connection.fromLane == lanes.at(laneIt)->getIndex()) && 
+                (connection.toLane == lanes.at(laneIt + 1)->getIndex())) {
+                connectionFound = true;
+            }
+        }
+        // abort if connectionFound is false
+        if (!connectionFound) {
+            return false;
+        }
+        // update iterator
+        laneIt++;
+    }
+    // there are connections between all lanes, then return true
+    return true;
 }
 
 

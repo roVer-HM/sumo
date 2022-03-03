@@ -105,6 +105,8 @@ enum {
     MID_HOTKEY_CTRL_S_STOPSIMULATION_SAVENETWORK,
     /// @brief Reload the previously loaded simulation
     MID_HOTKEY_CTRL_R_RELOAD,
+    /// @brief Quick-Reload the previously loaded simulation (keep the net)
+    MID_HOTKEY_CTRL_QUICK_RELOAD,
     /// @brief Open current network in SUMO or in NETEDIT
     MID_HOTKEY_CTRL_T_OPENSUMONETEDIT,
     /// @brief paste the current selection / element
@@ -575,6 +577,8 @@ enum {
     MID_CHOOSEN_INVERT,
     /// @brief Deselect selected items
     MID_CHOOSEN_NAME,
+    /// @brief simplify network reduction
+    MID_CHOOSEN_REDUCE,
 
     /// @}
 
@@ -788,8 +792,8 @@ enum {
     MID_GNE_INTERVALBAR_BEGIN,
     /// @brief end changed in InterbalBar
     MID_GNE_INTERVALBAR_END,
-    /// @brief attribute changed in InterbalBar
-    MID_GNE_INTERVALBAR_ATTRIBUTE,
+    /// @brief parameter changed in InterbalBar
+    MID_GNE_INTERVALBAR_PARAMETER,
 
     /// @}
 

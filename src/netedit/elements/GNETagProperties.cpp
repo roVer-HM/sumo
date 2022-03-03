@@ -89,13 +89,13 @@ GNETagProperties::getTagStr() const {
 
 void
 GNETagProperties::checkTagIntegrity() const {
-    // check that element belongs to a group
-    if (!isNetworkElement() && !isAdditionalElement() && !isWire() && !isShape() && !isTAZElement() && !isDemandElement() && !isDataElement() && !isInternalLane()) {
-        throw ProcessError("element must be at least networkElement, additional, TAZ, shape, demandElement or dataElement");
+    // check that element must ist at least networkElement, Additional, or shape
+    if (!isNetworkElement() && !isAdditionalElement() && !isDemandElement() && !isDataElement() && !isInternalLane()) {
+        throw ProcessError("element must be at leas networkElement, additional, TAZ, demandElement or dataElement");
     }
-    // check that element belongs to ONLY one group
-    if ((isNetworkElement() + isAdditionalElement() + isWire() + isShape() + isTAZElement() + isDemandElement() + isDataElement()) > 1) {
-        throw ProcessError("element can be only a networkElement, additional, wire, TAZ, shape, demandElement or dataElement at the same time");
+    // check that element only is networkElement, Additional, or shape at the same time
+    if ((isNetworkElement() + isAdditionalElement() + isDemandElement() + isDataElement()) > 1) {
+        throw ProcessError("element can be only a networkElement, additional, demandElement or dataElement at the same time");
     }
     // if element can mask the start and end position, check that bot attributes exist
     if (canMaskStartEndPos() && (!hasAttribute(SUMO_ATTR_STARTPOS) || !hasAttribute(SUMO_ATTR_ENDPOS))) {
@@ -154,9 +154,7 @@ GNETagProperties::getDefaultValue(SumoXMLAttr attr) const {
 
 void
 GNETagProperties::addAttribute(const GNEAttributeProperties& attributeProperty) {
-    if (isAttributeDeprecated(attributeProperty.getAttr())) {
-        throw ProcessError("Attribute '" + attributeProperty.getAttrStr() + "' is deprecated and cannot be inserted");
-    } else if ((myAttributeProperties.size() + 1) >= MAXNUMBEROFATTRIBUTES) {
+    if ((myAttributeProperties.size() + 1) >= MAXNUMBEROFATTRIBUTES) {
         throw ProcessError("Maximum number of attributes for tag " + attributeProperty.getAttrStr() + " exceeded");
     } else {
         // Check that attribute wasn't already inserted
@@ -169,19 +167,6 @@ GNETagProperties::addAttribute(const GNEAttributeProperties& attributeProperty) 
         myAttributeProperties.push_back(attributeProperty);
         myAttributeProperties.back().setTagPropertyParent(this);
     }
-}
-
-
-void
-GNETagProperties::addDeprecatedAttribute(SumoXMLAttr attr) {
-    // Check that attribute wasn't already inserted
-    for (const auto& attributeProperty : myAttributeProperties) {
-        if (attributeProperty.getAttr() == attr) {
-            throw ProcessError("Attribute '" + toString(attr) + "' is deprecated but was inserted in list of attributes");
-        }
-    }
-    // add it into myDeprecatedAttributes
-    myDeprecatedAttributes.push_back(attr);
 }
 
 
@@ -321,6 +306,18 @@ GNETagProperties::isStoppingPlace() const {
 bool
 GNETagProperties::isDetector() const {
     return (myTagType & DETECTOR) != 0;
+}
+
+
+bool
+GNETagProperties::isShape() const {
+    return (myTagType & SHAPE) != 0;
+}
+
+
+bool
+GNETagProperties::isTAZElement() const {
+    return (myTagType & TAZELEMENT) != 0;
 }
 
 
@@ -513,7 +510,7 @@ GNETagProperties::canCenterCameraAfterCreation() const {
 
 
 bool
-GNETagProperties::embebbedRoute() const {
+GNETagProperties::hasEmbebbedRoute() const {
     return (myTagProperty & EMBEDDED_ROUTE) != 0;
 }
 
@@ -527,12 +524,6 @@ GNETagProperties::requireProj() const {
 bool
 GNETagProperties::vClassIcon() const {
     return (myTagProperty & VCLASS_ICON) != 0;
-}
-
-
-bool
-GNETagProperties::isAttributeDeprecated(SumoXMLAttr attr) const {
-    return (std::find(myDeprecatedAttributes.begin(), myDeprecatedAttributes.end(), attr) != myDeprecatedAttributes.end());
 }
 
 /****************************************************************************/

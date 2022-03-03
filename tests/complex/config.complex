@@ -57,13 +57,16 @@ vehroutes2:vehroutes2.xml
 state:state.xml
 state2:state2.xml
 tripinfo:tripinfo.xml
+tripinfo2:tripinfo2.xml
 net:net.net.xml
 vss:vss.xml
 rawdump:rawdump.xml
 fcd:fcd.xml
+fcd2:fcd2.xml
 lanechanges:lanechanges.xml
 results:results.csv
 tls_state:tls_state.xml
+tls_state2:tls_state2.xml
 log:log.txt
 log2:log2.txt
 cadytslog:cadySumo-log.txt
@@ -107,8 +110,10 @@ net:<!--{[->]}-->
 vehroutes:<!--{[->]}-->
 vehroutes2:<!--{[->]}-->
 tripinfo:<!--{[->]}-->
+tripinfo2:<!--{[->]}-->
 rawdump:<!--{[->]}-->
 fcd:<!--{[->]}-->
+fcd2:<!--{[->]}-->
 stops:<!--{[->]}-->
 stopinfos:<!--{[->]}-->
 collisions:<!--{[->]}-->
@@ -120,6 +125,7 @@ lanechanges:<!--{[->]}-->
 state:<!--{[->]}-->
 state2:<!--{[->]}-->
 tls_state:<!--{[->]}-->
+tls_state2:<!--{[->]}-->
 state:<snapshot (.*) version="[^"]*"{REPLACE <snapshot \1 version="<version>"}
 state2:<snapshot (.*) version="[^"]*"{REPLACE <snapshot \1 version="<version>"}
 detector:<!--{[->]}-->

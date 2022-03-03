@@ -109,6 +109,7 @@ StringBijection<int>::Entry SUMOXMLDefinitions::tags[] = {
     { "flow",                           SUMO_TAG_FLOW },
     { "flowJunctions",                  GNE_TAG_FLOW_JUNCTIONS },
     { "flowState",                      SUMO_TAG_FLOWSTATE },
+    { "edgeControl",                    SUMO_TAG_EDGECONTROL },
 
     { "edgeRelation",                   SUMO_TAG_EDGEREL },
     { "tazRelation",                    SUMO_TAG_TAZREL },
@@ -751,6 +752,7 @@ StringBijection<int>::Entry SUMOXMLDefinitions::attrs[] = {
     { "personsPerHour",         SUMO_ATTR_PERSONSPERHOUR },
     { "containersPerHour",		SUMO_ATTR_CONTAINERSPERHOUR },
     { "perHour",				SUMO_ATTR_PERHOUR },
+    { "done",	  			    SUMO_ATTR_DONE },
     { "output",                 SUMO_ATTR_OUTPUT },
     { "height",                 SUMO_ATTR_HEIGHT },
     { "guiShape",               SUMO_ATTR_GUISHAPE },

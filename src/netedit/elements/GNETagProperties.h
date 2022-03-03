@@ -43,14 +43,13 @@ public:
         // basic types
         NETWORKELEMENT =    1 << 0,  // Network elements (Edges, Junctions, Lanes...)
         ADDITIONALELEMENT = 1 << 1,  // Additional elements (Bus Stops, Charging Stations, Detectors...)
-        WIRE =              1 << 2,  // Wire (tractionSubstation, overheadWireSegment...)
-        SHAPE =             1 << 3,  // Shapes (Polygons and POIs)
-        TAZELEMENT =        1 << 4,  // Traffic Assignment Zones
-        DEMANDELEMENT =     1 << 5,  // Demand elements (Routes, Vehicles, Trips...)
-        DATAELEMENT =       1 << 6,  // Data elements (DataSets, Data Intervals, EdgeData...)
+        DEMANDELEMENT =     1 << 2,  // Demand elements (Routes, Vehicles, Trips...)
+        DATAELEMENT =       1 << 3,  // Data elements (DataSets, Data Intervals, EdgeData...)
         // sub additional elements
-        STOPPINGPLACE =     1 << 7,  // StoppingPlaces (BusStops, ChargingStations...)
-        DETECTOR =          1 << 8,  // Detectors (E1, E2...)
+        STOPPINGPLACE =     1 << 4,  // StoppingPlaces (BusStops, ChargingStations...)
+        DETECTOR =          1 << 5,  // Detectors (E1, E2...)
+        SHAPE =             1 << 6,  // Shapes (Polygons and POIs)
+        TAZELEMENT =        1 << 7,  // Traffic Assignment Zones
         // sub demand elements
         VTYPE =             1 << 9,  // Vehicle types (vType and pTye)
         VEHICLE =           1 << 10, // Vehicles (Vehicles, trips, flows, and routeFlows)
@@ -120,9 +119,6 @@ public:
     /// @brief add attribute (duplicated attributed aren't allowed)
     void addAttribute(const GNEAttributeProperties& attributeProperty);
 
-    /// @brief add deprecated Attribute
-    void addDeprecatedAttribute(SumoXMLAttr attr);
-
     /// @brief get field string (by default tag in string format)
     const std::string& getFieldString() const;
 
@@ -188,6 +184,12 @@ public:
 
     /// @brief return true if tag correspond to a shape
     bool isDetector() const;
+
+    /// @brief return true if tag correspond to a shape
+    bool isShape() const;
+
+    /// @brief return true if tag correspond to a TAZ element
+    bool isTAZElement() const;
 
     /// @brief return true if tag correspond to a vehicle type element
     bool isVehicleType() const;
@@ -283,16 +285,13 @@ public:
     bool canCenterCameraAfterCreation() const;
 
     /// @brief return true if tag correspond to an element that owns a embebbed route
-    bool embebbedRoute() const;
+    bool hasEmbebbedRoute() const;
 
     /// @brief return true if tag correspond to an element that requires a geo projection
     bool requireProj() const;
 
     /// @brief return true if tag correspond to an element that has vClass icons
     bool vClassIcon() const;
-
-    /// @brief return true if attribute of this tag is deprecated
-    bool isAttributeDeprecated(SumoXMLAttr attr) const;
 
 private:
     /// @brief Sumo XML Tag vinculated wit this tag Property
@@ -318,9 +317,6 @@ private:
 
     /// @brief vector with master tags (used by child elements)
     std::vector<SumoXMLTag> myParentTags;
-
-    /// @brief List with the deprecated Attributes
-    std::vector<SumoXMLAttr> myDeprecatedAttributes;
 
     /// @brief field string
     std::string myFieldString;

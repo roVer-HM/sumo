@@ -61,7 +61,8 @@ MSStage::MSStage(const MSEdge* destination, MSStoppingPlace* toStop, const doubl
     myDeparted(-1),
     myArrived(-1),
     myType(type),
-    myGroup(group)
+    myGroup(group),
+    myParametersSet(0)
 {}
 
 MSStage::~MSStage() {}
@@ -378,6 +379,10 @@ MSStageTrip::setArrived(MSNet* net, MSTransportable* transportable, SUMOTime now
                     }
                 }
             }
+            if (wasSet(VEHPARS_ARRIVALPOS_SET) && stageIndex > 1) {
+                // mark the last stage
+                transportable->getNextStage(stageIndex - 1)->markSet(VEHPARS_ARRIVALPOS_SET);
+            }
         } else {
             // append stage so the GUI won't crash due to inconsistent state
             transportable->appendStage(new MSPerson::MSPersonStage_Walking(transportable->getID(), ConstMSEdgeVector({ myOrigin, myDestination }), myDestinationStop, myDuration, mySpeed, previous->getArrivalPos(), myArrivalPos, myDepartPosLat), stageIndex++);
@@ -412,6 +417,53 @@ MSStageTrip::getStageSummary(const bool) const {
     return "trip from '" + myOrigin->getID() + "' to '" + getDestination()->getID() + "'";
 }
 
+void
+MSStageTrip::routeOutput(const bool /*isPerson*/, OutputDevice& os, const bool /*withRouteLength*/, const MSStage* const previous) const {
+    if (myArrived < 0) {
+        const bool walkFactorSet = myWalkFactor != OptionsCont::getOptions().getFloat("persontrip.walkfactor");
+        const bool groupSet = myGroup != OptionsCont::getOptions().getString("persontrip.default.group");
+        // could still be a persontrip but most likely it was a walk in the input
+        SumoXMLTag tag = myModeSet == 0 && !walkFactorSet && !groupSet ? SUMO_TAG_WALK : SUMO_TAG_PERSONTRIP;
+        os.openTag(tag);
+        if (previous == nullptr || previous->getStageType() == MSStageType::WAITING_FOR_DEPART) {
+            os.writeAttr(SUMO_ATTR_FROM, myOrigin->getID());
+        }
+        if (myDestinationStop == nullptr) {
+            os.writeAttr(SUMO_ATTR_TO, myDestination->getID());
+            if (wasSet(VEHPARS_ARRIVALPOS_SET)) {
+                os.writeAttr(SUMO_ATTR_ARRIVALPOS, myArrivalPos);
+            }
+        } else {
+            os.writeAttr(toString(myDestinationStop->getElement()), myDestinationStop->getID());
+        }
+        std::vector<std::string> modes;
+        if ((myModeSet & SVC_PASSENGER) != 0) {
+            modes.push_back("car");
+        }
+        if ((myModeSet & SVC_BICYCLE) != 0) {
+            modes.push_back("bicycle");
+        }
+        if ((myModeSet & SVC_TAXI) != 0) {
+            modes.push_back("taxi");
+        }
+        if ((myModeSet & SVC_BUS) != 0) {
+            modes.push_back("public");
+        }
+        if (modes.size() > 0) {
+            os.writeAttr(SUMO_ATTR_MODES, modes);
+        }
+        if (myVTypes.size() > 0) {
+            os.writeAttr(SUMO_ATTR_VTYPES, myVTypes);
+        }
+        if (groupSet) {
+            os.writeAttr(SUMO_ATTR_GROUP, myGroup);
+        }
+        if (walkFactorSet) {
+            os.writeAttr(SUMO_ATTR_WALKFACTOR, myWalkFactor);
+        }
+        os.closeTag();
+    }
+}
 
 /* -------------------------------------------------------------------------
 * MSStageWaiting - methods
@@ -580,10 +632,14 @@ MSStageWaiting::loadState(MSTransportable* transportable, std::istringstream& st
     }
     MSNet* net = MSNet::getInstance();
     if (dynamic_cast<MSPerson*>(transportable) != nullptr) {
-        myDestination->addPerson(transportable);
+        if (myDeparted >= 0) {
+            myDestination->addPerson(transportable);
+        }
         net->getPersonControl().setWaitEnd(until, transportable);
     } else {
-        myDestination->addContainer(transportable);
+        if (myDeparted >= 0) {
+            myDestination->addContainer(transportable);
+        }
         net->getContainerControl().setWaitEnd(until, transportable);
     }
 }

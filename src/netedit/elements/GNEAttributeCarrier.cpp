@@ -40,6 +40,7 @@ const std::string GNEAttributeCarrier::FEATURE_GUESSED = "guessed";
 const std::string GNEAttributeCarrier::FEATURE_MODIFIED = "modified";
 const std::string GNEAttributeCarrier::FEATURE_APPROVED = "approved";
 const size_t GNEAttributeCarrier::MAXNUMBEROFATTRIBUTES = 128;
+const std::map<std::string, std::string> GNEAttributeCarrier::PARAMETERS_EMPTY;
 
 
 // ===========================================================================
@@ -94,7 +95,7 @@ GNEAttributeCarrier::isAttributeCarrierSelected() const {
 bool
 GNEAttributeCarrier::drawUsingSelectColor() const {
     // get flag for network element
-    const bool networkElement = myTagProperty.isNetworkElement() || myTagProperty.isAdditionalElement() || myTagProperty.isWire() || myTagProperty.isShape() || myTagProperty.isTAZElement();
+    const bool networkElement = myTagProperty.isNetworkElement() || myTagProperty.isAdditionalElement();
     // check supermode network
     if ((networkElement && myNet->getViewNet()->getEditModes().isCurrentSupermodeNetwork()) ||
             (myTagProperty.isDemandElement() && myNet->getViewNet()->getEditModes().isCurrentSupermodeDemand()) ||
@@ -637,8 +638,9 @@ GNEAttributeCarrier::getTagPropertiesByType(const int tagPropertyCategory) {
     if (tagPropertyCategory & GNETagProperties::ADDITIONALELEMENT) {
         // fill additional tags
         for (const auto& tagProperty : myTagProperties) {
-            // avoid symbols (It will be implemented in #7355)
-            if (!tagProperty.second.isSymbol() && tagProperty.second.isAdditionalElement()) {
+            // avoid symbols, shapes and TAZs (It will be implemented in #7355)
+            if (!tagProperty.second.isSymbol() && !tagProperty.second.isShape() && 
+                !tagProperty.second.isTAZElement() && tagProperty.second.isAdditionalElement()) {
                 allowedTags.push_back(tagProperty.second);
             }
         }
@@ -1913,8 +1915,6 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GNETagProperties::ADDITIONALELEMENT | GNETagProperties::DETECTOR,
                                       0,
                                       GUIIcon::E2, currentTag, {}, FXRGBA(240, 238, 249, 255));
-        // set "file" as deprecated attribute
-        myTagProperties[currentTag].addDeprecatedAttribute(SUMO_ATTR_CONT);
         // set attribute properties
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
@@ -1994,8 +1994,6 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GNETagProperties::ADDITIONALELEMENT | GNETagProperties::DETECTOR,
                                       0,
                                       GUIIcon::E2, SUMO_TAG_E2DETECTOR, {}, FXRGBA(240, 238, 249, 255));
-        // set "file" as deprecated attribute
-        myTagProperties[currentTag].addDeprecatedAttribute(SUMO_ATTR_CONT);
         // set attribute properties
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
@@ -2222,8 +2220,6 @@ GNEAttributeCarrier::fillAdditionalElements() {
                                       GNETagProperties::ADDITIONALELEMENT,
                                       GNETagProperties::RTREE | GNETagProperties::DIALOG,
                                       GUIIcon::VARIABLESPEEDSIGN, currentTag, {}, FXRGBA(210, 233, 255, 255));
-        // set "file" as deprecated attribute
-        myTagProperties[currentTag].addDeprecatedAttribute(SUMO_ATTR_FILE);
         // set attribute properties
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::AUTOMATICID,
@@ -2821,7 +2817,7 @@ GNEAttributeCarrier::fillShapeElements() {
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::SHAPE,
+                                      GNETagProperties::ADDITIONALELEMENT | GNETagProperties::SHAPE,
                                       GNETagProperties::RTREE | GNETagProperties::CLOSESHAPE | GNETagProperties::GEOSHAPE,
                                       GUIIcon::POLY, currentTag);
         // set attribute properties
@@ -2892,7 +2888,7 @@ GNEAttributeCarrier::fillShapeElements() {
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::SHAPE,
+                                      GNETagProperties::ADDITIONALELEMENT | GNETagProperties::SHAPE,
                                       GNETagProperties::RTREE,
                                       GUIIcon::POI, currentTag);
         // set attribute properties
@@ -2963,7 +2959,7 @@ GNEAttributeCarrier::fillShapeElements() {
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::SHAPE,
+                                      GNETagProperties::ADDITIONALELEMENT | GNETagProperties::SHAPE,
                                       0,
                                       GUIIcon::POILANE, SUMO_TAG_POI);
         // set attribute properties
@@ -3051,7 +3047,7 @@ GNEAttributeCarrier::fillShapeElements() {
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::SHAPE,
+                                      GNETagProperties::ADDITIONALELEMENT | GNETagProperties::SHAPE,
                                       GNETagProperties::RTREE | GNETagProperties::REQUIERE_PROJ,
                                       GUIIcon::POIGEO, SUMO_TAG_POI);
         // set attribute properties
@@ -3136,7 +3132,7 @@ GNEAttributeCarrier::fillTAZElements() {
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::TAZELEMENT,
+                                      GNETagProperties::ADDITIONALELEMENT | GNETagProperties::TAZELEMENT,
                                       GNETagProperties::RTREE,
                                       GUIIcon::TAZ, currentTag);
         // set attribute properties
@@ -3176,7 +3172,7 @@ GNEAttributeCarrier::fillTAZElements() {
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::TAZELEMENT,
+                                      GNETagProperties::ADDITIONALELEMENT | GNETagProperties::TAZELEMENT,
                                       GNETagProperties::CHILD,
                                       GUIIcon::TAZEDGE, currentTag, {SUMO_TAG_TAZ});
         // set attribute properties
@@ -3196,7 +3192,7 @@ GNEAttributeCarrier::fillTAZElements() {
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::TAZELEMENT,
+                                      GNETagProperties::ADDITIONALELEMENT | GNETagProperties::TAZELEMENT,
                                       GNETagProperties::CHILD,
                                       GUIIcon::TAZEDGE, currentTag, {SUMO_TAG_TAZ});
         // set attribute properties
@@ -3623,7 +3619,7 @@ GNEAttributeCarrier::fillVehicleElements() {
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::DEMANDELEMENT | GNETagProperties::VEHICLE,
+                                      GNETagProperties::DEMANDELEMENT | GNETagProperties::VEHICLE | GNETagProperties::EMBEDDED_ROUTE,
                                       GNETagProperties::EMBEDDED_ROUTE,
                                       GUIIcon::VEHICLE, SUMO_TAG_VEHICLE, {}, FXRGBA(240, 238, 249, 255));
         myTagProperties[currentTag].setFieldString("vehicle (embedded route)");
@@ -3784,7 +3780,7 @@ GNEAttributeCarrier::fillVehicleElements() {
     {
         // set tag properties
         myTagProperties[currentTag] = GNETagProperties(currentTag,
-                                      GNETagProperties::DEMANDELEMENT | GNETagProperties::VEHICLE | GNETagProperties::FLOW,
+                                      GNETagProperties::DEMANDELEMENT | GNETagProperties::VEHICLE | GNETagProperties::FLOW | GNETagProperties::EMBEDDED_ROUTE,
                                       GNETagProperties::EMBEDDED_ROUTE,
                                       GUIIcon::ROUTEFLOW, SUMO_TAG_FLOW, {}, FXRGBA(210, 233, 255, 255));
         myTagProperties[currentTag].setFieldString("flow (embedded route)");

@@ -98,6 +98,7 @@
 #include <microsim/trigger/MSOverheadWire.h>
 #include <microsim/trigger/MSTrigger.h>
 #include <utils/router/FareModul.h>
+#include <netload/NLBuilder.h>
 
 #include "MSEdgeControl.h"
 #include "MSJunctionControl.h"
@@ -750,12 +751,12 @@ MSNet::simulationState(SUMOTime stopTime) const {
 
 
 MSNet::SimulationState
-MSNet::adaptToState(MSNet::SimulationState state) const {
+MSNet::adaptToState(MSNet::SimulationState state, const bool isLibsumo) const {
     if (state == SIMSTATE_LOADING) {
         OptionsIO::setArgs(TraCIServer::getInstance()->getLoadArgs());
         TraCIServer::getInstance()->getLoadArgs().clear();
-    } else if (state != SIMSTATE_RUNNING && TraCIServer::getInstance() != nullptr && !TraCIServer::wasClosed()) {
-        // overrides SIMSTATE_END_STEP_REACHED, e.g. (TraCI ignore SUMO's --end option)
+    } else if (state != SIMSTATE_RUNNING && ((TraCIServer::getInstance() != nullptr && !TraCIServer::wasClosed()) || isLibsumo)) {
+        // overrides SIMSTATE_END_STEP_REACHED, e.g. (TraCI / Libsumo ignore SUMO's --end option)
         return SIMSTATE_RUNNING;
     } else if (state == SIMSTATE_NO_FURTHER_VEHICLES) {
         if (myPersonControl != nullptr) {
@@ -837,16 +838,25 @@ MSNet::clearState(const SUMOTime step) {
                 lane->clearState();
                 lane->releaseVehicles();
             }
+            edge->clearState();
         }
     }
     myInserter->clearState();
+    if (myPersonControl != nullptr) {
+        myPersonControl->clearState();
+    }
+    if (myContainerControl != nullptr) {
+        myContainerControl->clearState();
+    }
+    // delete vtypes after transportables have removed their types
     myVehicleControl->clearState(true);
     MSVehicleTransfer::getInstance()->clearState();
-    MSRoute::dict_clearState(); // delete all routes after vehicles are deleted
     myLogics->clearState();
     myDetectorControl->updateDetectors(myStep);
     myDetectorControl->writeOutput(myStep, true);
     myDetectorControl->clearState();
+    // delete all routes after vehicles and detector output is done
+    MSRoute::dict_clearState();
     for (auto& item : myStoppingPlaces) {
         for (auto& item2 : item.second) {
             item2.second->clearState();
@@ -856,12 +866,6 @@ MSNet::clearState(const SUMOTime step) {
     myBeginOfTimestepEvents->clearState(myStep, step);
     myEndOfTimestepEvents->clearState(myStep, step);
     myInsertionEvents->clearState(myStep, step);
-    if (myPersonControl != nullptr) {
-        myPersonControl->clearState();
-    }
-    if (myContainerControl != nullptr) {
-        myContainerControl->clearState();
-    }
     myStep = step;
     MSGlobals::gClearState = false;
 }
@@ -1514,6 +1518,25 @@ MSNet::warnOnce(const std::string& typeAndID) {
     return false;
 }
 
+void
+MSNet::quickReload() {
+    const OptionsCont& oc = OptionsCont::getOptions();
+    clearState(string2time(oc.getString("begin")));
+    NLBuilder::initRandomness();
+    // load traffic from additional files
+    for (std::string file : oc.getStringVector("additional-files")) {
+        // ignore failure on parsing calibrator flow
+        MSRouteHandler rh(file, true);
+        const long before = PROGRESS_BEGIN_TIME_MESSAGE("Loading traffic from '" + file + "'");
+        if (!XMLSubSys::runParser(rh, file, false)) {
+            throw ProcessError("Loading of " + file + " failed.");
+        }
+        PROGRESS_TIME_MESSAGE(before);
+    }
+    delete myRouteLoaders;
+    myRouteLoaders = NLBuilder::buildRouteLoaderControl(OptionsCont::getOptions());
+    updateGUI();
+}
 
 SUMOTime
 MSNet::loadState(const std::string& fileName) {
@@ -1527,6 +1550,12 @@ MSNet::loadState(const std::string& fileName) {
     if (MsgHandler::getErrorInstance()->wasInformed()) {
         throw ProcessError("Loading state from '" + fileName + "' failed.");
     }
+    // reset route loaders
+    delete myRouteLoaders;
+    myRouteLoaders = NLBuilder::buildRouteLoaderControl(OptionsCont::getOptions());
+    // prevent loading errors on rewound route file
+    MSGlobals::gStateLoaded = true;
+
     updateGUI();
     return newTime;
 }

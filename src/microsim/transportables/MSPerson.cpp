@@ -245,6 +245,8 @@ MSPerson::MSPersonStage_Walking::routeOutput(const bool /* isPerson */, OutputDe
         if (myDestinationStop->getMyName() != "") {
             comment =  " <!-- " + StringUtils::escapeXML(myDestinationStop->getMyName(), true) + " -->";
         }
+    } else if (wasSet(VEHPARS_ARRIVALPOS_SET)) {
+        os.writeAttr(SUMO_ATTR_ARRIVALPOS, myArrivalPos);
     }
     if (myWalkingTime > 0) {
         os.writeAttr(SUMO_ATTR_DURATION, time2string(myWalkingTime));
@@ -356,7 +358,12 @@ MSPerson::MSPersonStage_Walking::loadState(MSTransportable* transportable, std::
     state >> myDeparted >> stepIdx >> myLastEdgeEntryTime;
     myRouteStep = myRoute.begin() + stepIdx;
     myState = MSNet::getInstance()->getPersonControl().getMovementModel()->loadState(transportable, this, state);
-    (*myRouteStep)->addPerson(transportable);
+    if (myState->getLane() && !myState->getLane()->isNormal()) {
+        myCurrentInternalEdge = &myState->getLane()->getEdge();
+        myCurrentInternalEdge->addPerson(transportable);
+    } else {
+        (*myRouteStep)->addPerson(transportable);
+    }
 }
 
 
@@ -442,8 +449,9 @@ MSPerson::MSPersonStage_Access::ProceedCmd::execute(SUMOTime currentTime) {
  * ----------------------------------------------------------------------- */
 MSPerson::MSPerson(const SUMOVehicleParameter* pars, MSVehicleType* vtype, MSTransportable::MSTransportablePlan* plan, const double speedFactor) :
     MSTransportable(pars, vtype, plan, true),
-    myInfluencer(nullptr), myChosenSpeedFactor(speedFactor) {
-}
+    myInfluencer(nullptr),
+    myChosenSpeedFactor(pars->speedFactor < 0 ? speedFactor : pars->speedFactor)
+{ }
 
 
 MSPerson::~MSPerson() {

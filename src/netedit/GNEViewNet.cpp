@@ -202,7 +202,7 @@ FXDEFMAP(GNEViewNet) GNEViewNetMap[] = {
     FXMAPFUNC(SEL_COMMAND, MID_GNE_INTERVALBAR_LIMITED,                     GNEViewNet::onCmdIntervalBarLimit),
     FXMAPFUNC(SEL_COMMAND, MID_GNE_INTERVALBAR_BEGIN,                       GNEViewNet::onCmdIntervalBarSetBegin),
     FXMAPFUNC(SEL_COMMAND, MID_GNE_INTERVALBAR_END,                         GNEViewNet::onCmdIntervalBarSetEnd),
-    FXMAPFUNC(SEL_COMMAND, MID_GNE_INTERVALBAR_ATTRIBUTE,                   GNEViewNet::onCmdIntervalBarSetAttribute)
+    FXMAPFUNC(SEL_COMMAND, MID_GNE_INTERVALBAR_PARAMETER,                   GNEViewNet::onCmdIntervalBarSetParameter)
 };
 
 // Object implementation
@@ -929,6 +929,8 @@ GNEViewNet::doPaintGL(int mode, const Boundary& bound) {
     }
     // pop draw matrix
     GLHelper::popMatrix();
+    // update interval bar
+    myIntervalBar.markForUpdate();
     return hits2;
 }
 
@@ -2139,7 +2141,7 @@ GNEViewNet::onCmdTransformPOI(FXObject*, FXSelector, void*) {
                 POIBaseObject->addDoubleAttribute(SUMO_ATTR_POSITION_LAT, 0);
                 // remove POI
                 myUndoList->begin(GUIIcon::POI, "attach POI into " + toString(SUMO_TAG_LANE));
-                myNet->deleteShape(POI, myUndoList);
+                myNet->deleteAdditional(POI, myUndoList);
                 // add new POI use route handler
                 additionalHanlder.parseSumoBaseObject(POIBaseObject);
                 myUndoList->end();
@@ -2152,7 +2154,7 @@ GNEViewNet::onCmdTransformPOI(FXObject*, FXSelector, void*) {
             POIBaseObject->addDoubleAttribute(SUMO_ATTR_Y, POI->y());
             // remove POI
             myUndoList->begin(GUIIcon::POI, "release POI from " + toString(SUMO_TAG_LANE));
-            myNet->deleteShape(POI, myUndoList);
+            myNet->deleteAdditional(POI, myUndoList);
             // add new POI use route handler
             additionalHanlder.parseSumoBaseObject(POIBaseObject);
             myUndoList->end();
@@ -2225,7 +2227,7 @@ GNEViewNet::onCmdSetCustomGeometryPoint(FXObject*, FXSelector, void*) {
         }
     } else if (TAZ != nullptr) {
         // make a copy of TAZ geometry
-        PositionVector TAZGeometry = TAZ->getTAZElementShape();
+        PositionVector TAZGeometry = TAZ->getAdditionalGeometry().getShape();
         // get index position
         const int index = TAZGeometry.indexOfClosest(getPositionInformation(), true);
         // get new position
@@ -3689,8 +3691,8 @@ GNEViewNet::onCmdIntervalBarSetEnd(FXObject*, FXSelector, void*) {
 
 
 long
-GNEViewNet::onCmdIntervalBarSetAttribute(FXObject*, FXSelector, void*) {
-    myIntervalBar.setAttribute();
+GNEViewNet::onCmdIntervalBarSetParameter(FXObject*, FXSelector, void*) {
+    myIntervalBar.setParameter();
     return 1;
 }
 
@@ -4202,8 +4204,6 @@ GNEViewNet::updateDataModeSpecificControls() {
             menuChecks.menuCheckToogleTAZDrawFill->show();
             menuChecks.menuCheckToogleTAZRelOnlyFrom->show();
             menuChecks.menuCheckToogleTAZRelOnlyTo->show();
-            // enable IntervalBar
-            myIntervalBar.enableIntervalBar();
             break;
         case DataEditMode::DATA_DELETE:
             myViewParent->getDeleteFrame()->show();
@@ -4215,8 +4215,6 @@ GNEViewNet::updateDataModeSpecificControls() {
             myDataViewOptions.menuCheckToogleTAZRelDrawing->show();
             // show toogle TAZRel drawing menu check
             menuChecks.menuCheckToogleTAZRelDrawing->show();
-            // enable IntervalBar
-            myIntervalBar.enableIntervalBar();
             break;
         case DataEditMode::DATA_SELECT:
             myViewParent->getSelectorFrame()->show();
@@ -4228,8 +4226,6 @@ GNEViewNet::updateDataModeSpecificControls() {
             myDataViewOptions.menuCheckToogleTAZRelDrawing->show();
             // show toogle TAZRel drawing menu check
             menuChecks.menuCheckToogleTAZRelDrawing->show();
-            // enable IntervalBar
-            myIntervalBar.enableIntervalBar();
             break;
         case DataEditMode::DATA_EDGEDATA:
             myViewParent->getEdgeDataFrame()->show();
@@ -4237,8 +4233,6 @@ GNEViewNet::updateDataModeSpecificControls() {
             myCurrentFrame = myViewParent->getEdgeDataFrame();
             // set checkable button
             myDataCheckableButtons.edgeDataButton->setChecked(true);
-            // disable IntervalBar
-            myIntervalBar.disableIntervalBar();
             break;
         case DataEditMode::DATA_EDGERELDATA:
             myViewParent->getEdgeRelDataFrame()->show();
@@ -4246,8 +4240,6 @@ GNEViewNet::updateDataModeSpecificControls() {
             myCurrentFrame = myViewParent->getEdgeRelDataFrame();
             // set checkable button
             myDataCheckableButtons.edgeRelDataButton->setChecked(true);
-            // disable IntervalBar
-            myIntervalBar.disableIntervalBar();
             break;
         case DataEditMode::DATA_TAZRELDATA:
             myViewParent->getTAZRelDataFrame()->show();
@@ -4261,8 +4253,6 @@ GNEViewNet::updateDataModeSpecificControls() {
             // show menu check
             menuChecks.menuCheckToogleTAZRelDrawing->show();
             menuChecks.menuCheckToogleTAZDrawFill->show();
-            // disable IntervalBar
-            myIntervalBar.disableIntervalBar();
             break;
         default:
             break;
@@ -4327,20 +4317,6 @@ GNEViewNet::deleteNetworkAttributeCarriers(const std::vector<GNEAttributeCarrier
             if (additionalElement) {
                 myNet->deleteAdditional(additionalElement, myUndoList);
             }
-        } else if (AC->getTagProperty().isShape()) {
-            // get shape Element (note: could be already removed if is a child, then hardfail=false)
-            GNEShape* shapeElement = myNet->getAttributeCarriers()->retrieveShape(AC, false);
-            // if exist, remove it
-            if (shapeElement) {
-                myNet->deleteShape(shapeElement, myUndoList);
-            }
-        } else if (AC->getTagProperty().isTAZElement()) {
-            // get TAZ Element (note: could be already removed if is a child, then hardfail=false)
-            GNETAZElement* TAZElement = myNet->getAttributeCarriers()->retrieveTAZElement(AC, false);
-            // if exist, remove it
-            if (TAZElement) {
-                myNet->deleteTAZElement(TAZElement, myUndoList);
-            }
         }
     }
 }
@@ -4392,12 +4368,55 @@ GNEViewNet::deleteDataAttributeCarriers(const std::vector<GNEAttributeCarrier*> 
 
 void
 GNEViewNet::updateControls() {
-    switch (myEditModes.networkEditMode) {
-        case NetworkEditMode::NETWORK_INSPECT:
-            myViewParent->getInspectorFrame()->update();
-            break;
-        default:
-            break;
+    if (myEditModes.isCurrentSupermodeNetwork()) {
+        switch (myEditModes.networkEditMode) {
+            case NetworkEditMode::NETWORK_INSPECT:
+                myViewParent->getInspectorFrame()->update();
+                break;
+            default:
+                break;
+        }
+    }
+    if (myEditModes.isCurrentSupermodeDemand()) {
+        switch (myEditModes.demandEditMode) {
+            case DemandEditMode::DEMAND_INSPECT:
+                myViewParent->getInspectorFrame()->update();
+                break;
+            case DemandEditMode::DEMAND_VEHICLE:
+                myViewParent->getVehicleFrame()->show();
+                break;
+            case DemandEditMode::DEMAND_TYPE:
+                myViewParent->getTypeFrame()->show();
+                break;
+            case DemandEditMode::DEMAND_STOP:
+                myViewParent->getStopFrame()->show();
+                break;
+            case DemandEditMode::DEMAND_PERSON:
+                myViewParent->getPersonFrame()->show();
+                break;
+            case DemandEditMode::DEMAND_PERSONPLAN:
+                myViewParent->getPersonPlanFrame()->show();
+                break;
+            case DemandEditMode::DEMAND_CONTAINER:
+                myViewParent->getContainerFrame()->show();
+                break;
+            case DemandEditMode::DEMAND_CONTAINERPLAN:
+                myViewParent->getContainerPlanFrame()->show();
+                break;
+            default:
+                break;
+        }
+    }
+    if (myEditModes.isCurrentSupermodeData()) {
+        switch (myEditModes.dataEditMode) {
+            case DataEditMode::DATA_INSPECT:
+                myViewParent->getInspectorFrame()->update();
+                break;
+            default:
+                break;
+        }
+        // update data interval
+        myIntervalBar.markForUpdate();
     }
     // update view
     updateViewNet();

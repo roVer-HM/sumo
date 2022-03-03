@@ -612,6 +612,21 @@ MSActuatedTrafficLightLogic::changeStepAndDuration(MSTLLogicControl& tlcontrol,
     }
 }
 
+
+void
+MSActuatedTrafficLightLogic::loadState(MSTLLogicControl& tlcontrol, SUMOTime t, int step, SUMOTime spentDuration) {
+    const SUMOTime lastSwitch = t - spentDuration;
+    myStep = step;
+    myPhases[myStep]->myLastSwitch = lastSwitch;
+    const SUMOTime nextSwitch = t + getPhase(step).minDuration - spentDuration;
+    mySwitchCommand->deschedule(this);
+    mySwitchCommand = new SwitchCommand(tlcontrol, this, nextSwitch);
+    MSNet::getInstance()->getBeginOfTimestepEvents()->addEvent( mySwitchCommand, nextSwitch);
+    setTrafficLightSignals(lastSwitch);
+    tlcontrol.get(getID()).executeOnSwitchActions();
+}
+
+
 SUMOTime
 MSActuatedTrafficLightLogic::trySwitch() {
     // checks if the actual phase should be continued
@@ -1075,7 +1090,7 @@ MSActuatedTrafficLightLogic::evalTernaryExpression(double a, const std::string& 
     } else if (o == "+") {
         return a + b;
     } else if (o == "-") {
-        return a + b;
+        return a - b;
     } else if (o == "*") {
         return a * b;
     } else if (o == "/") {
@@ -1253,12 +1268,16 @@ MSActuatedTrafficLightLogic::setParameter(const std::string& key, const std::str
         for (InductLoopInfo& loopInfo : myInductLoops) {
             loopInfo.maxGap = myMaxGap;
         }
+        Parameterised::setParameter(key, value);
     } else if (key == "show-detectors") {
         myShowDetectors = StringUtils::toBool(value);
+        Parameterised::setParameter(key, value);
     } else if (key == "inactive-threshold") {
         myInactiveThreshold = string2time(value);
+        Parameterised::setParameter(key, value);
+    } else {
+        MSSimpleTrafficLightLogic::setParameter(key, value);
     }
-    Parameterised::setParameter(key, value);
 }
 
 

@@ -59,6 +59,7 @@
 #include <utils/foxtools/FXLCDLabel.h>
 #include <utils/foxtools/FXThreadEvent.h>
 #include <utils/foxtools/FXLinkLabel.h>
+#include <utils/foxtools/MFXRealSpinner.h>
 
 #include <utils/xml/XMLSubSys.h>
 #include <utils/gui/images/GUITexturesHelper.h>
@@ -110,6 +111,7 @@ FXDEFMAP(GUIApplicationWindow) GUIApplicationWindowMap[] = {
     FXMAPFUNC(SEL_COMMAND,  MID_OPEN_EDGEDATA,                                  GUIApplicationWindow::onCmdOpenEdgeData),
     FXMAPFUNC(SEL_COMMAND,  MID_RECENTFILE,                                     GUIApplicationWindow::onCmdOpenRecent),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_R_RELOAD,                           GUIApplicationWindow::onCmdReload),
+    FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_QUICK_RELOAD,                       GUIApplicationWindow::onCmdQuickReload),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_SHIFT_S_SAVENETWORK_AS,             GUIApplicationWindow::onCmdSaveConfig),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_W_CLOSESIMULATION,                  GUIApplicationWindow::onCmdClose),
     FXMAPFUNC(SEL_COMMAND,  MID_EDITCHOSEN,                                     GUIApplicationWindow::onCmdEditChosen),
@@ -154,6 +156,7 @@ FXDEFMAP(GUIApplicationWindow) GUIApplicationWindowMap[] = {
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_P,          GUIApplicationWindow::onUpdNeedsSimulation),
     FXMAPFUNC(SEL_UPDATE,   MID_OPEN_EDGEDATA,          GUIApplicationWindow::onUpdNeedsSimulation),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_R_RELOAD,   GUIApplicationWindow::onUpdReload),
+    FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_QUICK_RELOAD, GUIApplicationWindow::onUpdReload),
     FXMAPFUNC(SEL_UPDATE,   MID_RECENTFILE,             GUIApplicationWindow::onUpdOpenRecent),
     FXMAPFUNC(SEL_UPDATE,   MID_NEW_MICROVIEW,          GUIApplicationWindow::onUpdAddView),
 #ifdef HAVE_OSG
@@ -418,6 +421,9 @@ GUIApplicationWindow::fillMenuBar() {
     GUIDesigns::buildFXMenuCommandShortcut(myFileMenu,
                                            "&Reload", "Ctrl+R", "Reloads the simulation / the network.",
                                            GUIIconSubSys::getIcon(GUIIcon::RELOAD), this, MID_HOTKEY_CTRL_R_RELOAD);
+    GUIDesigns::buildFXMenuCommandShortcut(myFileMenu,
+                                           "Quick-Reload", "Ctrl+0", "Reloads the simulation (but not network).",
+                                           GUIIconSubSys::getIcon(GUIIcon::RELOAD), this, MID_HOTKEY_CTRL_QUICK_RELOAD);
     new FXMenuSeparator(myFileMenu);
     GUIDesigns::buildFXMenuCommandShortcut(myFileMenu,
                                            "Save Configuration", "Ctrl+Shift+S", "Save current options as a configuration file.",
@@ -549,9 +555,9 @@ GUIApplicationWindow::fillMenuBar() {
                                            "Step", "D", "Perform one simulation step.",
                                            GUIIconSubSys::getIcon(GUIIcon::STEP), this, MID_HOTKEY_CTRL_D_SINGLESIMULATIONSTEP_OPENDEMANDELEMENTS);
     GUIDesigns::buildFXMenuCommandShortcut(myControlMenu,
-                                           "Delay+", "PgUp", "Increase simulation step delay", nullptr, this, MID_DELAY_INC);
+                                           "Delay+", "PgUp", "Increase simulation step delay.", nullptr, this, MID_DELAY_INC);
     GUIDesigns::buildFXMenuCommandShortcut(myControlMenu,
-                                           "Delay-", "PgDn", "Decrease simulation step delay", nullptr, this, MID_DELAY_DEC);
+                                           "Delay-", "PgDn", "Decrease simulation step delay.", nullptr, this, MID_DELAY_DEC);
     GUIDesigns::buildFXMenuCommandShortcut(myControlMenu,
                                            "Save", "", "Save the current simulation state to a file.",
                                            GUIIconSubSys::getIcon(GUIIcon::SAVE), this, MID_SIMSAVE);
@@ -664,7 +670,7 @@ GUIApplicationWindow::buildToolBars() {
         // create spinner for delay
         mySimDelay = 0;
         mySimDelayTarget = new FXDataTarget(mySimDelay);
-        mySimDelaySpinner = new FXRealSpinner(myToolBar4, 7, mySimDelayTarget, FXDataTarget::ID_VALUE, GUIDesignSpinDial);
+        mySimDelaySpinner = new MFXRealSpinner(myToolBar4, 7, mySimDelayTarget, FXDataTarget::ID_VALUE, GUIDesignSpinDial);
         // create slider
         mySimDelaySlider = new FXSlider(myToolBar4, mySimDelayTarget, FXDataTarget::ID_VALUE, GUIDesignSlider);
         mySimDelaySlider->setRange(0, 1000);
@@ -684,7 +690,7 @@ GUIApplicationWindow::buildToolBars() {
         myToolBar8 = new FXToolBar(myTopDock, myToolBarDrag8, GUIDesignToolBarRaisedSameTop);
         new FXToolBarGrip(myToolBar8, myToolBar8, FXToolBar::ID_TOOLBARGRIP, GUIDesignToolBarGrip);
         new FXLabel(myToolBar8, "Scale Traffic:\t\tScale traffic from flows and vehicles that are loaded incrementally from route files", nullptr, LAYOUT_TOP | LAYOUT_LEFT);
-        myDemandScaleSpinner = new FXRealSpinner(myToolBar8, 7, this, MID_DEMAND_SCALE, GUIDesignSpinDial);
+        myDemandScaleSpinner = new MFXRealSpinner(myToolBar8, 7, this, MID_DEMAND_SCALE, GUIDesignSpinDial);
         myDemandScaleSpinner->setIncrement(0.5);
         myDemandScaleSpinner->setRange(0, 1000);
         myDemandScaleSpinner->setValue(1);
@@ -1009,6 +1015,16 @@ GUIApplicationWindow::onCmdReload(FXObject*, FXSelector, void*) {
 
 
 long
+GUIApplicationWindow::onCmdQuickReload(FXObject*, FXSelector, void*) {
+    if (!myAmLoading) {
+        setStatusBarText("Quick-Reloading.");
+        MSNet::getInstance()->quickReload();
+    }
+    return 1;
+}
+
+
+long
 GUIApplicationWindow::onCmdOpenRecent(FXObject* /* sender */, FXSelector, void* ptr) {
     if (myAmLoading) {
         myStatusbar->getStatusLine()->setText("Already loading!");
@@ -1196,12 +1212,19 @@ long
 GUIApplicationWindow::onCmdDelayInc(FXObject*, FXSelector, void*) {
     if (mySimDelay < 10) {
         mySimDelay = 10;
-    } else if (mySimDelay < 50) {
+    } else if (mySimDelay >=20 && mySimDelay < 50) {
         mySimDelay = 50;
+    } else if (mySimDelay >= 200 && mySimDelay < 500) {
+        mySimDelay = 500;
     } else {
         mySimDelay *= 2;
     }
-    getApp()->refresh();
+    if (mySimDelay > 1000) {
+        // setting high delay by pressing the key too often is hard to recover from
+        mySimDelay = 1000;
+    }
+    mySimDelaySlider->setValue((int)mySimDelay);
+    mySimDelaySpinner->setValue(mySimDelay);
     return 1;
 }
 
@@ -1210,12 +1233,15 @@ long
 GUIApplicationWindow::onCmdDelayDec(FXObject*, FXSelector, void*) {
     if (mySimDelay <= 10) {
         mySimDelay = 0;
-    } else if (mySimDelay <= 50) {
-        mySimDelay = 10;
+    } else if (mySimDelay > 20 && mySimDelay <= 50) {
+        mySimDelay = 20;
+    } else if (mySimDelay > 200 && mySimDelay <= 500) {
+        mySimDelay = 200;
     } else {
         mySimDelay /= 2;
     }
-    getApp()->refresh();
+    mySimDelaySlider->setValue((int)mySimDelay);
+    mySimDelaySpinner->setValue(mySimDelay);
     return 1;
 }
 

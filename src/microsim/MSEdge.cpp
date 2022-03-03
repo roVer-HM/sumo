@@ -1162,7 +1162,9 @@ bool
 MSEdge::canChangeToOpposite() const {
     return (!myLanes->empty() && myLanes->back()->getOpposite() != nullptr &&
             // do not change on curved internal lanes
-            (!isInternal() || myLanes->back()->getIncomingLanes()[0].viaLink->getDirection() == LinkDirection::STRAIGHT));
+            (!isInternal()
+             || (MSGlobals::gUsingInternalLanes
+                 && myLanes->back()->getIncomingLanes()[0].viaLink->getDirection() == LinkDirection::STRAIGHT)));
 }
 
 
@@ -1406,6 +1408,13 @@ MSEdge::inferEdgeType() {
             }
         }
     }
+}
+
+
+void
+MSEdge::clearState() {
+    myPersons.clear();
+    myContainers.clear();
 }
 
 /****************************************************************************/

@@ -185,6 +185,8 @@ enum SumoXMLTag {
     GNE_TAG_FLOW_JUNCTIONS,
     /// @brief a flow state definition (used when saving and loading simulatino state)
     SUMO_TAG_FLOWSTATE,
+    /// @brief the internal state for edge control
+    SUMO_TAG_EDGECONTROL,
     /// @brief a relation between two edges
     SUMO_TAG_EDGEREL,
     /// @brief a relation between two TAZs
@@ -1100,6 +1102,7 @@ enum SumoXMLAttr {
     SUMO_ATTR_PERSONSPERHOUR,
     SUMO_ATTR_CONTAINERSPERHOUR,
     SUMO_ATTR_PERHOUR,
+    SUMO_ATTR_DONE,
     SUMO_ATTR_OUTPUT,
     SUMO_ATTR_HEIGHT,
     SUMO_ATTR_GUISHAPE,

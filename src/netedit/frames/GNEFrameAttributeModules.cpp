@@ -241,16 +241,13 @@ GNEFrameAttributeModules::AttributesCreatorRow::refreshRow() {
     myInvalidValue.clear();
     // special case for attribute ID
     if ((myAttrProperties.getAttr() == SUMO_ATTR_ID) && myAttrProperties.hasAutomaticID()) {
-        // show check button and disable it
-        myEnableAttributeCheckButton->setText(myAttrProperties.getAttrStr().c_str());
-        myEnableAttributeCheckButton->setCheck(false);
-        myEnableAttributeCheckButton->show();
-        // show text field and disable it
-        myValueTextField->setTextColor(FXRGB(0, 0, 0));
-        myValueTextField->disable();
+        // show label
+        myAttributeLabel->setText(myAttrProperties.getAttrStr().c_str());
+        myAttributeLabel->show();
         // generate ID
         myValueTextField->setText(generateID().c_str());
         // show textField
+        myValueTextField->setTextColor(FXRGB(0, 0, 0));
         myValueTextField->show();
     } else {
         // left
@@ -467,9 +464,7 @@ GNEFrameAttributeModules::AttributesCreatorRow::generateID() const {
     // get attribute carriers
     const auto& GNEAttributeCarriers = myAttributesCreatorParent->getFrameParent()->getViewNet()->getNet()->getAttributeCarriers();
     // continue depending of type
-    if (myAttrProperties.getTagPropertyParent().isShape()) {
-        return GNEAttributeCarriers->generateShapeID(myAttrProperties.getTagPropertyParent().getXMLTag());
-    } else if (myAttrProperties.getTagPropertyParent().isAdditionalElement()) {
+    if (myAttrProperties.getTagPropertyParent().isAdditionalElement()) {
         return GNEAttributeCarriers->generateAdditionalID(myAttrProperties.getTagPropertyParent().getTag());
     } else if (myAttrProperties.getTagPropertyParent().isDemandElement()) {
         return GNEAttributeCarriers->generateDemandElementID(myAttrProperties.getTagPropertyParent().getTag());

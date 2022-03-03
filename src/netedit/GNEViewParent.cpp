@@ -662,7 +662,13 @@ GNEViewParent::onCmdLocate(FXObject*, FXSelector sel, void*) {
                     myACChoosers.ACChooserPOI->setFocus();
                 } else {
                     // fill ACsToLocate with POIs
-                    for (const auto& POI : viewNet->getNet()->getAttributeCarriers()->getShapes().at(SUMO_TAG_POI)) {
+                    for (const auto& POI : viewNet->getNet()->getAttributeCarriers()->getAdditionals().at(SUMO_TAG_POI)) {
+                        ACsToLocate.push_back(POI);
+                    }
+                    for (const auto& POI : viewNet->getNet()->getAttributeCarriers()->getAdditionals().at(GNE_TAG_POILANE)) {
+                        ACsToLocate.push_back(POI);
+                    }
+                    for (const auto& POI : viewNet->getNet()->getAttributeCarriers()->getAdditionals().at(GNE_TAG_POIGEO)) {
                         ACsToLocate.push_back(POI);
                     }
                     myACChoosers.ACChooserPOI = new GNEDialogACChooser(this, messageId, GUIIconSubSys::getIcon(GUIIcon::LOCATEPOI), "POI Chooser", ACsToLocate);
@@ -676,10 +682,10 @@ GNEViewParent::onCmdLocate(FXObject*, FXSelector sel, void*) {
                     myACChoosers.ACChooserPolygon->setFocus();
                 } else {
                     // fill ACsToLocate with polys and TAZs (because share namespae)
-                    for (const auto& polygon : viewNet->getNet()->getAttributeCarriers()->getShapes().at(SUMO_TAG_POLY)) {
+                    for (const auto& polygon : viewNet->getNet()->getAttributeCarriers()->getAdditionals().at(SUMO_TAG_POLY)) {
                         ACsToLocate.push_back(polygon);
                     }
-                    for (const auto& taz : viewNet->getNet()->getAttributeCarriers()->getTAZElements().at(SUMO_TAG_TAZ)) {
+                    for (const auto& taz : viewNet->getNet()->getAttributeCarriers()->getAdditionals().at(SUMO_TAG_TAZ)) {
                         ACsToLocate.push_back(taz);
                     }
                     myACChoosers.ACChooserPolygon = new GNEDialogACChooser(this, messageId, GUIIconSubSys::getIcon(GUIIcon::LOCATEPOLY), "Poly Chooser", ACsToLocate);

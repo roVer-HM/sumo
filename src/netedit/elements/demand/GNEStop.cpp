@@ -25,6 +25,7 @@
 #include <netedit/changes/GNEChange_Attribute.h>
 #include <netedit/changes/GNEChange_EnableAttribute.h>
 #include <netedit/frames/common/GNEMoveFrame.h>
+#include <netedit/frames/demand/GNEStopFrame.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/globjects/GLIncludes.h>
 #include <utils/vehicle/SUMORouteHandler.h>
@@ -37,7 +38,7 @@
 
 GNEStop::GNEStop(SumoXMLTag tag, GNENet* net) :
     GNEDemandElement("", net, GLO_STOP, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {}, {}, {}, {}, {}) {
+        {}, {}, {}, {}, {}, {}) {
     // reset default values
     resetDefaultValues();
     // enable parking for stops in parkin)gAreas
@@ -53,7 +54,7 @@ GNEStop::GNEStop(SumoXMLTag tag, GNENet* net) :
 
 GNEStop::GNEStop(SumoXMLTag tag, GNENet* net, GNEDemandElement* stopParent, GNEAdditional* stoppingPlace, const SUMOVehicleParameter::Stop& stopParameter) :
     GNEDemandElement(stopParent, net, GLO_STOP, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {}, {stoppingPlace}, {}, {}, {stopParent}, {}),
+        {}, {}, {}, {stoppingPlace}, {stopParent}, {}),
     SUMOVehicleParameter::Stop(stopParameter) {
     // enable parking for stops in parkingAreas
     if ((tag == SUMO_TAG_STOP_PARKINGAREA) || (tag == GNE_TAG_WAYPOINT_PARKINGAREA)) {
@@ -71,7 +72,7 @@ GNEStop::GNEStop(SumoXMLTag tag, GNENet* net, GNEDemandElement* stopParent, GNEA
 
 GNEStop::GNEStop(SumoXMLTag tag, GNENet* net, GNEDemandElement* stopParent, GNELane* lane, const SUMOVehicleParameter::Stop& stopParameter) :
     GNEDemandElement(stopParent, net, GLO_STOP, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {}, {lane}, {}, {}, {}, {stopParent}, {}),
+        {}, {}, {lane}, {}, {stopParent}, {}),
     SUMOVehicleParameter::Stop(stopParameter) {
     // set flags
     parking = (parametersSet & STOP_PARKING_SET);
@@ -85,7 +86,7 @@ GNEStop::GNEStop(SumoXMLTag tag, GNENet* net, GNEDemandElement* stopParent, GNEL
 
 GNEStop::GNEStop(SumoXMLTag tag, GNENet* net, GNEDemandElement* stopParent, GNEEdge* edge, const SUMOVehicleParameter::Stop& stopParameter) :
     GNEDemandElement(stopParent, net, GLO_STOP, tag, GNEPathManager::PathElement::Options::DEMAND_ELEMENT,
-        {}, {edge}, {}, {}, {}, {}, {stopParent}, {}),
+        {}, {edge}, {}, {}, {stopParent}, {}),
     SUMOVehicleParameter::Stop(stopParameter) {
     // enable parking for stops in parkingAreas
     if ((tag == SUMO_TAG_STOP_PARKINGAREA) || (tag == GNE_TAG_WAYPOINT_PARKINGAREA)) {
@@ -112,7 +113,7 @@ GNEStop::getMoveOperation() {
     if ((myTagProperty.getTag() == GNE_TAG_STOPPERSON_EDGE) || (myTagProperty.getTag() == GNE_TAG_STOPCONTAINER_EDGE)) {
         // return move operation for additional placed over shape
         return new GNEMoveOperation(this, getParentEdges().front()->getLanes().front(), endPos, false);
-    } else if (myTagProperty.getTag() == SUMO_TAG_STOP_LANE) {
+    } else if ((myTagProperty.getTag() == SUMO_TAG_STOP_LANE) || (myTagProperty.getTag() == GNE_TAG_WAYPOINT_LANE)) {
         // get allow change lane
         const bool allowChangeLane = myNet->getViewNet()->getViewParent()->getMoveFrame()->getCommonModeOptions()->getAllowChangeLane();
         // fist check if we're moving only extremes
@@ -322,9 +323,24 @@ GNEStop::getVClass() const {
 const RGBColor&
 GNEStop::getColor() const {
     if (getTagProperty().isPersonPlan() || getTagProperty().isContainerPlan()) {
-        return myNet->getViewNet()->getVisualisationSettings().colorSettings.stopColor;
-    } else {
         return myNet->getViewNet()->getVisualisationSettings().colorSettings.stopPersonColor;
+    } else if (myNet->getViewNet()->getInspectedAttributeCarriers().size() > 0) {
+        // get inspected AC
+        const auto AC = myNet->getViewNet()->getInspectedAttributeCarriers().front();
+        // check if is a route or a vehicle
+        if ((AC->getTagProperty().isRoute() || AC->getTagProperty().isVehicle()) && (AC != getParentDemandElements().front())) {
+            return RGBColor::GREY;
+        }
+    } else if (myNet->getViewNet()->getViewParent()->getStopFrame()->shown()) {
+        if (myNet->getViewNet()->getViewParent()->getStopFrame()->getStopParentSelector()->getCurrentDemandElement() != getParentDemandElements().front()) {
+            return RGBColor::GREY;
+        }
+    }
+    // return default color
+    if (myTagProperty.isWaypoint()) {
+        return myNet->getViewNet()->getVisualisationSettings().colorSettings.waypointColor;
+    } else {
+        return myNet->getViewNet()->getVisualisationSettings().colorSettings.stopColor;
     }
 }
 
@@ -1025,6 +1041,13 @@ GNEStop::canDrawVehicleStop() const {
         return true;
     } else if (myNet->getViewNet()->getDemandViewOptions().showAllTrips()) {
         return true;
+    } else if ((getParentDemandElements().front()->getTagProperty().getTag() == GNE_TAG_VEHICLE_WITHROUTE) ||
+               (getParentDemandElements().front()->getTagProperty().getTag() == GNE_TAG_FLOW_WITHROUTE)) {
+        if (myNet->getViewNet()->isAttributeCarrierInspected(getParentDemandElements().front()->getChildDemandElements().front())) {
+            return true;
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -1034,7 +1057,7 @@ GNEStop::canDrawVehicleStop() const {
 void
 GNEStop::drawVehicleStop(const GUIVisualizationSettings& s, const double exaggeration) const {;
     // declare value to save stop color
-    const RGBColor stopColor = drawUsingSelectColor() ? s.colorSettings.selectedRouteColor : myTagProperty.isWaypoint()? s.colorSettings.waypointColor : s.colorSettings.stopColor;
+    const RGBColor stopColor = drawUsingSelectColor() ? s.colorSettings.selectedRouteColor : getColor();
     // get lane
     const auto& stopLane = getParentLanes().size() > 0 ? getParentLanes().front() : nullptr;
     // get lane width
