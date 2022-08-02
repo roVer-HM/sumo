@@ -28,6 +28,7 @@
 
 #include "GNEApplicationWindow.h"
 #include "GNEViewNet.h"
+#include "GNELoadThread.h"
 
 #ifdef HAVE_VERSION_H
 #include <version.h>
@@ -1873,59 +1874,102 @@ GNEApplicationWindowHelper::GNEConfigHandler::GNEConfigHandler(GNEApplicationWin
 GNEApplicationWindowHelper::GNEConfigHandler::~GNEConfigHandler() {}
 
 
-void 
-GNEApplicationWindowHelper::GNEConfigHandler::loadNetFile(const std::string& file) {
-    if (FileHelpers::isAbsolute(file)) {
-        // load network
-        myApplicationWindow->loadNet(file);
-    } else {
-        // load network adding filepath
-        myApplicationWindow->loadNet(myFilepath + file);
-    }
-}
-
-
-void 
-GNEApplicationWindowHelper::GNEConfigHandler::loadAdditionalFiles(const std::vector<std::string>& files) {
-    // first check that net exist
-    if (myApplicationWindow->getViewNet() && myApplicationWindow->getViewNet()->getNet()) {
-        // load all files
-        for (const auto &file : files) {
-            // Create additional handler
-            GNEGeneralHandler generalHandler(myApplicationWindow->getViewNet()->getNet(), 
-                                             FileHelpers::isAbsolute(file)? file : myFilepath + file, false, true);
-            // Run parser
-            if (!generalHandler.parse()) {
-                WRITE_ERROR("Loading of " + file + " failed.");
-            }
-        }
-    } else {
-        WRITE_ERROR("A loaded network is needed for loading additional files");
-    }
-}
-
 void
-GNEApplicationWindowHelper::GNEConfigHandler::loadRouteFiles(const std::vector<std::string>& files) {
-    // first check that net exist
-    if (myApplicationWindow->getViewNet() && myApplicationWindow->getViewNet()->getNet()) {
-        // load all files
-        for (const auto &file : files) {
-            // Create additional handler
-            GNEGeneralHandler generalHandler(myApplicationWindow->getViewNet()->getNet(), 
-                                             FileHelpers::isAbsolute(file)? file : myFilepath + file, false, true);
-            // Run parser
-            if (!generalHandler.parse()) {
-                WRITE_ERROR("Loading of " + file + " failed.");
+GNEApplicationWindowHelper::GNEConfigHandler::loadConfig(CommonXMLStructure::SumoBaseObject* configObj) {
+    // get net file
+    const auto netFile = configObj->hasStringAttribute(SUMO_ATTR_NETFILE)? configObj->getStringAttribute(SUMO_ATTR_NETFILE) : "";
+    // first check if there is a network to load
+    if (netFile.size() > 0) {
+        OptionsCont& oc = OptionsCont::getOptions();
+        // load net depending if file is absoulte or relative
+        oc.resetWritable();
+        if (FileHelpers::isAbsolute(netFile)) {
+            oc.set("sumo-net-file", netFile);
+        } else {
+            oc.set("sumo-net-file", myFilepath + netFile);
+        }
+        // set additional files
+        if (configObj->hasStringAttribute(SUMO_ATTR_ADDITIONALFILES)) {
+            const auto file = configObj->getStringAttribute(SUMO_ATTR_ADDITIONALFILES);
+            oc.resetWritable();
+            if (FileHelpers::isAbsolute(file)) {
+                oc.set("additional-files", file);
+            } else {
+                oc.set("additional-files", myFilepath + file);
             }
         }
-    } else {
-        WRITE_ERROR("A loaded network is needed for loading route files");
+        // set route files
+        if (configObj->hasStringAttribute(SUMO_ATTR_ROUTEFILES)) {
+            const auto file = configObj->getStringAttribute(SUMO_ATTR_ROUTEFILES);
+            oc.resetWritable();
+            if (FileHelpers::isAbsolute(file)) {
+                oc.set("route-files", file);
+            } else {
+                oc.set("route-files", myFilepath + file);
+            }
+        }
+        // set data files
+        if (configObj->hasStringAttribute(SUMO_ATTR_DATAFILES)) {
+            const auto file = configObj->getStringAttribute(SUMO_ATTR_DATAFILES);
+            oc.resetWritable();
+            if (FileHelpers::isAbsolute(file)) {
+                oc.set("data-files", file);
+            } else {
+                oc.set("data-files", myFilepath + file);
+            }
+        }
+        // set SUMOConfig-files
+        oc.resetWritable();
+        oc.set("SUMOConfig-output", configObj->getStringAttribute(SUMO_ATTR_CONFIGFILE));
+        // load network
+        myApplicationWindow->loadNet("");
     }
 }
 
 // ---------------------------------------------------------------------------
 // GNEApplicationWindowHelper - methods
 // ---------------------------------------------------------------------------
+
+
+void 
+GNEApplicationWindowHelper::saveSUMOConfig() {
+    // obtain option container
+    OptionsCont& oc = OptionsCont::getOptions();
+    // check SUMOConfig-outpout
+    if (oc.getString("SUMOConfig-output").size() > 0) {
+        // open output device
+        OutputDevice& device = OutputDevice::getDevice(oc.getString("SUMOConfig-output"));
+        // open configuration tag
+        device.openTag(SUMO_TAG_CONFIGURATION);
+        // save network
+        device.openTag(SUMO_TAG_NETFILE);
+        device.writeAttr(SUMO_ATTR_VALUE, oc.getString("sumo-net-file"));
+        device.closeTag();
+        // check if write additionals
+        if (oc.getString("additional-files").size() > 0) {
+            device.openTag(SUMO_TAG_ADDITIONALFILES);
+            device.writeAttr(SUMO_ATTR_VALUE, oc.getString("additional-files"));
+            device.closeTag();
+        }
+        // check if write route elements    
+        if (oc.getString("route-files").size() > 0) {
+            device.openTag(SUMO_TAG_ROUTEFILES);
+            device.writeAttr(SUMO_ATTR_ROUTEFILES, oc.getString("route-files"));
+            device.closeTag();
+        }
+        // check if write data elements    
+        if (oc.getString("data-files").size() > 0) {
+            device.openTag(SUMO_TAG_DATAFILES);
+            device.writeAttr(SUMO_ATTR_DATAFILES, oc.getString("data-files"));
+            device.closeTag();
+        }
+        // close device
+        device.close();
+        // show debug information
+        WRITE_DEBUG("SUMOConfig saved");
+    }
+}
+
 
 bool
 GNEApplicationWindowHelper::toggleEditOptionsNetwork(GNEViewNet* viewNet, const MFXCheckableButton* menuCheck, const int numericalKeyPressed, FXObject* obj, FXSelector sel) {

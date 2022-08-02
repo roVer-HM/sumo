@@ -40,30 +40,11 @@ public:
     /// @brief parse
     bool parse();
 
-    /// @brief parse SumoBaseObject (it's called recursivelly)
-    void parseSumoBaseObject(CommonXMLStructure::SumoBaseObject* obj);
-
-    /// @name load functions
-    /// @{
     /**@brief Load net file
-     * @param[in] sumoBaseObject sumo base object used for build
+     * @param[in] configObj sumo base object used for build
      * @param[in] file net file
      */
-    virtual void loadNetFile(const std::string& file) = 0;
-
-    /**@brief Load additional files
-     * @param[in] sumoBaseObject sumo base object used for build
-     * @param[in] files additional files
-     */
-    virtual void loadAdditionalFiles(const std::vector<std::string>& files) = 0;
-
-    /**@brief Load route files
-     * @param[in] sumoBaseObject sumo base object used for build
-     * @param[in] files route files
-     */
-    virtual void loadRouteFiles(const std::vector<std::string>& files) = 0;
-
-    /// @}
+    virtual void loadConfig(CommonXMLStructure::SumoBaseObject* configObj) = 0;
 
 private:
     /// @brief common XML Structure
@@ -94,7 +75,10 @@ private:
     /// @name parse SUMOConfig attributes
     /// @{
 
-    /// @brief parse parse netFile attribute
+    /// @brief parse config file attribute
+    void parseConfigFile();
+
+    /// @brief parse net file attribute
     void parseNetFile(const SUMOSAXAttributes& attrs);
 
     /// @brief parse additional files attribute
@@ -102,6 +86,9 @@ private:
 
     /// @brief parse route files attribute
     void parseRouteFiles(const SUMOSAXAttributes& attrs);
+
+    /// @brief parse data files attribute
+    void parseDataFiles(const SUMOSAXAttributes& attrs);
 
     /// @}
 

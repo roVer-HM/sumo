@@ -406,6 +406,8 @@ enum SumoXMLTag {
     SUMO_TAG_ADDITIONALFILES,
     /// @brief route files
     SUMO_TAG_ROUTEFILES,
+    /// @brief data files
+    SUMO_TAG_DATAFILES,
     ///@}
 
     /// @name NETEDIT elements
@@ -1319,6 +1321,19 @@ enum SumoXMLAttr {
     AGEN_ATTR_OUTGOING,
     /// @}
     /// @}
+
+    /// @name SUMOConfig elements
+    /// @brief config file
+    SUMO_ATTR_CONFIGFILE,
+    /// @brief net file
+    SUMO_ATTR_NETFILE,
+    /// @brief additional files
+    SUMO_ATTR_ADDITIONALFILES,
+    /// @brief route files
+    SUMO_ATTR_ROUTEFILES,
+    /// @brief route files
+    SUMO_ATTR_DATAFILES,
+    ///@}
 
     //@name Netedit Attributes (used as virtual property holders, must be in SumoXMLAttr)
     //@{
