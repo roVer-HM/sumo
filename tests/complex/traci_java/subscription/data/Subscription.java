@@ -27,6 +27,11 @@ import java.util.TreeMap;
 public class Subscription {
 
     public static void main(String[] args) {
+        if (System.getProperty("os.name").startsWith("Windows") && Simulation.class.toString().contains("libsumo")) {
+            System.loadLibrary("iconv-2");
+            System.loadLibrary("intl-8");
+            System.loadLibrary("proj_9_0");
+        }
         System.loadLibrary("libtracijni");
         String sumo_bin = "sumo";
         String config_file = "data/config.sumocfg";

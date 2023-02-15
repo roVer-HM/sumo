@@ -316,7 +316,7 @@ GUIApplicationWindow::dependentBuild(const bool isLibsumo) {
     myLoadThread = new GUILoadThread(getApp(), this, myEvents, myLoadThreadEvent, isLibsumo);
     myRunThread = new GUIRunThread(getApp(), this, mySimDelay, myEvents, myRunThreadEvent);
     // set the status bar
-    myStatusbar->getStatusLine()->setText(TL("Ready."));
+    setStatusBarText(TL("Ready."));
     // set the caption
     setTitle(MFXUtils::getTitleText("SUMO " VERSION_STRING));
     // start the simulation-thread (it will loop until the application ends deciding by itself whether to perform a step or not)
@@ -809,12 +809,12 @@ GUIApplicationWindow::buildRecentNetworks(FXMenuPane* fileMenu, FXMenuPane* file
     GUIDesigns::buildFXMenuCommandRecentFile(fileMenuRecentNetworks, "", &myRecentNetworks, FXRecentFiles::ID_FILE_9);
     GUIDesigns::buildFXMenuCommandRecentFile(fileMenuRecentNetworks, "", &myRecentNetworks, FXRecentFiles::ID_FILE_10);
     new FXMenuSeparator(fileMenuRecentNetworks);  // NOSONAR, Fox does the cleanup
-    GUIDesigns::buildFXMenuCommand(fileMenuRecentNetworks, "Cl&ear Recent Networks", nullptr, &myRecentNetworks, FXRecentFiles::ID_CLEAR);
-    GUIDesigns::buildFXMenuCommand(fileMenuRecentNetworks, "No Recent Networks", nullptr, &myRecentNetworks, MFXRecentNetworks::ID_NOFILES);
+    GUIDesigns::buildFXMenuCommand(fileMenuRecentNetworks, TL("Cl&ear Recent Networks"), nullptr, &myRecentNetworks, FXRecentFiles::ID_CLEAR);
+    GUIDesigns::buildFXMenuCommand(fileMenuRecentNetworks, TL("No Recent Networks"), nullptr, &myRecentNetworks, MFXRecentNetworks::ID_NOFILES);
     // set target
     myRecentNetworks.setTarget(this);
     myRecentNetworks.setSelector(MID_RECENTFILE);
-    new FXMenuCascade(fileMenu, "Recent Networks", nullptr, fileMenuRecentNetworks);
+    new FXMenuCascade(fileMenu, TL("Recent Networks"), nullptr, fileMenuRecentNetworks);
 }
 
 
@@ -832,12 +832,12 @@ GUIApplicationWindow::buildRecentConfigs(FXMenuPane* fileMenu, FXMenuPane* fileM
     GUIDesigns::buildFXMenuCommandRecentFile(fileMenuRecentConfigs, "", &myRecentConfigs, FXRecentFiles::ID_FILE_9);
     GUIDesigns::buildFXMenuCommandRecentFile(fileMenuRecentConfigs, "", &myRecentConfigs, FXRecentFiles::ID_FILE_10);
     new FXMenuSeparator(fileMenuRecentConfigs);  // NOSONAR, Fox does the cleanup
-    GUIDesigns::buildFXMenuCommand(fileMenuRecentConfigs, "Cl&ear Recent Configs", nullptr, &myRecentConfigs, FXRecentFiles::ID_CLEAR);
-    GUIDesigns::buildFXMenuCommand(fileMenuRecentConfigs, "No Recent Configs", nullptr, &myRecentConfigs, MFXRecentNetworks::ID_NOFILES);
+    GUIDesigns::buildFXMenuCommand(fileMenuRecentConfigs, TL("Cl&ear Recent Configs"), nullptr, &myRecentConfigs, FXRecentFiles::ID_CLEAR);
+    GUIDesigns::buildFXMenuCommand(fileMenuRecentConfigs, TL("No Recent Configs"), nullptr, &myRecentConfigs, MFXRecentNetworks::ID_NOFILES);
     // set target
     myRecentConfigs.setTarget(this);
     myRecentConfigs.setSelector(MID_RECENTFILE);
-    new FXMenuCascade(fileMenu, "Recent Configs", nullptr, fileMenuRecentConfigs);
+    new FXMenuCascade(fileMenu, TL("Recent Configs"), nullptr, fileMenuRecentConfigs);
 }
 
 
@@ -1164,7 +1164,7 @@ GUIApplicationWindow::onCmdReload(FXObject*, FXSelector, void*) {
         myIsReload = true;
         closeAllWindows();
         myLoadThread->start();
-        setStatusBarText("Reloading.");
+        setStatusBarText(TL("Reloading."));
         update();
     }
     return 1;
@@ -1174,7 +1174,7 @@ GUIApplicationWindow::onCmdReload(FXObject*, FXSelector, void*) {
 long
 GUIApplicationWindow::onCmdQuickReload(FXObject*, FXSelector, void*) {
     if (!myAmLoading) {
-        setStatusBarText("Quick-Reloading.");
+        setStatusBarText(TL("Quick-Reloading."));
         MSNet::getInstance()->quickReload();
     }
     return 1;
@@ -1211,9 +1211,9 @@ GUIApplicationWindow::onCmdSaveConfig(FXObject*, FXSelector, void*) {
     std::ofstream out(StringUtils::transcodeToLocal(file));
     if (out.good()) {
         OptionsCont::getOptions().writeConfiguration(out, true, false, false, file, true);
-        setStatusBarText("Configuration saved to " + file);
+        setStatusBarText(TLF("Configuration saved to %.", file));
     } else {
-        setStatusBarText("Could not save configuration to " + file);
+        setStatusBarText(TLF("Could not save configuration to %.", file));
     }
     out.close();
     return 1;
@@ -1325,7 +1325,7 @@ GUIApplicationWindow::onCmdSaveState(FXObject*, FXSelector, void*) {
     const std::string file = MFXUtils::assureExtension(opendialog.getFilename(),
                              opendialog.getPatternText(opendialog.getCurrentPattern()).after('.').before(')')).text();
     MSStateHandler::saveState(file, MSNet::getInstance()->getCurrentTimeStep(), false);
-    setStatusBarText("Simulation saved to " + file);
+    setStatusBarText(TLF("Simulation state saved to '%'.", file));
     return 1;
 }
 
@@ -1344,10 +1344,10 @@ GUIApplicationWindow::onCmdLoadState(FXObject*, FXSelector, void*) {
         gCurrentFolder = opendialog.getDirectory();
         const std::string file = opendialog.getFilename().text();
         try {
-            MSNet::getInstance()->loadState(file);
-            setStatusBarText("Simulation loaded from '" + file + "'");
+            MSNet::getInstance()->loadState(file, true);
+            setStatusBarText(TLF("State loaded from '%'.", file));
         } catch (ProcessError& e) {
-            setStatusBarText("Failed to load state from '" + file + "' (" + e.what() + ")");
+            setStatusBarText(TLF("Failed to load state from '%' (%).", file, e.what()));
         }
     }
     return 1;
@@ -1781,7 +1781,7 @@ GUIApplicationWindow::handleEvent_SimulationLoaded(GUIEvent* e) {
     // check whether the loading was successfull
     if (ec->myNet == nullptr) {
         // report failure
-        setStatusBarText("Loading of '" + ec->myFile + "' failed!");
+        setStatusBarText(TLF("Loading of '%' failed!", ec->myFile));
         if (GUIGlobals::gQuitOnEnd) {
             closeAllWindows();
             getApp()->exit(1);
@@ -1795,7 +1795,7 @@ GUIApplicationWindow::handleEvent_SimulationLoaded(GUIEvent* e) {
             }
         } else {
             // report success
-            setStatusBarText("'" + ec->myFile + "' loaded.");
+            setStatusBarText(TLF("'%' loaded.", ec->myFile));
             setWindowSizeAndPos();
             myWasStarted = false;
             myHaveNotifiedAboutSimEnd = false;
@@ -2091,7 +2091,7 @@ GUIApplicationWindow::loadConfigOrNet(const std::string& file) {
         closeAllWindows();
         gSchemeStorage.saveViewport(0, 0, -1, 0); // recenter view
         myLoadThread->loadConfigOrNet(file);
-        setStatusBarText("Loading '" + file + "'.");
+        setStatusBarText(TLF("Loading '%'.", file));
         update();
     }
 }

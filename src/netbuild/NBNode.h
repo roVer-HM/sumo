@@ -544,6 +544,11 @@ public:
     /// @brief set the junction shape
     void setCustomShape(const PositionVector& shape);
 
+    /// @brief reset node shape
+    void resetShape() {
+        myPoly.clear();
+    }
+
     /// @brief set the turning radius
     void setRadius(double radius) {
         myRadius = radius;
@@ -651,6 +656,7 @@ public:
 
     /* @brief check whether a crossing should be build for the candiate edges and build 0 to n crossings
      * @param[in] candidates The candidate vector of edges to be crossed
+     * @param[in] checkOnly Whether only checking (of user supplied) crossings shall be performed
      * @return The number of crossings built
      * */
     int checkCrossing(EdgeVector candidates, bool checkOnly = false);

@@ -174,7 +174,7 @@ GUIOSGView::GUIOSGView(
     myRoot = GUIOSGBuilder::buildOSGScene(myGreenLight, myYellowLight, myRedLight, myRedYellowLight, myPoleBase);
     myPlane = new osg::MatrixTransform();
     myPlane->setCullCallback(new ExcludeFromNearFarComputationCallback());
-    myPlane->addChild(GUIOSGBuilder::buildPlane((zFar - zNear)));
+    myPlane->addChild(GUIOSGBuilder::buildPlane((float)(zFar - zNear)));
     myPlane->addUpdateCallback(new PlaneMoverCallback(myViewer->getCamera()));
     myRoot->addChild(myPlane);
 
@@ -965,7 +965,7 @@ GUIOSGView::updatePositionInformation() const {
         if (GeoConvHelper::getFinal().usingGeoProjection()) {
             myApp->getGeoLabel()->setText(("lat:" + toString(pos.y(), gPrecisionGeo) + ", lon:" + toString(pos.x(), gPrecisionGeo)).c_str());
         } else {
-            myApp->getGeoLabel()->setText(("x:" + toString(pos.x()) + ", y:" + toString(pos.y()) + " (No projection defined)").c_str());
+            myApp->getGeoLabel()->setText(("x:" + toString(pos.x()) + ", y:" + toString(pos.y()) + TL(" (No projection defined)")).c_str());
         }
     } else {
         // set placeholder

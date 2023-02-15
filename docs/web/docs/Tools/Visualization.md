@@ -54,9 +54,26 @@ When option **--show** is set, a interactive plot is opened that allows identify
 
 Option **--filter-ids ID1,ID2,...** allows restricting the plot to the given data element ids. You can use a wildcard to filter out ids that follow some pattern; for instance **--filter-ids bus_*** will filter out all ids that begin with the four characters "bus_".
 
-By setting the special attribute key `@RANK` then the index of the elements within the input file is used.
-
 Further examples are shown below. Some of them are generated with the scenario acosta, one of the published sumo scenarios (https://github.com/DLR-TS/sumo-scenarios/tree/main/bologna/acosta).
+
+### Plot Styles
+
+The script supports the following distinct styles of plots:
+
+- **lineplot**: default
+- **scatterplot:** with option **--scatterplot**
+- **box plot:** by setting one of **--xattr @BOX** or **--yattr @BOX**
+- **bar plot:** by setting either **--barplot** or **--hbarplot**
+
+### Special Attributes
+
+The following attribute values have a special meaning. Instead of using an attribute from the input file they derive a value based on the *other* attribute. (i.e. the special attribute is set for **--xattr** then the *other* value is given by the **--yattr**).
+
+- `@INDEX`: the index of the *other* value within the input file is used.
+- `@RANK`: the index of the *other* value within the sorted (descending) list of values is used
+- `@COUNT`: the number of occurences of the *other* value is used (basically a histogram without any binning)
+- `@BOX`: one or more [box plots](https://en.wikipedia.org/wiki/Box_plot) of the *other* value are drawn. The **--idattr** is used for grouping and there will be one box plot per id
+- `@NONE`: can be used with option **--idattr** to explicitly avoid grouping
 
 ### Multi-line plots
 
@@ -249,6 +266,32 @@ python tools/visualization/plotXMLAttributes.py turnCounts.xml -i from,to -x beg
 ```
 
 <img src="../images/turn-counts.png" width="500px"/>
+
+
+### Boxplot: waiting time by departLane
+
+This plot demonstrates box-plotting for a single attribute (waitingTime). Optionally split by category (departLane). The call uses [tripinfo-output](Simulation/Output/TripInfo.md) from two different simulation runs as it's input.
+
+Call to generate the plot:
+```
+python tools/visualization/plotXMLAttributes.py tripinfos.xml tripinfos2.xml  -x waitingTime -y @BOX -i departLane --show
+```
+
+<img src="../images/boxplot_departLane_waitingTime_horiz.png" width="500px"/>
+
+!!! note
+    By swapping x-attribute and y-attribute the orientation of the boxplot can be changed from horizontal to vertical
+
+### Histogram of timeLoss
+
+This plot demonstrates the use of **--barplot** binning and `@COUNT` to create a histogram of timeLoss values from two simulation runs.
+It also shows how to clamp data to the upper range of 300.
+
+Call to generate the plot:
+```
+plotXMLAttributes.py tripinfos.xml tripinfos2.xml -x timeLoss -y @COUNT -i @NONE -s --legend  --barplot --xbin 20 --xclamp :300
+```
+<img src="../images/hist_timeLoss_clamped.png" width="500px"/>
 
 ## plot_trajectories.py
 

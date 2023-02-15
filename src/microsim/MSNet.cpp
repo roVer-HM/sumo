@@ -1601,15 +1601,16 @@ MSNet::quickReload() {
     updateGUI();
 }
 
+
 SUMOTime
-MSNet::loadState(const std::string& fileName) {
+MSNet::loadState(const std::string& fileName, const bool catchExceptions) {
     // load time only
     const SUMOTime newTime = MSStateHandler::MSStateTimeHandler::getTime(fileName);
     // clean up state
     clearState(newTime);
     // load state
     MSStateHandler h(fileName, 0);
-    XMLSubSys::runParser(h, fileName);
+    XMLSubSys::runParser(h, fileName, false, false, false, catchExceptions);
     if (MsgHandler::getErrorInstance()->wasInformed()) {
         throw ProcessError(TLF("Loading state from '%' failed.", fileName));
     }
@@ -1622,5 +1623,6 @@ MSNet::loadState(const std::string& fileName) {
     updateGUI();
     return newTime;
 }
+
 
 /****************************************************************************/

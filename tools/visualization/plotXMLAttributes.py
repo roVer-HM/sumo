@@ -49,10 +49,15 @@ from sumolib.miscutils import uMin, uMax, parseTime  # noqa
 from sumolib.options import ArgumentParser, RawDescriptionHelpFormatter  # noqa
 import sumolib.visualization.helpers  # noqa
 
-RANK_ATTR = "@RANK"
 INDEX_ATTR = "@INDEX"
+RANK_ATTR = "@RANK"
+COUNT_ATTR = "@COUNT"
+BOX_ATTR = "@BOX"
 NONE_ATTR = "@NONE"
 NONE_ATTR_DEFAULT = 0
+
+POST_PROCESSING_ATTRS = [RANK_ATTR, COUNT_ATTR, BOX_ATTR]
+SYMBOLIC_ATTRS = POST_PROCESSING_ATTRS + [INDEX_ATTR]
 
 
 def getOptions(args=None):
@@ -86,10 +91,20 @@ def getOptions(args=None):
                          help="if --yattr is a list concatenate the values")
     optParser.add_option("--xfactor", help="multiplier for x-data", type=float, default=1)
     optParser.add_option("--yfactor", help="multiplier for y-data", type=float, default=1)
+    optParser.add_option("--xbin", help="binning size for x-data", type=float)
+    optParser.add_option("--ybin", help="binning size for y-data", type=float)
+    optParser.add_option("--xclamp", default=None,
+                         help="clamp x values to range A:B or half-range A: / :B")
+    optParser.add_option("--yclamp", default=None,
+                         help="clamp y values to range A:B or half-range A: / :B")
     optParser.add_option("--invert-yaxis", dest="invertYAxis", action="store_true",
                          default=False, help="Invert the Y-Axis")
     optParser.add_option("--scatterplot", action="store_true",
                          default=False, help="Draw a scatterplot instead of lines")
+    optParser.add_option("--barplot", action="store_true",
+                         default=False, help="Draw a bar plot parallel to the y-axis")
+    optParser.add_option("--hbarplot", action="store_true",
+                         default=False, help="Draw a bar plot parallel to the x-axis")
     optParser.add_option("--legend", action="store_true", default=False, help="Add legend")
     optParser.add_option("-v", "--verbose", action="store_true", default=False, help="tell me what you are doing")
     optParser.add_argument("files", nargs='+', help="List of XML files to plot")
@@ -107,9 +122,26 @@ def getOptions(args=None):
             sys.exit("mandatory argument --%s is missing" % a)
 
     if options.xlabel is None:
-        options.xlabel = options.xattr
+        if options.xattr == BOX_ATTR:
+            if options.idattr:
+                options.xlabel = options.idattr
+            else:
+                options.xlabel = "file"
+        else:
+            options.xlabel = options.xattr
+        if options.xclamp is not None:
+            options.xlabel += " clamp(%s)" % options.xclamp
+
     if options.ylabel is None:
-        options.ylabel = options.yattr
+        if options.yattr == BOX_ATTR:
+            if options.idattr:
+                options.ylabel = options.idattr
+            else:
+                options.ylabel = "file"
+        else:
+            options.ylabel = options.yattr
+        if options.yclamp is not None:
+            options.ylabel += " clamp(%s)" % options.yclamp
 
     # keep old presets from before integration of common options
     options.nolegend = not options.legend
@@ -117,7 +149,43 @@ def getOptions(args=None):
     if options.output is None:
         options.output = "plot.png"
 
+    if options.xattr == BOX_ATTR and options.yattr == BOX_ATTR:
+        sys.exit("Boxplot can only be specified for one dimension")
+    options.boxplot = options.xattr == BOX_ATTR or options.yattr == BOX_ATTR
+
+    if options.barplot and options.hbarplot:
+        sys.exit("Barplot can only be specified for one axis")
+
+    options.barbin = 0
+    if options.barplot:
+        if options.xbin is None:
+            options.xbin = 1.0
+            if options.verbose:
+                print("Binning set to %s for barplot. Use option --xbin to set a custom value." % options.xbin)
+        options.barbin = options.xbin
+
+    if options.hbarplot:
+        if options.ybin is None:
+            options.ybin = 1.0
+            if options.verbose:
+                print("Binning set to %s for horizontal barplot. Use option --ybin to set a custom value." % options.xbin)
+        options.barbin = options.ybin
+
+    options.xclampRange = interpretClamp(options.xclamp)
+    options.yclampRange = interpretClamp(options.yclamp)
+
     return options
+
+
+def interpretClamp(clamp):
+    if clamp is None:
+        return None
+    clamp = clamp.split(":")
+    if len(clamp) != 2:
+        sys.exit("Clamp option requires a single ':' value")
+    cmin = float(clamp[0]) if clamp[0] else uMin
+    cmax = float(clamp[1]) if clamp[1] else uMax
+    return cmin, cmax
 
 
 def write_csv(data, fname):
@@ -130,13 +198,20 @@ def write_csv(data, fname):
             f.write('\n\n')
 
 
-def short_names(filenames):
+def short_names(filenames, noEmpty):
     if len(filenames) == 1:
         return filenames
     reversedNames = [''.join(reversed(f)) for f in filenames]
-    prefixLen = len(os.path.commonprefix(filenames))
-    suffixLen = len(os.path.commonprefix(reversedNames))
-    return [f[prefixLen:-suffixLen] for f in filenames]
+    prefix = os.path.commonprefix(filenames)
+    suffix = os.path.commonprefix(reversedNames)
+    prefixLen = len(prefix)
+    suffixLen = len(suffix)
+    shortened = [f[prefixLen:-suffixLen] for f in filenames]
+    if noEmpty and any([not f for f in shortened]):
+        # make longer to avoid empty file names
+        base = os.path.basename(prefix)
+        shortened = [base + f for f in shortened]
+    return shortened
 
 
 def onpick(event):
@@ -200,7 +275,7 @@ def getDataStream(options):
                 if attr not in attr2elem:
                     lvlElem = [(lv, el) for el, lv in elem2level.items()]
                     minLevelElem = sorted(lvlElem)[-1][1]
-                    if attr == RANK_ATTR or attr == INDEX_ATTR:
+                    if attr in SYMBOLIC_ATTRS:
                         attr2elem[attr] = minLevelElem
                     else:
                         msg = "%s '%s' not found in %s" % (a, attr, options.files[0])
@@ -244,7 +319,8 @@ def getDataStream(options):
                             values[a] = m.groups()[0]
                         elif a == INDEX_ATTR:
                             values[a] = index
-                        elif a == RANK_ATTR:
+                        elif a in POST_PROCESSING_ATTRS:
+                            # set in post-processing
                             values[a] = 0
                         elif a == NONE_ATTR:
                             values[a] = NONE_ATTR_DEFAULT
@@ -274,7 +350,8 @@ def getDataStream(options):
                     for a, r in zip(allAttrs, mAs):
                         if a == INDEX_ATTR:
                             values[a] = index
-                        elif a == RANK_ATTR:
+                        elif a in POST_PROCESSING_ATTRS:
+                            # set in post-processing
                             values[a] = 0
                         elif a == NONE_ATTR:
                             values[a] = NONE_ATTR_DEFAULT
@@ -363,6 +440,40 @@ def useWildcards(labels):
     return False
 
 
+def binned(value, binsize):
+    if binsize is not None:
+        return int(value / binsize) * binsize
+    else:
+        return value
+
+def clamped(value, clamp):
+    if clamp is not None:
+        return max(clamp[0], min(clamp[1], value))
+    else:
+        return value
+
+
+def countPoints(xvalues):
+    counts = defaultdict(lambda: 0)
+    for x in xvalues:
+        counts[x] += 1
+    xres = sorted(counts.keys())
+    yres = [counts[x] for x in xres]
+    return xres, yres
+
+
+def makeNumeric(val):
+    if isnumeric(val):
+        return val
+    try:
+        return int(val)
+    except ValueError:
+        try:
+            return float(val)
+        except ValueError:
+            return val
+
+
 def applyTicks(d, xyIndex, ticksFile):
     offsets, labels = sumolib.visualization.helpers.parseTicks(ticksFile)
     l2o = dict(zip(labels, offsets))
@@ -399,10 +510,11 @@ def main(options):
     fig = plt.figure(figsize=(14, 9), dpi=100)
     fig.canvas.mpl_connect('pick_event', onpick)
 
-    shortFileNames = short_names(options.files)
+    shortFileNames = short_names(options.files, False)
+    titleFileNames = short_names(options.files, True)
     plt.xlabel(options.xlabel)
     plt.ylabel(options.ylabel)
-    plt.title(','.join(shortFileNames) if options.label is None else options.label)
+    plt.title(','.join(titleFileNames) if options.label is None else options.label)
     xdata = 0
     ydata = 1
 
@@ -433,17 +545,21 @@ def main(options):
             if len(options.files) > 1:
                 suffix = shortFileNames[fileIndex]
                 if len(suffix) > 0:
-                    dataID += "#" + suffix
+                    dataID = str(dataID) + "#" + suffix
             x = interpretValue(x)
             y = interpretValue(y)
             if isnumeric(x):
                 numericXCount += 1
                 x *= options.xfactor
+                x = clamped(x, options.xclampRange)
+                x = binned(x, options.xbin)
             else:
                 stringXCount += 1
             if isnumeric(y):
                 numericYCount += 1
                 y *= options.yfactor
+                y = clamped(y, options.yclampRange)
+                y = binned(y, options.ybin)
             else:
                 stringYCount += 1
 
@@ -461,6 +577,9 @@ def main(options):
     minX = uMax
     maxX = uMin
 
+    barOffset = 0
+    barWidth = options.barbin / (len(data.items()) + 1)
+
     for dataID, d in data.items():
 
         if numericXCount > 0 and stringXCount > 0:
@@ -475,6 +594,12 @@ def main(options):
         if options.yattr == RANK_ATTR:
             d[xdata].sort(reverse=True)
             d[ydata] = list(range(len(d[ydata])))
+
+        if options.xattr == COUNT_ATTR:
+            d[ydata], d[xdata] = countPoints(d[ydata])
+
+        if options.yattr == COUNT_ATTR:
+            d[xdata], d[ydata] = countPoints(d[xdata])
 
         if options.xticksFile:
             applyTicks(d, xdata, options.xticksFile)
@@ -493,13 +618,37 @@ def main(options):
         minX = min(minX, min(xvalues))
         maxX = max(maxX, max(xvalues))
 
-        linestyle = options.linestyle
-        marker = options.marker
-        if options.scatterplot or (min(yvalues) == max(yvalues) and min(xvalues) == max(xvalues)):
-            linestyle = ''
-            if marker is None:
-                marker = 'o'
-        plt.plot(xvalues, yvalues, linestyle=linestyle, marker=marker, picker=True, label=dataID)
+        if not options.boxplot:
+
+            if options.barplot or options.hbarplot:
+                if options.barplot:
+                    center = [x + barOffset * barWidth for x in xvalues]
+                    plt.bar(center, yvalues, width=barWidth, label=dataID)
+                else:
+                    center = [y + barOffset * barWidth for y in yvalues]
+                    plt.barh(center, xvalues, height=barWidth, label=dataID)
+                barOffset += 1
+
+            else:
+                linestyle = options.linestyle
+                marker = options.marker
+                if options.scatterplot or (min(yvalues) == max(yvalues) and min(xvalues) == max(xvalues)):
+                    linestyle = ''
+                    if marker is None:
+                        marker = 'o'
+                plt.plot(xvalues, yvalues, linestyle=linestyle, marker=marker, picker=True, label=dataID)
+
+
+    if options.boxplot:
+        labels = sorted(data.keys(), key=makeNumeric)
+        vertical = options.xattr == BOX_ATTR
+        xyIndex = ydata if vertical else xdata
+        boxdata = [data[dataID][xyIndex] for dataID in labels]
+        if vertical:
+            plt.xticks(range(len(labels)), labels)
+        else:
+            plt.yticks(range(len(labels)), labels)
+        plt.boxplot(boxdata, vert=options.xattr == BOX_ATTR)
 
     if options.invertYAxis:
         plt.axis([minX, maxX, maxY, minY])
