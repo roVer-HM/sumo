@@ -989,6 +989,18 @@ MSVehicle::MSVehicle(SUMOVehicleParameter* pars, ConstMSRoutePtr route,
 
 
 MSVehicle::~MSVehicle() {
+    cleanupFurtherLanes();
+    delete myLaneChangeModel;
+    if (myType->isVehicleSpecific()) {
+        MSNet::getInstance()->getVehicleControl().removeVType(myType);
+    }
+    delete myInfluencer;
+    delete myCFVariables;
+}
+
+
+void
+MSVehicle::cleanupFurtherLanes() {
     for (std::vector<MSLane*>::iterator i = myFurtherLanes.begin(); i != myFurtherLanes.end(); ++i) {
         (*i)->resetPartialOccupation(this);
     }
@@ -998,16 +1010,9 @@ MSVehicle::~MSVehicle() {
         myLaneChangeModel->cleanupTargetLane();
         // still needed when calling resetPartialOccupation (getShadowLane) and when removing
         // approach information from parallel links
-        delete myLaneChangeModel;
     }
     myFurtherLanes.clear();
     myFurtherLanesPosLat.clear();
-    //
-    if (myType->isVehicleSpecific()) {
-        MSNet::getInstance()->getVehicleControl().removeVType(myType);
-    }
-    delete myInfluencer;
-    delete myCFVariables;
 }
 
 
@@ -1021,6 +1026,9 @@ MSVehicle::onRemovalFromNet(const MSMoveReminder::Notification reason) {
     MSVehicleTransfer::getInstance()->remove(this);
     removeApproachingInformation(myLFLinkLanes);
     leaveLane(reason);
+    if (reason == MSMoveReminder::NOTIFICATION_VAPORIZED_COLLISION) {
+        cleanupFurtherLanes();
+    }
 }
 
 
@@ -5080,20 +5088,25 @@ MSVehicle::enterLaneAtLaneChange(MSLane* enteredLane) {
     MSLane* lane = myLane;
     double leftLength = getVehicleType().getLength() - myState.myPos;
     int deleteFurther = 0;
+#ifdef DEBUG_SETFURTHER
+    if (DEBUG_COND) {
+        std::cout << SIMTIME << " enterLaneAtLaneChange entered=" << Named::getIDSecure(enteredLane) << " oldFurther=" << toString(myFurtherLanes) << "\n";
+    }
+#endif
     for (int i = 0; i < (int)myFurtherLanes.size(); i++) {
         if (lane != nullptr) {
             lane = lane->getLogicalPredecessorLane(myFurtherLanes[i]->getEdge());
         }
-        if (lane != nullptr) {
 #ifdef DEBUG_SETFURTHER
-            if (DEBUG_COND) {
-                std::cout << SIMTIME << " enterLaneAtLaneChange \n";
-            }
+        if (DEBUG_COND) {
+            std::cout << "  enterLaneAtLaneChange i=" << i << " lane=" << Named::getIDSecure(lane) << " leftLength=" << leftLength << "\n";
+        }
 #endif
-            myFurtherLanes[i]->resetPartialOccupation(this);
-            // lane changing onto longer lanes may reduce the number of
-            // remaining further lanes
-            if (leftLength > 0) {
+        if (leftLength > 0) {
+            if (lane != nullptr) {
+                myFurtherLanes[i]->resetPartialOccupation(this);
+                // lane changing onto longer lanes may reduce the number of
+                // remaining further lanes
                 myFurtherLanes[i] = lane;
                 myFurtherLanesPosLat[i] = myState.myPosLat;
                 leftLength -= (lane)->setPartialOccupation(this);
@@ -5104,21 +5117,22 @@ MSVehicle::enterLaneAtLaneChange(MSLane* enteredLane) {
                 }
 #endif
             } else {
-                deleteFurther++;
+                // keep the old values, but ensure there is no shadow
+                if (myLaneChangeModel->isChangingLanes()) {
+                    myLaneChangeModel->setNoShadowPartialOccupator(myFurtherLanes[i]);
+                }
+                if (myState.myBackPos < 0) {
+                    myState.myBackPos += myFurtherLanes[i]->getLength();
+                }
+#ifdef DEBUG_SETFURTHER
+                if (DEBUG_COND) {
+                    std::cout << SIMTIME << "   i=" << i << " further=" << myFurtherLanes[i]->getID() << " newBackPos=" << myState.myBackPos << "\n";
+                }
+#endif
             }
         } else {
-            // keep the old values, but ensure there is no shadow
-            if (myLaneChangeModel->isChangingLanes()) {
-                myLaneChangeModel->setNoShadowPartialOccupator(myFurtherLanes[i]);
-            }
-            if (myState.myBackPos < 0) {
-                myState.myBackPos += myFurtherLanes[i]->getLength();
-            }
-#ifdef DEBUG_SETFURTHER
-            if (DEBUG_COND) {
-                std::cout << SIMTIME << "   i=" << i << " further=" << myFurtherLanes[i]->getID() << " newBackPos=" << myState.myBackPos << "\n";
-            }
-#endif
+            myFurtherLanes[i]->resetPartialOccupation(this);
+            deleteFurther++;
         }
     }
     if (deleteFurther > 0) {
@@ -5127,8 +5141,8 @@ MSVehicle::enterLaneAtLaneChange(MSLane* enteredLane) {
             std::cout << SIMTIME << " veh=" << getID() << " shortening myFurtherLanes by " << deleteFurther << "\n";
         }
 #endif
-        myFurtherLanes.erase(myFurtherLanes.end() - 1);
-        myFurtherLanesPosLat.erase(myFurtherLanesPosLat.end() - 1);
+        myFurtherLanes.erase(myFurtherLanes.end() - deleteFurther, myFurtherLanes.end());
+        myFurtherLanesPosLat.erase(myFurtherLanesPosLat.end() - deleteFurther, myFurtherLanesPosLat.end());
     }
 #ifdef DEBUG_SETFURTHER
     if (DEBUG_COND) {

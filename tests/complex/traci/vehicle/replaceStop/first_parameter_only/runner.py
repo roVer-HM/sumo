@@ -66,6 +66,7 @@ traci.start([sumoBinary,
              "-n", "input_net4.net.xml",
              "-a", "input_additional4.add.xml",
              "-r", "input_routes.rou.xml",
+             "--stop-output", "stopinfos.xml",
              "--no-step-log",
              "--vehroute-output", "vehroutes.xml",
              ] + sys.argv[1:])
@@ -80,6 +81,7 @@ while traci.simulation.getMinExpectedNumber() > 0:
         traci.vehicle.setStopParameter(vehID, 0, "posLat", "-0.5")
         traci.vehicle.setStopParameter(vehID, 0, "arrival", "42")
         traci.vehicle.setStopParameter(vehID, 0, "duration", "30")
+        traci.vehicle.setStopParameter(vehID, 1, "duration", "100")
         traci.vehicle.setStopParameter(vehID, 0, "until", "0:1:40")
         traci.vehicle.setStopParameter(vehID, 0, "extension", "10")
         traci.vehicle.setStopParameter(vehID, 0, "parking", "false")
@@ -94,6 +96,7 @@ while traci.simulation.getMinExpectedNumber() > 0:
         traci.vehicle.setStopParameter(vehID, 0, "speed", "3")
         traci.vehicle.setStopParameter(vehID, 0, "started", "0:1:23")
         traci.vehicle.setStopParameter(vehID, 0, "ended", "0:1:42")
+        traci.vehicle.setStopParameter(vehID, 2, "onDemand", "true")
     if traci.simulation.getTime() == 6:
         getParams(vehID, 0)
     if traci.simulation.getTime() == 200:

@@ -11,7 +11,7 @@
 // https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 /****************************************************************************/
-/// @file    MFXIconComboBox.h
+/// @file    MFXComboBoxIcon.h
 /// @author  Jakob Erdmann
 /// @author  Pablo Alvarez Lopez
 /// @date    2018-12-19
@@ -23,36 +23,13 @@
 #include <config.h>
 
 #include "MFXTextFieldIcon.h"
-
-
-/// @brief A list item which allows for custom coloring
-class MFXListItem : public FXListItem {
-    /// @brief FOX declaration
-    FXDECLARE(MFXListItem)
-
-public:
-    /// @brief Construct new item with given text, icon, and user-data
-    MFXListItem(const FXString& text, FXIcon* ic, FXColor backGroundColor, void* ptr = NULL);
-
-    /// @brief draw MFXListItem
-    void draw(const FXList* list, FXDC& dc, FXint x, FXint y, FXint w, FXint h);
-
-    /// @brief get background color
-    const FXColor& getBackGroundColor() const;
-
-protected:
-    /// @brief fox need this
-    MFXListItem();
-
-    /// @brief backGround color
-    FXColor myBackGroundColor;
-};
+#include "MFXListIcon.h"
 
 
 /// @brief ComboBox with icon
-class MFXIconComboBox : public FXPacker {
+class MFXComboBoxIcon : public FXPacker {
     /// @brief FOX declaration
-    FXDECLARE(MFXIconComboBox)
+    FXDECLARE(MFXComboBoxIcon)
 
 public:
     /// @brief enum for ID
@@ -63,10 +40,10 @@ public:
     };
 
     /// @brief Construct a Combo Box widget with room to display cols columns of text
-    MFXIconComboBox(FXComposite* p, FXint cols, const bool haveIcons, FXObject* tgt = NULL, FXSelector sel = 0, FXuint opts = COMBOBOX_NORMAL, FXint x = 0, FXint y = 0, FXint w = 0, FXint h = 0, FXint pl = DEFAULT_PAD, FXint pr = DEFAULT_PAD, FXint pt = DEFAULT_PAD, FXint pb = DEFAULT_PAD);
+    MFXComboBoxIcon(FXComposite* p, FXint cols, const bool haveIcons, FXObject* tgt = NULL, FXSelector sel = 0, FXuint opts = COMBOBOX_NORMAL, FXint x = 0, FXint y = 0, FXint w = 0, FXint h = 0, FXint pl = DEFAULT_PAD, FXint pr = DEFAULT_PAD, FXint pt = DEFAULT_PAD, FXint pb = DEFAULT_PAD);
 
     /// @brief Destructor
-    virtual ~MFXIconComboBox();
+    virtual ~MFXComboBoxIcon();
 
     /// @brief Create server-side resources
     virtual void create();
@@ -270,7 +247,7 @@ public:
 
 protected:
     /// @brief FOX need this
-    MFXIconComboBox();
+    MFXComboBoxIcon();
 
     /// @brief label for icon
     FXLabel* myIconLabel = nullptr;
@@ -282,7 +259,7 @@ protected:
     FXMenuButton* myButton = nullptr;
 
     /// @brief list
-    FXList* myList = nullptr;
+    MFXListIcon* myList = nullptr;
 
     /// @brief popup
     FXPopup* myPane = nullptr;
@@ -292,8 +269,8 @@ protected:
 
 private:
     /// @brief invalidate copy constructor
-    MFXIconComboBox(const MFXIconComboBox&);
+    MFXComboBoxIcon(const MFXComboBoxIcon&);
 
     /// @brief invalidate assignment operator
-    MFXIconComboBox& operator=(const MFXIconComboBox&) = delete;
+    MFXComboBoxIcon& operator=(const MFXComboBoxIcon&) = delete;
 };
