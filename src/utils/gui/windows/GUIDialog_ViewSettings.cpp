@@ -295,6 +295,7 @@ GUIDialog_ViewSettings::onCmdNameChange(FXObject*, FXSelector, void* ptr) {
     myRealisticLinkRules->setCheck(mySettings->realisticLinkRules);
     myShowLinkRules->setCheck(mySettings->showLinkRules);
     myShowRails->setCheck(mySettings->showRails);
+    mySecondaryShape->setCheck(mySettings->secondaryShape);
     myEdgeNamePanel->update(mySettings->edgeName);
     myInternalEdgeNamePanel->update(mySettings->internalEdgeName);
     myCwaEdgeNamePanel->update(mySettings->cwaEdgeName);
@@ -560,6 +561,7 @@ GUIDialog_ViewSettings::onCmdColorChange(FXObject* sender, FXSelector, void* /*v
     tmpSettings.realisticLinkRules = (myRealisticLinkRules->getCheck() != FALSE);
     tmpSettings.showLinkRules = (myShowLinkRules->getCheck() != FALSE);
     tmpSettings.showRails = (myShowRails->getCheck() != FALSE);
+    tmpSettings.secondaryShape = (mySecondaryShape->getCheck() != FALSE);
     tmpSettings.edgeName = myEdgeNamePanel->getSettings();
     tmpSettings.internalEdgeName = myInternalEdgeNamePanel->getSettings();
     tmpSettings.cwaEdgeName = myCwaEdgeNamePanel->getSettings();
@@ -1936,7 +1938,10 @@ GUIDialog_ViewSettings::buildStreetsFrame(FXTabBook* tabbook) {
     myShowRails->setCheck(mySettings->showRails);
     mySpreadSuperposed = new FXCheckButton(matrixLanes, (TL("Spread bidirectional railways/roads") + std::string("\t\t") + TL("Make both directional edges for a bidirectional railways or roads visible")).c_str(), this, MID_SIMPLE_VIEW_COLORCHANGE);
     mySpreadSuperposed->setCheck(mySettings->spreadSuperposed);
-    //new FXLabel(matrixLanes, " ", nullptr, GUIDesignViewSettingsLabel1);
+
+    mySecondaryShape = new FXCheckButton(matrixLanes, "Secondary shape", this, MID_SIMPLE_VIEW_COLORCHANGE);
+    mySecondaryShape->setCheck(mySettings->secondaryShape);
+    new FXLabel(matrixLanes, " ", nullptr, GUIDesignViewSettingsLabel1);
 
     FXMatrix* tmp0 = new FXMatrix(matrixLanes, 2, GUIDesignViewSettingsMatrix5);
     new FXLabel(tmp0, "Exaggerate width by", nullptr, GUIDesignViewSettingsLabel1);

@@ -74,6 +74,10 @@ public:
         return MEVehicle::getPosition(offset);
     }
 
+    Position getVisualPosition(bool /*s2*/, const double offset = 0) const {
+        return MEVehicle::getPosition(offset);
+    }
+
     /// @brief return exaggeration associated with this GLObject
     double getExaggeration(const GUIVisualizationSettings& s) const;
 
@@ -89,6 +93,10 @@ public:
     * @note implementation of abstract method does not work otherwise
     */
     double getAngle() const {
+        return MEVehicle::getAngle();
+    }
+
+    double getVisualAngle(bool /*s2*/) const {
         return MEVehicle::getAngle();
     }
 

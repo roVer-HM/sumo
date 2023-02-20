@@ -84,10 +84,22 @@ public:
      */
     virtual Position getPosition(const double offset = 0) const = 0;
 
+    /** @brief Return current position taking into account secondary shape
+     * @param[in] offset optional offset in longitudinal direction
+     * @return The current position (in cartesian coordinates)
+     */
+    virtual Position getVisualPosition(bool s2, const double offset = 0) const = 0;
+
     /** @brief Returns the vehicle's direction in radians
      * @return The vehicle's current angle
      */
     virtual double getAngle() const = 0;
+
+    /** @brief Returns the vehicle's direction in radians taking into account
+     * secondary shape
+     * @return The vehicle's current angle
+     */
+    virtual double getVisualAngle(bool s2) const = 0;
 
     /// @brief return the current angle in navigational degrees
     double getNaviDegree() const {

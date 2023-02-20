@@ -289,18 +289,19 @@ GUIEdge::drawGL(const GUIVisualizationSettings& s) const {
     if (drawEdgeName || drawInternalEdgeName || drawCwaEdgeName || drawStreetName || drawEdgeValue || drawEdgeScaleValue) {
         GUILane* lane1 = dynamic_cast<GUILane*>((*myLanes)[0]);
         if (lane1 != nullptr && lane2 != nullptr) {
+            const bool s2 = s.secondaryShape;
             const bool spreadSuperposed = s.spreadSuperposed && getBidiEdge() != nullptr;
-            Position p = lane1->getShape().positionAtOffset(lane1->getShape().length() / (double) 2.);
-            p.add(lane2->getShape().positionAtOffset(lane2->getShape().length() / (double) 2.));
+            Position p = lane1->getShape(s2).positionAtOffset(lane1->getShape(s2).length() / (double) 2.);
+            p.add(lane2->getShape(s2).positionAtOffset(lane2->getShape(s2).length() / (double) 2.));
             p.mul(.5);
             if (spreadSuperposed) {
                 // move name to the right of the edge and towards its beginning
                 const double dist = 0.6 * s.edgeName.scaledSize(s.scale);
-                const double shiftA = lane1->getShape().rotationAtOffset(lane1->getShape().length() / (double) 2.) - DEG2RAD(135);
+                const double shiftA = lane1->getShape(s2).rotationAtOffset(lane1->getShape(s2).length() / (double) 2.) - DEG2RAD(135);
                 Position shift(dist * cos(shiftA), dist * sin(shiftA));
                 p.add(shift);
             }
-            double angle = s.getTextAngle(lane1->getShape().rotationDegreeAtOffset(lane1->getShape().length() / (double) 2.) + 90);
+            double angle = s.getTextAngle(lane1->getShape(s2).rotationDegreeAtOffset(lane1->getShape(s2).length() / (double) 2.) + 90);
             if (drawEdgeName) {
                 drawName(p, s.scale, s.edgeName, angle, true);
             } else if (drawInternalEdgeName) {
@@ -337,7 +338,7 @@ GUIEdge::drawGL(const GUIVisualizationSettings& s) const {
                 if (value != "") {
                     if (drawEdgeName || drawInternalEdgeName || drawCwaEdgeName) {
                         const double dist = 0.4 * (s.edgeName.scaledSize(s.scale) + s.edgeValue.scaledSize(s.scale));
-                        const double shiftA = lane1->getShape().rotationAtOffset(lane1->getShape().length() / (double) 2.) - DEG2RAD(90);
+                        const double shiftA = lane1->getShape(s2).rotationAtOffset(lane1->getShape(s2).length() / (double) 2.) - DEG2RAD(90);
                         Position shift(dist * cos(shiftA), dist * sin(shiftA));
                         p.add(shift);
                     }
@@ -350,14 +351,14 @@ GUIEdge::drawGL(const GUIVisualizationSettings& s) const {
                 // use numerical value value of leftmost lane to hopefully avoid sidewalks, bikelanes etc
                 const double doubleValue = (MSGlobals::gUseMesoSim
                                             ? getScaleValue(s, activeScheme)
-                                            : lane2->getScaleValue(s, activeScheme));
+                                            : lane2->getScaleValue(s, activeScheme, s2));
                 if (doubleValue != s.MISSING_DATA) {
                     value = toString(doubleValue);
                 }
                 if (value != "") {
                     if (drawEdgeName || drawInternalEdgeName || drawCwaEdgeName || drawEdgeValue) {
                         const double dist = 0.4 * (s.edgeName.scaledSize(s.scale) + s.edgeScaleValue.scaledSize(s.scale));
-                        const double shiftA = lane1->getShape().rotationAtOffset(lane1->getShape().length() / (double) 2.) - DEG2RAD(90);
+                        const double shiftA = lane1->getShape(s2).rotationAtOffset(lane1->getShape(s2).length() / (double) 2.) - DEG2RAD(90);
                         Position shift(dist * cos(shiftA), dist * sin(shiftA));
                         p.add(shift);
                     }
@@ -423,8 +424,9 @@ GUIEdge::drawMesoVehicles(const GUIVisualizationSettings& s) const {
                             vehiclePosition += length;
                             latOff += 0.2;
                         }
+                        /// @fixme use correct shape for geometryPositionAtOffset
                         const Position p = l->geometryPositionAtOffset(vehiclePosition, latOff);
-                        const double angle = l->getShape().rotationAtOffset(l->interpolateLanePosToGeometryPos(vehiclePosition));
+                        const double angle = l->getShape(s.secondaryShape).rotationAtOffset(l->interpolateLanePosToGeometryPos(vehiclePosition));
                         veh->drawOnPos(s, p, angle);
                         vehiclePosition -= veh->getVehicleType().getLengthWithGap();
                     }

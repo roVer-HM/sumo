@@ -282,6 +282,18 @@ public:
     void setBidiLane(MSLane* bidyLane);
     ///@}
 
+    /// @name Used by the GUI for secondary shape visualization
+    /// @{
+    virtual void addSecondaryShape(const PositionVector& /*shape*/) {}
+
+    virtual double getLengthGeometryFactor(bool /*secondaryShape*/) const {
+        return myLengthGeometryFactor;
+    }
+
+    virtual const PositionVector& getShape(bool /*secondaryShape*/) const {
+        return myShape;
+    }
+    ///@}
 
 
     /// @name interaction with MSMoveReminder

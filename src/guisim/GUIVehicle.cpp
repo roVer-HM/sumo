@@ -45,6 +45,7 @@
 #include <microsim/MSLane.h>
 #include <microsim/MSLink.h>
 #include <microsim/MSStop.h>
+#include <microsim/MSParkingArea.h>
 #include <microsim/logging/CastingFunctionBinding.h>
 #include <microsim/logging/FunctionBinding.h>
 #include <microsim/lcmodels/MSAbstractLaneChangeModel.h>
@@ -302,6 +303,7 @@ GUIVehicle::drawAction_drawLinkItems(const GUIVisualizationSettings& s) const {
 
 void
 GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool asImage) const {
+    const bool s2 = s.secondaryShape;
     RGBColor current = GLHelper::getColor();
     RGBColor darker = current.changedBrightness(-51);
     const double exaggeration = (s.vehicleSize.getExaggeration(s, this)
@@ -413,8 +415,8 @@ GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool
             }
             backLane = prev;
         }
-        front = lane->geometryPositionAtOffset(carriageOffset, lateralOffset);
-        back = backLane->geometryPositionAtOffset(carriageBackOffset, lateralOffset);
+        front = lane->getShape(s2).positionAtOffset(carriageOffset * lane->getLengthGeometryFactor(s2), lateralOffset);
+        back = backLane->getShape(s2).positionAtOffset(carriageBackOffset * lane->getLengthGeometryFactor(s2), lateralOffset);
         if (front == back) {
             // no place for drawing available
             continue;
@@ -728,6 +730,7 @@ GUIVehicle::drawRouteHelper(const GUIVisualizationSettings& s, ConstMSRoutePtr r
     } else if (myLane->isInternal()) {
         bestLaneIndex++;
     }
+    const bool s2 = s.secondaryShape;
     for (; i != r->end(); ++i) {
         const GUILane* lane;
         if (bestLaneIndex < (int)bestLaneConts.size() && bestLaneConts[bestLaneIndex] != 0 && (*i) == &(bestLaneConts[bestLaneIndex]->getEdge())) {
@@ -742,7 +745,7 @@ GUIVehicle::drawRouteHelper(const GUIVisualizationSettings& s, ConstMSRoutePtr r
             }
         }
         GLHelper::setColor(col);
-        GLHelper::drawBoxLines(lane->getShape(), lane->getShapeRotations(), lane->getShapeLengths(), exaggeration);
+        GLHelper::drawBoxLines(lane->getShape(s2), lane->getShapeRotations(s2), lane->getShapeLengths(s2), exaggeration);
         if (prevLane != nullptr && lane->getBidiLane() == prevLane) {
             // indicate train reversal
             std::string label = "reverse:" + toString(reversalIndex++);
@@ -754,8 +757,8 @@ GUIVehicle::drawRouteHelper(const GUIVisualizationSettings& s, ConstMSRoutePtr r
         }
         if (s.showRouteIndex) {
             std::string label = toString((int)(i - myCurrEdge));
-            const double laneAngle = lane->getShape().angleAt2D(0);
-            Position pos = lane->getShape().front() - Position(0, textSize * repeatLane[lane]) + Position(
+            const double laneAngle = lane->getShape(s2).angleAt2D(0);
+            Position pos = lane->getShape(s2).front() - Position(0, textSize * repeatLane[lane]) + Position(
                                (laneAngle >= -0.25 * M_PI && laneAngle < 0.75 * M_PI ? 1 : -1) * 0.4 * indexDigits * textSize, 0);
             //GLHelper::drawText(label, pos, 1.0, textSize, s.vehicleName.color);
             GLHelper::drawTextSettings(s.vehicleName, label, pos, s.scale, s.angle, 1.0);
@@ -1107,5 +1110,56 @@ GUIVehicle::rerouteDRTStop(MSStoppingPlace* busStop) {
     assert(haveValidStopEdges());
 }
 
+Position
+GUIVehicle::getVisualPosition(bool s2, const double offset) const {
+    if (s2) {
+        // see MSVehicle::getPosition
+        if (myLane == nullptr) {
+            return Position::INVALID;
+        }
+        if (isParking()) {
+            if (myStops.begin()->parkingarea != nullptr) {
+                return myStops.begin()->parkingarea->getVehiclePosition(*this);
+            } else {
+                // position beside the road
+                PositionVector shp = myLane->getEdge().getLanes()[0]->getShape(s2);
+                shp.move2side(SUMO_const_laneWidth * (MSGlobals::gLefthand ? -1 : 1));
+                return shp.positionAtOffset((getPositionOnLane() + offset) * myLane->getLengthGeometryFactor(s2));
+            }
+        }
+        const PositionVector& shape = myLane->getShape(s2);
+        const double posLat = (MSGlobals::gLefthand ? 1 : -1) * getLateralPositionOnLane();
+        return shape.positionAtOffset((getPositionOnLane() + offset) * myLane->getLengthGeometryFactor(s2), posLat);
+    } else {
+        return getPosition(offset);
+    }
+}
 
+
+double
+GUIVehicle::getVisualAngle(bool s2) const {
+    if (s2) {
+        // see MSVehicle::computeAngle
+        const PositionVector& shape = myLane->getShape(s2);
+        if (isParking()) {
+            if (myStops.begin()->parkingarea != nullptr) {
+                return myStops.begin()->parkingarea->getVehicleAngle(*this);
+            } else {
+                return shape.rotationAtOffset(getPositionOnLane() * myLane->getLengthGeometryFactor(s2));
+            }
+        }
+        // if (myLaneChangeModel->isChangingLanes()) {
+        const double lefthandSign = (MSGlobals::gLefthand ? -1 : 1);
+        Position p1 = getVisualPosition(s2);
+        Position p2 = getVisualPosition(s2, MAX2(0.0, -myType->getLength()));
+        double result = (p1 != p2 ? p2.angleTo2D(p1) :
+                shape.rotationAtOffset(getPositionOnLane() * myLane->getLengthGeometryFactor(s2)));
+        if (myLaneChangeModel->isChangingLanes()) {
+            result += lefthandSign * DEG2RAD(myLaneChangeModel->getAngleOffset());
+        }
+        return result;
+    } else {
+        return getAngle();
+    }
+}
 /****************************************************************************/

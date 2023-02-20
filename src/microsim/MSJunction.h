@@ -77,9 +77,14 @@ public:
         (e.g., link map computation) */
     virtual void postloadInit();
 
+    /// used by the gui
+    void addSecondaryPosition(const Position& pos) {
+        myPosition2 = pos;
+    }
 
     /** returns the junction's position */
-    const Position& getPosition() const;
+    const Position& getPosition(bool secondaryShape = false) const;
+
 
 
     /** @brief Returns this junction's shape
@@ -145,6 +150,9 @@ protected:
 
     /// @brief The position of the junction
     Position myPosition;
+
+    /// @brief The secondary position of the junction
+    Position myPosition2;
 
     /// @brief The shape of the junction
     PositionVector myShape;
