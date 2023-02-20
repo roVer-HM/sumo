@@ -163,17 +163,17 @@ Time values are in seconds.
 - opening-time : time for opening the crossing (indicated by red-yellow state 'u') (default 3)
 - yellow-time : time for closing the crossing (default 3)
 
-When setting parameters, 'id' indicates the id of the rail-crossing junction and programID is always '0'.
+When setting parameters, `id` indicates the id of the rail-crossing junction and `programID` is always '0'.
 
 ```
-additional_file.xsd">
+<additional>
     <tlLogic id="C" programID="0">
-        <param key="time-gap" value="15.0"
-        <param key="space-gap" value="-1.0"
-        <param key="min-green-time" value="5.0"
+        <param key="time-gap" value="15.0"/>
+        <param key="space-gap" value="-1.0"/>
+        <param key="min-green-time" value="5.0"/>
         <param key="opening-delay" value="3.0"/>
         <param key="opening-time" value="3.0"/>
-        <param key="yellow-time" value="3.0"/>
+        <param key="yellow-time" value="5.0"/>
     </tlLogic>
 </additional>
 ```

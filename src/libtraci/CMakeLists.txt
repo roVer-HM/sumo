@@ -36,6 +36,8 @@ set(libtracistatic_STAT_SRCS
     VehicleType.cpp
 )
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin)
 add_library(libtracistatic STATIC ${libtracistatic_STAT_SRCS})
 add_dependencies(libtracistatic generate-version-h install_dll)
 set_property(TARGET libtracistatic PROPERTY FOLDER "libtraci")
@@ -46,8 +48,6 @@ else()
     set(libtcpip foreign_tcpip)
 endif()
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin)
 add_library(libtracicpp SHARED ${libtracistatic_STAT_SRCS})
 set_property(TARGET libtracicpp PROPERTY FOLDER "libtraci")
 set_target_properties(libtracicpp PROPERTIES PREFIX "")
@@ -179,9 +179,13 @@ if(SWIG_FOUND)
                 swig_link_libraries(libtraci ${PYTHON_LIBRARIES})
             endif()
             if (NOT ${SETUPTOOLS_MISSING})
-                install(
-                    CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/build/setup-libtraci.py clean --all install --root=\$ENV{DESTDIR}/ --prefix=${CMAKE_INSTALL_PREFIX} --optimize=1)"
-                    COMPONENT pylibtraci)
+                if (${PYTHON_BUILD_MISSING})
+                    install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${TOOLS_DIR}/build/setup-libtraci.py clean --all install --root=\$ENV{DESTDIR}/ --prefix=${CMAKE_INSTALL_PREFIX} --optimize=1)"
+                            COMPONENT pylibtraci)
+                else ()
+                    install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ./build/version.py ./build/setup-libtraci.py ./setup.py COMMAND ${PYTHON_EXECUTABLE} -m pip install --root=\$ENV{DESTDIR}/ --prefix=${CMAKE_INSTALL_PREFIX} . WORKING_DIRECTORY ${TOOLS_DIR})"
+                            COMPONENT pylibtraci)
+                endif()
             endif()
         else()
             message(WARNING "ENABLE_PYTHON_BINDINGS is set but Python libraries were not found.")

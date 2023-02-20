@@ -61,6 +61,8 @@ set(libsumostatic_STAT_SRCS
     VehicleType.h
 )
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin)
 add_library(libsumostatic STATIC ${libsumostatic_STAT_SRCS})
 add_dependencies(libsumostatic generate-version-h install_dll)
 set_property(TARGET libsumostatic PROPERTY FOLDER "libsumo")
@@ -81,8 +83,6 @@ else ()
 endif()
 add_dependencies(libsumocpp generate-version-h install_dll)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin)
 set_property(TARGET libsumocpp PROPERTY FOLDER "libsumo")
 set_target_properties(libsumocpp PROPERTIES PREFIX "")
 set_target_properties(libsumocpp PROPERTIES OUTPUT_NAME libsumocpp${BINARY_SUFFIX})
@@ -230,9 +230,13 @@ if(SWIG_FOUND)
             endif()
             swig_link_libraries(libsumo ${sumo_link_libraries})
             if (NOT ${SETUPTOOLS_MISSING})
-                install(
-                    CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/build/setup-libsumo.py clean --all install --root=\$ENV{DESTDIR}/ --prefix=${CMAKE_INSTALL_PREFIX} --optimize=1)"
-                    COMPONENT pylibsumo)
+                if (${PYTHON_BUILD_MISSING})
+                    install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${TOOLS_DIR}/build/setup-libsumo.py clean --all install --root=\$ENV{DESTDIR}/ --prefix=${CMAKE_INSTALL_PREFIX} --optimize=1)"
+                            COMPONENT pylibsumo)
+                else ()
+                    install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ./build/version.py ./build/setup-libsumo.py ./setup.py COMMAND ${PYTHON_EXECUTABLE} -m pip install --root=\$ENV{DESTDIR}/ --prefix=${CMAKE_INSTALL_PREFIX} . WORKING_DIRECTORY ${TOOLS_DIR})"
+                            COMPONENT pylibsumo)
+                endif()
             endif()
         else()
             message(WARNING "ENABLE_PYTHON_BINDINGS is set but Python libraries were not found.")

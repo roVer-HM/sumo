@@ -119,4 +119,8 @@ junction_circular
 
 # one incoming arm doesn't have a tls but the central junction should still be considered as controlled
 guess-signals.slack
+restrictionException_only
+
+# Copy of restrictionException_only
+restrictionException_no
 bugs
