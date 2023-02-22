@@ -20,10 +20,12 @@
 #include <netedit/GNENet.h>
 #include <netedit/GNEViewNet.h>
 #include <utils/common/StringTokenizer.h>
+#include <utils/common/ToString.h>
 #include <utils/emissions/PollutantsInterface.h>
 #include <utils/geom/GeomConvHelper.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
 #include <utils/gui/images/VClassIcons.h>
+#include <utils/iodevices/OutputDevice.h>
 #include <utils/options/OptionsCont.h>
 
 #include "GNEAttributeCarrier.h"
@@ -930,13 +932,13 @@ GNEAttributeCarrier::fillNetworkElements() {
         attrProperty = GNEAttributeProperties(SUMO_ATTR_RADIUS,
                                               GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUE | GNEAttributeProperties::UPDATEGEOMETRY,
                                               TL("Optional turning radius (for all corners) for that node in meters"),
-                                              TL("1.5"));
+                                              "1.5");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_KEEP_CLEAR,
                                               GNEAttributeProperties::BOOL | GNEAttributeProperties::DEFAULTVALUE,
                                               TL("Whether the junction-blocking-heuristic should be activated at this node"),
-                                              TL("1"));
+                                              "1");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_RIGHT_OF_WAY,
@@ -1177,7 +1179,7 @@ GNEAttributeCarrier::fillNetworkElements() {
 
         attrProperty = GNEAttributeProperties(GNE_ATTR_BIDIR,
                                               GNEAttributeProperties::BOOL | GNEAttributeProperties::DEFAULTVALUE, // virtual attribute to check of this edge is part of a bidirectional railway (cannot be edited)
-                                              TL("Show if edge is bidireccional"),
+                                              TL("Show if edge is bidirectional"),
                                               "0");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -1366,7 +1368,7 @@ GNEAttributeCarrier::fillNetworkElements() {
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_SHAPE,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::POSITION | GNEAttributeProperties::LIST | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::UPDATEGEOMETRY,
-                                              TL("Overrids default shape of pedestrian sidelwak"));
+                                              TL("Overrids default shape of pedestrian sidewalk"));
         myTagProperties[currentTag].addAttribute(attrProperty);
     }
     currentTag = SUMO_TAG_CONNECTION;
@@ -1429,13 +1431,13 @@ GNEAttributeCarrier::fillNetworkElements() {
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_TLLINKINDEX,
                                               GNEAttributeProperties::INT | GNEAttributeProperties::DEFAULTVALUE,
-                                              TL("sets index of this connection within the controlling trafficlight"),
+                                              TL("sets index of this connection within the controlling traffic light"),
                                               "-1");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_TLLINKINDEX2,
                                               GNEAttributeProperties::INT | GNEAttributeProperties::DEFAULTVALUE,
-                                              TL("sets index for the internal junction of this connection within the controlling trafficlight"),
+                                              TL("sets index for the internal junction of this connection within the controlling traffic light"),
                                               "-1");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
@@ -1670,7 +1672,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
         attrProperty = GNEAttributeProperties(SUMO_ATTR_LENGTH,
                                               GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUE,
                                               TL("The walking length of the access in meters"),
-                                              TL("-1.00"));
+                                              "-1.00");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_FRIENDLY_POS,
@@ -1731,7 +1733,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
         attrProperty = GNEAttributeProperties(SUMO_ATTR_CONTAINER_CAPACITY,
                                               GNEAttributeProperties::INT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUE,
                                               TL("Larger numbers of container trying to enter will create an upstream jam on the sidewalk"),
-                                              TL("6"));
+                                              "6");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_PARKING_LENGTH,
@@ -1852,7 +1854,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ROADSIDE_CAPACITY,
                                               GNEAttributeProperties::INT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::DEFAULTVALUE,
                                               TL(" The number of parking spaces for road-side parking"),
-                                              TL("0"));
+                                              "0");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ONROAD,
@@ -2076,7 +2078,7 @@ GNEAttributeCarrier::fillAdditionalElements() {
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_LANES,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::LIST | GNEAttributeProperties::SECUENCIAL | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::UPDATEGEOMETRY,
-                                              TL("The list of secuencial lane ids in which the detector shall be laid on"));
+                                              TL("The sequence of lane ids in which the detector shall be laid on"));
         myTagProperties[currentTag].addAttribute(attrProperty);
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_POSITION,
@@ -3251,7 +3253,7 @@ GNEAttributeCarrier::fillWireElements() {
         attrProperty = GNEAttributeProperties(SUMO_ATTR_STARTPOS,
                                               GNEAttributeProperties::FLOAT | GNEAttributeProperties::POSITIVE | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::DEFAULTVALUE,
                                               TL("Starting position in the specified lane"),
-                                              TL("0.0"));
+                                              "0.0");
         myTagProperties[currentTag].addAttribute(attrProperty);
 
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ENDPOS,
@@ -4115,7 +4117,7 @@ GNEAttributeCarrier::fillWaypointElements() {
         myTagProperties[currentTag] = GNETagProperties(currentTag,
                                       GNETagProperties::DEMANDELEMENT | GNETagProperties::STOP | GNETagProperties::WAYPOINT,
                                       GNETagProperties::CHILD | GNETagProperties::NOPARAMETERS,
-                                      GUIIcon::WAYPOINT, currentTag, {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(240, 255, 205, 255));
+                                      GUIIcon::WAYPOINT, SUMO_TAG_STOP, {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(240, 255, 205, 255));
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_CONTAINER_STOP,
                                               GNEAttributeProperties::STRING | GNEAttributeProperties::LIST | GNEAttributeProperties::UNIQUE | GNEAttributeProperties::UPDATEGEOMETRY,
@@ -5678,7 +5680,7 @@ GNEAttributeCarrier::fillDataElements() {
         myTagProperties[currentTag] = GNETagProperties(currentTag,
                                       GNETagProperties::DATAELEMENT | GNETagProperties::GENERICDATA,
                                       0,
-                                      GUIIcon::EDGEDATA, currentTag);
+                                      GUIIcon::EDGEDATA, SUMO_TAG_EDGE);
 
         // set values of attributes
         attrProperty = GNEAttributeProperties(SUMO_ATTR_ID,
@@ -5847,5 +5849,55 @@ GNEAttributeCarrier::fillCommonMeanDataAttributes(SumoXMLTag currentTag) {
                                           "0");
     myTagProperties[currentTag].addAttribute(attrProperty);
 }
+
+
+void
+GNEAttributeCarrier::writeAttributeHelp() {
+    if (myTagProperties.size() == 0) {
+        fillAttributeCarriers();
+    }
+    const std::string opt = "attribute-help-output";
+    OutputDevice::createDeviceByOption(opt, "attributeHelp");
+    OutputDevice& dev = OutputDevice::getDeviceByOption(opt);
+    // merge "virtual" netedit tags like  '<walk: edge->edge'
+    static std::map<SumoXMLTag, GNETagProperties> xmlTagProperties;
+    for (auto item : myTagProperties) {
+        if (xmlTagProperties.count(item.second.getXMLTag()) == 0) {
+            xmlTagProperties[item.second.getXMLTag()] = item.second;
+        } else {
+            std::set<SumoXMLAttr> attrs;
+            auto& old = xmlTagProperties[item.second.getXMLTag()];
+            for (auto it = old.begin(); it != old.end(); it++) {
+                attrs.insert(it->getAttr());
+            }
+            for (auto it = item.second.begin(); it != item.second.end(); it++) {
+                if (attrs.count(it->getAttr()) == 0) {
+                    old.addAttribute(*it);
+                }
+            }
+        }
+    }
+    for (auto item : xmlTagProperties) {
+        if (item.second.begin() == item.second.end()) {
+            // don't write elements without attributes, they are only used for internal purposes
+            continue;
+        }
+        dev.openTag(item.first);
+        if (item.second.getParentTags().size() > 0) {
+            dev.writeAttr("parents", joinToString(item.second.getParentTags(), " "));
+        }
+        for (auto it = item.second.begin(); it != item.second.end(); it++) {
+            auto attr = *it;
+            dev.openTag("attribute");
+            dev.writeAttr("name", attr.getAttr());
+            dev.writeAttr("type", attr.getDescription());
+            dev.writeAttr("default", attr.getDefaultValue());
+            dev.writeAttr("help", attr.getDefinition());
+            dev.closeTag();
+        }
+        dev.closeTag();
+    }
+}
+
 
 /****************************************************************************/
