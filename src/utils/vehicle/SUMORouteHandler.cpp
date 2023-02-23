@@ -477,8 +477,12 @@ SUMORouteHandler::parseStop(SUMOVehicleParameter::Stop& stop, const SUMOSAXAttri
         errorSuffix = " at '" + stop.containerstop + "'" + errorSuffix;
     } else if (stop.parkingarea != "") {
         errorSuffix = " at '" + stop.parkingarea + "'" + errorSuffix;
+    } else if (attrs.hasAttribute(SUMO_ATTR_LANE)) {
+        errorSuffix = " on lane '" + attrs.get<std::string>(SUMO_ATTR_LANE, nullptr, ok) + "'" + errorSuffix;
+    } else if (attrs.hasAttribute(SUMO_ATTR_EDGE)) {
+        errorSuffix = " on edge '" + attrs.get<std::string>(SUMO_ATTR_EDGE, nullptr, ok) + "'" + errorSuffix;
     } else {
-        errorSuffix = " on lane '" + stop.lane + "'" + errorSuffix;
+        errorSuffix = " at undefined location" + errorSuffix;
     }
     // speed for counting as stopped
     stop.speed = attrs.getOpt<double>(SUMO_ATTR_SPEED, nullptr, ok, 0);
@@ -502,16 +506,16 @@ SUMORouteHandler::parseStop(SUMOVehicleParameter::Stop& stop, const SUMOSAXAttri
         errorOutput->inform("Invalid duration or end time is given for a stop" + errorSuffix);
         return false;
     }
+    if (triggers.size() > 0 && stop.speed > 0) {
+        errorOutput->inform("Triggers and waypoints cannot be combined" + errorSuffix);
+        return false;
+    }
     stop.extension = attrs.getOptSUMOTimeReporting(SUMO_ATTR_EXTENSION, nullptr, ok, -1);
     const bool defaultParking = (stop.triggered || stop.containerTriggered || stop.parkingarea != "");
     stop.parking = attrs.getOpt<ParkingType>(SUMO_ATTR_PARKING, nullptr, ok, defaultParking ? ParkingType::OFFROAD : ParkingType::ONROAD);
     if ((stop.parkingarea != "") && (stop.parking == ParkingType::ONROAD)) {
         WRITE_WARNING("Stop at parkingarea overrides attribute 'parking' for stop" + errorSuffix);
         stop.parking = ParkingType::OFFROAD;
-    }
-    if (!ok) {
-        errorOutput->inform("Invalid bool for 'triggered', 'containerTriggered' or 'parking' for stop" + errorSuffix);
-        return false;
     }
 
     // expected persons

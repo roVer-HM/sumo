@@ -1553,10 +1553,7 @@ GUISUMOAbstractView::getCurrentTimeStep() const {
 void
 GUISUMOAbstractView::showViewschemeEditor() {
     if (myVisualizationChanger == nullptr) {
-        myVisualizationChanger =
-            new GUIDialog_ViewSettings(
-            this, myVisualizationSettings,
-            &myDecals, &myDecalsLock);
+        myVisualizationChanger = new GUIDialog_ViewSettings(this, myVisualizationSettings);
         myVisualizationChanger->create();
     } else {
         myVisualizationChanger->setCurrent(myVisualizationSettings);
@@ -1569,7 +1566,7 @@ GUISUMOAbstractView::showViewschemeEditor() {
 GUIDialog_EditViewport*
 GUISUMOAbstractView::getViewportEditor() {
     if (myViewportChooser == nullptr) {
-        myViewportChooser = new GUIDialog_EditViewport(this, "Edit Viewport");
+        myViewportChooser = new GUIDialog_EditViewport(this, TL("Edit Viewport"));
         myViewportChooser->create();
     }
     updateViewportValues();
@@ -1677,6 +1674,18 @@ GUISUMOAbstractView::onGamingRightClick(Position /*pos*/) {
 }
 
 
+std::vector<GUISUMOAbstractView::Decal>&
+GUISUMOAbstractView::getDecals() {
+    return myDecals;
+}
+
+
+FXMutex&
+GUISUMOAbstractView::getDecalsLockMutex() {
+    return myDecalsLockMutex;
+}
+
+
 FXComboBox*
 GUISUMOAbstractView::getColoringSchemesCombo() {
     return myParent->getColoringSchemesCombo();
@@ -1764,7 +1773,7 @@ GUISUMOAbstractView::checkGDALImage(Decal& d) {
 void
 GUISUMOAbstractView::drawDecals() {
     GLHelper::pushName(0);
-    myDecalsLock.lock();
+    myDecalsLockMutex.lock();
     for (GUISUMOAbstractView::Decal& d : myDecals) {
         if (d.skip2D) {
             continue;
@@ -1802,7 +1811,7 @@ GUISUMOAbstractView::drawDecals() {
         GUITexturesHelper::drawTexturedBox(d.glID, -halfWidth, -halfHeight, halfWidth, halfHeight);
         GLHelper::popMatrix();
     }
-    myDecalsLock.unlock();
+    myDecalsLockMutex.unlock();
     GLHelper::popName();
 }
 

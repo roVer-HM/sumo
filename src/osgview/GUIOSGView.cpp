@@ -225,7 +225,9 @@ GUIOSGView::GUIOSGView(
     myHUD->addChild(myTextNode);
     myHUD->setGraphicsContext(myAdapter);
     myHUD->setViewport(0, 0, w, h);
+#ifndef DEBUG:
     myViewer->addSlave(myHUD, false);
+#endif
     myCameraManipulator->updateHUDText();
 
     // adjust the main light
@@ -419,7 +421,7 @@ GUIOSGView::onPaint(FXObject*, FXSelector, void*) {
     if (!isEnabled()) {
         return 1;
     }
-    myDecalsLock.lock();
+    myDecalsLockMutex.lock();
     for (GUISUMOAbstractView::Decal& d : myDecals) {
         if (!d.initialised) {
             if (d.filename.length() == 6 && d.filename.substr(0, 5) == "light") {
@@ -449,7 +451,7 @@ GUIOSGView::onPaint(FXObject*, FXSelector, void*) {
             d.initialised = true;
         }
     }
-    myDecalsLock.unlock();
+    myDecalsLockMutex.unlock();
 
     // reset active flag
     for (auto& item : myVehicles) {

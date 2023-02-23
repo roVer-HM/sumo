@@ -19,10 +19,10 @@ tripId fancyID
 split train0
 join train1
 line S42
-speed 3.00
+speed 0.00
 started 83.00
 ended 102.00
-stop parameters for index -1 at time 200.0:
+stop parameters for index -1 at time 150.0:
 index 0
 edge A1B1
 lane 0
@@ -42,6 +42,6 @@ tripId fancyID
 split train0
 join train1
 line S42
-speed 3.00
-started 13.00
-ended 100.00
+speed 0.00
+started 16.00
+ended 111.00

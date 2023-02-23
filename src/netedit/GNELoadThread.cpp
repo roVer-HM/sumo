@@ -249,27 +249,27 @@ GNELoadThread::fillOptions(OptionsCont& neteditOptions) {
     neteditOptions.clear();
     neteditOptions.addCallExample("--new", TL("Start plain GUI with empty net"));
     neteditOptions.addCallExample("-s <SUMO_NET>", TL("Open a SUMO network"));
-    neteditOptions.addCallExample("-c <CONFIGURATION>", TL("Open a configuration file (netedit o NETCONVERT config)"));
+    neteditOptions.addCallExample("-c <CONFIGURATION>", TL("Open a configuration file (netedit or netconvert config)"));
     neteditOptions.addCallExample("-sumocfg-file <CONFIGURATION>", TL("Open a SUMO config file"));
 
     SystemFrame::addConfigurationOptions(neteditOptions); // this subtopic is filled here, too
-    neteditOptions.addOptionSubTopic("Input");
-    neteditOptions.addOptionSubTopic("Output");
+    neteditOptions.addOptionSubTopic(TL("Input"));
+    neteditOptions.addOptionSubTopic(TL("Output"));
     GeoConvHelper::addProjectionOptions(neteditOptions);
-    neteditOptions.addOptionSubTopic("Processing");
-    neteditOptions.addOptionSubTopic("Building Defaults");
+    neteditOptions.addOptionSubTopic(TL("Processing"));
+    neteditOptions.addOptionSubTopic(TL("Building Defaults"));
     neteditOptions.addOptionSubTopic("TLS Building");
-    neteditOptions.addOptionSubTopic("Ramp Guessing");
-    neteditOptions.addOptionSubTopic("Edge Removal");
-    neteditOptions.addOptionSubTopic("Unregulated Nodes");
-    neteditOptions.addOptionSubTopic("Junctions");
-    neteditOptions.addOptionSubTopic("Pedestrian");
-    neteditOptions.addOptionSubTopic("Bicycle");
-    neteditOptions.addOptionSubTopic("Railway");
-    neteditOptions.addOptionSubTopic("Formats");
-    neteditOptions.addOptionSubTopic("Netedit");
-    neteditOptions.addOptionSubTopic("Visualisation");
-    neteditOptions.addOptionSubTopic("Time");
+    neteditOptions.addOptionSubTopic(TL("Ramp Guessing"));
+    neteditOptions.addOptionSubTopic(TL("Edge Removal"));
+    neteditOptions.addOptionSubTopic(TL("Unregulated Nodes"));
+    neteditOptions.addOptionSubTopic(TL("Junctions"));
+    neteditOptions.addOptionSubTopic(TL("Pedestrian"));
+    neteditOptions.addOptionSubTopic(TL("Bicycle"));
+    neteditOptions.addOptionSubTopic(TL("Railway"));
+    neteditOptions.addOptionSubTopic(TL("Formats"));
+    neteditOptions.addOptionSubTopic(TL("Netedit"));
+    neteditOptions.addOptionSubTopic(TL("Visualisation"));
+    neteditOptions.addOptionSubTopic(TL("Time"));
 
     // TOPIC: Input
 
@@ -306,6 +306,9 @@ GNELoadThread::fillOptions(OptionsCont& neteditOptions) {
     neteditOptions.doRegister("new-network", new Option_Bool(false));
     neteditOptions.addSynonyme("new-network", "new");
     neteditOptions.addDescription("new-network", "Netedit", TL("Start netedit with a new network"));
+
+    neteditOptions.doRegister("attribute-help-output", new Option_FileName());
+    neteditOptions.addDescription("attribute-help-output", "Netedit", TL("Write attribute help to file"));
 
     // network prefixes
 
