@@ -29,11 +29,6 @@
 
 
 // ===========================================================================
-// class declarations
-// ===========================================================================
-
-
-// ===========================================================================
 // class definitions
 // ===========================================================================
 /*
@@ -106,6 +101,11 @@ public:
 
     double getClickPriority() const override {
         return getShapeLayer();
+    }
+
+    /// @brief Returns the name of the object (default "")
+    virtual const std::string getOptionalName() const override {
+        return getShapeName();
     }
     //@}
 

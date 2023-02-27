@@ -7,59 +7,62 @@ msgid ""
 msgstr ""
 "Project-Id-Version: sumo\n"
 "Report-Msgid-Bugs-To: sumo-dev@eclipse.org\n"
-"POT-Creation-Date: 2023-02-21 18:29+0100\n"
-"PO-Revision-Date: 2023-01-24 09:18+0100\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"POT-Creation-Date: 2023-02-26 12:44+0100\n"
+"PO-Revision-Date: 2023-02-25 09:00+0000\n"
+"Last-Translator: Rhea-Xiao <xiao.translations@gmail.com>\n"
+"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
+"eclipse-sumo/applications/zh_Hans/>\n"
 "Language: zh\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 4.16-dev\n"
 
 #: /home/micha/programming/sumo/src/activitygen/AGActivityGen.cpp:46
 msgid "Reading input"
-msgstr ""
+msgstr "正在读取数据输入"
 
 #: /home/micha/programming/sumo/src/activitygen/AGActivityGen.cpp:54
 msgid "Consolidating statistics"
-msgstr ""
+msgstr "正在合并统计"
 
 #: /home/micha/programming/sumo/src/activitygen/AGActivityGen.cpp:58
 msgid "Building street representation"
-msgstr ""
+msgstr "正在搭建街道显示"
 
 #: /home/micha/programming/sumo/src/activitygen/AGActivityGen.cpp:62
 msgid "Generating work positions"
-msgstr ""
+msgstr "正在生成工作场所"
 
 #: /home/micha/programming/sumo/src/activitygen/AGActivityGen.cpp:66
 msgid "Building bus lines"
-msgstr ""
+msgstr "正在搭建公交路线"
 
 #: /home/micha/programming/sumo/src/activitygen/AGActivityGen.cpp:71
 msgid "Generating population"
-msgstr ""
+msgstr "正在生成人口数据"
 
 #: /home/micha/programming/sumo/src/activitygen/AGActivityGen.cpp:75
 msgid "Allocating schools"
-msgstr ""
+msgstr "正在分配学校"
 
 #: /home/micha/programming/sumo/src/activitygen/AGActivityGen.cpp:79
 msgid "Allocating work places"
-msgstr ""
+msgstr "正在分配工作场所"
 
 #: /home/micha/programming/sumo/src/activitygen/AGActivityGen.cpp:83
 msgid "Allocating car places"
-msgstr ""
+msgstr "正在分配车位"
 
 #: /home/micha/programming/sumo/src/activitygen/AGActivityGenHandler.cpp:178
 #, c-format
 msgid "Edge '%' is not known."
-msgstr ""
+msgstr "边缘 '%' i 未知。"
 
 #: /home/micha/programming/sumo/src/activitygen/AGActivityGenHandler.cpp:329
 msgid "Unknown bus station '%'."
-msgstr ""
+msgstr "未知公交车站'%'。"
 
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:53
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:61
@@ -157,7 +160,7 @@ msgstr ""
 #: /home/micha/programming/sumo/src/tools/emissionsDrivingCycle_main.cpp:89
 #: /home/micha/programming/sumo/src/tools/emissionsDrivingCycle_main.cpp:92
 msgid "Input"
-msgstr ""
+msgstr "输入"
 
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:54
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:72
@@ -324,7 +327,7 @@ msgstr ""
 #: /home/micha/programming/sumo/src/utils/common/SystemFrame.cpp:125
 #: /home/micha/programming/sumo/src/utils/common/SystemFrame.cpp:128
 msgid "Output"
-msgstr ""
+msgstr "输出"
 
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:55
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:53
@@ -589,7 +592,7 @@ msgstr ""
 #: /home/micha/programming/sumo/src/tools/emissionsMap_main.cpp:112
 #: /home/micha/programming/sumo/src/tools/emissionsMap_main.cpp:114
 msgid "Processing"
-msgstr ""
+msgstr "处理中"
 
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:56
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:81
@@ -611,87 +614,88 @@ msgstr ""
 #: /home/micha/programming/sumo/src/router/ROFrame.cpp:116
 #: /home/micha/programming/sumo/src/router/ROFrame.cpp:119
 msgid "Time"
-msgstr ""
+msgstr "时间"
 
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:61
 msgid "Use FILE as SUMO-network to create trips for"
-msgstr ""
+msgstr "使用FILE作为SUMO网络，以创建行程，用于"
 
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:64
 msgid "Loads the SUMO-statistics FILE"
-msgstr ""
+msgstr "加载SUMO统计文件"
 
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:72
 msgid "Write generated trips to FILE"
-msgstr ""
+msgstr "将生成的行程写入文件"
 
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:81
 msgid ""
 "Sets the time of beginning of the simulation during the first day (in "
 "seconds)"
-msgstr ""
+msgstr "设置第一天模拟的开始时间（以秒为单位）"
 
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:84
 msgid ""
 "Sets the time of ending of the simulation during the last day (in seconds)"
-msgstr ""
+msgstr "设置最后一天模拟的结束时间（以秒为单位）"
 
 #: /home/micha/programming/sumo/src/activitygen/AGFrame.cpp:87
 msgid "Sets the duration of the simulation in days"
-msgstr ""
+msgstr "设置模拟的持续时间（以天为单位）"
 
 #: /home/micha/programming/sumo/src/activitygen/activitygen_main.cpp:64
 #: /home/micha/programming/sumo/src/router/ROLoader.cpp:111
 msgid "Missing definition of network to load!"
-msgstr ""
+msgstr "缺少要加载的网络定义！"
 
 #: /home/micha/programming/sumo/src/activitygen/activitygen_main.cpp:67
 #, c-format
 msgid "The network file '%' could not be accessed."
-msgstr ""
+msgstr "无法访问网络文件“%' c”。"
 
 #: /home/micha/programming/sumo/src/activitygen/activitygen_main.cpp:69
 #: /home/micha/programming/sumo/src/router/ROLoader.cpp:116
 msgid "Loading net"
-msgstr ""
+msgstr "加载网络"
 
 #: /home/micha/programming/sumo/src/activitygen/activitygen_main.cpp:79
 #: /home/micha/programming/sumo/src/netload/NLEdgeControlBuilder.cpp:227
 #: /home/micha/programming/sumo/src/router/ROLoader.cpp:133
 #, c-format
 msgid "Deprecated vehicle classes '%' in input network."
-msgstr ""
+msgstr "输入网络中的废弃车辆类 '%'。"
 
 #: /home/micha/programming/sumo/src/activitygen/activitygen_main.cpp:89
 msgid ""
 "Generates trips of persons throughout a day for the microscopic, multi-modal "
 "traffic simulation SUMO."
-msgstr ""
+msgstr "为微观、多模态的交通仿真软件SUMO生成全天的人员行程。"
 
 #: /home/micha/programming/sumo/src/activitygen/activitygen_main.cpp:113
-#, c-format
+#, fuzzy, c-format
 msgid "Loaded % edges."
-msgstr ""
+msgstr "已加载 % edges。"
 
 #: /home/micha/programming/sumo/src/activitygen/city/AGCity.cpp:427
 msgid "No street that allows passenger vehicles found in this city."
-msgstr ""
+msgstr "在该城市未发现允许客运车辆通行的街道。"
 
 #: /home/micha/programming/sumo/src/activitygen/city/AGWorkPosition.cpp:126
 msgid "Work position already occupied. Cannot give it to another adult."
-msgstr ""
+msgstr "工作场所已占用，无法提供给另一位成年人。"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFDetFlowLoader.cpp:76
 msgid "At least one value lies beyond given time boundaries."
-msgstr ""
+msgstr "至少有一个值超出了给定的时间界限。"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFDetFlowLoader.cpp:104
+#, fuzzy
 msgid "At least one line does not contain the correct number of columns."
-msgstr ""
+msgstr "至少有一行未包含正确的一列数字"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFDetector.cpp:171
 msgid "Missing routes for detector '%'."
-msgstr ""
+msgstr "缺少装有检测器“%”的路线。"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFDetector.cpp:305
 #, c-format
@@ -700,7 +704,7 @@ msgstr ""
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFDetectorHandler.cpp:86
 msgid "Could not add detector '%' (probably the id is already used)."
-msgstr ""
+msgstr "无法添加检测器“%”（可能 id 已被使用）。"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:54
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:209
@@ -734,70 +738,72 @@ msgstr ""
 #: /home/micha/programming/sumo/src/router/ROFrame.cpp:214
 #: /home/micha/programming/sumo/src/router/ROFrame.cpp:217
 msgid "Defaults"
-msgstr ""
+msgstr "默认值"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:61
 msgid "Loads the SUMO-network FILE"
-msgstr ""
+msgstr "加载 SUMO 网络文件"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:70
 msgid "Loads detector descriptions from FILE"
-msgstr ""
+msgstr "从文件中加载检测器描述"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:75
 msgid "Loads detector flows from FILE(s)"
-msgstr ""
+msgstr "从文件中加载检测器贯流"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:82
 msgid "Saves computed routes to FILE"
-msgstr ""
+msgstr "将计算出的路程保存到 FILE中"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:85
 msgid "Forces dfrouter to compute routes for in-between detectors"
-msgstr ""
+msgstr "强制 dfrouter 计算中间检测器的路程"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:89
 msgid "Saves typed detectors to FILE"
-msgstr ""
+msgstr "将输入的检测器保存到FILE中"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:92
 msgid "Saves detector positions as pois to FILE"
-msgstr ""
+msgstr "将检测器位置保存为pois并添加至FILE"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:95
 msgid "Saves emitter definitions for source detectors to FILE"
-msgstr ""
+msgstr "将源检测器的发射器定义保存到 FILE中"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:98
 msgid "Add vehicle types to the emitters file (PKW, LKW)"
-msgstr ""
+msgstr "将车辆类型添加到发射器文件（PKW、LKW）中"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:101
 msgid ""
 "Write generated vehicle types into separate FILE instead of including them "
 "into the emitters-output"
-msgstr ""
+msgstr "将生成的车辆类型写入单独的 FILE 中，而不是将其添加至发射器输出"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:104
 msgid "Saves emitter positions as pois to FILE"
-msgstr ""
+msgstr "将发射器位置保存为 pois 并添加至FILE"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:108
+#, fuzzy
 msgid "Saves variable seed sign definitions for sink detectors to FILE"
-msgstr ""
+msgstr "将下沉检测器的变量种子符号定义保存至 FILE"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:111
+#, fuzzy
 msgid "Saves rerouter definitions for sink detectors to FILE"
-msgstr ""
+msgstr "将下沉检测器的重发器定义保存到 FILE"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:114
 msgid ""
 "Write induction loop definitions for the given detector positions to FILE"
-msgstr ""
+msgstr "将给定检测器位置的感应线圈定义写进FILE中"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:117
 msgid "Add source detectors to the validation output"
-msgstr ""
+msgstr "将源检测器添加至验证输出"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:123
 msgid "Derive missing flow values from upstream or downstream (not working!)"
@@ -805,11 +811,11 @@ msgstr ""
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:127
 msgid "Switches to highway-mode"
-msgstr ""
+msgstr "切换到高速公路模式"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:131
 msgid "Only warn about unparseable detectors"
-msgstr ""
+msgstr "只对无法解析的检测器发出警告"
 
 #: /home/micha/programming/sumo/src/dfrouter/RODFFrame.cpp:135
 msgid "Recomputes detector types even if given"
@@ -1542,35 +1548,45 @@ msgid ""
 msgstr ""
 
 #: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1107
-#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1219
+#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1230
 msgid "Unsupported parameter '%'"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1322
+#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1182
+msgid "Waypoint (speed = %) at index % does not support triggers"
+msgstr ""
+
+#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1216
+msgid ""
+"Triggered stop at index % cannot be changed into a waypoint by setting speed "
+"to %"
+msgstr ""
+
+#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1333
 #, c-format
 msgid "Ignoring changeLaneRelative for vehicle '%' that isn't on the road"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1324
+#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1335
 msgid "Ignoring indexOffset % for vehicle '%' on laneIndex %."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1416
+#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1427
 #, c-format
 msgid ""
 "Departure time for vehicle '%' is in the past; using current time instead."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1582
+#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1593
 msgid "Could not determine position on lane '%' at lateral position %."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1779
+#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:1790
 #: /home/micha/programming/sumo/src/microsim/MSBaseVehicle.cpp:422
 msgid "Invalid route replacement for vehicle '%'. %"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:2462
+#: /home/micha/programming/sumo/src/libsumo/Vehicle.cpp:2473
 msgid ""
 "Ignoring lane change subscription filter with non-neighboring lane offset "
 "direction=%."
@@ -1831,14 +1847,14 @@ msgid ""
 msgstr ""
 
 #: /home/micha/programming/sumo/src/mesosim/MEVehicle.cpp:370
-#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:1661
+#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:1665
 #, c-format
 msgid ""
 "Vehicle '%' ignores triggered stop on lane '%' due to capacity constraints."
 msgstr ""
 
 #: /home/micha/programming/sumo/src/mesosim/MEVehicle.cpp:387
-#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:1675
+#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:1679
 #, c-format
 msgid ""
 "Vehicle '%' ignores container triggered stop on lane '%' due to capacity "
@@ -3509,40 +3525,44 @@ msgid ""
 "(exceeding maximum speed %). time=%."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:1824
+#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:1695
+msgid "Vehicle '%' aborts joining after extension of %s at time %."
+msgstr ""
+
+#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:1840
 msgid "Vehicle '%' to split from vehicle '%' is not known. time=%."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:2699
+#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:2723
 msgid "Suspicious right_before_left junction '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:4253
+#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:4277
 msgid " for unknown reasons"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:4261
+#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:4285
 msgid ""
 "Vehicle '%' performs emergency stop at the end of lane '%'% (decel=%, "
 "offset=%), time=%."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:4336
+#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:4360
 msgid "Unexpected end of opposite lane for vehicle '%' at lane '%', time=%."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:4454
+#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:4478
 msgid ""
 "Vehicle '%' performs emergency braking on lane '%' with decel=%, wished=%, "
 "severity=%, time=%."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:5301
+#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:5325
 #, c-format
 msgid "Vehicle '%' aborts stop."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:7086
+#: /home/micha/programming/sumo/src/microsim/MSVehicle.cpp:7110
 msgid "Error: Invalid vehicles in state (may be a meso state)!"
 msgstr ""
 
@@ -4985,7 +5005,7 @@ msgstr ""
 
 #: /home/micha/programming/sumo/src/netbuild/NBAlgorithms.cpp:282
 #: /home/micha/programming/sumo/src/netbuild/NBNodeCont.cpp:1739
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:413
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:423
 #: /home/micha/programming/sumo/src/netimport/NIXMLNodesHandler.cpp:355
 msgid "Could not allocate tls '%'."
 msgstr ""
@@ -5121,7 +5141,7 @@ msgstr ""
 #: /home/micha/programming/sumo/src/netbuild/NBAlgorithms_Ramps.cpp:279
 #: /home/micha/programming/sumo/src/netbuild/NBAlgorithms_Ramps.cpp:390
 #: /home/micha/programming/sumo/src/netbuild/NBAlgorithms_Ramps.cpp:393
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:705
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:710
 msgid "Could not set connection!"
 msgstr ""
 
@@ -5241,34 +5261,34 @@ msgstr ""
 msgid "Could not set any signal of the tlLogic '%' (unknown group)."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4073
+#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4074
 msgid "Ignoring invalid stopOffset for edge '%' (negative offset)."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4082
+#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4083
 msgid "Ignoring invalid stopOffset for lane '%' (negative offset)."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4088
+#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4089
 msgid "Ignoring invalid stopOffset for lane '%' (invalid lane index)."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4351
+#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4352
 #, c-format
 msgid "Edge % allows pedestrians on all lanes"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4409
+#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4410
 #, c-format
 msgid "Edge '%' already has a dedicated lane for %s. Not adding another one."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4446
+#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4447
 #, c-format
 msgid "Edge '%' doesn't have a dedicated lane for %s. Cannot be restored."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4494
+#: /home/micha/programming/sumo/src/netbuild/NBEdge.cpp:4495
 msgid "Could not avoid overlapping shape at node '%' for edge '%'."
 msgstr ""
 
@@ -5308,78 +5328,78 @@ msgstr ""
 msgid "Could not insert edge '%' after split of edge '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:875
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:880
 msgid "Moving opposite lane '%' from invalid lane '%' to lane index %."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:877
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:882
 msgid "Removing opposite lane '%' for invalid lane '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:886
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:891
 msgid "Removing unknown opposite lane '%' for edge '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:891
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:896
 msgid "Adapting invalid opposite lane '%' for edge '%' to '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:897
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:902
 msgid "Adapting missing opposite lane '%' for edge '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:903
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:908
 msgid "Averaging edge lengths for lane '%' (length %) and edge '%' (length %)."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:916
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:921
 msgid "Opposite lane '%' does not connect the same nodes as edge '%'!"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1416
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1421
 msgid "Replacing loaded roundabout '%' with '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1734
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1739
 msgid "Edge '%' overlaps with edge '%' by %."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1750
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1755
 #, c-format
 msgid "Edge '%' has a vertical jump of %m."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1752
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1757
 #, c-format
 msgid "Edge '%' has a grade of %%."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1762
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1767
 #, c-format
 msgid "Connection '%' has a vertical jump of %m."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1764
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1769
 #, c-format
 msgid "Connection '%' has a grade of %%."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1796
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1801
 msgid "Not joining tram edge '%' with % lanes."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1870
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:1875
 msgid "Ambiguous tram edges '%' and '%' for lane '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:2024
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:2029
 #: /home/micha/programming/sumo/src/netimport/NIImporter_SUMO.cpp:138
 #: /home/micha/programming/sumo/src/netimport/NIXMLEdgesHandler.cpp:543
 #, c-format
 msgid "Edge's '%' from-node '%' is not known."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:2028
+#: /home/micha/programming/sumo/src/netbuild/NBEdgeCont.cpp:2033
 #: /home/micha/programming/sumo/src/netimport/NIImporter_SUMO.cpp:142
 #: /home/micha/programming/sumo/src/netimport/NIXMLEdgesHandler.cpp:555
 #, c-format
@@ -7757,7 +7777,7 @@ msgstr ""
 #: /home/micha/programming/sumo/src/netimport/NIImporter_DlrNavteq.cpp:420
 #: /home/micha/programming/sumo/src/netimport/NIImporter_OpenDrive.cpp:532
 #: /home/micha/programming/sumo/src/netimport/NIImporter_OpenDrive.cpp:590
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:748
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:759
 msgid "Could not add edge '%'."
 msgstr ""
 
@@ -8006,241 +8026,237 @@ msgstr ""
 msgid "Double geometry information for road '%'"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:146
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:156
 #: /home/micha/programming/sumo/src/polyconvert/PCLoaderOSM.cpp:104
 msgid "Could not open osm-file '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:158
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:168
 #, c-format
 msgid "Found and substituted % osm nodes."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:182
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:192
 msgid "Removing duplicate edges"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:197
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:207
 #, c-format
 msgid "Removed % duplicate osm edges."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:231
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:241
 msgid "Discarding way '%' because it has only % node(s)"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:394
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:404
 msgid "Could not insert junction '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:451
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:462
 msgid ""
 "Discarding edge '%' which connects two identical nodes without geometry."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:563
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:574
 msgid "New value for oneway found: %"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:595
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:606
 msgid "Skipping edge '%' because it has zero lanes."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:615
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:626
 msgid "Skipping edge '%' because it has speed %."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:735
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:746
 msgid ""
 "Forward lanes count for edge '%' ('%') is not matching the number of lanes "
 "defined in width:lanes:forward key ('%'). Using default width values."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:781
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:792
 msgid ""
 "Backward lanes count for edge '%' ('%') is not matching the number of lanes "
 "defined in width:lanes:backward key ('%'). Using default width values."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:794
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:805
 msgid "Could not add edge '-%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:882
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:893
 msgid ""
 "Attribute 'id' in the definition of a node is not of type long long int."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:888
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:899
 msgid "Tag element on wrong XML hierarchy level."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:930
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:941
 msgid "Value of key '%' is invalid ('%') in node '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:935
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:946
 msgid "Value of key '%' is not numeric ('%') in node '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1083
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1091
 #: /home/micha/programming/sumo/src/polyconvert/PCLoaderOSM.cpp:592
 msgid "The referenced geometry information (ref='%') is not known"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1310
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1329
 #, c-format
 msgid "Using default lane width for edge '%' as key '%' could not be parsed."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1313
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1332
 #, c-format
 msgid "Using default lane width for edge '%' as value '%' could not be parsed."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1351
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1375
 msgid "Using minimum lane number from list (%) for edge '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1353
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1357
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1368
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1380
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1403
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1413
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1377
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1381
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1392
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1404
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1427
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1437
 msgid "Value of key '%' is not numeric ('%') in edge '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1410
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1434
 msgid "Ignoring track count % for edge '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1555
-msgid "Unknown lane use specifier '%' treated as 'no' for way '%'"
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1605
+msgid "Unknown lane use specifier '%' ignored for way '%'"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1669
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1714
 msgid "No node found for reference '%' in relation '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1731
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1776
 msgid "Found unknown restriction type '%' in relation '%'"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1769
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1814
 msgid "Invalid color value '%' in relation %"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1787
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1832
 msgid "No way found for reference '%' in relation '%'"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1799
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1844
 msgid "Ignoring restriction relation '%' with unknown type."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1803
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1848
 msgid "Ignoring restriction relation '%' with unknown from-way."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1807
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1852
 msgid "Ignoring restriction relation '%' with unknown to-way."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1811
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1856
 msgid "Ignoring restriction relation '%' with unknown via."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1815
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1860
 msgid "Ignoring restriction relation '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1840
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1885
 #, c-format
 msgid ""
 "Platform '%' in relation: '%' is given as polygon, which currently is not "
 "supported."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1861
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1906
 #, c-format
 msgid ""
 "Referenced platform: '%' in relation: '%' is corrupt. Probably OSM file is "
 "incomplete."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1900
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1945
 #, c-format
 msgid "PT line '%' in relation % seems to be split, only keeping first part."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1933
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1978
 msgid ""
 "PT line in relation % with no stops ignored. Probably OSM file is incomplete."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1939
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1984
 #: /home/micha/programming/sumo/src/netimport/NIXMLPTHandler.cpp:222
 msgid "Ignoring duplicate PT line '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1954
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1999
 msgid "Via-node '%' was not instantiated"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1960
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2005
 #, c-format
 msgid "from-edge '%' of restriction relation could not be determined"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1964
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2009
 #, c-format
 msgid "to-edge '%' of restriction relation could not be determined"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:1994
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2039
 msgid "direction of restriction relation could not be determined%"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2015
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2060
 #, c-format
 msgid "Ambiguous way reference '%' in restriction relation"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2266
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2311
 msgid ""
 "Discarding unknown compound '%' in type '%' (first occurrence for edge '%')."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2270
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2315
 msgid "Discarding unusable type '%' (first occurrence for edge '%')."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2319
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2364
 msgid "Discarding compound type '%' (first occurrence for edge '%')."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2324
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2369
 msgid "Adding new type '%' (first occurrence for edge '%')."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2359
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2404
 msgid "Ambiguous railway kilometrage direction for way '%' (assuming forward)"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2366
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2411
 msgid "Inconsistent railway kilometrage direction for way '%': % (skipping)"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2411
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2456
 msgid "Value of railway:position is not numeric ('%') in node '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2478
-msgid "Ignoring lane use information for % lanes on edge % with % lanes"
-msgstr ""
-
-#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2497
+#: /home/micha/programming/sumo/src/netimport/NIImporter_OpenStreetMap.cpp:2548
 msgid ""
 "Ignoring turn sign information for % lanes on edge % with % driving lanes"
 msgstr ""
@@ -9078,6 +9094,10 @@ msgstr ""
 msgid "Wrong number of state file names!"
 msgstr ""
 
+#: /home/micha/programming/sumo/src/netload/NLBuilder.cpp:425
+msgid "Loading % from '%'"
+msgstr ""
+
 #: /home/micha/programming/sumo/src/netload/NLBuilder.cpp:445
 #, c-format
 msgid "The route file '%' is not accessible."
@@ -9742,22 +9762,22 @@ msgstr ""
 msgid "Could not load traffic light files."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/osgview/GUIOSGView.cpp:442
+#: /home/micha/programming/sumo/src/osgview/GUIOSGView.cpp:445
 msgid "Invalid link index in '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/osgview/GUIOSGView.cpp:444
+#: /home/micha/programming/sumo/src/osgview/GUIOSGView.cpp:447
 msgid "Unknown traffic light in '%'."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/osgview/GUIOSGView.cpp:972
+#: /home/micha/programming/sumo/src/osgview/GUIOSGView.cpp:975
 msgid " (No projection defined)"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/osgview/GUIOSGView.cpp:976
-#: /home/micha/programming/sumo/src/osgview/GUIOSGView.cpp:977
+#: /home/micha/programming/sumo/src/osgview/GUIOSGView.cpp:979
+#: /home/micha/programming/sumo/src/osgview/GUIOSGView.cpp:980
 msgid "N/A"
-msgstr ""
+msgstr "不适用"
 
 #: /home/micha/programming/sumo/src/polyconvert/PCLoaderArcView.cpp:107
 #: /home/micha/programming/sumo/src/polyconvert/PCLoaderDlrNavteq.cpp:208
@@ -10861,9 +10881,26 @@ msgstr ""
 msgid "An acceleration given by the power was not found."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/utils/foxtools/MFXTreeListDynamic.cpp:147
-#: /home/micha/programming/sumo/src/utils/foxtools/MFXTreeListDynamic.cpp:159
-msgid "New item cannot be NULL"
+#: /home/micha/programming/sumo/src/utils/foxtools/MFXDecalsTable.cpp:125
+#: /home/micha/programming/sumo/src/utils/foxtools/MFXDecalsTable.cpp:136
+msgid "Invalid row or column"
+msgstr ""
+
+#: /home/micha/programming/sumo/src/utils/foxtools/MFXDecalsTable.cpp:160
+msgid "Invalid row"
+msgstr ""
+
+#: /home/micha/programming/sumo/src/utils/foxtools/MFXDecalsTable.cpp:170
+#: /home/micha/programming/sumo/src/utils/foxtools/MFXDecalsTable.cpp:180
+msgid "Invalid column"
+msgstr ""
+
+#: /home/micha/programming/sumo/src/utils/foxtools/MFXDecalsTable.cpp:711
+msgid "Open decal"
+msgstr ""
+
+#: /home/micha/programming/sumo/src/utils/foxtools/MFXDecalsTable.cpp:711
+msgid "Open decal."
 msgstr ""
 
 #: /home/micha/programming/sumo/src/utils/geom/GeoConvHelper.cpp:86
@@ -11460,11 +11497,11 @@ msgstr ""
 msgid "Route file should be sorted by departure time, ignoring '%'!"
 msgstr ""
 
-#: /home/micha/programming/sumo/src/utils/vehicle/SUMOVehicleParameter.cpp:651
+#: /home/micha/programming/sumo/src/utils/vehicle/SUMOVehicleParameter.cpp:653
 msgid "Invalid % % given for %. Using edge end instead."
 msgstr ""
 
-#: /home/micha/programming/sumo/src/utils/vehicle/SUMOVehicleParameter.cpp:701
+#: /home/micha/programming/sumo/src/utils/vehicle/SUMOVehicleParameter.cpp:703
 msgid ""
 "Value of stop attribute 'trigger' must be 'person', 'container', 'join' or a "
 "boolean"

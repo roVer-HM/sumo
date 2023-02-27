@@ -23,15 +23,16 @@ from __future__ import print_function
 import os
 import sys
 import random
-from heapq import heappush,heappop
+from heapq import heappush, heappop
 from collections import defaultdict
 from itertools import chain
 SUMO_HOME = os.environ.get('SUMO_HOME',
                            os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 sys.path.append(os.path.join(SUMO_HOME, 'tools'))
-import sumolib
+import sumolib  # noqa
 from sumolib.options import ArgumentParser  # noqa
 from sumolib.miscutils import Colorgen  # noqa
+import sumolib.geomhelper as gh
 
 
 def get_options():
@@ -41,10 +42,14 @@ def get_options():
     ap.add_option("-n", "--net-file", dest="netfile", help="the network to read lane and edge permissions")
     ap.add_option("-s", "--stop-file", dest="stopfile", help="the additional file with stops")
     ap.add_option("-o", "--output", help="output taz file")
+    ap.add_option("--split-output", dest="splitOutput",
+                  help="generate splits for edges assigned to multiple stations")
     ap.add_option("--vclasses", default="rail,rail_urban",
                   help="Include consider edges allowing VCLASS")
     ap.add_option("--parallel-radius", type=float, default=100, dest="parallelRadius",
                   help="search radius for finding parallel edges")
+    ap.add_option("--merge", action="store_true", default=False,
+                  help="merge stations that have a common edge")
     ap.add_option("--hue", default="random",
                   help="hue for taz (float from [0,1] or 'random')")
     ap.add_option("--saturation", default=1,
@@ -84,7 +89,8 @@ class Station:
         outf.write('    </taz>\n')
 
         if self.coord:
-            outf.write('    <poi id="%s" name="%s" x="%s" y="%s"/>\n' % (index, self.name, self.coord[0], self.coord[1]))
+            outf.write('    <poi id="%s" name="%s" x="%s" y="%s"/>\n' %
+                       (index, self.name, self.coord[0], self.coord[1]))
 
 
 def allowsAny(edge, vclasses):
@@ -96,7 +102,7 @@ def allowsAny(edge, vclasses):
 
 def initStations(options, net):
     stations = defaultdict(Station)
-    
+
     numStops = 0
     numIgnoredStops = 0
     for stop in sumolib.xml.parse(options.stopfile, ['busStop', 'trainStop']):
@@ -123,17 +129,15 @@ def initStations(options, net):
             print("Ignored %s stops because they did not allow any of the vclasses '%s'" % (
                 numIgnoredStops, ','.join(options.vclasses)))
 
-
-
     return stations
 
 
 def findParallel(options, net, stations):
     for station in stations.values():
-        coords = sum(station.platforms, []) 
+        coords = sum(station.platforms, [])
         station.coord = (
-                sum([c[0] for c in coords]) / len(coords),
-                sum([c[1] for c in coords]) / len(coords))
+            sum([c[0] for c in coords]) / len(coords),
+            sum([c[1] for c in coords]) / len(coords))
 
         for edge, dist in net.getNeighboringEdges(*station.coord, options.parallelRadius):
             station.edges.add(edge)
@@ -142,12 +146,12 @@ def findParallel(options, net, stations):
 def findGroup(mergedStations, station):
     for group in mergedStations:
         if station in group:
-            return group;
+            return group
     assert(False)
 
 
 def mergeGroups(stations, mergedStations, group1, group2):
-    if group1 == None or group1 == group2:
+    if group1 is None or group1 == group2:
         return group2
 
     name1 = '|'.join(sorted(group1))
@@ -191,12 +195,55 @@ def mergeStations(stations, verbose=False):
         print("Merged %s stations" % (initialStations - finalStations))
 
 
+def splitStations(options, stations):
+    edgeStation = defaultdict(set)
+    for station in stations.values():
+        for edge in station.edges:
+            edgeStation[edge].add(station)
+
+    bidiSplits = defaultdict(list)
+    with open(options.splitOutput, 'w') as outf:
+        sumolib.writeXMLHeader(outf, "$Id$", "edges", schemaPath="edgediff_file.xsd", options=options)
+        for edge, stations in edgeStation.items():
+            if len(stations) == 1:
+                continue
+            shape = edge.getShape(True)
+            stationOffsets = []
+            for station in stations:
+                offset = gh.polygonOffsetWithMinimumDistanceToPoint(station.coord, shape, perpendicular=False)
+                stationOffsets.append((offset, station.name))
+            stationOffsets.sort()
+
+            splits = []
+            for (o1, n1), (o2, n2) in zip(stationOffsets[:-1], stationOffsets[1:]):
+                if o1 != o2:
+                    pos = (o1 + o2) / 2
+                    splits.append((pos, "%s.%s" % (edge.getID(), int(pos))))
+                else:
+                    sys.stderr.write("Cannot split edge '%s' between stations '%s' and '%s'\n" % (
+                        edge.getID(), n1, n2))
+
+            if edge.getBidi():
+                if edge.getBidi() in bidiSplits:
+                    bidiLength = edge.getBidi().getLength()
+                    splits = [(bidiLength - p, n) for p, n in reversed(bidiSplits[edge.getBidi()])]
+                else:
+                    bidiSplits[edge] = splits
+
+            outf.write('    <edge id="%s">\n' % edge.getID())
+            for pos, nodeID in splits:
+                outf.write('        <split pos="%s" id="%s"/>\n' % (pos, nodeID))
+            outf.write('    </edge>\n')
+
+        outf.write("</edges>\n")
+
+
 def assignByDistance(options, net, stations):
     """assign edges to closest station"""
     edgeStation = dict()
     for station in stations.values():
         for edge in station.edges:
-            assert edge not in edgeStation
+            assert(edge not in edgeStation or not options.merge)
             edgeStation[edge] = station.name
 
     remaining = set()
@@ -232,7 +279,10 @@ def main(options):
 
     stations = initStations(options, net)
     findParallel(options, net, stations)
-    mergeStations(stations, options.verbose)
+    if options.merge:
+        mergeStations(stations, options.verbose)
+    elif options.splitOutput:
+        splitStations(options, stations)
     assignByDistance(options, net, stations)
 
     with open(options.output, 'w') as outf:
@@ -240,6 +290,7 @@ def main(options):
         for i, name in enumerate(sorted(stations.keys())):
             stations[name].write(outf, i, options.colorgen())
         outf.write("</additional>\n")
+
 
 if __name__ == "__main__":
     main(get_options())

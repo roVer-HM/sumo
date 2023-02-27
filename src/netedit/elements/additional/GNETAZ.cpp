@@ -219,7 +219,9 @@ GNETAZ::updateCenteringBoundary(const bool updateGrid) {
     // use shape as boundary
     myAdditionalBoundary = myShape.getBoxBoundary();
     // add center
-    myAdditionalBoundary.add(myTAZCenter);
+    if (myTAZCenter != Position::INVALID) {
+        myAdditionalBoundary.add(myTAZCenter);
+    }
     // grow boundary
     myAdditionalBoundary.grow(10);
     // add object into net
@@ -356,7 +358,7 @@ GNETAZ::drawGL(const GUIVisualizationSettings& s) const {
             // push center matrix
             GLHelper::pushMatrix();
             // move to vertex
-            glTranslated(myTAZCenter.x(), myTAZCenter.y(), 0.3);
+            glTranslated(myTAZCenter.x(), myTAZCenter.y(), GLO_JUNCTION + 0.3);
             // set color
             GLHelper::setColor(darkerColor);
             // draw circle

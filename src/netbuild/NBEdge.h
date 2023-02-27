@@ -1353,8 +1353,8 @@ public:
     /// @brief set disallowed class for the given lane or for all lanes if -1 is given
     void disallowVehicleClass(int lane, SUMOVehicleClass vclass);
 
-    /// @brief prefer certain vehicle class
-    void preferVehicleClass(int lane, SUMOVehicleClass vclass);
+    /// @brief prefer certain vehicle classes for the given lane or for all lanes if -1 is given (ensures also permissions)
+    void preferVehicleClass(int lane, SVCPermissions vclasses);
 
     /// @brief set lane specific width (negative lane implies set for all lanes)
     void setLaneWidth(int lane, double width);
@@ -1404,6 +1404,11 @@ public:
     /// @brief mark this edge as a bidi edge
     void setBidi(bool isBidi) {
         myIsBidi = isBidi;
+    }
+
+    /// @brief return whether this edge should be a bidi edge
+    bool isBidi() {
+        return myIsBidi;
     }
 
     // @brief returns a reference to the internal structure for the convenience of netedit
