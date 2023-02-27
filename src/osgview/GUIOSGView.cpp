@@ -204,6 +204,8 @@ GUIOSGView::GUIOSGView(
 
     myTextNode = new osg::Geode();
     myText = new osgText::Text;
+    myText->setCharacterSizeMode(osgText::Text::SCREEN_COORDS);
+    myText->setShaderTechnique(osgText::NO_TEXT_SHADER);
     osgText::Font* font = osgText::readFontFile("arial.ttf");
     if (font != nullptr) {
         myText->setFont(font);
@@ -225,9 +227,7 @@ GUIOSGView::GUIOSGView(
     myHUD->addChild(myTextNode);
     myHUD->setGraphicsContext(myAdapter);
     myHUD->setViewport(0, 0, w, h);
-#ifndef DEBUG
     myViewer->addSlave(myHUD, false);
-#endif
     myCameraManipulator->updateHUDText();
 
     // adjust the main light
@@ -411,6 +411,7 @@ GUIOSGView::setColorScheme(const std::string& name) {
     }
     myVisualizationSettings = &gSchemeStorage.get(name.c_str());
     myVisualizationSettings->gaming = myApp->isGaming();
+    adoptViewSettings();
     update();
     return true;
 }
