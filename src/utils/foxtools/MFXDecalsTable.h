@@ -22,8 +22,8 @@
 
 #include <vector>
 
-#include <utils/foxtools/fxheader.h>
 #include <utils/common/UtilExceptions.h>
+#include <utils/foxtools/MFXLabelTooltip.h>
 
 // ===========================================================================
 // class declaration
@@ -37,7 +37,7 @@ class GUIDialog_ViewSettings;
 /**
  * @class MFXDecalsTable
  */
-class MFXDecalsTable : public FXHorizontalFrame {
+class MFXDecalsTable : public FXVerticalFrame {
     /// @brief fox declaration
     FXDECLARE(MFXDecalsTable)
 
@@ -67,30 +67,37 @@ public:
     void selectRow(const int rowIndex);
 
     /// @brief Change column header text
-    void setColumnLabelTop(const int column, const std::string& text, const std::string& tooltip = "");
-
-    /// @brief Change column bottom text
-    void setColumnLabelBot(const int column, const std::string& text);
+    void setColumnLabel(const int column, const std::string& text, const std::string& tooltip = "");
 
     /// @brief fill table
     void fillTable();
 
     /// @name FOX callbacks
     /// @{
+
     /// @brief called when a row is focused
     long onFocusRow(FXObject*, FXSelector, void*);
 
-    /// @brief called when add phase button is selected
-    long onCmdAddPhasePressed(FXObject*, FXSelector, void*);
-
-    /// @brief called when a row is modified
-    long onCmdEditRow(FXObject*, FXSelector, void*);
-
     /// @brief called when a key is pressed
     long onCmdKeyPress(FXObject*, FXSelector, void*);
+    
+    /// @brief called when a string is updated
+    long onCmdEditRowString(FXObject*, FXSelector, void*);
+    
+    /// @brief called when a spinner is updated
+    long onCmdEditRowSpinner(FXObject*, FXSelector, void*);
 
-    /// @brief called when an add phase button is pressed
-    long onCmdAddPhase(FXObject*, FXSelector, void*);
+    /// @brief called when a checkBox is updated
+    long onCmdEditRowCheckBox(FXObject*, FXSelector, void*);
+
+    /// @brief called when open decal button is pressed
+    long onCmdOpenDecal(FXObject*, FXSelector, void*);
+
+    /// @brief called when add row button is pressed
+    long onCmdAddRow(FXObject*, FXSelector, void*);
+
+    /// @brief called when remove row button is pressed
+    long onCmdRemoveRow(FXObject*, FXSelector, void*);
 
     /// @}
 
@@ -102,23 +109,23 @@ protected:
     class Cell {
 
     public:
-        /// @brief constructor for textField (t)
+        /// @brief constructor for textField
         Cell(MFXDecalsTable* decalsTable, FXTextField* textField, int col, int row);
 
-        /// @brief constructor for index label (i)
+        /// @brief constructor for index label
         Cell(MFXDecalsTable* decalsTable, FXLabel* indexLabel, FXLabel* indexLabelBold, int col, int row);
 
-        /// @brief constructor for buttons (b)
+        /// @brief constructor for buttons
         Cell(MFXDecalsTable* decalsTable, FXButton* button, int col, int row);
+        
+        /// @brief constructor for check buttons
+        Cell(MFXDecalsTable* decalsTable, FXCheckButton* checkButton, int col, int row);
+        
+        /// @brief constructor for spinners
+        Cell(MFXDecalsTable* decalsTable, FXRealSpinner* spinner, int col, int row);
 
         /// @brief destructor
         ~Cell();
-
-        /// @brief Enable cell
-        void enable();
-
-        /// @brief Disable cell
-        void disable();
 
         /// @brief check if current cell has focus
         bool hasFocus() const;
@@ -135,6 +142,12 @@ protected:
         /// @brief get open button
         FXButton* getButton();
 
+        /// @brief get check button
+        FXCheckButton* getCheckButton();
+
+        /// @brief get spinner
+        FXRealSpinner* getSpinner();
+
         /// @brief show label index normal
         void showIndexLabelNormal();
 
@@ -149,9 +162,6 @@ protected:
 
         /// @brief get column type
         char getType() const;
-
-        /// @brief disable button (used for delete, move up and move down)
-        void disableButton();
 
     private:
         /// @brief pointer to decals table parent
@@ -168,6 +178,12 @@ protected:
 
         /// @brief button
         FXButton* myButton = nullptr;
+
+        /// @brief spinner
+        FXRealSpinner* mySpinner = nullptr;
+
+        /// @brief check button
+        FXCheckButton* myCheckButton= nullptr;
 
         /// @brief column index
         const int myCol;
@@ -195,20 +211,11 @@ protected:
         /// @brief get column type
         char getType() const;
 
-        /// @brief get column label top
-        FXString getColumnLabelTop() const;
+        /// @brief get column label
+        FXString getColumnLabel() const;
 
-        /// @brief set column label top
-        void setColumnLabelTop(const std::string& text, const std::string& tooltip);
-
-        /// @brief set column label boit
-        void setColumnLabelBot(const std::string& text);
-
-        /// @brief get column minimum width
-        int getColumnMinimumWidth();
-
-        /// @brief set colum width
-        void setColumnWidth(const int colWidth);
+        /// @brief set column label
+        void setColumnLabel(const std::string& text, const std::string& tooltip);
 
     private:
         /// @brief pointer to table
@@ -218,13 +225,10 @@ protected:
         FXVerticalFrame* myVerticalFrame = nullptr;
 
         /// @brief column top tooltip label
-        FXLabel* myTopLabel = nullptr;
+        MFXLabelTooltip* myTopLabel = nullptr;
 
         /// @brief vertical frame
         FXVerticalFrame* myVerticalCellFrame = nullptr;
-
-        /// @brief column bot label
-        FXLabel* myBotLabel = nullptr;
 
         /// @brief column index
         const int myIndex;
@@ -232,8 +236,8 @@ protected:
         /// @brief column type
         const char myType;
 
-        /// @brief check if current type correspond to a textField
-        bool isTextFieldColumn() const;
+        /// @brief adjust column width
+        void adjustColumnWidth();
 
         /// @brief default constructor
         Column();
@@ -279,6 +283,9 @@ protected:
     /// @brief move focus to current row
     bool moveFocus();
 
+    /// @brief horizontal columns frame
+    FXHorizontalFrame* myColumnsFrame = nullptr;
+
     /// @brief font for index
     FXFont* myIndexFont = nullptr;
 
@@ -293,6 +300,9 @@ protected:
 
     /// @brief rows
     std::vector<Row*> myRows;
+
+    /// @brief add button
+    FXButton* myAddButton = nullptr;
 
     /// @brief current selected row
     int myCurrentSelectedRow = -1;

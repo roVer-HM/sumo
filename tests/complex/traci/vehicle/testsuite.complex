@@ -29,6 +29,9 @@ taxi
 # test adding vehicles
 add
 
+# test traci access to cfmodel features
+cfmodel
+
 # Tests the vehicle API
 vehicle
 
