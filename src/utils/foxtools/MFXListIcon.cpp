@@ -27,12 +27,16 @@
 #include "MFXListIcon.h"
 #include "MFXListItemIcon.h"
 
+
+#define LINE_SPACING    4   // Line spacing between items
+#define ICON_SIZE       16
+
 // ===========================================================================
 // FOX callback mapping
 // ===========================================================================
 
-FXDEFMAP(FXList) MFXListIconMap[]={
-    FXMAPFUNC(SEL_PAINT, 0, FXList::onPaint),
+FXDEFMAP(MFXListIcon) MFXListIconMap[]={
+    FXMAPFUNC(SEL_PAINT, 0, MFXListIcon::onPaint),
 };
 
 // Object implementation
@@ -47,6 +51,16 @@ MFXListIcon::MFXListIcon(FXComposite *p, FXObject* tgt, FXSelector sel, FXuint o
 }
 
 
+FXint
+MFXListIcon::getDefaultHeight() {
+    if (visible) {
+        return visible * (LINE_SPACING + FXMAX(font->getFontHeight(), ICON_SIZE));
+    } else {
+        return FXScrollArea::getDefaultHeight();
+    }
+}
+
+
 long
 MFXListIcon::onPaint(FXObject*, FXSelector, void* ptr) {
     FXEvent* event = (FXEvent*)ptr;
@@ -55,15 +69,13 @@ MFXListIcon::onPaint(FXObject*, FXSelector, void* ptr) {
     // Paint items
     y = pos_y;
     for(i = 0; i < items.no(); i++) {
-        auto listIcon = dynamic_cast<MFXListItemIcon*>(items[i]);
+        const auto listIcon = dynamic_cast<MFXListItemIcon*>(items[i]);
         if (listIcon) {
             h = listIcon->getHeight(this);
             if (event->rect.y <= (y + h) && y < (event->rect.y + event->rect.h)) {
                 listIcon->draw(this, dc, pos_x, y, FXMAX(listWidth, viewport_w), h);
             }
             y += h;
-        } else {
-            throw ProcessError("LisItemIcon cannot be NULL");
         }
     }
     // Paint blank area below items

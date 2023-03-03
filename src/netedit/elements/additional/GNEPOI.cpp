@@ -37,6 +37,7 @@
 #include <utils/options/OptionsCont.h>
 
 #include "GNEPOI.h"
+#include "GNEAdditionalHandler.h"
 
 
 // ===========================================================================
@@ -162,6 +163,63 @@ GNEPOI::writeAdditional(OutputDevice& device) const {
         writeXML(device, false, 0, getParentLanes().at(0)->getID(), fixedPositionOverLane, myFriendlyPos, myPosLat);
     } else {
         writeXML(device, myGeo);
+    }
+}
+
+
+bool
+GNEPOI::isAdditionalValid() const {
+    // only for POIS over lanes
+    if (getParentLanes().size() == 0) {
+        return true;
+    } else if (getFriendlyPos()) {
+        // with friendly position enabled position is "always fixed"
+        return true;
+    } else {
+        return fabs(myPosOverLane) <= getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength();
+    }
+}
+
+
+std::string
+GNEPOI::getAdditionalProblem() const {
+    // only for POIS over lanes
+    if (getParentLanes().size() > 0) {
+        // obtain final length
+        const double len = getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength();
+        // check if detector has a problem
+        if (GNEAdditionalHandler::checkLanePosition(myPosOverLane, 0, len, getFriendlyPos())) {
+            return "";
+        } else {
+            // declare variable for error position
+            std::string errorPosition;
+            // check positions over lane
+            if (myPosOverLane < 0) {
+                errorPosition = (toString(SUMO_ATTR_POSITION) + " < 0");
+            }
+            if (myPosOverLane > len) {
+                errorPosition = (toString(SUMO_ATTR_POSITION) + TL(" > lanes's length"));
+            }
+            return errorPosition;
+        }
+    } else {
+        return "";
+    }
+}
+
+
+void
+GNEPOI::fixAdditionalProblem() {
+    // only for POIS over lanes
+    if (getParentLanes().size() > 0) {
+        // declare new position
+        double newPositionOverLane = myPosOverLane;
+        // declare new lenght (but unsed in this context)
+        double length = 0;
+        // fix pos and length with fixLanePosition
+        GNEAdditionalHandler::fixLanePosition(newPositionOverLane, length, getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength());
+        // set new position
+        setAttribute(SUMO_ATTR_POSITION, toString(newPositionOverLane), myNet->getViewNet()->getUndoList());
     }
 }
 

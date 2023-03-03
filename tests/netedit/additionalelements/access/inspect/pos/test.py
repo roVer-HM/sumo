@@ -28,9 +28,6 @@ import neteditTestFunctions as netedit  # noqa
 # Open netedit
 neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
 
-# apply zoom
-netedit.setZoom("25", "20", "25")
-
 # go to additional mode
 netedit.additionalMode()
 
@@ -38,20 +35,20 @@ netedit.additionalMode()
 netedit.changeElement("busStop")
 
 # create BusStop with default parameters
-netedit.leftClick(referencePosition, 375, 250)
+netedit.leftClick(referencePosition, 428, 257)
 
 # select Access
 netedit.changeElement("access")
 
 # Create Access
 netedit.selectAdditionalChild(netedit.attrs.access.create.parent, 0)
-netedit.leftClick(referencePosition, 200, 280)
+netedit.leftClick(referencePosition, 153, 95)
 
 # go to inspect mode
 netedit.inspectMode()
 
 # delete Access
-netedit.leftClick(referencePosition, 208, 280)
+netedit.leftClick(referencePosition, 153, 95)
 
 # Change parameter pos with a non valid value (dummy position X)
 netedit.modifyAttribute(netedit.attrs.access.inspect.pos, "dummy position", True)
@@ -66,7 +63,7 @@ netedit.modifyAttribute(netedit.attrs.access.inspect.pos, "-1000", True)
 netedit.modifyAttribute(netedit.attrs.access.inspect.pos, "1000", True)
 
 # Change parameter pos with a valid value (middle lane)
-netedit.modifyAttribute(netedit.attrs.access.inspect.pos, "25", True)
+netedit.modifyAttribute(netedit.attrs.access.inspect.pos, "2.1", True)
 
 # Check undo redo
 netedit.undo(referencePosition, 6)
