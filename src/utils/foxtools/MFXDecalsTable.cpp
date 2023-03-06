@@ -264,7 +264,7 @@ MFXDecalsTable::onCmdEditRowString(FXObject* sender, FXSelector, void*) {
     // get decals
     auto &decals = myDialogViewSettings->getSUMOAbstractView()->getDecals();
     // get value
-    const auto value = dynamic_cast<FXTextField*>(sender)->getText().text();
+    const std::string value = dynamic_cast<FXTextField*>(sender)->getText().text();
     // set filename
     for (int rowIndex = 0; rowIndex < (int)myRows.size(); rowIndex++) {
         // continue depending of string
@@ -716,6 +716,8 @@ MFXDecalsTable::Column::adjustColumnWidth() {
                 row->getCells().at(myIndex)->getTextField()->setWidth(columnWidth);
             } else if (row->getCells().at(myIndex)->getButton()) {
                 row->getCells().at(myIndex)->getButton()->setWidth(columnWidth);
+            } else if (row->getCells().at(myIndex)->getSpinner()) {
+                row->getCells().at(myIndex)->getSpinner()->setWidth(columnWidth);
             }
         }
         // adjust labels and vertical frames

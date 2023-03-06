@@ -679,18 +679,24 @@ MSNet::closeSimulation(SUMOTime start, const std::string& reason) {
 
 
 void
-MSNet::simulationStep() {
+MSNet::simulationStep(const bool onlyMove) {
+    if (myStepCompletionMissing) {
+        postMoveStep();
+        myStepCompletionMissing = false;
+        return;
+    }
 #ifdef DEBUG_SIMSTEP
     std::cout << SIMTIME << ": MSNet::simulationStep() called"
               << ", myStep = " << myStep
               << std::endl;
 #endif
     TraCIServer* t = TraCIServer::getInstance();
+    int lastTraCICmd = 0;
     if (t != nullptr) {
         if (myLogExecutionTime) {
             myTraCIStepDuration = SysUtils::getCurrentMillis();
         }
-        t->processCommandsUntilSimStep(myStep);
+        lastTraCICmd = t->processCommands(myStep);
 #ifdef DEBUG_SIMSTEP
         bool loadRequested = !TraCI::getLoadArgs().empty();
         assert(t->getTargetTime() >= myStep || loadRequested || TraCIServer::wasClosed());
@@ -795,6 +801,19 @@ MSNet::simulationStep() {
     if (myLogExecutionTime) {
         myTraCIStepDuration -= SysUtils::getCurrentMillis();
     }
+    if (onlyMove) {
+        myStepCompletionMissing = true;
+        return;
+    }
+    if (t != nullptr && lastTraCICmd == libsumo::CMD_EXECUTEMOVE) {
+        t->processCommands(myStep, true);
+    }
+    postMoveStep();
+}
+
+
+void
+MSNet::postMoveStep() {
     const int numControlled = libsumo::Helper::postProcessRemoteControl();
     if (numControlled > 0 && MSGlobals::gCheck4Accidents) {
         myEdges->detectCollisions(myStep, STAGE_REMOTECONTROL);
