@@ -34,7 +34,7 @@ sys.path.append(os.path.join(os.environ.get(
 from sumolib.miscutils import getSocketStream  # noqa
 import sumolib.net  # noqa
 from sumolib.options import ArgumentParser  # noqa
-from sumolib.output.convert import phem, omnet, shawn, ns2, gpsdat, kml, gpx, poi, ipg, fcdfilter, keplerjson, trj  # noqa
+from sumolib.output.convert import phem, omnet, bonnmotion, shawn, ns2, gpsdat, kml, gpx, poi, ipg, fcdfilter, keplerjson, trj  # noqa
 
 
 class FCDTimeEntry:
@@ -192,6 +192,11 @@ output format. Optionally the output can be sampled, filtered and distorted.
     # OMNET
     optParser.add_option("--omnet-output", dest="omnet", metavar="FILE",
                          help="Defines the name of the OMNET file to generate")
+    # BONNMOTION
+    optParser.add_option("--bonnmotion-output", dest="bonnmotion", metavar="FILE",
+                         help="Defines the name of the BonnMotion file to generate")
+    optParser.add_option("--bonnmotion-omnet-origin", dest="omnet_origin", default=False,
+                          action="store_true", help="")
     # Shawn
     optParser.add_option("--shawn-output", dest="shawn", metavar="FILE",
                          help="Defines the name of the Shawn file to generate")
@@ -264,6 +269,10 @@ output format. Optionally the output can be sampled, filtered and distorted.
     if options.omnet and not options.fcd:
         print("A fcd-output from SUMO must be given using the --fcd-input.")
         return 1
+    # bonnmotion
+    if options.bonnmotion and not options.fcd and not options.net:
+        print("A SUMO fcd-output and network must given using the --fcd-input and --net-input.")
+        return 1
     # trj
     if options.trj and not options.fcd:
         print("A fcd-output from SUMO must be given using the --fcd-input.")
@@ -277,6 +286,17 @@ output format. Optionally the output can be sampled, filtered and distorted.
     if options.omnet:
         runMethod(options.fcd, options.omnet, omnet.fcd2omnet, options)
     # ----- OMNET
+
+    # ----- BONNMOTION
+    if options.bonnmotion:
+        if options.omnet_origin:
+            if not net:
+                net = sumolib.net.readNet(options.net)
+            _options = {"bbox": net.getBBoxXY()}
+        else:
+            _options = {}
+        runMethod(options.fcd, options.bonnmotion, bonnmotion.fcd2bonnmotion, options, further=_options)
+    # ----- BONNMOTION
 
     # ----- Shawn
     if options.shawn:
