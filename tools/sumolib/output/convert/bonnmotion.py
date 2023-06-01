@@ -12,7 +12,7 @@
 # SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 # @file    bonnmotion.py
-# @author  Stefan Schuhbäck
+# @author  Stefan Schuhbaeck
 # @date    2023-05-23
 
 """
@@ -45,10 +45,10 @@ def fcd2bonnmotion(inpFCD, outSTRM, further):
             if omnet_orig:
                 _y = y_height - v.y
                 if _y < 0:
-                    print(f"warning: negative y coordinate after switching to OMNeT origin. {v}")
+                    print("warning: negative y coordinate after switching to OMNeT origin. %s" % v)
             else:
                 _y = v.y
-            _trace.append(f"{timestep.time} {v.x} {_y}") 
+            _trace.append("%s %s %s" % (timestep.time, v.x, _y)) 
             lines[v.id] = _trace
     # sort by numeric id if possible to ensure nodes are 
     try:
@@ -61,8 +61,9 @@ def fcd2bonnmotion(inpFCD, outSTRM, further):
     # print sumo ids as space separated list in comment of bonnMotion file to allow 
     # mapping between bonnmotion and fcd export. 
     print("# BonnMotion file (2D) time x y time x y ...", file=outSTRM)
-    print(f"# {len(_ids)} nodes.", file=outSTRM)
-    print(f"# Sumo id map: {' '.join([str(i) for i in _ids])}", file=outSTRM)
+    print("# %s nodes." % len(_ids), file=outSTRM)
+    id_str = ' '.join([str(i) for i in _ids])
+    print("# Sumo id map: %s" % id_str, file=outSTRM)
     for _id in _ids:
         _trace = lines[str(_id)]
         print(" ".join(_trace), file=outSTRM)
