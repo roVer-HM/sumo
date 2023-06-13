@@ -33,8 +33,11 @@ from __future__ import absolute_import
 
 def fcd2bonnmotion(inpFCD, outSTRM, further):
     omnet_orig = False
+    min_len = further["bonnmotion_min_trace_len"]
+    skip_min_len = further["bonnmotion_min_trace_skip"]
     if "bbox" in further:
-        y_height = further["bbox"][1][1]
+        y_max = further["bbox"][1][1]
+        x_min = further["bbox"][0][0]
         omnet_orig = True
     
     lines = {}
@@ -43,12 +46,16 @@ def fcd2bonnmotion(inpFCD, outSTRM, further):
         for v in timestep.vehicle:
             _trace = lines.get(v.id, [])
             if omnet_orig:
-                _y = y_height - v.y
+                _x = v.x - x_min
+                _y = y_max - v.y
                 if _y < 0:
                     print("warning: negative y coordinate after switching to OMNeT origin. %s" % v)
+                if _x < 0:
+                    print("warning: negative x coordinate after switching to OMNeT origin. %s" % v)
             else:
+                _x = v.x
                 _y = v.y
-            _trace.append("%s %s %s" % (timestep.time, v.x, _y)) 
+            _trace.append("%s %s %s" % (timestep.time, _x, _y)) 
             lines[v.id] = _trace
     # sort by numeric id if possible to ensure nodes are 
     try:
@@ -57,7 +64,25 @@ def fcd2bonnmotion(inpFCD, outSTRM, further):
     except Exception as e:
         _ids = list(lines.keys())
         print("warning: Sorting node ids as numbers did not work. This is needed to ensure same node order if comparing trace and traci runs.")
-    
+
+    # clear traces with to few data points.
+    _remove_ids = []
+    for id_index, _id in enumerate(_ids):
+        _trace = lines[str(_id)]
+        if len(_trace) <= min_len:
+            if skip_min_len:
+                _remove_ids.append(id_index)
+                del lines[str(_id)]
+                print("warning: removed trace for id %i as it has to few data points. Expected at least %i points in trace, got %i." % (_id, min_len, len(_trace)))
+                continue
+            else:
+                raise ValueError("Expected at least %s points in trace, got %s." % (min_len, len(_trace)))
+    # remove id's in reverse order. (trace lines are already removed.)
+    _remove_ids.sort(reverse=True)
+    for i in _remove_ids:
+        del _ids[i]
+
+
     # print sumo ids as space separated list in comment of bonnMotion file to allow 
     # mapping between bonnmotion and fcd export. 
     print("# BonnMotion file (2D) time x y time x y ...", file=outSTRM)

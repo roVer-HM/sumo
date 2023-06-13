@@ -197,7 +197,11 @@ output format. Optionally the output can be sampled, filtered and distorted.
     optParser.add_option("--bonnmotion-output", dest="bonnmotion", metavar="FILE",
                          help="Defines the name of the BonnMotion file to generate")
     optParser.add_option("--bonnmotion-omnet-origin", dest="omnet_origin", default=False,
-                          action="store_true", help="")
+                          action="store_true", help="Apply coordinate transformation based on convBoundary in net-file. Requires --net-input")
+    optParser.add_option("--bonnmotion-min-trace-length", dest="bonnmotion_min_trace_len", default=2,
+                         type=int, help="Ensure minimal trace length for each node.")
+    optParser.add_option("--bonnmotion-skip-min-trace-length", dest="bonnmotion_min_trace_skip", default=False,
+                          action="store_true", help="Do not raise error on min trace length. Just skip them.")
     # Shawn
     optParser.add_option("--shawn-output", dest="shawn", metavar="FILE",
                          help="Defines the name of the Shawn file to generate")
@@ -296,6 +300,8 @@ output format. Optionally the output can be sampled, filtered and distorted.
             _options = {"bbox": net.getBBoxXY()}
         else:
             _options = {}
+        _options.setdefault("bonnmotion_min_trace_len", options.bonnmotion_min_trace_len)
+        _options.setdefault("bonnmotion_min_trace_skip", options.bonnmotion_min_trace_skip)
         runMethod(options.fcd, options.bonnmotion, bonnmotion.fcd2bonnmotion, options, further=_options)
     # ----- BONNMOTION
 
