@@ -5,8 +5,8 @@ title: Sumolib
 **sumolib** is a set of python modules for working with sumo networks,
 simulation output and other simulation artifacts. For a detailed list of
 available functions see the [pydoc generated
-documentation](http://sumo.dlr.de/pydoc/sumolib.html). You can
-[browse the code here](https://github.com/eclipse/sumo/tree/main/tools/sumolib).
+documentation](https://sumo.dlr.de/pydoc/sumolib.html). You can
+[browse the code here](https://github.com/eclipse-sumo/sumo/tree/main/tools/sumolib).
 
 # importing **sumolib** in a script
 
@@ -14,12 +14,10 @@ To use the library, the {{SUMO}}/tools directory must be on the python load
 path. This is typically done with a stanza like this:
 
 ```python
-import os, sys
+import os
+import sys
 if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(tools)
-else:   
-    sys.exit("please declare environment variable 'SUMO_HOME'")
+    sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
 ```
 
 # loading a network file
@@ -71,7 +69,16 @@ avgSpeed = speedSum / edgeCount
 !!! note
     This is just a processing example. To compute average travel speeds in a network, process [edgeData](../Simulation/Output/Lane-_or_Edge-based_Traffic_Measures.md), [tripinfos](../Simulation/Output/TripInfo.md) or [summary-output](../Simulation/Output/Summary.md) instead.
 
-## compute the median speed using the [Statistics](http://sumo.dlr.de/pydoc/sumolib.miscutils.html#Statistics) module
+## compute the length of the selected edges
+```
+net.loadSelection('selection.txt')
+cumulLength = 0.
+for edge in net.getEdges():
+    if edge.isSelected():
+        cumulLength += edge.getLength()
+```
+
+## compute the median speed using the [Statistics](https://sumo.dlr.de/pydoc/sumolib.miscutils.html#Statistics) module
 
 ```python
 edgeStats = sumolib.miscutils.Statistics("edge speeds")
@@ -94,7 +101,7 @@ x, y = net.convertLonLat2XY(lon, lat)
 edges = net.getNeighboringEdges(x, y, radius)
 # pick the closest edge
 if len(edges) > 0:
-    distancesAndEdges = sorted([(dist, edge) for edge, dist in edges])
+    distancesAndEdges = sorted([(dist, edge) for edge, dist in edges], key=lambda x:x[0])
     dist, closestEdge = distancesAndEdges[0]
 ```
 

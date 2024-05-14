@@ -13,7 +13,7 @@ title: PlainXML
 [netconvert](../netconvert.md) can [convert freely](../Networks/Export.md#plain) and without information loss
 between these two formats. Only the *plain-xml* format is meant to be
 edited by the users. In contrast, the *.net.xml* format has lots of
-subtle inter-dependencies between it's elements and should never be
+subtle inter-dependencies between its elements and should never be
 edited by hand. The *plain-xml* format is described below.
 
 It is possible to loaded a *net.xml* file along with *plain-xml* patch
@@ -63,15 +63,15 @@ The structures of the files described in the following are also
 available as XML Schema Definitions:
 
 - [nodes files](#node_descriptions):
-  <http://sumo.dlr.de/xsd/nodes_file.xsd>
+  <https://sumo.dlr.de/xsd/nodes_file.xsd>
 - [edges files](#edge_descriptions):
-  <http://sumo.dlr.de/xsd/edges_file.xsd>
+  <https://sumo.dlr.de/xsd/edges_file.xsd>
 - [types files](#type_descriptions):
-  <http://sumo.dlr.de/xsd/types_file.xsd>
+  <https://sumo.dlr.de/xsd/types_file.xsd>
 - [connections files](#connection_descriptions):
-  <http://sumo.dlr.de/xsd/connections_file.xsd>
+  <https://sumo.dlr.de/xsd/connections_file.xsd>
 - [tllogic files](#traffic_light_program_definition):
-  <http://sumo.dlr.de/xsd/tllogic_file.xsd>
+  <https://sumo.dlr.de/xsd/tllogic_file.xsd>
 
 # Node Descriptions
 
@@ -83,7 +83,7 @@ available as XML Schema Definitions:
 | Type of content    | Nodes (intersections/junctions) |
 | Open format?       | Yes                             |
 | SUMO specific?     | Yes                             |
-| XML Schema         | [nodes_file.xsd](http://sumo.dlr.de/xsd/nodes_file.xsd)                  |
+| XML Schema         | [nodes_file.xsd](https://sumo.dlr.de/xsd/nodes_file.xsd)                  |
 
 </center>
 
@@ -162,14 +162,14 @@ default may be changed using the option **--tls.default-type** {{DT_STR}}.
 
 !!! note
     You can load multiple node files at the same time by giving a comma-separated list of file names on the command line. In a configuration file you can use a space separated list as well.
-    
+
 ### tlLayout
 If you leave out the tlLayout of the node, it is set to *opposites*. This
 default may be changed using the option **--tls.layout** {{DT_STR}}
 
 - `opposites`: roads from opposite directions get the green light at the same time. Left turns (which conflict with the opposite stream) either have a green-with-conflict ('m') or get their own phase.
-- `incoming`: each incoming road gets it's own green phase
-- `alternateOneWay`: This program is for a joined controller that regulates alternating one-way access from two or more sides of a work zone (or narrow road). each incoming road gets it's own green phase and there is an all-red phase according to the size of the work zone for traffic to clear before the next direction starts up.
+- `incoming`: each incoming road gets its own green phase
+- `alternateOneWay`: This program is for a joined controller that regulates alternating one-way access from two or more sides of a work zone (or narrow road). each incoming road gets its own green phase and there is an all-red phase according to the size of the work zone for traffic to clear before the next direction starts up.
 
 ## Node types
 
@@ -281,7 +281,7 @@ If a vehicle is braking in the simulation, the responsible foe vehicle
 
 !!! caution
     Never attempt to modify the junction logic within a ***.net.xml*** file manually as there are subtle inter-dependencies with other data structures in the network. Nevertheless, it may be useful to [look into the .net.xml to understand right-of-way](../Networks/SUMO_Road_Networks.md#requests)
-    
+
 ### Modifying Right-of-Way
 
 The right-of-way can be customized by specifying [additional prohibitions](#setting_connection_priorities) and by
@@ -290,7 +290,7 @@ specifying the [connection attribute](#explicitly_setting_which_edge_lane_is_con
 
 Since version 1.1.0, the algorithm for computing right-of-way from the
 edge priorities can be switched between two modes using `<node>`-attribute
-*rightOfWay*.    
+*rightOfWay*.
 
 ## Fringe
 
@@ -315,7 +315,7 @@ The new junction will get the id *cluster_id0_id1*. If there are more nodes in t
 the id will be abbreviated to something like *cluster_id0_id1_id2_id3_#5more* (for a 9 node cluster).
 
 ### Reasons for joining node clusters
-Within an intersection, special rules of traffic do apply. When modelling an intersection by a cluster of nodes, the edges within the cluster are regular roads where these rules cannot be applied. 
+Within an intersection, special rules of traffic do apply. When modelling an intersection by a cluster of nodes, the edges within the cluster are regular roads where these rules cannot be applied.
 - To prevent jamming cross-traffic, vehicles should only enter an intersection space if they are not prevented from leaving by a downstream jam
 - Vehicles that turn left from opposite directions may turn ahead of each other (without intersecting trajectories). In an unjoined cluster long vehicles easily block each other when turning left from opposite directions.
 
@@ -362,7 +362,7 @@ excluded from joining can also be specified via the option **--junctions.join-ex
 
 !!! caution
     After merging nodes, the lane-to-lane connections are recalculated. You can override them by resorting to a 2-step process:
-    
+
         # 1. Merging the junctions.
         netconvert --sumo-net-file berlin-separated-junctions.net.xml \
           --output-file berlin-joined-junctions.net.xml \
@@ -371,7 +371,7 @@ excluded from joining can also be specified via the option **--junctions.join-ex
         netconvert --sumo-net-file berlin-joined-junctions.net.xml \
           --output-file berlin-with-fixed-connections.net.xml \
           --connection-files berlin-new-connections.con.xml
-    
+
     See [#Connection Descriptions](#connection_descriptions) on how to define connections in **\*.con.xml** format.
 
 When loading networks with defined connections, the results of joining
@@ -404,7 +404,7 @@ the connections.
 | Type of content    | Edges (roads/streets) |
 | Open format?       | Yes                   |
 | SUMO specific?     | Yes                   |
-| XML Schema         | [edges_file.xsd](http://sumo.dlr.de/xsd/edges_file.xsd)        |
+| XML Schema         | [edges_file.xsd](https://sumo.dlr.de/xsd/edges_file.xsd)        |
 
 Within the edges file, each description of a single edge looks like
 this: `<edge id="<STRING>" from="<NODE_ID>" to="<NODE_ID>" [type="<STRING>"] [numLanes="<INT>"] [speed="<FLOAT>"] [priority="<UINT>"] [length="<FLOAT>"] [shape="<2D-POSITION>[ <2D-POSITION>]*"] [spreadType="center"] [allow="<VEHICLE_CLASS>[ <VEHICLE_CLASS>]*"] [disallow="<VEHICLE_CLASS>[ <VEHICLE_CLASS>]*"]/>`.
@@ -579,7 +579,7 @@ The definition of a lane contains the following optional attributes:
 | speed          | float                                                                                                               | speed in meters per second                                                                                                                 |
 | width          | float                                                                                                               | width in meters (used for visualization)                                                                                                   |
 | endOffset      | float \>= 0                                                                                                         | Move the stop line back from the intersection by the given amount (effectively shortening the lane and locally enlarging the intersection) |
-| shape          | List of positions; each position is encoded in x,y or x,y,z in meters (do not separate the numbers with a space\!). | A custom shape for this lane.<br><br>**Note:** The lane lengths will be averaged in the generated network. Lane-changing will ignore gaps between lanes.    
+| shape          | List of positions; each position is encoded in x,y or x,y,z in meters (do not separate the numbers with a space\!). | A custom shape for this lane.<br><br>**Note:** The lane lengths will be averaged in the generated network. Lane-changing will ignore gaps between lanes.
 | type          | string | a custom type description for this lane (only informational) |
 | acceleration  | bool | whether this lane is a motorway acceleration lane (default *false*) |
 
@@ -587,14 +587,14 @@ See "Vehicle Classes" for further information about [allowed vehicle classes](..
 and their usage.
 
 ### lane change restrictions
-When defining lane change restrictions with `changeLeft` and `changeRight`, the vehicle class "emergency" should typically be allowed since emergency vehicles can ignore non-physical restrictions in most cases. 
+When defining lane change restrictions with `changeLeft` and `changeRight`, the vehicle class "emergency" should typically be allowed since emergency vehicles can ignore non-physical restrictions in most cases.
 
-To strongest restriction is the value "ignoring". Note, that vehicles of class "ignoring" cannot be restricted from lane changing with `changeLeft` and `changeRight`. (only creating separate parallel edges will work).
+The strongest restriction is the value "ignoring". Note, that vehicles of class "ignoring" cannot be restricted from lane changing with `changeLeft` and `changeRight`. (only creating separate parallel edges will work).
 
 ## Stop Offsets
 
 Each edge or lane may carry a `stopOffset` child element to specify an additional
-stopping offset for vehicles of certain classes. This can be used to define a [bike box](https://en.wikipedia.org/wiki/Advanced_stop_line). 
+stopping offset for vehicles of certain classes. This can be used to define a [bike box](https://en.wikipedia.org/wiki/Advanced_stop_line).
 
 ```xml
 <edge id="<ID>">
@@ -769,7 +769,7 @@ by giving the attribute remove="true" to the type.
 | Type of content    | Edge Types     |
 | Open format?       | Yes            |
 | SUMO specific?     | Yes            |
-| XML Schema         | [types_file.xsd](http://sumo.dlr.de/xsd/types_file.xsd) |
+| XML Schema         | [types_file.xsd](https://sumo.dlr.de/xsd/types_file.xsd) |
 
 As mentioned, [edge types](../SUMO_edge_type_file.md) are meant to
 be used to ease the definition of edges. Each description of an edge
@@ -830,7 +830,7 @@ Using `<type>` definitions it is possible to implement vClass specific speed
 limits:
 
 ```xml
-<type id="a" priority="3" numLanes="3" speed="38.89"/>
+<type id="a" priority="3" numLanes="3" speed="38.89">
    <restriction vClass="truck" speed="27.89"/>
 </type>
 ```
@@ -862,7 +862,7 @@ If the network was built with option **--junctions.higher-speed**, the maximum o
 | Type of content    | Connections          |
 | Open format?       | Yes                  |
 | SUMO specific?     | Yes                  |
-| XML Schema         | [connections_file.xsd](http://sumo.dlr.de/xsd/connections_file.xsd) |
+| XML Schema         | [connections_file.xsd](https://sumo.dlr.de/xsd/connections_file.xsd) |
 
 "Connections" describe how a node's incoming and outgoing edges are
 connected (for example to prohibit left-turns at some junctions). Your
@@ -1075,7 +1075,7 @@ have the right of way but this can be customized by using attribute
 | Type of content    | traffic light definition |
 | Open format?       | Yes                      |
 | SUMO specific?     | Yes                      |
-| XML Schema         | [tllogic_file.xsd](http://sumo.dlr.de/xsd/tllogic_file.xsd)         |
+| XML Schema         | [tllogic_file.xsd](https://sumo.dlr.de/xsd/tllogic_file.xsd)         |
 
 This file describes traffic lights, signal plans and defines which
 connections they control. It consists of two types of elements described

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2003-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2003-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -168,29 +168,40 @@ public:
     }
 
 protected:
+
+    std::string buildTimestampPrefix(void) const;
+    std::string buildProcessIdPrefix(void) const;
+
     /// @brief Builds the string which includes the mml-message type
     inline std::string build(const std::string& msg, bool addType) {
+        std::string prefix;
+        if (myWriteTimestamps) {
+            prefix += buildTimestampPrefix();
+        }
+        if (myWriteProcessId) {
+            prefix += buildProcessIdPrefix();
+        }
         if (addType) {
             switch (myType) {
                 case MsgType::MT_MESSAGE:
                     break;
                 case MsgType::MT_WARNING:
-                    return "Warning: " + msg;
+                    prefix += myWarningPrefix;
                     break;
                 case MsgType::MT_ERROR:
-                    return "Error: " + msg;
+                    prefix += myErrorPrefix;
                     break;
                 case MsgType::MT_DEBUG:
-                    return "Debug: " + msg;
+                    prefix += "Debug: ";
                     break;
                 case MsgType::MT_GLDEBUG:
-                    return "GLDebug: " + msg;
+                    prefix += "GLDebug: ";
                     break;
                 default:
                     break;
             }
         }
-        return msg;
+        return prefix + msg;
     }
 
     virtual bool aggregationThresholdReached(const std::string& format) {
@@ -248,19 +259,33 @@ private:
     /// @brief storage for initial messages
     std::vector<std::string> myInitialMessages;
 
+    /** @brief Flag to enable or disable debug output
+     *
+     * This value is used to show more internal information through warning messages about certain operations
+     */
+    static bool myWriteDebugMessages;
+
+    /// @brief Flag to enable or disable GL specific debug output
+    static bool myWriteDebugGLMessages;
+
+    /// @brief Whether to prefix every message with a time stamp
+    static bool myWriteTimestamps;
+
+    /// @brief Whether to prefix every message with the process id
+    static bool myWriteProcessId;
+
+    /// @brief The possibly translated error prefix (mainly for speedup)
+    static std::string myErrorPrefix;
+
+    /// @brief The possibly translated warning prefix (mainly for speedup)
+    static std::string myWarningPrefix;
+
 private:
     /// @brief invalid copy constructor
     MsgHandler(const MsgHandler& s) = delete;
 
     /// @brief invalid assignment operator
     MsgHandler& operator=(const MsgHandler& s) = delete;
-
-    /** @brief Flag to enable or disable debug GL Functions
-     *
-     * This value is used to show more internal information through warning messages about certain operations
-     */
-    static bool myWriteDebugMessages;
-    static bool myWriteDebugGLMessages;
 };
 
 
@@ -281,9 +306,13 @@ private:
 #define WRITE_DEBUG(msg) if(MsgHandler::writeDebugMessages()){MsgHandler::getDebugInstance()->inform(msg);};
 #define WRITE_GLDEBUG(msg) if(MsgHandler::writeDebugGLMessages()){MsgHandler::getGLDebugInstance()->inform(msg);};
 #ifdef HAVE_INTL
+// basic translation
 #define TL(string) gettext(string)
+// complex translation ("This % an %", "is", "example")
 #define TLF(string, ...) StringUtils::format(gettext(string), __VA_ARGS__)
 #else
+// basic translation
 #define TL(string) (string)
+// complex translation ("This % an %", "is", "example")
 #define TLF(string, ...) StringUtils::format(string, __VA_ARGS__)
 #endif

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2005-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -65,7 +65,7 @@ const double INVALID_DOUBLE = std::numeric_limits<double>::max();
 
 /// @brief (M)ajor/(M)inor version for written networks and default version for loading
 typedef std::pair<int, double> MMVersion;
-const MMVersion NETWORK_VERSION(1, 16);
+const MMVersion NETWORK_VERSION(1, 20);
 
 /* -------------------------------------------------------------------------
  * templates for mathematical functions missing in some c++-implementations
@@ -133,8 +133,8 @@ extern bool gDebugFlag4;
 extern bool gDebugFlag5;
 extern bool gDebugFlag6;
 
-// synchronized output to stdout with << (i.e. DEBUGOUT(SIMTIME << " var=" << var << "\n")
-#define DEBUGOUT(msg) {std::ostringstream oss; oss << msg; std::cout << oss.str();}
+// synchronized output to stdout with << (i.e. DEBUGOUT(gDebugFlag1, SIMTIME << " var=" << var << "\n")
+#define DEBUGOUT(cond, msg) if (cond) {std::ostringstream oss; oss << msg; std::cout << oss.str();}
 
 /// @brief discrds mantissa bits beyond the given number
 double truncate(double x, int fractionBits);
@@ -151,4 +151,3 @@ double roundDecimal(double x, int precision);
  * @return the number of objects to create (something between 0 and ceil(frac))
  */
 int getScalingQuota(double frac, int loaded);
-

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -37,7 +37,7 @@ class GNEPythonTool {
 
 public:
     /// @brief Constructor
-    GNEPythonTool(GNEApplicationWindow* GNEApp, const std::string& pythonPath,
+    GNEPythonTool(GNEApplicationWindow* GNEApp, const std::string& toolPath,
                   const std::string& templateStr, FXMenuPane* menu);
 
     /// @brief destructor
@@ -74,6 +74,10 @@ public:
     void saveConfiguration(const std::string& file) const;
 
 protected:
+    /// @brief get command (python + script)
+    std::string getCommandPath() const;
+
+protected:
     /// @brief pointer to GNEApplicationWindow
     GNEApplicationWindow* myGNEApp;
 
@@ -86,8 +90,8 @@ protected:
     /// @brief original tools options
     OptionsCont myPythonToolsOptionsOriginal;
 
-    /// @brief python path
-    const std::string myPythonPath;
+    /// @brief python tool path relative to SUMO_HOME
+    const std::string myToolPath;
 
     /// @brief tool name
     const std::string myPythonToolName;
@@ -99,4 +103,3 @@ private:
     /// @brief Invalidated assignment operator.
     GNEPythonTool& operator=(const GNEPythonTool&) = delete;
 };
-

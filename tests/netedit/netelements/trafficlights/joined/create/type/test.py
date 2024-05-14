@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -32,7 +32,7 @@ neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
 netedit.selectTLSMode()
 
 # select junction
-netedit.leftClick(referencePosition, 320, 220)
+netedit.leftClick(referencePosition, 500, 225)
 
 # create TLS
 netedit.createTLS()
@@ -41,10 +41,10 @@ netedit.createTLS()
 netedit.joinTSL()
 
 # select four corners
-netedit.leftClick(referencePosition, 150, 220)
-netedit.leftClick(referencePosition, 500, 220)
-netedit.leftClick(referencePosition, 320, 50)
-netedit.leftClick(referencePosition, 320, 400)
+netedit.leftClick(referencePosition, 273, 225)
+netedit.leftClick(referencePosition, 720, 225)
+netedit.leftClick(referencePosition, 500, 10)
+netedit.leftClick(referencePosition, 500, 450)
 
 # join tls
 netedit.typeEnter()

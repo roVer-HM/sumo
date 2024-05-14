@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -33,7 +33,7 @@
 #include <utils/distribution/RandomDistributor.h>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/SUMOVehicleClass.h>
-#include "MSNet.h"
+#include <microsim/MSRouterDefs.h>
 
 
 // ===========================================================================
@@ -47,8 +47,6 @@ class MSRoute;
 class MSVehicleType;
 class OutputDevice;
 class MSEdge;
-
-typedef std::shared_ptr<const MSRoute> ConstMSRoutePtr;
 
 
 // ===========================================================================
@@ -332,6 +330,11 @@ public:
         return myEmergencyStops;
     }
 
+    /// @brief return the number of emergency stops
+    int getEmergencyBrakingCount() const {
+        return myEmergencyBrakingCount;
+    }
+
     /// @brief return the number of vehicles that are currently stopped
     int getStoppedVehiclesCount() const {
         return myStoppedVehicles;
@@ -436,6 +439,9 @@ public:
     /// @brief return the vehicle type distribution with the given id
     const RandomDistributor<MSVehicleType*>* getVTypeDistribution(const std::string& typeDistID) const;
 
+    /// @brief Return all pedestrian vehicle types.
+    const std::vector<MSVehicleType*> getPedestrianTypes(void) const;
+
     /// @}
 
     /** @brief increases the count of vehicles waiting for a transport to allow recognition of person / container related deadlocks
@@ -476,6 +482,11 @@ public:
     /// @brief register emergency stop
     void registerEmergencyStop() {
         myEmergencyStops++;
+    }
+
+    /// @brief register emergency stop
+    void registerEmergencyBraking() {
+        myEmergencyBrakingCount++;
     }
 
     /// @brief register emergency stop
@@ -530,7 +541,7 @@ public:
         return myMinDecelerationRail;
     }
 
-    void adaptIntermodalRouter(MSNet::MSIntermodalRouter& router) const;
+    void adaptIntermodalRouter(MSTransportableRouter& router) const;
 
     /// @brief sets the demand scaling factor
     void setScale(double scale) {
@@ -593,6 +604,9 @@ private:
 
     /// @brief The number of emergency stops
     int myEmergencyStops;
+
+    /// @brief The number of emergency stops
+    int myEmergencyBrakingCount;
 
     /// @brief The number of stopped vehicles
     int myStoppedVehicles;

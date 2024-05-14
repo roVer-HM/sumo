@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -237,7 +237,7 @@ NIImporter_DlrNavteq::NodesHandler::report(const std::string& result) {
         if (!myNodeCont.insert(n)) {
             delete n;
             if (OptionsCont::getOptions().getBool("ignore-errors")) {
-                WRITE_WARNINGF(TL("Could not add add node '%'"), id);
+                WRITE_WARNINGF(TL("Could not add node '%'."), id);
             } else {
                 throw ProcessError(TLF("Could not add node '%'.", id));
             }

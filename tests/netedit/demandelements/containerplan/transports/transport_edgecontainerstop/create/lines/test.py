@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,10 +35,10 @@ netedit.supermodeDemand()
 netedit.containerMode()
 
 # change container plan
-netedit.changeContainerPlan("tranship: edge->edge", False)
+netedit.changeContainerPlan("tranship", False)
 
-# create route using two one
-netedit.leftClick(referencePosition, 274, 400)
+# create route using one edge
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
 
 # press enter to create route
 netedit.typeEnter()
@@ -46,14 +46,12 @@ netedit.typeEnter()
 # go to containerPlanMode mode
 netedit.containerPlanMode()
 
-# select container
-netedit.leftClick(referencePosition, 80, 410)
-
 # go to containerPlanMode mode
-netedit.changeContainerPlanMode("transport: edge->containerStop")
+netedit.changeContainerPlanMode("transport")
 
 # create transportEdgeContainerStop
-netedit.leftClick(referencePosition, 290, 20)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.container.x,
+                  netedit.positions.demandElements.container.y)
 
 # set invalid container number
 netedit.changeDefaultValue(netedit.attrs.transportEdgeContainerStop.create.lines, "custom line")
@@ -62,8 +60,7 @@ netedit.changeDefaultValue(netedit.attrs.transportEdgeContainerStop.create.lines
 netedit.typeEnter()
 
 # Check undo redo
-netedit.undo(referencePosition, 2)
-netedit.redo(referencePosition, 2)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

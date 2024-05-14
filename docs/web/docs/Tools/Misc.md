@@ -63,6 +63,27 @@ the data set. The following is recommenced:
   speed/speedLimit for each vehicle
 
 
+# createScreenshotSequence.py
+
+This script helps in the process of creating a movie by taking screenshots repeatedly and moving the viewport during the simulation. There are other ways to capture videos from sumo-gui such as using
+external screen capture software or using the internal screenshot feature. The screenshot sequence obtained from this script can be joined into a video using appropiate video software.
+
+Example:
+```
+python tools/createScreenshotSequence.py --sumocfg test.sumocfg -o outDir --begin 600 --end 900 -p filePrefix --zoom 600:500;900:1000 --translate 800:100,100;900:150,100 --include-time
+```
+This will run the configuration file named by **--sumocfg** in sumo-gui and register a TraCI step listener for the screenshot process. The time interval when to take a screenshot of each time step
+can be limited to start only at **--begin** (s) or to end at **--end** (s). If the end time is not defined explicitly, the script runs the simulation either up to the end value from the configuration (if defined)
+or further to the technical system limits. The screenshots are written to the directory given by **-o** / **--output-dir**. Their file names can optionally start with the **-p** / **--prefix** value or contain the
+date/time when the simulation was started (**--include-time**). The standard file type is set to _png_ but can be set via **--image-format**. The file name contains a zero-padded counter number such that it can be sorted easily in
+post-production.
+
+The available attributes to animate are:
+
+- Zoom using the **--zoom** option. The option value consists of pairs of time and zoom values (separator: colon) joined by semicolon.
+- Angle using the **--rotate** option. The option value consists of pairs of time and angle values (in degrees, separator: colon) joined by semicolon.
+- Offset/center position using the **--translate** option. The option value consists of pairs of time and position values (separator: colon, position dimensions separated by comma) joined by semicolon.
+
 # extractTest.py
 
 This scripts extracts test scenarios if you like to run a simulation scenario which is included in the test folder <SUMO_HOME>/tests. In order to do so, you can either:
@@ -70,7 +91,7 @@ This scripts extracts test scenarios if you like to run a simulation scenario wh
 ```
 python tools/extractTest.py <path to test directory>
 ```
-- or use the [online test extraction](https://sumo.dlr.de/extractTest.php). In the online tool you enter the path to the test you like (e.g. [{{SUMO}}/tests/sumo/extended/rerouter/use_routing_device](https://github.com/eclipse/sumo/blob/main/tests/sumo/extended/rerouter/use_routing_device) into the form and get a zip containing all the files.
+- or use the [online test extraction](https://sumo.dlr.de/extractTest.php). In the online tool you enter the path to the test you like (e.g. [{{SUMO}}/tests/sumo/extended/rerouter/use_routing_device](https://github.com/eclipse-sumo/sumo/blob/main/tests/sumo/extended/rerouter/use_routing_device) into the form and get a zip containing all the files.
 
 # generateParkingAreas.py
 
@@ -89,6 +110,7 @@ The required parameter is the network (-n or --net-file). More options can be ob
 
 Additional options:
 
+- **--selection-file** restrict the generation to the edges mentioned in this selection file
 - **--output-file** define the output filename
 - **--probability** probability for an edge to receive a parkingArea
 - **--length** length required per parking space
@@ -98,6 +120,9 @@ Additional options:
 - **--min** minimum capacity for parkingAreas
 - **--max** maximum capacity for parkingAreas
 - **--angle** parking area angle
+- **--lefthand** create parking areas to the left of the edge (only where no neighbor lane is marked, see [opposite direction driving](../Simulation/OppositeDirectionDriving.md))
+- **--on-road** will force the parking area to be created on the road (vehicles will stop directly on the lane)
+- **--on-road.lane-offset** sets the lane(s) on-road parking areas will be created (either use a negative value for all lanes or enter a lane index)
 - **--prefix** prefix for the parkingArea ids
 - **--seed** random seed
 - **--random** use a random seed to initialize the random number generator
@@ -169,7 +194,7 @@ python tools/generateRerouters.py -n <net-file> -o <output-file> -x CLOSED_EDG
 This script generates rerouter definitions for a continuously running simulation. Rerouters are placed ahead of each intersection with routes leading up to the next intersection and configurable turning ratios. Vehicles that enter the simulation will circulate continuously (unless hitting a dead-end). Example:
 
 ```
-python tools/generateContinuousRerouters.py -n <net-file> -o <output-file> 
+python tools/generateContinuousRerouters.py -n <net-file> -o <output-file>
 ```
 
 # generateParkingAreaRerouters.py
@@ -177,7 +202,7 @@ python tools/generateContinuousRerouters.py -n <net-file> -o <output-file>
 This script generates parking area rerouters from a parking area definition. Example:
 
 ```
-python tools/generateParkingAreaRerouters.py -n <net-file> -a <parkingArea-file> -o <output-file> 
+python tools/generateParkingAreaRerouters.py -n <net-file> -a <parkingArea-file> -o <output-file>
 ```
 
 # averageTripStatistics.py
@@ -191,14 +216,14 @@ Example:
 python tools/averageTripStatistics.py <sumocfg-file>
 ```
 
-As default, the simulation will be run 10 times with an initial seed for 
+As default, the simulation will be run 10 times with an initial seed for
 random seed generation of 42. These values can be changed with the options
 **-n** and **-s** respectively.
 
 # ptlines2flows.py
 
 This script determines feasible stop-to-stop travel times and creates a public
-transport schedule (regular interval timetable) for all lines. The stop-to-stop 
+transport schedule (regular interval timetable) for all lines. The stop-to-stop
 travel times are determined by running a background simulation on an empty network using either a given route or shortest paths between stops. Example:
 
 ```
@@ -206,7 +231,7 @@ python tools/ptlines2flows.py -n <net-file> -s <ptstops-file> -l <ptlines-
 ```
 
 As output, the public transport lines are written as [flows](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md).
-By default a period of 600 seconds is adopted as regular interval, which can be 
+By default a period of 600 seconds is adopted as regular interval, which can be
 changed with the **-p** option.
 
 With the option **--use-osm-routes**, public transport routes from the given osm
@@ -235,14 +260,14 @@ The used busStops must be defined in an additional file and passed with option *
 The resulting bus definition may look like this:
 
 ```xml
-<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+<routes xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://sumo.dlr.de/xsd/routes_file.xsd">
     <vType id="bus" vClass="bus"/>
     <route id="bus_123:0"" edges="110450334#1 110450334#2 338412122 391493949 391493947 391493950#0 391493950#1 391493952#0 391493952#1 391493952#2 391493954#0 391493954#1 391493954#2 391493954#3" >
-        <stop busStop="stopA" duration="20" until="35.0"/> 
-        <stop busStop="stopB" duration="20" until="101.0"/> 
+        <stop busStop="stopA" duration="20" until="35.0"/>
+        <stop busStop="stopB" duration="20" until="101.0"/>
         <stop busStop="stopC" duration="20" until="221.0"/>
     </route>
-    <flow id="bus_123:0" type="bus" route="bus_123:0" begin="0.0" end="3600.0" period="600" line="123:0" /> 
+    <flow id="bus_123:0" type="bus" route="bus_123:0" begin="0.0" end="3600.0" period="600" line="123:0" />
 </routes>
 ```
 
@@ -302,7 +327,7 @@ python tools/tileGet.py -n test.net.xml -t 10
 - Retrieving satellite data from Google or MapQuest (Requires obtaining an API-key first):
 ```
 python tools/tileGet.py -n test.net.xml -t 10 --url maps.googleapis.com/maps/api/staticmap --key YOURKEY
-python tools/tileGet.py -n test.net.xml -t 10 --url open.mapquestapi.com/staticmap/v4/getmap --key YOURKEY
+python tools/tileGet.py -n test.net.xml -t 10 --url www.mapquestapi.com/staticmap/v5/map --key YOURKEY
 ```
 
 The generated setting file can be loaded in sumo-gui with:
@@ -347,7 +372,7 @@ Example:
 python tools/runSeeds.py -k test.sumocfg --seeds 7,11,13
 ```
 
-- option **--seeds** can either be given as a list or as a range (`0:100`).  
+- option **--seeds** can either be given as a list or as a range (`0:100`).
 - the application path can be set with option **--application** (**-a**). Default is *sumo*.
    - by passing a comma-separated list of applications, each one will be run with all seeds and results will be put into a subfolder
 - the application config path must be set with with option **--configuration** (**-k**)
@@ -355,4 +380,3 @@ python tools/runSeeds.py -k test.sumocfg --seeds 7,11,13
 - option **--output-prefix** (**-p**) can be used to define a prefix for all written output files. The string "SEED" is replaced by the current seed. (default prefix is "SEED.")
 - option **--threads INT** can be used to perform application runs in parallel
 - any additional options are forwarded to the application
-

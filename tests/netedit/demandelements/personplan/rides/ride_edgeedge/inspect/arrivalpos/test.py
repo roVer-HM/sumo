@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,10 +35,10 @@ netedit.supermodeDemand()
 netedit.personMode()
 
 # change person plan
-netedit.changePersonPlan("walk: edge->edge", False)
+netedit.changePersonPlan("walk", False)
 
-# create route using two one
-netedit.leftClick(referencePosition, 274, 400)
+# create route using one edge
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
 
 # press enter to create route
 netedit.typeEnter()
@@ -46,14 +46,11 @@ netedit.typeEnter()
 # go to rideEdgeEdge mode
 netedit.personPlanMode()
 
-# select person
-netedit.leftClick(referencePosition, 92, 412)
-
 # go to rideEdgeEdge mode
-netedit.changePersonPlanMode("ride: edge->edge")
+netedit.changePersonPlanMode("ride")
 
 # create rideEdgeEdge
-netedit.leftClick(referencePosition, 180, 55)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x, netedit.positions.demandElements.edge2.y)
 
 # press enter to create route
 netedit.typeEnter()
@@ -61,8 +58,13 @@ netedit.typeEnter()
 # go to inspect mode
 netedit.inspectMode()
 
-# inspect rideEdgeEdge
-netedit.leftClick(referencePosition, 430, 65)
+# inspect person
+netedit.leftClick(referencePosition, netedit.positions.demandElements.person.x,
+                  netedit.positions.demandElements.person.y)
+
+# now inspect plan top
+netedit.leftClick(referencePosition, netedit.positions.demandElements.planTopRide.x,
+                  netedit.positions.demandElements.planTopRide.y)
 
 # change depart with an invalid value
 netedit.modifyAttribute(netedit.attrs.rideEdgeEdge.inspect.arrivalPos, "dummy", False)
@@ -77,8 +79,7 @@ netedit.modifyAttribute(netedit.attrs.rideEdgeEdge.inspect.arrivalPos, "-6", Fal
 netedit.modifyAttribute(netedit.attrs.rideEdgeEdge.inspect.arrivalPos, "2.5", False)
 
 # Check undo redo
-netedit.undo(referencePosition, 5)
-netedit.redo(referencePosition, 5)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

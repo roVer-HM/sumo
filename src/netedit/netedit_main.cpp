@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -48,6 +48,10 @@ main(int argc, char** argv) {
     auto& neteditOptions = OptionsCont::getOptions();
     neteditOptions.setApplicationDescription(TL("Graphical editor for SUMO networks, demand and additional infrastructure."));
     neteditOptions.setApplicationName("netedit", "Eclipse SUMO netedit Version " VERSION_STRING);
+    // preload registry from sumo to decide on language
+    FXRegistry reg("SUMO GUI", "sumo-gui");
+    reg.read();
+    gLanguage = reg.readStringEntry("gui", "language", gLanguage.c_str());
     int ret = 0;
 #ifndef _DEBUG
     try {
@@ -60,7 +64,7 @@ main(int argc, char** argv) {
         GNELoadThread::fillOptions(neteditOptions);
         // set default options
         GNELoadThread::setDefaultOptions(neteditOptions);
-        // set argumentos called throught console
+        // set arguments called through console
         OptionsIO::setArgs(argc, argv);
         OptionsIO::getOptions(true);
         if (neteditOptions.processMetaOptions(false)) {

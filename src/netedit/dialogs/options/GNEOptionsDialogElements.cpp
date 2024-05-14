@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -63,7 +63,7 @@ FXIMPLEMENT_ABSTRACT(GNEOptionsDialogElements::InputFilename,   GNEOptionsDialog
 // GNEOptionsDialogElements::InputOption - methods
 // ---------------------------------------------------------------------------
 
-GNEOptionsDialogElements::InputOption::InputOption(GNEOptionsDialog* GUIDialogOptions, FXComposite* parent, const std::string& topic, 
+GNEOptionsDialogElements::InputOption::InputOption(GNEOptionsDialog* GUIDialogOptions, FXComposite* parent, const std::string& topic,
         const std::string& name, const std::string& description, const std::string& defaultValue) :
     FXHorizontalFrame(parent, GUIDesignAuxiliarHorizontalFrame),
     myGUIDialogOptions(GUIDialogOptions),
@@ -72,13 +72,13 @@ GNEOptionsDialogElements::InputOption::InputOption(GNEOptionsDialog* GUIDialogOp
     myDescription(description),
     myDefaultValue(defaultValue) {
     // build label with name (default width 150)
-    myNameLabel = new MFXLabelTooltip(this, myGUIDialogOptions->myMainWindowParent->getStaticTooltipMenu(), name.c_str(), nullptr, GUIDesignLabelThickedFixed(MINNAMEWIDTH));
+    myNameLabel = new MFXLabelTooltip(this, myGUIDialogOptions->myGNEApp->getStaticTooltipMenu(), name.c_str(), nullptr, GUIDesignLabelThickedFixed(MINNAMEWIDTH));
     // set description as tooltip
     myNameLabel->setTipText(description.c_str());
     // create content frame
     myContentFrame = new FXHorizontalFrame(this, GUIDesignAuxiliarHorizontalFrame);
     // Create reset button
-    myResetButton = new FXButton(this, (std::string("\t\t") + TL("Reset value")).c_str(), GUIIconSubSys::getIcon(GUIIcon::RESET), this, MID_GNE_RESET, GUIDesignButtonIcon);
+    myResetButton = GUIDesigns::buildFXButton(this, "", "", TL("Reset value"), GUIIconSubSys::getIcon(GUIIcon::RESET), this, MID_GNE_RESET, GUIDesignButtonIcon);
 }
 
 
@@ -99,17 +99,13 @@ GNEOptionsDialogElements::InputOption::getTopic() const {
 
 const std::string
 GNEOptionsDialogElements::InputOption::getNameLower() const {
-    std::string lowerName = myName;
-    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
-    return lowerName;
+    return StringUtils::to_lower_case(myName);
 }
 
 
 const std::string
 GNEOptionsDialogElements::InputOption::getDescriptionLower() const {
-    std::string lowerDescription = myDescription;
-    std::transform(lowerDescription.begin(), lowerDescription.end(), lowerDescription.begin(), ::tolower);
-    return lowerDescription;
+    return StringUtils::to_lower_case(myDescription);
 }
 
 
@@ -284,7 +280,7 @@ GNEOptionsDialogElements::InputBool::onCmdResetOption(FXObject*, FXSelector, voi
 
 std::string
 GNEOptionsDialogElements::InputBool::getValue() const {
-    return myCheckButton->getCheck()? "true" : "false";
+    return myCheckButton->getCheck() ? "true" : "false";
 }
 
 // ---------------------------------------------------------------------------
@@ -425,6 +421,7 @@ GNEOptionsDialogElements::InputFloat::onCmdSetOption(FXObject*, FXSelector, void
     } else {
         myGUIDialogOptions->myOptionsContainer.resetWritable();
         myGUIDialogOptions->myOptionsContainer.set(myName, myFloatTextField->getText().text());
+        myGUIDialogOptions->myOptionsModified = true;
     }
     return 1;
 }
@@ -444,7 +441,7 @@ GNEOptionsDialogElements::InputFloat::getValue() const {
 
 
 std::string
-GNEOptionsDialogElements::InputFloat::parseFloat(const std::string &value) const {
+GNEOptionsDialogElements::InputFloat::parseFloat(const std::string& value) const {
     try {
         return toString(StringUtils::toDouble(value));
     } catch (...) {
@@ -459,8 +456,8 @@ GNEOptionsDialogElements::InputFloat::parseFloat(const std::string &value) const
 GNEOptionsDialogElements::InputFilename::InputFilename(GNEOptionsDialog* GUIDialogOptions, FXComposite* parent, const std::string& topic,
         const std::string& name, const std::string& description, const std::string& defaultValue) :
     InputOption(GUIDialogOptions, parent, topic, name, description, defaultValue) {
-    myOpenFilenameButton = new FXButton(myContentFrame, (std::string("\t\t") + TL("Select filename")).c_str(),
-        GUIIconSubSys::getIcon(GUIIcon::OPEN), this, MID_GNE_SET_ATTRIBUTE_DIALOG, GUIDesignButtonIcon);
+    myOpenFilenameButton = GUIDesigns::buildFXButton(myContentFrame, "", "", TL("Select filename"),
+                           GUIIconSubSys::getIcon(GUIIcon::OPEN), this, MID_GNE_SET_ATTRIBUTE_DIALOG, GUIDesignButtonIcon);
     myFilenameTextField = new FXTextField(myContentFrame, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
     updateOption();
 }

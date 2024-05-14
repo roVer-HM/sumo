@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -41,15 +41,15 @@ netedit.createDataSet()
 netedit.createDataInterval()
 
 # create edgeRelData
-netedit.leftClick(referencePosition, 250, 90)
-netedit.leftClick(referencePosition, 450, 270)
+netedit.leftClick(referencePosition, 700, 180)
+netedit.leftClick(referencePosition, 265, 180)
 netedit.typeEnter()
 
 # go to inspect mode
 netedit.inspectMode()
 
 # inspect edgeRelData
-netedit.leftClick(referencePosition, 250, 90)
+netedit.leftClick(referencePosition, 265, 180)
 
 # Change parameter 3 with a non valid value (empty speed)
 netedit.modifyAttribute(netedit.attrs.edgeRelData.inspect.toEdge, "", False)
@@ -58,14 +58,13 @@ netedit.modifyAttribute(netedit.attrs.edgeRelData.inspect.toEdge, "", False)
 netedit.modifyAttribute(netedit.attrs.edgeRelData.inspect.toEdge, "dummyEdge", False)
 
 # Change parameter 3 with a non valid value (empty speed)
-netedit.modifyAttribute(netedit.attrs.edgeRelData.inspect.toEdge, "gneE12", False)
+netedit.modifyAttribute(netedit.attrs.edgeRelData.inspect.toEdge, "-gneE15", False)
 
 # Change parameter 3 with a non valid value (empty speed)
-netedit.modifyAttribute(netedit.attrs.edgeRelData.inspect.toEdge, "-gneE14", False)
+netedit.modifyAttribute(netedit.attrs.edgeRelData.inspect.toEdge, "gneE16", False)
 
 # Check undo
-netedit.undo(referencePosition, 3)
-netedit.redo(referencePosition, 3)
+netedit.checkUndoRedo(referencePosition)
 
 # save data elements
 netedit.saveDatas(referencePosition, True, 0, 30)

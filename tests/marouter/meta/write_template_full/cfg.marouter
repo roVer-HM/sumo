@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2023-01-04 11:28:03 by Eclipse SUMO marouter Version v1_15_0+1277-3febad6e597
+<!-- generated on 2024-04-03 13:22:50 by Eclipse SUMO marouter Version v1_19_0+1662-cc3005420e0
 -->
 
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/marouterConfiguration.xsd">
@@ -60,6 +60,7 @@
         <weights.interpolate value="false" synonymes="interpolate" type="BOOL" help="Interpolate edge weights at interval boundaries"/>
         <weights.expand value="false" synonymes="expand-weights" type="BOOL" help="Expand the end of the last loaded weight interval to infinity"/>
         <weights.minor-penalty value="1.5" type="FLOAT" help="Apply the given time penalty when computing routing costs for minor-link internal lanes"/>
+        <weights.tls-penalty value="0" type="FLOAT" help="Apply the given time penalty when computing routing costs across a traffic light"/>
         <aggregation-interval value="3600" type="TIME" help="Defines the time interval when aggregating single vehicle input; Defaults to one hour"/>
         <capacities.default value="false" type="BOOL" help="Ignore edge priorities when calculating capacities and restraints"/>
         <weights.priority-factor value="0" type="FLOAT" help="Consider edge priorities in addition to travel times, weighted by factor"/>
@@ -117,6 +118,8 @@
         <log value="" synonymes="l log-file" type="FILE" help="Writes all messages to FILE (implies verbose)"/>
         <message-log value="" type="FILE" help="Writes all non-error messages to FILE (implies verbose)"/>
         <error-log value="" type="FILE" help="Writes all warnings and errors to FILE"/>
+        <log.timestamps value="false" type="BOOL" help="Writes timestamps in front of all messages"/>
+        <log.processid value="false" type="BOOL" help="Writes process ID in front of all messages"/>
         <language value="C" type="STR" help="Language to use in messages"/>
         <ignore-errors value="false" synonymes="continue-on-unbuild dismiss-loading-errors" type="BOOL" help="Continue if a route could not be build"/>
         <stats-period value="-1" type="INT" help="Defines how often statistics shall be printed"/>

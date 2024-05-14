@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -179,19 +179,7 @@ public:
     /// @brief get distance for coming to a stop (used for rerouting checks)
     double getBrakeGap(bool delayed = false) const {
         UNUSED_PARAMETER(delayed);
-        return 0;
-    }
-
-    /** @brief replace the current parking area stop with a new stop with merge duration
-     */
-    bool replaceParkingArea(MSParkingArea* /* parkingArea = 0 */, std::string& /*errorMsg*/) {
-        throw ProcessError(TL("parkingZoneReroute not implemented for meso"));
-    }
-
-    /** @brief get the current parking area stop
-     */
-    MSParkingArea* getNextParkingArea() {
-        throw ProcessError(TL("parkingZoneReroute not implemented for meso"));
+        return mySegment == nullptr || myQueIndex == MESegment::PARKING_QUEUE ? 0 : mySegment->getLength();
     }
 
     /** @brief Sets the (planned) time at which the vehicle leaves its current segment
@@ -280,7 +268,8 @@ public:
 
 
     /// @brief Returns the duration for which the vehicle was blocked
-    inline SUMOTime getWaitingTime() const {
+    inline SUMOTime getWaitingTime(const bool accumulated = false) const {
+        UNUSED_PARAMETER(accumulated);
         return MAX2(SUMOTime(0), myEventTime - myBlockTime);
     }
 
@@ -288,12 +277,6 @@ public:
         // slow-downs while driving are not modelled
         return getWaitingTime();
     }
-
-    /// @brief Returns the duration for which the vehicle was blocked
-    inline SUMOTime getAccumulatedWaitingTime() const {
-        return getWaitingTime();
-    }
-
 
     /// @brief Returns the earliest leave time for the current segment
     double getEventTimeSeconds() const {

@@ -28,11 +28,11 @@ values to indicate a distance from the lane's end).
 
 ```xml
 <additional>
-   <laneAreaDetector id="<ID>" lanes="<LANE_ID1> <LANE_ID2> ... <LANE_IDN>" 
-   pos="<START_POSITION_ON_FIRST_LANE>" endPos="<END_POSITION_ON_LAST_LANE>" 
-   friendlyPos="<BOOL>" period="<AGGREGATION_TIME>" file="<OUTPUT_FILE>" 
+   <laneAreaDetector id="<ID>" lanes="<LANE_ID1> <LANE_ID2> ... <LANE_IDN>"
+   pos="<START_POSITION_ON_FIRST_LANE>" endPos="<END_POSITION_ON_LAST_LANE>"
+   friendlyPos="<BOOL>" period="<AGGREGATION_TIME>" file="<OUTPUT_FILE>"
    timeThreshold="<FLOAT>" speedThreshold="<FLOAT>" jamThreshold="<FLOAT>"
-   tl="<TRAFFIC_LIGHT_ID>"  to="<LANE_ID>"/>  
+   tl="<TRAFFIC_LIGHT_ID>"  to="<LANE_ID>"/>
 </additional>
 ```
 
@@ -46,11 +46,11 @@ plus two of the attributes `pos`, `endPos`, and `length` like this:
 
 ```xml
 <additional>
-   <laneAreaDetector id="<ID>" lane="<LANE_ID>" 
+   <laneAreaDetector id="<ID>" lane="<LANE_ID>"
    pos="<START_POSITION_ON_LANE>" endPos="<END_POSITION_ON_LANE>" length="<DETECTOR_LENGTH>"  // <- only two of those
-   friendlyPos="<BOOL>" period="<AGGREGATION_TIME>" file="<OUTPUT_FILE>" 
-   timeThreshold="<FLOAT>" speedThreshold="<FLOAT>" jamThreshold="<FLOAT>" 
-   tl="<TRAFFIC_LIGHT_ID>"  to="<LANE_ID>"/>  
+   friendlyPos="<BOOL>" period="<AGGREGATION_TIME>" file="<OUTPUT_FILE>"
+   timeThreshold="<FLOAT>" speedThreshold="<FLOAT>" jamThreshold="<FLOAT>"
+   tl="<TRAFFIC_LIGHT_ID>"  to="<LANE_ID>"/>
 </additional>
 ```
 
@@ -135,7 +135,7 @@ The values are described in the following table.
 | id                          | id                   | The id of the detector (needed if several detectors share an output file)                                                                                                                                   |
 | sampledSeconds              | s                    | The total time all vehicles which contributed data were on the detector. this may be fractional even if the time step is one second, because the times when the vehicle enters and leaves are interpolated. |
 | nVehEntered                 | \#                   | The number of vehicles that entered the detector in the corresponding interval. (vehicle front has passed 'pos')                                                                                                                            |
-| nVehLeft                    | \#                   | The number of vehicles that left the detector in the corresponding interval. (vehicle back has passed 'endPos')  |
+| nVehLeft                    | \#                   | The number of vehicles that left the detector in the corresponding interval. (vehicle back has passed 'endPos' / has changed lane / has been teleported / has parked)  |
 | nVehSeen                    | \#                   | The number of vehicles that were on the detector in the corresponding interval (were "seen" by the detector).                                                                                               |
 | meanSpeed                   | m/s                  | The mean velocity over all collected data samples.                                                                                                                                                          |
 | meanTimeLoss                | s                    | The average time loss per vehicle in the corresponding interval. The total time loss can be obtained by multiplying this value with nVehSeen.                                                               |

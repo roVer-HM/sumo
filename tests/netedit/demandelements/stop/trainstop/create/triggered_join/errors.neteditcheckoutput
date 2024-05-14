@@ -1,1 +1,2 @@
-Warning: busStop 'trainStop' on lane 'gneE1_0' is too short for vehicle 'vehicle_0'.
+Error: Attribute 'join' in definition of a stop is empty.
+Warning: Vehicle 'vehicle_0' aborted waiting to be joined to vehicle 'customJoin'.

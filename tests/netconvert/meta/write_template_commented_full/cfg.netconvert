@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2023-05-14 23:03:00 by Eclipse SUMO netconvert Version v1_17_0+0284-21a361d
+<!-- generated on 2024-04-02 19:59:09 by Eclipse SUMO netconvert Version v1_19_0+1644-497bdaaec19
 -->
 
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
@@ -131,6 +131,9 @@
 
         <!-- The generated net will be written to dlr-navteq files with the given PREFIX -->
         <dlr-navteq-output value="" type="FILE"/>
+
+        <!-- The dlr-navteq output format version to write -->
+        <dlr-navteq.version value="6.5" type="STR"/>
 
         <!-- The network coordinates are written with the specified level of output precision -->
         <dlr-navteq.precision value="2" type="INT"/>
@@ -318,6 +321,9 @@
         <!-- Enable roundabout-guessing -->
         <roundabouts.guess value="true" synonymes="guess-roundabouts" type="BOOL"/>
 
+        <!-- Structures with a circumference above FLOAT threshold are not classified as roundabout -->
+        <roundabouts.guess.max-length value="3500" type="FLOAT"/>
+
         <!-- Default visibility when approaching a roundabout -->
         <roundabouts.visibility-distance value="9" type="FLOAT"/>
 
@@ -411,10 +417,10 @@
     </building_defaults>
 
     <tls_building>
-        <!-- Does not instatiate traffic lights loaded from other formats than plain-XML -->
+        <!-- Does not instantiate traffic lights loaded from other formats than plain-XML -->
         <tls.discard-loaded value="false" type="BOOL"/>
 
-        <!-- Does not instatiate traffic lights at geometry-like nodes loaded from other formats than plain-XML -->
+        <!-- Does not instantiate traffic lights at geometry-like nodes loaded from other formats than plain-XML -->
         <tls.discard-simple value="false" type="BOOL"/>
 
         <!-- Interprets STR[] as list of junctions to be controlled by TLS -->
@@ -440,6 +446,9 @@
 
         <!-- Determines the maximal distance for joining traffic lights (defaults to 20) -->
         <tls.join-dist value="20" type="FLOAT"/>
+
+        <!-- Interprets STR[] as list of tls ids to exclude from joining -->
+        <tls.join-exclude value="" type="STR[]"/>
 
         <!-- Do not control edges that lie fully within a joined traffic light. This may cause collisions but allows old traffic light plans to be used -->
         <tls.uncontrolled-within value="false" type="BOOL"/>
@@ -486,7 +495,7 @@
         <!-- Set INT as fixed time for intermediate vehext phase after every switch -->
         <tls.nema.vehExt value="2" type="INT"/>
 
-        <!-- Set INT as fixed time for intermediate NEMA yelow phase after every switch -->
+        <!-- Set INT as fixed time for intermediate NEMA yellow phase after every switch -->
         <tls.nema.yellow value="3" type="INT"/>
 
         <!-- Set INT as fixed time for intermediate NEMA red phase after every switch -->
@@ -579,7 +588,7 @@
         <!-- Remove edges in FILE. (Each id on a single line. Selection files from sumo-gui are also supported) -->
         <remove-edges.input-file value="" type="FILE"/>
 
-        <!-- Remove edges after joining -->
+        <!-- Remove edges after loading, patching and joining -->
         <keep-edges.postload value="false" type="BOOL"/>
 
         <!-- Only keep edges which are located within the given boundary (given either as CARTESIAN corner coordinates &lt;xmin,ymin,xmax,ymax&gt; or as polygon &lt;x0,y0,x1,y1,...&gt;) -->
@@ -678,7 +687,7 @@
         <!-- Builds common edges for turning connections with common from- and to-edge. This causes discrepancies between geometrical length and assigned length due to averaging but enables lane-changing while turning -->
         <junctions.join-turns value="false" type="BOOL"/>
 
-        <!-- Limits speed on junctions to an average lateral acceleration of at most FLOAT m/s^2) -->
+        <!-- Limits speed on junctions to an average lateral acceleration of at most FLOAT (m/s^2) -->
         <junctions.limit-turn-speed value="5.5" type="FLOAT"/>
 
         <!-- Do not limit turn speed for angular changes below FLOAT (degrees). The value is subtracted from the geometric angle before computing the turning radius. -->
@@ -698,6 +707,12 @@
 
         <!-- Use maximum value of incoming and outgoing edge speed on junction instead of average -->
         <junctions.higher-speed value="false" type="BOOL"/>
+
+        <!-- Build junctions with minimal shapes (ignoring edge overlap) -->
+        <junctions.minimal-shape value="false" type="BOOL"/>
+
+        <!-- Build junction shapes based on edge endpoints (ignoring edge overlap) -->
+        <junctions.endpoint-shape value="false" type="BOOL"/>
 
         <!-- Assumed vehicle width for computing internal junction positions -->
         <internal-junctions.vehicle-width value="1.8" type="FLOAT"/>
@@ -813,6 +828,9 @@
         <!-- List vehicle classes that may ignore lane changing restrictions (&apos;all&apos; discards all restrictions) -->
         <ignore-change-restrictions value="authority" type="STR[]"/>
 
+        <!-- Whether lane widths shall be ignored. -->
+        <ignore-widths value="false" synonymes="opendrive.ignore-widths" type="BOOL"/>
+
         <!-- Skips the check for duplicate nodes and edges -->
         <osm.skip-duplicates-check value="false" type="BOOL"/>
 
@@ -822,7 +840,7 @@
         <!-- Reconstruct (relative) elevation based on layer data. Each layer is raised by FLOAT m -->
         <osm.layer-elevation value="0" type="FLOAT"/>
 
-        <!-- Maximum grade threshold in % at 50km/h when reconstrucing elevation based on layer data. The value is scaled according to road speed. -->
+        <!-- Maximum grade threshold in % at 50km/h when reconstructing elevation based on layer data. The value is scaled according to road speed. -->
         <osm.layer-elevation.max-grade value="10" type="FLOAT"/>
 
         <!-- Whether one-way roads should be spread to the side instead of centered -->
@@ -854,6 +872,9 @@
 
         <!-- The default length of a train stop in FLOAT m -->
         <osm.stop-output.length.train value="200" type="FLOAT"/>
+
+        <!-- Specify custom rules for importing railway signals -->
+        <osm.railsignals value="DEFAULT" type="STR[]"/>
 
         <!-- Whether additional attributes shall be imported -->
         <osm.all-attributes value="false" synonymes="osm.all-tags" type="BOOL"/>
@@ -966,9 +987,6 @@
         <!-- Imports all lane types -->
         <opendrive.import-all-lanes value="false" type="BOOL"/>
 
-        <!-- Whether lane widths shall be ignored. -->
-        <opendrive.ignore-widths value="false" type="BOOL"/>
-
         <!-- The geometry resolution in m when importing curved geometries as line segments. -->
         <opendrive.curve-resolution value="2" type="FLOAT"/>
 
@@ -986,6 +1004,12 @@
 
         <!-- Use custom lane shapes to compensate discarded lane types -->
         <opendrive.lane-shapes value="false" type="BOOL"/>
+
+        <!-- Use the OpenDRIVE controller information for the generated signal program -->
+        <opendrive.signal-groups value="false" type="BOOL"/>
+
+        <!-- Ignore traffic signals which do not control any driving lane -->
+        <opendrive.ignore-misplaced-signals value="false" type="BOOL"/>
 
     </formats>
 
@@ -1022,6 +1046,12 @@
 
         <!-- Writes all warnings and errors to FILE -->
         <error-log value="" type="FILE"/>
+
+        <!-- Writes timestamps in front of all messages -->
+        <log.timestamps value="false" type="BOOL"/>
+
+        <!-- Writes process ID in front of all messages -->
+        <log.processid value="false" type="BOOL"/>
 
         <!-- Language to use in messages -->
         <language value="C" type="STR"/>

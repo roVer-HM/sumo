@@ -134,20 +134,11 @@ ticket8899
 # duplicated roundabout
 ticket9810
 
-# junction shape
-ticket10589
-
 # regression on clipping curved shapes
 ticket10727
 
 # strange connections
 ticket10771
-
-# invalid rail crossing
-ticket10777
-
-# join looses tram connection
-ticket10826
 
 # doubly linked edge with hybrid tram
 ticket10978
@@ -190,3 +181,13 @@ ticket12767
 
 # missing connection to merged tram
 ticket12768
+ticket13542
+ticket13542b
+
+# crash
+ticket13581
+ticket9874
+ticket12676
+ticket11737
+ticket55
+ticket9874b

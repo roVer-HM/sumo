@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -46,7 +46,8 @@ SUMORouteHandler::SUMORouteHandler(const std::string& file, const std::string& e
     myBeginDefault(string2time(OptionsCont::getOptions().getString("begin"))),
     myEndDefault(string2time(OptionsCont::getOptions().getString("end"))),
     myFirstDepart(-1),
-    myInsertStopEdgesAt(-1) {
+    myInsertStopEdgesAt(-1),
+    myAllowInternalRoutes(false) {
 }
 
 
@@ -86,33 +87,17 @@ SUMORouteHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
     myElementStack.push_back(element);
     switch (element) {
         case SUMO_TAG_VEHICLE:
-            // delete if myVehicleParameter isn't null
-            if (myVehicleParameter) {
-                delete myVehicleParameter;
-                myVehicleParameter = nullptr;
-            }
-            // create a new vehicle
-            myVehicleParameter = SUMOVehicleParserHelper::parseVehicleAttributes(element, attrs, myHardFail);
-            break;
         case SUMO_TAG_PERSON:
-            // delete if myVehicleParameter isn't null
-            if (myVehicleParameter) {
-                delete myVehicleParameter;
-                myVehicleParameter = nullptr;
-            }
-            // create a new person
-            myVehicleParameter = SUMOVehicleParserHelper::parseVehicleAttributes(element, attrs, myHardFail, false, false);
-            addPerson(attrs);
-            break;
         case SUMO_TAG_CONTAINER:
-            // delete if myVehicleParameter isn't null
-            if (myVehicleParameter) {
-                delete myVehicleParameter;
-                myVehicleParameter = nullptr;
+            // if myVehicleParameter is nullptr this will do nothing
+            delete myVehicleParameter;
+            // we set to nullptr to have a consistent state if the parsing fails
+            myVehicleParameter = nullptr;
+            myVehicleParameter = SUMOVehicleParserHelper::parseVehicleAttributes(element, attrs, myHardFail, false, false, myAllowInternalRoutes);
+            myParamStack.push_back(myVehicleParameter);
+            if (element != SUMO_TAG_VEHICLE) {
+                addTransportable(attrs, element == SUMO_TAG_PERSON);
             }
-            // create a new container
-            myVehicleParameter = SUMOVehicleParserHelper::parseVehicleAttributes(element, attrs, myHardFail);
-            addContainer(attrs);
             break;
         case SUMO_TAG_FLOW:
             // delete if myVehicleParameter isn't null
@@ -124,7 +109,7 @@ SUMORouteHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
             // might be called to parse vehicles from additional file in the
             // context of quickReload. In this case, rerouter flows must be ignored
             if (myElementStack.size() == 1 || myElementStack[myElementStack.size() - 2] != SUMO_TAG_CALIBRATOR) {
-                myVehicleParameter = SUMOVehicleParserHelper::parseFlowAttributes(SUMO_TAG_FLOW, attrs, myHardFail, true, myBeginDefault, myEndDefault);
+                myVehicleParameter = SUMOVehicleParserHelper::parseFlowAttributes(SUMO_TAG_FLOW, attrs, myHardFail, true, myBeginDefault, myEndDefault, myAllowInternalRoutes);
             }
             // check if myVehicleParameter was successfully created
             if (myVehicleParameter) {
@@ -136,17 +121,10 @@ SUMORouteHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
                     // open a route flow
                     openRouteFlow(attrs);
                 }
+                myParamStack.push_back(myVehicleParameter);
             }
             break;
         case SUMO_TAG_PERSONFLOW:
-            // delete if myVehicleParameter isn't null
-            if (myVehicleParameter) {
-                delete myVehicleParameter;
-                myVehicleParameter = nullptr;
-            }
-            // create a new flow
-            myVehicleParameter = SUMOVehicleParserHelper::parseFlowAttributes(SUMO_TAG_PERSONFLOW, attrs, myHardFail, true, myBeginDefault, myEndDefault);
-            break;
         case SUMO_TAG_CONTAINERFLOW:
             // delete if myVehicleParameter isn't null
             if (myVehicleParameter) {
@@ -154,7 +132,8 @@ SUMORouteHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
                 myVehicleParameter = nullptr;
             }
             // create a new flow
-            myVehicleParameter = SUMOVehicleParserHelper::parseFlowAttributes(SUMO_TAG_CONTAINERFLOW, attrs, myHardFail, true, myBeginDefault, myEndDefault);
+            myVehicleParameter = SUMOVehicleParserHelper::parseFlowAttributes((SumoXMLTag)element, attrs, myHardFail, true, myBeginDefault, myEndDefault, myAllowInternalRoutes);
+            myParamStack.push_back(myVehicleParameter);
             break;
         case SUMO_TAG_VTYPE:
             // delete if myCurrentVType isn't null
@@ -164,6 +143,7 @@ SUMORouteHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
             }
             // create a new vType
             myCurrentVType = SUMOVehicleParserHelper::beginVTypeParsing(attrs, myHardFail, getFileName());
+            myParamStack.push_back(myCurrentVType);
             break;
         case SUMO_TAG_VTYPE_DISTRIBUTION:
             openVehicleTypeDistribution(attrs);
@@ -175,7 +155,7 @@ SUMORouteHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
             openRouteDistribution(attrs);
             break;
         case SUMO_TAG_STOP:
-            addStop(attrs);
+            myParamStack.push_back(addStop(attrs));
             break;
         case SUMO_TAG_TRIP: {
             // delete if myVehicleParameter isn't null
@@ -184,13 +164,14 @@ SUMORouteHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
                 myVehicleParameter = nullptr;
             }
             // parse vehicle parameters
-            myVehicleParameter = SUMOVehicleParserHelper::parseVehicleAttributes(element, attrs, myHardFail);
+            myVehicleParameter = SUMOVehicleParserHelper::parseVehicleAttributes(element, attrs, myHardFail, false, false, myAllowInternalRoutes);
             // check if myVehicleParameter was successfully created
             if (myVehicleParameter) {
                 myVehicleParameter->parametersSet |= VEHPARS_FORCE_REROUTE;
                 myActiveRouteID = "!" + myVehicleParameter->id;
                 // open trip
                 openTrip(attrs);
+                myParamStack.push_back(myVehicleParameter);
             }
             break;
         }
@@ -238,6 +219,9 @@ SUMORouteHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
 void
 SUMORouteHandler::myEndElement(int element) {
     switch (element) {
+        case SUMO_TAG_STOP:
+            myParamStack.pop_back();
+            break;
         case SUMO_TAG_ROUTE:
             closeRoute();
             break;
@@ -245,26 +229,31 @@ SUMORouteHandler::myEndElement(int element) {
             closeVType();
             delete myCurrentVType;
             myCurrentVType = nullptr;
+            myParamStack.pop_back();
             break;
         case SUMO_TAG_PERSON:
             closePerson();
             delete myVehicleParameter;
             myVehicleParameter = nullptr;
+            myParamStack.pop_back();
             break;
         case SUMO_TAG_PERSONFLOW:
             closePersonFlow();
             delete myVehicleParameter;
             myVehicleParameter = nullptr;
+            myParamStack.pop_back();
             break;
         case SUMO_TAG_CONTAINER:
             closeContainer();
             delete myVehicleParameter;
             myVehicleParameter = nullptr;
+            myParamStack.pop_back();
             break;
         case SUMO_TAG_CONTAINERFLOW:
             closeContainerFlow();
             delete myVehicleParameter;
             myVehicleParameter = nullptr;
+            myParamStack.pop_back();
             break;
         case SUMO_TAG_VEHICLE:
             if (myVehicleParameter == nullptr) {
@@ -278,12 +267,14 @@ SUMORouteHandler::myEndElement(int element) {
                 closeVehicle();
                 delete myVehicleParameter;
                 myVehicleParameter = nullptr;
+                myParamStack.pop_back();
                 break;
             }
         case SUMO_TAG_FLOW:
             if (myVehicleParameter) {
                 closeFlow();
                 delete myVehicleParameter;
+                myParamStack.pop_back();
             }
             myVehicleParameter = nullptr;
             myInsertStopEdgesAt = -1;
@@ -292,6 +283,7 @@ SUMORouteHandler::myEndElement(int element) {
             closeTrip();
             delete myVehicleParameter;
             myVehicleParameter = nullptr;
+            myParamStack.pop_back();
             myInsertStopEdgesAt = -1;
             break;
         case SUMO_TAG_VTYPE_DISTRIBUTION:
@@ -299,6 +291,15 @@ SUMORouteHandler::myEndElement(int element) {
             break;
         case SUMO_TAG_ROUTE_DISTRIBUTION:
             closeRouteDistribution();
+            break;
+        case SUMO_TAG_PERSONTRIP:
+        case SUMO_TAG_RIDE:
+        case SUMO_TAG_TRANSPORT:
+        case SUMO_TAG_TRANSHIP:
+        case SUMO_TAG_WALK:
+            if (myParamStack.size() == 2) {
+                myParamStack.pop_back();
+            }
             break;
         case SUMO_TAG_INTERVAL:
             myBeginDefault = string2time(OptionsCont::getOptions().getString("begin"));
@@ -378,13 +379,9 @@ SUMORouteHandler::addParam(const SUMOSAXAttributes& attrs) {
     if (ok && (key.size() > 0)) {
         // circumventing empty string test
         const std::string val = attrs.hasAttribute(SUMO_ATTR_VALUE) ? attrs.getString(SUMO_ATTR_VALUE) : "";
-        // add parameter in current created element, or in myLoadedParameterised
-        if (myVehicleParameter != nullptr) {
-            myVehicleParameter->setParameter(key, val);
-        } else if (myCurrentVType != nullptr) {
-            myCurrentVType->setParameter(key, val);
-        } else {
-            myLoadedParameterised.setParameter(key, val);
+        // add parameter in current created element
+        if (!myParamStack.empty()) {
+            myParamStack.back()->setParameter(key, val);
         }
     }
 }
@@ -487,7 +484,7 @@ SUMORouteHandler::parseStop(SUMOVehicleParameter::Stop& stop, const SUMOSAXAttri
     // speed for counting as stopped
     stop.speed = attrs.getOpt<double>(SUMO_ATTR_SPEED, nullptr, ok, 0);
     if (stop.speed < 0) {
-        errorOutput->inform("Speed cannot be negative for stop" + errorSuffix);
+        errorOutput->inform(TLF("Speed cannot be negative for stop%.", errorSuffix));
         return false;
     }
 
@@ -503,18 +500,18 @@ SUMORouteHandler::parseStop(SUMOVehicleParameter::Stop& stop, const SUMOSAXAttri
     stop.duration = attrs.getOptSUMOTimeReporting(SUMO_ATTR_DURATION, nullptr, ok, -1);
     stop.until = attrs.getOptSUMOTimeReporting(SUMO_ATTR_UNTIL, nullptr, ok, -1);
     if (!expectTrigger && (!ok || (stop.duration < 0 && stop.until < 0 && stop.speed == 0))) {
-        errorOutput->inform("Invalid duration or end time is given for a stop" + errorSuffix);
+        errorOutput->inform(TLF("Invalid duration or end time is given for a stop%.", errorSuffix));
         return false;
     }
     if (triggers.size() > 0 && stop.speed > 0) {
-        errorOutput->inform("Triggers and waypoints cannot be combined" + errorSuffix);
+        errorOutput->inform(TLF("Triggers and waypoints cannot be combined%.", errorSuffix));
         return false;
     }
     stop.extension = attrs.getOptSUMOTimeReporting(SUMO_ATTR_EXTENSION, nullptr, ok, -1);
     const bool defaultParking = (stop.triggered || stop.containerTriggered || stop.parkingarea != "");
     stop.parking = attrs.getOpt<ParkingType>(SUMO_ATTR_PARKING, nullptr, ok, defaultParking ? ParkingType::OFFROAD : ParkingType::ONROAD);
     if ((stop.parkingarea != "") && (stop.parking == ParkingType::ONROAD)) {
-        WRITE_WARNING("Stop at parkingarea overrides attribute 'parking' for stop" + errorSuffix);
+        WRITE_WARNINGF(TL("Stop at parkingArea overrides attribute 'parking' for stop%."), errorSuffix);
         stop.parking = ParkingType::OFFROAD;
     }
 
@@ -555,7 +552,7 @@ SUMORouteHandler::parseStop(SUMOVehicleParameter::Stop& stop, const SUMOSAXAttri
     } else {
         stop.index = attrs.get<int>(SUMO_ATTR_INDEX, nullptr, ok);
         if (!ok || stop.index < 0) {
-            errorOutput->inform("Invalid 'index' for stop" + errorSuffix);
+            errorOutput->inform(TLF("Invalid 'index' for stop%.", errorSuffix));
             return false;
         }
     }

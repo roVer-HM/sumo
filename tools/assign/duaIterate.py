@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2008-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -92,7 +92,7 @@ def addGenericOptions(argParser):
                            help="Restrict edgeData measurements to the given vehicle types")
     argParser.add_argument("-7", "--zip", action="store_true",
                            default=False, help="zip old iterations using 7zip")
-    argParser.add_argument("-MSA", "--method-of-successive-average", action="store_true", dest="MSA",
+    argParser.add_argument("-s", "--method-of-successive-average", action="store_true", dest="MSA",
                            default=False, help="apply the method of successive average as the swapping algorithm")
 
 
@@ -530,8 +530,6 @@ def main(args=None):
             "Either --trips, --flows, or --routes have to be given!")
     duaBinary = sumolib.checkBinary("duarouter", options.path)
     sumoBinary = sumolib.checkBinary("sumo", options.path)
-    if options.addweights and options.weightmemory:
-        argParser.error("Options --addweights and --weight-memory are mutually exclusive.")
     if options.marginal_cost and not options.logit:
         print("Warning! --marginal-cost works best with --logit.", file=sys.stderr)
 
@@ -685,6 +683,8 @@ def main(args=None):
                                                'tripinfo', ['duration']):
                 sum += float(t.duration)
                 count += 1
+            if count == 0:
+                sys.exit("Error: No vehicle has reached its destination within the simulation duration.")
             avgTT.add(sum / count)
             relStdDev = avgTT.relStdDev(options.convIt)
             print("< relative travel time deviation in the last %s steps: %.05f" % (

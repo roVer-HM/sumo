@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -72,10 +72,11 @@
 #include "GUIOSGPerspectiveChanger.h"
 #include "GUIOSGView.h"
 
+//#define DEBUG_GLERRORS
 
 FXDEFMAP(GUIOSGView) GUIOSGView_Map[] = {
     //________Message_Type_________        ___ID___                        ________Message_Handler________
-    FXMAPFUNC(SEL_CHORE,                MID_CHORE,			GUIOSGView::OnIdle),
+    FXMAPFUNC(SEL_CHORE,                MID_CHORE,			GUIOSGView::onIdle),
 };
 FXIMPLEMENT(GUIOSGView, GUISUMOAbstractView, GUIOSGView_Map, ARRAYNUMBER(GUIOSGView_Map))
 
@@ -226,7 +227,6 @@ GUIOSGView::GUIOSGView(
 
     // adjust the main light
     adoptViewSettings();
-
     osgUtil::Optimizer optimizer;
     optimizer.optimize(myRoot);
 }
@@ -287,11 +287,6 @@ GUIOSGView::getPositionInformation() const {
 }
 
 
-void
-GUIOSGView::recalculateBoundaries() {
-}
-
-
 bool
 GUIOSGView::is3DView() const {
     return true;
@@ -304,58 +299,57 @@ GUIOSGView::buildViewToolBars(GUIGlChildWindow* v) {
     {
         const std::vector<std::string>& names = gSchemeStorage.getNames();
         for (std::vector<std::string>::const_iterator i = names.begin(); i != names.end(); ++i) {
-            v->getColoringSchemesCombo()->appendItem(i->c_str());
+            v->getColoringSchemesCombo()->appendIconItem(i->c_str());
             if ((*i) == myVisualizationSettings->name) {
                 v->getColoringSchemesCombo()->setCurrentItem(v->getColoringSchemesCombo()->getNumItems() - 1);
             }
         }
-        v->getColoringSchemesCombo()->setNumVisible(5);
     }
     // for junctions
-    new FXButton(v->getLocatorPopup(),
-                 "\tLocate Junction\tLocate a junction within the network.",
-                 GUIIconSubSys::getIcon(GUIIcon::LOCATEJUNCTION), v, MID_HOTKEY_SHIFT_J_LOCATEJUNCTION,
-                 GUIDesignButtonPopup);
+    GUIDesigns::buildFXButton(v->getLocatorPopup(),
+                              "Locate Junction", "Locate a junction within the network.", "",
+                              GUIIconSubSys::getIcon(GUIIcon::LOCATEJUNCTION), v, MID_HOTKEY_SHIFT_J_LOCATEJUNCTION,
+                              GUIDesignButtonPopup);
     // for edges
-    new FXButton(v->getLocatorPopup(),
-                 "\tLocate Street\tLocate a street within the network.",
-                 GUIIconSubSys::getIcon(GUIIcon::LOCATEEDGE), v, MID_HOTKEY_SHIFT_E_LOCATEEDGE,
-                 GUIDesignButtonPopup);
+    GUIDesigns::buildFXButton(v->getLocatorPopup(),
+                              "Locate Street", "Locate a street within the network.", "",
+                              GUIIconSubSys::getIcon(GUIIcon::LOCATEEDGE), v, MID_HOTKEY_SHIFT_E_LOCATEEDGE,
+                              GUIDesignButtonPopup);
     // for vehicles
-    new FXButton(v->getLocatorPopup(),
-                 "\tLocate Vehicle\tLocate a vehicle within the network.",
-                 GUIIconSubSys::getIcon(GUIIcon::LOCATEVEHICLE), v, MID_HOTKEY_SHIFT_V_LOCATEVEHICLE,
-                 GUIDesignButtonPopup);
+    GUIDesigns::buildFXButton(v->getLocatorPopup(),
+                              "Locate Vehicle", "Locate a vehicle within the network.", "",
+                              GUIIconSubSys::getIcon(GUIIcon::LOCATEVEHICLE), v, MID_HOTKEY_SHIFT_V_LOCATEVEHICLE,
+                              GUIDesignButtonPopup);
     // for persons
-    new FXButton(v->getLocatorPopup(),
-                 "\tLocate Person\tLocate a person within the network.",
-                 GUIIconSubSys::getIcon(GUIIcon::LOCATEPERSON), v, MID_HOTKEY_SHIFT_P_LOCATEPERSON,
-                 GUIDesignButtonPopup);
+    GUIDesigns::buildFXButton(v->getLocatorPopup(),
+                              "Locate Person", "Locate a person within the network.", "",
+                              GUIIconSubSys::getIcon(GUIIcon::LOCATEPERSON), v, MID_HOTKEY_SHIFT_P_LOCATEPERSON,
+                              GUIDesignButtonPopup);
     // for containers
-    new FXButton(v->getLocatorPopup(),
-                 "\tLocate Container\tLocate a container within the network.",
-                 GUIIconSubSys::getIcon(GUIIcon::LOCATECONTAINER), v, MID_HOTKEY_SHIFT_C_LOCATECONTAINER,
-                 GUIDesignButtonPopup);
+    GUIDesigns::buildFXButton(v->getLocatorPopup(),
+                              "Locate Container", "Locate a container within the network.", "",
+                              GUIIconSubSys::getIcon(GUIIcon::LOCATECONTAINER), v, MID_HOTKEY_SHIFT_C_LOCATECONTAINER,
+                              GUIDesignButtonPopup);
     // for tls
-    new FXButton(v->getLocatorPopup(),
-                 "\tLocate TLS\tLocate a tls within the network.",
-                 GUIIconSubSys::getIcon(GUIIcon::LOCATETLS), v, MID_HOTKEY_SHIFT_T_LOCATETLS,
-                 GUIDesignButtonPopup);
+    GUIDesigns::buildFXButton(v->getLocatorPopup(),
+                              "Locate TLS", "Locate a tls within the network.", "",
+                              GUIIconSubSys::getIcon(GUIIcon::LOCATETLS), v, MID_HOTKEY_SHIFT_T_LOCATETLS,
+                              GUIDesignButtonPopup);
     // for additional stuff
-    new FXButton(v->getLocatorPopup(),
-                 "\tLocate Additional\tLocate an additional structure within the network.",
-                 GUIIconSubSys::getIcon(GUIIcon::LOCATEADD), v, MID_HOTKEY_SHIFT_A_LOCATEADDITIONAL,
-                 GUIDesignButtonPopup);
+    GUIDesigns::buildFXButton(v->getLocatorPopup(),
+                              "Locate Additional", "Locate an additional structure within the network.", "",
+                              GUIIconSubSys::getIcon(GUIIcon::LOCATEADD), v, MID_HOTKEY_SHIFT_A_LOCATEADDITIONAL,
+                              GUIDesignButtonPopup);
     // for pois
-    new FXButton(v->getLocatorPopup(),
-                 "\tLocate POI\tLocate a POI within the network.",
-                 GUIIconSubSys::getIcon(GUIIcon::LOCATEPOI), v, MID_HOTKEY_SHIFT_O_LOCATEPOI,
-                 GUIDesignButtonPopup);
+    GUIDesigns::buildFXButton(v->getLocatorPopup(),
+                              "Locate POI", "Locate a POI within the network.", "",
+                              GUIIconSubSys::getIcon(GUIIcon::LOCATEPOI), v, MID_HOTKEY_SHIFT_O_LOCATEPOI,
+                              GUIDesignButtonPopup);
     // for polygons
-    new FXButton(v->getLocatorPopup(),
-                 "\tLocate Polygon\tLocate a Polygon within the network.",
-                 GUIIconSubSys::getIcon(GUIIcon::LOCATEPOLY), v, MID_HOTKEY_SHIFT_L_LOCATEPOLY,
-                 GUIDesignButtonPopup);
+    GUIDesigns::buildFXButton(v->getLocatorPopup(),
+                              "Locate Polygon", "Locate a Polygon within the network.", "",
+                              GUIIconSubSys::getIcon(GUIIcon::LOCATEPOLY), v, MID_HOTKEY_SHIFT_L_LOCATEPOLY,
+                              GUIDesignButtonPopup);
 }
 
 
@@ -376,26 +370,14 @@ GUIOSGView::position(int x, int y, int w, int h) {
 void
 GUIOSGView::updateHUDPosition(int w, int h) {
     // keep the HUD text in the left top corner
-#ifdef DEBUG
-    std::cout << "GUIOSGView::updateHUDPosition() begin" << std::endl;
-#endif
     myHUD->setProjectionMatrixAsOrtho2D(0, w, 0, h);
     myText->setPosition(osg::Vec3d(0., static_cast<double>(height), 0.));
-#ifdef DEBUG
-    std::cout << "GUIOSGView::updateHUDPosition() end" << std::endl;
-#endif
 }
 
 
 void
 GUIOSGView::updateHUDText(const std::string text) {
-#ifdef DEBUG
-    std::cout << "GUIOSGView::updateHUDText(" << text << ") begin" << std::endl;
-#endif
     myText->setText(text, osgText::String::ENCODING_UTF8);
-#ifdef DEBUG
-    std::cout << "GUIOSGView::updateHUDText(" << text << ") end" << std::endl;
-#endif
 }
 
 
@@ -433,7 +415,7 @@ GUIOSGView::onPaint(FXObject*, FXSelector, void*) {
     }
     myDecalsLockMutex.lock();
     for (GUISUMOAbstractView::Decal& d : myDecals) {
-        if (!d.initialised) {
+        if (!d.initialised && d.filename.length() > 0) {
             if (d.filename.length() == 6 && d.filename.substr(0, 5) == "light") {
                 GUIOSGBuilder::buildLight(d, *myRoot);
             } else if (d.filename.length() > 3 && d.filename.substr(0, 3) == "tl:") {
@@ -869,7 +851,7 @@ long GUIOSGView::onRightBtnRelease(FXObject* sender, FXSelector sel, void* ptr) 
 long
 GUIOSGView::onMouseMove(FXObject* sender, FXSelector sel, void* ptr) {
     // if popup exist but isn't shown, destroy it first
-    if (myPopup && (myPopup->shown() == false)) {
+    if (myPopup && !myPopup->shown()) {
         destroyPopup();
     }
 
@@ -885,7 +867,7 @@ GUIOSGView::onMouseMove(FXObject* sender, FXSelector sel, void* ptr) {
 
 
 long
-GUIOSGView::OnIdle(FXObject* /* sender */, FXSelector /* sel */, void*) {
+GUIOSGView::onIdle(FXObject* /* sender */, FXSelector /* sel */, void*) {
     forceRefresh();
     update();
     getApp()->addChore(this, MID_CHORE);
@@ -989,7 +971,7 @@ GUIOSGView::updatePositionInformation() const {
         if (GeoConvHelper::getFinal().usingGeoProjection()) {
             myApp->getGeoLabel()->setText(("lat:" + toString(pos.y(), gPrecisionGeo) + ", lon:" + toString(pos.x(), gPrecisionGeo)).c_str());
         } else {
-            myApp->getGeoLabel()->setText(("x:" + toString(pos.x()) + ", y:" + toString(pos.y()) + TL(" (No projection defined)")).c_str());
+            myApp->getGeoLabel()->setText(TL("(No projection defined)"));
         }
     } else {
         // set placeholder
@@ -1104,6 +1086,10 @@ GUIOSGView::FXOSGAdapter::FXOSGAdapter(GUISUMOAbstractView* parent, FXCursor* cu
     if (valid()) {
         setState(new osg::State());
         getState()->setGraphicsContext(this);
+#ifdef DEBUG_GLERRORS
+        getState()->setCheckForGLErrors(osg::State::ONCE_PER_ATTRIBUTE);
+        std::cout << "OSG getCheckForGLErrors " << getState()->getCheckForGLErrors() << std::endl;
+#endif
         if (_traits.valid() && _traits->sharedContext != 0) {
             getState()->setContextID(_traits->sharedContext->getState()->getContextID());
             incrementContextIDUsageCount(getState()->getContextID());

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -44,17 +44,16 @@ netedit.inspectMode()
 netedit.leftClick(referencePosition, 649, 290)
 
 # Change parameter Layer with a non valid value
-netedit.modifyAttribute(netedit.attrs.POILane.inspectSelection.layer, "dummyLayer", True)
+netedit.modifyAttribute(netedit.attrs.poiLane.inspectSelection.layer, "dummyLayer", True)
 
 # Change parameter Layer with a valid value (negative)
-netedit.modifyAttribute(netedit.attrs.POILane.inspectSelection.layer, "-2", True)
+netedit.modifyAttribute(netedit.attrs.poiLane.inspectSelection.layer, "-2", True)
 
 # Change parameter Layer with a valid value (negative)
-netedit.modifyAttribute(netedit.attrs.POILane.inspectSelection.layer, "2.5", True)
+netedit.modifyAttribute(netedit.attrs.poiLane.inspectSelection.layer, "2.5", True)
 
 # Check undos and redos
-netedit.undo(referencePosition, 3)
-netedit.redo(referencePosition, 3)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

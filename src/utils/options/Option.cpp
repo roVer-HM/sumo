@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -158,6 +158,24 @@ Option::isRoute() const {
 
 bool
 Option::isData() const {
+    return false;
+}
+
+
+bool
+Option::isSumoConfig() const {
+    return false;
+}
+
+
+bool
+Option::isEdge() const {
+    return false;
+}
+
+
+bool
+Option::isEdgeVector() const {
     return false;
 }
 
@@ -514,7 +532,6 @@ bool Option_Network::isNetwork() const {
     return true;
 }
 
-
 // -------------------------------------------------------------------------
 // Option_Additional - methods
 // -------------------------------------------------------------------------
@@ -528,7 +545,6 @@ bool
 Option_Additional::isAdditional() const {
     return true;
 }
-
 
 // -------------------------------------------------------------------------
 // Option_Route - methods
@@ -544,7 +560,6 @@ Option_Route::isRoute() const {
     return true;
 }
 
-
 // -------------------------------------------------------------------------
 // Option_Data - methods
 // -------------------------------------------------------------------------
@@ -556,6 +571,48 @@ Option_Data::Option_Data(const std::string& value) :
 
 bool
 Option_Data::isData() const {
+    return true;
+}
+
+// -------------------------------------------------------------------------
+// Option_Data - methods
+// -------------------------------------------------------------------------
+
+Option_SumoConfig::Option_SumoConfig(const std::string& value) :
+    Option_String(value, "SUMOCONFIG") {
+}
+
+
+bool
+Option_SumoConfig::isSumoConfig() const {
+    return true;
+}
+
+// -------------------------------------------------------------------------
+// Option_Data - methods
+// -------------------------------------------------------------------------
+
+Option_Edge::Option_Edge(const std::string& value) :
+    Option_String(value, "EDGE") {
+}
+
+
+bool
+Option_Edge::isEdge() const {
+    return true;
+}
+
+// -------------------------------------------------------------------------
+// Option_Data - methods
+// -------------------------------------------------------------------------
+
+Option_EdgeVector::Option_EdgeVector(const std::string& value) :
+    Option_String(value, "EDGE[]") {
+}
+
+
+bool
+Option_EdgeVector::isEdgeVector() const {
     return true;
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2010-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2010-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -17,6 +17,7 @@
 # @author  Yun-Pang Floetteroed
 # @author  Daniel Krajzewicz
 # @author  Michael Behrisch
+# @author  Mirko Barthauer
 # @date    2010-09-15
 
 """
@@ -54,11 +55,11 @@ def initOptions():
     argParser.add_argument("-d", "--detector-values", dest="detvals", type=argParser.file,
                            help="adapt to the flow on the given edges", metavar="FILE")
     argParser.add_argument("--classpath", dest="classpath", default=os.pathsep.join(jars), type=str,
-                           help="classpath for the calibrator [default: %default]")
+                           help="classpath for the calibrator [default: %(default)s]")
     argParser.add_argument("-l", "--last-calibration-step", dest="calibStep",
-                           type=int, default=100, help="last step of the calibration [default: %default]")
+                           type=int, default=100, help="last step of the calibration [default: %(default)s]")
     argParser.add_argument("-S", "--demandscale", dest="demandscale",
-                           type=float, default=2., help="scaled demand [default: %default]")
+                           type=float, default=2., help="scaled demand [default: %(default)s]")
     argParser.add_argument("-F", "--freezeit",  dest="freezeit",
                            type=int, default=85, help="define the number of iterations for stablizing the results " +
                                                       "in the DTA-calibration")

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -26,6 +26,7 @@
 #include <cmath>
 #include <iostream>
 #include <algorithm>
+#include <numeric>
 #include <cassert>
 #include <iterator>
 #include <limits>
@@ -655,7 +656,14 @@ operator<<(std::ostream& os, const PositionVector& geom) {
 
 void
 PositionVector::sortAsPolyCWByAngle() {
+    // We take the centroid of the points as an origin for the angle computations
+    // that will follow but other points could be taken (the center of the bounding
+    // box of the polygon for instance). Each of these can potentially lead
+    // to a different result in the case of a non-convex polygon.
+    const Position centroid = std::accumulate(begin(), end(), Position(0, 0)) / (double)size();
+    sub(centroid);
     std::sort(begin(), end(), as_poly_cw_sorter());
+    add(centroid);
 }
 
 
@@ -702,9 +710,27 @@ PositionVector::as_poly_cw_sorter::as_poly_cw_sorter() {}
 
 int
 PositionVector::as_poly_cw_sorter::operator()(const Position& p1, const Position& p2) const {
-    return atan2(p1.x(), p1.y()) < atan2(p2.x(), p2.y());
+    double angle1 = atAngle2D(p1);
+    double angle2 = atAngle2D(p2);
+    if (angle1 > angle2) {
+        return true;
+    }
+    if (angle1 == angle2) {
+        double squaredDistance1 = p1.dotProduct(p1);
+        double squaredDistance2 = p2.dotProduct(p2);
+        if (squaredDistance1 < squaredDistance2) {
+            return true;
+        }
+    }
+    return false;
 }
 
+
+double
+PositionVector::as_poly_cw_sorter::atAngle2D(const Position& p) const {
+    double angle = atan2(p.y(), p.x());
+    return angle < 0.0 ? angle : angle + 2.0 * M_PI;
+}
 
 void
 PositionVector::sortByIncreasingXY() {
@@ -872,22 +898,22 @@ PositionVector::nearest_offset_to_point2D(const Position& p, bool perpendicular)
     for (const_iterator i = begin(); i != end() - 1; i++) {
         const double pos =
             GeomHelper::nearest_offset_on_line_to_point2D(*i, *(i + 1), p, perpendicular);
-        const double dist = pos == GeomHelper::INVALID_OFFSET ? minDist : p.distanceTo2D(positionAtOffset2D(*i, *(i + 1), pos));
-        if (dist < minDist) {
+        const double dist2 = pos == GeomHelper::INVALID_OFFSET ? minDist : p.distanceSquaredTo2D(positionAtOffset2D(*i, *(i + 1), pos));
+        if (dist2 < minDist) {
             nearestPos = pos + seen;
-            minDist = dist;
+            minDist = dist2;
         }
         if (perpendicular && i != begin() && pos == GeomHelper::INVALID_OFFSET) {
             // even if perpendicular is set we still need to check the distance to the inner points
-            const double cornerDist = p.distanceTo2D(*i);
-            if (cornerDist < minDist) {
+            const double cornerDist2 = p.distanceSquaredTo2D(*i);
+            if (cornerDist2 < minDist) {
                 const double pos1 =
                     GeomHelper::nearest_offset_on_line_to_point2D(*(i - 1), *i, p, false);
                 const double pos2 =
                     GeomHelper::nearest_offset_on_line_to_point2D(*i, *(i + 1), p, false);
                 if (pos1 == (*(i - 1)).distanceTo2D(*i) && pos2 == 0.) {
                     nearestPos = seen;
-                    minDist = cornerDist;
+                    minDist = cornerDist2;
                 }
             }
         }
@@ -1089,7 +1115,7 @@ PositionVector::intersectsAtLengths2D(const Position& lp1, const Position& lp2) 
 
 void
 PositionVector::extrapolate(const double val, const bool onlyFirst, const bool onlyLast) {
-    if (size() > 0) {
+    if (size() > 1) {
         Position& p1 = (*this)[0];
         Position& p2 = (*this)[1];
         const Position offset = (p2 - p1) * (val / p1.distanceTo(p2));
@@ -1111,7 +1137,7 @@ PositionVector::extrapolate(const double val, const bool onlyFirst, const bool o
 
 void
 PositionVector::extrapolate2D(const double val, const bool onlyFirst) {
-    if (size() > 0) {
+    if (size() > 1) {
         Position& p1 = (*this)[0];
         Position& p2 = (*this)[1];
         if (p1.distanceTo2D(p2) > 0) {
@@ -1323,9 +1349,8 @@ double
 PositionVector::angleAt2D(int pos) const {
     if ((pos + 1) < (int)size()) {
         return (*this)[pos].angleTo2D((*this)[pos + 1]);
-    } else {
-        return INVALID_DOUBLE;
     }
+    return INVALID_DOUBLE;
 }
 
 
@@ -1514,7 +1539,7 @@ PositionVector::operator-(const PositionVector& v2) const {
 PositionVector
 PositionVector::operator+(const PositionVector& v2) const {
     if (length() != v2.length()) {
-        WRITE_ERROR(TL("Trying to subtract PositionVectors of different lengths."));
+        WRITE_ERROR(TL("Trying to add PositionVectors of different lengths."));
     }
     PositionVector pv;
     auto i1 = begin();
@@ -1868,6 +1893,30 @@ PositionVector::bezier(int numPoints) {
         prev = current;
     }
     return ret;
+}
+
+
+bool PositionVector::isClockwiseOriented() {
+    // The test is based on the computation of a signed area enclosed by the polygon.
+    // If the polygon is in the upper (resp. the lower) half-plane and the area is
+    // negatively (resp. positively) signed, then the polygon is CW oriented. In case
+    // the polygon has points with both positive and negative y-coordinates, we translate
+    // the polygon to apply the above simple area-based test.
+    double area = 0.0;
+    const double y_min = std::min_element(begin(), end(), [](Position p1, Position p2) {
+        return p1.y() < p2.y();
+    })->y();
+    const double gap = y_min > 0.0 ? 0.0 : y_min;
+    add(0., gap, 0.);
+    const int last = (int)size() - 1;
+    for (int i = 0; i < last; i++) {
+        const Position& firstPoint = at(i);
+        const Position& secondPoint = at(i + 1);
+        area += (secondPoint.x() - firstPoint.x()) / (secondPoint.y() + firstPoint.y()) / 2.0;
+    }
+    area += (at(0).x() - at(last).x()) / (at(0).y() + at(last).y()) / 2.0;
+    add(0., -gap, 0.);
+    return area < 0.0;
 }
 
 

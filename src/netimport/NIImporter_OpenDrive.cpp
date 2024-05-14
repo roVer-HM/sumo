@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -41,6 +41,7 @@
 #include <netbuild/NBNodeCont.h>
 #include <netbuild/NBNetBuilder.h>
 #include <netbuild/NBOwnTLDef.h>
+#include <netbuild/NBLoadedSUMOTLDef.h>
 #include <netbuild/NBTrafficLightLogicCont.h>
 #include <utils/xml/SUMOXMLDefinitions.h>
 #include <utils/geom/GeoConvHelper.h>
@@ -48,6 +49,7 @@
 #include <foreign/eulerspiral/odrSpiral.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/common/FileHelpers.h>
+#include <utils/xml/SUMOXMLDefinitions.h>
 #include <utils/xml/XMLSubSys.h>
 #include <utils/geom/Boundary.h>
 #include "NILoader.h"
@@ -92,6 +94,8 @@ StringBijection<int>::Entry NIImporter_OpenDrive::openDriveTags[] = {
     { "access",           NIImporter_OpenDrive::OPENDRIVE_TAG_ACCESS },
     { "signal",           NIImporter_OpenDrive::OPENDRIVE_TAG_SIGNAL },
     { "signalReference",  NIImporter_OpenDrive::OPENDRIVE_TAG_SIGNALREFERENCE },
+    { "controller",       NIImporter_OpenDrive::OPENDRIVE_TAG_CONTROLLER },
+    { "control",          NIImporter_OpenDrive::OPENDRIVE_TAG_CONTROL },
     { "validity",         NIImporter_OpenDrive::OPENDRIVE_TAG_VALIDITY },
     { "junction",         NIImporter_OpenDrive::OPENDRIVE_TAG_JUNCTION },
     { "connection",       NIImporter_OpenDrive::OPENDRIVE_TAG_CONNECTION },
@@ -103,6 +107,7 @@ StringBijection<int>::Entry NIImporter_OpenDrive::openDriveTags[] = {
     { "offset",           NIImporter_OpenDrive::OPENDRIVE_TAG_OFFSET },
     { "object",           NIImporter_OpenDrive::OPENDRIVE_TAG_OBJECT },
     { "repeat",           NIImporter_OpenDrive::OPENDRIVE_TAG_REPEAT },
+    { "include",          NIImporter_OpenDrive::OPENDRIVE_TAG_INCLUDE },
 
     { "",                 NIImporter_OpenDrive::OPENDRIVE_TAG_NOTHING }
 };
@@ -160,6 +165,8 @@ StringBijection<int>::Entry NIImporter_OpenDrive::openDriveAttrs[] = {
     { "rule",           NIImporter_OpenDrive::OPENDRIVE_ATTR_RULE },
     { "restriction",    NIImporter_OpenDrive::OPENDRIVE_ATTR_RESTRICTION },
     { "name",           NIImporter_OpenDrive::OPENDRIVE_ATTR_NAME },
+    { "signalId",       NIImporter_OpenDrive::OPENDRIVE_ATTR_SIGNALID },
+    { "file",           NIImporter_OpenDrive::OPENDRIVE_ATTR_FILE },
     // towards xodr v1.4 speed:unit
     { "unit",           NIImporter_OpenDrive::OPENDRIVE_ATTR_UNIT },
 
@@ -170,7 +177,9 @@ StringBijection<int>::Entry NIImporter_OpenDrive::openDriveAttrs[] = {
 bool NIImporter_OpenDrive::myImportAllTypes;
 bool NIImporter_OpenDrive::myImportWidths;
 double NIImporter_OpenDrive::myMinWidth;
+bool NIImporter_OpenDrive::myIgnoreMisplacedSignals;
 bool NIImporter_OpenDrive::myImportInternalShapes;
+NIImporter_OpenDrive::OpenDriveController NIImporter_OpenDrive::myDummyController("", "");
 
 // ===========================================================================
 // method definitions
@@ -189,6 +198,7 @@ NIImporter_OpenDrive::loadNetwork(const OptionsCont& oc, NBNetBuilder& nb) {
     myImportWidths = !oc.getBool("opendrive.ignore-widths");
     myMinWidth = oc.getFloat("opendrive.min-width");
     myImportInternalShapes = oc.getBool("opendrive.internal-shapes");
+    myIgnoreMisplacedSignals = oc.getBool("opendrive.ignore-misplaced-signals");
     bool customLaneShapes = oc.getBool("opendrive.lane-shapes");
     NBTypeCont& tc = nb.getTypeCont();
     NBNodeCont& nc = nb.getNodeCont();
@@ -214,6 +224,7 @@ NIImporter_OpenDrive::loadNetwork(const OptionsCont& oc, NBNetBuilder& nb) {
                     signal.type = ref.type;
                     signal.name = ref.name;
                     signal.dynamic = ref.dynamic;
+                    signal.controller = ref.controller;
                 }
             }
         }
@@ -739,7 +750,32 @@ NIImporter_OpenDrive::loadNetwork(const OptionsCont& oc, NBNetBuilder& nb) {
     // -------------------------
     // traffic lights
     // -------------------------
-    std::map<std::string, std::string> tlsControlled;
+    std::map<std::string, std::string> signal2junction;
+    std::map<std::string, OpenDriveController>& controllers = handler.getControllers();
+
+    for (const auto& it : edges) {
+        const OpenDriveEdge* e = it.second;
+        for (const OpenDriveSignal& signal : e->signals) { // signal for which junction?
+            if (signal.controller.size() == 0) {
+                continue;
+            }
+            std::string junctionID;
+            for (auto connection : e->connections) {
+                if ((connection.fromLane < 0 && signal.orientation < 0) || (connection.fromLane > 0 && signal.orientation > 0)) {
+                    continue;
+                }
+                if ((signal.minLane == 0 && signal.maxLane == 0) || (signal.maxLane >= connection.fromLane && signal.minLane <= connection.fromLane)) {
+                    const OpenDriveEdge* connectedEdge = edges[connection.toEdge];
+                    if (controllers[signal.controller].junction.size() > 0 && controllers[signal.controller].junction != connectedEdge->junction) {
+                        WRITE_WARNINGF(TL("Controlling multiple junctions by the same controller '%' is currently not implemented."), signal.controller);
+                    }
+                    controllers[signal.controller].junction = connectedEdge->junction;
+                }
+            }
+        }
+    }
+
+    const bool importSignalGroups = oc.getBool("opendrive.signal-groups");
     for (std::map<std::string, OpenDriveEdge*>::iterator i = edges.begin(); i != edges.end(); ++i) {
         OpenDriveEdge* e = (*i).second;
         for (const OpenDriveSignal& signal : e->signals) {
@@ -829,15 +865,29 @@ NIImporter_OpenDrive::loadNetwork(const OptionsCont& oc, NBNetBuilder& nb) {
                             int odLane = laneIndexMap[std::make_pair(from, c.fromLane)];
                             //std::cout << "  fromLane=" << c.fromLane << " odLane=" << odLane << "\n";
                             if (signal.minLane == 0 || (signal.minLane <= odLane && signal.maxLane >= odLane)) {
-                                if (c.knowsParameter("signalID")) {
+                                if (c.hasParameter("signalID")) {
                                     c.setParameter("signalID", c.getParameter("signalID") + " " + signal.id);
                                 } else {
                                     c.setParameter("signalID", signal.id);
                                 }
                             }
+                            // set tlIndex to allow signal groups (defined in OpenDRIVE controller elements)
+                            if (importSignalGroups) {
+                                const OpenDriveController& controller = handler.getController(signal.id);
+                                if (controller.id != "") {
+                                    if (c.getParameter("controllerID") != "") {
+                                        WRITE_WARNINGF(TL("The signaling of the connection from '%' to '%' (controller '%') is ambiguous because it is overwritten signal '%' and with controller '%'."), from->getID(), c.toEdge->getID(), c.getParameter("controllerID"), signal.id, controller.id);
+                                    }
+                                    //junctionsWithControllers.insert(from->getToNode()->getID());
+                                    int tlIndex = handler.getTLIndexForController(controller.id);
+                                    c.tlLinkIndex = tlIndex;
+                                    c.setParameter("controllerID", controller.id);
+                                }
+                            }
                         }
                     }
                     getTLSSecure(from, nb);
+
                     //std::cout << "odrEdge=" << e->id << " fromID=" << fromID << " toID=" << toID << " from=" << from->getID() << " to=" << to->getID()
                     //    << " signal=" << signal.id << " minLane=" << signal.minLane << " maxLane=" << signal.maxLane << "\n";
                 } else {
@@ -855,22 +905,38 @@ NIImporter_OpenDrive::loadNetwork(const OptionsCont& oc, NBNetBuilder& nb) {
                     WRITE_WARNINGF(TL("Could not find edge '%' for signal '%'."), id, signal.id);
                     continue;
                 }
-                getTLSSecure(edge, nb);
+
                 /// XXX consider lane validity
                 for (NBEdge::Connection& c : edge->getConnections()) {
                     int odLane = laneIndexMap[std::make_pair(edge, c.fromLane)];
                     if (signal.minLane == 0 || (signal.minLane <= odLane && signal.maxLane >= odLane)) {
-                        if (c.knowsParameter("signalID")) {
+                        if (c.hasParameter("signalID")) {
                             c.setParameter("signalID", c.getParameter("signalID") + " " + signal.id);
                         } else {
                             c.setParameter("signalID", signal.id);
                         }
                     }
+
+                    // set tlIndex to allow signal groups (defined in OpenDRIVE controller elements)
+                    if (importSignalGroups) {
+                        const OpenDriveController& controller = handler.getController(signal.id);
+                        if (controller.id != "") {
+                            if (c.getParameter("controllerID") != "") {
+                                WRITE_WARNINGF(TL("The signaling of the connection from '%' to '%' (controller '%') is ambiguous because it is overwritten with signal '%' and controller '%'."), edge->getID(), c.toEdge->getID(), c.getParameter("controllerID"), signal.id, controller.id);
+                            }
+                            //junctionsWithControllers.insert(edge->getToNode()->getID());
+                            int tlIndex = handler.getTLIndexForController(controller.id);
+                            c.tlLinkIndex = tlIndex;
+                            c.setParameter("controllerID", controller.id);
+                        }
+                    }
                 }
+                getTLSSecure(edge, nb);
                 //std::cout << "odrEdge=" << e->id << " sumoID=" << (*k).sumoID << " sumoEdge=" << edge->getID()
                 //    << " signal=" << signal.id << " minLane=" << signal.minLane << " maxLane=" << signal.maxLane << "\n";
             }
             // @note: tls 'signalID' parameters are set via NBTrafficLightLogicCont::setOpenDriveSignalParameters
+            // @note: OpenDRIVE controllers are applied to the signal programs in NBTrafficLightLogicCont::applyOpenDriveControllers
         }
     }
 
@@ -887,7 +953,7 @@ void
 NIImporter_OpenDrive::writeRoadObjects(const OpenDriveEdge* e) {
     OptionsCont& oc = OptionsCont::getOptions();
     const bool writeGeo = GeoConvHelper::getLoaded().usingGeoProjection() && (
-            oc.isDefault("proj.plain-geo") || oc.getBool("proj.plain-geo"));
+                              oc.isDefault("proj.plain-geo") || oc.getBool("proj.plain-geo"));
     OutputDevice& dev = OutputDevice::getDevice(oc.getString("polygon-output"));
     dev.writeXMLHeader("additional", "additional_file.xsd");
     //SUMOPolygon poly("road_" + e->id, "road", RGBColor::BLUE, e->geom, true, false);
@@ -898,9 +964,9 @@ NIImporter_OpenDrive::writeRoadObjects(const OpenDriveEdge* e) {
             // cicrular shape
             // GeoConvHelper::getFinal is not ready yet
             GeoConvHelper::getLoaded().cartesian2geo(ref);
-            PointOfInterest poly(o.id, o.type, RGBColor::YELLOW, ref, true, "", -1, false, 0);
-            poly.setParameter("name", o.name);
-            poly.writeXML(dev, writeGeo);
+            PointOfInterest POI(o.id, o.type, RGBColor::YELLOW, ref, true, "", -1, false, 0, SUMOXMLDefinitions::POIIcons.getString(POIIcon::NONE));
+            POI.setParameter("name", o.name);
+            POI.writeXML(dev, writeGeo);
         } else {
             // rectangular shape
             PositionVector centerLine;
@@ -948,7 +1014,7 @@ NIImporter_OpenDrive::retrieveSignalEdges(NBNetBuilder& nb, const std::string& f
 
 
 NBTrafficLightDefinition*
-NIImporter_OpenDrive::getTLSSecure(NBEdge* inEdge, NBNetBuilder& nb) {
+NIImporter_OpenDrive::getTLSSecure(NBEdge* inEdge, /*const NBEdge::Connection& conn,*/ NBNetBuilder& nb) {
     NBNode* toNode = inEdge->getToNode();
     if (!toNode->isTLControlled()) {
         TrafficLightType type = SUMOXMLDefinitions::TrafficLightTypes.get(OptionsCont::getOptions().getString("tls.default-type"));
@@ -2191,7 +2257,8 @@ NIImporter_OpenDrive::OpenDriveEdge::getPriority(OpenDriveXMLTag dir) const {
 // ---------------------------------------------------------------------------
 NIImporter_OpenDrive::NIImporter_OpenDrive(const NBTypeCont& tc, std::map<std::string, OpenDriveEdge*>& edges)
     : GenericSAXHandler(openDriveTags, OPENDRIVE_TAG_NOTHING, openDriveAttrs, OPENDRIVE_ATTR_NOTHING, "opendrive"),
-      myTypeContainer(tc), myCurrentEdge("", "", "", -1), myEdges(edges), myOffset(0, 0) {
+      myTypeContainer(tc), myCurrentEdge("", "", "", -1), myCurrentController("", ""), myEdges(edges), myOffset(0, 0),
+      myUseCurrentNode(false) {
 }
 
 
@@ -2202,12 +2269,20 @@ NIImporter_OpenDrive::~NIImporter_OpenDrive() {
 void
 NIImporter_OpenDrive::myStartElement(int element,
                                      const SUMOSAXAttributes& attrs) {
+    if (myUseCurrentNode) { // skip the parent node repeated in the included file
+        myUseCurrentNode = false;
+        myElementStack.push_back(element);
+        return;
+    }
     bool ok = true;
     switch (element) {
         case OPENDRIVE_TAG_HEADER: {
-            /*
             int majorVersion = attrs.get<int>(OPENDRIVE_ATTR_REVMAJOR, nullptr, ok);
             int minorVersion = attrs.get<int>(OPENDRIVE_ATTR_REVMINOR, nullptr, ok);
+            if (majorVersion == 1 && minorVersion > 4) { // disable flags only used for old 1.4 standard
+                NIImporter_OpenDrive::myIgnoreMisplacedSignals = false;
+            }
+            /*
             if (majorVersion != 1 || minorVersion != 2) {
                 // TODO: leave note of exceptions
                 WRITE_WARNINGF(TL("Given openDrive file '%' uses version %.%;\n Version 1.2 is supported."), getFileName(), toString(majorVersion), toString(minorVersion));
@@ -2339,6 +2414,7 @@ NIImporter_OpenDrive::myStartElement(int element,
                 myCurrentEdge.laneSections.back().length = s - myCurrentEdge.laneSections.back().s;
             }
             myCurrentEdge.laneSections.push_back(OpenDriveLaneSection(s));
+
             // possibly updated by the next laneSection
             myCurrentEdge.laneSections.back().length = myCurrentEdge.length - s;
         }
@@ -2391,6 +2467,22 @@ NIImporter_OpenDrive::myStartElement(int element,
             double s = attrs.get<double>(OPENDRIVE_ATTR_S, myCurrentEdge.id.c_str(), ok);
             OpenDriveSignal signal = OpenDriveSignal(id, "", "", orientationCode, false, s);
             myCurrentEdge.signals.push_back(signal);
+        }
+        break;
+        case OPENDRIVE_TAG_CONTROLLER: {
+            std::string id = attrs.get<std::string>(OPENDRIVE_ATTR_ID, nullptr, ok);
+            std::string name = attrs.getOpt<std::string>(OPENDRIVE_ATTR_NAME, nullptr, ok, "", false);
+            myCurrentController = OpenDriveController(id, name);
+        }
+        break;
+        case OPENDRIVE_TAG_CONTROL: {
+            std::string signalID = attrs.get<std::string>(OPENDRIVE_ATTR_SIGNALID, myCurrentController.id.c_str(), ok);
+            myCurrentController.signalIDs.push_back(signalID);
+            if (mySignals.find(signalID) != mySignals.end()) {
+                mySignals[signalID].controller = myCurrentController.id;
+            } else {
+                WRITE_WARNINGF(TL("Ignoring missing signal '%' in controller '%'."), signalID, myCurrentController.id);
+            }
         }
         break;
         case OPENDRIVE_TAG_VALIDITY: {
@@ -2570,6 +2662,17 @@ NIImporter_OpenDrive::myStartElement(int element,
             }
         }
         break;
+        case OPENDRIVE_TAG_INCLUDE: {
+            std::string includedFile = attrs.get<std::string>(OPENDRIVE_ATTR_FILE, 0, ok);
+            if (!FileHelpers::isAbsolute(includedFile)) {
+                includedFile = FileHelpers::getConfigurationRelative(getFileName(), includedFile);
+            }
+            PROGRESS_BEGIN_MESSAGE("Parsing included opendrive from '" + includedFile + "'");
+            myUseCurrentNode = true;
+            XMLSubSys::runParser(*this, includedFile);
+            PROGRESS_DONE_MESSAGE();
+        }
+        break;
         default:
             break;
     }
@@ -2630,8 +2733,54 @@ NIImporter_OpenDrive::myEndElement(int element) {
                 }
             }
             break;
+        case OPENDRIVE_TAG_CONTROLLER: {
+            myControllers.insert({ myCurrentController.id, myCurrentController });
+        }
+        break;
         case OPENDRIVE_TAG_LANESECTION: {
             myCurrentEdge.laneSections.back().buildLaneMapping(myTypeContainer);
+        }
+        break;
+        case OPENDRIVE_TAG_SIGNAL:
+        case OPENDRIVE_TAG_SIGNALREFERENCE: {
+            if (NIImporter_OpenDrive::myIgnoreMisplacedSignals) {
+                int intType = -1;
+                try {
+                    intType = StringUtils::toInt(myCurrentEdge.signals.back().type);
+                } catch (NumberFormatException&) {
+                    break;
+                } catch (EmptyData&) {
+                    break;
+                }
+                if (intType < 1000001 || (intType > 1000013 && intType != 1000020) || intType == 1000008) {
+                    // not a traffic_light (Section 6.11)
+                    break;
+                }
+                double s = myCurrentEdge.signals.back().s;
+                int minLane = myCurrentEdge.signals.back().minLane;
+                int maxLane = myCurrentEdge.signals.back().maxLane;
+                bool foundDrivingType = false;
+                for (OpenDriveLaneSection ls : myCurrentEdge.laneSections) {
+                    if (ls.s <= s && ls.s + ls.length > s) {
+                        if (myCurrentEdge.signals.back().orientation < 0) {
+                            for (OpenDriveLane l : ls.lanesByDir[OPENDRIVE_TAG_LEFT]) {
+                                if ((minLane < 0 && l.id >= minLane && l.id <= maxLane) && l.type == "driving") {
+                                    foundDrivingType = true;
+                                }
+                            }
+                        } else if (myCurrentEdge.signals.back().orientation > 0) { // 0 = center is never used for driving
+                            for (OpenDriveLane l : ls.lanesByDir[OPENDRIVE_TAG_RIGHT]) {
+                                if ((minLane > 0 && l.id >= minLane && l.id <= maxLane) && l.type == "driving") {
+                                    foundDrivingType = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!foundDrivingType) { // reject signal / signal reference if not on driving lane
+                    myCurrentEdge.signals.pop_back();
+                }
+            }
         }
         break;
         default:

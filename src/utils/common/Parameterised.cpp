@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -61,8 +61,27 @@ Parameterised::updateParameters(const Parameterised::Map& mapArg) {
 }
 
 
+void
+Parameterised::mergeParameters(const Parameterised::Map& mapArg, const std::string separator, bool uniqueValues) {
+    for (const auto& keyValue : mapArg) {
+        if (hasParameter(keyValue.first)) {
+            bool append = true;
+            if (uniqueValues) {
+                if (getParameter(keyValue.first) == keyValue.second) {
+                    append = false;
+                }
+            }
+            if (append) {
+                setParameter(keyValue.first, getParameter(keyValue.first) + separator + keyValue.second);
+            }
+        } else {
+            setParameter(keyValue.first, keyValue.second);
+        }
+    }
+}
+
 bool
-Parameterised::knowsParameter(const std::string& key) const {
+Parameterised::hasParameter(const std::string& key) const {
     return myMap.find(key) != myMap.end();
 }
 
@@ -146,23 +165,7 @@ Parameterised::getParametersStr(const std::string kvsep, const std::string sep) 
 
 void
 Parameterised::setParameters(const Parameterised& params) {
-    // first clear map
-    myMap.clear();
-    // set parameter
-    for (const auto& keyValue : params.getParametersMap()) {
-        setParameter(keyValue.first, keyValue.second);
-    }
-}
-
-
-void
-Parameterised::setParametersMap(const Parameterised::Map& paramsMap) {
-    // first clear map
-    myMap.clear();
-    // set parameter
-    for (const auto& keyValue : paramsMap) {
-        setParameter(keyValue.first, keyValue.second);
-    }
+    myMap = params.getParametersMap();
 }
 
 

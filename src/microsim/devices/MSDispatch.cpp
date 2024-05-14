@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2007-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2007-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -70,8 +70,11 @@ Reservation*
 MSDispatch::addReservation(MSTransportable* person,
                            SUMOTime reservationTime,
                            SUMOTime pickupTime,
+                           SUMOTime earliestPickupTime,
                            const MSEdge* from, double fromPos,
+                           const MSStoppingPlace* fromStop,
                            const MSEdge* to, double toPos,
+                           const MSStoppingPlace* toStop,
                            std::string group,
                            const std::string& line,
                            int maxCapacity,
@@ -110,7 +113,7 @@ MSDispatch::addReservation(MSTransportable* person,
         }
     }
     if (!added) {
-        Reservation* newRes = new Reservation(toString(myReservationCount++), {person}, reservationTime, pickupTime, from, fromPos, to, toPos, group, line);
+        Reservation* newRes = new Reservation(toString(myReservationCount++), {person}, reservationTime, pickupTime, earliestPickupTime, from, fromPos, fromStop, to, toPos, toStop, group, line);
         myGroupReservations[group].push_back(newRes);
         result = newRes;
     }
@@ -171,6 +174,51 @@ MSDispatch::removeReservation(MSTransportable* person,
                                            << "\n";
 #endif
     return removedID;
+}
+
+
+Reservation*
+MSDispatch::updateReservationFromPos(MSTransportable* person,
+                                     const MSEdge* from, double fromPos,
+                                     const MSEdge* to, double toPos,
+                                     std::string group, double newFromPos) {
+    if (group == "") {
+        // the default empty group implies, no grouping is wanted (and
+        // transportable ids are unique)
+        group = person->getID();
+    }
+    Reservation* result = nullptr;
+    std::string updatedID = "";
+    auto it = myGroupReservations.find(group);
+    if (it != myGroupReservations.end()) {
+        for (auto itRes = it->second.begin(); itRes != it->second.end(); itRes++) {
+            Reservation* res = *itRes;
+            // TODO: if there is already a reservation with the newFromPos, add to this reservation
+            // TODO: if there are other persons in this reservation, create a new reservation for the updated one
+            if (res->persons.count(person) != 0
+                    && res->from == from
+                    && res->to == to
+                    && res->fromPos == fromPos
+                    && res->toPos == toPos) {
+                // update fromPos
+                res->fromPos = newFromPos;
+                result = res;
+                updatedID = res->id;
+                break;
+            }
+        }
+    }
+#ifdef DEBUG_RESERVATION
+    if (DEBUG_COND2(person)) std::cout << SIMTIME
+                                           << " updateReservationFromPos p=" << person->getID()
+                                           << " from=" << from->getID() << " fromPos=" << fromPos
+                                           << " to=" << to->getID() << " toPos=" << toPos
+                                           << " group=" << group
+                                           << " newFromPos=" << newFromPos
+                                           << " updatedID=" << updatedID
+                                           << "\n";
+#endif
+    return result;
 }
 
 
@@ -238,13 +286,13 @@ MSDispatch::computeDetourTime(SUMOTime t, SUMOTime viaTime, const MSDevice_Taxi*
     ConstMSEdgeVector edges;
     if (timeDirect < 0) {
         router.compute(from, fromPos, to, toPos, &taxi->getHolder(), t, edges, true);
-        timeDirect = router.recomputeCosts(edges, &taxi->getHolder(), fromPos, toPos, t);
+        timeDirect = router.recomputeCostsPos(edges, &taxi->getHolder(), fromPos, toPos, t);
         edges.clear();
     }
 
     router.compute(from, fromPos, via, viaPos, &taxi->getHolder(), t, edges, true);
     const double start = STEPS2TIME(t);
-    const double leg1 = router.recomputeCosts(edges, &taxi->getHolder(), fromPos, viaPos, t);
+    const double leg1 = router.recomputeCostsPos(edges, &taxi->getHolder(), fromPos, viaPos, t);
 #ifdef DEBUG_DETOUR
     std::cout << "        leg1=" << toString(edges) << " startPos=" << fromPos << " toPos=" << viaPos << " time=" << leg1 << "\n";
 #endif
@@ -252,7 +300,7 @@ MSDispatch::computeDetourTime(SUMOTime t, SUMOTime viaTime, const MSDevice_Taxi*
     edges.clear();
     const SUMOTime timeContinue = TIME2STEPS(start + leg1 + wait);
     router.compute(via, viaPos, to, toPos, &taxi->getHolder(), timeContinue, edges, true);
-    const double leg2 = router.recomputeCosts(edges, &taxi->getHolder(), viaPos, toPos, timeContinue);
+    const double leg2 = router.recomputeCostsPos(edges, &taxi->getHolder(), viaPos, toPos, timeContinue);
     const double timeDetour = leg1 + wait + leg2;
 #ifdef DEBUG_DETOUR
     std::cout << "        leg2=" << toString(edges) << " startPos=" << viaPos << " toPos=" << toPos << " time=" << leg2 << "\n";

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -40,6 +40,9 @@
 class Distribution_Parameterized : public Distribution {
 
 public:
+    /// @brief Constructor for any temporary distribution parsed directly from the description
+    Distribution_Parameterized(const std::string& description);
+
     /// @brief Constructor for standard normal distribution
     Distribution_Parameterized(const std::string& id, double mean, double deviation);
 

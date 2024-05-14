@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -50,7 +50,7 @@ GNEChange_MeanData::~GNEChange_MeanData() {
         // show extra information for tests
         WRITE_DEBUG("Deleting unreferenced " + myMeanData->getTagStr());
         // make sure that MeanData isn't in net before removing
-        if (myMeanData->getNet()->getAttributeCarriers()->meanDataExist(myMeanData)) {
+        if (myMeanData->getNet()->getAttributeCarriers()->retrieveMeanData(myMeanData->getTagProperty().getTag(), myMeanData->getID(), false)) {
             // delete MeanData from net
             myMeanData->getNet()->getAttributeCarriers()->deleteMeanData(myMeanData);
         }

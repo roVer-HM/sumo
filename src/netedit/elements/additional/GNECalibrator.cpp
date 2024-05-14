@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -24,7 +24,8 @@
 #include <netedit/dialogs/GNECalibratorDialog.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/globjects/GLIncludes.h>
-#include <utils/gui/div/GUIGlobalPostDrawing.h>
+#include <utils/gui/div/GUIGlobalViewObjectsHandler.h>
+#include <utils/xml/NamespaceIDs.h>
 
 #include "GNECalibrator.h"
 
@@ -204,11 +205,7 @@ GNECalibrator::getPositionInView() const {
 
 void
 GNECalibrator::updateCenteringBoundary(const bool /*updateGrid*/) {
-    myAdditionalBoundary.reset();
-    // add center
-    myAdditionalBoundary.add(getPositionInView());
-    // grow
-    myAdditionalBoundary.grow(10);
+    // nothing to update
 }
 
 
@@ -246,26 +243,41 @@ GNECalibrator::drawGL(const GUIVisualizationSettings& s) const {
     const double exaggeration = getExaggeration(s);
     // first check if additional has to be drawn
     if (myNet->getViewNet()->getDataViewOptions().showAdditionals()) {
-        if (s.drawAdditionals(exaggeration)) {
-            // draw first symbol
-            drawCalibratorSymbol(s, exaggeration, myAdditionalGeometry.getShape().front(), myAdditionalGeometry.getShapeRotations().front() + 90);
-            // continue with the other symbols
-            for (const auto& edgeCalibratorGeometry : myEdgeCalibratorGeometries) {
-                drawCalibratorSymbol(s, exaggeration, edgeCalibratorGeometry.getShape().front(), edgeCalibratorGeometry.getShapeRotations().front() + 90);
-            }
-            // draw additional ID
-            drawAdditionalID(s);
-            // iterate over additionals and check if drawn
-            for (const auto& calibratorFlow : getChildAdditionals()) {
-                // if calibrator is being inspected or selected, then draw
-                if (myNet->getViewNet()->getNetworkViewOptions().showSubAdditionals() ||
-                        isAttributeCarrierSelected() || myNet->getViewNet()->isAttributeCarrierInspected(this) ||
-                        calibratorFlow->isAttributeCarrierSelected() || myNet->getViewNet()->isAttributeCarrierInspected(calibratorFlow) ||
-                        (myNet->getViewNet()->getFrontAttributeCarrier() == calibratorFlow)) {
-                    calibratorFlow->drawGL(s);
-                }
+        // get detail level
+        const auto d = s.getDetailLevel(exaggeration);
+        // draw first symbol
+        drawCalibratorSymbol(s, d, exaggeration, myAdditionalGeometry.getShape().front(), myAdditionalGeometry.getShapeRotations().front() + 90);
+        // continue with the other symbols
+        for (const auto& edgeCalibratorGeometry : myEdgeCalibratorGeometries) {
+            drawCalibratorSymbol(s, d, exaggeration, edgeCalibratorGeometry.getShape().front(), edgeCalibratorGeometry.getShapeRotations().front() + 90);
+        }
+        // draw additional ID
+        drawAdditionalID(s);
+        // iterate over additionals and check if drawn
+        for (const auto& calibratorFlow : getChildAdditionals()) {
+            // if calibrator is being inspected or selected, then draw
+            if (myNet->getViewNet()->getNetworkViewOptions().showSubAdditionals() ||
+                    isAttributeCarrierSelected() || myNet->getViewNet()->isAttributeCarrierInspected(this) ||
+                    calibratorFlow->isAttributeCarrierSelected() || myNet->getViewNet()->isAttributeCarrierInspected(calibratorFlow) ||
+                    (myNet->getViewNet()->getFrontAttributeCarrier() == calibratorFlow)) {
+                calibratorFlow->drawGL(s);
             }
         }
+    }
+}
+
+
+bool
+GNECalibrator::checkDrawMoveContour() const {
+    // get edit modes
+    const auto& editModes = myNet->getViewNet()->getEditModes();
+    // check if we're in move mode
+    if (!myNet->getViewNet()->isMovingElement() && editModes.isCurrentSupermodeNetwork() &&
+            (editModes.networkEditMode == NetworkEditMode::NETWORK_MOVE) && myNet->getViewNet()->checkOverLockedElement(this, mySelected)) {
+        // only move the first element
+        return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
+    } else {
+        return false;
     }
 }
 
@@ -346,7 +358,7 @@ GNECalibrator::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoLi
         case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
         case GNE_ATTR_SHIFTLANEINDEX:
-            undoList->changeAttribute(new GNEChange_Attribute(this, key, value));
+            GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
@@ -359,7 +371,7 @@ bool
 GNECalibrator::isValid(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_ID:
-            return isValidAdditionalID(value);
+            return isValidAdditionalID(NamespaceIDs::calibrators, value);
         case SUMO_ATTR_EDGE:
             if (myNet->getAttributeCarriers()->retrieveEdge(value, false) != nullptr) {
                 return true;
@@ -436,26 +448,24 @@ GNECalibrator::getHierarchyName() const {
 // ===========================================================================
 
 void
-GNECalibrator::drawCalibratorSymbol(const GUIVisualizationSettings& s, const double exaggeration, const Position& pos, const double rot) const {
-    // begin push name
-    GLHelper::pushName(getGlID());
-    // push layer matrix
-    GLHelper::pushMatrix();
-    // translate to front
-    myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_CALIBRATOR);
-    // translate to position
-    glTranslated(pos.x(), pos.y(), 0);
-    // rotate over lane
-    GUIGeometry::rotateOverLane(rot);
-    // scale
-    glScaled(exaggeration, exaggeration, 1);
-    // set drawing mode
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    // set color
-    const RGBColor color = drawUsingSelectColor() ? s.colorSettings.selectedAdditionalColor : s.additionalSettings.calibratorColor;
-    // avoid draw invisible elements
-    if (color.alpha() != 0) {
-        GLHelper::setColor(color);
+GNECalibrator::drawCalibratorSymbol(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d, const double exaggeration,
+                                    const Position& pos, const double rot) const {
+    // draw geometry only if we'rent in drawForObjectUnderCursor mode
+    if (!s.drawForViewObjectsHandler) {
+        // push layer matrix
+        GLHelper::pushMatrix();
+        // translate to front
+        myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_CALIBRATOR);
+        // translate to position
+        glTranslated(pos.x(), pos.y(), 0);
+        // rotate over lane
+        GUIGeometry::rotateOverLane(rot);
+        // scale
+        glScaled(exaggeration, exaggeration, 1);
+        // set drawing mode
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        // set color
+        GLHelper::setColor(drawUsingSelectColor() ? s.colorSettings.selectedAdditionalColor : s.additionalSettings.calibratorColor);
         // base
         glBegin(GL_TRIANGLES);
         glVertex2d(0 - s.additionalSettings.calibratorWidth, 0);
@@ -466,7 +476,7 @@ GNECalibrator::drawCalibratorSymbol(const GUIVisualizationSettings& s, const dou
         glVertex2d(0 + s.additionalSettings.calibratorWidth, s.additionalSettings.calibratorHeight);
         glEnd();
         // draw text if isn't being drawn for selecting
-        if (!s.drawForRectangleSelection && !s.drawForPositionSelection && s.drawDetail(s.detailSettings.calibratorText, exaggeration)) {
+        if (d <= GUIVisualizationSettings::Detail::Text) {
             // set color depending of selection status
             RGBColor textColor = drawUsingSelectColor() ? s.colorSettings.selectionColor : RGBColor::BLACK;
             // draw "C"
@@ -482,36 +492,12 @@ GNECalibrator::drawCalibratorSymbol(const GUIVisualizationSettings& s, const dou
         }
         // pop layer matrix
         GLHelper::popMatrix();
-        // pop name
-        GLHelper::popName();
+        // draw dotted contour
+        myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
     }
-    // check if mouse is over element
-    mouseWithinGeometry(pos, s.additionalSettings.calibratorWidth,
-                        s.additionalSettings.calibratorHeight * 0.5, 0, s.additionalSettings.calibratorHeight * 0.5, rot);
-    // inspect element
-    if (myNet->getViewNet()->isAttributeCarrierInspected(this)) {
-        GUIDottedGeometry::drawDottedSquaredShape(s, GUIDottedGeometry::DottedContourType::INSPECT, pos,
-                s.additionalSettings.calibratorWidth, s.additionalSettings.calibratorHeight * 0.5,
-                0, s.additionalSettings.calibratorHeight * 0.5, rot, exaggeration);
-    }
-    // front element
-    if (myNet->getViewNet()->getFrontAttributeCarrier() == this) {
-        GUIDottedGeometry::drawDottedSquaredShape(s, GUIDottedGeometry::DottedContourType::FRONT, pos,
-                s.additionalSettings.calibratorWidth, s.additionalSettings.calibratorHeight * 0.5,
-                0, s.additionalSettings.calibratorHeight * 0.5, rot, exaggeration);
-    }
-    // delete contour
-    if (myNet->getViewNet()->drawDeleteContour(this, this)) {
-        GUIDottedGeometry::drawDottedSquaredShape(s, GUIDottedGeometry::DottedContourType::REMOVE, pos,
-                s.additionalSettings.calibratorWidth, s.additionalSettings.calibratorHeight * 0.5,
-                0, s.additionalSettings.calibratorHeight * 0.5, rot, exaggeration);
-    }
-    // select contour
-    if (myNet->getViewNet()->drawSelectContour(this, this)) {
-        GUIDottedGeometry::drawDottedSquaredShape(s, GUIDottedGeometry::DottedContourType::SELECT, pos,
-                s.additionalSettings.calibratorWidth, s.additionalSettings.calibratorHeight * 0.5,
-                0, s.additionalSettings.calibratorHeight * 0.5, rot, exaggeration);
-    }
+    // draw dotted contour
+    myAdditionalContour.calculateContourRectangleShape(s, d, this, pos, s.additionalSettings.calibratorWidth,
+            s.additionalSettings.calibratorHeight * 0.5, 0, 0, rot, exaggeration);
 }
 
 void
@@ -519,7 +505,7 @@ GNECalibrator::setAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_ID:
             // update microsimID
-            setMicrosimID(value);
+            setAdditionalID(value);
             break;
         case SUMO_ATTR_EDGE:
             replaceAdditionalParentEdges(value);

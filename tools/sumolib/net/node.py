@@ -1,5 +1,5 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2011-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -37,6 +37,7 @@ class Node:
         self._shape = None
         self._fringe = None
         self._params = {}
+        self._selected = False
 
     def getID(self):
         return self._id
@@ -132,7 +133,7 @@ class Node:
         if possProhibitorIndex < 0 or possProhibitedIndex < 0:
             return False
         ps = self._prohibits[possProhibitedIndex]
-        return ps[-(possProhibitorIndex - 1)] == '1'
+        return ps[-(possProhibitorIndex + 1)] == '1'
 
     def getCoord(self):
         return tuple(self._coord[:2])
@@ -176,6 +177,12 @@ class Node:
                 conns.extend(outgoing)
         return conns
 
+    def select(self, value=True):
+        self._selected = value
+
+    def isSelected(self):
+        return self._selected
+
     def setParam(self, key, value):
         self._params[key] = value
 
@@ -190,14 +197,23 @@ class Node:
         if incomingNodes:
             edges = self._incoming
             for e in edges:
-                if not (e.getFromNode() in neighboring) and not(e.getFromNode().getID() == self.getID()):
+                if not (e.getFromNode() in neighboring) and not (e.getFromNode().getID() == self.getID()):
                     neighboring.append(e.getFromNode())
         if outgoingNodes:
             edges = self._outgoing
             for e in edges:
-                if not (e.getToNode() in neighboring) and not(e.getToNode().getID() == self.getID()):
+                if not (e.getToNode() in neighboring) and not (e.getToNode().getID() == self.getID()):
                     neighboring.append(e.getToNode())
         return neighboring
 
     def __repr__(self):
         return '<junction id="%s"/>' % self._id
+
+    def getMaxTLLinkIndex(self):
+        idx = []
+        if self.getType() == 'traffic_light':
+            for conn in self.getConnections():
+                idx.append(conn.getTLLinkIndex())
+            return (max(idx))
+        else:
+            return None

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -137,6 +137,16 @@ public:
      */
     double insertionFollowSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel, const MSVehicle* const pred = 0) const;
 
+    /** @brief Computes the vehicle's safe speed for approaching an obstacle at insertion without constraints
+     *         due to acceleration capabilities and previous speeds.
+     * @param[in] veh The vehicle (EGO)
+     * @param[in] speed The vehicle's speed
+     * @param[in] gap The (netto) distance to the the obstacle
+     * @return EGO's safe speed for approaching a non-moving obstacle at insertion
+     * @see stopSpeed() and insertionFollowSpeed()
+     *
+     */
+    double insertionStopSpeed(const MSVehicle* const veh, double speed, double gap) const;
 
     /** @brief Returns the minimum gap to reserve if the leader is braking at maximum (>=0)
      * @param[in] veh The vehicle itself, for obtaining other values
@@ -212,4 +222,3 @@ private:
     /// @brief Invalidated assignment operator
     MSCFModel_IDM& operator=(const MSCFModel_IDM& s);
 };
-

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2023-05-25 14:50:08 by Eclipse SUMO sumo Version v1_17_0+0480-b4173846450
+<!-- generated on 2024-04-12 11:15:26 by Eclipse SUMO sumo Version v1_19_0+1803-069e576fb4d
 -->
 
 <xsd:schema elementFormDefault="qualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
@@ -31,6 +31,7 @@
             <xsd:element name="tripinfo_device" type="tripinfo_deviceTopicType" minOccurs="0"/>
             <xsd:element name="vehroutes_device" type="vehroutes_deviceTopicType" minOccurs="0"/>
             <xsd:element name="friction_device" type="friction_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="fcd_replay_device" type="fcd_replay_deviceTopicType" minOccurs="0"/>
             <xsd:element name="traci_server" type="traci_serverTopicType" minOccurs="0"/>
             <xsd:element name="mesoscopic" type="mesoscopicTopicType" minOccurs="0"/>
             <xsd:element name="random_number" type="random_numberTopicType" minOccurs="0"/>
@@ -216,8 +217,9 @@
             <xsd:element name="pedestrian.striping.reserve-oncoming.max" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="pedestrian.striping.legacy-departposlat" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="pedestrian.striping.walkingarea-detail" type="intOptionType" minOccurs="0"/>
-            <xsd:element name="pedestrian.remote.address" type="strOptionType" minOccurs="0"/>
             <xsd:element name="ride.stop-tolerance" type="floatOptionType" minOccurs="0"/>
+            <xsd:element name="mapmatch.distance" type="floatOptionType" minOccurs="0"/>
+            <xsd:element name="mapmatch.junctions" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="persontrip.walk-opposite-factor" type="floatOptionType" minOccurs="0"/>
         </xsd:all>
     </xsd:complexType>
@@ -249,6 +251,7 @@
             <xsd:element name="device.rerouting.adaptation-steps" type="intOptionType" minOccurs="0"/>
             <xsd:element name="device.rerouting.adaptation-interval" type="timeOptionType" minOccurs="0"/>
             <xsd:element name="device.rerouting.with-taz" type="boolOptionType" minOccurs="0"/>
+            <xsd:element name="device.rerouting.mode" type="strOptionType" minOccurs="0"/>
             <xsd:element name="device.rerouting.init-with-loaded-weights" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="device.rerouting.threads" type="intOptionType" minOccurs="0"/>
             <xsd:element name="device.rerouting.synchronize" type="boolOptionType" minOccurs="0"/>
@@ -276,6 +279,8 @@
             <xsd:element name="log" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="message-log" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="error-log" type="fileOptionType" minOccurs="0"/>
+            <xsd:element name="log.timestamps" type="boolOptionType" minOccurs="0"/>
+            <xsd:element name="log.processid" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="language" type="strOptionType" minOccurs="0"/>
             <xsd:element name="duration-log.disable" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="duration-log.statistics" type="boolOptionType" minOccurs="0"/>
@@ -357,10 +362,12 @@
             <xsd:element name="device.ssm.trajectories" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="device.ssm.range" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.ssm.extratime" type="floatOptionType" minOccurs="0"/>
+            <xsd:element name="device.ssm.mdrac.prt" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.ssm.file" type="strOptionType" minOccurs="0"/>
             <xsd:element name="device.ssm.geo" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="device.ssm.write-positions" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="device.ssm.write-lane-positions" type="boolOptionType" minOccurs="0"/>
+            <xsd:element name="device.ssm.exclude-conflict-types" type="strOptionType" minOccurs="0"/>
         </xsd:all>
     </xsd:complexType>
 
@@ -415,6 +422,7 @@
             <xsd:element name="device.bluelight.explicit" type="strArrayOptionType" minOccurs="0"/>
             <xsd:element name="device.bluelight.deterministic" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="device.bluelight.reactiondist" type="floatOptionType" minOccurs="0"/>
+            <xsd:element name="device.bluelight.mingapfactor" type="floatOptionType" minOccurs="0"/>
         </xsd:all>
     </xsd:complexType>
 
@@ -492,6 +500,15 @@
         </xsd:all>
     </xsd:complexType>
 
+    <xsd:complexType name="fcd_replay_deviceTopicType">
+        <xsd:all>
+            <xsd:element name="device.fcd-replay.probability" type="floatOptionType" minOccurs="0"/>
+            <xsd:element name="device.fcd-replay.explicit" type="strArrayOptionType" minOccurs="0"/>
+            <xsd:element name="device.fcd-replay.deterministic" type="boolOptionType" minOccurs="0"/>
+            <xsd:element name="device.fcd-replay.file" type="fileOptionType" minOccurs="0"/>
+        </xsd:all>
+    </xsd:complexType>
+
     <xsd:complexType name="traci_serverTopicType">
         <xsd:all>
             <xsd:element name="remote-port" type="intOptionType" minOccurs="0"/>
@@ -546,7 +563,6 @@
             <xsd:element name="window-size" type="strArrayOptionType" minOccurs="0"/>
             <xsd:element name="window-pos" type="strArrayOptionType" minOccurs="0"/>
             <xsd:element name="tracker-interval" type="timeOptionType" minOccurs="0"/>
-            <xsd:element name="osg-view" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="gui-testing" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="gui-testing-debug" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="gui-testing.setting-output" type="fileOptionType" minOccurs="0"/>

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2013-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -183,10 +183,11 @@ PollutantsInterface::Helper::compute(const SUMOEmissionClass c, const EmissionTy
 
 
 double
-PollutantsInterface::Helper::getModifiedAccel(const SUMOEmissionClass c, const double v, const double a, const double slope) const {
+PollutantsInterface::Helper::getModifiedAccel(const SUMOEmissionClass c, const double v, const double a, const double slope, const EnergyParams* param) const {
     UNUSED_PARAMETER(c);
     UNUSED_PARAMETER(v);
     UNUSED_PARAMETER(slope);
+    UNUSED_PARAMETER(param);
     return a;
 }
 
@@ -372,8 +373,8 @@ PollutantsInterface::computeDefault(const SUMOEmissionClass c, const EmissionTyp
 
 
 double
-PollutantsInterface::getModifiedAccel(const SUMOEmissionClass c, const double v, const double a, const double slope) {
-    return myHelpers[c >> 16]->getModifiedAccel(c, v, a, slope);
+PollutantsInterface::getModifiedAccel(const SUMOEmissionClass c, const double v, const double a, const double slope, const EnergyParams* param) {
+    return myHelpers[c >> 16]->getModifiedAccel(c, v, a, slope, param);
 }
 
 

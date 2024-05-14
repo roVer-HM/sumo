@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -112,11 +112,11 @@ void
 RODUAFrame::addDUAOptions() {
     OptionsCont& oc = OptionsCont::getOptions();
     // register Gawron's DUE-settings
-    oc.doRegister("gawron.beta", new Option_Float(double(0.3)));
+    oc.doRegister("gawron.beta", new Option_Float(double(0.9)));
     oc.addSynonyme("gawron.beta", "gBeta", true);
     oc.addDescription("gawron.beta", "Processing", TL("Use FLOAT as Gawron's beta"));
 
-    oc.doRegister("gawron.a", new Option_Float(double(0.05)));
+    oc.doRegister("gawron.a", new Option_Float(double(0.5)));
     oc.addSynonyme("gawron.a", "gA", true);
     oc.addDescription("gawron.a", "Processing", TL("Use FLOAT as Gawron's a"));
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -168,6 +168,10 @@ NIFrame::fillOptions(OptionsCont& oc, bool forNetedit) {
     oc.doRegister("ignore-change-restrictions", new Option_StringVector(StringVector({"authority"})));
     oc.addDescription("ignore-change-restrictions", "Formats", TL("List vehicle classes that may ignore lane changing restrictions ('all' discards all restrictions)"));
 
+    oc.doRegister("ignore-widths", new Option_Bool(false));
+    oc.addSynonyme("ignore-widths", "opendrive.ignore-widths", false);
+    oc.addDescription("ignore-widths", "Formats", TL("Whether lane widths shall be ignored."));
+
     // register xml options
     oc.doRegister("plain.extend-edge-shape", new Option_Bool(false));
     oc.addSynonyme("plain.extend-edge-shape", "xml.keep-shape", true);
@@ -184,7 +188,7 @@ NIFrame::fillOptions(OptionsCont& oc, bool forNetedit) {
     oc.addDescription("osm.layer-elevation", "Formats", TL("Reconstruct (relative) elevation based on layer data. Each layer is raised by FLOAT m"));
 
     oc.doRegister("osm.layer-elevation.max-grade", new Option_Float(10));
-    oc.addDescription("osm.layer-elevation.max-grade", "Formats", TL("Maximum grade threshold in % at 50km/h when reconstrucing elevation based on layer data. The value is scaled according to road speed."));
+    oc.addDescription("osm.layer-elevation.max-grade", "Formats", TL("Maximum grade threshold in % at 50km/h when reconstructing elevation based on layer data. The value is scaled according to road speed."));
 
     oc.doRegister("osm.oneway-spread-right", new Option_Bool(false));
     oc.addDescription("osm.oneway-spread-right", "Formats", TL("Whether one-way roads should be spread to the side instead of centered"));
@@ -213,6 +217,9 @@ NIFrame::fillOptions(OptionsCont& oc, bool forNetedit) {
     oc.addDescription("osm.stop-output.length.tram", "Formats", TL("The default length of a tram stop in FLOAT m"));
     oc.doRegister("osm.stop-output.length.train", new Option_Float(200));
     oc.addDescription("osm.stop-output.length.train", "Formats", TL("The default length of a train stop in FLOAT m"));
+
+    oc.doRegister("osm.railsignals", new Option_StringVector(StringVector({ "DEFAULT"})));
+    oc.addDescription("osm.railsignals", "Formats", TL("Specify custom rules for importing railway signals"));
 
     oc.doRegister("osm.all-attributes", new Option_Bool(false));
     oc.addSynonyme("osm.all-attributes", "osm.all-tags");
@@ -350,8 +357,6 @@ NIFrame::fillOptions(OptionsCont& oc, bool forNetedit) {
     // register opendrive options
     oc.doRegister("opendrive.import-all-lanes", new Option_Bool(false));
     oc.addDescription("opendrive.import-all-lanes", "Formats", TL("Imports all lane types"));
-    oc.doRegister("opendrive.ignore-widths", new Option_Bool(false));
-    oc.addDescription("opendrive.ignore-widths", "Formats", TL("Whether lane widths shall be ignored."));
     oc.doRegister("opendrive.curve-resolution", new Option_Float(2.0));
     oc.addDescription("opendrive.curve-resolution", "Formats", TL("The geometry resolution in m when importing curved geometries as line segments."));
     oc.doRegister("opendrive.advance-stopline", new Option_Float(0.0));
@@ -364,13 +369,17 @@ NIFrame::fillOptions(OptionsCont& oc, bool forNetedit) {
     oc.addDescription("opendrive.position-ids", "Formats", TL("Sets edge-id based on road-id and offset in m (legacy)"));
     oc.doRegister("opendrive.lane-shapes", new Option_Bool(false));
     oc.addDescription("opendrive.lane-shapes", "Formats", TL("Use custom lane shapes to compensate discarded lane types"));
+    oc.doRegister("opendrive.signal-groups", new Option_Bool(false));
+    oc.addDescription("opendrive.signal-groups", "Formats", TL("Use the OpenDRIVE controller information for the generated signal program"));
+    oc.doRegister("opendrive.ignore-misplaced-signals", new Option_Bool(false));
+    oc.addDescription("opendrive.ignore-misplaced-signals", "Formats", TL("Ignore traffic signals which do not control any driving lane"));
 
     // register some additional options
     oc.doRegister("tls.discard-loaded", new Option_Bool(false));
-    oc.addDescription("tls.discard-loaded", "TLS Building", "Does not instatiate traffic lights loaded from other formats than plain-XML");
+    oc.addDescription("tls.discard-loaded", "TLS Building", "Does not instantiate traffic lights loaded from other formats than plain-XML");
 
     oc.doRegister("tls.discard-simple", new Option_Bool(false));
-    oc.addDescription("tls.discard-simple", "TLS Building", "Does not instatiate traffic lights at geometry-like nodes loaded from other formats than plain-XML");
+    oc.addDescription("tls.discard-simple", "TLS Building", "Does not instantiate traffic lights at geometry-like nodes loaded from other formats than plain-XML");
 
     // register railway options
     oc.doRegister("railway.signals.discard", new Option_Bool(false));
@@ -455,6 +464,10 @@ NIFrame::checkOptions(OptionsCont& oc) {
     if (oc.getBool("osm.crossings") && !oc.getBool("osm.sidewalks")) {
         WRITE_WARNING(TL("It is recommend to use option osm.crossings with osm.sidewalks"));
     }
+    if (oc.isSet("shapefile-prefix") && !oc.isDefault("shapefile.name")) {
+        oc.setDefault("output.street-names", "true");
+    }
+
     return ok;
 }
 

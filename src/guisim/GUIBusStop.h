@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -25,15 +25,16 @@
 
 #include <vector>
 #include <string>
+#include <microsim/MSStoppingPlace.h>
 #include <utils/common/Command.h>
 #include <utils/common/VectorHelper.h>
 #include <utils/common/RGBColor.h>
 #include <utils/geom/PositionVector.h>
-#include <microsim/MSStoppingPlace.h>
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <utils/gui/globjects/GUIGlObject_AbstractAdd.h>
 #include <utils/gui/globjects/GUIGLObjectPopupMenu.h>
 #include <utils/geom/Position.h>
+#include <utils/xml/SUMOXMLDefinitions.h>
 #include <gui/GUIManipulator.h>
 
 
@@ -81,7 +82,7 @@ public:
 
 
     /// @brief adds an access point to this stop
-    bool addAccess(MSLane* lane, const double pos, double length);
+    bool addAccess(MSLane* const lane, const double startPos, const double endPos, double length, const bool doors);
 
     /// @name inherited from GUIGlObject
     //@{
@@ -120,6 +121,9 @@ public:
 
     /// @brief Returns the street name
     const std::string getOptionalName() const;
+
+    /// @brief Formats the last free pos value
+    double getCroppedLastFreePos() const;
 
     /** @brief Draws the object
      * @param[in] s The settings for the current view (may influence drawing)

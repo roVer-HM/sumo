@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -73,11 +73,40 @@ public:
     /// @brief get GUIGlObject associated with this AttributeCarrier
     GUIGlObject* getGUIGlObject();
 
+    /// @brief get GUIGlObject associated with this AttributeCarrier (constant)
+    const GUIGlObject* getGUIGlObject() const;
+
     /// @brief update pre-computed geometry information
     void updateGeometry();
 
     /// @brief Returns element position in view
     Position getPositionInView() const;
+
+    /// @name Function related with contour drawing
+    /// @{
+
+    /// @brief check if draw from contour (green)
+    bool checkDrawFromContour() const;
+
+    /// @brief check if draw from contour (magenta)
+    bool checkDrawToContour() const;
+
+    /// @brief check if draw related contour (cyan)
+    bool checkDrawRelatedContour() const;
+
+    /// @brief check if draw over contour (orange)
+    bool checkDrawOverContour() const;
+
+    /// @brief check if draw delete contour (pink/white)
+    bool checkDrawDeleteContour() const;
+
+    /// @brief check if draw select contour (blue)
+    bool checkDrawSelectContour() const;
+
+    /// @brief check if draw move contour (red)
+    bool checkDrawMoveContour() const;
+
+    /// @}
 
     /// @name members and functions relative to write data elements into XML
     /// @{
@@ -108,6 +137,9 @@ public:
 
     /// @brief get generic data children
     const std::vector<GNEGenericData*>& getGenericDataChildren() const;
+
+    /// @brief check if there is already a edgeRel defined between two edges
+    bool edgeRelExists(const GNEEdge* fromEdge, const GNEEdge* toEdge) const;
 
     /// @brief check if there is already a TAZRel defined in one TAZ
     bool TAZRelExists(const GNEAdditional* TAZ) const;
@@ -191,4 +223,3 @@ private:
 };
 
 /****************************************************************************/
-

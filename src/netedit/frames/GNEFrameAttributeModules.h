@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -36,6 +36,8 @@
 class GNEFrame;
 class GNEViewParent;
 class GNEFlowEditor;
+class GNEInspectorFrame;
+class GNETypeFrame;
 
 // ===========================================================================
 // class definitions
@@ -68,7 +70,7 @@ public:
         void destroy();
 
         /// @brief refresh current row
-        void refreshAttributesEditorRow(const std::string& value, const bool forceRefresh, const bool attributeEnabled, const bool computed, GNEAttributeCarrier* ACParent);
+        void refreshAttributesEditorRow(const std::string& value, const bool forceRefreshAttribute, const bool attributeEnabled, const bool computed, GNEAttributeCarrier* ACParent);
 
         /// @brief check if current attribute of TextField/ComboBox is valid
         bool isAttributesEditorRowValid() const;
@@ -82,11 +84,21 @@ public:
         /// @brief called when user press a check button
         long onCmdSelectCheckButton(FXObject*, FXSelector, void*);
 
-        /// @brief open model dialog for more comfortable attribute editing
-        long onCmdOpenAttributeDialog(FXObject*, FXSelector, void*);
+        /// @brief open model dialog for edit color
+        long onCmdOpenColorDialog(FXObject*, FXSelector, void*);
+
+        /// @brief open model dialog for edit allow
+        long onCmdOpenAllowDialog(FXObject*, FXSelector, void*);
+
+        /// @brief inspect parent
+        long onCmdInspectParent(FXObject*, FXSelector, void*);
 
         /// @brief inspect vType/VTypeDistribution parent
-        long onCmdInspectVTypeParent(FXObject*, FXSelector, void*);
+        long onCmdMoveElementLaneUp(FXObject*, FXSelector, void*);
+
+        /// @brief inspect vType/VTypeDistribution parent
+        long onCmdMoveElementLaneDown(FXObject*, FXSelector, void*);
+
         /// @}
 
     protected:
@@ -113,25 +125,49 @@ public:
         FXCheckButton* myAttributeCheckButton = nullptr;
 
         /// @brief pointer to attributeAllowButton
-        MFXButtonTooltip* myAttributeAllowButton = nullptr;
-
-        /// @brief Button for open color editor
-        MFXButtonTooltip* myAttributeColorButton = nullptr;
-
-        /// @brief Button for inspect Vtype/VtypeDistribution parent
-        MFXButtonTooltip* myAttributeVTypeButton = nullptr;
+        MFXButtonTooltip* myAttributeButton = nullptr;
 
         /// @brief textField to modify the value of string attributes
         MFXTextFieldTooltip* myValueTextField = nullptr;
 
         /// @brief pointer to combo box choices
-        MFXComboBoxIcon* myValueChoicesComboBox = nullptr;
+        MFXComboBoxIcon* myValueComboBox = nullptr;
 
         /// @brief pointer to menu check
         FXCheckButton* myValueCheckButton = nullptr;
 
+        /// @brief Button for move lane up
+        MFXButtonTooltip* myValueLaneUpButton = nullptr;
+
+        /// @brief Button for move lane down
+        MFXButtonTooltip* myValueLaneDownButton = nullptr;
+
         /// @brief pointer to AC Parent
         GNEAttributeCarrier* myACParent = nullptr;
+
+        /// @brief build Attribute elements
+        void buildAttributeElements(const bool attributeEnabled, const bool computed);
+
+        /// @brief build value elements();
+        void buildValueElements(const bool attributeEnabled, const bool computed);
+
+        /// @brief refresh Attribute elements
+        void refreshAttributeElements(const std::string& value, const bool attributeEnabled, const bool computed);
+
+        /// @brief build value elements();
+        void refreshValueElements(const std::string& value,  const bool attributeEnabled, const bool computed, const bool forceRefreshAttribute);
+
+        /// @brief fill comboBox with discrete values
+        void fillComboBox(const std::string& value);
+
+        /// @brief update move lane buttons
+        void updateMoveLaneButtons(const std::string& value);
+
+        /// @brief Invalidated copy constructor.
+        AttributesEditorRow(AttributesEditorRow*) = delete;
+
+        /// @brief Invalidated assignment operator.
+        AttributesEditorRow& operator=(AttributesEditorRow*) = delete;
     };
 
     // ===========================================================================
@@ -147,7 +183,7 @@ public:
         AttributesEditor(GNEFrame* inspectorFrameParent);
 
         /// @brief show attributes of multiple ACs
-        void showAttributeEditorModule(bool includeExtended, bool forceAttributeEnabled);
+        void showAttributeEditorModule(bool includeExtended);
 
         /// @brief hide attribute editor
         void hideAttributesEditorModule();
@@ -280,6 +316,69 @@ public:
 
         /// @brief pointer to current map of parameters
         Parameterised::Map myParameters;
+
+        /// @brief text field for write parameters
+        FXTextField* myTextFieldParameters = nullptr;
+
+        /// @brief button for edit parameters using specific dialog
+        FXButton* myButtonEditParameters = nullptr;
+    };
+
+    // ===========================================================================
+    // class ParametersEditor
+    // ===========================================================================
+
+    class ParametersEditor : public MFXGroupBoxModule {
+        /// @brief FOX-declaration
+        FXDECLARE(GNEFrameAttributeModules::ParametersEditor)
+
+    public:
+        /// @brief constructor for inspector frame
+        ParametersEditor(GNEInspectorFrame* inspectorFrameParent);
+
+        /// @brief constructor for type frame
+        ParametersEditor(GNETypeFrame* typeFrameParent);
+
+        /// @brief destructor
+        ~ParametersEditor();
+
+        /// @get viewNet
+        GNEViewNet* getViewNet() const;
+
+        /// @brief show netedit attributes EditorInspector
+        void showParametersEditor();
+
+        /// @brief hide netedit attributes EditorInspector
+        void hideParametersEditor();
+
+        /// @brief refresh netedit attributes
+        void refreshParametersEditor();
+
+        /// @brief get inspector frame parent
+        GNEInspectorFrame* getInspectorFrameParent() const;
+
+        /// @brief get type frame parent
+        GNETypeFrame* getTypeFrameParent() const;
+
+        /// @name FOX-callbacks
+        /// @{
+        /// @brief Called when user clicks over add parameter
+        long onCmdEditParameters(FXObject*, FXSelector, void*);
+
+        /// @brief Called when user udpate the parameter text field
+        long onCmdSetParameters(FXObject*, FXSelector, void*);
+        /// @}
+
+    protected:
+        /// @brief FOX need this
+        FOX_CONSTRUCTOR(ParametersEditor)
+
+    private:
+        /// @brief inspector frame parent
+        GNEInspectorFrame* myInspectorFrameParent = nullptr;
+
+        /// @brief type frame parent
+        GNETypeFrame* myTypeFrameParent = nullptr;
 
         /// @brief text field for write parameters
         FXTextField* myTextFieldParameters = nullptr;

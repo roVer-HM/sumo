@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2008-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -141,7 +141,7 @@ parser.add_argument("-F", "--weight-files", dest="weightfiles", type=parser.file
                     help="Load edge/lane weights from FILE", metavar="FILE")
 parser.add_argument("-A", "--routing-algorithm", dest="routingalgorithm", type=str,
                     choices=('dijkstra', 'astar'),
-                    default="astar", help="type of routing algorithm [default: %default]")
+                    default="astar", help="type of routing algorithm [default: %(default)s]")
 parser.add_argument("-r", "--rerouting-explicit", dest="reroutingexplicit", type=str,
                     default="", help="define the ids of the vehicles that should be re-routed.")
 parser.add_argument("-x", "--with-exittime", action="store_true", dest="withexittime",

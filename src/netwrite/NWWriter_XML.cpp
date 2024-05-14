@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -152,7 +152,7 @@ NWWriter_XML::writeNodes(const OptionsCont& oc, const std::string& prefix, NBNod
         if (n->getRadius() != NBNode::UNSPECIFIED_RADIUS) {
             device.writeAttr(SUMO_ATTR_RADIUS, n->getRadius());
         }
-        if (n->getKeepClear() == false) {
+        if (!n->getKeepClear()) {
             device.writeAttr<bool>(SUMO_ATTR_KEEP_CLEAR, n->getKeepClear());
         }
         if (n->getRightOfWay() != RightOfWay::DEFAULT) {
@@ -365,6 +365,10 @@ NWWriter_XML::writeEdgesAndConnections(const OptionsCont& oc, const std::string&
             if (c->customShape.size() != 0) {
                 writeShape(cdevice, gch, c->customShape, SUMO_ATTR_SHAPE, useGeo, geoAccuracy);
             }
+            if (c->outlineShape.size() != 0) {
+                writeShape(cdevice, gch, c->outlineShape, SUMO_ATTR_OUTLINESHAPE, useGeo, geoAccuracy);
+            }
+            c->writeParams(cdevice);
             cdevice.closeTag();
         }
     }

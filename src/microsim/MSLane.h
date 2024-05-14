@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -225,7 +225,8 @@ public:
            SVCPermissions permissions,
            SVCPermissions changeLeft, SVCPermissions changeRight,
            int index, bool isRampAccel,
-           const std::string& type);
+           const std::string& type,
+           const PositionVector& outlineShape);
 
 
     /// @brief Destructor
@@ -566,7 +567,11 @@ public:
         if (myRestrictions != nullptr) {
             std::map<SUMOVehicleClass, double>::const_iterator r = myRestrictions->find(veh->getVClass());
             if (r != myRestrictions->end()) {
-                return MIN2(veh->getMaxSpeed(), r->second * veh->getChosenSpeedFactor());
+                if (mySpeedByVSS || mySpeedByTraCI) {
+                    return MIN2(myMaxSpeed, MIN2(veh->getMaxSpeed(), r->second * veh->getChosenSpeedFactor()));
+                } else {
+                    return MIN2(veh->getMaxSpeed(), r->second * veh->getChosenSpeedFactor());
+                }
             }
         }
         return MIN2(veh->getMaxSpeed(), myMaxSpeed * veh->getChosenSpeedFactor());
@@ -679,6 +684,10 @@ public:
     /// Insert buffered vehicle into the real lane.
     virtual void integrateNewVehicles();
 
+    /** @brief Set a flag to recalculate the brutto (including minGaps) occupancy of this lane (used if mingap is changed)
+     */
+    void markRecalculateBruttoSum();
+
     /// @brief updated current vehicle length sum (delayed to avoid lane-order-dependency)
     void updateLengthSum();
     ///@}
@@ -726,8 +735,10 @@ public:
 
     /** @brief Sets a new maximum speed for the lane (used by TraCI and MSCalibrator)
      * @param[in] val the new speed in m/s
+     * @param[in] whether a variable speed sign (VSS) imposes the speed limit
+     * @param[in] whether TraCI imposes the speed limit
      */
-    void setMaxSpeed(double val);
+    void setMaxSpeed(double val, bool byVSS = false, bool byTraCI = false, double jamThreshold = -1);
 
     /** @brief Sets a new friction coefficient for the lane [*to be later (used by TraCI and MSCalibrator)*]
     * @param[in] val the new friction coefficient [0..1]
@@ -856,8 +867,14 @@ public:
     /** Returns whether the lane pertains to a crossing edge*/
     bool isCrossing() const;
 
+    /** Returns whether the lane pertains to a walkingarea*/
+    bool isWalkingArea() const;
+
     /// @brief returns the last vehicle for which this lane is responsible or 0
     MSVehicle* getLastFullVehicle() const;
+
+    /// @brief returns the first vehicle for which this lane is responsible or 0
+    MSVehicle* getFirstFullVehicle() const;
 
     /// @brief returns the last vehicle that is fully or partially on this lane
     MSVehicle* getLastAnyVehicle() const;
@@ -900,6 +917,8 @@ public:
     inline bool allowsVehicleClass(SUMOVehicleClass vclass) const {
         return (myPermissions & vclass) == vclass;
     }
+
+    bool allowsVehicleClass(SUMOVehicleClass vclass, int routingMode) const;
 
     /** @brief Returns whether the given vehicle class may change left from this lane */
     inline bool allowsChangingLeft(SUMOVehicleClass vclass) const {
@@ -1195,13 +1214,13 @@ public:
      * @param[in] ego The ego vehicle
      * @param[in] dist The look-ahead distance when looking at consecutive lanes
      * @param[in] oppositeDir Whether the lane has the opposite driving direction of ego
-     * @return the leader vehicle and it's gap to ego
+     * @return the leader vehicle and its gap to ego
      */
     std::pair<MSVehicle* const, double> getOppositeLeader(const MSVehicle* ego, double dist, bool oppositeDir, MinorLinkMode mLinkMode = MinorLinkMode::FOLLOW_NEVER) const;
 
     /* @brief find follower for a vehicle that is located on the opposite of this lane
      * @param[in] ego The ego vehicle
-     * @return the follower vehicle and it's gap to ego
+     * @return the follower vehicle and its gap to ego
      */
     std::pair<MSVehicle* const, double> getOppositeFollower(const MSVehicle* ego) const;
 
@@ -1211,7 +1230,7 @@ public:
      * @param[in] egoPos The ego position mapped to the current lane
      * @param[in] dist The look-back distance when looking at consecutive lanes
      * @param[in] ignoreMinorLinks Whether backward search should stop at minor links
-     * @return the follower vehicle and it's gap to ego
+     * @return the follower vehicle and its gap to ego
      */
     std::pair<MSVehicle* const, double> getFollower(const MSVehicle* ego, double egoPos, double dist, MinorLinkMode mLinkMode) const;
 
@@ -1320,8 +1339,12 @@ public:
     /// @brief compute maximum braking distance on this lane
     double getMaximumBrakeDist() const;
 
+    inline const PositionVector* getOutlineShape() const {
+        return myOutlineShape;
+    }
+
     static void initCollisionOptions(const OptionsCont& oc);
-    static void initCollisionAction(const OptionsCont& oc, const std::string& option, CollisionAction& myAction); 
+    static void initCollisionAction(const OptionsCont& oc, const std::string& option, CollisionAction& myAction);
 
     static CollisionAction getCollisionAction() {
         return myCollisionAction;
@@ -1371,9 +1394,9 @@ protected:
                                 std::set<const MSVehicle*, ComparatorNumericalIdLess>& toTeleport) const;
 
     void handleIntermodalCollisionBetween(SUMOTime timestep, const std::string& stage, const MSVehicle* collider, const MSTransportable* victim,
-                                double gap, const std::string& collisionType,
-                                std::set<const MSVehicle*, ComparatorNumericalIdLess>& toRemove,
-                                std::set<const MSVehicle*, ComparatorNumericalIdLess>& toTeleport) const;
+                                          double gap, const std::string& collisionType,
+                                          std::set<const MSVehicle*, ComparatorNumericalIdLess>& toRemove,
+                                          std::set<const MSVehicle*, ComparatorNumericalIdLess>& toTeleport) const;
 
     /* @brief determine depart speed and whether it may be patched
      * @param[in] veh The departing vehicle
@@ -1406,6 +1429,9 @@ protected:
 
     /// The shape of the lane
     PositionVector myShape;
+
+    /// @brief the outline of the lane (optional)
+    PositionVector* myOutlineShape = nullptr;
 
     /// The lane index
     int myIndex;
@@ -1470,10 +1496,16 @@ protected:
     /// The lane's edge, for routing only.
     MSEdge* const myEdge;
 
-    /// Lane-wide speedlimit [m/s]
+    /// Lane-wide speed limit [m/s]
     double myMaxSpeed;
     /// Lane-wide friction coefficient [0..1]
     double myFrictionCoefficient;
+
+    /// @brief Whether the current speed limit is set by a variable speed sign (VSS)
+    bool mySpeedByVSS;
+
+    /// @brief Whether the current speed limit has been set through TraCI
+    bool mySpeedByTraCI;
 
     /// The vClass permissions for this lane
     SVCPermissions myPermissions;
@@ -1512,7 +1544,10 @@ protected:
     /// @brief The length of all vehicles that have left this lane in the current step (this lane, excluding their minGaps)
     double myNettoVehicleLengthSumToRemove;
 
-    /** The lane's Links to it's succeeding lanes and the default
+    /// @brief Flag to recalculate the occupancy (including minGaps) after a change in minGap
+    bool myRecalculateBruttoSum;
+
+    /** The lane's Links to its succeeding lanes and the default
         right-of-way rule, i.e. blocked or not blocked. */
     std::vector<MSLink*> myLinks;
 

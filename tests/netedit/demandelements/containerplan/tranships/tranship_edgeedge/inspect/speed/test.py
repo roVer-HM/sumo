@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,10 +35,10 @@ netedit.supermodeDemand()
 netedit.containerMode()
 
 # change container plan
-netedit.changeContainerPlan("tranship: edge->edge", False)
+netedit.changeContainerPlan("tranship", False)
 
-# create route using two one
-netedit.leftClick(referencePosition, 274, 400)
+# create route using one edge
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
 
 # press enter to create route
 netedit.typeEnter()
@@ -46,14 +46,11 @@ netedit.typeEnter()
 # go to transhipEdgeEdge mode
 netedit.containerPlanMode()
 
-# select container
-netedit.leftClick(referencePosition, 80, 410)
-
 # go to transhipEdgeEdge mode
-netedit.changeContainerPlanMode("tranship: edge->edge")
+netedit.changeContainerPlanMode("tranship")
 
 # create transhipEdgeEdge
-netedit.leftClick(referencePosition, 180, 55)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x, netedit.positions.demandElements.edge2.y)
 
 # press enter to create route
 netedit.typeEnter()
@@ -62,7 +59,8 @@ netedit.typeEnter()
 netedit.inspectMode()
 
 # inspect transhipEdgeEdge
-netedit.leftClick(referencePosition, 430, 58)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.containerPlanEdge.x,
+                  netedit.positions.demandElements.containerPlanEdge.y)
 
 # change depart with an invalid value
 netedit.modifyAttribute(netedit.attrs.transhipEdgeEdge.inspect.speed, "dummySpeed", False)
@@ -74,8 +72,7 @@ netedit.modifyAttribute(netedit.attrs.transhipEdgeEdge.inspect.speed, "-7", Fals
 netedit.modifyAttribute(netedit.attrs.transhipEdgeEdge.inspect.speed, "12.34", False)
 
 # Check undo redo
-netedit.undo(referencePosition, 3)
-netedit.redo(referencePosition, 3)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

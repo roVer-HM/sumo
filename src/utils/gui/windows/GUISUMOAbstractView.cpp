@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -251,7 +251,7 @@ GUISUMOAbstractView::updatePositionInformationLabel() const {
     if (GeoConvHelper::getFinal().usingGeoProjection()) {
         myApp->getGeoLabel()->setText(("lat:" + toString(pos.y(), gPrecisionGeo) + ", lon:" + toString(pos.x(), gPrecisionGeo)).c_str());
     } else {
-        myApp->getGeoLabel()->setText(("x:" + toString(pos.x()) + ", y:" + toString(pos.y()) + TL(" (No projection defined)")).c_str());
+        myApp->getGeoLabel()->setText(TL("(No projection defined)"));
     }
     // if enabled, set test position
     if (myApp->getTestFrame()) {
@@ -306,8 +306,6 @@ GUISUMOAbstractView::paintGL() {
     if (getTrackedID() != GUIGlObject::INVALID_ID) {
         centerTo(getTrackedID(), false);
     }
-    // get id tooltip
-    const GUIGlID idToolTip = getObjectUnderCursor();
     // draw
     glClearColor(
         myVisualizationSettings->backgroundColor.red() / 255.f,
@@ -337,7 +335,7 @@ GUISUMOAbstractView::paintGL() {
     }
     // check if show tooltip
     if (myGlChildWindowParent->getGUIMainWindowParent()->getStaticTooltipView()->isStaticToolTipEnabled()) {
-        showToolTipFor(idToolTip);
+        showToolTipFor(getToolTipID());
     } else {
         myGlChildWindowParent->getGUIMainWindowParent()->getStaticTooltipView()->hideStaticToolTip();
     }
@@ -382,6 +380,12 @@ GUISUMOAbstractView::getLaneUnderCursor() {
 
 
 GUIGlID
+GUISUMOAbstractView::getToolTipID() {
+    return getObjectUnderCursor();
+}
+
+
+GUIGlID
 GUISUMOAbstractView::getObjectUnderCursor() {
     return getObjectAtPosition(getPositionInformation());
 }
@@ -391,6 +395,7 @@ std::vector<GUIGlID>
 GUISUMOAbstractView::getObjectsUnderCursor() {
     return getObjectsAtPosition(getPositionInformation(), SENSITIVITY);
 }
+
 
 
 std::vector<GUIGlObject*>
@@ -411,7 +416,7 @@ GUISUMOAbstractView::getObjectAtPosition(Position pos) {
     Boundary positionBoundary;
     positionBoundary.add(pos);
     positionBoundary.grow(SENSITIVITY);
-    const std::vector<GUIGlID> ids = getObjectsInBoundary(positionBoundary, true);
+    const std::vector<GUIGlID> ids = getObjectsInBoundary(positionBoundary);
     // Interpret results
     int idMax = 0;
     double maxLayer = -std::numeric_limits<double>::max();
@@ -450,7 +455,7 @@ GUISUMOAbstractView::getObjectsAtPosition(Position pos, double radius) {
     selection.add(pos);
     selection.grow(radius);
     // obtain GUIGlID of objects in boundary
-    const std::vector<GUIGlID> ids = getObjectsInBoundary(selection, true);
+    const std::vector<GUIGlID> ids = getObjectsInBoundary(selection);
     // iterate over obtained GUIGlIDs
     for (const auto& i : ids) {
         // obtain GUIGlObject
@@ -485,7 +490,7 @@ GUISUMOAbstractView::getGUIGlObjectsAtPosition(Position pos, double radius) {
     selection.add(pos);
     selection.grow(radius);
     // obtain GUIGlID of objects in boundary
-    const std::vector<GUIGlID> ids = getObjectsInBoundary(selection, true);
+    const std::vector<GUIGlID> ids = getObjectsInBoundary(selection);
     // iterate over obtained GUIGlIDs
     for (const auto& i : ids) {
         // obtain GUIGlObject
@@ -507,7 +512,7 @@ GUISUMOAbstractView::getGUIGlObjectsAtPosition(Position pos, double radius) {
 
 
 std::vector<GUIGlID>
-GUISUMOAbstractView::getObjectsInBoundary(Boundary bound, bool singlePosition) {
+GUISUMOAbstractView::getObjectsInBoundary(Boundary bound) {
     const int NB_HITS_MAX = 1024 * 1024;
     // Prepare the selection mode
     static GUIGlID hits[NB_HITS_MAX];
@@ -520,14 +525,9 @@ GUISUMOAbstractView::getObjectsInBoundary(Boundary bound, bool singlePosition) {
     myChanger->setViewport(bound);
     bound = applyGLTransform(false);
     // enable draw for selecting (to draw objects with less details)
-    if (singlePosition) {
-        myVisualizationSettings->drawForPositionSelection = true;
-    } else {
-        myVisualizationSettings->drawForRectangleSelection = true;
-    }
+    myVisualizationSettings->drawForRectangleSelection = true;
     int hits2 = doPaintGL(GL_SELECT, bound);
     // reset flags
-    myVisualizationSettings->drawForPositionSelection = false;
     myVisualizationSettings->drawForRectangleSelection = false;
     // Get the results
     nb_hits = glRenderMode(GL_RENDER);
@@ -552,7 +552,7 @@ GUISUMOAbstractView::getObjectsInBoundary(Boundary bound, bool singlePosition) {
 
 
 std::vector<GUIGlObject*>
-GUISUMOAbstractView::filterInernalLanes(const std::vector<GUIGlObject*>& objects) const {
+GUISUMOAbstractView::filterInternalLanes(const std::vector<GUIGlObject*>& objects) const {
     // count number of internal lanes
     size_t internalLanes = 0;
     for (const auto& object : objects) {
@@ -592,7 +592,7 @@ GUISUMOAbstractView::showToolTipFor(const GUIGlID idToolTip) {
 
 
 void
-GUISUMOAbstractView::paintGLGrid() {
+GUISUMOAbstractView::paintGLGrid() const {
     // obtain minimum grid
     const double minimumSizeGrid = (myVisualizationSettings->gridXSize < myVisualizationSettings->gridYSize) ? myVisualizationSettings->gridXSize : myVisualizationSettings->gridYSize;
     // Check if the distance is enough to draw grid
@@ -830,9 +830,9 @@ GUISUMOAbstractView::displayColorLegend(const GUIColorScheme& scheme, bool leftS
         glTranslated(0, 0, 0.1);
         glBegin(GL_QUADS);
         glVertex2d(textX, topi + fontHeight * bgShift);
-        glVertex2d(textX - textDir * fontWidth * (double)text.size() / 2., topi + fontHeight * bgShift);
-        glVertex2d(textX - textDir * fontWidth * (double)text.size() / 2., topi + fontHeight * (1. + bgShift));
-        glVertex2d(textX, topi + fontHeight * (1. + bgShift));
+        glVertex2d(textX - textDir * fontWidth * (double)text.size() / 2.1, topi + fontHeight * bgShift);
+        glVertex2d(textX - textDir * fontWidth * (double)text.size() / 2.1, topi + fontHeight * (0.8 + bgShift));
+        glVertex2d(textX, topi + fontHeight * (0.8 + bgShift));
         glEnd();
         glTranslated(0, 0, -0.1);
         GLHelper::drawText(text, Position(textX + textDir * textXShift, topi + textShift), 0, fontHeight, RGBColor::BLACK, 0, textAlign, fontWidth);
@@ -842,7 +842,18 @@ GUISUMOAbstractView::displayColorLegend(const GUIColorScheme& scheme, bool leftS
     if (StringUtils::startsWith(name, "by ")) {
         name = name.substr(3);
     }
-    GLHelper::drawText(name, Position(textX + textDir * 0.04, -0.8), 0, fontHeight, RGBColor::BLACK, 0, textAlign, fontWidth);
+    const double topN = -0.8;
+    const double bgShift = 0.0;
+    GLHelper::setColor(RGBColor::WHITE);
+    glTranslated(0, 0, 0.1);
+    glBegin(GL_QUADS);
+    glVertex2d(textX + textDir * 0.04,                                                   topN + fontHeight * bgShift - 0.01);
+    glVertex2d(textX + textDir * 0.04 - textDir * fontWidth * (double)name.size() / 2.3, topN + fontHeight * bgShift - 0.01);
+    glVertex2d(textX + textDir * 0.04 - textDir * fontWidth * (double)name.size() / 2.3, topN + fontHeight * (0.8 + bgShift));
+    glVertex2d(textX + textDir * 0.04,                                                   topN + fontHeight * (0.8 + bgShift));
+    glEnd();
+    glTranslated(0, 0, -0.1);
+    GLHelper::drawText(name, Position(textX + textDir * 0.04, topN), 0, fontHeight, RGBColor::BLACK, 0, textAlign, fontWidth);
 
     GLHelper::popMatrix();
     // restore matrices
@@ -1047,7 +1058,7 @@ GUISUMOAbstractView::onLeftBtnPress(FXObject*, FXSelector, void* ptr) {
             }
             makeNonCurrent();
             if (id != 0) {
-                // possibly, the selection-colouring is used,
+                // possibly, the selection-coloring is used,
                 //  so we should update the screen again...
                 update();
             }
@@ -1097,7 +1108,7 @@ long
 GUISUMOAbstractView::onMiddleBtnPress(FXObject*, FXSelector, void* ptr) {
     destroyPopup();
     setFocus();
-    if(!myApp->isGaming()) {
+    if (!myApp->isGaming()) {
         myChanger->onMiddleBtnPress(ptr);
     }
     grab();
@@ -1113,7 +1124,7 @@ GUISUMOAbstractView::onMiddleBtnPress(FXObject*, FXSelector, void* ptr) {
 long
 GUISUMOAbstractView::onMiddleBtnRelease(FXObject*, FXSelector, void* ptr) {
     destroyPopup();
-    if(!myApp->isGaming()) {
+    if (!myApp->isGaming()) {
         myChanger->onMiddleBtnRelease(ptr);
     }
     ungrab();
@@ -1129,7 +1140,7 @@ GUISUMOAbstractView::onMiddleBtnRelease(FXObject*, FXSelector, void* ptr) {
 long
 GUISUMOAbstractView::onRightBtnPress(FXObject*, FXSelector, void* ptr) {
     destroyPopup();
-    if(!myApp->isGaming()) {
+    if (!myApp->isGaming()) {
         myChanger->onRightBtnPress(ptr);
     }
     grab();
@@ -1183,11 +1194,11 @@ GUISUMOAbstractView::onMouseMove(FXObject*, FXSelector, void* ptr) {
             myPopupPosition = Position::INVALID;
             myPopup->handle(this, FXSEL(SEL_COMMAND, MID_CURSORDIALOG_FRONT), nullptr);
             destroyPopup();
-        } else if (myPopup->shown() == false) {
+        } else if (!myPopup->shown()) {
             destroyPopup();
         }
     }
-    if (myPopup == nullptr && !myApp->isGaming()) {
+    if (myPopup == nullptr) {
         if (myGUIDialogEditViewport == nullptr || !myGUIDialogEditViewport->haveGrabbed()) {
             myChanger->onMouseMove(ptr);
         }
@@ -1207,6 +1218,18 @@ GUISUMOAbstractView::onMouseLeft(FXObject*, FXSelector, void* /*data*/) {
     return 1;
 }
 
+std::vector<GUIGlObject*>
+GUISUMOAbstractView::filterContextObjects(const std::vector<GUIGlObject*>& objects) {
+    // assume input is sorted with ComparatorClickPriority
+    std::vector<GUIGlObject*> result;
+    for (GUIGlObject* o : objects) {
+        if (o->getClickPriority() != GUIGlObject::INVALID_PRIORITY && (result.empty() || result.back() != o)) {
+            result.push_back(o);
+        }
+    }
+    return result;
+}
+
 
 void
 GUISUMOAbstractView::openObjectDialogAtCursor(const FXEvent* ev) {
@@ -1216,65 +1239,21 @@ GUISUMOAbstractView::openObjectDialogAtCursor(const FXEvent* ev) {
     const bool altKeyPressed = ((ev->state & ALTMASK) != 0);
     // check if SUMO is enabled, initialised and Make OpenGL context current
     if (isEnabled() && myAmInitialised && makeCurrent()) {
-        // get all objects under cusor
         auto objectsUnderCursor = getGUIGlObjectsUnderCursor();
-        // filter elements by layer
-        objectsUnderCursor = filterGUIGLObjectsByLayer(objectsUnderCursor);
-        // filter elements
-        std::vector<GUIGlObject*> filteredObjectsUnderCursor;
-        std::vector<GUIGlObject*> filteredVehiclesUnderCursor;
-        std::vector<GUIGlObject*> filteredTLSUnderCursor;
-        for (const auto& GLObject : objectsUnderCursor) {
-            if (GLObject->getType() == GLO_EDGE) {
-                // avoid edges
-                continue;
-            }
-            if (std::find(filteredObjectsUnderCursor.begin(), filteredObjectsUnderCursor.end(), GLObject) != filteredObjectsUnderCursor.end()) {
-                // avoid duplicated lanes
-                continue;
-            }
-            if ((GLObject->getType() == GLO_VEHICLE) || (GLObject->getType() == GLO_TRIP) ||
-                    (GLObject->getType() == GLO_FLOW) || (GLObject->getType() == GLO_ROUTEFLOW) ||
-                    (GLObject->getType() == GLO_CONTAINER) || (GLObject->getType() == GLO_CONTAINERFLOW) ||
-                    (GLObject->getType() == GLO_PERSON) || (GLObject->getType() == GLO_PERSONFLOW)) {
-                // filter vehicles, person and containers
-                filteredVehiclesUnderCursor.push_back(GLObject);
-            }
-            if (GLObject->getType() == GLO_TLLOGIC) {
-                // filter TLSs
-                filteredTLSUnderCursor.push_back(GLObject);
-            }
-            filteredObjectsUnderCursor.push_back(GLObject);
-        }
-        // filter internal lanes
-        filteredObjectsUnderCursor = filterInernalLanes(filteredObjectsUnderCursor);
-        // remove duplicated elements using an unordered set
-        auto itDuplicated = filteredObjectsUnderCursor.begin();
-        std::unordered_set<GUIGlObject*> unorderedSet;
-        for (auto itElement = filteredObjectsUnderCursor.begin(); itElement != filteredObjectsUnderCursor.end(); itElement++) {
-            if (unorderedSet.insert(*itElement).second) {
-                *itDuplicated++ = *itElement;
-            }
-        }
-        filteredObjectsUnderCursor.erase(itDuplicated, filteredObjectsUnderCursor.end());
-        // continue depending of number of objects
-        if (filteredObjectsUnderCursor.empty()) {
-            // if filteredObjectsUnderCursor, inspect net
-            openObjectDialog({GUIGlObjectStorage::gIDStorage.getNetObject()}, true);
-        } else if (altKeyPressed) {
-            // inspect all objects under cusror
-            openObjectDialog(filteredObjectsUnderCursor, false);
-        } else if (filteredVehiclesUnderCursor.size() > 0) {
-            // inspect only vehicles
-            openObjectDialog(filteredVehiclesUnderCursor, true);
-        } else if (filteredTLSUnderCursor.size() > 0) {
-            // inspect only TLSs
-            openObjectDialog(filteredTLSUnderCursor, true);
+        if (objectsUnderCursor.empty()) {
+            myPopup = GUIGlObjectStorage::gIDStorage.getNetObject()->getPopUpMenu(*myApp, *this);
         } else {
-            // inspect objects under cursor
-            openObjectDialog(filteredObjectsUnderCursor, true);
+            std::sort(objectsUnderCursor.begin(), objectsUnderCursor.end(), ComparatorClickPriority());
+            std::vector<GUIGlObject*> filtered = filterContextObjects(objectsUnderCursor);
+            if (filtered.size() > 1 && (altKeyPressed
+                                        || filtered[0]->getClickPriority() == filtered[1]->getClickPriority())) {
+                // open dialog for picking among objects (without duplicates)
+                myPopup = new GUICursorDialog(GUIGLObjectPopupMenu::PopupType::PROPERTIES, this, filtered);
+            } else {
+                myPopup = objectsUnderCursor.front()->getPopUpMenu(*myApp, *this);
+            }
         }
-        // Make OpenGL context non current
+        openPopupDialog();
         makeNonCurrent();
     }
 }
@@ -1291,7 +1270,7 @@ GUISUMOAbstractView::openObjectDialog(const std::vector<GUIGlObject*>& objects, 
             std::vector<GUIGlObject*> filteredGLObjects;
             // fill filtered objects
             for (const auto& glObject : objects) {
-                // compare type with first eleement type
+                // compare type with first element type
                 if (glObject->getType() == objects.front()->getType()) {
                     filteredGLObjects.push_back(glObject);
                 }
@@ -1593,7 +1572,7 @@ GUISUMOAbstractView::showViewschemeEditor() {
 GUIDialog_EditViewport*
 GUISUMOAbstractView::getViewportEditor() {
     if (myGUIDialogEditViewport == nullptr) {
-        myGUIDialogEditViewport = new GUIDialog_EditViewport(this, TL("Edit Viewport"));
+        myGUIDialogEditViewport = new GUIDialog_EditViewport(this, TLC("Labels", "Edit Viewport"));
         myGUIDialogEditViewport->create();
     }
     updateViewportValues();
@@ -1713,7 +1692,7 @@ GUISUMOAbstractView::getDecalsLockMutex() {
 }
 
 
-FXComboBox*
+MFXComboBoxIcon*
 GUISUMOAbstractView::getColoringSchemesCombo() {
     return myGlChildWindowParent->getColoringSchemesCombo();
 }
@@ -1848,21 +1827,21 @@ GUISUMOAbstractView::openPopupDialog() {
     int x, y;
     FXuint b;
     myApp->getCursorPosition(x, y, b);
-    int popX = x + myApp->getX();
+    int appX = myApp->getX();
+    int popX = x + appX;
     int popY = y + myApp->getY();
     myPopup->setX(popX);
     myPopup->setY(popY);
     myPopup->create();
     myPopup->show();
-    // try to stay on screen unless click appears to come from a multi-screen setup
+    // TODO: try to stay on screen even on a right secondary screen in multi-monitor setup
     const int rootWidth = getApp()->getRootWindow()->getWidth();
     const int rootHeight = getApp()->getRootWindow()->getHeight();
     if (popX <= rootWidth) {
-        popX = MAX2(0, MIN2(popX, rootWidth - myPopup->getWidth() - 10));
+        const int maxX = (appX < 0) ? 0 : rootWidth;
+        popX = MIN2(popX, maxX - myPopup->getWidth() - 10);
     }
-    if (popY <= rootHeight) {
-        popY = MAX2(0, MIN2(popY, rootHeight - myPopup->getHeight() - 50));
-    }
+    popY = MIN2(popY, rootHeight - myPopup->getHeight() - 50);
     myPopup->move(popX, popY);
     myPopupPosition = getPositionInformation();
     myChanger->onRightBtnRelease(nullptr);
@@ -1980,29 +1959,6 @@ GUISUMOAbstractView::LayerObject::LayerObject(GUIGlObject* object) :
 GUIGlObject*
 GUISUMOAbstractView::LayerObject::getGLObject() const {
     return myGLObject;
-}
-
-
-std::vector<GUIGlObject*>
-GUISUMOAbstractView::filterGUIGLObjectsByLayer(const std::vector<GUIGlObject*>& objects) const {
-    // declare map for saving shapes sorted by layer and ID
-    std::set<LayerObject> layerObjects;
-    for (const auto& object : objects) {
-        if ((object->getType() == GLO_POLYGON) || (object->getType() == GLO_POI)) {
-            layerObjects.insert(LayerObject(dynamic_cast<Shape*>(object)->getShapeLayer(), object));
-        } else {
-            layerObjects.insert(LayerObject(object));
-        }
-    }
-    // declare vector for saving object filtered by layer
-    std::vector<GUIGlObject*> objectsFiltered;
-    // insert in objects filtered sorted from bot to top
-    for (const auto& object : layerObjects) {
-        objectsFiltered.push_back(object.getGLObject());
-    }
-    // reverse objets filtered to top from bot
-    std::reverse(objectsFiltered.begin(), objectsFiltered.end());
-    return objectsFiltered;
 }
 
 /****************************************************************************/

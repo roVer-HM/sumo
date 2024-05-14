@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -1161,10 +1161,13 @@ void NIImporter_VISUM::parse_stopPoints() {
     if (edgeID == "") {
         WRITE_WARNINGF(TL("Ignoring stopping place '%' without edge id"), id);
     } else if (from == nullptr && to == nullptr) {
-        WRITE_WARNINGF(TL("Ignoring stopping place '%' without node informatio"), id);
+        WRITE_WARNINGF(TL("Ignoring stopping place '%' without node information"), id);
     } else {
         NBEdge* edge = getNamedEdge(KEYS.getString(VISUM_LINKNO));
-        if (from != nullptr) {
+        if (edge == nullptr) {
+            WRITE_WARNINGF(TL("Ignoring stopping place '%' with invalid edge reference '%'"), id, edgeID);
+            return;
+        } else if (from != nullptr) {
             if (edge->getToNode() == from) {
                 NBEdge* edge2 = myNetBuilder.getEdgeCont().retrieve("-" + edge->getID());
                 if (edge2 == nullptr) {

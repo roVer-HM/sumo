@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -91,11 +91,39 @@ public:
 
     /// @name Functions related with geometry of element
     /// @{
+
     /// @brief update pre-computed geometry information
     void updateGeometry();
 
     /// @brief Returns position of hierarchical element in view
     Position getPositionInView() const;
+
+    /// @}
+
+    /// @name Function related with contour drawing
+    /// @{
+
+    /// @brief check if draw from contour (green)
+    bool checkDrawFromContour() const;
+
+    /// @brief check if draw from contour (magenta)
+    bool checkDrawToContour() const;
+
+    /// @brief check if draw related contour (cyan)
+    bool checkDrawRelatedContour() const;
+
+    /// @brief check if draw over contour (orange)
+    bool checkDrawOverContour() const;
+
+    /// @brief check if draw delete contour (pink/white)
+    bool checkDrawDeleteContour() const;
+
+    /// @brief check if draw select contour (blue)
+    bool checkDrawSelectContour() const;
+
+    /// @brief check if draw move contour (red)
+    bool checkDrawMoveContour() const;
+
     /// @}
 
     /// @name Functions related with move elements
@@ -138,6 +166,9 @@ public:
 
     /// @brief return exaggeration associated with this GLObject
     double getExaggeration(const GUIVisualizationSettings& s) const;
+
+    /// @brief Returns the boundary to which the view shall be centered in order to show the object
+    Boundary getCenteringBoundary() const;
 
     /// @brief update centering boundary (implies change in RTREE)
     void updateCenteringBoundary(const bool updateGrid);
@@ -261,8 +292,8 @@ public:
      * straight unless the user clicked near a geometry point */
     Position getSplitPos(const Position& clickPos);
 
-    /// @brief override to also set lane ids
-    void setMicrosimID(const std::string& newID);
+    /// @brief set edge ID
+    void setEdgeID(const std::string& newID);
 
     /// @brief check if edge has a restricted lane
     bool hasRestrictedLane(SUMOVehicleClass vclass) const;
@@ -311,10 +342,6 @@ public:
 
     // @brief update vehicle geometries
     void updateContainerStackLabels();
-
-    /// @brief draw dotted contour for the given dottedGeometries
-    static void drawDottedContourEdge(const GUIVisualizationSettings& s, const GUIDottedGeometry::DottedContourType type, const GNEEdge* edge,
-                                      const bool drawFrontExtreme, const bool drawBackExtreme, const double exaggeration = 1);
 
     /// @brief check if edge makes a convex angle [0 - 180) degrees
     bool isConvexAngle() const;
@@ -382,6 +409,9 @@ private:
         const std::vector<GNEDemandElement*>& getDemandElements() const;
     };
 
+    /// @brief edge boundary
+    Boundary myEdgeBoundary;
+
     /// @brief flag to enable/disable update geometry of lanes (used mainly by setNumLanes)
     bool myUpdateGeometry;
 
@@ -439,31 +469,33 @@ private:
     const std::map<const GNELane*, std::vector<GNEDemandElement*> > getContainersOverEdgeMap() const;
 
     /// @brief draw edge geometry points (note: This function is called by GNELane::drawGL(...)
-    void drawEdgeGeometryPoints(const GUIVisualizationSettings& s) const;
+    void drawEdgeGeometryPoints(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d) const;
 
     /// @brief draw start extreme geometry point
-    void drawStartGeometryPoint(const GUIVisualizationSettings& scircleWidth, const double circleWidth, const double exaggeration) const;
+    void drawStartGeometryPoint(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
+                                const double geometryPointRadius, const double exaggeration) const;
 
     /// @brief draw end extreme geometry point
-    void drawEndGeometryPoint(const GUIVisualizationSettings& s, const double circleWidth, const double exaggeration) const;
+    void drawEndGeometryPoint(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
+                              const double geometryPointRadius, const double exaggeration) const;
 
     /// @brief draw edge name
     void drawEdgeName(const GUIVisualizationSettings& s) const;
 
     /// @brief draw edgeStopOffset
-    void drawLaneStopOffset(const GUIVisualizationSettings& s) const;
+    void drawLaneStopOffset(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d) const;
+
+    /// @brief draw edge shape (only one line)
+    void drawEdgeShape(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d) const;
 
     /// @brief draw children
-    void drawChildrens(const GUIVisualizationSettings& s) const;
+    void drawChildrens(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d) const;
+
+    /// @brief calculate contours
+    void calculateEdgeContour(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d) const;
 
     /// @brief draw TAZElements
     void drawTAZElements(const GUIVisualizationSettings& s) const;
-
-    /// @brief draw edge shape (only one line)
-    void drawEdgeShape(const GUIVisualizationSettings& s) const;
-
-    /// @brief set geometry point color
-    void setGeometryPointColor(const Position& geometryPointPos, const double circleWidth, const RGBColor& geometryPointColor) const;
 
     /// @brief check if draw big geometry points
     bool drawBigGeometryPoints() const;
@@ -483,8 +515,8 @@ private:
     /// @brief process moving edge when none junction are selected
     GNEMoveOperation* processNoneJunctionSelected(const double snapRadius);
 
-    /// @brief get snap radius
-    double getSnapRadius(const bool squared) const;
+    /// @brief get geometry point radius
+    double getGeometryPointRadius() const;
 
     /// @brief invalidated copy constructor
     GNEEdge(const GNEEdge& s) = delete;

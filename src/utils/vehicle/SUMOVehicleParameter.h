@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -70,6 +70,8 @@ const int VEHPARS_DEPARTEDGE_SET = 2 << 25;
 const int VEHPARS_ARRIVALEDGE_SET = 2 << 26;
 const int VEHPARS_CALIBRATORSPEED_SET = 2 << 27;
 const int VEHPARS_JUNCTIONMODEL_PARAMS_SET = 2 << 28;
+const int VEHPARS_CFMODEL_PARAMS_SET = 2 << 29;
+const int VEHPARS_PARKING_BADGES_SET = 2 << 30;
 
 const int STOP_INDEX_END = -1;
 const int STOP_INDEX_FIT = -2;
@@ -156,9 +158,9 @@ enum class DepartPosDefinition {
     DEFAULT,
     /// @brief The position is given
     GIVEN,
-    /// @brief The position is given
-    GIVEN_VEHROUTE,
     /// @brief The position is set by the vehroute device
+    GIVEN_VEHROUTE,
+    /// @brief A random position is chosen
     RANDOM,
     /// @brief A free position is chosen
     FREE,
@@ -168,6 +170,10 @@ enum class DepartPosDefinition {
     LAST,
     /// @brief If a fixed number of random choices fails, a free position is chosen
     RANDOM_FREE,
+    /// @brief The position may be chosen freely in a polygon defined by a taz
+    RANDOM_LOCATION,
+    /// @brief depart position for a split vehicle is in front of the continuing vehicle
+    SPLIT_FRONT,
     /// @brief depart position is endPos of first stop
     STOP
 };
@@ -348,10 +354,13 @@ public:
          */
         void write(OutputDevice& dev, const bool close = true, const bool writeTagAndParents = true) const;
 
+        /// @brief return list of stopping place ids
+        std::vector<std::string> getStoppingPlaceIDs() const;
+
         /// @brief write trigger attribute
         std::vector<std::string> getTriggers() const;
 
-        /// @brief The edge to stop at (used only in netedit)
+        /// @brief The edge to stop at
         std::string edge;
 
         /// @brief The lane to stop at
@@ -389,6 +398,9 @@ public:
 
         /// @brief The maximum time extension for boarding / loading
         SUMOTime extension = -1;
+
+        /// @brief The earliest pickup time for a taxi stop
+        SUMOTime waitUntil = -1;
 
         /// @brief whether an arriving person lets the vehicle continue
         bool triggered = false;
@@ -745,6 +757,9 @@ public:
     /// @brief The probability for emitting a vehicle per second
     double repetitionProbability;
 
+    /// @brief The rate for emitting vehicles with a poisson distribution
+    double poissonRate;
+
     /// @brief The time at which the flow ends (only needed when using repetitionProbability)
     SUMOTime repetitionEnd;
 
@@ -764,6 +779,9 @@ public:
 
     /// @brief List of the via-edges the vehicle must visit
     mutable std::vector<std::string> via;
+
+    /// @brief The parking access rights
+    mutable std::vector <std::string> parkingBadges;
 
     /// @brief The static number of persons in the vehicle when it departs (not including boarding persons)
     int personNumber;

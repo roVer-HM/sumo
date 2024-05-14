@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -32,7 +32,7 @@
 // class declaration
 // ===========================================================================
 
-class GUIMainWindow;
+class GNEApplicationWindow;
 class OptionsCont;
 
 // ===========================================================================
@@ -52,27 +52,27 @@ class GNEOptionsDialog : public FXDialogBox {
 public:
     /**@brief Constructor for options dialogs
      *
-     * @param[in] parent The parent window
+     * @param[in] GNEApp netedit App
      * @param[in] optionsContainer edited option container
      * @param[in] originalOptionsContainer original options container
      * @param[in] icon windows icon
      * @param[in] name The title to show
      * @return pair with int (TRUE, FALSE) depending of execution, and bool for check if options were modified
      */
-    static std::pair<int, bool> Options(GUIMainWindow* windows, GUIIcon icon, OptionsCont &optionsContainer,
-                                        const OptionsCont &originalOptionsContainer, const char* titleName);
+    static std::pair<int, bool> Options(GNEApplicationWindow* GNEApp, GUIIcon icon, OptionsCont& optionsContainer,
+                                        const OptionsCont& originalOptionsContainer, const char* titleName);
 
     /**@brief Constructor for run dialogs
      *
-     * @param[in] parent The parent window
+     * @param[in] GNEApp netedit App
      * @param[in] optionsContainer edited option container
      * @param[in] originalOptionsContainer original options container
      * @param[in] icon windows icon
      * @param[in] name The title to show
      * @return pair with int (TRUE, FALSE) depending of execution, and bool for check if options were modified
      */
-    static std::pair<int, bool> Run(GUIMainWindow* windows, GUIIcon icon, OptionsCont &optionsContainer,
-                                    const OptionsCont&originalOptionsContainer, const char* titleName);
+    static std::pair<int, bool> Run(GNEApplicationWindow* GNEApp, GUIIcon icon, OptionsCont& optionsContainer,
+                                    const OptionsCont& originalOptionsContainer, const char* titleName);
 
     /// @brief Destructor
     ~GNEOptionsDialog();
@@ -89,8 +89,11 @@ public:
     /// @brief called when user select a topic in the list
     long onCmdSelectTopic(FXObject*, FXSelector, void*);
 
-    /// @brief called when user searchs
+    /// @brief called when user searches
     long onCmdSearch(FXObject*, FXSelector, void*);
+
+    /// @brief enable/disable show toolTip
+    long onCmdShowToolTipsMenu(FXObject*, FXSelector, void*);
 
     /// @brief save options
     long onCmdSaveOptions(FXObject*, FXSelector, void*);
@@ -106,12 +109,12 @@ protected:
     GNEOptionsDialog();
 
     /// @brief pointer to main window parent
-    GUIMainWindow* myMainWindowParent;
+    GNEApplicationWindow* myGNEApp;
 
-    /// @brief refecente to edited Option container
+    /// @brief reference to edited Option container
     OptionsCont& myOptionsContainer;
 
-    /// @brief refecente to original Option container
+    /// @brief reference to original Option container
     const OptionsCont& myOriginalOptionsContainer;
 
     /// @brief flag for check if options was modified
@@ -119,7 +122,7 @@ protected:
 
 private:
     /// @brief checkable button for show toolTips
-    MFXCheckableButton* myShowToolTipsMenu = nullptr; 
+    MFXCheckableButton* myShowToolTipsMenu = nullptr;
 
     /// @brief Topics elements tree
     FXTreeList* myTopicsTreeList = nullptr;
@@ -127,7 +130,7 @@ private:
     /// @brief root item
     FXTreeItem* myRootItem = nullptr;
 
-    /// @brief vertical farme for entries
+    /// @brief vertical frame for entries
     FXVerticalFrame* myEntriesFrame = nullptr;
 
     /// @brief checkbox for enable/disable search by description
@@ -145,7 +148,7 @@ private:
     /// @brief ignores topics
     const std::set<std::string> myIgnoredTopics = {"Configuration"};
 
-    /// @brief ignores entrys
+    /// @brief ignores entries
     const std::set<std::string> myIgnoredEntries = {"geometry.remove", "edges.join", "geometry.split", "ramps.guess", "ramps.set"};
 
     /// @brief update visible entries by selected topic
@@ -155,19 +158,19 @@ private:
     void updateVisibleEntriesBySearch(std::string searchText);
 
     /// @brief load configuration
-    bool loadConfiguration(const std::string &file);
+    bool loadConfiguration(const std::string& file);
 
     /**@brief Constructor
      *
-     * @param[in] parent The parent window
+     * @param[in] GNEApp netedit App
      * @param[in] optionsContainer edited option container
      * @param[in] originalOptionsContainer original options container
      * @param[in] titleName The title to show
      * @param[in] icon windows icon
      * @param[in] runDialog check if this is a run dialog
      */
-    GNEOptionsDialog(GUIMainWindow* parent, GUIIcon icon, OptionsCont &optionsContainer, 
-                    const OptionsCont &originalOptionsContainer, const char* titleName, const bool runDialog);
+    GNEOptionsDialog(GNEApplicationWindow* GNEApp, GUIIcon icon, OptionsCont& optionsContainer,
+                     const OptionsCont& originalOptionsContainer, const char* titleName, const bool runDialog);
 
     /// @brief Invalidated copy constructor.
     GNEOptionsDialog(const GNEOptionsDialog&) = delete;

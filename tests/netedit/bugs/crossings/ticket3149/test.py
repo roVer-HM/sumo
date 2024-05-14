@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,22 +35,22 @@ netedit.rebuildNetwork()
 netedit.inspectMode()
 
 # select first left edge and change their junction
-netedit.leftClick(referencePosition, 250, 205)
+netedit.leftClick(referencePosition, 400, 215)
 netedit.modifyAttribute(netedit.attrs.edge.inspect.fromEdge, "B", False)
 netedit.rebuildNetwork()
 
 # select second left edge and change their junction
-netedit.leftClick(referencePosition, 250, 255)
+netedit.leftClick(referencePosition, 400, 265)
 netedit.modifyAttribute(netedit.attrs.edge.inspect.toEdge, "A", False)
 netedit.rebuildNetwork()
 
 # select first right edge and change their junction
-netedit.leftClick(referencePosition, 500, 205)
+netedit.leftClick(referencePosition, 580, 215)
 netedit.modifyAttribute(netedit.attrs.edge.inspect.toEdge, "B", False)
 netedit.rebuildNetwork()
 
 # select second right edge and change their junction
-netedit.leftClick(referencePosition, 500, 255)
+netedit.leftClick(referencePosition, 580, 265)
 netedit.modifyAttribute(netedit.attrs.edge.inspect.fromEdge, "A", False)
 netedit.rebuildNetwork()
 

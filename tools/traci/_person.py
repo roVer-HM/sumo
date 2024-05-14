@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2011-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -62,7 +62,7 @@ class Reservation(object):
 
 def _readReservation(result):
     # compound size and type
-    assert(result.read("!i")[0] == 10)
+    assert result.read("!i")[0] == 10
     id = result.readTypedString()
     persons = result.readTypedStringList()
     group = result.readTypedString()
@@ -152,13 +152,6 @@ class PersonDomain(VTypeDomain):
         """
         return self._getUniversal(tc.VAR_LANEPOSITION, personID)
 
-    def getSpeedFactor(self, personID):
-        """getSpeedFactor(string) -> double
-
-        Returns the quotient of this persons maximum speed and the maximum speed of its type
-        """
-        return self._getUniversal(tc.VAR_SPEED_FACTOR, personID)
-
     def getWaitingTime(self, personID):
         """getWaitingTime(string) -> double
         The waiting time of a person is defined as the time (in seconds) spent with a
@@ -189,7 +182,7 @@ class PersonDomain(VTypeDomain):
         return self._getUniversal(tc.VAR_EDGES, personID, "i", nextStageIndex)
 
     def getStage(self, personID, nextStageIndex=0):
-        """getStage(string, int) -> int
+        """getStage(string, int) -> stage
         Returns the the nth stage object (type simulation.Stage)
         Attribute type of this object has the following meaning:
           0 for not-yet-departed
@@ -326,18 +319,18 @@ class PersonDomain(VTypeDomain):
     def moveTo(self, personID, laneID, pos, posLat=tc.INVALID_DOUBLE_VALUE):
         """moveTo(string, string, double, double) -> None
 
-        Move a person to a new position along it's current route.
+        Move a person to a new position along its current route.
         """
         self._setCmd(tc.VAR_MOVE_TO, personID, "tsdd", 3, laneID, pos, posLat)
 
     def moveToXY(self, personID, edgeID, x, y, angle=tc.INVALID_DOUBLE_VALUE, keepRoute=1, matchThreshold=100):
-        '''Place person at the given x,y coordinates and force it's angle to
+        '''Place person at the given x,y coordinates and force its angle to
         the given value (for drawing).
         If the angle is set to INVALID_DOUBLE_VALUE, the vehicle assumes the
         natural angle of the edge on which it is driving.
         If keepRoute is set to 1, the closest position
         within the existing route is taken. If keepRoute is set to 0, the vehicle may move to
-        any edge in the network but it's route then only consists of that edge.
+        any edge in the network but its route then only consists of that edge.
         If keepRoute is set to 2 the person has all the freedom of keepRoute=0
         but in addition to that may even move outside the road network.
         edgeID is an optional placement hint to resolve ambiguities.

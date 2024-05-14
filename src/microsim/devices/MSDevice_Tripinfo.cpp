@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -275,7 +275,9 @@ MSDevice_Tripinfo::notifyLeave(SUMOTrafficObject& veh, double /*lastPos*/,
         updateParkingStopTime();
     } else if (reason == MSMoveReminder::NOTIFICATION_PARKING) {
         myParkingStarted = MSNet::getInstance()->getCurrentTimeStep();
-    } else if (reason == NOTIFICATION_JUNCTION || reason == NOTIFICATION_TELEPORT) {
+    } else if (reason == NOTIFICATION_JUNCTION
+               || reason == NOTIFICATION_TELEPORT
+               || reason == NOTIFICATION_TELEPORT_CONTINUATION) {
         if (MSGlobals::gUseMesoSim) {
             myRouteLength += myHolder.getEdge()->getLength();
         } else {
@@ -409,7 +411,7 @@ MSDevice_Tripinfo::generateOutputForUnfinished() {
             if (tripinfoOut != nullptr) {
                 for (MSVehicleDevice* const dev : d->myHolder.getDevices()) {
                     if (typeid(*dev) == typeid(MSDevice_Tripinfo) || typeid(*dev) == typeid(MSDevice_Vehroutes)) {
-                        // tripinfo is special and vehroute has it's own write-unfinished option
+                        // tripinfo is special and vehroute has its own write-unfinished option
                         continue;
                     }
                     dev->generateOutput(tripinfoOut);

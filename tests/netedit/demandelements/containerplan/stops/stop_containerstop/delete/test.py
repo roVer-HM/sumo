@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,26 +35,24 @@ netedit.supermodeDemand()
 netedit.containerMode()
 
 # change container plan
-netedit.changeContainerPlan("tranship: edge->edge", False)
+netedit.changeContainerPlan("tranship", False)
 
-# create route using two one
-netedit.leftClick(referencePosition, 274, 400)
-netedit.leftClick(referencePosition, 280, 60)
+# create route using one edge
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x, netedit.positions.demandElements.edge2.y)
 
 # press enter to create route
 netedit.typeEnter()
 
-# go to containerStopContainerStop mode
+# go to StopPlanStoppingPlace mode
 netedit.containerPlanMode()
 
-# select container
-netedit.leftClick(referencePosition, 85, 412)
+# go to StopPlanStoppingPlace mode
+netedit.changeContainerPlanMode("stop")
 
-# go to containerStopContainerStop mode
-netedit.changeContainerPlanMode("stopContainer: containerStop")
-
-# create containerStopContainerStop
-netedit.leftClick(referencePosition, 170, 40)
+# create StopPlanStoppingPlace
+netedit.leftClick(referencePosition, netedit.positions.demandElements.containerStop.x,
+                  netedit.positions.demandElements.containerStop.y)
 
 # press enter to create route
 netedit.typeEnter()
@@ -62,12 +60,12 @@ netedit.typeEnter()
 # go to delete mode
 netedit.deleteMode()
 
-# delete containerStopContainerStop
-netedit.leftClick(referencePosition, 119, 14)
+# delete StopPlanStoppingPlace
+netedit.leftClick(referencePosition, netedit.positions.demandElements.containerStop.x,
+                  netedit.positions.demandElements.containerStop.y)
 
 # Check undo redo
-netedit.undo(referencePosition, 3)
-netedit.redo(referencePosition, 3)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

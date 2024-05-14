@@ -17,10 +17,10 @@ following properties:
   classes for results which can be linked directly to the client code
 - Function signatures similar to [TraCI](TraCI.md)
 - Pre-built language bindings for Java and Python (using
-  [SWIG](http://www.swig.org/))
+  [SWIG](https://www.swig.org/))
 - Support for other programming languages via
-  [SWIG](http://www.swig.org/)
-  
+  [SWIG](https://www.swig.org/)
+
 # Limitations
 
 The following things currently do not work (or work differently than with the TraCI Python client):
@@ -36,7 +36,7 @@ The following things currently do not work (or work differently than with the Tr
 - libsumo by itself cannot be used to [connect multiple clients to the simulation](TraCI/Interfacing_TraCI_from_Python.md#controlling_the_same_simulation_from_multiple_clients) (though connecting normal TraCI clients to a libsumo instance is possible)
 - running parallel instances of libsumo requires the [multiprocessing module (in python)](https://docs.python.org/3/library/multiprocessing.html)
 
-To avoid the limitations with respect to GUI, multi-clients support, you can also use [libraci](Libtraci.md). This is a C++ traci client library which is fully API-compatible with libsumo.
+To avoid the limitations with respect to GUI, multi-clients support, you can also use [libtraci](Libtraci.md). This is a C++ traci client library which is fully API-compatible with libsumo.
 
 # Building and Installing it
 
@@ -93,6 +93,9 @@ Please note the extra `#define` for enabling GUI code which is not needed if you
 
 ### Example Code (test.cpp)
 
+The example assumes you have the named sumocfg file in your current working directory and the SUMO `bin` directory included 
+in the `PATH` environmental variable. Otherwise you need to provide the full file path.
+
 ```cpp
 #include <iostream>
 #define HAVE_LIBSUMOGUI  // if you are on Windows or have libsumo compiled yourself without GUI you should remove this line
@@ -144,7 +147,7 @@ public class Test {
 ```
 
 Please note that starting with SUMO 1.16.0 it seems to be necessary to preload more libraries
-on Windows, see https://github.com/eclipse/sumo/issues/12605
+on Windows, see https://github.com/eclipse-sumo/sumo/issues/12605
 
 ### compiling on Linux (make sure SUMO_HOME is set and sumo has been built)
 

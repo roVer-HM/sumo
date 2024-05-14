@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -31,34 +31,19 @@ neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
 # go to demand mode
 netedit.supermodeDemand()
 
-# go to route mode
-netedit.routeMode()
-
-# create route using three edges
-netedit.leftClick(referencePosition, 274, 392)
-netedit.leftClick(referencePosition, 570, 250)
-
-# press enter to create route
-netedit.typeEnter()
-
-# create route using three edges
-netedit.leftClick(referencePosition, 274, 368)
-
-# press enter to create route
-netedit.typeEnter()
-
 # go to select mode
 netedit.selectMode()
 
 # select both routes
-netedit.leftClick(referencePosition, 274, 392)
-netedit.leftClick(referencePosition, 274, 368)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edgeRepeat1.x,
+                  netedit.positions.demandElements.edgeRepeat1.y)
 
 # go to inspect mode
 netedit.inspectMode()
 
 # inspect route
-netedit.leftClick(referencePosition, 280, 392)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
 
 # Change parameter repeat with a non valid value (empty)
 netedit.modifyAttribute(netedit.attrs.route.inspectSelection.repeat, "", False)
@@ -73,8 +58,7 @@ netedit.modifyAttribute(netedit.attrs.route.inspectSelection.repeat, "-13.1", Fa
 netedit.modifyAttribute(netedit.attrs.route.inspectSelection.repeat, "14", False)
 
 # Check undo redo
-netedit.undo(referencePosition, 4)
-netedit.redo(referencePosition, 4)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

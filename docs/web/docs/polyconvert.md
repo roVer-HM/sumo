@@ -44,7 +44,7 @@ be projected in Polyconvert again.
 
 You may use a XML schema definition file for setting up a polyconvert
 configuration:
-[polyconvertConfiguration.xsd](http://sumo.dlr.de/xsd/polyconvertConfiguration.xsd).
+[polyconvertConfiguration.xsd](https://sumo.dlr.de/xsd/polyconvertConfiguration.xsd).
 
 ### Configuration
 
@@ -74,19 +74,19 @@ distinct shape file.
 |--------|-------------|
 | **-n** {{DT_FILE}}<br> **--net-file** {{DT_FILE}} | Loads SUMO-network FILE as reference to offset and projection |
 | **--dlr-navteq-poly-files** {{DT_FILE}} | Reads polygons from FILE assuming they're coded in DLR-Navteq (Elmar)-format |
-| **--dlr-navteq-poi-files** {{DT_FILE}} | Reads pois from FILE+ assuming they're coded in DLR-Navteq (Elmar)-format |
+| **--dlr-navteq-poi-files** {{DT_FILE}} | Reads pois from FILE assuming they're coded in DLR-Navteq (Elmar)-format |
 | **--visum-files** {{DT_FILE}} | Reads polygons from FILE assuming it's a Visum-net |
 | **--visum.language-file** {{DT_FILE}} | Load language mappings from FILE |
 | **--xml-files** {{DT_FILE}} | Reads pois and shapes from FILE assuming they're coded in XML |
-| **--osm-files** {{DT_FILE}} | Reads pois from FILE+ assuming they're coded in OSM |
+| **--osm-files** {{DT_FILE}} | Reads pois from FILE assuming they're coded in OSM |
 | **--osm.keep-full-type** {{DT_BOOL}} | The type will be made of the key-value - pair; *default:* **false** |
 | **--osm.use-name** {{DT_BOOL}} | The id will be set from the given 'name' attribute; *default:* **false** |
 | **--osm.merge-relations** {{DT_FLOAT}} | If FLOAT >= 0, assemble one polygon from all ways of a relation if they all connect with gaps below FLOAT; *default:* **-1** |
-| **--shapefile-prefixes** {{DT_FILE}} | Reads shapes from shapefiles FILE+ |
+| **--shapefile-prefixes** {{DT_FILE}} | Reads shapes from shapefiles FILE |
 | **--shapefile.guess-projection** {{DT_BOOL}} | Guesses the shapefile's projection; *default:* **false** |
 | **--shapefile.traditional-axis-mapping** {{DT_BOOL}} | Use traditional axis order (lon, lat); *default:* **false** |
 | **--shapefile.id-column** {{DT_STR}} | Defines in which column the id can be found |
-| **--shapefile.type-columns** {{DT_STR[]}} | Defines which columns form the type id (comma separated list) |
+| **--shapefile.type-columns** {{DT_STR_LIST}} | Defines which columns form the type id (comma separated list) |
 | **--shapefile.use-running-id** {{DT_BOOL}} | A running number will be used as id; *default:* **false** |
 | **--shapefile.add-param** {{DT_BOOL}} | Extract all additional columns as params; *default:* **false** |
 | **--shapefile.fill** {{DT_STR}} | [auto,true,false]. Forces the 'fill' status to the given value. Default 'auto' tries to determine it from the data type |
@@ -113,8 +113,7 @@ One of the major uses of **polyconvert** is to
 apply a projection on the read shapes. Normally, one wants the shapes to
 be aligned in accordance to a previously imported road network. In this
 case, the network should be given using **--net-file** {{DT_FILE}}. But it is also possible to use
-a different projection. In any case, if the read coordinates shall be
-changed, **--use-projection** must be given.
+a different projection.
 
 | Option | Description |
 |--------|-------------|
@@ -142,7 +141,7 @@ this boundary are discarded in these cases.
 | **--prune.in-net.offsets** {{DT_STR}} | Uses FLOAT,FLOAT,FLOAT,FLOAT as offset definition added to the net boundary. Positive values grow the boundary on all sides while negative values shrink it.; *default:* **0,0,0,0** |
 | **--prune.boundary** {{DT_STR}} | Uses STR as pruning boundary |
 | **--prune.keep-list** {{DT_STR}} | Items in STR will be kept though out of boundary |
-| **--prune.explicit** {{DT_STR[]}} | Items with names in STR[] will be removed |
+| **--prune.explicit** {{DT_STR_LIST}} | Items with names in STR[] will be removed |
 
 ### Processing
 
@@ -167,6 +166,7 @@ command line.
 | **--prefix** {{DT_STR}} | Sets STR as default prefix |
 | **--type** {{DT_STR}} | Sets STR as default type; *default:* **unknown** |
 | **--fill** {{DT_BOOL}} | Fills polygons by default; *default:* **true** |
+| **--icon** {{DT_STR}} | Sets STR as default icon |
 | **--layer** {{DT_FLOAT}} | Sets FLOAT as default layer; *default:* **-1** |
 | **--discard** {{DT_BOOL}} | Sets default action to discard; *default:* **false** |
 
@@ -190,6 +190,8 @@ Options](Basics/Using_the_Command_Line_Applications.md#reporting_options).
 | **-l** {{DT_FILE}}<br> **--log** {{DT_FILE}} | Writes all messages to FILE (implies verbose) |
 | **--message-log** {{DT_FILE}} | Writes all non-error messages to FILE (implies verbose) |
 | **--error-log** {{DT_FILE}} | Writes all warnings and errors to FILE |
+| **--log.timestamps** {{DT_BOOL}} | Writes timestamps in front of all messages; *default:* **false** |
+| **--log.processid** {{DT_BOOL}} | Writes process ID in front of all messages; *default:* **false** |
 | **--language** {{DT_STR}} | Language to use in messages; *default:* **C** |
 
 # See Also

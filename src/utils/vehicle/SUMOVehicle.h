@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -24,7 +24,6 @@
 
 #include <vector>
 #include <typeinfo>
-#include <memory>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/Named.h>
 #include <utils/router/SUMOAbstractRouter.h>
@@ -49,7 +48,6 @@ class SUMOSAXAttributes;
 class EnergyParams;
 
 typedef std::vector<const MSEdge*> ConstMSEdgeVector;
-typedef std::shared_ptr<const MSRoute> ConstMSRoutePtr;
 
 
 // ===========================================================================
@@ -115,9 +113,6 @@ public:
      */
     virtual bool replaceRouteEdges(ConstMSEdgeVector& edges, double cost, double savings, const std::string& info, bool onInit = false, bool check = false, bool removeStops = true, std::string* msgReturn = nullptr) = 0;
 
-    /// Replaces the current route by the given one
-    virtual bool replaceRoute(ConstMSRoutePtr route, const std::string& info, bool onInit = false, int offset = 0, bool addStops = true, bool removeStops = true, std::string* msgReturn = nullptr) = 0;
-
     /** @brief Performs a rerouting using the given router
      *
      * Tries to find a new route between the current edge and the destination edge, first.
@@ -125,9 +120,10 @@ public:
      *
      * @param[in] t The time for which the route is computed
      * @param[in] router The router to use
+     * @return whether a valid route was found
      * @see replaceRoute
      */
-    virtual void reroute(SUMOTime t, const std::string& info, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router, const bool onInit = false, const bool withTaz = false, const bool silent = false) = 0;
+    virtual bool reroute(SUMOTime t, const std::string& info, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router, const bool onInit = false, const bool withTaz = false, const bool silent = false, const MSEdge* sink = nullptr) = 0;
 
     /** @brief Validates the current or given route
      * @param[out] msg Description why the route is not valid (if it is the case)
@@ -345,8 +341,6 @@ public:
 
     virtual void setChosenSpeedFactor(const double factor) = 0;
 
-    virtual SUMOTime getAccumulatedWaitingTime() const = 0;
-
     virtual SUMOTime getDepartDelay() const = 0;
 
     virtual SUMOTime getTimeLoss() const = 0;
@@ -361,12 +355,6 @@ public:
      * @return This vehicle's devices
      */
     virtual const std::vector<MSVehicleDevice*>& getDevices() const = 0;
-
-    /// @brief Returns a device of the given type if it exists or 0
-    virtual MSVehicleDevice* getDevice(const std::type_info& type) const = 0;
-
-    /// @brief @return The index of the vehicle's associated RNG
-    virtual int getRNGIndex() const = 0;
 
     /// @brief Returns the vehicles's length
     virtual double getLength() const = 0;

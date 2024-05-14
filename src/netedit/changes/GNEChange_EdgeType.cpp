@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -51,7 +51,7 @@ GNEChange_EdgeType::~GNEChange_EdgeType() {
         // show extra information for tests
         WRITE_DEBUG("Deleting unreferenced " + myEdgeType->getTagStr() + " '" + myEdgeType->getID() + "' GNEChange_EdgeType");
         // make sure that edgeType isn't in net before removing
-        if (myEdgeType->getNet()->getAttributeCarriers()->edgeTypeExist(myEdgeType)) {
+        if (myEdgeType->getNet()->getAttributeCarriers()->retrieveEdgeType(myEdgeType->getID(), false)) {
             // delete edgeType from net
             myEdgeType->getNet()->getAttributeCarriers()->deleteEdgeType(myEdgeType);
         }

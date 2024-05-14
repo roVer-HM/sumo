@@ -5,7 +5,7 @@ title: PythonFileTemplate
 ```py
 #!/usr/bin/env python # Leave this one out for non executable python files
 # -*- coding: utf-8 -*- # optional encoding line, use if non-ASCII characters are in the code
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
 # Copyright (C) <YEAR OF CREATION>-<CURRENT YEAR> German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
@@ -36,7 +36,8 @@ import sys
 import ...
 
 # use the following when you depend on sumolib or traci
-sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
+if "SUMO_HOME" in os.environ:
+    sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
 import sumolib  # noqa
 # the noqa is needed to tell the style checker that it is OK to have an import which is not at the top of the file
 ```

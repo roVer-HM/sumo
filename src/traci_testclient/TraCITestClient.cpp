@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2008-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2008-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -1001,6 +1001,7 @@ TraCITestClient::testAPI() {
     walkEdges.push_back("e_m5");
     person.appendWalkingStage("p1", walkEdges, -20);
     simulationStep();
+    answerLog << "    getEdges before rerouting: " << joinToString(person.getEdges("p1"), " ") << "\n";
     person.rerouteTraveltime("p1");
     answerLog << "    getEdges after rerouting: " << joinToString(person.getEdges("p1"), " ") << "\n";
 

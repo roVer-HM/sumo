@@ -3,7 +3,7 @@ set(netconvertlibs
 
 set(sumolibs
         traciserver netload microsim_cfmodels microsim_engine microsim_lcmodels microsim_devices microsim_trigger microsim_output microsim_transportables microsim_actions
-        microsim_traffic_lights microsim mesosim ${commonvehiclelibs})
+        microsim_traffic_lights microsim mesosim ${commonvehiclelibs} ${GEOS_LIBRARY})
 if (OPENSCENEGRAPH_FOUND)
     set(osgviewlib osgview)
 endif ()
@@ -57,9 +57,6 @@ add_executable(sumo sumo_main.cpp)
 set_target_properties(sumo PROPERTIES OUTPUT_NAME sumo${BINARY_SUFFIX})
 set_target_properties(sumo PROPERTIES OUTPUT_NAME_DEBUG sumo${BINARY_SUFFIX}D)
 target_link_libraries(sumo microsim traciserver libsumostatic ${sumolibs} ${TCMALLOC_LIBRARY})
-if (JPS_FOUND)
-    target_link_libraries(sumo jps)
-endif()
 add_dependencies(sumo generate-version-h install_dll)
 
 if (FOX_FOUND)
@@ -110,8 +107,8 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../.git/index")
     set(VERSION_DEP "${CMAKE_CURRENT_SOURCE_DIR}/../.git/index")
 endif()
 add_custom_command(OUTPUT version.h
-                   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../tools/build/version.py ${CMAKE_CURRENT_BINARY_DIR}
+                   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../tools/build_config/version.py ${CMAKE_CURRENT_BINARY_DIR}
                    DEPENDS ${VERSION_DEP}
                   )
 add_custom_target(generate-version-h DEPENDS version.h)
-set_property(TARGET generate-version-h PROPERTY FOLDER "CMake") 
+set_property(TARGET generate-version-h PROPERTY FOLDER "CMake")

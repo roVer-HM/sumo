@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -65,7 +65,7 @@ GNECalibratorDialog::GNECalibratorDialog(GNECalibrator* editedCalibrator) :
 
     // create add button and label for routes
     FXHorizontalFrame* buttonAndLabelRoute = new FXHorizontalFrame(columnLeft, GUIDesignAuxiliarHorizontalFrame);
-    myAddRoute = new FXButton(buttonAndLabelRoute, "", GUIIconSubSys::getIcon(GUIIcon::ADD), this, MID_GNE_CALIBRATORDIALOG_ADD_ROUTE, GUIDesignButtonIcon);
+    myAddRoute = GUIDesigns::buildFXButton(buttonAndLabelRoute, "", "", "", GUIIconSubSys::getIcon(GUIIcon::ADD), this, MID_GNE_CALIBRATORDIALOG_ADD_ROUTE, GUIDesignButtonIcon);
     new FXLabel(buttonAndLabelRoute, ("Add new " + toString(SUMO_TAG_ROUTE) + "s").c_str(), nullptr, GUIDesignLabelThick(JUSTIFY_NORMAL));
 
     // Create table in left frame
@@ -76,7 +76,7 @@ GNECalibratorDialog::GNECalibratorDialog(GNECalibrator* editedCalibrator) :
 
     // create add button and label for vehicle types
     FXHorizontalFrame* buttonAndLabelVehicleType = new FXHorizontalFrame(columnLeft, GUIDesignAuxiliarHorizontalFrame);
-    myAddVehicleType = new FXButton(buttonAndLabelVehicleType, "", GUIIconSubSys::getIcon(GUIIcon::ADD), this, MID_GNE_CALIBRATORDIALOG_ADD_VEHICLETYPE, GUIDesignButtonIcon);
+    myAddVehicleType = GUIDesigns::buildFXButton(buttonAndLabelVehicleType, "", "", "", GUIIconSubSys::getIcon(GUIIcon::ADD), this, MID_GNE_CALIBRATORDIALOG_ADD_VEHICLETYPE, GUIDesignButtonIcon);
     new FXLabel(buttonAndLabelVehicleType, ("Add new " + toString(SUMO_TAG_VTYPE) + "s").c_str(), nullptr, GUIDesignLabelThick(JUSTIFY_NORMAL));
 
     // Create table in left frame
@@ -87,7 +87,7 @@ GNECalibratorDialog::GNECalibratorDialog(GNECalibrator* editedCalibrator) :
 
     // create add button and label for flows in right frame
     FXHorizontalFrame* buttonAndLabelFlow = new FXHorizontalFrame(columnRight, GUIDesignAuxiliarHorizontalFrame);
-    myAddFlow = new FXButton(buttonAndLabelFlow, "", GUIIconSubSys::getIcon(GUIIcon::ADD), this, MID_GNE_CALIBRATORDIALOG_ADD_FLOW, GUIDesignButtonIcon);
+    myAddFlow = GUIDesigns::buildFXButton(buttonAndLabelFlow, "", "", "", GUIIconSubSys::getIcon(GUIIcon::ADD), this, MID_GNE_CALIBRATORDIALOG_ADD_FLOW, GUIDesignButtonIcon);
     myLabelFlow = new FXLabel(buttonAndLabelFlow, ("Add new " + toString(GNE_TAG_CALIBRATOR_FLOW) + "s").c_str(), nullptr, GUIDesignLabelThick(JUSTIFY_NORMAL));
 
     // Create table in right frame
@@ -229,7 +229,7 @@ GNECalibratorDialog::onCmdAddFlow(FXObject*, FXSelector, void*) {
     // only add flow if there is at least a GNERoute (There is always a Vehicle Type)
     if (routes.size() > 0) {
         // create new calibrator and configure it with modal GNECalibratorFlowDialog
-        GNECalibratorFlowDialog(new GNECalibratorFlow(myEditedAdditional, defaultVType, *routes.begin()), false);  // NOSONAR, constructor returns after dialog has been closed
+        GNECalibratorFlowDialog(new GNECalibratorFlow(myEditedAdditional, defaultVType, routes.begin()->second), false);  // NOSONAR, constructor returns after dialog has been closed
         // update flows table
         updateFlowTable();
         return 1;
@@ -363,10 +363,10 @@ GNECalibratorDialog::updateRouteTable() {
     // iterate over routes
     for (const auto& route : myEditedAdditional->getNet()->getViewNet()->getNet()->getAttributeCarriers()->getDemandElements().at(SUMO_TAG_ROUTE)) {
         // Set ID
-        item = new FXTableItem(toString(route->getAttribute(SUMO_ATTR_ID)).c_str());
+        item = new FXTableItem(toString(route.second->getAttribute(SUMO_ATTR_ID)).c_str());
         myRouteList->setItem(indexRow, 0, item);
         // Set edges
-        item = new FXTableItem(toString(route->getAttribute(SUMO_ATTR_EDGES)).c_str());
+        item = new FXTableItem(toString(route.second->getAttribute(SUMO_ATTR_EDGES)).c_str());
         myRouteList->setItem(indexRow, 1, item);
         // set remove
         item = new FXTableItem("", GUIIconSubSys::getIcon(GUIIcon::REMOVE));
@@ -441,10 +441,10 @@ GNECalibratorDialog::updateVehicleTypeTable() {
     // iterate over vehicle types
     for (const auto& vType : myEditedAdditional->getNet()->getViewNet()->getNet()->getAttributeCarriers()->getDemandElements().at(SUMO_TAG_VTYPE)) {
         // Set id
-        item = new FXTableItem(vType->getAttribute(SUMO_ATTR_ID).c_str());
+        item = new FXTableItem(vType.second->getAttribute(SUMO_ATTR_ID).c_str());
         myVehicleTypeList->setItem(indexRow, 0, item);
         // Set VClass
-        item = new FXTableItem(vType->getAttribute(SUMO_ATTR_VCLASS).c_str());
+        item = new FXTableItem(vType.second->getAttribute(SUMO_ATTR_VCLASS).c_str());
         myVehicleTypeList->setItem(indexRow, 1, item);
         // set remove icon except for default vehicle type
         if (indexRow != 0) {

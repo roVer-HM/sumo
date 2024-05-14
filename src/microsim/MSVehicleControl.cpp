@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -27,6 +27,7 @@
 #include "MSEdge.h"
 #include "MSNet.h"
 #include "MSRouteHandler.h"
+#include "MSStop.h"
 #include <microsim/devices/MSVehicleDevice.h>
 #include <microsim/devices/MSDevice_Tripinfo.h>
 #include <utils/common/FileHelpers.h>
@@ -52,6 +53,7 @@ MSVehicleControl::MSVehicleControl() :
     myTeleportsYield(0),
     myTeleportsWrongLane(0),
     myEmergencyStops(0),
+    myEmergencyBrakingCount(0),
     myStoppedVehicles(0),
     myTotalDepartureDelay(0),
     myTotalTravelTime(0),
@@ -263,6 +265,7 @@ MSVehicleControl::clearState(const bool reinit) {
     myTeleportsYield = 0;
     myTeleportsWrongLane = 0;
     myEmergencyStops = 0;
+    myEmergencyBrakingCount = 0;
     myStoppedVehicles = 0;
     myTotalDepartureDelay = 0;
     myTotalTravelTime = 0;
@@ -452,20 +455,59 @@ MSVehicleControl::getVTypeDistributionMembership(const std::string& id) const {
 
 const RandomDistributor<MSVehicleType*>*
 MSVehicleControl::getVTypeDistribution(const std::string& typeDistID) const {
-    auto it = myVTypeDistDict.find(typeDistID);
+    const auto it = myVTypeDistDict.find(typeDistID);
     if (it != myVTypeDistDict.end()) {
         return it->second;
-    } else {
-        return nullptr;
     }
+    return nullptr;
+}
+
+
+const std::vector<MSVehicleType*>
+MSVehicleControl::getPedestrianTypes(void) const {
+    std::vector<MSVehicleType*> pedestrianTypes;
+    for (auto const& e : myVTypeDict)
+        if (e.second->getVehicleClass() == SUMOVehicleClass::SVC_PEDESTRIAN) {
+            pedestrianTypes.push_back(e.second);
+        }
+    return pedestrianTypes;
 }
 
 
 void
 MSVehicleControl::abortWaiting() {
     for (VehicleDictType::iterator i = myVehicleDict.begin(); i != myVehicleDict.end(); ++i) {
-        WRITE_WARNINGF(TL("Vehicle '%' aborted waiting for a % that will never come."), i->first,
-                       i->second->getParameter().departProcedure == DepartDefinition::SPLIT ? "split" : "person or container")
+        SUMOVehicle* veh = i->second;
+        std::string waitReason;
+        if (veh->isStoppedTriggered()) {
+            const MSStop& stop = veh->getNextStop();
+            if (stop.triggered) {
+                waitReason = "for a person that will never come";
+            } else if (stop.containerTriggered) {
+                waitReason = "for a container that will never come";
+            } else if (stop.joinTriggered) {
+                if (stop.pars.join != "") {
+                    waitReason = "to be joined to vehicle '" + stop.pars.join + "'";
+                } else {
+                    waitReason = "for a joining vehicle that will never come";
+                }
+            } else {
+                waitReason = "for an unknown trigger";
+            }
+        } else if (!veh->hasDeparted()) {
+            if (veh->getParameter().departProcedure == DepartDefinition::SPLIT) {
+                waitReason = "for a train from which to split";
+            } else if (veh->getParameter().departProcedure == DepartDefinition::TRIGGERED) {
+                waitReason = "at insertion for a person that will never come";
+            } else if (veh->getParameter().departProcedure == DepartDefinition::CONTAINER_TRIGGERED) {
+                waitReason = "at insertion for a container that will never come";
+            } else {
+                waitReason = "for an unknown departure trigger";
+            }
+        } else {
+            waitReason = "for an unknown reason";
+        }
+        WRITE_WARNINGF(TL("Vehicle '%' aborted waiting %."), i->first, waitReason);
     }
 }
 
@@ -523,12 +565,13 @@ MSVehicleControl::getTeleportCount() const {
 
 
 void
-MSVehicleControl::adaptIntermodalRouter(MSNet::MSIntermodalRouter& router) const {
+MSVehicleControl::adaptIntermodalRouter(MSTransportableRouter& router) const {
     for (const SUMOVehicle* const veh : myPTVehicles) {
         // add single vehicles with line attribute which are not part of a flow
         ConstMSRoutePtr const route = MSRoute::dictionary(veh->getParameter().routeid);
         router.getNetwork()->addSchedule(veh->getParameter(), route == nullptr ? nullptr : &route->getStops());
     }
 }
+
 
 /****************************************************************************/

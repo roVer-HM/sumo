@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2007-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -49,7 +49,7 @@ def get_options():
                   help="generate splits for edges assigned to multiple stations")
     ap.add_option("--poi-output", dest="poiOutput", category="output", type=ap.file,
                   help="generate a point of interest for every station")
-    ap.add_option("--vclasses", default="rail,rail_urban", type=str,
+    ap.add_option("--vclasses", default="rail,rail_urban,subway", type=str,
                   help="Include only edges allowing VCLASS")
     ap.add_option("--parallel-radius", type=float, default=100, dest="parallelRadius",
                   help="search radius for finding parallel edges")
@@ -141,8 +141,8 @@ def findParallel(options, net, stations):
     for station in stations.values():
         coords = sum(station.platforms, [])
         station.coord = (
-            sum([c[0] for c in coords]) / len(coords),
-            sum([c[1] for c in coords]) / len(coords))
+            round(sum([c[0] for c in coords]) / len(coords), 3),
+            round(sum([c[1] for c in coords]) / len(coords), 3))
 
         for edge, dist in net.getNeighboringEdges(station.coord[0], station.coord[1], options.parallelRadius):
             station.edges.add(edge)
@@ -152,7 +152,7 @@ def findGroup(mergedStations, station):
     for group in mergedStations:
         if station in group:
             return group
-    assert(False)
+    assert False
 
 
 def mergeGroups(stations, mergedStations, group1, group2):
@@ -248,7 +248,7 @@ def assignByDistance(options, net, stations):
     edgeStation = dict()
     for station in stations.values():
         for edge in station.edges:
-            assert(edge not in edgeStation or not options.merge)
+            assert (edge not in edgeStation or not options.merge)
             edgeStation[edge] = station.name
 
     remaining = set()

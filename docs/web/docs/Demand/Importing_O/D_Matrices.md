@@ -32,7 +32,7 @@ zero. You can also add a prefix to the generated trip definition names
 using (**--prefix** {{DT_STR}}). As usual, they are written to the output file named using the
 **--output-file** {{DT_FILE}} (**-o** {{DT_FILE}} for short). You can specify a vehicle type to be added to the trip
 definitions using **--vtype** {{DT_STR}}. Please remark that vehicles will have no type unless
-not given in the O/D-matrices or defined using this option. The command
+given in the O/D-matrices or defined using this option. The command
 line option overrides type names given in the O/D-matrices. The type
 itself will not be generated. Vehicles will be generated for the time
 period between **--begin** {{DT_TIME}} (**-b** {{DT_TIME}}) and -**-end** {{DT_TIME}} (**-e** {{DT_TIME}}), having 0 and 86400 as default values,
@@ -143,7 +143,7 @@ The tazRelation format defines the demand per OD pair in time slices for
 every a given vehicle type as follows:
 
 ```xml
-<data xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/datamode_file.xsd">
+<data xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://sumo.dlr.de/xsd/datamode_file.xsd">
     <interval id="car" begin="0" end="1:0:0">
       <tazRelation count="2000" from="1" to="2"/>
       <tazRelation count="500" from="1" to="3"/>
@@ -273,7 +273,7 @@ The Amitran format defines the demand per OD pair in time slices for
 every vehicle type as follows:
 
 ```xml
-<demand xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/amitran/od.xsd">
+<demand xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://sumo.dlr.de/xsd/amitran/od.xsd">
    <actorConfig id="0">
        <timeSlice duration="86400000" startTime="0">
            <odPair amount="100" destination="2" origin="1"/>
@@ -281,6 +281,9 @@ every vehicle type as follows:
    </actorConfig>
 </demand>
 ```
+
+!!! note
+    The time values are given in milliseconds.
 
 For details on the types and units see the schema at
 <https://sumo.dlr.de/xsd/amitran/od.xsd>
@@ -390,7 +393,7 @@ following scaling factors at page 31.
 | NRW other streets | 82,6%   | 74%     | 78,3%   | 71,6%   |
 | Bavaria           | 75%     | 67,2%   | 73,9%   | 64,7%   |
 
-One may note that this information is 15 years old. Additionally, no
+One may note that this information is several years old. Additionally, no
 information about the type of vehicles is given.
 
 A 24h time line a given O/D-matrix shall be split by may be given to
@@ -441,7 +444,7 @@ trip ids.
 - missing connection to an origin AND a destination district: error
 
 <div style="border:1px solid #909090; min-height: 35px;" align="right">
-<span style="float: right; margin-top: -5px;"><a href="https://wayback.archive-it.org/12090/20191127213419/https:/ec.europa.eu/research/fp7/index_en.cfm"><img src="../../images/FP7-small.gif" alt="Seventh Framework Programme"></a>
-<a href="https://trimis.ec.europa.eu/project/assessment-methodologies-ict-multimodal-transport-user-behaviour-co2-reduction"><img src="../../images/AMITRAN-small.png" alt="AMITRAN project"></a></span>
-<span style="">This part of SUMO was developed, reworked, or extended within the project 
-<a href="https://trimis.ec.europa.eu/project/assessment-methodologies-ict-multimodal-transport-user-behaviour-co2-reduction">"AMITRAN"</a>, co-funded by the European Commission within the <a href="https://cordis.europa.eu/about/archives">Seventh Framework Programme</a>.</span></div>
+<span style="float: right; margin-top: -5px;"><a href="https://web.archive.org/web/20191005024529/https:/ec.europa.eu/research/fp7/index_en.cfm"><img src="../../images/FP7-small.gif" alt="Seventh Framework Programme"></a>
+<a href="https://web.archive.org/web/20180309093847/https://amitran.eu/"><img src="../../images/AMITRAN-small.png" alt="AMITRAN project"></a></span>
+<span style="">This part of SUMO was developed, reworked, or extended within the project
+<a href="https://web.archive.org/web/20180309093847/https://amitran.eu/">"AMITRAN"</a>, co-funded by the European Commission within the <a href="https://cordis.europa.eu/about/archives">Seventh Framework Programme</a>.</span></div>

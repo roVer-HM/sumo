@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,10 +35,10 @@ netedit.supermodeDemand()
 netedit.personMode()
 
 # change person plan
-netedit.changePersonPlan("walk: edge->edge", False)
+netedit.changePersonPlan("walk", False)
 
-# create route using two one
-netedit.leftClick(referencePosition, 274, 400)
+# create route using one edge
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
 
 # press enter to create route
 netedit.typeEnter()
@@ -46,14 +46,12 @@ netedit.typeEnter()
 # go to person plan mode
 netedit.personPlanMode()
 
-# select person
-netedit.leftClick(referencePosition, 92, 412)
-
 # go to person plan mode
-netedit.changePersonPlanMode("personTrip: edge->busStop")
+netedit.changePersonPlanMode("personTrip")
 
 # create personTripEdgeBusStop
-netedit.leftClick(referencePosition, 295, 50)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.busStop.x,
+                  netedit.positions.demandElements.busStop.y)
 
 # press enter to create route
 netedit.typeEnter()
@@ -61,8 +59,13 @@ netedit.typeEnter()
 # go to inspect mode
 netedit.inspectMode()
 
-# inspect personTripEdgeBusStop
-netedit.leftClick(referencePosition, 430, 65)
+# inspect person
+netedit.leftClick(referencePosition, netedit.positions.demandElements.person.x,
+                  netedit.positions.demandElements.person.y)
+
+# now inspect plan top
+netedit.leftClick(referencePosition, netedit.positions.demandElements.planTopBusStop.x,
+                  netedit.positions.demandElements.planTopBusStop.y)
 
 # change depart with an invalid value
 netedit.modifyAttribute(netedit.attrs.personTripEdgeBusStop.inspect.modes, "dummy", False)
@@ -74,8 +77,7 @@ netedit.modifyAttribute(netedit.attrs.personTripEdgeBusStop.inspect.modes, "", F
 netedit.modifyAttribute(netedit.attrs.personTripEdgeBusStop.inspect.modes, "car", False)
 
 # Check undo redo
-netedit.undo(referencePosition, 3)
-netedit.redo(referencePosition, 3)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

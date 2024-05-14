@@ -1,5 +1,5 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2013-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2013-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -208,6 +208,7 @@ def minAngleDegreeDiff(d1, d2):
 
 
 def isWithin(pos, shape):
+    """Returns whether the given pos coordinate is inside the polygon shape defined in anticlockwise order."""
     angle = 0.
     for i in range(0, len(shape) - 1):
         p1 = ((shape[i][0] - pos[0]), (shape[i][1] - pos[1]))

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -65,10 +65,12 @@ class Node;
 // ===========================================================================
 
 class GUIGlObject {
+
 public:
     /// @brief associates object types with strings
     static StringBijection<GUIGlObjectType> TypeNames;
     static const GUIGlID INVALID_ID;
+    static const double INVALID_PRIORITY;
 
     /** @brief Constructor
      *
@@ -184,7 +186,7 @@ public:
     virtual void drawGL(const GUIVisualizationSettings& s) const = 0;
 
     /// @brief check if element is locked (Currently used only in netedit)
-    virtual bool isGLObjectLocked();
+    virtual bool isGLObjectLocked() const;
 
     /// @brief mark element as front element (Currently used only in netedit)
     virtual void markAsFrontElement();
@@ -296,22 +298,6 @@ protected:
     /// @brief build basic additional popup options. Used to unify pop-ups menu in netedit and SUMO-GUI
     void buildAdditionalsPopupOptions(GUIMainWindow& app, GUIGLObjectPopupMenu* ret, const std::string& type);
 
-    /// @brief check if mouse is within elements geometry (for circles)
-    bool mouseWithinGeometry(const Position center, const double radius) const;
-
-    /// @brief check if mouse is within elements geometry (for filled shapes)
-    bool mouseWithinGeometry(const PositionVector shape) const;
-
-    /// @brief check if mouse is within elements geometry (for shapes)
-    bool mouseWithinGeometry(const PositionVector shape, const double width) const;
-
-    /// @brief check if mouse is within elements geometry (for edges)
-    bool mouseWithinGeometry(const PositionVector shape, const double width, GUIGlObject* parent) const;
-
-    /// @brief check if mouse is within elements geometry (for rectangles)
-    bool mouseWithinGeometry(const Position& pos, const double width, const double height,
-                             const double offsetX, const double offsetY, const double rot) const;
-
 private:
     /// @brief The numerical id of the object
     const GUIGlID myGlID;
@@ -329,14 +315,14 @@ private:
     FXIcon* myIcon;
 
     /// @brief whether the object can be deleted
-    bool myAmBlocked;
+    bool myAmBlocked = false;
 
     /// @brief Parameter table windows which refer to this object
     std::set<GUIParameterTableWindow*> myParamWindows;
 
 #ifdef HAVE_OSG
     /// @brief OSG Node of this GL object
-    osg::Node* myOSGNode;
+    osg::Node* myOSGNode = nullptr;
 #endif
 
     /// @brief create full name

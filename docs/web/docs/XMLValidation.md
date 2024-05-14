@@ -23,7 +23,7 @@ Another prerequisite for validation is a schema declaration within the
 root element of the input file such as
 
 ```xml
-<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+<routes xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://sumo.dlr.de/xsd/routes_file.xsd">
 ```
 
 When setting the validation options to *always* the schemata for networks, additional files and routes
@@ -31,7 +31,7 @@ are pre-parsed from the local [schema file](#schema_files). For all other file t
 
 The validation option *auto* (which was the default before SUMO 1.15.0) in contrast only validates the file
 if the schema declaration is present. It tries to parse the schema first from the local path,
-see [the section schema files](#schema_files) and falls back to the web version if *SUMO_HOME* is not set or 
+see [the section schema files](#schema_files) and falls back to the web version if *SUMO_HOME* is not set or
 the file could not be found.  The current default *local* has no fallback, so validation will fail
 if the local file is not accessible (or SUMO_HOME is not set). This is to prevent unintended network access and [XXE attacks](https://en.wikipedia.org/wiki/XML_external_entity_attack).
 
@@ -50,8 +50,8 @@ from scratch the schema declaration must be added manually to the root
 element as follows:
 
 ```xml
-    <ROOT_ELEMENT xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/SCHEMA_FILE">
+    <ROOT_ELEMENT xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://sumo.dlr.de/xsd/SCHEMA_FILE">
 ```
 
 where *ROOT_ELEMENT* and *SCHEMA_FILE* should be set according to the
@@ -79,7 +79,7 @@ set](Basics/Basic_Computer_Skills.md#additional_environment_variables),
 these files will be used when validating inputs.
 
 Otherwise, the files are loaded from
-*<http://sumo.dlr.de/xsd/SCHEMA_FILE>* which may slow down the
+*<https://sumo.dlr.de/xsd/SCHEMA_FILE>* which may slow down the
 application (or fail if there is no internet connection).
 
 # SUMO File Types
@@ -93,5 +93,5 @@ given at [File_Extensions](Other/File_Extensions.md).
 To disable schema validation any of the following actions is sufficient
 
 - set the option **--xml-validation never**
-- Remove the `xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"` `xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/....xsd"`
+- Remove the `xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"` `xsi:noNamespaceSchemaLocation="https://sumo.dlr.de/xsd/....xsd"`
 attribute from the top of the XML input file.

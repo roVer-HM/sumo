@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -15,6 +15,7 @@
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
+/// @author  Mirko Barthauer
 /// @date    Mon, 14.04.2008
 ///
 // Importer for networks stored in openDrive format
@@ -39,6 +40,7 @@ class NBNodeCont;
 
 
 #define UNSET_CONNECTION 100000
+#define UNSET_LANEVALIDITY 100000
 
 // ===========================================================================
 // class definitions
@@ -98,6 +100,8 @@ protected:
         OPENDRIVE_TAG_LANE,
         OPENDRIVE_TAG_SIGNAL,
         OPENDRIVE_TAG_SIGNALREFERENCE,
+        OPENDRIVE_TAG_CONTROLLER,
+        OPENDRIVE_TAG_CONTROL,
         OPENDRIVE_TAG_VALIDITY,
         OPENDRIVE_TAG_JUNCTION,
         OPENDRIVE_TAG_CONNECTION,
@@ -108,7 +112,8 @@ protected:
         OPENDRIVE_TAG_GEOREFERENCE,
         OPENDRIVE_TAG_OFFSET,
         OPENDRIVE_TAG_OBJECT,
-        OPENDRIVE_TAG_REPEAT
+        OPENDRIVE_TAG_REPEAT,
+        OPENDRIVE_TAG_INCLUDE
     };
 
 
@@ -170,7 +175,9 @@ protected:
         OPENDRIVE_ATTR_RULE,
         OPENDRIVE_ATTR_RESTRICTION,
         OPENDRIVE_ATTR_NAME,
-        OPENDRIVE_ATTR_UNIT    // xodr v1.4
+        OPENDRIVE_ATTR_UNIT,    // xodr v1.4
+        OPENDRIVE_ATTR_SIGNALID,
+        OPENDRIVE_ATTR_FILE
     };
 
 
@@ -407,7 +414,7 @@ protected:
                         int orientationArg, bool dynamicArg, double sArg) :
             id(idArg), type(typeArg), name(nameArg),
             orientation(orientationArg), dynamic(dynamicArg), s(sArg),
-            minLane(0), maxLane(0)
+            minLane(-UNSET_LANEVALIDITY), maxLane(UNSET_LANEVALIDITY)
         { }
 
         /// dummy constructor for use in maps
@@ -422,6 +429,30 @@ protected:
         /// @brief signal validity range
         int minLane;
         int maxLane;
+        /// @brief the controller ID
+        std::string controller;
+    };
+
+
+    /**
+     * @struct OpenDriveController
+     * @brief Representation of a signal group
+     */
+    struct OpenDriveController {
+        /** @brief Constructor
+         * @param[in] idArg The OpenDrive id of the signal group
+         * @param[in] nameArg The type of the signal group
+         */
+        OpenDriveController(const std::string& idArg, const std::string nameArg) :
+            id(idArg), name(nameArg) { }
+
+        /// dummy constructor for use in maps
+        OpenDriveController() {}
+
+        std::string id;
+        std::string name;
+        std::vector<std::string> signalIDs;
+        std::string junction;
     };
 
     /**
@@ -600,6 +631,35 @@ protected:
         return mySignals;
     }
 
+    std::map<std::string, OpenDriveController>& getControllers() {
+        return myControllers;
+    }
+
+    std::map<std::string, std::vector<std::string>>& getJunctions2Controllers() {
+        return myJunctions2Controllers;
+    }
+
+    const OpenDriveController& getController(std::string signalID) {
+        if (mySignals.find(signalID) != mySignals.end() && myControllers.find(mySignals[signalID].controller) != myControllers.end()) {
+            return myControllers[mySignals[signalID].controller];
+        }
+        return myDummyController;
+    }
+
+    int getTLIndexForController(std::string controllerID) {
+        // sort them by their id
+        std::string junctionID = myControllers[controllerID].junction;
+        std::vector<std::string> junctionControllers;
+        for (auto& it : myControllers) {
+            if (it.second.junction == junctionID) {
+                junctionControllers.push_back(it.first);
+            }
+        }
+        std::sort(junctionControllers.begin(), junctionControllers.end());
+        auto it = std::find(junctionControllers.begin(), junctionControllers.end(), controllerID);
+        return (int)(it - junctionControllers.begin());
+    }
+
 
 private:
     void addLink(LinkType lt, const std::string& elementType, const std::string& elementID,
@@ -616,6 +676,7 @@ private:
     static std::string revertID(const std::string& id);
     const NBTypeCont& myTypeContainer;
     OpenDriveEdge myCurrentEdge;
+    OpenDriveController myCurrentController;
 
     std::map<std::string, OpenDriveEdge*>& myEdges;
     std::vector<int> myElementStack;
@@ -626,12 +687,17 @@ private:
     ContactPoint myCurrentContactPoint;
     bool myConnectionWasEmpty;
     std::map<std::string, OpenDriveSignal> mySignals;
+    std::map<std::string, OpenDriveController> myControllers;
+    std::map<std::string, std::vector<std::string>> myJunctions2Controllers;
     Position myOffset;
+    bool myUseCurrentNode;
 
     static bool myImportAllTypes;
     static bool myImportWidths;
     static double myMinWidth;
     static bool myImportInternalShapes;
+    static bool myIgnoreMisplacedSignals;
+    static OpenDriveController myDummyController;
 
 
 protected:
@@ -684,7 +750,7 @@ protected:
     static void setNodeSecure(NBNodeCont& nc, OpenDriveEdge& e,
                               const std::string& nodeID, NIImporter_OpenDrive::LinkType lt, std::vector<NodeSet>& joinedNodeIDs);
 
-    static NBTrafficLightDefinition* getTLSSecure(NBEdge* inEdge, NBNetBuilder& nb);
+    static NBTrafficLightDefinition* getTLSSecure(NBEdge* inEdge, /*const NBEdge::Connection& conn,*/ NBNetBuilder& nb);
 
 
     static std::pair<NBEdge*, NBEdge*> retrieveSignalEdges(NBNetBuilder& nb, const std::string& fromID, const std::string& toID, const std::string& junction);
@@ -702,7 +768,7 @@ protected:
     static void recomputeWidths(OpenDriveLaneSection& sec, double start, double end, double sectionStart, double sectionEnd);
     static void recomputeWidths(std::vector<OpenDriveLane>& lanes, double start, double end, double sectionStart, double sectionEnd);
     static void setLaneAttributes(const OpenDriveEdge* e, NBEdge::Lane& sumoLane, const OpenDriveLane& odLane, bool saveOrigIDs, const NBTypeCont& tc);
-    static void writeRoadObjects(const OpenDriveEdge* e); 
+    static void writeRoadObjects(const OpenDriveEdge* e);
 
     /// The names of openDrive-XML elements (for passing to GenericSAXHandler)
     static StringBijection<int>::Entry openDriveTags[];

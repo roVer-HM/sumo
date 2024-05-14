@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,6 +19,8 @@
 /****************************************************************************/
 
 #include <netbuild/NBLoadedSUMOTLDef.h>
+#include <netedit/frames/common/GNEInspectorFrame.h>
+#include <netedit/frames/demand/GNETypeFrame.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
@@ -197,7 +199,7 @@ GNESingleParametersDialog::ParametersValues::ParameterRow::ParameterRow(Paramete
     horizontalFrame = new FXHorizontalFrame(verticalFrameParent, GUIDesignAuxiliarHorizontalFrame);
     keyField = new FXTextField(horizontalFrame, GUIDesignTextFieldNCol, ParametersValues, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
     valueField = new FXTextField(horizontalFrame, GUIDesignTextFieldNCol, ParametersValues, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
-    button = new FXButton(horizontalFrame, "", GUIIconSubSys::getIcon(GUIIcon::REMOVE), ParametersValues, MID_GNE_REMOVE_ATTRIBUTE, GUIDesignButtonIcon);
+    button = GUIDesigns::buildFXButton(horizontalFrame, "", "", "", GUIIconSubSys::getIcon(GUIIcon::REMOVE), ParametersValues, MID_GNE_REMOVE_ATTRIBUTE, GUIDesignButtonIcon);
     // only create elements if vertical frame was previously created
     if (verticalFrameParent->id()) {
         horizontalFrame->create();
@@ -278,11 +280,11 @@ GNESingleParametersDialog::ParametersOperations::ParametersOperations(FXHorizont
     FXGroupBox(frame, "Operations", GUIDesignGroupBoxFrame100),
     myParameterDialogParent(ParameterDialogParent) {
     // create buttons
-    mySortButton =  new FXButton(this, TL("Sort"),  GUIIconSubSys::getIcon(GUIIcon::RELOAD), this, MID_GNE_BUTTON_SORT, GUIDesignButtonRectangular100);
-    myClearButton = new FXButton(this, TL("Clear"), GUIIconSubSys::getIcon(GUIIcon::CLEANJUNCTIONS), this, MID_GNE_BUTTON_CLEAR, GUIDesignButtonRectangular100);
-    myLoadButton =  new FXButton(this, TL("Load"),  GUIIconSubSys::getIcon(GUIIcon::OPEN), this, MID_GNE_BUTTON_LOAD, GUIDesignButtonRectangular100);
-    mySaveButton =  new FXButton(this, TL("Save"),  GUIIconSubSys::getIcon(GUIIcon::SAVE), this, MID_GNE_BUTTON_SAVE, GUIDesignButtonRectangular100);
-    myHelpButton =  new FXButton(this, TL("Help"),  GUIIconSubSys::getIcon(GUIIcon::HELP), this, MID_HELP, GUIDesignButtonRectangular100);
+    mySortButton =  GUIDesigns::buildFXButton(this, TL("Sort"), "", "", GUIIconSubSys::getIcon(GUIIcon::RELOAD), this, MID_GNE_BUTTON_SORT, GUIDesignButtonFixed(100));
+    myClearButton = GUIDesigns::buildFXButton(this, TL("Clear"), "", "", GUIIconSubSys::getIcon(GUIIcon::CLEANJUNCTIONS), this, MID_GNE_BUTTON_CLEAR, GUIDesignButtonFixed(100));
+    myLoadButton =  GUIDesigns::buildFXButton(this, TL("Load"), "", "",  GUIIconSubSys::getIcon(GUIIcon::OPEN), this, MID_GNE_BUTTON_LOAD, GUIDesignButtonFixed(100));
+    mySaveButton =  GUIDesigns::buildFXButton(this, TL("Save"), "", "",  GUIIconSubSys::getIcon(GUIIcon::SAVE), this, MID_GNE_BUTTON_SAVE, GUIDesignButtonFixed(100));
+    myHelpButton =  GUIDesigns::buildFXButton(this, TL("Help"), "", "",  GUIIconSubSys::getIcon(GUIIcon::HELP), this, MID_HELP, GUIDesignButtonFixed(100));
 }
 
 
@@ -408,7 +410,7 @@ GNESingleParametersDialog::ParametersOperations::onCmdHelpParameter(FXObject*, F
     FXHorizontalFrame* myHorizontalFrameOKButton = new FXHorizontalFrame(ParameterHelpDialog, GUIDesignAuxiliarHorizontalFrame);
     // Create Button Close (And two more horizontal frames to center it)
     new FXHorizontalFrame(myHorizontalFrameOKButton, GUIDesignAuxiliarHorizontalFrame);
-    new FXButton(myHorizontalFrameOKButton, (TL("OK") + std::string("\t\t") + TL("close")).c_str(), GUIIconSubSys::getIcon(GUIIcon::ACCEPT), ParameterHelpDialog, FXDialogBox::ID_ACCEPT, GUIDesignButtonOK);
+    GUIDesigns::buildFXButton(myHorizontalFrameOKButton, TL("OK"), "", TL("close"), GUIIconSubSys::getIcon(GUIIcon::ACCEPT), ParameterHelpDialog, FXDialogBox::ID_ACCEPT, GUIDesignButtonOK);
     new FXHorizontalFrame(myHorizontalFrameOKButton, GUIDesignAuxiliarHorizontalFrame);
     // Write Warning in console if we're in testing mode
     WRITE_DEBUG("Opening Parameter help dialog");
@@ -490,8 +492,8 @@ GNESingleParametersDialog::GNESingleParametersDialog(GNEFrameAttributeModules::G
 }
 
 
-GNESingleParametersDialog::GNESingleParametersDialog(GNEInspectorFrame::ParametersEditor* parametersEditor) :
-    FXDialogBox(parametersEditor->getInspectorFrameParent()->getViewNet()->getApp(), "Edit parameters", GUIDesignDialogBoxExplicitStretchable(400, 300)),
+GNESingleParametersDialog::GNESingleParametersDialog(GNEFrameAttributeModules::ParametersEditor* parametersEditor) :
+    FXDialogBox(parametersEditor->getViewNet()->getApp(), "Edit parameters", GUIDesignDialogBoxExplicitStretchable(400, 300)),
     myGenericDataAttributes(nullptr),
     myParametersEditor(parametersEditor),
     VTypeAttributeRow(nullptr),
@@ -499,10 +501,17 @@ GNESingleParametersDialog::GNESingleParametersDialog(GNEInspectorFrame::Paramete
     myTLDef(nullptr) {
     // call auxiliar constructor
     constructor("Parameters");
-    // get AC Front
-    const GNEAttributeCarrier* AC = parametersEditor->getInspectorFrameParent()->getViewNet()->getInspectedAttributeCarriers().front();
-    // fill myParametersValues
-    myParametersValues->setParameters(AC->getACParameters<std::vector<std::pair<std::string, std::string> > >());
+    if (parametersEditor->getInspectorFrameParent()) {
+        // get AC Front
+        const auto AC = parametersEditor->getViewNet()->getInspectedAttributeCarriers().front();
+        // fill myParametersValues
+        myParametersValues->setParameters(AC->getACParameters<std::vector<std::pair<std::string, std::string> > >());
+    } else if (parametersEditor->getTypeFrameParent()) {
+        // get type
+        const auto type = parametersEditor->getTypeFrameParent()->getTypeSelector()->getCurrentType();
+        // fill myParametersValues
+        myParametersValues->setParameters(type->getACParameters<std::vector<std::pair<std::string, std::string> > >());
+    }
 }
 
 
@@ -606,29 +615,34 @@ GNESingleParametersDialog::onCmdAccept(FXObject*, FXSelector, void*) {
         // set parameter in editor creator
         myGenericDataAttributes->setParameters(parameters);
     } else if (myParametersEditor) {
-        // get inspected AC
-        GNEAttributeCarrier* AC = myParametersEditor->getInspectorFrameParent()->getViewNet()->getInspectedAttributeCarriers().front();
-        // set parameter in AC using undoList
-        myParametersEditor->getInspectorFrameParent()->getViewNet()->getUndoList()->begin(AC->getTagProperty().getGUIIcon(), "change parameters");
-        AC->setACParameters(parameters, myParametersEditor->getInspectorFrameParent()->getViewNet()->getUndoList());
-        myParametersEditor->getInspectorFrameParent()->getViewNet()->getUndoList()->end();
+        if (myParametersEditor->getInspectorFrameParent()) {
+            // get inspected AC
+            const auto AC = myParametersEditor->getViewNet()->getInspectedAttributeCarriers().front();
+            // set parameter in AC using undoList
+            myParametersEditor->getViewNet()->getUndoList()->begin(AC, "change parameters");
+            AC->setACParameters(parameters, myParametersEditor->getViewNet()->getUndoList());
+            myParametersEditor->getViewNet()->getUndoList()->end();
+        } else if (myParametersEditor->getTypeFrameParent()) {
+            // get type
+            const auto type = myParametersEditor->getTypeFrameParent()->getTypeSelector()->getCurrentType();
+            // set parameter in AC using undoList
+            myParametersEditor->getViewNet()->getUndoList()->begin(type, "change parameters");
+            type->setACParameters(parameters, myParametersEditor->getViewNet()->getUndoList());
+            myParametersEditor->getViewNet()->getUndoList()->end();
+        }
     } else if (VTypeAttributeRow) {
         // set parameter in VTypeAttributeRow
         VTypeAttributeRow->setParameters(parameters);
     } else if (myAttributeCarrier) {
         // set parameter in AC using undoList
-        myAttributeCarrier->getNet()->getViewNet()->getUndoList()->begin(myAttributeCarrier->getTagProperty().getGUIIcon(), "change parameters");
+        myAttributeCarrier->getNet()->getViewNet()->getUndoList()->begin(myAttributeCarrier, "change parameters");
         myAttributeCarrier->setACParameters(parameters, myAttributeCarrier->getNet()->getViewNet()->getUndoList());
         myAttributeCarrier->getNet()->getViewNet()->getUndoList()->end();
     } else if (myTLDef) {
-        // declare parametersMap
-        Parameterised::Map parametersMap;
-        // Generate an string using the following structure: "key1=value1|key2=value2|...
+        myTLDef->clearParameter();
         for (const auto& parameter : parameters) {
-            parametersMap[parameter.first] = parameter.second;
+            myTLDef->setParameter(parameter.first, parameter.second);
         }
-        // set setACParameters map
-        myTLDef->setParametersMap(parametersMap);
     }
     // all ok, then close dialog
     getApp()->stopModal(this, TRUE);
@@ -650,8 +664,13 @@ GNESingleParametersDialog::onCmdReset(FXObject*, FXSelector, void*) {
     if (myGenericDataAttributes) {
         myParametersValues->setParameters(myGenericDataAttributes->getParameters());
     } else if (myParametersEditor) {
-        const GNEAttributeCarrier* AC = myParametersEditor->getInspectorFrameParent()->getViewNet()->getInspectedAttributeCarriers().front();
-        myParametersValues->setParameters(AC->getACParameters<std::vector<std::pair<std::string, std::string> > >());
+        if (myParametersEditor->getInspectorFrameParent()) {
+            const auto AC = myParametersEditor->getViewNet()->getInspectedAttributeCarriers().front();
+            myParametersValues->setParameters(AC->getACParameters<std::vector<std::pair<std::string, std::string> > >());
+        } else if (myParametersEditor->getTypeFrameParent()) {
+            const auto type = myParametersEditor->getTypeFrameParent()->getTypeSelector()->getCurrentType();
+            myParametersValues->setParameters(type->getACParameters<std::vector<std::pair<std::string, std::string> > >());
+        }
     } else if (VTypeAttributeRow) {
         myParametersValues->setParameters(VTypeAttributeRow->getParametersVectorStr());
     } else if (myAttributeCarrier) {
@@ -687,9 +706,9 @@ GNESingleParametersDialog::constructor(const std::string& name) {
     // create dialog buttons bot centered
     FXHorizontalFrame* buttonsFrame = new FXHorizontalFrame(mainFrame, GUIDesignHorizontalFrame);
     new FXHorizontalFrame(buttonsFrame, GUIDesignAuxiliarHorizontalFrame);
-    myAcceptButton = new FXButton(buttonsFrame, (TL("accept") + std::string("\t\t") + TL("close")).c_str(), GUIIconSubSys::getIcon(GUIIcon::ACCEPT), this, MID_GNE_BUTTON_ACCEPT, GUIDesignButtonAccept);
-    myCancelButton = new FXButton(buttonsFrame, (TL("cancel") + std::string("\t\t") + TL("close")).c_str(), GUIIconSubSys::getIcon(GUIIcon::CANCEL), this, MID_GNE_BUTTON_CANCEL, GUIDesignButtonCancel);
-    myResetButton = new FXButton(buttonsFrame, (TL("reset") + std::string("\t\t") + TL("close")).c_str(),  GUIIconSubSys::getIcon(GUIIcon::RESET), this, MID_GNE_BUTTON_RESET,  GUIDesignButtonReset);
+    myAcceptButton = GUIDesigns::buildFXButton(buttonsFrame, TL("accept"), "", TL("close"), GUIIconSubSys::getIcon(GUIIcon::ACCEPT), this, MID_GNE_BUTTON_ACCEPT, GUIDesignButtonAccept);
+    myCancelButton = GUIDesigns::buildFXButton(buttonsFrame, TL("cancel"), "", TL("close"), GUIIconSubSys::getIcon(GUIIcon::CANCEL), this, MID_GNE_BUTTON_CANCEL, GUIDesignButtonCancel);
+    myResetButton = GUIDesigns::buildFXButton(buttonsFrame, TL("reset"), "", TL("close"),  GUIIconSubSys::getIcon(GUIIcon::RESET), this, MID_GNE_BUTTON_RESET,  GUIDesignButtonReset);
     new FXHorizontalFrame(buttonsFrame, GUIDesignAuxiliarHorizontalFrame);
 }
 

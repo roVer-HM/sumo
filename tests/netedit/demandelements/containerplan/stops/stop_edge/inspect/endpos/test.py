@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,26 +35,23 @@ netedit.supermodeDemand()
 netedit.containerMode()
 
 # change container plan
-netedit.changeContainerPlan("tranship: edge->edge", False)
+netedit.changeContainerPlan("tranship", False)
 
-# create route using two one
-netedit.leftClick(referencePosition, 274, 400)
-netedit.leftClick(referencePosition, 180, 65)
+# create route using one edge
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x, netedit.positions.demandElements.edge2.y)
 
 # press enter to create route
 netedit.typeEnter()
 
-# go to containerStopEdge mode
+# go to StopPlanEdge mode
 netedit.containerPlanMode()
 
-# select container
-netedit.leftClick(referencePosition, 80, 410)
+# go to StopPlanEdge mode
+netedit.changeContainerPlanMode("stop")
 
-# go to containerStopEdge mode
-netedit.changeContainerPlanMode("stopContainer: edge")
-
-# create containerStopEdge
-netedit.leftClick(referencePosition, 180, 65)
+# create StopPlanEdge
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x, netedit.positions.demandElements.edge2.y)
 
 # press enter to create route
 netedit.typeEnter()
@@ -62,21 +59,20 @@ netedit.typeEnter()
 # go to inspect mode
 netedit.inspectMode()
 
-# inspect containerStopEdge
-netedit.leftClick(referencePosition, 180, 45)
+# inspect StopPlanEdge
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x, netedit.positions.demandElements.edge2.y)
 
 # change depart with an invalid value
-netedit.modifyAttribute(netedit.attrs.containerStopEdge.inspect.endPos, "dummy", False)
+netedit.modifyAttribute(netedit.attrs.stopPlanEdge.inspect.endPos, "dummy", False)
 
 # change depart with an invalid value
-netedit.modifyAttribute(netedit.attrs.containerStopEdge.inspect.endPos, "-40", False)
+netedit.modifyAttribute(netedit.attrs.stopPlanEdge.inspect.endPos, "-40", False)
 
 # change depart with an valid value
-netedit.modifyAttribute(netedit.attrs.containerStopEdge.inspect.endPos, "7.3", False)
+netedit.modifyAttribute(netedit.attrs.stopPlanEdge.inspect.endPos, "7.3", False)
 
 # Check undo redo
-netedit.undo(referencePosition, 3)
-netedit.redo(referencePosition, 3)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

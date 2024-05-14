@@ -118,6 +118,25 @@ The following example restricts fcd-output to a single flow out of the whole sim
 </flow>
 ```
 
+### Restricting the set of persons and containers that generate output
+Output can be restricted to specific person or container types or person/container ids by [controlling the set of persons that are equipped](../../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#devices)   with the **fcd**-(person)-device. The following example restricts output to a
+  single person called *ego*:
+```
+--person-device.fcd.explicit ego
+```
+
+The following example restricts fcd-output to a single personFlow out of the whole simulation
+
+```
+--person-device.fcd.probability 0 ...
+```
+
+```xml
+<personFlow ...>
+   <param key="has.fcd.device" value="true"/>
+</personFlow>
+```
+
 ### Restricting the locations
 Output can be restricted to a specific set of edges by loading a list of edges from a file with option **--fcd-output.filter-edges.input-file** {{DT_FILE}}. The file format for
 this is the same as the one when saving selections in  [netedit](../../Netedit/index.md):
@@ -141,7 +160,7 @@ When not all vehicles are equipped with an **fcd**-device, other vehicles and pe
   geo-referenced networks)
 - **--fcd-output.signals** will add [signal state
   information](../../TraCI/Vehicle_Signalling.md) to the output
-- **--fcd-output.distance** will add [kilometrage](../Railways.md#kilometrage-mileage-chainage) information to the output
+- **--fcd-output.distance** will add [kilometrage](../Railways.md#kilometrage_mileage_chainage) information to the output
 - **--fcd-output.acceleration** will add acceleration data to the output (also lateral acceleration when using the [sublane model](../SublaneModel.md)
 - **--fcd-output.max-leader-distance FLOAT** will add attributes leaderGap, leaderSpeed, leaderID whenever a vehicle has a leader within the given distance. Otherwise, leaderID will be "" and leaderGap, leaderSpeed will be -1.
 - **--fcd-output.params KEY1,KEY2,...** adds [generic parameters](../GenericParameters.md) to the output (supports device and carfollowmodel parameters as well as arbitrary user-define values)
@@ -150,13 +169,13 @@ When not all vehicles are equipped with an **fcd**-device, other vehicles and pe
   - **vehicle**: add a vehicle attribute to each person (and thereby distinguish riding from walking persons).
   - **odometer**: write odometer value for each vehicle (distance driven since departure)
   - **posLat**: write lateral position on lane for each vehicle
-  
+
 ## NOTES
 
 In combination with the given geometry of the vehicles (shapes) you can
 build some nice animations, e.g [NASA
-WorldWind](http://worldwind.arc.nasa.gov/java/) or [Google
-Earth](http://earth.google.com).
+WorldWind](https://worldwind.arc.nasa.gov/java/) or [Google
+Earth](https://earth.google.com).
 
 ## Visualization example
 
@@ -192,4 +211,3 @@ Generated with [plot_trajectories.py](../../Tools/Visualization.md#selected_traj
 <img src="../../images/timeSpeed_output.png" width="500px"/>
 
 Generated with [plot_trajectories.py](../../Tools/Visualization.md#fcd_based_speeds_over_time).
-

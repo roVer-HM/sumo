@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2023-01-04 11:28:03 by Eclipse SUMO jtrrouter Version v1_15_0+1277-3febad6e597
+<!-- generated on 2024-04-03 13:22:50 by Eclipse SUMO jtrrouter Version v1_19_0+1662-cc3005420e0
 -->
 
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/jtrrouterConfiguration.xsd">
@@ -138,6 +138,9 @@
         <!-- Apply the given time penalty when computing routing costs for minor-link internal lanes -->
         <weights.minor-penalty value="1.5" type="FLOAT"/>
 
+        <!-- Apply the given time penalty when computing routing costs across a traffic light -->
+        <weights.tls-penalty value="0" type="FLOAT"/>
+
         <!-- Routes are cut off when the route edges to net edges ratio is larger than FLOAT -->
         <max-edges-factor value="2" type="FLOAT"/>
 
@@ -233,6 +236,12 @@
 
         <!-- Writes all warnings and errors to FILE -->
         <error-log value="" type="FILE"/>
+
+        <!-- Writes timestamps in front of all messages -->
+        <log.timestamps value="false" type="BOOL"/>
+
+        <!-- Writes process ID in front of all messages -->
+        <log.processid value="false" type="BOOL"/>
 
         <!-- Language to use in messages -->
         <language value="C" type="STR"/>

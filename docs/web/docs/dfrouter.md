@@ -4,7 +4,7 @@ title: dfrouter
 
 # From 30.000 feet
 
-**dfrouter** uses induction loop values to compute vehicle routes that
+**dfrouter** (*"detector flow router"*) uses induction loop values to compute vehicle routes that
 may be used by [sumo](sumo.md).
 
 - **Purpose:** Building vehicle routes from induction loop counts
@@ -12,7 +12,7 @@ may be used by [sumo](sumo.md).
 - **Input (mandatory):**
 
   A) a road network as generated via [netconvert](netconvert.md) or [netgenerate](netgenerate.md), see [Building Networks](index.md#network_building)
-  
+
   B) induction loop definitions
 
   C) induction loop measures
@@ -32,7 +32,7 @@ The complete list of options is given in the following.
 
 You may use a XML schema definition file for setting up a dfrouter
 configuration:
-[dfrouterConfiguration.xsd](http://sumo.dlr.de/xsd/dfrouterConfiguration.xsd).
+[dfrouterConfiguration.xsd](https://sumo.dlr.de/xsd/dfrouterConfiguration.xsd).
 
 ### Configuration
 
@@ -92,7 +92,7 @@ Applications\#Configuration Files](Basics/Using_the_Command_Line_Applications.md
 | **--keep-longer-routes** {{DT_BOOL}} | Keeps routes even if a shorter one exists; *default:* **false** |
 | **--max-search-depth** {{DT_INT}} | Number of edges to follow a route without passing a detector; *default:* **30** |
 | **--emissions-only** {{DT_BOOL}} | Writes only emission times; *default:* **false** |
-| **--disallowed-edges** {{DT_STR[]}} | Do not route on these edges |
+| **--disallowed-edges** {{DT_STR_LIST}} | Do not route on these edges |
 | **--vclass** {{DT_STR}} | Only route on edges allowing the given vclass; *default:* **ignoring** |
 | **--keep-turnarounds** {{DT_BOOL}} | Allow turnarounds as route continuations; *default:* **false** |
 | **--min-route-length** {{DT_FLOAT}} | Minimum distance in meters between start and end node of every route; *default:* **-1** |
@@ -147,6 +147,8 @@ Options](Basics/Using_the_Command_Line_Applications.md#reporting_options).
 | **-l** {{DT_FILE}}<br> **--log** {{DT_FILE}} | Writes all messages to FILE (implies verbose) |
 | **--message-log** {{DT_FILE}} | Writes all non-error messages to FILE (implies verbose) |
 | **--error-log** {{DT_FILE}} | Writes all warnings and errors to FILE |
+| **--log.timestamps** {{DT_BOOL}} | Writes timestamps in front of all messages; *default:* **false** |
+| **--log.processid** {{DT_BOOL}} | Writes process ID in front of all messages; *default:* **false** |
 | **--language** {{DT_STR}} | Language to use in messages; *default:* **C** |
 | **--report-empty-detectors** {{DT_BOOL}} | Lists detectors with no flow (enable -v); *default:* **false** |
 | **--print-absolute-flows** {{DT_BOOL}} | Prints aggregated detector flows; *default:* **false** |
@@ -163,5 +165,3 @@ Options](Basics/Using_the_Command_Line_Applications.md#random_number_options).
 |--------|-------------|
 | **--random** {{DT_BOOL}} | Initialises the random number generator with the current system time; *default:* **false** |
 | **--seed** {{DT_INT}} | Initialises the random number generator with the given value; *default:* **23423** |
-
-

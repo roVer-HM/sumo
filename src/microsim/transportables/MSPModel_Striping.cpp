@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2014-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2014-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -373,78 +373,83 @@ MSPModel_Striping::initWalkingAreaPaths(const MSNet*) {
 
     // build walkingareaPaths
     for (MSEdgeVector::const_iterator i = MSEdge::getAllEdges().begin(); i != MSEdge::getAllEdges().end(); ++i) {
-        const MSEdge* edge = *i;
-        if (edge->isWalkingArea()) {
-            const MSLane* walkingArea = getSidewalk<MSEdge, MSLane>(edge);
-            myMinNextLengths[walkingArea] = walkingArea->getLength();
-            // build all possible paths across this walkingArea
-            // gather all incident lanes
-            std::vector<const MSLane*> lanes;
-            for (const MSEdge* in : edge->getPredecessors()) {
-                if (!in->isTazConnector()) {
-                    lanes.push_back(getSidewalk<MSEdge, MSLane>(in));
-                    if (lanes.back() == nullptr) {
-                        throw ProcessError("Invalid connection from edge '" + in->getID() + "' to walkingarea edge '" + edge->getID() + "'");
-                    }
+        insertWalkArePaths(*i, myWalkingAreaPaths);
+    }
+}
+
+
+void
+MSPModel_Striping::insertWalkArePaths(const MSEdge* edge, WalkingAreaPaths& into) {
+    if (edge->isWalkingArea()) {
+        const MSLane* walkingArea = getSidewalk<MSEdge, MSLane>(edge);
+        myMinNextLengths[walkingArea] = walkingArea->getLength();
+        // build all possible paths across this walkingArea
+        // gather all incident lanes
+        std::vector<const MSLane*> lanes;
+        for (const MSEdge* in : edge->getPredecessors()) {
+            if (!in->isTazConnector()) {
+                lanes.push_back(getSidewalk<MSEdge, MSLane>(in));
+                if (lanes.back() == nullptr) {
+                    throw ProcessError("Invalid connection from edge '" + in->getID() + "' to walkingarea edge '" + edge->getID() + "'");
                 }
             }
-            for (const MSEdge* out : edge->getSuccessors()) {
-                if (!out->isTazConnector()) {
-                    lanes.push_back(getSidewalk<MSEdge, MSLane>(out));
-                    if (lanes.back() == nullptr) {
-                        throw ProcessError("Invalid connection from walkingarea edge '" + edge->getID() + "' to edge '" + out->getID() + "'");
-                    }
+        }
+        for (const MSEdge* out : edge->getSuccessors()) {
+            if (!out->isTazConnector()) {
+                lanes.push_back(getSidewalk<MSEdge, MSLane>(out));
+                if (lanes.back() == nullptr) {
+                    throw ProcessError("Invalid connection from walkingarea edge '" + edge->getID() + "' to edge '" + out->getID() + "'");
                 }
             }
-            // build all combinations
-            for (int j = 0; j < (int)lanes.size(); ++j) {
-                for (int k = 0; k < (int)lanes.size(); ++k) {
-                    if (j != k) {
-                        // build the walkingArea
-                        const MSLane* const from = lanes[j];
-                        const MSLane* const to = lanes[k];
-                        const int fromDir = from->getLinkTo(walkingArea) != nullptr ? FORWARD : BACKWARD;
-                        const int toDir = walkingArea->getLinkTo(to) != nullptr ? FORWARD : BACKWARD;
-                        PositionVector shape;
-                        Position fromPos = from->getShape()[fromDir == FORWARD ? -1 : 0];
-                        Position toPos = to->getShape()[toDir == FORWARD ? 0 : -1];
-                        const double maxExtent = fromPos.distanceTo2D(toPos) / 4; // prevent sharp corners
-                        const double extrapolateBy = MIN2(maxExtent, walkingArea->getWidth() / 2);
-                        // assemble shape
-                        shape.push_back(fromPos);
-                        if (extrapolateBy > POSITION_EPS) {
-                            PositionVector fromShp = from->getShape();
-                            fromShp.extrapolate(extrapolateBy);
-                            shape.push_back_noDoublePos(fromDir == FORWARD ? fromShp.back() : fromShp.front());
-                            PositionVector nextShp = to->getShape();
-                            nextShp.extrapolate(extrapolateBy);
-                            shape.push_back_noDoublePos(toDir == FORWARD ? nextShp.front() : nextShp.back());
-                        }
-                        shape.push_back_noDoublePos(toPos);
-                        if (shape.size() < 2) {
-                            PositionVector fromShp = from->getShape();
-                            fromShp.extrapolate(1.5 * POSITION_EPS); // noDoublePos requires a difference of POSITION_EPS in at least one coordinate
-                            shape.push_back_noDoublePos(fromDir == FORWARD ? fromShp.back() : fromShp.front());
-                            assert(shape.size() == 2);
-                        } else if (myWalkingAreaDetail > 4) {
-                            shape = shape.bezier(myWalkingAreaDetail);
-                        }
-                        double angleOverride = INVALID_DOUBLE;
-                        if (shape.size() >= 4 && shape.length() < walkingArea->getWidth()) {
-                            const double aStart = shape.angleAt2D(0);
-                            const double aEnd = shape.angleAt2D((int)shape.size() - 2);
-                            if (fabs(aStart - aEnd) < DEG2RAD(10)) {
-                                angleOverride = (aStart + aEnd) / 2;
-                            }
-                        }
-                        if (fromDir == BACKWARD) {
-                            // will be walking backward on walkingArea
-                            shape = shape.reverse();
-                        }
-                        WalkingAreaPath wap = WalkingAreaPath(from, walkingArea, to, shape, fromDir, angleOverride);
-                        myWalkingAreaPaths.insert(std::make_pair(std::make_pair(from, to), wap));
-                        myMinNextLengths[walkingArea] = MIN2(myMinNextLengths[walkingArea], wap.length);
+        }
+        // build all combinations
+        for (int j = 0; j < (int)lanes.size(); ++j) {
+            for (int k = 0; k < (int)lanes.size(); ++k) {
+                if (j != k) {
+                    // build the walkingArea
+                    const MSLane* const from = lanes[j];
+                    const MSLane* const to = lanes[k];
+                    const int fromDir = from->getLinkTo(walkingArea) != nullptr ? FORWARD : BACKWARD;
+                    const int toDir = walkingArea->getLinkTo(to) != nullptr ? FORWARD : BACKWARD;
+                    PositionVector shape;
+                    Position fromPos = from->getShape()[fromDir == FORWARD ? -1 : 0];
+                    Position toPos = to->getShape()[toDir == FORWARD ? 0 : -1];
+                    const double maxExtent = fromPos.distanceTo2D(toPos) / 4; // prevent sharp corners
+                    const double extrapolateBy = MIN2(maxExtent, walkingArea->getWidth() / 2);
+                    // assemble shape
+                    shape.push_back(fromPos);
+                    if (extrapolateBy > POSITION_EPS) {
+                        PositionVector fromShp = from->getShape();
+                        fromShp.extrapolate(extrapolateBy);
+                        shape.push_back_noDoublePos(fromDir == FORWARD ? fromShp.back() : fromShp.front());
+                        PositionVector nextShp = to->getShape();
+                        nextShp.extrapolate(extrapolateBy);
+                        shape.push_back_noDoublePos(toDir == FORWARD ? nextShp.front() : nextShp.back());
                     }
+                    shape.push_back_noDoublePos(toPos);
+                    if (shape.size() < 2) {
+                        PositionVector fromShp = from->getShape();
+                        fromShp.extrapolate(1.5 * POSITION_EPS); // noDoublePos requires a difference of POSITION_EPS in at least one coordinate
+                        shape.push_back_noDoublePos(fromDir == FORWARD ? fromShp.back() : fromShp.front());
+                        assert(shape.size() == 2);
+                    } else if (myWalkingAreaDetail > 4) {
+                        shape = shape.bezier(myWalkingAreaDetail);
+                    }
+                    double angleOverride = INVALID_DOUBLE;
+                    if (shape.size() >= 4 && shape.length() < walkingArea->getWidth()) {
+                        const double aStart = shape.angleAt2D(0);
+                        const double aEnd = shape.angleAt2D((int)shape.size() - 2);
+                        if (fabs(aStart - aEnd) < DEG2RAD(10)) {
+                            angleOverride = (aStart + aEnd) / 2;
+                        }
+                    }
+                    if (fromDir == BACKWARD) {
+                        // will be walking backward on walkingArea
+                        shape = shape.reverse();
+                    }
+                    WalkingAreaPath wap = WalkingAreaPath(from, walkingArea, to, shape, fromDir, angleOverride);
+                    into.insert(std::make_pair(std::make_pair(from, to), wap));
+                    myMinNextLengths[walkingArea] = MIN2(myMinNextLengths[walkingArea], wap.length);
                 }
             }
         }
@@ -645,7 +650,24 @@ MSPModel_Striping::getNextLane(const PState& ped, const MSLane* currentLane, con
                 }
             } else {
                 // walk forward by default
-                nextDir = junction == nextRouteEdge->getToJunction() ? BACKWARD : FORWARD;
+                if (junction == nextRouteEdge->getToJunction()) {
+                    nextDir = BACKWARD;
+                } else if (junction == nextRouteEdge->getFromJunction()) {
+                    nextDir = FORWARD;
+                } else {
+                    // topological disconnect, find a direction that makes sense
+                    // for the future part of the route
+                    ConstMSEdgeVector futureRoute = ped.myStage->getRoute();
+                    futureRoute.erase(futureRoute.begin(), futureRoute.begin() + ped.myStage->getRoutePosition() + 1);
+                    int passedFwd = 0;
+                    int passedBwd = 0;
+                    canTraverse(FORWARD, futureRoute, passedFwd);
+                    canTraverse(BACKWARD, futureRoute, passedBwd);
+                    nextDir = (passedFwd >= passedBwd) ? FORWARD : BACKWARD;
+                    if DEBUGCOND(ped) {
+                        std::cout << " nextEdge=" << nextRouteEdge->getID() << " passedFwd=" << passedFwd << " passedBwd=" << passedBwd << " futureRoute=" << toString(futureRoute) << " nextDir=" << nextDir << "\n";
+                    }
+                }
                 // try to use a direct link as fallback
                 // direct links only exist if built explicitly. They are used to model tl-controlled links if there are no crossings
                 if (ped.myDir == FORWARD) {
@@ -1306,7 +1328,7 @@ MSPModel_Striping::addCrossingVehs(const MSLane* crossing, int stripes, double l
             // the vehicle to enter the junction first has priority
             const MSVehicle* veh = (*it).vehAndGap.first;
             if (veh != nullptr) {
-                Obstacle vo((*it).distToCrossing, 0, OBSTACLE_VEHICLE, veh->getID(), veh->getVehicleType().getWidth() + 2 * minGapToVehicle);
+                Obstacle vo((*it).distToCrossing, 0, OBSTACLE_VEHICLE, veh->getID(), veh->getVehicleType().getWidth() + 2 * minGapToVehicle, veh);
                 // block entry to the crossing in walking direction but allow leaving it
                 Obstacle voBlock = vo;
                 if (dir == FORWARD) {
@@ -1475,7 +1497,7 @@ MSPModel_Striping::getVehicleObstacles(const MSLane* lane, int dir, PState* ped)
                       << "\n";
         }
         if (vehXMaxCheck > minX && vehXMinCheck && vehXMinCheck <= maxX) {
-            Obstacle vo(vehBack, veh->getSpeed() * (bidi ? -1 : 1), OBSTACLE_VEHICLE, veh->getID(), 0);
+            Obstacle vo(vehBack, veh->getSpeed() * (bidi ? -1 : 1), OBSTACLE_VEHICLE, veh->getID(), 0, veh);
             // moving vehicles block space along their path
             vo.xFwd = vehXMax;
             vo.xBack = vehXMin;
@@ -1542,6 +1564,9 @@ MSPModel_Striping::Obstacle::Obstacle(const PState& ped) :
     type(ped.getOType()),
     description(ped.getID()) {
     assert(!ped.myWaitingToEnter);
+    if (type == OBSTACLE_VEHICLE) {
+        vehicle = static_cast<const PStateVehicle&>(ped).getVehicle();
+    }
 }
 
 
@@ -1586,8 +1611,10 @@ MSPModel_Striping::PState::PState(MSPerson* person, MSStageMoving* stage, const 
             myWalkingAreaPath = getArbitraryPath(route.front());
         }
     } else {
-        const bool mayStartForward = canTraverse(FORWARD, route) != UNDEFINED_DIRECTION;
-        const bool mayStartBackward = canTraverse(BACKWARD, route) != UNDEFINED_DIRECTION;
+        int passedFwd = 0;
+        int passedBwd = 0;
+        const bool mayStartForward = canTraverse(FORWARD, route, passedFwd) != UNDEFINED_DIRECTION;
+        const bool mayStartBackward = canTraverse(BACKWARD, route, passedBwd) != UNDEFINED_DIRECTION;
         if DEBUGCOND(*this) {
             std::cout << "  initialize dir for " << myPerson->getID() << " forward=" << mayStartForward << " backward=" << mayStartBackward << "\n";
         }
@@ -1605,6 +1632,15 @@ MSPModel_Striping::PState::PState(MSPerson* person, MSStageMoving* stage, const 
             if DEBUGCOND(*this) {
                 std::cout << " crossingRoute=" << toString(crossingRoute) << "\n";
             }
+        } else if (!mayStartForward && !mayStartBackward) {
+            int lastDisconnect = passedFwd >= passedBwd ? passedFwd : passedBwd;
+            std::string dLoc = TLF(", time=%.", SIMTIME);
+            if (route.size() > 2) {
+                dLoc = TLF("between edge '%' and edge '%', time=%.", route[lastDisconnect - 1]->getID(), route[lastDisconnect]->getID(), SIMTIME);
+            }
+            WRITE_WARNINGF(TL("Person '%' walking from edge '%' to edge '%' has a disconnect%"),
+                           myPerson->getID(), route.front()->getID(), route.back()->getID(), dLoc);
+            myDir =  passedFwd >= passedBwd ? FORWARD : BACKWARD;
         } else {
             myDir = !mayStartBackward ? FORWARD : BACKWARD;
         }
@@ -2115,9 +2151,15 @@ MSPModel_Striping::PState::walk(const Obstacles& obs, SUMOTime currentTime) {
         xSpeed = 0;
     }
     if (xSpeed == 0) {
+        if (DEBUGCOND(*this)) {
+            std::cout << " sharedWA=" << (myWalkingAreaFoes.find(&myLane->getEdge()) != myWalkingAreaFoes.end())
+                      << " vehObs=" << Named::getIDSecure(obs[current].vehicle)
+                      << " vehWait=" << STEPS2TIME(obs[current].vehicle ? obs[current].vehicle->getWaitingTime() : 0)
+                      << "\n";
+        }
         if (myWaitingTime > ((myLane->getEdge().isCrossing()
                               // treat shared walkingarea like a crossing to avoid deadlocking vehicles
-                              || (myLane->getEdge().isWalkingArea() && obs[current].type == OBSTACLE_VEHICLE
+                              || (myLane->getEdge().isWalkingArea() && obs[current].vehicle != nullptr && obs[current].vehicle->getWaitingTime() > jamTimeCrossing
                                   && myWalkingAreaFoes.find(&myLane->getEdge()) != myWalkingAreaFoes.end())) ? jamTimeCrossing : jamTime)
                 || (sMax == 0 && obs[0].speed * myDir < 0 && myWaitingTime > jamTimeNarrow)
                 || myAmJammed) {
@@ -2681,4 +2723,3 @@ MSPModel_Striping::MovePedestrians::execute(SUMOTime currentTime) {
 #endif
     return DELTA_T;
 }
-

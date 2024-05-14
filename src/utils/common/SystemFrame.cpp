@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -109,7 +109,13 @@ SystemFrame::addReportOptions(OptionsCont& oc) {
     oc.doRegister("error-log", new Option_FileName());
     oc.addDescription("error-log", "Report", TL("Writes all warnings and errors to FILE"));
 
-    oc.doRegister("language", new Option_String("C"));
+    oc.doRegister("log.timestamps", new Option_Bool(false));
+    oc.addDescription("log.timestamps", "Report", TL("Writes timestamps in front of all messages"));
+
+    oc.doRegister("log.processid", new Option_Bool(false));
+    oc.addDescription("log.processid", "Report", TL("Writes process ID in front of all messages"));
+
+    oc.doRegister("language", new Option_String(gLanguage));
     oc.addDescription("language", "Report", TL("Language to use in messages"));
 
     oc.doRegister("write-license", new Option_Bool(false));

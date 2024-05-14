@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2002-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -291,10 +291,10 @@ RORouteDef::addAlternative(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
             delete myAlternatives[0];
             myAlternatives[0] = current;
         }
-        double costs = router.recomputeCosts(current->getEdgeVector(), veh, begin);
-        if (costs < 0) {
+        if (!router.isValid(current->getEdgeVector(), veh)) {
             throw ProcessError("Route '" + getID() + "' (vehicle '" + veh->getID() + "') is not valid.");
         }
+        double costs = router.recomputeCosts(current->getEdgeVector(), veh, begin);
         if (veh->hasJumps()) {
             // @todo: jumpTime should be applied in recomputeCost to ensure the
             // correctness of time-dependent traveltimes
@@ -310,11 +310,11 @@ RORouteDef::addAlternative(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
     // recompute the costs and (when a new route was added) scale the probabilities
     const double scale = double(myAlternatives.size() - 1) / double(myAlternatives.size());
     for (RORoute* const alt : myAlternatives) {
-        // recompute the costs for all routes
-        const double newCosts = router.recomputeCosts(alt->getEdgeVector(), veh, begin);
-        if (newCosts < 0.) {
+        if (!router.isValid(alt->getEdgeVector(), veh)) {
             throw ProcessError("Route '" + current->getID() + "' (vehicle '" + veh->getID() + "') is not valid.");
         }
+        // recompute the costs for all routes
+        const double newCosts = router.recomputeCosts(alt->getEdgeVector(), veh, begin);
         assert(myAlternatives.size() != 0);
         if (myNewRoute) {
             if (alt == current) {

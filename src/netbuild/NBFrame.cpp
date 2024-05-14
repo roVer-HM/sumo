@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -301,6 +301,10 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
     oc.addSynonyme("roundabouts.guess", "guess-roundabouts", true);
     oc.addDescription("roundabouts.guess", "Processing", TL("Enable roundabout-guessing"));
 
+    // The Putrajaya Roundabout (Malaysia) holds the Guinness record for the world’s largest roundabout with 3.4km.
+    oc.doRegister("roundabouts.guess.max-length", new Option_Float(3500));
+    oc.addDescription("roundabouts.guess.max-length", "Processing", TL("Structures with a circumference above FLOAT threshold are not classified as roundabout"));
+
     oc.doRegister("roundabouts.visibility-distance", new Option_Float(9));
     oc.addDescription("roundabouts.visibility-distance", "Processing", TL("Default visibility when approaching a roundabout"));
 
@@ -373,7 +377,7 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
 
     oc.doRegister("junctions.limit-turn-speed", new Option_Float(5.5));
     oc.addDescription("junctions.limit-turn-speed", "Junctions",
-                      "Limits speed on junctions to an average lateral acceleration of at most FLOAT m/s^2)");
+                      "Limits speed on junctions to an average lateral acceleration of at most FLOAT (m/s^2)");
 
     oc.doRegister("junctions.limit-turn-speed.min-angle", new Option_Float(15));
     oc.addDescription("junctions.limit-turn-speed.min-angle", "Junctions",
@@ -391,7 +395,6 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
     oc.addDescription("junctions.limit-turn-speed.warn.turn", "Junctions",
                       "Warn about turn speed limits that reduce the speed of turning connections (no u-turns) by more than FLOAT");
 
-
     oc.doRegister("junctions.small-radius", new Option_Float(1.5));
     oc.addDescription("junctions.small-radius", "Junctions",
                       "Default radius for junctions that do not require wide vehicle turns");
@@ -399,6 +402,14 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
     oc.doRegister("junctions.higher-speed", new Option_Bool(false));
     oc.addDescription("junctions.higher-speed", "Junctions",
                       "Use maximum value of incoming and outgoing edge speed on junction instead of average");
+
+    oc.doRegister("junctions.minimal-shape", new Option_Bool(false));
+    oc.addDescription("junctions.minimal-shape", "Junctions",
+                      "Build junctions with minimal shapes (ignoring edge overlap)");
+
+    oc.doRegister("junctions.endpoint-shape", new Option_Bool(false));
+    oc.addDescription("junctions.endpoint-shape", "Junctions",
+                      "Build junction shapes based on edge endpoints (ignoring edge overlap)");
 
     oc.doRegister("internal-junctions.vehicle-width", new Option_Float(1.8));
     oc.addDescription("internal-junctions.vehicle-width", "Junctions",
@@ -505,6 +516,9 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
     oc.addDescription("tls.join-dist", "TLS Building",
                       "Determines the maximal distance for joining traffic lights (defaults to 20)");
 
+    oc.doRegister("tls.join-exclude", new Option_StringVector());
+    oc.addDescription("tls.join-exclude", "TLS Building", TL("Interprets STR[] as list of tls ids to exclude from joining"));
+
     oc.doRegister("tls.uncontrolled-within", new Option_Bool(false));
     oc.addDescription("tls.uncontrolled-within", "TLS Building",
                       "Do not control edges that lie fully within a joined traffic light. This may cause collisions but allows old traffic light plans to be used");
@@ -561,7 +575,7 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
     oc.addDescription("tls.nema.vehExt", "TLS Building", "Set INT as fixed time for intermediate vehext phase after every switch");
 
     oc.doRegister("tls.nema.yellow", new Option_Integer(3));
-    oc.addDescription("tls.nema.yellow", "TLS Building", "Set INT as fixed time for intermediate NEMA yelow phase after every switch");
+    oc.addDescription("tls.nema.yellow", "TLS Building", "Set INT as fixed time for intermediate NEMA yellow phase after every switch");
 
     oc.doRegister("tls.nema.red", new Option_Integer(2));
     oc.addDescription("tls.nema.red", "TLS Building", "Set INT as fixed time for intermediate NEMA red phase after every switch");
@@ -630,7 +644,7 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
 
     if (!forNetgen) {
         oc.doRegister("keep-edges.postload", new Option_Bool(false));
-        oc.addDescription("keep-edges.postload", "Edge Removal", TL("Remove edges after joining"));
+        oc.addDescription("keep-edges.postload", "Edge Removal", TL("Remove edges after loading, patching and joining"));
     }
 
     oc.doRegister("keep-edges.in-boundary", new Option_StringVector());

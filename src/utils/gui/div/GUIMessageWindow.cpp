@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2003-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2003-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -168,18 +168,21 @@ GUIMessageWindow::setCursorPos(FXint pos, FXbool notify) {
             const int lookback = MIN2(pos, 20);
             const int start = MAX2(lineStart(pos), pos - lookback);
             const FXString candidate = text.mid(start, lineEnd(pos) - start);
-            FXint timePos = candidate.find(" time") + 6;
-            SUMOTime t = -1;
-            if (pos >= 0 && pos > start + timePos) {
-                t = getTimeString(candidate, timePos, 0, candidate.length());
-                if (t >= 0) {
-                    t += myBreakPointOffset;
-                    std::vector<SUMOTime> breakpoints = myMainWindow->retrieveBreakpoints();
-                    if (std::find(breakpoints.begin(), breakpoints.end(), t) == breakpoints.end()) {
-                        breakpoints.push_back(t);
-                        std::sort(breakpoints.begin(), breakpoints.end());
-                        myMainWindow->setBreakpoints(breakpoints);
-                        myMainWindow->setStatusBarText("Set breakpoint at " + time2string(t));
+            FXint timePos = candidate.find(TL(" time"));
+            if (timePos > -1) {
+                timePos += (int)std::string(TL(" time")).size() + 1;
+                SUMOTime t = -1;
+                if (pos >= 0 && pos > start + timePos) {
+                    t = getTimeString(candidate, timePos, 0, (int)candidate.length());
+                    if (t >= 0) {
+                        t += myBreakPointOffset;
+                        std::vector<SUMOTime> breakpoints = myMainWindow->retrieveBreakpoints();
+                        if (std::find(breakpoints.begin(), breakpoints.end(), t) == breakpoints.end()) {
+                            breakpoints.push_back(t);
+                            std::sort(breakpoints.begin(), breakpoints.end());
+                            myMainWindow->setBreakpoints(breakpoints);
+                            myMainWindow->setStatusBarText(TLF("Set breakpoint at %", time2string(t)));
+                        }
                     }
                 }
             }
@@ -237,15 +240,16 @@ GUIMessageWindow::appendMsg(GUIEventType eType, const std::string& msg) {
             pos = text.find("'", pos + 1);
         }
         // find time links
-        pos = text.find(" time");
+        pos = text.find(TL(" time"));
+        const int timeTerm = (int)std::string(TL(" time")).size() + 1;
         SUMOTime t = -1;
         if (pos >= 0) {
-            t = getTimeString(text, pos + 6, 0, text.length());
+            t = getTimeString(text, pos + timeTerm, 0, text.length());
         }
         if (t >= 0) {
-            FXString insText = text.left(pos + 6);
+            FXString insText = text.left(pos + timeTerm);
             FXText::appendStyledText(insText, style + 1);
-            text.erase(0, pos + 6);
+            text.erase(0, pos + timeTerm);
             pos = text.find(" ");
             if (pos < 0) {
                 pos = text.rfind(".");

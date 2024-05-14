@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2011-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2011-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -175,6 +175,9 @@ public:
     /// @brief perform optional final checks (on writing)
     void finalChecks() const;
 
+    /// @brief replace the given link index in all connections
+    void replaceIndex(int oldIndex, int newIndex);
+
 protected:
     /// @brief Collects the links participating in this traffic light (only if not previously loaded)
     void collectLinks();
@@ -204,9 +207,6 @@ protected:
 
     /// @brief return whether the given link index is used by any connectons
     bool isUsed(int index) const;
-
-    /// @brief replace the given link index in all connections
-    void replaceIndex(int oldIndex, int newIndex);
 
     /// brief retrieve all edges with connections that use the given traffic light index
     std::set<const NBEdge*> getEdgesUsingIndex(int index) const;

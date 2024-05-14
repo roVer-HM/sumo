@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2002-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -438,6 +438,10 @@ public:
         return myState >= 'A' && myState <= 'Z';
     }
 
+    inline bool haveOffPriority() const {
+        return myOffState >= 'A' && myOffState <= 'Z';
+    }
+
     /** @brief Returns whether this link is blocked by a red (or redyellow) traffic light
      * @return Whether the link has a red light
      */
@@ -556,7 +560,7 @@ public:
     /// @brief return the speed at which ego vehicle must approach the zipper link
     double getZipperSpeed(const MSVehicle* ego, const double dist, double vSafe,
                           SUMOTime arrivalTime,
-                          BlockingFoes* collectFoes) const;
+                          const BlockingFoes* foes) const;
 
     /// @brief return the via lane if it exists and the lane otherwise
     inline MSLane* getViaLaneOrLane() const {
@@ -645,6 +649,11 @@ public:
         return myFoeLinks;
     }
 
+    /// @brief who may use this link
+    SVCPermissions getPermissions() const {
+        return myPermissions;
+    }
+
     /// @brief initialize parallel links (to be called after all links are loaded)
     void initParallelLinks();
 
@@ -681,8 +690,8 @@ private:
     /// @brief whether the given person is in front of the car
     bool isInFront(const MSVehicle* ego, const PositionVector& egoPath, const Position& pPos) const;
 
-    /// @brief whether the given person is walking towards the car
-    bool isOnComingPed(const MSVehicle* ego, const MSPerson* p) const;
+    /// @brief whether the given person is walking towards the car returned as a factor in [0, 1]
+    double isOnComingPed(const MSVehicle* ego, const MSPerson* p) const;
 
     /// @brief return extrapolated position of the given person after the given time
     Position getFuturePosition(const MSPerson* p, double timeHorizon = 1) const;
@@ -830,6 +839,9 @@ private:
 
     /// @brief the turning radius for this link or doublemax for straight links
     double myRadius;
+
+    /// @brief who may drive on this link
+    SVCPermissions myPermissions;
 
     /// @brief the junction to which this link belongs
     MSJunction* myJunction;

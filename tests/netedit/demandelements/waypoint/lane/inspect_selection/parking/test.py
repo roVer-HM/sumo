@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -41,20 +41,20 @@ netedit.selectionInvert()
 netedit.inspectMode()
 
 # inspect selection
-netedit.leftClick(referencePosition, 265, 188)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.stopEdge.x,
+                  netedit.positions.demandElements.stopEdge.y)
 
 # change value
-netedit.modifyAttribute(netedit.attrs.waypointLane.inspectSelection.parking, "opportunistic", False)
+netedit.modifyAttribute(netedit.attrs.waypointLane.inspectSelection.parking, "opportunistic", True)
 
 # change value
-netedit.modifyAttribute(netedit.attrs.waypointLane.inspectSelection.parking, "true", False)
+netedit.modifyAttribute(netedit.attrs.waypointLane.inspectSelection.parking, "false", True)
 
 # change value
-netedit.modifyAttribute(netedit.attrs.waypointLane.inspectSelection.parking, "false", False)
+netedit.modifyAttribute(netedit.attrs.waypointLane.inspectSelection.parking, "true", True)
 
 # Check undo redo
-netedit.undo(referencePosition, 3)
-netedit.redo(referencePosition, 3)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

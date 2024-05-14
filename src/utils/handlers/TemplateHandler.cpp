@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -188,6 +188,14 @@ TemplateHandler::addOption(std::string value, const std::string& synonymes, cons
             option = new Option_Route(value);
         } else if ((type == "DATA") || (type == "data_file") || (type == "edgedata_file")) {
             option = new Option_Data(value);
+        } else if ((type == "SUMOCONFIG") || (type == "sumoconfig_file")) {
+            option = new Option_SumoConfig(value);
+        } else if ((type == "EDGE") || (type == "edge")) {
+            if (listSep.empty()) {
+                option = new Option_Edge(value);
+            } else {
+                option = new Option_EdgeVector(value);
+            }
         } else if (type.size() > 0) {
             WRITE_WARNING(type + " is an invalid type");
         }

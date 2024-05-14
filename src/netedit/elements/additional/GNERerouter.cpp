@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -37,6 +37,7 @@ GNERerouter::GNERerouter(GNENet* net) :
 {}, {}, {}, {}, {}, {}),
 myProbability(0),
 myOff(false),
+myOptional(false),
 myTimeThreshold(0) {
     // reset default values
     resetDefaultValues();
@@ -44,7 +45,7 @@ myTimeThreshold(0) {
 
 
 GNERerouter::GNERerouter(const std::string& id, GNENet* net, const Position& pos, const std::string& name,
-                         double probability, bool off, SUMOTime timeThreshold, const std::vector<std::string>& vTypes,
+                         double probability, bool off, bool optional, SUMOTime timeThreshold, const std::vector<std::string>& vTypes,
                          const Parameterised::Map& parameters) :
     GNEAdditional(id, net, GLO_REROUTER, SUMO_TAG_REROUTER, GUIIconSubSys::getIcon(GUIIcon::REROUTER), name,
 {}, {}, {}, {}, {}, {}),
@@ -52,6 +53,7 @@ Parameterised(parameters),
 myPosition(pos),
 myProbability(probability),
 myOff(off),
+myOptional(optional),
 myTimeThreshold(timeThreshold),
 myVTypes(vTypes) {
     // update centering boundary without updating grid
@@ -84,6 +86,9 @@ GNERerouter::writeAdditional(OutputDevice& device) const {
     if (myOff) {
         device.writeAttr(SUMO_ATTR_OFF, myOff);
     }
+    if (myOptional) {
+        device.writeAttr(SUMO_ATTR_OPTIONAL, myOptional);
+    }
     // write all rerouter interval
     for (const auto& rerouterInterval : getChildAdditionals()) {
         if (!rerouterInterval->getTagProperty().isSymbol()) {
@@ -110,6 +115,21 @@ std::string GNERerouter::getAdditionalProblem() const {
 void
 GNERerouter::fixAdditionalProblem() {
     // nothing to fix
+}
+
+
+bool
+GNERerouter::checkDrawMoveContour() const {
+    // get edit modes
+    const auto& editModes = myNet->getViewNet()->getEditModes();
+    // check if we're in move mode
+    if (!myNet->getViewNet()->isMovingElement() && editModes.isCurrentSupermodeNetwork() &&
+            (editModes.networkEditMode == NetworkEditMode::NETWORK_MOVE) && myNet->getViewNet()->checkOverLockedElement(this, mySelected)) {
+        // only move the first element
+        return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
+    } else {
+        return false;
+    }
 }
 
 
@@ -150,19 +170,21 @@ GNERerouter::updateCenteringBoundary(const bool updateGrid) {
     updateGeometry();
     // add shape boundary
     myAdditionalBoundary = myAdditionalGeometry.getShape().getBoxBoundary();
-    // add positions of all childrens (intervals and symbols)
-    for (const auto& additionalChildren : getChildAdditionals()) {
-        myAdditionalBoundary.add(additionalChildren->getPositionInView());
-        for (const auto& rerouterElement : additionalChildren->getChildAdditionals()) {
-            myAdditionalBoundary.add(rerouterElement->getPositionInView());
-            // special case for parking area rerouter
-            if (rerouterElement->getTagProperty().getTag() == SUMO_TAG_PARKING_AREA_REROUTE) {
-                myAdditionalBoundary.add(rerouterElement->getParentAdditionals().at(1)->getPositionInView());
+    /*
+        // add positions of all childrens (intervals and symbols)
+        for (const auto& additionalChildren : getChildAdditionals()) {
+            myAdditionalBoundary.add(additionalChildren->getPositionInView());
+            for (const auto& rerouterElement : additionalChildren->getChildAdditionals()) {
+                myAdditionalBoundary.add(rerouterElement->getPositionInView());
+                // special case for parking area rerouter
+                if (rerouterElement->getTagProperty().getTag() == SUMO_TAG_PARKING_AREA_REROUTE) {
+                    myAdditionalBoundary.add(rerouterElement->getParentAdditionals().at(1)->getCenteringBoundary());
+                }
             }
         }
-    }
+    */
     // grow
-    myAdditionalBoundary.grow(10);
+    myAdditionalBoundary.grow(5);
     // add additional into RTREE again
     if (updateGrid) {
         myNet->addGLObjectIntoGrid(this);
@@ -242,6 +264,8 @@ GNERerouter::getAttribute(SumoXMLAttr key) const {
             return toString(myVTypes);
         case SUMO_ATTR_OFF:
             return toString(myOff);
+        case SUMO_ATTR_OPTIONAL:
+            return toString(myOptional);
         case GNE_ATTR_SELECTED:
             return toString(isAttributeCarrierSelected());
         case GNE_ATTR_PARAMETERS:
@@ -287,9 +311,10 @@ GNERerouter::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList
         case SUMO_ATTR_HALTING_TIME_THRESHOLD:
         case SUMO_ATTR_VTYPES:
         case SUMO_ATTR_OFF:
+        case SUMO_ATTR_OPTIONAL:
         case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
-            undoList->changeAttribute(new GNEChange_Attribute(this, key, value));
+            GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
@@ -319,6 +344,8 @@ GNERerouter::isValid(SumoXMLAttr key, const std::string& value) {
                 return SUMOXMLDefinitions::isValidListOfTypeID(value);
             }
         case SUMO_ATTR_OFF:
+            return canParse<bool>(value);
+        case SUMO_ATTR_OPTIONAL:
             return canParse<bool>(value);
         case GNE_ATTR_SELECTED:
             return canParse<bool>(value);
@@ -352,7 +379,7 @@ GNERerouter::setAttribute(SumoXMLAttr key, const std::string& value) {
             throw InvalidArgument(getTagStr() + " cannot be edited");
         case SUMO_ATTR_ID:
             // update microsimID
-            setMicrosimID(value);
+            setAdditionalID(value);
             break;
         case SUMO_ATTR_POSITION:
             myPosition = parse<Position>(value);
@@ -375,6 +402,9 @@ GNERerouter::setAttribute(SumoXMLAttr key, const std::string& value) {
             break;
         case SUMO_ATTR_OFF:
             myOff = parse<bool>(value);
+            break;
+        case SUMO_ATTR_OPTIONAL:
+            myOptional = parse<bool>(value);
             break;
         case GNE_ATTR_SELECTED:
             if (parse<bool>(value)) {
@@ -403,15 +433,15 @@ GNERerouter::setMoveShape(const GNEMoveResult& moveResult) {
 
 void
 GNERerouter::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
-    undoList->begin(GUIIcon::REROUTER, "position of " + getTagStr());
-    undoList->changeAttribute(new GNEChange_Attribute(this, SUMO_ATTR_POSITION, toString(moveResult.shapeToUpdate.front())));
+    undoList->begin(this, "position of " + getTagStr());
+    GNEChange_Attribute::changeAttribute(this, SUMO_ATTR_POSITION, toString(moveResult.shapeToUpdate.front()), undoList);
     undoList->end();
 }
 
 
 void
 GNERerouter::rebuildRerouterSymbols(const std::string& value, GNEUndoList* undoList) {
-    undoList->begin(GUIIcon::REROUTER, ("change " + getTagStr() + " attribute").c_str());
+    undoList->begin(this, ("change " + getTagStr() + " attribute").c_str());
     // drop all additional children
     while (getChildAdditionals().size() > 0) {
         undoList->add(new GNEChange_Additional(getChildAdditionals().front(), false), true);

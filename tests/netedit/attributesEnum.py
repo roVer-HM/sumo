@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -174,25 +174,30 @@ class junction:
 
 class edge:
     class create:
-        numLanes = 7
-        speed = 8
-        allowButton = 9
-        allow = 10
-        disallow = 11
-        spreadType = 12
-        priority = 14
-        width = 15
-        sidewalkWidth = 16
-        bikelaneWidth = 17
+        defaultShort = 3
+        disallowPedestrians = 4
+        addSidewalk = 5
+        addBikelane = 6
+        useTemplate = 7
+        numLanes = 9
+        speed = 10
+        allowButton = 11
+        allow = 12
+        disallow = 13
+        spreadType = 14
+        priority = 16
+        width = 17
+        sidewalkWidth = 18
+        bikelaneWidth = 19
 
     class createLane:
-        add = 23
-        remove = 24
-        speed = 25
-        allowButton = 26
-        allow = 27
-        disallow = 28
-        width = 29
+        add = 24
+        remove = 25
+        speed = 26
+        allowButton = 27
+        allow = 28
+        disallow = 29
+        width = 30
 
     class inspect:
         id = 1
@@ -217,7 +222,7 @@ class edge:
         stopOffset = 21
         stopExceptionButton = 22
         stopException = 23
-        parameters = 26
+        parameters = 22
 
     class inspectSelection:
         speed = 1
@@ -237,12 +242,12 @@ class edge:
         stopOffset = 16
         stopExceptionButton = 17
         stopException = 18
-        parameters = 21
+        parameters = 17
 
     class template:
-        create = 32
-        copy = 33
-        clear = 34
+        create = 30
+        copy = 31
+        clear = 32
 
     class contextualMenu:
         splitEdge = 1
@@ -250,8 +255,8 @@ class edge:
         setGeometryPoint = 2
         restoreGeometryPoint = 3
         reverseEdge = 4
-        addReverseDirection = 5
-        addReverseDirectionDisconnected = 6
+        reverseElementDirection = 5
+        reverseElementDirectionDisconnected = 6
         resetLenght = 7
         straighteen = 8
         smooth = 9
@@ -651,16 +656,17 @@ class busStop:
     class inspect:
         id = 1
         lane = 2
-        startPos = 3
-        endPos = 4
-        name = 5
-        friendlyPos = 6
-        lines = 7
-        personCapacity = 8
-        parkingLength = 9
-        colorButton = 10
-        color = 11
-        parameters = 14
+        moveLane = 3
+        startPos = 4
+        endPos = 5
+        name = 6
+        friendlyPos = 7
+        lines = 8
+        personCapacity = 9
+        parkingLength = 10
+        colorButton = 11
+        color = 12
+        parameters = 15
 
     class inspectSelection:
         name = 1
@@ -691,16 +697,17 @@ class trainStop:
     class inspect:
         id = 1
         lane = 2
-        startPos = 3
-        endPos = 4
-        name = 5
-        friendlyPos = 6
-        lines = 7
-        personCapacity = 8
-        parkingLength = 9
-        colorButton = 10
-        color = 11
-        parameters = 14
+        moveLane = 3
+        startPos = 4
+        endPos = 5
+        name = 6
+        friendlyPos = 7
+        lines = 8
+        personCapacity = 9
+        parkingLength = 10
+        colorButton = 11
+        color = 12
+        parameters = 15
 
     class inspectSelection:
         name = 1
@@ -731,16 +738,17 @@ class containerStop:
     class inspect:
         id = 1
         lane = 2
-        startPos = 3
-        endPos = 4
-        name = 5
-        friendlyPos = 6
-        lines = 7
-        containerCapacity = 8
-        parkingLength = 9
-        colorButton = 10
-        color = 11
-        parameters = 14
+        moveLane = 3
+        startPos = 4
+        endPos = 5
+        name = 6
+        friendlyPos = 7
+        lines = 8
+        containerCapacity = 9
+        parkingLength = 10
+        colorButton = 11
+        color = 12
+        parameters = 15
 
     class inspectSelection:
         name = 1
@@ -764,21 +772,26 @@ class chargingStation:
         efficiency = 9
         chargeInTransit = 10
         chargeDelay = 11
-        references = 15
-        length = 17
+        chargeType = 12
+        waitingTime = 14
+        references = 18
+        length = 20
 
     class inspect:
         id = 1
         lane = 2
-        startPos = 3
-        endPos = 4
-        name = 5
-        friendlyPos = 6
-        power = 7
-        efficiency = 8
-        chargeInTransit = 9
-        chargeDelay = 10
-        parameters = 13
+        moveLane = 3
+        startPos = 4
+        endPos = 5
+        name = 6
+        friendlyPos = 7
+        power = 8
+        efficiency = 9
+        chargeInTransit = 10
+        chargeDelay = 11
+        chargeType = 12
+        waitingTime = 14
+        parameters = 17
 
     class inspectSelection:
         name = 1
@@ -787,7 +800,9 @@ class chargingStation:
         efficiency = 4
         chargeInTrainsit = 5
         chargeDelay = 6
-        parameters = 9
+        chargeType = 7
+        waitingTime = 9
+        parameters = 12
 
 # access
 
@@ -800,9 +815,10 @@ class access:
 
     class inspect:
         lane = 1
-        pos = 2
-        length = 3
-        friendlyPos = 4
+        moveLane = 2
+        pos = 3
+        length = 4
+        friendlyPos = 5
 
     class inspectSelection:
         length = 1
@@ -822,23 +838,26 @@ class parkingArea:
         width = 11
         length = 12
         angle = 13
-        references = 17
-        referencesLength = 19
+        lefthand = 14
+        references = 18
+        referencesLength = 20
 
     class inspect:
         id = 1
         lane = 2
-        startPos = 3
-        endPos = 4
-        departPos = 5
-        name = 6
-        roadSideCapacity = 7
-        onRoad = 8
-        friendlyPos = 9
-        width = 10
-        length = 11
-        angle = 12
-        parameters = 15
+        moveLane = 3
+        startPos = 4
+        endPos = 5
+        departPos = 6
+        name = 7
+        roadSideCapacity = 8
+        onRoad = 9
+        friendlyPos = 10
+        width = 11
+        length = 12
+        angle = 13
+        lefthand = 14
+        parameters = 17
 
     class inspectSelection:
         departPos = 1
@@ -849,7 +868,8 @@ class parkingArea:
         width = 6
         length = 7
         angle = 8
-        parameters = 11
+        lefthand = 9
+        parameters = 12
 
 # parkingSpace
 
@@ -897,13 +917,14 @@ class E1:
     class inspect:
         id = 1
         lane = 2
-        pos = 3
-        period = 4
-        name = 5
-        file = 6
-        vTypes = 7
-        friendlyPos = 8
-        parameters = 11
+        moveLane = 3
+        pos = 4
+        period = 5
+        name = 6
+        file = 7
+        vTypes = 8
+        friendlyPos = 9
+        parameters = 12
 
     class inspectSelection:
         period = 1
@@ -933,18 +954,19 @@ class E2:
     class inspect:
         id = 1
         lane = 2
-        pos = 3
-        length = 4
-        period = 5
-        tl = 6
-        name = 7
-        file = 8
-        vTypes = 9
-        timeThreshold = 10
-        speedThreshold = 11
-        jamThreshold = 12
-        friendlyPos = 13
-        parameters = 16
+        moveLane = 3
+        pos = 4
+        length = 5
+        period = 6
+        tl = 7
+        name = 8
+        file = 9
+        vTypes = 10
+        timeThreshold = 11
+        speedThreshold = 12
+        jamThreshold = 13
+        friendlyPos = 14
+        parameters = 17
 
     class inspectSelection:
         length = 1
@@ -1015,6 +1037,7 @@ class E3:
         vTypes = 9
         timeThreshold = 10
         speedThreshold = 11
+        expectArrival = 12
 
     class inspect:
         id = 1
@@ -1025,7 +1048,8 @@ class E3:
         vTypes = 6
         timeThreshold = 7
         speedThreshold = 8
-        parameters = 11
+        expectArrival = 9
+        parameters = 12
 
     class inspectSelection:
         period = 1
@@ -1034,7 +1058,8 @@ class E3:
         vTypes = 4
         timeThreshold = 5
         speedThreshold = 6
-        parameters = 9
+        expectArrival = 7
+        parameters = 10
 
 # entryExit
 
@@ -1046,10 +1071,11 @@ class entryExit:
 
     class inspect:
         lane = 1
-        pos = 2
-        friendlyPos = 3
-        parameters = 6
-        parent = 10
+        moveLane = 2
+        pos = 3
+        friendlyPos = 4
+        parameters = 7
+        parent = 11
 
     class inspectSelection:
         friendlyPos = 1
@@ -1070,12 +1096,13 @@ class E1Instant:
     class inspect:
         id = 1
         lane = 2
-        pos = 3
-        name = 4
-        file = 5
-        vTypes = 6
-        friendlyPos = 7
-        parameters = 10
+        moveLane = 3
+        pos = 4
+        name = 5
+        file = 6
+        vTypes = 7
+        friendlyPos = 8
+        parameters = 11
 
     class inspectSelection:
         name = 1
@@ -1101,7 +1128,7 @@ class calibrator:
 
     class inspect:
         id = 1
-        edgeLane = 2
+        edge = 2
         pos = 3
         frequency = 4
         name = 5
@@ -1110,6 +1137,19 @@ class calibrator:
         jamTreshold = 8
         vTypes = 9
         parameters = 12
+
+    class inspectLane:
+        id = 1
+        lane = 2
+        laneMoveUp = 3
+        pos = 4
+        frequency = 5
+        name = 6
+        routeProbe = 7
+        output = 8
+        jamTreshold = 9
+        vTypes = 10
+        parameters = 13
 
     class inspectSelection:
         pos = 1
@@ -1179,7 +1219,7 @@ class vaporizer:
 # Poly
 
 
-class Poly:
+class poly:
     class create:
         id = 5
         colorButton = 6
@@ -1230,19 +1270,20 @@ class Poly:
 # POI
 
 
-class POI:
+class poi:
     class create:
         id = 5
         colorButton = 6
         color = 7
         type = 8
-        name = 9
-        layer = 10
-        width = 11
-        height = 12
-        imgFile = 13
-        relativePath = 14
-        angle = 15
+        icon = 9
+        name = 11
+        layer = 12
+        width = 13
+        height = 14
+        imgFile = 15
+        relativePath = 16
+        angle = 17
 
     class inspect:
         id = 1
@@ -1250,6 +1291,21 @@ class POI:
         colorButton = 3
         color = 4
         type = 5
+        icon = 6
+        name = 8
+        layer = 9
+        width = 10
+        height = 11
+        imgFile = 12
+        relativePath = 13
+        angle = 14
+        parameters = 17
+
+    class inspectSelection:
+        colorButton = 1
+        color = 2
+        type = 3
+        icon = 4
         name = 6
         layer = 7
         width = 8
@@ -1259,36 +1315,24 @@ class POI:
         angle = 12
         parameters = 15
 
-    class inspectSelection:
-        colorButton = 1
-        color = 2
-        type = 3
-        name = 4
-        layer = 5
-        width = 6
-        height = 7
-        imgFile = 8
-        relativePath = 9
-        angle = 10
-        parameters = 13
-
 # POIGEO
 
 
-class POIGEO:
+class poiGeo:
     class create:
         id = 5
         colorButton = 6
         color = 7
         type = 8
-        name = 9
-        layer = 10
-        width = 11
-        height = 12
-        imgFile = 13
-        relativePath = 14
-        angle = 15
-        lonLat = 20
+        icon = 9
+        name = 11
+        layer = 12
+        width = 13
+        height = 14
+        imgFile = 15
+        relativePath = 16
+        angle = 17
+        lonLat = 22
 
     class inspect:
         id = 1
@@ -1297,56 +1341,7 @@ class POIGEO:
         colorButton = 4
         color = 5
         type = 6
-        name = 7
-        layer = 8
-        width = 9
-        height = 10
-        imgFile = 11
-        relativePath = 12
-        angle = 13
-        parameters = 16
-
-    class inspectSelection:
-        colorButton = 1
-        color = 2
-        type = 3
-        name = 4
-        layer = 5
-        width = 6
-        height = 7
-        imgFile = 8
-        relativePath = 9
-        angle = 10
-        parameters = 13
-
-# POILane
-
-
-class POILane:
-    class create:
-        id = 5
-        friendlyPos = 6
-        posLat = 7
-        colorButton = 8
-        color = 9
-        type = 10
-        name = 11
-        layer = 12
-        width = 13
-        height = 14
-        imgFile = 15
-        relativePath = 16
-        angle = 14
-
-    class inspect:
-        id = 1
-        lane = 2
-        pos = 3
-        friendlyPos = 4
-        posLat = 5
-        colorButton = 6
-        color = 7
-        type = 8
+        icon = 7
         name = 9
         layer = 10
         width = 11
@@ -1357,11 +1352,10 @@ class POILane:
         parameters = 18
 
     class inspectSelection:
-        friendlyPos = 1
-        posLat = 2
-        colorButton = 3
-        color = 4
-        type = 5
+        colorButton = 1
+        color = 2
+        type = 3
+        icon = 4
         name = 6
         layer = 7
         width = 8
@@ -1370,6 +1364,98 @@ class POILane:
         relativePath = 11
         angle = 12
         parameters = 15
+
+# POILane
+
+
+class poiLane:
+    class create:
+        id = 5
+        friendlyPos = 6
+        posLat = 7
+        colorButton = 8
+        color = 9
+        type = 10
+        icon = 11
+        name = 13
+        layer = 14
+        width = 15
+        height = 16
+        imgFile = 17
+        relativePath = 18
+        angle = 16
+
+    class inspect:
+        id = 1
+        lane = 2
+        moveLane = 3
+        pos = 4
+        friendlyPos = 5
+        posLat = 6
+        colorButton = 7
+        color = 8
+        type = 9
+        icon = 10
+        name = 12
+        layer = 13
+        width = 14
+        height = 15
+        imgFile = 16
+        relativePath = 17
+        angle = 18
+        parameters = 21
+
+    class inspectSelection:
+        friendlyPos = 1
+        posLat = 2
+        colorButton = 3
+        color = 4
+        type = 5
+        icon = 6
+        name = 8
+        layer = 9
+        width = 10
+        height = 11
+        imgFile = 12
+        relativePath = 13
+        angle = 14
+        parameters = 17
+
+# jps walkableArea
+
+
+class jpsWalkableArea:
+    class create:
+        id = 5
+        name = 6
+
+    class inspect:
+        id = 1
+        shape = 2
+        name = 3
+        parameters = 6
+
+    class inspectSelection:
+        name = 1
+        parameters = 4
+
+# jps obstacle
+
+
+class jpsObstacle:
+    class create:
+        id = 5
+        name = 6
+
+    class inspect:
+        id = 1
+        shape = 2
+        name = 3
+        parameters = 6
+
+    class inspectSelection:
+        name = 1
+        parameters = 4
 
 # --------------------------------
 # TAZ ELEMENTS
@@ -1414,42 +1500,40 @@ class TAZ:
 
 class type:
 
-    color = 6
+    color = 5
 
     class buttons:
         create = 2
         delete = 3
         copy = 3
-        dialog = 25
+        dialog = 24
 
     class edit:
         id = 8
-        vTypeDist = 9
-        vClass = 10
-        colorButton = 12
-        color = 13
-        length = 14
-        minGap = 15
-        maxSpeed = 16
-        desiredMaxSpeed = 17
-        accel = 18
-        decel = 19
-        sigma = 20
-        tau = 21
+        vClass = 9
+        colorButton = 11
+        color = 12
+        length = 13
+        minGap = 14
+        maxSpeed = 15
+        desiredMaxSpeed = 16
+        accel = 17
+        decel = 18
+        sigma = 19
+        tau = 20
 
     class editDefault:
-        vTypeDist = 7
-        vClass = 8
-        colorButton = 10
-        color = 11
-        length = 12
-        minGap = 13
-        maxSpeed = 14
-        desiredMaxSpeed = 15
-        accel = 16
-        decel = 17
-        sigma = 18
-        tau = 19
+        vClass = 7
+        colorButton = 9
+        color = 10
+        length = 11
+        minGap = 12
+        maxSpeed = 13
+        desiredMaxSpeed = 14
+        accel = 15
+        decel = 16
+        sigma = 17
+        tau = 18
 
     class editDialog:
         vClass = 1
@@ -1470,20 +1554,20 @@ class type:
         osgFile = 18
         laneChangeModel = 19
         guiShape = 21
-        probability = 23
-        personCapacity = 24
-        containerCapacity = 25
-        boardingDuration = 26
-        loadingDuration = 27
-        latAlignment = 28
-        minGapLat = 30
-        maxSpeedLat = 31
-        actionStepLength = 32
-        carriageLength = 33
-        locomotiveLength = 34
-        carriageGap = 35
-        parametersButton = 36
-        parameters = 37
+        probability = 21
+        personCapacity = 22
+        containerCapacity = 23
+        boardingDuration = 24
+        loadingDuration = 25
+        latAlignment = 26
+        minGapLat = 28
+        maxSpeedLat = 29
+        actionStepLength = 30
+        carriageLength = 31
+        locomotiveLength = 32
+        carriageGap = 33
+        parametersButton = 34
+        parameters = 35
 
 # route
 
@@ -1511,6 +1595,12 @@ class route:
         repeat = 3
         cycletime = 4
         parameters = 7
+
+    class reverse:
+        current = 1
+        add = 2
+
+    reverseElement = 11
 
 # trip (from-to edges)
 
@@ -1561,22 +1651,22 @@ class trip:
 
     class inspectSelection:
         type = 1
-        colorButton = 2
-        color = 3
-        departLane = 4
-        departPos = 5
-        departSpeed = 6
-        arrivalLane = 7
-        arrivalPos = 8
-        arrivalSpeed = 9
-        line = 10
-        personNumber = 11
-        containerNumber = 12
-        departPosLat = 13
-        arrivalPosLat = 14
-        insertionChecks = 15
-        depart = 16
-        parameters = 19
+        colorButton = 3
+        color = 4
+        departLane = 5
+        departPos = 6
+        departSpeed = 7
+        arrivalLane = 8
+        arrivalPos = 9
+        arrivalSpeed = 10
+        line = 11
+        personNumber = 12
+        containerNumber = 13
+        departPosLat = 14
+        arrivalPosLat = 15
+        insertionChecks = 16
+        depart = 17
+        parameters = 20
 
     class transform:
         vehicle = 1
@@ -1585,12 +1675,17 @@ class trip:
         routeFlowEmbedded = 4
         flow = 5
 
-    transformTo = 9
+    class reverse:
+        current = 1
+        add = 2
+
+    reverseElement = 9
+    transformTo = 10
 
 # trip (from-to junctions)
 
 
-class tripFromToJunction:
+class tripJunction:
     class create:
         type = 5
         id = 8
@@ -1635,22 +1730,22 @@ class tripFromToJunction:
 
     class inspectSelection:
         type = 1
-        colorButton = 2
-        color = 3
-        departLane = 4
-        departPos = 5
-        departSpeed = 6
-        arrivalLane = 7
-        arrivalPos = 8
-        arrivalSpeed = 9
-        line = 10
-        personNumber = 11
-        containerNumber = 12
-        departPosLat = 13
-        arrivalPosLat = 14
-        insertionChecks = 15
-        depart = 16
-        parameters = 19
+        colorButton = 3
+        color = 4
+        departLane = 5
+        departPos = 6
+        departSpeed = 7
+        arrivalLane = 8
+        arrivalPos = 9
+        arrivalSpeed = 10
+        line = 11
+        personNumber = 12
+        containerNumber = 13
+        departPosLat = 14
+        arrivalPosLat = 15
+        insertionChecks = 16
+        depart = 17
+        parameters = 20
 
     class transform:
         vehicle = 1
@@ -1660,6 +1755,86 @@ class tripFromToJunction:
         trip = 5
         flow = 6
 
+    class reverse:
+        current = 1
+        add = 2
+
+    reverseElement = 8
+    transformTo = 9
+
+# trip (from-to TAZs)
+
+
+class tripTAZ:
+    class create:
+        type = 5
+        id = 8
+        colorButton = 9
+        color = 10
+        departLane = 11
+        departPos = 12
+        departSpeed = 13
+        arrivalLane = 14
+        arrivalPos = 15
+        arrivalSpeed = 16
+        line = 17
+        personNumber = 18
+        containerNumber = 19
+        departPosLat = 20
+        arrivalPosLat = 21
+        insertionChecks = 22
+        depart = 23
+
+    class inspect:
+        id = 1
+        typeButton = 2
+        type = 3
+        fromTAZ = 5
+        toTAZ = 6
+        colorButton = 7
+        color = 8
+        departLane = 9
+        departPos = 10
+        departSpeed = 11
+        arrivalLane = 12
+        arrivalPos = 13
+        arrivalSpeed = 14
+        line = 15
+        personNumber = 16
+        containerNumber = 17
+        departPosLat = 18
+        arrivalPosLat = 19
+        insertionChecks = 20
+        depart = 21
+        parameters = 24
+
+    class inspectSelection:
+        type = 1
+        colorButton = 3
+        color = 4
+        departLane = 5
+        departPos = 6
+        departSpeed = 7
+        arrivalLane = 8
+        arrivalPos = 9
+        arrivalSpeed = 10
+        line = 11
+        personNumber = 12
+        containerNumber = 13
+        departPosLat = 14
+        arrivalPosLat = 15
+        insertionChecks = 16
+        depart = 17
+        parameters = 20
+
+    class transform:
+        flow = 1
+
+    class reverse:
+        current = 1
+        add = 2
+
+    reverseElement = 8
     transformTo = 9
 
 # vehicle (over route)
@@ -1711,22 +1886,22 @@ class vehicle:
 
     class inspectSelection:
         type = 1
-        colorButton = 2
-        color = 3
-        departLane = 4
-        departPos = 5
-        departSpeed = 6
-        arrivalLane = 7
-        arrivalPos = 8
-        arrivalSpeed = 9
-        line = 10
-        personNumber = 11
-        containerNumber = 12
-        departPosLat = 13
-        arrivalPosLat = 14
-        insertionChecks = 15
-        depart = 16
-        parameters = 19
+        colorButton = 3
+        color = 4
+        departLane = 5
+        departPos = 6
+        departSpeed = 7
+        arrivalLane = 8
+        arrivalPos = 9
+        arrivalSpeed = 10
+        line = 11
+        personNumber = 12
+        containerNumber = 13
+        departPosLat = 14
+        arrivalPosLat = 15
+        insertionChecks = 16
+        depart = 17
+        parameters = 20
 
     class transform:
         vehicleEmbedded = 1
@@ -1735,7 +1910,12 @@ class vehicle:
         trip = 4
         flow = 5
 
-    transformTo = 9
+    class reverse:
+        current = 1
+        add = 2
+
+    reverseElement = 9
+    transformTo = 10
 
 # vehicle (embedded route)
 
@@ -1785,22 +1965,22 @@ class vehicleEmbedded:
 
     class inspectSelection:
         type = 1
-        colorButton = 2
-        color = 3
-        departLane = 4
-        departPos = 5
-        departSpeed = 6
-        arrivalLane = 7
-        arrivalPos = 8
-        arrivalSpeed = 9
-        line = 10
-        personNumber = 11
-        containerNumber = 12
-        departPosLat = 13
-        arrivalPosLat = 14
-        insertionChecks = 15
-        depart = 16
-        parameters = 19
+        colorButton = 3
+        color = 4
+        departLane = 5
+        departPos = 6
+        departSpeed = 7
+        arrivalLane = 8
+        arrivalPos = 9
+        arrivalSpeed = 10
+        line = 11
+        personNumber = 12
+        containerNumber = 13
+        departPosLat = 14
+        arrivalPosLat = 15
+        insertionChecks = 16
+        depart = 17
+        parameters = 20
 
     class transform:
         vehicle = 1
@@ -1809,7 +1989,12 @@ class vehicleEmbedded:
         trip = 4
         flow = 5
 
-    transformTo = 9
+    class reverse:
+        current = 1
+        add = 2
+
+    reverseElement = 9
+    transformTo = 10
 
 # flow (from-to edges)
 
@@ -1871,26 +2056,26 @@ class flow:
 
     class inspectSelection:
         type = 1
-        colorButton = 2
-        color = 3
-        departLane = 4
-        departPos = 5
-        departSpeed = 6
-        arrivalLane = 7
-        arrivalPos = 8
-        arrivalSpeed = 9
-        line = 10
-        personNumber = 11
-        containerNumber = 12
-        departPosLat = 13
-        arrivalPosLat = 14
-        insertionChecks = 15
-        begin = 16
-        terminate = 19
-        spacing = 21
-        terminateOption = 23
-        spacingOption = 24
-        parameters = 24
+        colorButton = 3
+        color = 4
+        departLane = 5
+        departPos = 6
+        departSpeed = 7
+        arrivalLane = 8
+        arrivalPos = 9
+        arrivalSpeed = 10
+        line = 11
+        personNumber = 12
+        containerNumber = 13
+        departPosLat = 14
+        arrivalPosLat = 15
+        insertionChecks = 16
+        begin = 17
+        terminate = 20
+        spacing = 22
+        terminateOption = 24
+        spacingOption = 25
+        parameters = 25
 
     class transform:
         vehicle = 1
@@ -1899,7 +2084,12 @@ class flow:
         routeFlowEmbedded = 4
         trip = 5
 
-    transformTo = 9
+    class reverse:
+        current = 1
+        add = 2
+
+    reverseElement = 9
+    transformTo = 10
 
 # flow (from-to junctions)
 
@@ -1960,26 +2150,26 @@ class flowJunction:
 
     class inspectSelection:
         type = 1
-        colorButton = 2
-        color = 3
-        departLane = 4
-        departPos = 5
-        departSpeed = 6
-        arrivalLane = 7
-        arrivalPos = 8
-        arrivalSpeed = 9
-        line = 10
-        personNumber = 11
-        containerNumber = 12
-        departPosLat = 13
-        arrivalPosLat = 14
-        insertionChecks = 15
-        begin = 16
-        terminate = 19
-        spacing = 21
-        terminateOption = 23
-        spacingOption = 24
-        parameters = 24
+        colorButton = 3
+        color = 4
+        departLane = 5
+        departPos = 6
+        departSpeed = 7
+        arrivalLane = 8
+        arrivalPos = 9
+        arrivalSpeed = 10
+        line = 11
+        personNumber = 12
+        containerNumber = 13
+        departPosLat = 14
+        arrivalPosLat = 15
+        insertionChecks = 16
+        begin = 17
+        terminate = 20
+        spacing = 22
+        terminateOption = 24
+        spacingOption = 25
+        parameters = 25
 
     class transform:
         vehicle = 1
@@ -1989,6 +2179,101 @@ class flowJunction:
         trip = 5
         flow = 6
 
+    class reverse:
+        current = 1
+        add = 2
+
+    reverseElement = 8
+    transformTo = 9
+
+# flow (from-to TAZs)
+
+
+class flowTAZ:
+    class create:
+        type = 5
+        id = 8
+        colorButton = 9
+        color = 10
+        departLane = 11
+        departPos = 12
+        departSpeed = 13
+        arrivalLane = 14
+        arrivalPos = 15
+        arrivalSpeed = 16
+        line = 17
+        personNumber = 18
+        containerNumber = 19
+        departPosLat = 20
+        arrivalPosLat = 21
+        insertionChecks = 22
+        begin = 23
+        terminate = 27
+        end = 29
+        number = 30
+        spacing = 29
+        terminateOption = 31
+        spacingOption = 32
+
+    class inspect:
+        id = 1
+        typeButton = 2
+        type = 3
+        fromTAZ = 5
+        toTAZ = 6
+        colorButton = 7
+        color = 8
+        departLane = 9
+        departPos = 10
+        departSpeed = 11
+        arrivalLane = 12
+        arrivalPos = 13
+        arrivalSpeed = 14
+        line = 15
+        personNumber = 16
+        containerNumber = 17
+        departPosLat = 18
+        arrivalPosLat = 19
+        insertionChecks = 20
+        begin = 21
+        terminate = 24
+        spacing = 26
+        end = 27
+        terminateOption = 28
+        spacingOption = 29
+        parameters = 31
+
+    class inspectSelection:
+        type = 1
+        colorButton = 3
+        color = 4
+        departLane = 5
+        departPos = 6
+        departSpeed = 7
+        arrivalLane = 8
+        arrivalPos = 9
+        arrivalSpeed = 10
+        line = 11
+        personNumber = 12
+        containerNumber = 13
+        departPosLat = 14
+        arrivalPosLat = 15
+        insertionChecks = 16
+        begin = 17
+        terminate = 20
+        spacing = 22
+        terminateOption = 24
+        spacingOption = 25
+        parameters = 25
+
+    class transform:
+        trip = 1
+
+    class reverse:
+        current = 1
+        add = 2
+
+    reverseElement = 8
     transformTo = 9
 
 # flow (over route)
@@ -2051,26 +2336,26 @@ class routeFlow:
 
     class inspectSelection:
         type = 1
-        colorButton = 2
-        color = 3
-        departLane = 4
-        departPos = 5
-        departSpeed = 6
-        arrivalLane = 7
-        arrivalPos = 8
-        arrivalSpeed = 9
-        line = 10
-        personNumber = 11
-        containerNumber = 12
-        departPosLat = 13
-        arrivalPosLat = 14
-        insertionChecks = 15
-        begin = 16
-        terminate = 19
-        spacing = 21
-        terminateOption = 23
-        spacingOption = 24
-        parameters = 24
+        colorButton = 3
+        color = 4
+        departLane = 5
+        departPos = 6
+        departSpeed = 7
+        arrivalLane = 8
+        arrivalPos = 9
+        arrivalSpeed = 10
+        line = 11
+        personNumber = 12
+        containerNumber = 13
+        departPosLat = 14
+        arrivalPosLat = 15
+        insertionChecks = 16
+        begin = 17
+        terminate = 20
+        spacing = 22
+        terminateOption = 24
+        spacingOption = 25
+        parameters = 25
 
     class transform:
         vehicle = 1
@@ -2079,7 +2364,12 @@ class routeFlow:
         trip = 4
         flow = 5
 
-    transformTo = 9
+    class reverse:
+        current = 1
+        add = 2
+
+    reverseElement = 9
+    transformTo = 10
 
 # flow (embedded route)
 
@@ -2140,26 +2430,26 @@ class flowEmbedded:
 
     class inspectSelection:
         type = 1
-        colorButton = 2
-        color = 3
-        departLane = 4
-        departPos = 5
-        departSpeed = 6
-        arrivalLane = 7
-        arrivalPos = 8
-        arrivalSpeed = 9
-        line = 10
-        personNumber = 11
-        containerNumber = 12
-        departPosLat = 13
-        arrivalPosLat = 14
-        insertionChecks = 15
-        begin = 16
-        terminate = 19
-        spacing = 21
-        terminateOption = 23
-        spacingOption = 24
-        parameters = 24
+        colorButton = 3
+        color = 4
+        departLane = 5
+        departPos = 6
+        departSpeed = 7
+        arrivalLane = 8
+        arrivalPos = 9
+        arrivalSpeed = 10
+        line = 11
+        personNumber = 12
+        containerNumber = 13
+        departPosLat = 14
+        arrivalPosLat = 15
+        insertionChecks = 16
+        begin = 17
+        terminate = 20
+        spacing = 22
+        terminateOption = 24
+        spacingOption = 25
+        parameters = 25
 
     class transform:
         vehicle = 1
@@ -2168,7 +2458,12 @@ class flowEmbedded:
         trip = 4
         flow = 5
 
-    transformTo = 9
+    class reverse:
+        current = 1
+        add = 2
+
+    reverseElement = 9
+    transformTo = 10
 
 # stop over bus stop
 
@@ -2183,12 +2478,15 @@ class stopBusStop:
         extension = 11
         triggered = 12
         expected = 14
+        join = 14
         permitted = 14
         parking = 15
         actType = 17
         tripID = 18
         line = 19
         onDemand = 20
+        jump = 21
+        split = 22
 
     class inspect:
         durationEnable = 1
@@ -2199,12 +2497,15 @@ class stopBusStop:
         extension = 4
         triggered = 5
         expected = 7
+        join = 7
         permitted = 7
         parking = 8
         actType = 10
         tripID = 11
         line = 12
         onDemand = 13
+        jump = 14
+        split = 15
 
     class inspectSelection:
         durationEnable = 1
@@ -2215,12 +2516,15 @@ class stopBusStop:
         extension = 6
         triggered = 7
         expected = 9
+        join = 9
         permitted = 10
         parking = 11
         actType = 13
         tripID = 14
         line = 15
         onDemand = 16
+        jump = 17
+        split = 18
 
 # stop over train stop
 
@@ -2235,12 +2539,15 @@ class stopTrainStop:
         extension = 11
         triggered = 12
         expected = 14
+        join = 14
         permitted = 14
         parking = 15
         actType = 17
         tripID = 18
         line = 19
         onDemand = 20
+        jump = 21
+        split = 22
 
     class inspect:
         durationEnable = 1
@@ -2251,12 +2558,15 @@ class stopTrainStop:
         extension = 4
         triggered = 5
         expected = 7
+        join = 7
         permitted = 7
         parking = 8
         actType = 10
         tripID = 11
         line = 12
         onDemand = 13
+        jump = 14
+        split = 15
 
     class inspectSelection:
         durationEnable = 1
@@ -2267,12 +2577,15 @@ class stopTrainStop:
         extension = 6
         triggered = 7
         expected = 9
+        join = 9
         permitted = 10
         parking = 11
         actType = 13
         tripID = 14
         line = 15
         onDemand = 16
+        jump = 17
+        split = 18
 
 # stop over container stop
 
@@ -2287,12 +2600,15 @@ class stopContainerStop:
         extension = 11
         triggered = 12
         expected = 14
+        join = 14
         permitted = 14
         parking = 15
         actType = 17
         tripID = 18
         line = 19
         onDemand = 20
+        jump = 21
+        split = 22
 
     class inspect:
         durationEnable = 1
@@ -2303,12 +2619,15 @@ class stopContainerStop:
         extension = 4
         triggered = 5
         expected = 7
+        join = 7
         permitted = 7
         parking = 8
         actType = 10
         tripID = 11
         line = 12
         onDemand = 13
+        jump = 14
+        split = 15
 
     class inspectSelection:
         durationEnable = 1
@@ -2319,12 +2638,15 @@ class stopContainerStop:
         extension = 6
         triggered = 7
         expected = 9
+        join = 9
         permitted = 10
         parking = 11
         actType = 13
         tripID = 14
         line = 15
         onDemand = 16
+        jump = 17
+        split = 18
 
 # stop over charging station
 
@@ -2339,12 +2661,15 @@ class stopChargingStation:
         extension = 11
         triggered = 12
         expected = 14
+        join = 14
         permitted = 14
         parking = 15
         actType = 17
         tripID = 18
         line = 19
         onDemand = 20
+        jump = 21
+        split = 22
 
     class inspect:
         durationEnable = 1
@@ -2355,12 +2680,15 @@ class stopChargingStation:
         extension = 4
         triggered = 5
         expected = 7
+        join = 7
         permitted = 7
         parking = 8
         actType = 10
         tripID = 11
         line = 12
         onDemand = 13
+        jump = 14
+        split = 15
 
     class inspectSelection:
         durationEnable = 1
@@ -2371,17 +2699,20 @@ class stopChargingStation:
         extension = 6
         triggered = 7
         expected = 9
+        join = 9
         permitted = 10
         parking = 11
         actType = 13
         tripID = 14
         line = 15
         onDemand = 16
+        jump = 17
+        split = 18
 
 # stop over parkings
 
 
-class stopParking:
+class stopParkingArea:
     class create:
         durationEnable = 8
         duration = 9
@@ -2391,11 +2722,14 @@ class stopParking:
         extension = 11
         triggered = 12
         expected = 14
+        join = 14
         permitted = 14
         actType = 15
         tripID = 16
         line = 17
         onDemand = 18
+        jump = 19
+        split = 20
 
     class inspect:
         durationEnable = 1
@@ -2406,11 +2740,14 @@ class stopParking:
         extension = 4
         triggered = 5
         expected = 7
+        join = 7
         permitted = 7
         actType = 8
         tripID = 9
         line = 10
         onDemand = 11
+        jump = 12
+        split = 13
 
     class inspectSelection:
         durationEnable = 1
@@ -2421,11 +2758,14 @@ class stopParking:
         extension = 6
         triggered = 7
         expected = 9
+        join = 9
         permitted = 10
         actType = 11
         tripID = 12
         line = 13
         onDemand = 14
+        jump = 15
+        split = 16
 
 # stop over lane
 
@@ -2442,33 +2782,40 @@ class stopLane:
         extension = 13
         triggered = 14
         expected = 16
+        join = 16
         permitted = 16
         parking = 17
         actType = 19
         tripID = 20
         line = 21
         onDemand = 22
+        jump = 23
+        split = 24
 
     class inspect:
         lane = 1
-        startPos = 2
-        endPos = 3
-        friendlyPos = 4
-        posLat = 5
-        durationEnable = 6
-        duration = 7
-        untilEnable = 7
-        until = 8
-        extensionEnable = 8
-        extension = 9
-        triggered = 10
-        expected = 12
-        permitted = 12
-        parking = 13
-        actType = 15
-        tripID = 16
-        line = 17
-        onDemand = 18
+        moveLane = 2
+        startPos = 3
+        endPos = 4
+        friendlyPos = 5
+        posLat = 6
+        durationEnable = 7
+        duration = 8
+        untilEnable = 8
+        until = 9
+        extensionEnable = 9
+        extension = 10
+        triggered = 11
+        expected = 13
+        join = 13
+        permitted = 13
+        parking = 14
+        actType = 16
+        tripID = 17
+        line = 18
+        onDemand = 19
+        jump = 20
+        split = 21
 
     class inspectSelection:
         friendlyPos = 1
@@ -2481,12 +2828,15 @@ class stopLane:
         extension = 8
         triggered = 9
         expected = 11
+        join = 11
         permitted = 12
         parking = 13
         actType = 15
         tripID = 16
         line = 17
         onDemand = 18
+        jump = 19
+        split = 20
 
 # waypoint over bus stops
 
@@ -2499,14 +2849,14 @@ class waypointBusStop:
         until = 10
         extensionEnable = 10
         extension = 11
-        triggered = 12
-        expected = 14
-        permitted = 14
-        parking = 15
-        actType = 17
-        tripID = 18
-        line = 19
-        speed = 20
+        permitted = 12
+        parking = 13
+        actType = 15
+        tripID = 16
+        line = 17
+        speed = 18
+        jump = 19
+        split = 20
 
     class inspect:
         durationEnable = 1
@@ -2515,14 +2865,14 @@ class waypointBusStop:
         until = 3
         extensionEnable = 3
         extension = 4
-        triggered = 5
-        expected = 7
-        permitted = 7
-        parking = 8
-        actType = 10
-        tripID = 11
-        line = 12
-        speed = 13
+        permitted = 5
+        parking = 6
+        actType = 8
+        tripID = 9
+        line = 10
+        speed = 11
+        jump = 12
+        split = 13
 
     class inspectSelection:
         durationEnable = 1
@@ -2531,14 +2881,14 @@ class waypointBusStop:
         until = 4
         extensionEnable = 5
         extension = 6
-        triggered = 7
-        expected = 9
-        permitted = 10
-        parking = 11
-        actType = 13
-        tripID = 14
-        line = 15
-        speed = 16
+        permitted = 7
+        parking = 8
+        actType = 10
+        tripID = 11
+        line = 12
+        speed = 13
+        jump = 14
+        split = 15
 
 # waypoint over train stops
 
@@ -2551,14 +2901,14 @@ class waypointTrainStop:
         until = 10
         extensionEnable = 10
         extension = 11
-        triggered = 12
-        expected = 14
-        permitted = 14
-        parking = 15
-        actType = 17
-        tripID = 18
-        line = 19
-        speed = 20
+        permitted = 12
+        parking = 13
+        actType = 15
+        tripID = 16
+        line = 17
+        speed = 18
+        jump = 19
+        split = 20
 
     class inspect:
         durationEnable = 1
@@ -2567,14 +2917,14 @@ class waypointTrainStop:
         until = 3
         extensionEnable = 3
         extension = 4
-        triggered = 5
-        expected = 7
-        permitted = 7
-        parking = 8
-        actType = 10
-        tripID = 11
-        line = 12
-        speed = 13
+        permitted = 5
+        parking = 6
+        actType = 8
+        tripID = 9
+        line = 10
+        speed = 11
+        jump = 12
+        split = 13
 
     class inspectSelection:
         durationEnable = 1
@@ -2583,14 +2933,14 @@ class waypointTrainStop:
         until = 4
         extensionEnable = 5
         extension = 6
-        triggered = 7
-        expected = 9
-        permitted = 10
-        parking = 11
-        actType = 13
-        tripID = 14
-        line = 15
-        speed = 16
+        permitted = 7
+        parking = 8
+        actType = 10
+        tripID = 11
+        line = 12
+        speed = 13
+        jump = 14
+        split = 15
 
 # waypoint over container stops
 
@@ -2603,14 +2953,14 @@ class waypointContainerStop:
         until = 10
         extensionEnable = 10
         extension = 11
-        triggered = 12
-        expected = 14
-        permitted = 14
-        parking = 15
-        actType = 17
-        tripID = 18
-        line = 19
-        speed = 20
+        permitted = 12
+        parking = 13
+        actType = 15
+        tripID = 16
+        line = 17
+        speed = 18
+        jump = 19
+        split = 20
 
     class inspect:
         durationEnable = 1
@@ -2619,14 +2969,14 @@ class waypointContainerStop:
         until = 3
         extensionEnable = 3
         extension = 4
-        triggered = 5
-        expected = 7
-        permitted = 7
-        parking = 8
-        actType = 10
-        tripID = 11
-        line = 12
-        speed = 13
+        permitted = 5
+        parking = 6
+        actType = 8
+        tripID = 9
+        line = 10
+        speed = 11
+        jump = 12
+        split = 13
 
     class inspectSelection:
         durationEnable = 1
@@ -2635,14 +2985,14 @@ class waypointContainerStop:
         until = 4
         extensionEnable = 5
         extension = 6
-        triggered = 7
-        expected = 9
-        permitted = 10
-        parking = 11
-        actType = 13
-        tripID = 14
-        line = 15
-        speed = 16
+        permitted = 7
+        parking = 8
+        actType = 10
+        tripID = 11
+        line = 12
+        speed = 13
+        jump = 14
+        split = 15
 
 # waypoint over charging stations
 
@@ -2655,14 +3005,14 @@ class waypointChargingStation:
         until = 10
         extensionEnable = 10
         extension = 11
-        triggered = 12
-        expected = 14
-        permitted = 14
-        parking = 15
-        actType = 17
-        tripID = 18
-        line = 19
-        speed = 20
+        permitted = 12
+        parking = 13
+        actType = 15
+        tripID = 16
+        line = 17
+        speed = 18
+        jump = 19
+        split = 20
 
     class inspect:
         durationEnable = 1
@@ -2671,14 +3021,14 @@ class waypointChargingStation:
         until = 3
         extensionEnable = 3
         extension = 4
-        triggered = 5
-        expected = 7
-        permitted = 7
-        parking = 8
-        actType = 10
-        tripID = 11
-        line = 12
-        speed = 13
+        permitted = 5
+        parking = 6
+        actType = 8
+        tripID = 9
+        line = 10
+        speed = 11
+        jump = 12
+        split = 13
 
     class inspectSelection:
         durationEnable = 1
@@ -2687,14 +3037,14 @@ class waypointChargingStation:
         until = 4
         extensionEnable = 5
         extension = 6
-        triggered = 7
-        expected = 9
-        permitted = 10
-        parking = 11
-        actType = 13
-        tripID = 14
-        line = 15
-        speed = 16
+        permitted = 7
+        parking = 8
+        actType = 10
+        tripID = 11
+        line = 12
+        speed = 13
+        jump = 14
+        split = 15
 
 # waypoint over parkings
 
@@ -2707,13 +3057,13 @@ class waypointParking:
         until = 10
         extensionEnable = 10
         extension = 11
-        triggered = 12
-        expected = 14
-        permitted = 14
-        actType = 15
-        tripID = 16
-        line = 17
-        speed = 18
+        permitted = 12
+        actType = 13
+        tripID = 14
+        line = 15
+        speed = 16
+        jump = 17
+        split = 18
 
     class inspect:
         durationEnable = 1
@@ -2722,13 +3072,13 @@ class waypointParking:
         until = 3
         extensionEnable = 3
         extension = 4
-        triggered = 5
-        expected = 7
-        permitted = 7
-        actType = 8
-        tripID = 9
-        line = 10
-        speed = 11
+        permitted = 5
+        actType = 6
+        tripID = 7
+        line = 8
+        speed = 9
+        jump = 10
+        split = 11
 
     class inspectSelection:
         durationEnable = 1
@@ -2737,13 +3087,13 @@ class waypointParking:
         until = 4
         extensionEnable = 5
         extension = 6
-        triggered = 7
-        expected = 9
-        permitted = 10
-        actType = 11
-        tripID = 12
-        line = 13
-        speed = 14
+        permitted = 7
+        actType = 8
+        tripID = 9
+        line = 10
+        speed = 11
+        jump = 12
+        split = 13
 
 # waypoint (over lane)
 
@@ -2758,35 +3108,36 @@ class waypointLane:
         until = 12
         extensionEnable = 12
         extension = 13
-        triggered = 14
-        expected = 16
-        permitted = 16
-        parking = 17
-        actType = 19
-        tripID = 20
-        line = 21
-        speed = 22
+        permitted = 14
+        parking = 15
+        actType = 17
+        tripID = 18
+        line = 19
+        speed = 20
+        jump = 21
+        split = 22
 
     class inspect:
         lane = 1
-        startPos = 2
-        endPos = 3
-        friendlyPos = 4
-        posLat = 5
-        durationEnable = 6
-        duration = 7
-        untilEnable = 7
-        until = 8
-        extensionEnable = 8
-        extension = 9
-        triggered = 10
-        expected = 12
-        permitted = 12
-        parking = 13
-        actType = 15
-        tripID = 16
-        line = 17
-        speed = 18
+        moveLane = 2
+        startPos = 3
+        endPos = 4
+        friendlyPos = 5
+        posLat = 6
+        durationEnable = 7
+        duration = 8
+        untilEnable = 8
+        until = 9
+        extensionEnable = 9
+        extension = 10
+        permitted = 11
+        parking = 12
+        actType = 14
+        tripID = 15
+        line = 16
+        speed = 17
+        jump = 18
+        split = 19
 
     class inspectSelection:
         friendlyPos = 1
@@ -2797,14 +3148,14 @@ class waypointLane:
         until = 6
         extensionEnable = 7
         extension = 8
-        triggered = 9
-        expected = 11
-        permitted = 12
-        parking = 13
-        actType = 15
-        tripID = 16
-        line = 17
-        speed = 18
+        permitted = 9
+        parking = 10
+        actType = 12
+        tripID = 13
+        line = 14
+        speed = 15
+        jump = 16
+        split = 17
 
 # Person
 
@@ -2829,11 +3180,11 @@ class person:
 
     class inspectSelection:
         type = 1
-        colorButton = 2
-        color = 3
-        departPos = 4
-        depart = 5
-        parameters = 8
+        colorButton = 3
+        color = 4
+        departPos = 5
+        depart = 6
+        parameters = 9
 
     transformTo = 8
 
@@ -2869,15 +3220,15 @@ class personFlow:
 
     class inspectSelection:
         type = 1
-        colorButton = 2
-        color = 3
-        departPos = 4
-        begin = 5
-        terminate = 8
-        spacing = 10
-        terminateOption = 12
-        spacingOption = 13
-        parameters = 15
+        colorButton = 3
+        color = 4
+        departPos = 5
+        begin = 6
+        terminate = 9
+        spacing = 11
+        terminateOption = 13
+        spacingOption = 14
+        parameters = 16
 
     transformTo = 8
 
@@ -2892,11 +3243,10 @@ class personTripEdgeEdge:
         lines = 11
 
     class inspect:
-        to = 1
-        arrivalPos = 2
-        vTypes = 3
-        modes = 4
-        lines = 5
+        arrivalPos = 1
+        vTypes = 2
+        modes = 3
+        lines = 4
 
     class inspectSelection:
         arrivalPos = 1
@@ -2907,15 +3257,15 @@ class personTripEdgeEdge:
 
 class personTripEdgeBusStop:
     class create:
-        vTypes = 8
-        modes = 9
-        lines = 10
+        arrivalPos = 8
+        vTypes = 9
+        modes = 10
+        lines = 11
 
     class inspect:
-        to = 1
-        vTypes = 2
-        modes = 3
-        lines = 4
+        vTypes = 1
+        modes = 2
+        lines = 3
 
     class inspectSelection:
         vTypes = 1
@@ -2925,15 +3275,15 @@ class personTripEdgeBusStop:
 
 class personTripJunctions:
     class create:
-        vTypes = 8
-        modes = 9
-        lines = 10
+        arrivalPos = 8
+        vTypes = 9
+        modes = 10
+        lines = 11
 
     class inspect:
-        to = 1
-        vTypes = 2
-        modes = 3
-        lines = 4
+        vTypes = 1
+        modes = 2
+        lines = 3
 
     class inspectSelection:
         vTypes = 1
@@ -2947,9 +3297,8 @@ class rideEdgeEdge:
         lines = 9
 
     class inspect:
-        to = 1
-        arrivalPos = 2
-        lines = 3
+        arrivalPos = 1
+        lines = 2
 
     class inspectSelection:
         arrivalPos = 1
@@ -2958,11 +3307,11 @@ class rideEdgeEdge:
 
 class rideEdgeBusStop:
     class create:
-        lines = 8
+        arrivalPos = 8
+        lines = 9
 
     class inspect:
-        to = 1
-        lines = 2
+        lines = 1
 
     class inspectSelection:
         lines = 1
@@ -2973,8 +3322,7 @@ class walkEdgeEdge:
         arrivalPos = 8
 
     class inspect:
-        to = 1
-        arrivalPos = 2
+        arrivalPos = 1
 
     class inspectSelection:
         arrivalPos = 1
@@ -2985,8 +3333,7 @@ class walkEdges:
         arrivalPos = 8
 
     class inspect:
-        edges = 1
-        arrivalPos = 2
+        arrivalPos = 1
 
     class inspectSelection:
         arrivalPos = 1
@@ -2997,72 +3344,10 @@ class walkRoute:
         arrivalPos = 8
 
     class inspect:
-        route = 1
-        arrivalPos = 2
+        arrivalPos = 1
 
     class inspectSelection:
         arrivalPos = 1
-
-
-class walkEdgeBusStop:
-    class inspect:
-        to = 1
-
-
-class walkJunctions:
-    class inspect:
-        to = 1
-
-
-class personStopEdge:
-    class create:
-        friendlyPos = 8
-        durationEnable = 9
-        duration = 10
-        untilEnable = 11
-        until = 12
-        actType = 12
-
-    class inspect:
-        edge = 1
-        endPos = 2
-        friendlyPos = 3
-        durationEnable = 4
-        duration = 5
-        untilEnable = 6
-        until = 7
-        actType = 7
-
-    class inspectSelection:
-        friendlyPos = 1
-        durationEnable = 2
-        duration = 3
-        untilEnable = 4
-        until = 5
-        actType = 6
-
-
-class personStopBusStop:
-    class create:
-        durationEnable = 8
-        duration = 9
-        untilEnable = 10
-        until = 11
-        actType = 11
-
-    class inspect:
-        durationEnable = 1
-        duration = 2
-        untilEnable = 3
-        until = 4
-        actType = 4
-
-    class inspectSelection:
-        durationEnable = 1
-        duration = 2
-        untilEnable = 3
-        until = 4
-        actType = 4
 
 # Container
 
@@ -3085,10 +3370,10 @@ class container:
 
     class inspectSelection:
         type = 1
-        colorButton = 2
-        color = 3
-        depart = 4
-        parameters = 7
+        colorButton = 3
+        color = 4
+        depart = 5
+        parameters = 8
 
     transformTo = 8
 
@@ -3122,14 +3407,14 @@ class containerFlow:
 
     class inspectSelection:
         type = 1
-        colorButton = 2
-        color = 3
-        begin = 4
-        terminate = 7
-        spacing = 9
-        terminateOption = 11
-        spacingOption = 12
-        parameters = 14
+        colorButton = 3
+        color = 4
+        begin = 5
+        terminate = 8
+        spacing = 10
+        terminateOption = 12
+        spacingOption = 13
+        parameters = 15
 
     transformTo = 8
 
@@ -3142,9 +3427,8 @@ class transportEdgeEdge:
         lines = 9
 
     class inspect:
-        to = 1
-        arrivalPos = 2
-        lines = 3
+        arrivalPos = 1
+        lines = 2
 
     class inspectSelection:
         arrivalPos = 1
@@ -3156,8 +3440,7 @@ class transportEdgeContainerStop:
         lines = 8
 
     class inspect:
-        to = 1
-        lines = 2
+        lines = 1
 
     class inspectSelection:
         lines = 1
@@ -3170,10 +3453,9 @@ class transhipEdgeEdge:
         speed = 9
 
     class inspect:
-        to = 1
-        departPos = 2
-        arrivalPos = 3
-        speed = 4
+        departPos = 1
+        arrivalPos = 2
+        speed = 3
 
     class inspectSelection:
         departPos = 1
@@ -3187,9 +3469,8 @@ class transhipEdgeContainerStop:
         speed = 9
 
     class inspect:
-        to = 1
-        departPos = 2
-        speed = 3
+        departPos = 1
+        speed = 2
 
     class inspectSelection:
         departPos = 1
@@ -3203,18 +3484,19 @@ class transhipEdges:
         speed = 9
 
     class inspect:
-        edges = 1
-        departPos = 2
-        arrivalPos = 3
-        speed = 4
+        departPos = 1
+        arrivalPos = 2
+        speed = 3
 
     class inspectSelection:
         departPos = 1
         arrivalPos = 2
         speed = 3
 
+# stop plans
 
-class containerStopEdge:
+
+class stopPlanEdge:
     class create:
         friendlyPos = 8
         durationEnable = 9
@@ -3224,14 +3506,13 @@ class containerStopEdge:
         actType = 12
 
     class inspect:
-        edge = 1
-        endPos = 2
-        friendlyPos = 3
-        durationEnable = 4
-        duration = 5
-        untilEnable = 6
-        until = 7
-        actType = 7
+        endPos = 1
+        friendlyPos = 2
+        durationEnable = 3
+        duration = 4
+        untilEnable = 5
+        until = 6
+        actType = 6
 
     class inspectSelection:
         friendlyPos = 1
@@ -3242,7 +3523,7 @@ class containerStopEdge:
         actType = 6
 
 
-class containerStopContainerStop:
+class stopPlanStoppingPlace:
     class create:
         durationEnable = 8
         duration = 9
@@ -3263,6 +3544,7 @@ class containerStopContainerStop:
         untilEnable = 3
         until = 4
         actType = 4
+
 
 # --------------------------------
 # DATA ELEMENTS

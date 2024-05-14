@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2007-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -65,6 +65,8 @@ def getOptions(args=None):
                          + " Default 'ds' plots Distance vs. Speed")
     optParser.add_option("--persons", category="processing", action="store_true",
                          default=False, help="plot person trajectories")
+    optParser.add_option("--meso", category="processing", action="store_true",
+                         default=False, help="plot meso trajectories")
     optParser.add_option("-s", "--show", category="processing", action="store_true",
                          default=False, help="show plot directly")
     optParser.add_option("--csv-output", category="output", dest="csv_output", help="write plot as csv", metavar="FILE")
@@ -86,11 +88,9 @@ def getOptions(args=None):
     optParser.add_option("--legend", category="processing", action="store_true", default=False, help="Add legend")
     optParser.add_option("-v", "--verbose", category="processing", action="store_true",
                          default=False, help="tell me what you are doing")
+    optParser.add_option("fcdfiles", nargs="+", category="input", type=ArgumentParser.file, help="FCD input file(s)")
 
     options, args = optParser.parse_known_args(args=args)
-    if len(args) < 1:
-        sys.exit("mandatory argument FCD_FILE missing")
-    options.fcdfiles = args
 
     # keep old presets from before integration of common options
     options.nolegend = not options.legend
@@ -155,6 +155,8 @@ def main(options):
     if options.persons:
         element = 'person'
         location = 'edge'
+    elif options.meso:
+        location = 'edge'
 
     routes = defaultdict(list)  # vehID -> recorded edges
     # vehID -> (times, speeds, distances, accelerations, angles, xPositions, yPositions, kilometrage)
@@ -177,7 +179,7 @@ def main(options):
                 suffix = shortFileNames[fileIndex]
                 if len(suffix) > 0:
                     vehID += "#" + suffix
-            if options.persons:
+            if options.persons or options.meso:
                 edge = vehicle.edge
             else:
                 edge = vehicle.lane[0:vehicle.lane.rfind('_')]

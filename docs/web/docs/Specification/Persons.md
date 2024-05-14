@@ -40,20 +40,23 @@ below. Each person must have at least one stage in its plan.
 
 | Attribute           | Type      | Range              | Default         | Remark      |
 |---------------------|-----------|--------------------|-----------------|---------------------------|
-| width               | float (s) | ≥0                 | 0,48            | The person's width [m]        |
-| length              | float (s) | ≥0                 | 0,21            | The person's netto-length (length) (in m)       |
-| mingap              | float (s) | ≥0                 | 0,25            | Empty space after leader [m]                |
-| maxSpeed            | float (s) | ≥0                 | 10,44           | The person's absolute maximum velocity (in m/s)             |
-| desiredMaxSpeed     | float (s) | ≥0                 | 1,39            | The person's desired maximum velocity (in m/s)             |
+| width               | float (m) | ≥0                 | 0.48            | The person's width [m]        |
+| length              | float (m) | ≥0                 | 0.21            | The person's netto-length (length) [m]       |
+| height              | float (m) | ≥0                 | 1.72            | The person's height [m]      |
+| mingap              | float (s) | ≥0                 | 0.25            | Empty space after leader [m]                |
+| maxSpeed            | float (s) | ≥0                 | 10.44           | The person's absolute maximum velocity [m/s]             |
+| desiredMaxSpeed     | float (s) | ≥0                 | 1.39            | The person's desired maximum velocity [m/s]             |
 | speedFactor         | float or [distribution spec](../Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#defining_a_normal_distribution_for_vehicle_speeds) | >0 | 1.0 | The persons expected multiplier for desiredMaxSpeed   |
-| speedDev          | float                 | >=0      | 0.1      | The deviation of the speedFactor distribution |
+| speedDev          | float                 | ≥0      | 0.1      | The deviation of the speedFactor distribution |
 | color             | [RGB-color](../Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#colors)  |          | "1,1,0" (yellow)    | This person type's color       |
 | jmDriveAfterRedTime | float (s)           | ≥0       | -1       | This value causes persons to violate a red light if the duration of the red phase is lower than the given threshold. When set to 0, persons will always walk at yellow but will try to stop at red. If this behavior causes a person to walk so fast that stopping is not possible any more it will not attempt to stop. |
+| jmIgnoreFoeProb        | float | \[0,1\]             | 0          | This value causes vehicles and pedestrians to ignore foe vehicles that have right-of-way with the given probability. The check is performed anew every simulation step.|
+| jmIgnoreFoeSpeed       | float (m/s) | ≥0            | 0          | This value is used in conjunction with *jmIgnoreFoeProb*. Only vehicles with a speed below or equal to the given value may be ignored. |
 | impatience         | float or 'off'       | <= 1     | 0.0      | Willingness of persons to walk across the street at an unprioritized crossing when there are vehicles that would have to brake  |
 | vClass            | class (enum) |        |          | "pedestrian" | Should either be "pedestrian" or "ignoring" (to allow walking anywhere) |
 
 !!! note
-    Up to version 1.14.1, speed distributions for walking persons (pedestrians) worked differently from those for vehicles. Whereas the individual speed factor of vehicles is multiplied with the road speed limit to arrive at the desired speed, the individual speed factor of persons was multiplied with the maxSpeed of their vType (since road speed limits do not apply to persons). In later versions, person use [desiredMaxSpeed and maxSpeed](../Simulation/VehicleSpeed.md#desiredmaxspeed) in the exact same manner as vehicles. For backward compatibility reasons, if `maxSpeed` is configured and `desiredMaxSpeed` is not given in the vType, the `desiredMaxSpeed` is initialied from the given `maxSpeed` value.
+    Up to version 1.14.1, speed distributions for walking persons (pedestrians) worked differently from those for vehicles. Whereas the individual speed factor of vehicles is multiplied with the road speed limit to arrive at the desired speed, the individual speed factor of persons was multiplied with the maxSpeed of their vType (since road speed limits do not apply to persons). In later versions, person use [desiredMaxSpeed and maxSpeed](../Simulation/VehicleSpeed.md#desiredmaxspeed) in the exact same manner as vehicles. For backward compatibility reasons, if `maxSpeed` is configured and `desiredMaxSpeed` is not given in the vType, the `desiredMaxSpeed` is initialized from the given `maxSpeed` value.
 
 When specifying a `type`, the set of
 attributes which are in effect during simulation depend on the selected
@@ -115,16 +118,17 @@ definitions.
 
 | Attribute  | Type     | Range                              | Default | Remark                                            |
 | ---------- | -------- | ---------------------------------- | ------- | ------------------------------------------------- |
-| lines  | list     | valid line or vehicle ids or *ANY* | ANY      | list of vehicle alternatives to take for the ride |
+| lines  | list     | valid line or vehicle ids or *ANY* | ANY      | list of vehicle alternatives to take for the ride    |
 | from       | string   | valid edge ids                     | \-      | id of the start edge (optional, if it is a subsequent movement or [starts in a vehicle](Persons.md#starting_the_simulation_in_a_vehicle)) |
 | to         | string   | valid edge ids                     | \-      | id of the destination edge (optional, if a busStop or other stopping place is given)  |
-| arrivalPos | float(m) |                                    | end of edge  | arrival position on the destination edge          |
-| busStop    | string   | valid bus stop ids                 | \-      | id of the destination stop                        |
-| parkingArea| string   | valid parkingArea ids              | \-      | id of the destination stop                        |
-| trainStop  | string   | valid trainStop ids              | \-      | id of the destination stop                        |
-| chargingStation| string   | valid chargingStation ids              | \-      | id of the destination stop                        |
-| containerStop| string   | valid containerStop ids              | \-      | id of the destination stop                        |
-| group| string           |               | ""      | id of the travel group. Persons with the same group may share a taxi ride     |
+| fromPos    | float(m) |                                    | middle of edge  | depart position on the start edge          |
+| arrivalPos | float(m) |                                    | end of edge  | arrival position on the destination edge      |
+| busStop    | string   | valid bus stop ids                 | \-      | id of the destination stop                         |
+| parkingArea| string   | valid parkingArea ids              | \-      | id of the destination stop                         |
+| trainStop  | string   | valid trainStop ids                | \-      | id of the destination stop                         |
+| chargingStation| string | valid chargingStation ids        | \-      | id of the destination stop                         |
+| containerStop| string   | valid containerStop ids          | \-      | id of the destination stop                         |
+| group      | string   |                                    | ""      | id of the travel group. Persons with the same group may share a taxi ride |
 
 The vehicle to use has to exist already (either public transport or some
 existing passenger car) and the route to take is defined by the vehicle.
@@ -132,22 +136,25 @@ The person enters the vehicle if it stops on the 'from' edge and any of
 the following conditions are met
 
 - the 'line' attribute of the vehicle or the 'id' of the vehicle is
-  given in the list defined by the 'lines' attribute of the ride OR
+  given in the list defined by the `lines` attribute of the ride OR
   the lines attribute contains 'ANY' and the vehicle stops at the
   destination 'busStop' of the ride (or at the destination edge if no destination busStop is defined).
+- the `lines` attribute can be used to apply taxis, see [taxi](../Simulation/Taxi.md) for more information
 - the vehicle has a triggered stop and the person position is within
   the range of `startpos,endPos` of the stop.
 - the vehicle has a timed stop and the person is waiting within 10m of
   the vehicle position
 
-The position of the person is either it's `departPos` or the arrival position of
+The position of the person is either its `departPos` or the arrival position of
 the preceding plan element
 
 A given bus stop (or any other stopping place) may serve as a replacement for a destination edge and
 arrival position. If an arrival position is given nevertheless it has to
 be inside the range of the stop.
 
-The positions of persons in a vehicle depend on the 'guiShape' parameter of the vehicle as well as it's dimensions. The offset between the front of the vehicle and the first passenger placement can be configured by adding `<param key="frontSeatPos" value="3.14"/>`to the vType definition of the vehicle.
+The positions of persons in a vehicle depend on the 'guiShape' parameter of the vehicle as well as its dimensions. The offset between the front of the vehicle and the first passenger placement can be configured by adding `<param key="frontSeatPos" value="3.14"/>` to the vType definition of the vehicle.
+
+The number of persons sitting side-by-side depends on the vehicle width but can be overruled by setting `<param key="seatingWidth" value="1.3"/>` in the vType definition.
 
 !!! note
     up to version 1.15.0 attribute 'lines' was mandatory.
@@ -175,7 +182,7 @@ They are child elements of plan definitions.
 
 You can define either a `route`-id, or a list of `edges` to travel or a `from` and a `to` edge.
 In the first and second case the route edges are traveled in the listed
-order. They do not need to be joined in the net. If travelling between
+order. They do not need to be joined in the net. If traveling between
 stops on the same edge then only include the edge once. In the latter
 case a shortest path calculation is performed and it is an error if
 there is no path connecting `from` and `to`.
@@ -199,6 +206,12 @@ possible to model activities with a fixed duration as well as those with
 a fixed end time. If a person needs to be transferred between two
 positions without delay, it is possible to use two stops in conjunction.
 
+## Parameters
+
+All stages can hold user defined parameters in the usual `<param key="k" value="v"/>` form.
+If a stage is generated using a [personTrip](#persontrips) the stages inherited the parameters
+of the trip.
+
 # Simulation behavior
 
 A person is starting her life at her depart time on the source (resp.
@@ -213,7 +226,7 @@ positioned between the start and end position of the vehicle's stop, the
 person will enter the vehicle and start its ride. If such a vehicle
 exists but the person is not positioned between the start and end
 position of the vehicle's stop, the person will still enter if the
-vehicle is triggered by the a person and the distance between person and
+vehicle is triggered by the person and the distance between person and
 vehicle is at most 10 metres. It does not check whether the vehicle has
 the aspired destination on the current route. The first time the vehicle
 stops (on a well defined stop) at the destination edge, the ride is
@@ -240,10 +253,10 @@ The person stops for the maximum of `currentTime` + `duration` and `until`.
 
 ## Access
 
-Whenever a person starts or ends a walk at a busStop or trainStop (collectively called *stoppingPlace*), an access stage inserted into the person plan under the following conditions:
+Whenever a person starts or ends a walk at a busStop or trainStop (collectively called *stoppingPlace*), an access stage is inserted into the person plan under the following conditions:
 
 - the walk ends on an edge that is different from the stoppingPlace edge and the stoppingPlace has an `<access>` definition that connects it with the final edge of the walk
-- the walk starts on an edge that is differnt from the stoppingPlace edge and the stoppingPlce has an `<access>` definition that connects it with the first edge of the walk
+- the walk starts on an edge that is different from the stoppingPlace edge and the stoppingPlace has an `<access>` definition that connects it with the first edge of the walk
 
 The time spent in an access stage is equal to the "length" attribute of the access divided by the walking speed of the person. No interaction between persons on the same access element takes place.
 
@@ -253,7 +266,7 @@ It is possible to start the person simulation simultaneously with the start of a
 
 !!! note
     The starting vehicle must already be loaded in the input file
-    
+
 ## Starting a person in a vehicle
 To start the simulation of a person while riding in a vehicle, the `depart` attribute of the person must be set to `triggered`.
 Additionally the first stage of the plan must be a `ride`. The `from` attribute is not necessary, since the vehicle start position is already defined and used.
@@ -321,7 +334,7 @@ If the computed plan starts with a car or bicycle, a vehicle for use by the pers
 
 !!! note
     If no itinerary for performing the trip is found and the option **--ignore-route-errors** is set, the trip will be transformed into a walk which consists of the start and arrival edge. The person will teleport to complete the walk.
-    
+
 !!! note
     when attribute vTypes is used, the person may start with any of the given vehicle types at the from-edge. Including 'car' in modes is equivalent to vTypes="DEFAULT_VEHTYPE". Including 'bicycle' in modes is equivalent to vTypes="DEFAULT_BIKETYPE". The vehicles will be automatically generated when used.
 

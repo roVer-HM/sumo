@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -38,6 +38,7 @@
 #include <utils/router/SUMOAbstractRouter.h>
 #include <utils/router/RouterProvider.h>
 #include <utils/vehicle/SUMOVehicle.h>
+#include <microsim/MSRouterDefs.h>
 
 #include <utils/foxtools/MFXSynchQue.h>
 #include <utils/foxtools/MFXSynchSet.h>
@@ -54,12 +55,8 @@
 // ===========================================================================
 // class declarations
 // ===========================================================================
-class MSEdge;
-class MSLane;
-class MSJunction;
 class OutputDevice;
 
-typedef std::vector<MSEdge*> MSEdgeVector;
 
 // ===========================================================================
 // class definitions
@@ -81,8 +78,6 @@ typedef std::vector<MSEdge*> MSEdgeVector;
 class MSEdgeControl {
 
 public:
-    typedef RouterProvider<MSEdge, MSLane, MSJunction, SUMOVehicle> MSRouterProvider;
-
     /** @brief Constructor
      *
      * Builds LaneUsage information for each lane and assigns them to lanes.
@@ -251,8 +246,11 @@ public:
             }
             return false;
         }
-        SUMOAbstractRouter<MSEdge, SUMOVehicle>& getRouter(SUMOVehicleClass svc) const {
+        MSVehicleRouter& getRouter(SUMOVehicleClass svc) const {
             return myRouterProvider->getVehicleRouter(svc);
+        }
+        MSTransportableRouter& getIntermodalRouter() const {
+            return myRouterProvider->getIntermodalRouter();
         }
         virtual ~WorkerThread() {
             stop();

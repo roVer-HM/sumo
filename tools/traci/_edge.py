@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2011-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -201,6 +201,20 @@ class EdgeDomain(Domain):
         then INVALID_DOUBLE_VALUE is returned.
         """
         return self._getUniversal(tc.VAR_ANGLE, edgeID, "d", relativePosition)
+
+    def getFromJunction(self, edgeID):
+        """getFromJunction(string) -> string
+
+        Returns the id of the junction at the start of this edge
+        """
+        return self._getUniversal(tc.FROM_JUNCTION, edgeID)
+
+    def getToJunction(self, edgeID):
+        """getToJunction(string) -> string
+
+        Returns the id of the junction at the end of this edge
+        """
+        return self._getUniversal(tc.TO_JUNCTION, edgeID)
 
     def adaptTraveltime(self, edgeID, time, begin=None, end=None):
         """adaptTraveltime(string, double, double, double) -> None

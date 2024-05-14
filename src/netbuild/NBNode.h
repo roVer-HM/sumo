@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -142,6 +142,8 @@ public:
         EdgeVector edges;
         /// @brief The crossing's shape
         PositionVector shape;
+        /// @brief The outline shape for this crossing
+        PositionVector outlineShape;
         /// @brief This crossing's width
         double customWidth;
         /// @brief This crossing's width
@@ -255,7 +257,7 @@ public:
     /// @name Atomar getter methods
     /// @{
     /// @brief Returns the position of this node
-    const Position& getPosition() const {
+    inline const Position& getPosition() const {
         return myPosition;
     }
 
@@ -263,49 +265,49 @@ public:
     Position getCenter() const;
 
     /// @brief Returns this node's incoming edges (The edges which yield in this node)
-    const EdgeVector& getIncomingEdges() const {
+    inline const EdgeVector& getIncomingEdges() const {
         return myIncomingEdges;
     }
 
     /// @brief Returns this node's outgoing edges (The edges which start at this node)
-    const EdgeVector& getOutgoingEdges() const {
+    inline const EdgeVector& getOutgoingEdges() const {
         return myOutgoingEdges;
     }
 
     /// @brief Returns all edges which participate in this node (Edges that start or end at this node)
-    const EdgeVector& getEdges() const {
+    inline const EdgeVector& getEdges() const {
         return myAllEdges;
     }
 
     /**@brief Returns the type of this node
      * @see SumoXMLNodeType
      */
-    SumoXMLNodeType getType() const {
+    inline SumoXMLNodeType getType() const {
         return myType;
     }
 
     /// @brief Returns the turning radius of this node
-    double getRadius() const {
+    inline double getRadius() const {
         return myRadius;
     }
 
     /// @brief Returns the keepClear flag
-    bool getKeepClear() const {
+    inline bool getKeepClear() const {
         return myKeepClear;
     }
 
     /// @brief Returns hint on how to compute right of way
-    RightOfWay getRightOfWay() const {
+    inline RightOfWay getRightOfWay() const {
         return myRightOfWay;
     }
 
     /// @brief Returns fringe type
-    FringeType getFringeType() const {
+    inline FringeType getFringeType() const {
         return myFringeType;
     }
 
     /// @brief Returns intersection name
-    const std::string& getName() const {
+    inline const std::string& getName() const {
         return myName;
     }
     /// @}
@@ -485,9 +487,13 @@ public:
     /// @brief whether one of multple connections from the same edge targeting the same lane must yield
     bool mergeConflictYields(const NBEdge* from, int fromLane, int fromLaneFoe, NBEdge* to, int toLane) const;
 
-    /// @brief whether multple connections from the same edge target the same lane
+    /// @brief whether multiple connections from the same edge target the same lane
     bool mergeConflict(const NBEdge* from, const NBEdge::Connection& con,
                        const NBEdge* prohibitorFrom, const NBEdge::Connection& prohibitorCon, bool foes) const;
+
+    /// @brief whether the foe connections is oncoming on the same lane
+    bool bidiConflict(const NBEdge* from, const NBEdge::Connection& con,
+                      const NBEdge* prohibitorFrom, const NBEdge::Connection& prohibitorCon, bool foes) const;
 
     bool zipperConflict(const NBEdge* incoming, const NBEdge* outgoing, int fromLane, int toLane) const;
 
@@ -596,7 +602,7 @@ public:
 
     /// @brief whether an internal junction should be built at from and respect other
     bool needsCont(const NBEdge* fromE, const NBEdge* otherFromE,
-                   const NBEdge::Connection& c, const NBEdge::Connection& otherC) const;
+                   const NBEdge::Connection& c, const NBEdge::Connection& otherC, bool checkOnlyTLS = false) const;
 
     /// @brief whether the connection must yield if the foe remains on the intersection after its phase ends
     bool tlsContConflict(const NBEdge* from, const NBEdge::Connection& c,
@@ -677,6 +683,9 @@ public:
      */
     void buildWalkingAreas(int cornerDetail, double joinMinDist);
 
+    /// @brief build crossing outlines after walkingareas are finished
+    void buildCrossingOutlines();
+
     /// @brief build crossings, and walkingareas. Also removes invalid loaded crossings if wished
     void buildCrossingsAndWalkingAreas();
 
@@ -709,7 +718,7 @@ public:
 
     /// @brief add a pedestrian crossing to this node
     NBNode::Crossing* addCrossing(EdgeVector edges, double width, bool priority, int tlIndex = -1, int tlIndex2 = -1,
-                                  const PositionVector& customShape = PositionVector::EMPTY, bool fromSumoNet = false);
+                                  const PositionVector& customShape = PositionVector::EMPTY, bool fromSumoNet = false, const Parameterised* params = nullptr);
 
     /// @brief add custom shape for walkingArea
     void addWalkingAreaShape(EdgeVector edges, const PositionVector& shape, double width);
@@ -810,6 +819,10 @@ public:
     /// @brief return whether the given type is a traffic light
     static bool isTrafficLight(SumoXMLNodeType type);
 
+    inline bool isTrafficLight() const {
+        return isTrafficLight(myType);
+    }
+
     /// @brief check if node is a simple continuation
     bool isSimpleContinuation(bool checkLaneNumbers = true, bool checkWidth = false) const;
 
@@ -885,6 +898,9 @@ private:
 
     /// @brief detect explict rail turns with potential geometry problem
     static bool isExplicitRailNoBidi(const NBEdge* incoming, const NBEdge* outgoing);
+
+    /// @brief geometry helper that cuts the first shape where bordered by the other two
+    PositionVector cutAtShapes(const PositionVector& cut, const PositionVector& border1, const PositionVector& border2, const PositionVector& def);
 
 private:
     /// @brief The position the node lies at

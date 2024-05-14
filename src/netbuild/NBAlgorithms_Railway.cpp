@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2012-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -84,7 +84,7 @@ NBRailwayTopologyAnalyzer::Track::getSuccessors(SUMOVehicleClass svc) const {
 
 
 const std::vector<std::pair<const NBRailwayTopologyAnalyzer::Track*, const NBRailwayTopologyAnalyzer::Track*> >&
-NBRailwayTopologyAnalyzer::Track::getViaSuccessors(SUMOVehicleClass svc) const {
+NBRailwayTopologyAnalyzer::Track::getViaSuccessors(SUMOVehicleClass svc, bool /*ignoreTransientPermissions*/) const {
     if ((minPermissions & svc) != 0) {
         return viaSuccessors;
     } else {
@@ -134,8 +134,6 @@ NBRailwayTopologyAnalyzer::repairTopology(NBEdgeCont& ec, NBPTStopCont& sc, NBPT
 
 int
 NBRailwayTopologyAnalyzer::makeAllBidi(NBEdgeCont& ec) {
-    int numRailEdges = 0;
-    int numBidiEdges = 0;
     int numNotCenterEdges = 0;
     int numAddedBidiEdges = 0;
     std::string inputfile = OptionsCont::getOptions().getString("railway.topology.all-bidi.input-file");
@@ -156,7 +154,6 @@ NBRailwayTopologyAnalyzer::makeAllBidi(NBEdgeCont& ec) {
     }
     for (NBEdge* edge : edges) {
         if (hasRailway(edge->getPermissions())) {
-            numRailEdges++;
             // rebuild connections if given from an earlier network
             edge->invalidateConnections(true);
             if (!edge->isBidiRail()) {
@@ -168,8 +165,6 @@ NBRailwayTopologyAnalyzer::makeAllBidi(NBEdgeCont& ec) {
                 } else {
                     numNotCenterEdges++;
                 }
-            } else {
-                numBidiEdges++;
             }
         }
     }
@@ -195,6 +190,9 @@ NBRailwayTopologyAnalyzer::addBidiEdge(NBEdgeCont& ec, NBEdge* edge, bool update
     if (ec.retrieve(id2) == nullptr) {
         NBEdge* e2 = new NBEdge(id2, edge->getToNode(), edge->getFromNode(),
                                 edge, edge->getGeometry().reverse());
+        if (edge->getParameter(NBTrafficLightDefinition::OSM_DIRECTION) == "forward") {
+            e2->setParameter(NBTrafficLightDefinition::OSM_DIRECTION, "backward");
+        }
         ec.insert(e2);
         if (ec.retrieve(id2) == nullptr) {
             WRITE_WARNINGF(TL("Bidi-edge '%' prevented by filtering rules."), id2);
@@ -662,6 +660,9 @@ NBRailwayTopologyAnalyzer::reverseEdges(NBEdgeCont& ec, NBPTStopCont& sc) {
                 e->reinitNodes(e->getToNode(), e->getFromNode());
                 e->setGeometry(e->getGeometry().reverse());
                 reversedIDs.insert(e->getID());
+                if (e->getParameter(NBTrafficLightDefinition::OSM_DIRECTION) == "forward") {
+                    e->setParameter(NBTrafficLightDefinition::OSM_DIRECTION, "backward");
+                }
             }
             seqLengths[(int)seq.size()]++;
             numReversed++;
@@ -692,7 +693,7 @@ NBRailwayTopologyAnalyzer::addBidiEdgesForBufferStops(NBEdgeCont& ec) {
                 WRITE_WARNINGF(TL("Ignoring buffer stop junction '%' with % edges."), node->getID(), node->getEdges().size());
                 continue;
             }
-            int numAddedBidi = 0;
+            // int numAddedBidi = 0;
             numBufferStops++;
             NBEdge* prev = nullptr;
             NBEdge* prev2 = nullptr;
@@ -734,7 +735,7 @@ NBRailwayTopologyAnalyzer::addBidiEdgesForBufferStops(NBEdgeCont& ec) {
                 }
                 prev = e;
                 prev2 = e2;
-                numAddedBidi++;
+                // numAddedBidi++;
                 numAddedBidiTotal++;
                 inRail.clear();
                 outRail.clear();

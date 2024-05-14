@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -85,6 +85,21 @@ GNEDetector::getPositionOverLane() const {
 }
 
 
+bool
+GNEDetector::checkDrawMoveContour() const {
+    // get edit modes
+    const auto& editModes = myNet->getViewNet()->getEditModes();
+    // check if we're in move mode
+    if (!myNet->getViewNet()->isMovingElement() && editModes.isCurrentSupermodeNetwork() &&
+            (editModes.networkEditMode == NetworkEditMode::NETWORK_MOVE) && myNet->getViewNet()->checkOverLockedElement(this, mySelected)) {
+        // only move the first element
+        return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
+    } else {
+        return false;
+    }
+}
+
+
 GNELane*
 GNEDetector::getLane() const {
     return getParentLanes().front();
@@ -99,11 +114,7 @@ GNEDetector::getPositionInView() const {
 
 void
 GNEDetector::updateCenteringBoundary(const bool /*updateGrid*/) {
-    myAdditionalBoundary.reset();
-    // add center
-    myAdditionalBoundary.add(getPositionInView());
-    // grow
-    myAdditionalBoundary.grow(10);
+    // nothing to update
 }
 
 void
@@ -162,7 +173,7 @@ GNEDetector::getHierarchyName() const {
 
 
 void
-GNEDetector::drawE1Shape(const GUIVisualizationSettings& s, const double exaggeration, const double scaledWidth,
+GNEDetector::drawE1Shape(const GUIVisualizationSettings::Detail d, const double exaggeration,
                          const RGBColor& mainColor, const RGBColor& secondColor) const {
     // push matrix
     GLHelper::pushMatrix();
@@ -194,8 +205,8 @@ GNEDetector::drawE1Shape(const GUIVisualizationSettings& s, const double exagger
     glVertex2d(0, -2 + .1);
     // end draw line
     glEnd();
-    // outline if isn't being drawn for selecting
-    if ((scaledWidth * exaggeration > 1) && !s.drawForRectangleSelection) {
+    // draw center only in draw in level 2
+    if (d <= GUIVisualizationSettings::Detail::AdditionalDetails) {
         // set main color
         GLHelper::setColor(secondColor);
         // set polygon mode
@@ -220,20 +231,21 @@ GNEDetector::drawE1Shape(const GUIVisualizationSettings& s, const double exagger
         glVertex2d(0, -1.7);
         // end draw line
         glEnd();
+        //arrow
+        glTranslated(2, 0, 0);
+        GLHelper::setColor(mainColor);
+        GLHelper::drawTriangleAtEnd(Position(0, 0), Position(0.5, 0), (double) 0.5, (double) 1);
     }
-    //arrow
-    glTranslated(2, 0, 0);
-    GLHelper::setColor(mainColor);
-    GLHelper::drawTriangleAtEnd(Position(0, 0), Position(0.5, 0), (double) 0.5, (double) 1);
     // pop matrix
     GLHelper::popMatrix();
 }
 
 
 void
-GNEDetector::drawE1DetectorLogo(const GUIVisualizationSettings& s, const double exaggeration,
-                                const std::string& logo, const RGBColor& textColor) const {
-    if (!s.drawForRectangleSelection && !s.drawForPositionSelection) {
+GNEDetector::drawE1DetectorLogo(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
+                                const double exaggeration, const std::string& logo, const RGBColor& textColor) const {
+    // only draw in level 2
+    if (d <= GUIVisualizationSettings::Detail::Text) {
         // calculate position
         const Position pos = myAdditionalGeometry.getShape().front();
         // calculate rotation
@@ -253,9 +265,10 @@ GNEDetector::drawE1DetectorLogo(const GUIVisualizationSettings& s, const double 
 
 
 void
-GNEDetector::drawE2DetectorLogo(const GUIVisualizationSettings& s, const double exaggeration,
-                                const std::string& logo, const RGBColor& textColor) const {
-    if (!s.drawForRectangleSelection && !s.drawForPositionSelection) {
+GNEDetector::drawE2DetectorLogo(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
+                                const double exaggeration, const std::string& logo, const RGBColor& textColor) const {
+    // only draw in level 2
+    if (d <= GUIVisualizationSettings::Detail::Text) {
         // calculate middle point
         const double middlePoint = (myAdditionalGeometry.getShape().length2D() * 0.5);
         // calculate position

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2017-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2017-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -49,6 +49,7 @@ ContextSubscriptionResults Lane::myContextSubscriptionResults;
 // ===========================================================================
 std::vector<std::string>
 Lane::getIDList() {
+    MSNet::getInstance(); // just to check that we actually have a network
     std::vector<std::string> ids;
     MSLane::insertIDs(ids);
     return ids;
@@ -333,7 +334,7 @@ Lane::getPendingVehicles(const std::string& laneID) {
 }
 
 
-double 
+double
 Lane::getAngle(const std::string& laneID, double relativePosition) {
     double angle;
     MSLane* lane = getLane(laneID);
@@ -341,8 +342,7 @@ Lane::getAngle(const std::string& laneID, double relativePosition) {
         Position start = lane->getShape().front();
         Position end = lane->getShape().back();
         angle = start.angleTo2D(end);
-    }
-    else {
+    } else {
         angle = lane->getShape().rotationAtOffset(lane->interpolateLanePosToGeometryPos(relativePosition));
     }
 
@@ -393,7 +393,7 @@ Lane::setChangePermissions(const std::string& laneID, std::vector<std::string> a
 
 void
 Lane::setMaxSpeed(const std::string& laneID, double speed) {
-    getLane(laneID)->setMaxSpeed(speed);
+    getLane(laneID)->setMaxSpeed(speed, false, true);
 }
 
 

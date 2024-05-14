@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,6 +19,7 @@
 /****************************************************************************/
 #include <config.h>
 
+#include <netedit/frames/GNEFrame.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
@@ -28,6 +29,7 @@
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 #include <utils/common/SUMOVehicleClass.h>
+#include <utils/gui/images/POIIcons.h>
 
 #include "GNEAttributesCreatorRow.h"
 #include "GNEAttributesCreator.h"
@@ -39,11 +41,12 @@
 
 FXDEFMAP(GNEAttributesCreatorRow) RowCreatorMap[] = {
     FXMAPFUNC(SEL_COMMAND,  MID_GNE_SET_ATTRIBUTE,          GNEAttributesCreatorRow::onCmdSetAttribute),
-    FXMAPFUNC(SEL_COMMAND,  MID_GNE_SET_ATTRIBUTE_DIALOG,   GNEAttributesCreatorRow::onCmdOpenAttributeDialog),
+    FXMAPFUNC(SEL_COMMAND,  MID_GNE_SET_ATTRIBUTE_COLOR,    GNEAttributesCreatorRow::onCmdOpenColorDialog),
+    FXMAPFUNC(SEL_COMMAND,  MID_GNE_SET_ATTRIBUTE_ALLOW,    GNEAttributesCreatorRow::onCmdOpenAllowDialog),
 };
 
 // Object implementation
-FXIMPLEMENT(GNEAttributesCreatorRow,         FXHorizontalFrame,      RowCreatorMap,                  ARRAYNUMBER(RowCreatorMap))
+FXIMPLEMENT(GNEAttributesCreatorRow,    FXHorizontalFrame,  RowCreatorMap,  ARRAYNUMBER(RowCreatorMap))
 
 
 // ===========================================================================
@@ -61,14 +64,17 @@ GNEAttributesCreatorRow::GNEAttributesCreatorRow(GNEAttributesCreator* Attribute
     myAttributeLabel->hide();
     myEnableAttributeCheckButton = new FXCheckButton(this, TL("name"), this, MID_GNE_SET_ATTRIBUTE, GUIDesignCheckButtonAttribute);
     myEnableAttributeCheckButton->hide();
-    myAttributeButton = new FXButton(this, TL("button"), nullptr, this, MID_GNE_SET_ATTRIBUTE_DIALOG, GUIDesignButtonAttribute);
-    myAttributeButton->hide();
+    myAttributeColorButton = GUIDesigns::buildFXButton(this, toString(SUMO_ATTR_COLOR), "", "", GUIIconSubSys::getIcon(GUIIcon::COLORWHEEL), this, MID_GNE_SET_ATTRIBUTE_COLOR, GUIDesignButtonAttribute);
+    myAttributeColorButton->hide();
+    myAttributeAllowButton = GUIDesigns::buildFXButton(this, toString(SUMO_ATTR_ALLOW), "", "", GUIIconSubSys::getIcon(GUIIcon::ALLOW), this, MID_GNE_SET_ATTRIBUTE_ALLOW, GUIDesignButtonAttribute);
+    myAttributeAllowButton->hide();
     // Create right visual elements
     myValueTextField = new FXTextField(this, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
     myValueTextField->hide();
     myValueCheckButton = new FXCheckButton(this, TL("Disabled"), this, MID_GNE_SET_ATTRIBUTE, GUIDesignCheckButton);
     myValueCheckButton->hide();
-    myValueComboBox = new FXComboBox(this, GUIDesignComboBoxNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignComboBoxAttribute);
+    myValueComboBox = new MFXComboBoxIcon(this, GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItemsMedium,
+                                          this, MID_GNE_SET_ATTRIBUTE, GUIDesignComboBoxAttribute);
     myValueComboBox->hide();
     // only create if parent was created
     if (getParent()->id()) {
@@ -202,12 +208,16 @@ GNEAttributesCreatorRow::refreshRow() {
         myValueTextField->show();
     } else {
         // left
-        if (myAttrProperties.isColor() || (myAttrProperties.getAttr() == SUMO_ATTR_ALLOW)) {
+        if (myAttrProperties.isColor()) {
             // show color button
-            myAttributeButton->setTextColor(FXRGB(0, 0, 0));
-            myAttributeButton->killFocus();
-            myAttributeButton->setText(myAttrProperties.getAttrStr().c_str());
-            myAttributeButton->show();
+            myAttributeColorButton->setTextColor(FXRGB(0, 0, 0));
+            myAttributeColorButton->killFocus();
+            myAttributeColorButton->show();
+        } else if (myAttrProperties.isSVCPermission() && (myAttrProperties.getAttr() != SUMO_ATTR_DISALLOW)) {
+            // show allow button
+            myAttributeAllowButton->setTextColor(FXRGB(0, 0, 0));
+            myAttributeAllowButton->killFocus();
+            myAttributeAllowButton->show();
         } else if (myAttrProperties.isActivatable()) {
             // show check button
             myEnableAttributeCheckButton->setText(myAttrProperties.getAttrStr().c_str());
@@ -243,16 +253,22 @@ GNEAttributesCreatorRow::refreshRow() {
         } else if (myAttrProperties.isDiscrete()) {
             // fill textField
             myValueComboBox->clearItems();
-            for (const auto& item : myAttrProperties.getDiscreteValues()) {
-                myValueComboBox->appendItem(item.c_str());
-            }
-            // set number of visible items
-            if (myAttrProperties.showAllDiscreteValues()) {
-                myValueComboBox->setNumVisible(myValueComboBox->getNumItems());
+            // check if add POI icons
+            if (myAttrProperties.getAttr() == SUMO_ATTR_ICON) {
+                for (const auto& POIIcon : SUMOXMLDefinitions::POIIcons.getValues()) {
+                    myValueComboBox->appendIconItem(SUMOXMLDefinitions::POIIcons.getString(POIIcon).c_str(), POIIcons::getPOIIcon(POIIcon));
+                }
             } else {
-                myValueComboBox->setNumVisible(10);
+                for (const auto& item : myAttrProperties.getDiscreteValues()) {
+                    myValueComboBox->appendIconItem(item.c_str());
+                }
             }
-            myValueComboBox->setText(myAttributesCreatorParent->getCurrentTemplateAC()->getAttribute(myAttrProperties.getAttr()).c_str());
+            auto index = myValueComboBox->findItem(myAttributesCreatorParent->getCurrentTemplateAC()->getAttribute(myAttrProperties.getAttr()).c_str());
+            if (index < 0) {
+                myValueComboBox->setCurrentItem(0);
+            } else {
+                myValueComboBox->setCurrentItem(index);
+            }
             if (myAttrProperties.hasDefaultValue() && (myAttrProperties.getDefaultValue() == myValueComboBox->getText().text())) {
                 myValueComboBox->setTextColor(FXRGB(128, 128, 128));
             } else {
@@ -292,7 +308,8 @@ void
 GNEAttributesCreatorRow::disableRow() {
     myAttributeLabel->disable();
     myEnableAttributeCheckButton->disable();
-    myAttributeButton->disable();
+    myAttributeColorButton->disable();
+    myAttributeAllowButton->disable();
     myValueTextField->disable();
     myValueComboBox->disable();
     myValueCheckButton->disable();
@@ -374,7 +391,7 @@ GNEAttributesCreatorRow::onCmdSetAttribute(FXObject* obj, FXSelector, void*) {
                 myAttributesCreatorParent->getCurrentTemplateAC()->setAttribute(myAttrProperties.getAttr(), myValueComboBox->getText().text());
             }
             // special case for trigger stops (in the future will be changed)
-            if (myAttributesCreatorParent->getCurrentTemplateAC()->getTagProperty().isStop() && (myAttrProperties.getAttr() == SUMO_ATTR_TRIGGERED)) {
+            if (myAttributesCreatorParent->getCurrentTemplateAC()->getTagProperty().isVehicleStop() && (myAttrProperties.getAttr() == SUMO_ATTR_TRIGGERED)) {
                 // refresh entire GNEAttributesCreator
                 myAttributesCreatorParent->refreshAttributesCreator();
             }
@@ -416,34 +433,37 @@ GNEAttributesCreatorRow::onCmdSetAttribute(FXObject* obj, FXSelector, void*) {
 
 
 long
-GNEAttributesCreatorRow::onCmdOpenAttributeDialog(FXObject*, FXSelector, void*) {
+GNEAttributesCreatorRow::onCmdOpenColorDialog(FXObject*, FXSelector, void*) {
+    // create FXColorDialog
+    FXColorDialog colordialog(this, TL("Color Dialog"));
+    colordialog.setTarget(this);
+    colordialog.setIcon(GUIIconSubSys::getIcon(GUIIcon::COLORWHEEL));
+    // If previous attribute wasn't correct, set black as default color
+    if (GNEAttributeCarrier::canParse<RGBColor>(myValueTextField->getText().text())) {
+        colordialog.setRGBA(MFXUtils::getFXColor(GNEAttributeCarrier::parse<RGBColor>(myValueTextField->getText().text())));
+    } else {
+        colordialog.setRGBA(MFXUtils::getFXColor(GNEAttributeCarrier::parse<RGBColor>(myAttrProperties.getDefaultValue())));
+    }
+    // execute dialog to get a new color
+    if (colordialog.execute()) {
+        myValueTextField->setText(toString(MFXUtils::getRGBColor(colordialog.getRGBA())).c_str(), TRUE);
+    }
+    return 0;
+}
+
+
+long
+GNEAttributesCreatorRow::onCmdOpenAllowDialog(FXObject*, FXSelector, void*) {
     // declare bool for accept changes
     bool acceptChanges = false;
-    // continue depending of attribute
-    if (myAttrProperties.getAttr() == SUMO_ATTR_COLOR) {
-        // create FXColorDialog
-        FXColorDialog colordialog(this, TL("Color Dialog"));
-        colordialog.setTarget(this);
-        // If previous attribute wasn't correct, set black as default color
-        if (GNEAttributeCarrier::canParse<RGBColor>(myValueTextField->getText().text())) {
-            colordialog.setRGBA(MFXUtils::getFXColor(GNEAttributeCarrier::parse<RGBColor>(myValueTextField->getText().text())));
-        } else {
-            colordialog.setRGBA(MFXUtils::getFXColor(GNEAttributeCarrier::parse<RGBColor>(myAttrProperties.getDefaultValue())));
-        }
-        // execute dialog to get a new color
-        if (colordialog.execute()) {
-            myValueTextField->setText(toString(MFXUtils::getRGBColor(colordialog.getRGBA())).c_str(), TRUE);
-        }
-    } else if (myAttrProperties.getAttr() == SUMO_ATTR_ALLOW) {
-        // get allow string
-        std::string allow = myValueTextField->getText().text();
-        // opena allowDisallow dialog
-        GNEAllowVClassesDialog(myAttributesCreatorParent->getFrameParent()->getViewNet(), &allow, &acceptChanges).execute();
-        // continue depending of acceptChanges
-        if (acceptChanges) {
-            // update text field
-            myValueTextField->setText(allow.c_str(), TRUE);
-        }
+    // get allow string
+    std::string allow = myValueTextField->getText().text();
+    // opena allowDisallow dialog
+    GNEAllowVClassesDialog(myAttributesCreatorParent->getFrameParent()->getViewNet(), &allow, &acceptChanges).execute();
+    // continue depending of acceptChanges
+    if (acceptChanges) {
+        // update text field
+        myValueTextField->setText(allow.c_str(), TRUE);
     }
     return 0;
 }

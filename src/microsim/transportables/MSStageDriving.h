@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -15,13 +15,14 @@
 /// @author  Michael Behrisch
 /// @date    Tue, 21 Apr 2015
 ///
-// The common superclass for modelling transportable objects like persons and containers
+// A stage performing the travelling by a transport system (cars, public transport)
 /****************************************************************************/
 #pragma once
 #include <config.h>
 
 #include <set>
 #include <cassert>
+#include <utils/common/Command.h>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/SUMOVehicleClass.h>
 #include <utils/geom/Position.h>
@@ -60,7 +61,7 @@ class MSStageDriving : public MSStage {
 public:
     /// constructor
     MSStageDriving(const MSEdge* origin, const MSEdge* destination, MSStoppingPlace* toStop,
-                   const double arrivalPos, const std::vector<std::string>& lines,
+                   const double arrivalPos, const double arrivalPosLat, const std::vector<std::string>& lines,
                    const std::string& group = "",
                    const std::string& intendedVeh = "", SUMOTime intendedDepart = -1);
 
@@ -76,6 +77,9 @@ public:
 
     /// abort this stage (TraCI)
     void abort(MSTransportable* t);
+
+    /// initialization, e.g. for param-related events
+    void init(MSTransportable* transportable);
 
     /// Returns the current edge
     const MSEdge* getEdge() const;
@@ -172,6 +176,9 @@ public:
     /// @brief checks whether the person may exit at the current vehicle position
     bool canLeaveVehicle(const MSTransportable* t, const SUMOVehicle& veh, const MSStop& stop);
 
+    SUMOTime getTimeLoss(const MSTransportable* transportable) const;
+    SUMOTime getWaitingTime() const;
+
     /** @brief Saves the current state into the given stream
      */
     void saveState(std::ostringstream& out);
@@ -210,6 +217,7 @@ protected:
     std::string myIntendedVehicleID;
     SUMOTime myIntendedDepart;
 
+
 private:
     /// brief register waiting person (on proceed or loadState)
     void registerWaiting(MSTransportable* transportable, SUMOTime now);
@@ -220,5 +228,22 @@ private:
 
     /// @brief Invalidated assignment operator.
     MSStageDriving& operator=(const MSStageDriving&) = delete;
+
+private:
+    class BookReservation : public Command {
+    public:
+        BookReservation(MSTransportable* transportable, SUMOTime earliestPickupTime, MSStageDriving* stage) :
+            myTransportable(transportable), myEarliestPickupTime(earliestPickupTime), myStage(stage), myWaitingPos(stage->myWaitingPos) {}
+        SUMOTime execute(SUMOTime currentTime);
+
+    public:
+        MSTransportable* myTransportable;
+        SUMOTime myEarliestPickupTime;
+        MSStageDriving* myStage;
+        double myWaitingPos;
+    };
+
+protected:
+    BookReservation* myReservationCommand;
 
 };

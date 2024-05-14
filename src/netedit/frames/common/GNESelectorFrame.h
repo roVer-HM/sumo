@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -317,10 +317,10 @@ public:
         GNESelectorFrame* mySelectorFrameParent;
 
         /// @brief comboBox for parents
-        FXComboBox* myParentsComboBox = nullptr;
+        MFXComboBoxIcon* myParentsComboBox = nullptr;
 
         /// @brief comboBox for children
-        FXComboBox* myChildrenComboBox = nullptr;
+        MFXComboBoxIcon* myChildrenComboBox = nullptr;
 
         /// @brief select parents button
         FXButton* mySelectParentsButton = nullptr;
@@ -398,9 +398,9 @@ public:
     void clearCurrentSelection() const;
 
     /**@brief select attribute carrier (element)
-     * @param objectsUnderCursor objects under cursors
+     * @param viewObjects objects under cursors
      */
-    bool selectAttributeCarrier(const GNEViewNetHelper::ObjectsUnderCursor& objectsUnderCursor);
+    bool selectAttributeCarrier(const GNEViewNetHelper::ViewObjectsSelector& viewObjects);
 
     /**@brief apply list of ids to the current selection according to Operation,
      * @note if setop==DEFAULT than the currently set mode (myOperation) is used

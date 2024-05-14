@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,11 +19,10 @@
 /// @author  Eric Nicolay
 /// @author  Mario Krumnow
 /// @author  Michael Behrisch
-/// @author  Mario Krumnow
 /// @author  Christoph Sommer
 /// @date    Tue, 06 Mar 2001
 ///
-// The simulated network and simulation perfomer
+// The simulated network and simulation performer
 /****************************************************************************/
 #include <config.h>
 
@@ -169,7 +168,7 @@ MSNet::getTravelTime(const MSEdge* const e, const SUMOVehicle* const v, double t
     if (getInstance()->getWeightsStorage().retrieveExistingTravelTime(e, t, value)) {
         return value;
     }
-    if (veh != nullptr && veh->getBaseInfluencer() != nullptr && veh->getBaseInfluencer()->getRoutingMode() == libsumo::ROUTING_MODE_AGGREGATED_CUSTOM) {
+    if (veh != nullptr && veh->getRoutingMode() == libsumo::ROUTING_MODE_AGGREGATED_CUSTOM) {
         return MSRoutingEngine::getEffortExtra(e, v, t);
     }
     return e->getMinimumTravelTime(v);
@@ -296,6 +295,7 @@ MSNet::~MSNet() {
     // delete mean data
     delete myEdges;
     delete myInserter;
+    myInserter = nullptr;
     delete myLogics;
     delete myRouteLoaders;
     if (myPersonControl != nullptr) {
@@ -381,6 +381,14 @@ MSNet::getMesoType(const std::string& typeID) {
     }
     return myMesoEdgeTypes[typeID];
 }
+
+
+bool
+MSNet::hasFlow(const std::string& id) const {
+    // inserter is deleted at the end of the simulation
+    return myInserter != nullptr && myInserter->hasFlow(id);
+}
+
 
 MSNet::SimulationState
 MSNet::simulate(SUMOTime start, SUMOTime stop) {
@@ -476,6 +484,9 @@ MSNet::generateStatistics(const SUMOTime start, const long now) {
         }
         if (myVehicleControl->getEmergencyStops() > 0) {
             msg << " Emergency Stops: " << myVehicleControl->getEmergencyStops() << "\n";
+        }
+        if (myVehicleControl->getEmergencyBrakingCount() > 0) {
+            msg << " Emergency Braking: " << myVehicleControl->getEmergencyBrakingCount() << "\n";
         }
         if (myPersonControl != nullptr && myPersonControl->getLoadedNumber() > 0) {
             msg << "Persons: " << "\n"
@@ -574,6 +585,7 @@ MSNet::writeStatistics(const SUMOTime start, const long now) const {
     od.openTag("safety");
     od.writeAttr("collisions", myVehicleControl->getCollisionCount());
     od.writeAttr("emergencyStops", myVehicleControl->getEmergencyStops());
+    od.writeAttr("emergencyBraking", myVehicleControl->getEmergencyBrakingCount());
     od.closeTag();
     od.openTag("persons");
     od.writeAttr("loaded", myPersonControl != nullptr ? myPersonControl->getLoadedNumber() : 0);
@@ -749,7 +761,9 @@ MSNet::simulationStep(const bool onlyMove) {
         }
     }
     myBeginOfTimestepEvents->execute(myStep);
-    MSRailSignal::recheckGreen();
+    if (MSRailSignalControl::hasInstance()) {
+        MSRailSignalControl::getInstance().recheckGreen();
+    }
 #ifdef HAVE_FOX
     MSRoutingEngine::waitForAll();
 #endif
@@ -1448,7 +1462,7 @@ MSNet::existTractionSubstation(const std::string& substationId) {
 }
 
 
-SUMOAbstractRouter<MSEdge, SUMOVehicle>&
+MSVehicleRouter&
 MSNet::getRouterTT(const int rngIndex, const MSEdgeVector& prohibited) const {
     if (myRouterTT.count(rngIndex) == 0) {
         const std::string routingAlgorithm = OptionsCont::getOptions().getString("routing-algorithm");
@@ -1466,7 +1480,7 @@ MSNet::getRouterTT(const int rngIndex, const MSEdgeVector& prohibited) const {
 }
 
 
-SUMOAbstractRouter<MSEdge, SUMOVehicle>&
+MSVehicleRouter&
 MSNet::getRouterEffort(const int rngIndex, const MSEdgeVector& prohibited) const {
     if (myRouterEffort.count(rngIndex) == 0) {
         myRouterEffort[rngIndex] = new DijkstraRouter<MSEdge, SUMOVehicle>(MSEdge::getAllEdges(), true, &MSNet::getEffort, &MSNet::getTravelTime, false, nullptr, true);
@@ -1476,7 +1490,7 @@ MSNet::getRouterEffort(const int rngIndex, const MSEdgeVector& prohibited) const
 }
 
 
-MSNet::MSPedestrianRouter&
+MSPedestrianRouter&
 MSNet::getPedestrianRouter(const int rngIndex, const MSEdgeVector& prohibited) const {
     if (myPedestrianRouter.count(rngIndex) == 0) {
         myPedestrianRouter[rngIndex] = new MSPedestrianRouter();
@@ -1486,7 +1500,7 @@ MSNet::getPedestrianRouter(const int rngIndex, const MSEdgeVector& prohibited) c
 }
 
 
-MSNet::MSIntermodalRouter&
+MSTransportableRouter&
 MSNet::getIntermodalRouter(const int rngIndex, const int routingMode, const MSEdgeVector& prohibited) const {
     const OptionsCont& oc = OptionsCont::getOptions();
     const int key = rngIndex * oc.getInt("thread-rngs") + routingMode;
@@ -1494,11 +1508,11 @@ MSNet::getIntermodalRouter(const int rngIndex, const int routingMode, const MSEd
         int carWalk = 0;
         for (const std::string& opt : oc.getStringVector("persontrip.transfer.car-walk")) {
             if (opt == "parkingAreas") {
-                carWalk |= MSIntermodalRouter::Network::PARKING_AREAS;
+                carWalk |= MSTransportableRouter::Network::PARKING_AREAS;
             } else if (opt == "ptStops") {
-                carWalk |= MSIntermodalRouter::Network::PT_STOPS;
+                carWalk |= MSTransportableRouter::Network::PT_STOPS;
             } else if (opt == "allJunctions") {
-                carWalk |= MSIntermodalRouter::Network::ALL_JUNCTIONS;
+                carWalk |= MSTransportableRouter::Network::ALL_JUNCTIONS;
             }
         }
         // XXX there is currently no reason to combine multiple values, thus getValueString rather than getStringVector
@@ -1506,28 +1520,28 @@ MSNet::getIntermodalRouter(const int rngIndex, const int routingMode, const MSEd
         const std::string& taxiPickup = oc.getValueString("persontrip.transfer.walk-taxi");
         if (taxiDropoff == "") {
             if (MSDevice_Taxi::getTaxi() != nullptr) {
-                carWalk |= MSIntermodalRouter::Network::TAXI_DROPOFF_ANYWHERE;
+                carWalk |= MSTransportableRouter::Network::TAXI_DROPOFF_ANYWHERE;
             }
         } else if (taxiDropoff == "ptStops") {
-            carWalk |= MSIntermodalRouter::Network::TAXI_DROPOFF_PT;
+            carWalk |= MSTransportableRouter::Network::TAXI_DROPOFF_PT;
         } else if (taxiDropoff == "allJunctions") {
-            carWalk |= MSIntermodalRouter::Network::TAXI_DROPOFF_ANYWHERE;
+            carWalk |= MSTransportableRouter::Network::TAXI_DROPOFF_ANYWHERE;
         }
         if (taxiPickup == "") {
             if (MSDevice_Taxi::getTaxi() != nullptr) {
-                carWalk |= MSIntermodalRouter::Network::TAXI_PICKUP_ANYWHERE;
+                carWalk |= MSTransportableRouter::Network::TAXI_PICKUP_ANYWHERE;
             }
         } else if (taxiPickup == "ptStops") {
-            carWalk |= MSIntermodalRouter::Network::TAXI_PICKUP_PT;
+            carWalk |= MSTransportableRouter::Network::TAXI_PICKUP_PT;
         } else if (taxiPickup == "allJunctions") {
-            carWalk |= MSIntermodalRouter::Network::TAXI_PICKUP_ANYWHERE;
+            carWalk |= MSTransportableRouter::Network::TAXI_PICKUP_ANYWHERE;
         }
         const std::string routingAlgorithm = OptionsCont::getOptions().getString("routing-algorithm");
         double taxiWait = STEPS2TIME(string2time(OptionsCont::getOptions().getString("persontrip.taxi.waiting-time")));
         if (routingMode == libsumo::ROUTING_MODE_COMBINED) {
-            myIntermodalRouter[key] = new MSIntermodalRouter(MSNet::adaptIntermodalRouter, carWalk, taxiWait, routingAlgorithm, routingMode, new FareModul());
+            myIntermodalRouter[key] = new MSTransportableRouter(MSNet::adaptIntermodalRouter, carWalk, taxiWait, routingAlgorithm, routingMode, new FareModul());
         } else {
-            myIntermodalRouter[key] = new MSIntermodalRouter(MSNet::adaptIntermodalRouter, carWalk, taxiWait, routingAlgorithm, routingMode);
+            myIntermodalRouter[key] = new MSTransportableRouter(MSNet::adaptIntermodalRouter, carWalk, taxiWait, routingAlgorithm, routingMode);
         }
     }
     myIntermodalRouter[key]->prohibit(prohibited);
@@ -1536,7 +1550,7 @@ MSNet::getIntermodalRouter(const int rngIndex, const int routingMode, const MSEd
 
 
 void
-MSNet::adaptIntermodalRouter(MSIntermodalRouter& router) {
+MSNet::adaptIntermodalRouter(MSTransportableRouter& router) {
     double taxiWait = STEPS2TIME(string2time(OptionsCont::getOptions().getString("persontrip.taxi.waiting-time")));
     // add access to all parking areas
     EffortCalculator* const external = router.getExternalEffort();
@@ -1546,11 +1560,11 @@ MSNet::adaptIntermodalRouter(MSIntermodalRouter& router) {
         for (const auto& i : stopType.second) {
             const MSEdge* const edge = &i.second->getLane().getEdge();
             router.getNetwork()->addAccess(i.first, edge, i.second->getBeginLanePosition(), i.second->getEndLanePosition(),
-                                           i.second->getAccessDistance(edge), element, false, taxiWait);
+                                           0., element, false, taxiWait);
             if (element == SUMO_TAG_BUS_STOP) {
                 // add access to all public transport stops
                 for (const auto& a : i.second->getAllAccessPos()) {
-                    router.getNetwork()->addAccess(i.first, &std::get<0>(a)->getEdge(), std::get<1>(a), std::get<1>(a), std::get<2>(a), element, true, taxiWait);
+                    router.getNetwork()->addAccess(i.first, &a.lane->getEdge(), a.startPos, a.endPos, a.length, element, true, taxiWait);
                 }
                 if (external != nullptr) {
                     external->addStop(router.getNetwork()->getStopEdge(i.first)->getNumericalID(), *i.second);
@@ -1561,7 +1575,7 @@ MSNet::adaptIntermodalRouter(MSIntermodalRouter& router) {
     myInstance->getInsertionControl().adaptIntermodalRouter(router);
     myInstance->getVehicleControl().adaptIntermodalRouter(router);
     // add access to transfer from walking to taxi-use
-    if ((router.getCarWalkTransfer() & MSIntermodalRouter::Network::TAXI_PICKUP_ANYWHERE) != 0) {
+    if ((router.getCarWalkTransfer() & MSTransportableRouter::Network::TAXI_PICKUP_ANYWHERE) != 0) {
         for (MSEdge* edge : myInstance->getEdgeControl().getEdges()) {
             if ((edge->getPermissions() & SVC_PEDESTRIAN) != 0 && (edge->getPermissions() & SVC_TAXI) != 0) {
                 router.getNetwork()->addCarAccess(edge, SVC_TAXI, taxiWait);

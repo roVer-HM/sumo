@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -32,23 +32,22 @@ neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
 netedit.selectMode()
 
 # select edge
-netedit.leftClick(referencePosition, 220, 240)
+netedit.leftClick(referencePosition, 460, 260)
 
-# select second
+# select first junction
 netedit.leftClick(referencePosition, 220, 210)
 
-# select both junctions
-netedit.leftClick(referencePosition, 570, 210)
+# select second junction
+netedit.leftClick(referencePosition, 850, 230)
 
 # change to move mode
 netedit.moveMode()
 
 # move all
-netedit.moveElement(referencePosition, 325, 205, 325, 75)
+netedit.moveElement(referencePosition, 460, 260, 460, 413)
 
 # Check undos and redos
-netedit.undo(referencePosition, 2)
-netedit.redo(referencePosition, 2)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

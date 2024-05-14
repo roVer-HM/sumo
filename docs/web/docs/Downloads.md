@@ -28,7 +28,7 @@ SUMO is also available via winget so `winget install --name sumo` should give yo
 
 ## Linux
 
-The community maintains several repositories notably at the 
+The community maintains several repositories notably at the
 [open build service](https://build.opensuse.org/project/show/science:dlr).
 For a detailed list of repositories see below.
 
@@ -39,7 +39,7 @@ launchpad project as well as an archlinux package:
 - <https://launchpad.net/~sumo>
 - <https://aur.archlinux.org/packages/sumo/>
 
-There is also a [flatpak](https://flathub.org/apps/details/org.eclipse.sumo) available for SUMO.
+There is also a [flatpak](https://flathub.org/apps/org.eclipse.sumo) available for SUMO.
 
 To add the most recent sumo to your ubuntu you will need to do:
 
@@ -59,17 +59,17 @@ try one of the build service repositories here too, e.g.
 At the moment there is no documentation included in the packages. The
 repositories include a nightly build as well (called ***sumo-git***).
 
-- [openSUSE Leap 15.2 repository](http://download.opensuse.org/repositories/science:/dlr/openSUSE_Leap_15.2/)
-- [openSUSE Leap 15.3 repository](http://download.opensuse.org/repositories/science:/dlr/15.3/)
-- [openSUSE Leap 15.4 repository](http://download.opensuse.org/repositories/science:/dlr/15.4/)
-- [openSUSE Tumbleweed repository](http://download.opensuse.org/repositories/science:/dlr/openSUSE_Tumbleweed/)
-- [Fedora 34 repository](http://download.opensuse.org/repositories/science:/dlr/Fedora_34/)
-- [Fedora 35 repository](http://download.opensuse.org/repositories/science:/dlr/Fedora_35/)
-- [Fedora 36 repository](http://download.opensuse.org/repositories/science:/dlr/Fedora_36/)
-- [Fedora 37 repository](http://download.opensuse.org/repositories/science:/dlr/Fedora_37/)
-- [Fedora Rawhide repository](http://download.opensuse.org/repositories/science:/dlr/Fedora_Rawhide/)
-- [CentOS 7 repository](http://download.opensuse.org/repositories/science:/dlr/CentOS_7/)
-- [CentOS 8 repository](http://download.opensuse.org/repositories/science:/dlr/CentOS_8/)
+- [openSUSE Leap 15.2 repository](https://download.opensuse.org/repositories/science:/dlr/openSUSE_Leap_15.2/)
+- [openSUSE Leap 15.3 repository](https://download.opensuse.org/repositories/science:/dlr/15.3/)
+- [openSUSE Leap 15.4 repository](https://download.opensuse.org/repositories/science:/dlr/15.4/)
+- [openSUSE Leap 15.5 repository](https://download.opensuse.org/repositories/science:/dlr/15.5/)
+- [openSUSE Tumbleweed repository](https://download.opensuse.org/repositories/science:/dlr/openSUSE_Tumbleweed/)
+- [Fedora 36 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_36/)
+- [Fedora 37 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_37/)
+- [Fedora 38 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_38/)
+- [Fedora 39 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_39/)
+- [Fedora Rawhide repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_Rawhide/)
+- [CentOS 7 repository](https://download.opensuse.org/repositories/science:/dlr/CentOS_7/)
 
 ### Examples
 
@@ -81,7 +81,7 @@ yum install -y --nogpgcheck sumo-{{Version}}
 ```
 and like this, for zypper on openSUSE Leap 15.3:
 ```
-zypper ar http://download.opensuse.org/repositories/science:/dlr/15.3/ science:dlr
+zypper ar https://download.opensuse.org/repositories/science:/dlr/15.3/ science:dlr
 zypper in sumo={{Version}}
 ```
 I you leave out the version number it will install the latest nightly build.
@@ -101,8 +101,8 @@ Ubuntu, Debian and Arch users please see the community repositories above.
 You can read the Homebrew-based installation guide [here](Installing/index.md#macos) or follow the Build instructions [here](Installing/MacOS_Build.md).
 
 "Bottles" are available for installing with
-[Homebrew](https://brew.sh/). They are built for two of the most recent
-major macOS versions (currently Catalina and Big Sur) and are built
+[Homebrew](https://brew.sh/). They are built for the three most recent
+macOS versions (currently Monterey, Ventura and Sonoma) and are built
 from source with minimal requirements (fox, proj, xerces-c). If you need
 optional libraries, you can specify these on the brew command line and
 brew will compile SUMO from source. For details, see the [Formula's
@@ -160,10 +160,10 @@ SUMO is under active development. You can find a continuously updated
 list of bug-fixes and enhancements at our
 [ChangeLog](ChangeLog.md). To make use of the latest features
 [(and to give us pre-release feedback)](Contact.md) we encourage
-you to use the latest version from our [code repository](https://github.com/eclipse/sumo/).
+you to use the latest version from our [code repository](https://github.com/eclipse-sumo/sumo/).
 
 Every push to our main branch also triggers a build for Windows, Linux and macOS. The results can be found
-by clicking on the [relevant commit here](https://github.com/eclipse/sumo/actions) and downloading the
+by clicking on the [relevant commit here](https://github.com/eclipse-sumo/sumo/actions) and downloading the
 appropriate file for your platform (you may need to sign in to GitHub).
 
 ## Nightly Snapshots
@@ -187,12 +187,13 @@ see [the notes below](Downloads.md#note_on_licensing). The following packages ca
 <li>Windows 64-bit debug version: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-win64Debug-git.zip">https://sumo.dlr.de/daily/sumo-win64Debug-git.zip</a><?php getInfo("sumo-win64Debug-git.zip","d",true);?></li>
 </ul>
 
-The nightly builds are also available from the [Python packaging index test instance](https://test.pypi.org/project/eclipse-sumo/).
+The nightly builds are also available as [Python wheels](https://sumo.dlr.de/daily/wheels/).
 To install the latest nightly version (it is strongly encouraged to do this in a virtual environment) use [the instructions above](#python_packages_virtual_environments) replacing the install line with:
 ```
-pip install -i https://test.pypi.org/simple/ eclipse-sumo
+pip install -f https://sumo.dlr.de/daily/wheels/ eclipse-sumo
 ```
 Although this is a python package, it contains all compiled SUMO binaries and should be fully functional (see the requirements in [the section above](#python_packages_virtual_environments)).
+The nightly python wheels are also available for libsumo, sumolib and traci.
 
 The Linux [repositories](#repositories) at the open build service contain a nightly build as well.
 This is unfortunately not the case for the Debian, Ubuntu and Arch versions.
@@ -205,7 +206,9 @@ analysis](https://sumo.dlr.de/daily/lcov/html/) are generated every
 night.
 
 !!! caution
-    The available Windows binary packages may lag behind the [latest Git revision](https://github.com/eclipse/sumo/commits/main) due to being compiled only once per day (around midnight, Berlin time).
+    The available Windows binary packages may lag behind the [latest Git revision](https://github.com/eclipse-sumo/sumo/commits/main) due to being compiled only once per day (around midnight, Berlin time).
+
+If you need even more recent builds, have a look at the [artifacts of the GitHub actions](https://github.com/eclipse-sumo/sumo/actions). You will need to click on the commit and the platform you are interested in, e.g. `windows` for Windows binaries.
 
 # Older releases and alternative download
 
@@ -216,7 +219,7 @@ If you want to try out an older version you can also use the virtual environment
 `pip install eclipse-sumo==1.9.0` (works only for 1.8.0 and later).
 
 If you need a complete zipped snapshot of the repository (including tests) for an older version have a look at the tags in your
-local repository or at [GitHub tags](https://github.com/eclipse/sumo/tags).
+local repository or at [GitHub tags](https://github.com/eclipse-sumo/sumo/tags).
 
 # Other
 

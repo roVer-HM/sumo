@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -62,7 +62,7 @@ public:
      */
     void writeAdditional(OutputDevice& device) const;
 
-    /// @brief check if current additional is valid to be writed into XML
+    /// @brief check if current additional is valid to be written into XML
     bool isAdditionalValid() const;
 
     /// @brief return a string with the current additional problem
@@ -119,6 +119,15 @@ public:
     /// @}
 
 private:
+    /// @brief draw body
+    void drawBody(const GUIVisualizationSettings::Detail d, const RGBColor& color, const double exaggeration) const;
+
+    /// @brief draw entry logo
+    void drawEntryLogo(const GUIVisualizationSettings::Detail d, const RGBColor& color, const double exaggeration) const;
+
+    /// @brief draw E3 logo
+    void drawE3Logo(const GUIVisualizationSettings::Detail d, const RGBColor& color, const double exaggeration) const;
+
     /// @brief set attribute after validation
     void setAttribute(SumoXMLAttr key, const std::string& value);
 

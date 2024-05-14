@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2003-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2003-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -101,6 +101,8 @@ public:
          * (onLeaveLane sets amOnNet=false if reason>=NOTIFICATION_TELEPORT) */
         /// @brief The vehicle is being teleported
         NOTIFICATION_TELEPORT,
+        /// @brief The vehicle continues being teleported past an edge
+        NOTIFICATION_TELEPORT_CONTINUATION,
         /// @brief The vehicle starts or ends parking
         NOTIFICATION_PARKING,
         /// @brief The vehicle needs another parking area
@@ -147,7 +149,7 @@ public:
      *
      * Indicator if the reminders is still active for the passed
      * vehicle/parameters. If false, the vehicle will erase this reminder
-     * from it's reminder-container.
+     * from its reminder-container.
      *
      * @param[in] veh Vehicle that asks this reminder.
      * @param[in] oldPos Position before move.
@@ -221,7 +223,7 @@ public:
      *
      * Indicator if the reminders is still active for the passed
      * vehicle/parameters. If false, the vehicle will erase this reminder
-     * from it's reminder-container.
+     * from its reminder-container.
      *
      * @param[in] veh Vehicle that asks this reminder.
      * @param[in] frontOnLane time the front of the vehicle spent on the lane.
@@ -256,6 +258,11 @@ public:
 
     const std::string& getDescription() const {
         return myDescription;
+    }
+
+    // @brief return whether this moveReminder triggers parking reroute
+    virtual bool isParkingRerouter() const {
+        return false;
     }
 
 protected:

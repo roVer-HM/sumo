@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -43,24 +43,23 @@ netedit.selectionInvert()
 # go to inspect mode
 netedit.inspectMode()
 
-# inspect containerStopEdge
-netedit.leftClick(referencePosition, 156, 40)
+# inspect StopPlanEdge
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x, netedit.positions.demandElements.edge2.y)
 
 # change depart with an invalid value
-netedit.modifyBoolAttribute(netedit.attrs.containerStopEdge.inspectSelection.durationEnable, False)
+netedit.modifyBoolAttribute(netedit.attrs.stopPlanEdge.inspectSelection.durationEnable, False)
 
 # change depart with an invalid value
-netedit.modifyBoolAttribute(netedit.attrs.containerStopEdge.inspectSelection.durationEnable, False)
+netedit.modifyBoolAttribute(netedit.attrs.stopPlanEdge.inspectSelection.durationEnable, False)
 
 # change depart with an invalid value
-netedit.modifyAttribute(netedit.attrs.containerStopEdge.inspectSelection.duration, "dummy", False)
+netedit.modifyAttribute(netedit.attrs.stopPlanEdge.inspectSelection.duration, "dummy", False)
 
 # change depart with an invalid value
-netedit.modifyAttribute(netedit.attrs.containerStopEdge.inspectSelection.duration, "20.15", False)
+netedit.modifyAttribute(netedit.attrs.stopPlanEdge.inspectSelection.duration, "20.15", False)
 
 # Check undo redo
-netedit.undo(referencePosition, 2)
-netedit.redo(referencePosition, 2)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

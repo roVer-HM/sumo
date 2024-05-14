@@ -45,15 +45,16 @@ software (Veins, VSimRTI, flow etc.) at this stage.
     known bug.
   - recheck/rebuild the test networks (if necessary due to
     netconvert changes)
+  - check for orphaned tests by running `tools/devel/orphaned_tests.py tests` and patch testsuites to add them back in  
   - check the tests again
 - check the documentation
   - update the [ChangeLog](../ChangeLog.md)
   - generate options documentation and xsd schemata for configuration files
-    using `tools/build/rebuildConfigDocsAndXsd.py`
+    using `tools/build_config/rebuildConfigDocsAndXsd.py`
 - check the internal tests (same procedure as above), especially the
   (to be) published scenarios
 - GitHub
-  - add new [milestone](https://github.com/eclipse/sumo/milestones)
+  - add new [milestone](https://github.com/eclipse-sumo/sumo/milestones)
     if necessary
   - check all remaining tickets and assign them to later milestones
     or to persons.
@@ -74,12 +75,14 @@ assigned to a later milestone.
 
 All scenarios should be fixed by now.
 
-- patch the version information using `tools/build/updateReleaseInfo.py 0.13.7` and double check changes
+- start and save a new version draft [in Zenodo](https://zenodo.org/) (using the sumo@dlr.de user), in order to reserve a DOI. Don't Publish it yet, and don't upload a file to it!
+  - update the version doi in CITATION.cff and in the README badge to this new reserved one
+- patch the version information using `tools/build_config/updateReleaseInfo.py 0.13.7` and double check changes
   - in src/config.h.cmake, also the HAVE_VERSION_H macro should be disabled
   - in CMakeLists.txt
   - [in mkdocs.yml]({{Source}}docs/web/mkdocs.yml) in the **extra:** section at the end
     to update the [download links](../Downloads.md)
-  - [in sumo.metainfo.xml]({{Source}}build/package/sumo.metainfo.xml)
+  - [in sumo.metainfo.xml]({{Source}}build_config/package/sumo.metainfo.xml)
     for correct flatpak info
   - in CITATION.cff
   - commit the changes
@@ -112,12 +115,12 @@ following things need to be there:
   - windows binary distribution (zip, unzip the x64 file and run at least sumo-gui)
   - windows installer (msi, Win32 and x64, includes docs)
 - check the wheels on PyPI
-  - https://pypi.org/project/eclipse-sumo/ 
+  - https://pypi.org/project/eclipse-sumo/
   - https://pypi.org/project/libsumo/
   - https://pypi.org/project/sumolib/
   - https://pypi.org/project/traci/
   - https://pypi.org/project/libtraci/
-- check the Maven build https://ci.eclipse.org/sumo/job/SUMO%20Build%20-%20Maven%20Release/view/tags/ and ensure that the artifacts have been uploaded to:
+- check the Maven build https://ci.eclipse.org/sumo/job/sumo-build/view/tags/ and ensure that the artifacts have been uploaded to:
   - https://repo.eclipse.org/content/repositories/sumo-releases/org/eclipse/sumo/libtraci and
   - https://repo.eclipse.org/content/repositories/sumo-releases/org/eclipse/sumo/libsumo/
 
@@ -127,12 +130,14 @@ If everything is fine:
 - make a new folder in S:\Releases
 - make new sumo.dlr.de-release
   - copy the folder from S:\Releases to the releases dir `scp -r /media/S/Releases/x.y.z delphi@ts-sim-front-ba.intra.dlr.de:docs/releases`
-- update the eclipse.org/sumo website
-  - modify the version number (Version) [in config.yaml](https://github.com/eclipse/sumo.website/blob/main/src/config/_default/config.yaml) in the **Default Parameters** section at the beginning
+- update the eclipse.dev/sumo website
+  - modify the version number (Version) [in config.yaml](https://github.com/eclipse-sumo/sumo.website/blob/main/src/config/_default/config.yaml) in the **Default Parameters** section
+  - generate the static files `cd src && hugo -d ../` and commit them
 - make new sourceforge-release
   - make a new release within the sumo package (named "version x.y.z")
   - add files to the release
   - change default download attributes
+- publish a new "version" in Zenodo. Do not forget to delete the previous file in the new version!
 - update files at the [opensuse build
     service](https://build.opensuse.org/package/show/science:dlr/sumo)
 - update the ubuntu ppa (see
@@ -144,6 +149,7 @@ If everything is fine:
   - modify the changelog, using `dch` (enter an email address which has write access to the ppa and a valid gpg key)
   - run `dpkg-buildpackage -S` in the sumo dir and `dput -f ppa:sumo/stable sumo_{{Version}}+dfsg1_source.changes` one level up
 - update the [flatpak](https://github.com/flathub/org.eclipse.sumo) (update version number and commit hash)
+- start a pull request against [winget](https://github.com/microsoft/winget-pkgs/tree/master/manifests/e/EclipseFoundation/SUMO)
 - [update the Homebrew Formula](HowToUpdateHomebrewFormula.md)
 - do a remote login to the M1 Mac and upload the wheels to PyPI using `twine upload clangMacOS_M1/sumo/dist_native/* clangMacOS_M1/sumo/wheelhouse/*`
 - scenarios (optional)
@@ -155,9 +161,10 @@ If everything is fine:
   - submit news about the release on the Eclipse Newsroom <https://newsroom.eclipse.org/node/add/news>
   - tweet about it, post on Facebook and Instagram stories
   - trigger update of main website at <https://sumo.dlr.de>
-- close [the milestone](https://github.com/eclipse/sumo/milestones)
+- close [the milestone](https://github.com/eclipse-sumo/sumo/milestones)
   (retargeting open tickets needs to be done manually for now)
 - add the latest version to the **"software version identifier"** statement in [Wikidata](https://www.wikidata.org/wiki/Q15847637) (this will update the Wikipedia articles about SUMO), making sure to select the latest version as **"preferred rank"** and setting the previous one to **"normal rank"**.
+- finish the Zenodo version draft, by uploading the release `.tar.gz` source, and publishing it
 
 ### After-release cleanup
 

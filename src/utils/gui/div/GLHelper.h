@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -101,6 +101,15 @@ public:
      */
     static void drawFilledPolyTesselated(const PositionVector& v, bool close);
 
+    /** @brief Draws a rectangle line
+     *
+     * The line is drawn as a GL_QUADS.
+     *
+     * @param[in] center rectangle center
+     * @param[in] width The width of the rectangle
+     * @param[in] height The height of the rectangle
+     */
+    static void drawRectangle(const Position& center, const double width, const double height);
 
     /** @brief Draws a thick line
      *
@@ -248,27 +257,44 @@ public:
      */
     static void drawLine(const Position& beg, const Position& end);
 
+    /** @brief Draws a filled circle around (0,0) depending of level of detail
+     *
+     * The circle is drawn by calling drawFilledCircle(width, steps, 0, 360).
+     *
+     * @param[in] radius The radius of the circle
+     */
+    static void drawFilledCircleDetailled(const GUIVisualizationSettings::Detail d, const double radius);
+
+    /** @brief Draws a filled circle around (0,0) depending of level of detail
+     *
+     * The circle is drawn by calling drawFilledCircle(width, steps, 0, 360).
+     * @param[in] beg The begin angle in degrees
+     * @param[in] end The end angle in degrees
+     *
+     * @param[in] radius The radius of the circle
+     */
+    static void drawFilledCircleDetailled(const GUIVisualizationSettings::Detail d, const double radius,
+                                          double beg, double end);
 
     /** @brief Draws a filled circle around (0,0)
      *
      * The circle is drawn by calling drawFilledCircle(width, steps, 0, 360).
      *
-     * @param[in] width The width of the circle
+     * @param[in] radius The radius of the circle
      * @param[in] steps The number of steps to divide the circle into
      */
-    static void drawFilledCircle(double width, int steps = 8);
-
+    static void drawFilledCircle(const double widradiusth, const int steps = 8);
 
     /** @brief Draws a filled circle around (0,0)
      *
      * The circle is drawn use GL_TRIANGLES.
      *
-     * @param[in] width The width of the circle
+     * @param[in] radius The radius of the circle
      * @param[in] steps The number of steps to divide the circle into
      * @param[in] beg The begin angle in degrees
      * @param[in] end The end angle in degrees
      */
-    static void drawFilledCircle(double width, int steps,
+    static void drawFilledCircle(double radius, int steps,
                                  double beg, double end);
 
 
@@ -276,11 +302,11 @@ public:
      *
      * The circle is drawn by calling drawOutlineCircle(width, iwidth, steps, 0, 360).
      *
-     * @param[in] width The (outer) width of the circle
-     * @param[in] iwidth The inner width of the circle
+     * @param[in] radius The (outer) radius of the circle
+     * @param[in] iRadius The inner radius of the circle
      * @param[in] steps The number of steps to divide the circle into
      */
-    static void drawOutlineCircle(double width, double iwidth,
+    static void drawOutlineCircle(double radius, double iRadius,
                                   int steps = 8);
 
 
@@ -288,13 +314,13 @@ public:
      *
      * The circle is drawn use GL_TRIANGLES.
      *
-     * @param[in] width The (outer) width of the circle
-     * @param[in] iwidth The inner width of the circle
+     * @param[in] radius The (outer) radius of the circle
+     * @param[in] iRadius The inner radius of the circle
      * @param[in] steps The number of steps to divide the circle into
      * @param[in] beg The begin angle in degrees
      * @param[in] end The end angle in degrees
      */
-    static void drawOutlineCircle(double width, double iwidth,
+    static void drawOutlineCircle(double radius, double iRadius,
                                   int steps, double beg, double end);
 
 
@@ -358,7 +384,8 @@ public:
     static void drawCrossTies(const PositionVector& geom,
                               const std::vector<double>& rots,
                               const std::vector<double>& lengths,
-                              double length, double spacing, double halfWidth, bool drawForSelection);
+                              double length, double spacing, double halfWidth,
+                              double offset, bool lessDetail);
 
     /// @bried draw the space between markings (in road color)
     static void drawInverseMarkings(const PositionVector& geom,
@@ -371,7 +398,7 @@ public:
     static void debugVertices(const PositionVector& shape, const GUIVisualizationTextSettings& settings, double scale, double layer = 1024);
 
     /// @brief Draw a boundary (used for debugging)
-    static void drawBoundary(const Boundary& b);
+    static void drawBoundary(const GUIVisualizationSettings& s, const Boundary& b);
 
     /// @brief to be called when the font context is invalidated
     static void resetFont();

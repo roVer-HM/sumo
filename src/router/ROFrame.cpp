@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -192,6 +192,9 @@ ROFrame::fillOptions(OptionsCont& oc, const bool isDUA, const bool isMA) {
 
     oc.doRegister("weights.minor-penalty", new Option_Float(1.5));
     oc.addDescription("weights.minor-penalty", "Processing", TL("Apply the given time penalty when computing routing costs for minor-link internal lanes"));
+
+    oc.doRegister("weights.tls-penalty", new Option_Float(0));
+    oc.addDescription("weights.tls-penalty", "Processing", TL("Apply the given time penalty when computing routing costs across a traffic light"));
 
     if (!isMA) {
         // register defaults options

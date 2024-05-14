@@ -1,6 +1,7 @@
 import_config_file:../config_all
 binary:$SUMO_BINARY
 copy_test_path:net.net.xml
+copy_test_path:net.net.xml.gz
 copy_test_path:net2.net.xml
 copy_test_path:net3.net.xml
 copy_test_path:net4.net.xml
@@ -9,6 +10,7 @@ copy_test_path:motorway.net.xml
 copy_test_path:lefthand.net.xml
 copy_test_path:input_routes.rou.xml
 copy_test_path:input_routes2.rou.xml
+copy_test_path:input_routes3.rou.xml
 copy_test_path:input_additional.add.xml
 copy_test_path:input_additional2.add.xml
 copy_test_path:input_additional3.add.xml
@@ -100,6 +102,7 @@ ssm:ssm.xml
 ssm2:ssm_ego.xml
 png:out.png
 png2:out2.png
+wkt:wkt.txt
 
 [run_dependent_text]
 output:^Performance:{->}^Vehicles:
@@ -107,6 +110,7 @@ output:Building Contraction Hierarchy{[->]}Simulation ended
 output:ms answering queries
 output:--python-script
 output:--osg-view{LINES 2}
+output:--pedestrian.jupedsim{LINES 2}
 output:movereminder-output{LINES 2}
 output:Simulation.*started with{REPLACE Simulation started with}
 calibrator_log:<!--{[->]}-->
@@ -189,6 +193,8 @@ cfg:<python-script
 cfg:embedded python
 cfg:osg-view
 cfg:OpenSceneGraph
+cfg:pedestrian.jupedsim
+cfg:JuPedSim
 cfg:^$
 weights:<!--{[->]}-->
 lanechanges:<!--{[->]}-->

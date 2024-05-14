@@ -9,7 +9,7 @@ rerouter, route, routeprobe, simulation, trafficlight, variablespeedsign, vehicl
 vehicle, which correspond to individual modules. For a detailed list of
 available functions see the [pydoc generated documentation](https://sumo.dlr.de/pydoc/traci.html). The source code
 can be found at
-[\[1\]](https://github.com/eclipse/sumo/tree/main/tools/traci).
+[\[1\]](https://github.com/eclipse-sumo/sumo/tree/main/tools/traci).
 
 Please note that if performance is an issue and you don't a need GUI, it is almost always better
 to use [libsumo](../Libsumo.md) instead of traci, which has the same API.
@@ -195,7 +195,7 @@ The following filter types are available:
 - VClass: Only return vehicles of the specified vClasses
 
 See the [pydoc
-documentation](http://sumo.dlr.de/daily/pydoc/traci._vehicle.html#VehicleDomain-addSubscriptionFilterCFManeuver)
+documentation](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-addSubscriptionFilterCFManeuver)
 for detailed specifications.
 
 !!! caution
@@ -242,7 +242,7 @@ traci.start(["sumo", "-c", "sim2.sumocfg"], label="sim2")
 traci.switch("sim1")
 traci.simulationStep() # run 1 step for sim1
 traci.switch("sim2")
-traci.simulationStep() # run 1 step for sim2 
+traci.simulationStep() # run 1 step for sim2
 traci.switch("sim1")
 traci.close()
 traci.switch("sim2")
@@ -335,17 +335,17 @@ For this functionality it is recommended to use
   subprocess.Popen, be sure to call wait() on the resulting process
   object before quitting your script. You might loose output
   otherwise.
-  
+
 ### Determine the traci library being loaded
 When working with different sumo versions it may happen that the call `import traci` loads the wrong library.
 The easiest way to debug this is to add the following lines after the import
 ```python
 import traci
-print("LOADPATH:", '\n'.join(sys.path))                                                                                                                                      
-print("TRACIPATH:", traci.__file__) 
+print("LOADPATH:", '\n'.join(sys.path))
+print("TRACIPATH:", traci.__file__)
 sys.exit()
 ```
-Make sure that the TRACIPATH corresponds to the sumo version that you wish to use. 
+Make sure that the TRACIPATH corresponds to the sumo version that you wish to use.
 If it does not, then the order of directories in LOADPATH (sys.path) must be changed
 or the SUMO installation must be removed from any directories that come before the wanted directory.
 
@@ -374,7 +374,7 @@ gdb --args sumoD -c debug.sumocfg
 mode](../Installing/Linux_Build.md#building_the_sumo_binaries_with_cmake_recommended))
 
 ### Generating a log of all traci commands
-To share a traci scenario (i.e. in a bug report) it may be useful to seperate the logic of the traci script from the actual commands.
+To share a traci scenario (i.e. in a bug report) it may be useful to separate the logic of the traci script from the actual commands.
 For this, the function `traci.start` accepts the optional arguments `traceFile` and `traceGetters`.
 When calling `traci.start([<commands>], traceFile=<LOG_FILE_PATH>)` all traci commands that were sent to sumo will be written to the given LOG_FILE_PATH.
 This allows re-running the scenario without the original runner script.
@@ -445,9 +445,9 @@ junctionID = traci.junction.getIDList()[0]
 # subscribe around that junction with a sufficiently large
 # radius to retrieve the speeds of all vehicles in every step
 traci.junction.subscribeContext(
-    junctionID, tc.CMD_GET_VEHICLE_VARIABLE, 1000000, 
+    junctionID, tc.CMD_GET_VEHICLE_VARIABLE, 1000000,
     [tc.VAR_SPEED, tc.VAR_ALLOWED_SPEED]
-) 
+)
 stepLength = traci.simulation.getDeltaT()
 while traci.simulation.getMinExpectedNumber() > 0:
     traci.simulationStep()
@@ -474,7 +474,7 @@ try:
     pos = traci.vehicle.getPosition(vehID)
 except traci.TraCIException:
     pass # or do something smarter
-```    
+```
 
 ## Further Resources
 

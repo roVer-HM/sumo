@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -129,12 +129,13 @@ def main(options):
         if not os.path.exists(os.path.dirname(options.python_script)):
             os.makedirs(os.path.dirname(options.python_script))
         pyBatch = open(options.python_script, 'w')
-        pyBatch.write('''import subprocess, sys, os
+        pyBatch.write('''#!/usr/bin/env python
+import subprocess, sys, os, multiprocessing
 from os.path import abspath, dirname, join
 THIS_DIR = abspath(dirname(__file__))
 SUMO_HOME = os.environ.get("SUMO_HOME", dirname(dirname(THIS_DIR)))
 os.environ["SUMO_HOME"] = SUMO_HOME
-for d, p in [
+calls = [
 ''')
     for source, target, app in targets:
         optionsFiles = defaultdict(list)
@@ -232,6 +233,10 @@ for d, p in [
                 nameBase = os.path.basename(target)
             if "." in variant:
                 nameBase += variant.split(".")[-1]
+            isNetdiff = False
+            for a in appOptions:
+                if "netdiff.py" in a:
+                    isNetdiff = True
             exclude = []
             # gather copy_test_path exclusions
             for configFile in cfg:
@@ -246,7 +251,7 @@ for d, p in [
                     for line in config:
                         entry = line.strip().split(':')
                         if entry and "copy_test_path" in entry[0] and entry[1] in potentials:
-                            if "net" in app or not net or entry[1][-8:] != ".net.xml" or entry[1] == net:
+                            if "net" in app or isNetdiff or not net or entry[1][-8:] != ".net.xml" or entry[1] == net:
                                 toCopy = potentials[entry[1]][0]
                                 if os.path.isdir(toCopy):
                                     # copy from least specific to most specific
@@ -275,7 +280,7 @@ for d, p in [
                     call = ['join(SUMO_HOME, "bin", "%s")' % app] + ['"%s"' % a for a in appOptions]
                 prefix = os.path.commonprefix((testPath, os.path.abspath(pyBatch.name)))
                 up = os.path.abspath(pyBatch.name)[len(prefix):].count(os.sep) * "../"
-                pyBatch.write('    (r"%s", subprocess.Popen([%s], cwd=join(THIS_DIR, r"%s%s"))),\n' %
+                pyBatch.write('    (r"%s", [%s], r"%s%s"),\n' %
                               (testPath[len(prefix):], ', '.join(call), up, testPath[len(prefix):]))
             if options.skip_configuration:
                 continue
@@ -328,8 +333,9 @@ for d, p in [
                           (testPath, " ".join(appOptions)))
                 cmd = [ao if " " not in ao else "'%s'" % ao for ao in appOptions]
                 with open(nameBase + ".sh", "w") as sh:
+                    sh.write("#!/bin/bash\n")
                     sh.write(" ".join(cmd))
-                os.chmod(nameBase + ".sh", os.stat(nameBase + ".sh").st_mode | stat.S_IXUSR)
+                os.chmod(sh.name, os.stat(sh.name).st_mode | stat.S_IXUSR)
                 cmd = [o.replace("$SUMO_HOME", "%SUMO_HOME%") if " " not in o else '"%s"' % o for o in appOptions]
                 with open(nameBase + ".bat", "w") as bat:
                     bat.write(" ".join(cmd))
@@ -337,10 +343,23 @@ for d, p in [
         if not haveVariant:
             print("No suitable variant found for %s." % source, file=sys.stderr)
     if options.python_script:
-        pyBatch.write("""]:
-    if p.wait() != 0:
-        print("Error: '%s' failed for '%s'!" % (" ".join(getattr(p, "args", [str(p.pid)])), d))
-        sys.exit(1)\n""")
+        pyBatch.write("""]
+procs = []
+def check():
+    for d, p in procs:
+        if p.wait() != 0:
+            print("Error: '%s' failed for '%s'!" % (" ".join(getattr(p, "args", [str(p.pid)])), d))
+            sys.exit(1)
+
+for dir, call, wd in calls:
+    procs.append((dir, subprocess.Popen(call, cwd=join(THIS_DIR, wd))))
+    if len(procs) == multiprocessing.cpu_count():
+        check()
+        procs = []
+check()
+""")
+        pyBatch.close()
+        os.chmod(pyBatch.name, os.stat(pyBatch.name).st_mode | stat.S_IXUSR)
 
 
 if __name__ == "__main__":

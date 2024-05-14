@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -74,20 +74,23 @@ public:
     /// @brief Mark the entire GNEViewNet to be repainted later
     void updateViewNet() const;
 
-    /// @brief set supermode Network (used after load/create new network)
-    void forceSupermodeNetwork();
+    /// @brief force supermode network(used after load/create new network)
+    void forceSupemodeNetwork();
 
-    /// @brief get AttributeCarriers in Boundary
-    std::set<std::pair<std::string, GNEAttributeCarrier*> > getAttributeCarriersInBoundary(const Boundary& boundary, bool forceSelectEdges = false);
+    /// @brief called when view is updated
+    void viewUpdated();
 
     /// @brief get objects under cursor
-    const GNEViewNetHelper::ObjectsUnderCursor& getObjectsUnderCursor() const;
-
-    /// @brief Update objects under cursor in the given position
-    void updateObjectsUnderCursor(const Position& pos);
+    const GNEViewNetHelper::ViewObjectsSelector& getViewObjectsSelector() const;
 
     /// @brief get move multiple element values
-    const GNEViewNetHelper::MoveMultipleElementValues& getMoveMultipleElementValues() const;
+    const GNEViewNetHelper::MoveMultipleElementModul& getMoveMultipleElementValues() const;
+
+    /// @brief get objects in the given boundary
+    void updateObjectsInBoundary(const Boundary& boundary);
+
+    /// @brief get objects in the given position
+    void updateObjectsInPosition(const Position& pos);
 
     /** @brief Builds an entry which allows to (de)select the object
      * @param ret The popup menu to add the entry to
@@ -111,6 +114,12 @@ public:
 
     /// @brief return list of loaded edgeRelation and tazRelation attributes
     std::vector<std::string> getRelDataAttrs() const;
+
+    /// @brief get draw toggle (used to avoid drawing junctions twice)
+    int getDrawingToggle() const;
+
+    /// @brief check if select edges (toggle using button or shift)
+    bool checkSelectEdges() const;
 
     /// @brief open object dialog
     void openObjectDialogAtCursor(const FXEvent* ev);
@@ -247,6 +256,12 @@ public:
 
     /// @brief transform POI to POILane, and vice versa
     long onCmdTransformPOI(FXObject*, FXSelector, void*);
+
+    /// @brief reverse current demand element
+    long onCmdReverse(FXObject*, FXSelector, void*);
+
+    /// @brief add a reverse demand element
+    long onCmdAddReverse(FXObject*, FXSelector, void*);
 
     /// @brief set custom geometry point
     long onCmdSetCustomGeometryPoint(FXObject*, FXSelector, void*);
@@ -462,6 +477,9 @@ public:
     /// @brief unselect Edge under cursor
     long onCmdRemoveEdgeSelected(FXObject*, FXSelector, void*);
 
+    /// @brief called when a new view is set
+    long onCmdSetNeteditView(FXObject*, FXSelector sel, void*);
+
     /// @brief abort current edition operation
     void abortOperation(bool clearSelection = true);
 
@@ -507,17 +525,20 @@ public:
     /// @brief get front attributeCarrier
     const GNEAttributeCarrier* getFrontAttributeCarrier() const;
 
+    /// @brief get front glObject
+    const GUIGlObject* getFrontGLObject() const;
+
     /// @brief set front attributeCarrier
     void setFrontAttributeCarrier(GNEAttributeCarrier* AC);
 
     /// @brief draw front attributeCarrier
     void drawTranslateFrontAttributeCarrier(const GNEAttributeCarrier* AC, double typeOrLayer, const double extraOffset = 0);
 
-    /// @brief check if draw delete contour
-    bool drawDeleteContour(const GUIGlObject* GLObject, const GNEAttributeCarrier* AC) const;
+    /// @brief check if an element is being moved
+    bool isMovingElement() const;
 
-    /// @brief check if draw select contour
-    bool drawSelectContour(const GUIGlObject* GLObject, const GNEAttributeCarrier* AC) const;
+    /// @brief check if given element is locked (used for drawing select and delete contour)
+    bool checkOverLockedElement(const GUIGlObject* GLObject, const bool isSelected) const;
 
     /// @brief get last created route
     GNEDemandElement* getLastCreatedRoute() const;
@@ -561,6 +582,18 @@ public:
     /// @brief get variable used to save elements
     GNEViewNetHelper::SaveElements& getSaveElements();
 
+    /// @brief get variable used to switch between time formats
+    GNEViewNetHelper::TimeFormat& getTimeFormat();
+
+    /// @brief restrict lane
+    bool restrictLane(GNELane* lane, SUMOVehicleClass vclass);
+
+    /// @brief add restricted lane
+    bool addRestrictedLane(GNELane* lane, SUMOVehicleClass vclass, const bool insertAtFront);
+
+    /// @brief remove restricted lane
+    bool removeRestrictedLane(GNELane* lane, SUMOVehicleClass vclass);
+
 protected:
     /// @brief FOX needs this
     GNEViewNet();
@@ -571,7 +604,13 @@ protected:
     /// @brief called after some features are already initialized
     void doInit();
 
+    /// @brief returns the id of object under cursor to show their tooltip
+    GUIGlID getToolTipID();
+
 private:
+    /// @brief variable use to select objects in view
+    GNEViewNetHelper::ViewObjectsSelector myViewObjectsSelector;
+
     /// @name structs related with modes and testing mode
     /// @{
 
@@ -580,6 +619,7 @@ private:
 
     /// @brief variable used to save variables related with testing mode
     GNEViewNetHelper::TestingMode myTestingMode;
+
     /// @}
 
     /// @name structs related with input (keyboard and mouse)
@@ -588,8 +628,6 @@ private:
     /// @brief variable used to save key status after certain events
     GNEViewNetHelper::MouseButtonKeyPressed myMouseButtonKeyPressed;
 
-    /// @brief variable use to save all pointers to objects under cursor after a click
-    GNEViewNetHelper::ObjectsUnderCursor myObjectsUnderCursor;
     /// @}
 
     /// @name structs related with checkable buttons
@@ -606,6 +644,7 @@ private:
 
     /// @brief variable used to save checkable buttons for Supermode Data
     GNEViewNetHelper::DataCheckableButtons myDataCheckableButtons;
+
     /// @}
 
     /// @name structs related with view options
@@ -619,6 +658,7 @@ private:
 
     /// @brief variable used to save variables related with view options in supermode Data
     GNEViewNetHelper::DataViewOptions myDataViewOptions;
+
     /// @}
 
     /// @brief variable used to save IntervalBar
@@ -626,11 +666,13 @@ private:
 
     /// @name structs related with move elements
     /// @{
-    /// @brief variable used to save variables related with movement of single elements
-    GNEViewNetHelper::MoveSingleElementValues myMoveSingleElementValues;
 
-    /// @brief variable used to save variables related with movement of multiple elements
-    GNEViewNetHelper::MoveMultipleElementValues myMoveMultipleElementValues;
+    /// @brief modul used for moving single element
+    GNEViewNetHelper::MoveSingleElementModul myMoveSingleElement;
+
+    /// @brief modul used for moving multiple elements
+    GNEViewNetHelper::MoveMultipleElementModul myMoveMultipleElements;
+
     // @}
 
     /// @name structs related with Demand options
@@ -641,12 +683,16 @@ private:
 
     /// @brief variable used to save variables related with vehicle type options
     GNEViewNetHelper::VehicleTypeOptions myVehicleTypeOptions;
+
     // @}
 
-    /// @brief variable used to save elements
+    /// @brief variable used for grouping all variables related with salve elements
     GNEViewNetHelper::SaveElements mySaveElements;
 
-    /// @brief variable used to save variables related with selecting areas
+    /// @brief variable used for grouping all variables related with switch time
+    GNEViewNetHelper::TimeFormat myTimeFormat;
+
+    /// @brief variable used for grouping all variables related with selecting areas
     GNEViewNetHelper::SelectingArea mySelectingArea;
 
     /// @brief struct for grouping all variables related with edit shapes
@@ -682,11 +728,11 @@ private:
     /// @brief last clicked position
     Position myLastClickedPosition = Position::INVALID;
 
-    /// @brief flag for post-drawing (used for dotted contours)
-    bool myPostDrawing = false;
-
     /// @brief flag for mark if during this frame a popup was created (needed to avoid problems in linux with CursorDialogs)
     bool myCreatedPopup = false;
+
+    /// @brief drawin toggle (used in drawGLElements to avoid draw elements twice)
+    int myDrawingToggle = 0;
 
     /// @brief create edit mode buttons and elements
     void buildEditModeControls();
@@ -730,6 +776,9 @@ private:
     /// @brief try to retrieve a additional at popup position
     GNEAdditional* getAdditionalAtPopupPosition();
 
+    /// @brief try to retrieve a demand element at popup position
+    GNEDemandElement* getDemandElementAtPopupPosition();
+
     /// @brief try to retrieve a polygon at popup position
     GNEPoly* getPolygonAtPopupPosition();
 
@@ -739,15 +788,6 @@ private:
     /// @brief try to retrieve a TAZ at popup position
     GNETAZ* getTAZAtPopupPosition();
 
-    /// @brief restrict lane
-    bool restrictLane(SUMOVehicleClass vclass);
-
-    /// @brief add restricted lane
-    bool addRestrictedLane(SUMOVehicleClass vclass, const bool insertAtFront);
-
-    /// @brief remove restricted lane
-    bool removeRestrictedLane(SUMOVehicleClass vclass);
-
     /// @brief Auxiliary function used by onLeftBtnPress(...)
     void processClick(void* eventData);
 
@@ -756,6 +796,12 @@ private:
 
     /// @brief draw functions
     /// @{
+
+    /// @brief draw all gl elements of netedit
+    int drawGLElements(const Boundary& bound);
+
+    /// @brief draw grid and update grid button
+    void drawGrid() const;
 
     /// @brief draw temporal polygon shape in Polygon Mode
     void drawTemporalDrawingShape() const;
@@ -775,13 +821,10 @@ private:
     /// @brief draw temporal Junction TLS Lines
     void drawTemporalJunctionTLSLines() const;
 
-    /// @brief draw delete dotted contours
-    void drawDeleteDottedContour();
+    /// @brief draw circle in testing mode (needed for grid)
+    void drawNeteditAttributesReferences();
 
-    /// @brief draw select dotted contours
-    void drawSelectDottedContour();
-
-    /// @brief draw circle in testing mode (neede for grid)
+    /// @brief draw circle in testing mode (needed for grid)
     void drawTestsCircle() const;
 
     /// @}

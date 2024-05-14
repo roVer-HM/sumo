@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -30,7 +30,7 @@
 #include <utils/gui/windows/GUIDialog_ViewSettings.h>
 
 
-#define EXTRAMARGING 4
+#define EXTRAMARGIN 4
 
 #define MAXROWS 100
 
@@ -70,9 +70,8 @@ MFXDecalsTable::MFXDecalsTable(GUIDialog_ViewSettings* dialogViewSettingsParent,
     // create vertical frame for rows
     myColumnsFrame = new FXHorizontalFrame(this, GUIDesignAuxiliarFrame);
     // create add button
-    myAddButton = new FXButton(this,
-                               (std::string("\t") + TL("Add decal") + std::string("\t") + TL("Add decal.")).c_str(),
-                               GUIIconSubSys::getIcon(GUIIcon::ADD), this, MID_DECALSTABLE_ADD, GUIDesignButtonIcon);
+    myAddButton = GUIDesigns::buildFXButton(this, "", TL("Add decal"), TL("Add decal."),
+                                            GUIIconSubSys::getIcon(GUIIcon::ADD), this, MID_DECALSTABLE_ADD, GUIDesignButtonIcon);
 }
 
 
@@ -111,11 +110,11 @@ MFXDecalsTable::fillTable() {
         myColumns.push_back(new Column(this, i, columnsType.at(i)));
     }
     // get num decals
-    const int numDecals = decals.size() < MAXROWS? (int)decals.size() : MAXROWS;
+    const int numDecals = decals.size() < MAXROWS ? (int)decals.size() : MAXROWS;
     // create rows
     for (int i = 0; i < numDecals; i++) {
         // get decal
-        const auto &decal = decals.at(i);
+        const auto& decal = decals.at(i);
         // create row
         auto row = new Row(this);
         // fill cells
@@ -716,7 +715,7 @@ MFXDecalsTable::Column::adjustColumnWidth() {
         // adjust depending of label
         if ((myType == 's') || (myType == 'p') || (myType == 'c')) {
             // calculate top label width
-            columnWidth = myTopLabel->getFont()->getTextWidth(myTopLabel->getText().text(), myTopLabel->getText().length() + EXTRAMARGING);
+            columnWidth = myTopLabel->getFont()->getTextWidth(myTopLabel->getText().text(), myTopLabel->getText().length() + EXTRAMARGIN);
         }
         // adjust width in all rows
         for (const auto& row : myTable->myRows) {
@@ -794,17 +793,17 @@ MFXDecalsTable::Row::Row(MFXDecalsTable* table) :
             }
             case ('b'): {
                 // create button for open decal
-                auto button = new FXButton(table->myColumns.at(columnIndex)->getVerticalCellFrame(),
-                                           (std::string("\t") + TL("Open decal") + std::string("\t") + TL("Open decal.")).c_str(),
-                                           GUIIconSubSys::getIcon(GUIIcon::OPEN), table, MID_DECALSTABLE_OPEN, GUIDesignButtonIcon);
+                auto button = GUIDesigns::buildFXButton(table->myColumns.at(columnIndex)->getVerticalCellFrame(),
+                                                        "", TL("Open decal"), TL("Open decal."),
+                                                        GUIIconSubSys::getIcon(GUIIcon::OPEN), table, MID_DECALSTABLE_OPEN, GUIDesignButtonIcon);
                 myCells.push_back(new Cell(table, button, columnIndex, numCells));
                 break;
             }
             case ('d'): {
                 // create button for delete decal
-                auto button = new FXButton(table->myColumns.at(columnIndex)->getVerticalCellFrame(),
-                                           (std::string("\t") + TL("Remove decal") + std::string("\t") + TL("Remove decal.")).c_str(),
-                                           GUIIconSubSys::getIcon(GUIIcon::REMOVE), table, MID_DECALSTABLE_REMOVE, GUIDesignButtonIcon);
+                auto button = GUIDesigns::buildFXButton(table->myColumns.at(columnIndex)->getVerticalCellFrame(),
+                                                        "", TL("Remove decal"), TL("Remove decal."),
+                                                        GUIIconSubSys::getIcon(GUIIcon::REMOVE), table, MID_DECALSTABLE_REMOVE, GUIDesignButtonIcon);
                 myCells.push_back(new Cell(table, button, columnIndex, numCells));
                 break;
             }

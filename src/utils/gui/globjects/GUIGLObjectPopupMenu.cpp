@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -213,7 +213,7 @@ GUIGLObjectPopupMenu::onCmdShowCursorGeoPositionOnline(FXObject* item, FXSelecto
     FXMenuCommand* const mc = dynamic_cast<FXMenuCommand*>(item);
     Position pos = myNetworkPosition;
     GeoConvHelper::getFinal().cartesian2geo(pos);
-    std::string url = myApplication->getOnlineMaps().find(mc->getText().rafter(' ').text())->second;
+    std::string url = myApplication->getOnlineMaps().find(mc->getText().text())->second;
     url = StringUtils::replace(StringUtils::replace(url, "%lat", toString(pos.y(), gPrecisionGeo)), "%lon", toString(pos.x(), gPrecisionGeo));
     MFXLinkLabel::fxexecute(url.c_str());
     return 1;

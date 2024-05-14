@@ -37,7 +37,7 @@ turn-ratios](Demand/Routing_by_Turn_Probabilities.md).
 
 You may use a XML schema definition file for setting up a jtrrouter
 configuration:
-[jtrrouterConfiguration.xsd](http://sumo.dlr.de/xsd/jtrrouterConfiguration.xsd).
+[jtrrouterConfiguration.xsd](https://sumo.dlr.de/xsd/jtrrouterConfiguration.xsd).
 
 ### Configuration
 
@@ -102,11 +102,12 @@ Files](Basics/Using_the_Command_Line_Applications.md#configuration_files).
 | **--mapmatch.junctions** {{DT_BOOL}} | Match positions to junctions instead of edges; *default:* **false** |
 | **--bulk-routing** {{DT_BOOL}} | Aggregate routing queries with the same origin; *default:* **false** |
 | **--routing-threads** {{DT_INT}} | The number of parallel execution threads used for routing; *default:* **0** |
-| **--restriction-params** {{DT_STR[]}} | Comma separated list of param keys to compare for additional restrictions |
+| **--restriction-params** {{DT_STR_LIST}} | Comma separated list of param keys to compare for additional restrictions |
 | **--weights.minor-penalty** {{DT_FLOAT}} | Apply the given time penalty when computing routing costs for minor-link internal lanes; *default:* **1.5** |
+| **--weights.tls-penalty** {{DT_FLOAT}} | Apply the given time penalty when computing routing costs across a traffic light; *default:* **0** |
 | **--max-edges-factor** {{DT_FLOAT}} | Routes are cut off when the route edges to net edges ratio is larger than FLOAT; *default:* **2** |
-| **-T** {{DT_STR[]}}<br> **--turn-defaults** {{DT_STR[]}} | Use STR[] as default turn definition; *default:* **30,50,20** |
-| **--sink-edges** {{DT_STR[]}} | Use STR[] as list of sink edges |
+| **-T** {{DT_STR_LIST}}<br> **--turn-defaults** {{DT_STR_LIST}} | Use STR[] as default turn definition; *default:* **30,50,20** |
+| **--sink-edges** {{DT_STR_LIST}} | Use STR[] as list of sink edges |
 | **-A** {{DT_BOOL}}<br> **--accept-all-destinations** {{DT_BOOL}} | Whether all edges are allowed as sink edges; *default:* **false** |
 | **-i** {{DT_BOOL}}<br> **--ignore-vclasses** {{DT_BOOL}} | Ignore road restrictions based on vehicle class; *default:* **false** |
 | **--allow-loops** {{DT_BOOL}} | Allow to re-use a road; *default:* **false** |
@@ -153,6 +154,8 @@ Options](Basics/Using_the_Command_Line_Applications.md#reporting_options).
 | **-l** {{DT_FILE}}<br> **--log** {{DT_FILE}} | Writes all messages to FILE (implies verbose) |
 | **--message-log** {{DT_FILE}} | Writes all non-error messages to FILE (implies verbose) |
 | **--error-log** {{DT_FILE}} | Writes all warnings and errors to FILE |
+| **--log.timestamps** {{DT_BOOL}} | Writes timestamps in front of all messages; *default:* **false** |
+| **--log.processid** {{DT_BOOL}} | Writes process ID in front of all messages; *default:* **false** |
 | **--language** {{DT_STR}} | Language to use in messages; *default:* **C** |
 | **--ignore-errors** {{DT_BOOL}} | Continue if a route could not be build; *default:* **false** |
 | **--stats-period** {{DT_INT}} | Defines how often statistics shall be printed; *default:* **-1** |
@@ -169,5 +172,3 @@ Options](Basics/Using_the_Command_Line_Applications.md#random_number_options).
 |--------|-------------|
 | **--random** {{DT_BOOL}} | Initialises the random number generator with the current system time; *default:* **false** |
 | **--seed** {{DT_INT}} | Initialises the random number generator with the given value; *default:* **23423** |
-
-

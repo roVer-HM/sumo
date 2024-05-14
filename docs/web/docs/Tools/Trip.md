@@ -67,7 +67,7 @@ per second. By using values below 1, multiple arrivals per second can be
 achieved. If several {{DT_FLOAT}} numbers are passed, like in **--period 1.0 0.5** (or **--period="1.0,0.5"**) for example, the time interval will be divided equally into subintervals, and the arrival rate for each subinterval is controlled by the corresponding period (in the preceding example, a period of 1.0 will be used for the first subinterval and a period of 0.5 will be used for the second). There are two other ways to specify the insertion rate:
 
 - Either by using the **--insertion-rate** argument (with one or several values as explained before): this is the number of vehicles per hour that the user expects.
-- Or by using the **--insertion-density** argument (with one or several values): this is the number of vehicles per hour per kilometer of road that the user expects (the total length of the road is computed with respect to a certain vehicle class that can be changed with the option **--edge-permission**). 
+- Or by using the **--insertion-density** argument (with one or several values): this is the number of vehicles per hour per kilometer of road that the user expects (the total length of the road is computed with respect to a certain vehicle class that can be changed with the option **--edge-permission**).
 
 When adding option **--binomial** {{DT_INT}} the arrivals will be randomized using a binomial
 distribution where *n* (the maximum number of simultaneous arrivals) is
@@ -203,6 +203,10 @@ allows to specify the available traffic modes and thus use
 they use public transport, a personal car or walking.
   - walking or public transport: **--trip-attributes "modes=\"public\""**
   - walking, public transport or car **--trip-attributes "modes=\"public car\""**
+- Using the option **--personrides <LINE>** will generated persons with `<ride line="LINE">` definitions.
+- using option **--from-stops busStop** will make persons start with an initial `<stop duration="0">` at a random busStop
+- using option **--to-stops busStop** will make persons end their journey at a random busStop
+
 
 !!! caution
     Quoting of trip attributes on Linux must use the style **--trip-attributes 'modes="public"'**

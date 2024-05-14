@@ -52,7 +52,7 @@ found by following its link.
   informations for all edges, lanes and vehicles (good for
   visualisation purposes)
 - [vtk output](VTKOutput.md): generates
-  Files in the well known [VTK](http://www.vtk.org/) (Visualization
+  Files in the well known [VTK](https://www.vtk.org/) (Visualization
   Toolkit) format, to show the positions the speed value for every
   vehicle
 - [fcd output](FCDOutput.md): Floating Car
@@ -191,7 +191,7 @@ By default, sumo will print some "heartbeat" information to indicate that it is 
 - **ACT**: number of currently running vehicles
 - **BUF**: number of vehicles with delayed insertion
 
-This output can be disabled with the option **--no-step-log**. It's period can be configured with the option **--step-log.period TIME**.
+This output can be disabled with the option **--no-step-log**. Its period can be configured with the option **--step-log.period TIME**.
 
 # Commandline Output (verbose)
 
@@ -243,7 +243,7 @@ If the simulation contained persons the following output will be added:
   time*. If one hour is simulated in 360 seconds the real time factor
   is 10.
 - UPS: (updates per second). The number of vehicle updates that were
-  performed on average per second of computation time. If a single 
+  performed on average per second of computation time. If a single
   vehicle update takes on average one millisecond, this will be 1000.
 
 If routing took place in the simulation, Each routing algorithm instance
@@ -302,7 +302,7 @@ following output will be added:
 - Aborted rides: rides that could not be completed because no suitable
   vehicle was available
 
-You can also take a look at [statistic output](StatisticOutput.md) for a more overall statistics of the entire simulation, including those mentioned above and additional ones safety-, ride- and transport-related. 
+You can also take a look at [statistic output](StatisticOutput.md) for a more overall statistics of the entire simulation, including those mentioned above and additional ones safety-, ride- and transport-related.
 
 When setting this option and using [sumo-gui](../../sumo-gui.md), the
 network parameter dialog will also show a running average for these

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -36,7 +36,9 @@
 * MSStageMoving - methods
 * ----------------------------------------------------------------------- */
 MSStageMoving::~MSStageMoving() {
-    delete myState;
+    if (myPState != nullptr && myPState->isFinished()) {
+        delete myPState;
+    }
 }
 
 const MSEdge*
@@ -61,38 +63,38 @@ MSStageMoving::getEdges() const {
 
 double
 MSStageMoving::getEdgePos(SUMOTime now) const {
-    return myState == nullptr ? 0. : myState->getEdgePos(*this, now);
+    return myPState == nullptr ? myDepartPos : myPState->getEdgePos(*this, now);
 }
 
 int
 MSStageMoving::getDirection() const {
-    return myState == nullptr ? MSPModel::UNDEFINED_DIRECTION : myState->getDirection(*this, MSNet::getInstance()->getCurrentTimeStep());
+    return myPState == nullptr ? MSPModel::UNDEFINED_DIRECTION : myPState->getDirection(*this, MSNet::getInstance()->getCurrentTimeStep());
 }
 
 
 Position
 MSStageMoving::getPosition(SUMOTime now) const {
-    return myState == nullptr ? Position::INVALID : myState->getPosition(*this, now);
+    return myPState == nullptr ? Position::INVALID : myPState->getPosition(*this, now);
 }
 
 double
 MSStageMoving::getAngle(SUMOTime now) const {
-    return myState == nullptr ? 0. : myState->getAngle(*this, now);
+    return myPState == nullptr ? 0. : myPState->getAngle(*this, now);
 }
 
 SUMOTime
 MSStageMoving::getWaitingTime(SUMOTime now) const {
-    return myState == nullptr ? 0 : myState->getWaitingTime(*this, now);
+    return myPState == nullptr ? 0 : myPState->getWaitingTime(*this, now);
 }
 
 double
 MSStageMoving::getSpeed() const {
-    return myState == nullptr ? 0. : myState->getSpeed(*this);
+    return myPState == nullptr ? 0. : myPState->getSpeed(*this);
 }
 
 const MSLane*
 MSStageMoving::getLane() const {
-    return myState == nullptr ? nullptr : myState->getLane();
+    return myPState == nullptr ? nullptr : myPState->getLane();
 }
 
 void

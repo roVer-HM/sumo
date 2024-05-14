@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -67,7 +67,7 @@ public:
     virtual double getLength() const = 0;
     virtual const NBRouterEdge* getBidiEdge() const = 0;
     virtual int getNumericalID() const = 0;
-    virtual const ConstRouterEdgePairVector& getViaSuccessors(SUMOVehicleClass vClass = SVC_IGNORING) const = 0;
+    virtual const ConstRouterEdgePairVector& getViaSuccessors(SUMOVehicleClass vClass = SVC_IGNORING, bool ignoreTransientPermissions = false) const = 0;
     virtual bool isInternal() const {
         return false;
     }
@@ -327,8 +327,9 @@ public:
         bool isInternal() const {
             return true;
         }
-        const ConstRouterEdgePairVector& getViaSuccessors(SUMOVehicleClass vClass = SVC_IGNORING) const {
+        const ConstRouterEdgePairVector& getViaSuccessors(SUMOVehicleClass vClass = SVC_IGNORING, bool ignoreTransientPermissions = false) const {
             UNUSED_PARAMETER(vClass);
+            UNUSED_PARAMETER(ignoreTransientPermissions);
             return myViaSuccessors;
         }
         /// }@
@@ -369,6 +370,11 @@ public:
 
     /// @brief TLS-controlled despite its node controlled not specified.
     static const bool UNSPECIFIED_CONNECTION_UNCONTROLLED;
+
+    /// @brief shift values for decoding turn signs
+    static const int TURN_SIGN_SHIFT_BUS = 8;
+    static const int TURN_SIGN_SHIFT_TAXI = 16;
+    static const int TURN_SIGN_SHIFT_BICYCLE = 24;
 
     /// @brief junction priority values set by setJunctionPriority
     enum JunctionPriority {
@@ -748,8 +754,10 @@ public:
     /// @brief return all permission variants within the specified lane range [iStart, iEnd[
     std::set<SVCPermissions> getPermissionVariants(int iStart, int iEnd) const;
 
-    /// @brief get lane indices that allow the given permissions
-    int getNumLanesThatAllow(SVCPermissions permissions) const;
+    /* @brief get lane indices that allow the given permissions
+     * @param[in] allPermissions: whether all the given permissions must be allowed (or just some of them)
+     */
+    int getNumLanesThatAllow(SVCPermissions permissions, bool allPermissions = true) const;
 
     /** @brief Returns whether the given vehicle class may change left from this lane */
     bool allowsChangingLeft(int lane, SUMOVehicleClass vclass) const;
@@ -1284,8 +1292,7 @@ public:
 
     /** @brief Returns the angle of the edge's geometry at the given node
      *
-     * The angle is signed, regards direction, and starts at 12 o'clock
-     *  (north->south), proceeds positive clockwise.
+     * The angle is in degrees between -180 and 180.
      * @param[in] node The node for which the edge's angle shall be returned
      * @return This edge's angle at the given node
      */
@@ -1509,7 +1516,7 @@ public:
 
     /** @brief Returns the following edges for the given vClass
      */
-    const ConstRouterEdgePairVector& getViaSuccessors(SUMOVehicleClass vClass = SVC_IGNORING) const;
+    const ConstRouterEdgePairVector& getViaSuccessors(SUMOVehicleClass vClass = SVC_IGNORING, bool ignoreTransientPermissions = false) const;
 
     //@}
     const std::string& getID() const {
@@ -1704,7 +1711,8 @@ private:
     double assignInternalLaneLength(std::vector<Connection>::iterator i, int numLanes, double lengthSum, bool averageLength);
 
     /// @brief decode bitset
-    std::vector<LinkDirection> decodeTurnSigns(int turnSigns);
+    static std::vector<LinkDirection> decodeTurnSigns(int turnSigns, int shift = 0);
+    static void updateTurnPermissions(SVCPermissions& perm, LinkDirection dir, SVCPermissions spec, std::vector<LinkDirection> dirs);
 
     /// @brief apply loaded turn sign information
     bool applyTurnSigns();
