@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -33,8 +33,8 @@
 // member method definitions
 // ===========================================================================
 
-GNENetDiffTool::GNENetDiffTool(GNEApplicationWindow* GNEApp, const std::string& pythonPath, FXMenuPane* menu) :
-    GNEPythonTool(GNEApp, pythonPath, "", menu) {
+GNENetDiffTool::GNENetDiffTool(GNEApplicationWindow* GNEApp, const std::string& toolPath, FXMenuPane* menu) :
+    GNEPythonTool(GNEApp, toolPath, "", menu) {
     // fill options
     fillNetDiffOptions(myPythonToolsOptions);
     fillNetDiffOptions(myPythonToolsOptionsOriginal);
@@ -89,19 +89,11 @@ GNENetDiffTool::postProcessing() {
 
 std::string
 GNENetDiffTool::getCommand() const {
-    // add python script
-    const char* pythonEnv = getenv("PYTHON");
-    const std::string python = (pythonEnv == nullptr) ? "python" : pythonEnv;
-    const char* sumoHomeEnv = getenv("SUMO_HOME");
-    const std::string sumoHome = (sumoHomeEnv == nullptr) ? "" : sumoHomeEnv + std::string("/");
-    // get command
-    std::string command = python + " " + sumoHome + myPythonPath;
-    // declare arguments
     std::string arguments;
     // add arguments
-    arguments += (myPythonToolsOptions.getString("original-net") + " ");
-    arguments += (myPythonToolsOptions.getString("modified-net") + " ");
-    arguments += myPythonToolsOptions.getString("outprefix") + " ";
+    arguments += "\"" + myPythonToolsOptions.getString("original-net") + "\" ";
+    arguments += "\"" + myPythonToolsOptions.getString("modified-net") + "\" ";
+    arguments += "\"" + myPythonToolsOptions.getString("outprefix")    + "\" ";
     // check if save selection
     if (myPythonToolsOptions.getBool("select-modified") ||
             myPythonToolsOptions.getBool("select-added") ||
@@ -114,7 +106,7 @@ GNENetDiffTool::getCommand() const {
             myPythonToolsOptions.getBool("load-shapes-deleted")) {
         arguments += "--write-shapes ";
     }
-    return command + " " + arguments;
+    return getCommandPath() + " " + arguments;
 }
 
 
@@ -170,7 +162,7 @@ GNENetDiffTool::loadShapes(const std::string& file) {
         WRITE_ERROR(TL("Loading of shape file failed: ") + file);
     } else {
         // write info
-        WRITE_MESSAGE(TL("Loading of shape file sucessfully: ") + file);
+        WRITE_MESSAGE(TL("Loading of shape file successfully: ") + file);
     }
     // end undoList operation
     undoList->end();

@@ -39,7 +39,7 @@ stop is an area on a lane. The parameters have the following meanings:
 
 ## Access Lanes
 
-Each bus stop may have additional child elements to model access from
+Each bus or train stop may have additional child elements to model access from
 other parts of the network (e.g. road access to a stop on the rail
 network). This takes the following form:
 
@@ -56,9 +56,14 @@ OSM](../Tutorials/PT_from_OpenStreetMap.md#initial_network_and_public_transit_in
 | Attribute Name | Value Type | Value Range         | Description                                                    |
 | -------------- | ---------- | ------------------- | -------------------------------------------------------------- |
 | **lane**       | string     | id                  | The name of the lane from which this stop may also be accessed |
-| **pos**        | float      | position along lane | The position along the lane from which the stop is reached     |
+| **pos**        | float, "random", "doors"      | position along lane | The position along the lane from which the stop is reached     |
 | length         | float      | >= 0 | The distance for computing the access time of pedestrians that use this element|
 | friendlyPos    | bool       |      | Whether an invalid **pos** should be silently converted to the closest correct approximation |
+
+The value `doors` is currently only used when exiting a train or bus. The starting position for a
+subsequent walk of the exiting passengers will be randomly chosen among the door positions of the train or bus.
+The door positions themselves cannot be defined but they are derived from the number of carriages
+and the number of doors per carriage of the vehicle, see [carriage definition](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#carriages)
 
 # Letting Vehicles stop at a bus stop
 
@@ -66,7 +71,7 @@ Vehicles must be informed that they must stop at a bus stop. The
 following example shows how this can be done (taken from {{SUMO}}*/examples/sumo/busses*):
 
 ```xml
-<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+<additional xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://sumo.dlr.de/xsd/additional_file.xsd">
     <busStop id="busstop1" lane="2/1to1/1_0" startPos="20" endPos="40" lines="100 101 102"/>
     <busStop id="busstop2" lane="1/2to0/2_0" startPos="20" endPos="40" lines="100 101"/>
     <busStop id="busstop3" lane="0/1to0/0_0" startPos="20" endPos="40" lines="100 101 102"/>
@@ -113,7 +118,7 @@ intermediate edges:
 The vehicle will take the fastest path between *from*-edge and *to*-edge
 that visits all stops in their correct order.
 
-Even the trip attributes 'from' and 'to' can be omitted to let the bus start at the first stop and end at the last. Using `departPos="stop"`, the vehicle will be inserted directly at the first stop in it's route:
+Even the trip attributes 'from' and 'to' can be omitted to let the bus start at the first stop and end at the last. Using `departPos="stop"`, the vehicle will be inserted directly at the first stop in its route:
 ```xml
    <trip id="0" type="BUS" depart="0" color="1,1,0" departPos="stop">
        <stop busStop="busstop1" duration="20"/>
@@ -128,10 +133,10 @@ In most cases, public transport runs according to a fixed schedule. Such a sched
 
 !!! note
     Defining a public transport schedule is necessary for [intermodal routing](../IntermodalRouting.md).
-    
+
 !!! caution
     A public transport schedule for [intermodal routing](../IntermodalRouting.md) must be fully defined when loading the simulation. Stops that are defined during the simulation via rerouters or TraCI will not be considered when routing a [`<personTrip>`](../Specification/Persons.md#persontrips).
-  
+
 
 ## Single vehicles and trips
 When defining `until` values for a vehicle and trip, the values denote absolute simulation times.
@@ -206,7 +211,7 @@ In contrast to a period flow (which also repeats a given stop sequence), this si
 
 !!! caution
     When using attribute `repeat`, the last edge of the route must be connected to the first edge of the route in order to have a valid route definition.
-    
+
 ## Further Schedule Attributes
 The following [stop attributes](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#stops) are relevant for public transport schedules:
 
@@ -259,10 +264,8 @@ transport lines. The usage of this line data is explained at
 
 ## GTFS
 
-The tool [gtfs2pt.py](../Tools/Import/GTFS.md) can be used to import public transport data for a geo-referenced network. 
+The tool [gtfs2pt.py](../Tools/Import/GTFS.md) can be used to import public transport data for a geo-referenced network.
 
 ## Automatic Schedule Generation
 
 The tool [ptlines2flows.py](../Tools/Misc.md#ptlines2flowspy) can be used to generated a public transport schedule with 'until' and 'duration' values for a given sequence of stops. The schedule times are derived by running a simulation in the background.
-
-

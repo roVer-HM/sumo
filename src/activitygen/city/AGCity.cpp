@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2010-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2010-2024 German Aerospace Center (DLR) and others.
 // activitygen module
 // Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
 // This program and the accompanying materials are made available under the
@@ -137,6 +137,7 @@ AGCity::generateOutgoingWP() {
     int nbrOutWorkPositions = (int)((double)workPositions.size() * (double)statData.outgoingTraffic / (nbrWorkers - (double)statData.outgoingTraffic));
 
     if (cityGates.empty()) {
+        statData.workPositions = static_cast<int>(workPositions.size());
         return;
     }
 
@@ -212,23 +213,13 @@ AGCity::generatePopulation() {
     int nbrCouple = 0;
     int nbrChild = 0;
     int nbrHH = 0;
-    int workingP = 0;
     std::list<AGHousehold>::iterator itt;
     for (itt = households.begin(); itt != households.end(); ++itt) {
         if (itt->getAdultNbr() == 1) {
             nbrSingle++;
-            if (itt->getAdults().front().isWorking()) {
-                workingP++;
-            }
         }
         if (itt->getAdultNbr() == 2) {
             nbrCouple += 2;
-            if (itt->getAdults().front().isWorking()) {
-                workingP++;
-            }
-            if (itt->getAdults().back().isWorking()) {
-                workingP++;
-            }
         }
         nbrChild += itt->getPeopleNbr() - itt->getAdultNbr();
         nbrHH++;

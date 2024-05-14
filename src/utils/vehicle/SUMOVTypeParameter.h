@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -68,14 +68,16 @@ const long long int VTYPEPARS_DESIRED_MAXSPEED_SET = 1 << 24;
 const long long int VTYPEPARS_CARRIAGE_LENGTH_SET = 1 << 25;
 const long long int VTYPEPARS_LOCOMOTIVE_LENGTH_SET = 1 << 26;
 const long long int VTYPEPARS_CARRIAGE_GAP_SET = 1 << 27;
-const long long int VTYPEPARS_MANEUVER_ANGLE_TIMES_SET = 1 << 28;
-const long long int VTYPEPARS_FRONT_SEAT_POS_SET = 1 << 29;
-const long long int VTYPEPARS_SCALE_SET = 1 << 30;
-const long long int VTYPEPARS_MASS_SET = (long long int)1 << 31;
-const long long int VTYPEPARS_TTT_SET = (long long int)1 << 32;
-const long long int VTYPEPARS_TTT_BIDI_SET = (long long int)1 << 33;
-const long long int VTYPEPARS_SEATING_WIDTH_SET = (long long int)1 << 34;
-const long long int VTYPEPARS_SPEEDFACTOR_PREMATURE_SET = (long long int)1 << 35;
+const long long int VTYPEPARS_CARRIAGE_DOORS_SET = 1 << 28;
+const long long int VTYPEPARS_MANEUVER_ANGLE_TIMES_SET = 1 << 29;
+const long long int VTYPEPARS_FRONT_SEAT_POS_SET = 1 << 30;
+const long long int VTYPEPARS_SCALE_SET = (long long int)1 << 31;
+const long long int VTYPEPARS_MASS_SET = (long long int)1 << 32;
+const long long int VTYPEPARS_TTT_SET = (long long int)1 << 33;
+const long long int VTYPEPARS_TTT_BIDI_SET = (long long int)1 << 34;
+const long long int VTYPEPARS_SEATING_WIDTH_SET = (long long int)1 << 35;
+const long long int VTYPEPARS_SPEEDFACTOR_PREMATURE_SET = (long long int)1 << 36;
+const long long int VTYPEPARS_PARKING_BADGES_SET = (long long int)1 << 37;
 
 
 const int VTYPEPARS_DEFAULT_EMERGENCYDECEL_DEFAULT = -1;
@@ -171,6 +173,9 @@ public:
 
         /// @brief the length of train locomotive
         double locomotiveLength;
+
+        /// @brief the number of doors per carriage
+        int carriageDoors;
 
         /// @brief the lateral alignment procedure
         LatAlignmentDefinition latAlignmentProcedure;
@@ -364,6 +369,9 @@ public:
     double locomotiveLength;
     double carriageGap;
 
+    /// @brief the number of doors per carriage
+    int carriageDoors;
+
     /// @brief the custom time-to-teleport for this type
     SUMOTime timeToTeleport;
 
@@ -379,6 +387,9 @@ public:
     /// @brief width to be used when comping seats
     double seatingWidth;
 
+    /// @brief the parking access rights
+    std::vector<std::string> parkingBadges;
+
     /// @brief Information for the router which parameter were set
     long long int parametersSet;
 
@@ -390,6 +401,9 @@ public:
 
     /// @brief cached value of parameters which may restrict access to certain edges
     std::vector<double> paramRestrictions;
+
+    /// @brief allowed attrs for the junction model
+    static std::set<SumoXMLAttr> AllowedJMAttrs;
 
     /// @brief satisfy vType / router template requirements
     inline double getLength() const {

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2005-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -84,7 +84,7 @@ fillOptions() {
     oc.doRegister("dlr-navteq-poly-files", new Option_FileName());
     oc.addDescription("dlr-navteq-poly-files", "Input", TL("Reads polygons from FILE assuming they're coded in DLR-Navteq (Elmar)-format"));
     oc.doRegister("dlr-navteq-poi-files", new Option_FileName());
-    oc.addDescription("dlr-navteq-poi-files", "Input", TL("Reads pois from FILE+ assuming they're coded in DLR-Navteq (Elmar)-format"));
+    oc.addDescription("dlr-navteq-poi-files", "Input", TL("Reads pois from FILE assuming they're coded in DLR-Navteq (Elmar)-format"));
 
     // visum import
     oc.doRegister("visum-files", new Option_FileName());
@@ -102,7 +102,7 @@ fillOptions() {
     // osm import
     oc.doRegister("osm-files", new Option_FileName());
     oc.addSynonyme("osm-files", "osm");
-    oc.addDescription("osm-files", "Input", TL("Reads pois from FILE+ assuming they're coded in OSM"));
+    oc.addDescription("osm-files", "Input", TL("Reads pois from FILE assuming they're coded in OSM"));
     oc.doRegister("osm.keep-full-type", new Option_Bool(false));
     oc.addDescription("osm.keep-full-type", "Input", TL("The type will be made of the key-value - pair"));
     oc.doRegister("osm.use-name", new Option_Bool(false));
@@ -115,7 +115,7 @@ fillOptions() {
     oc.addSynonyme("shapefile-prefixes", "shapefile-prefix");
     oc.addSynonyme("shapefile-prefixes", "shapefile");
     oc.addSynonyme("shapefile-prefixes", "shape-files", true);
-    oc.addDescription("shapefile-prefixes", "Input", TL("Reads shapes from shapefiles FILE+"));
+    oc.addDescription("shapefile-prefixes", "Input", TL("Reads shapes from shapefiles FILE"));
 
     oc.doRegister("shapefile.guess-projection", new Option_Bool(false));
     oc.addSynonyme("shapefile.guess-projection", "arcview.guess-projection", true);
@@ -159,7 +159,7 @@ fillOptions() {
     oc.addDescription("dlr-tdp-output", "Output", TL("Write generated polygons/pois to a dlr-tdp file with the given prefix"));
 
 
-    // prunning options
+    // pruning options
     oc.doRegister("prune.in-net", new Option_Bool(false));
     oc.addSynonyme("prune.in-net", "prune.on-net", true);
     oc.addDescription("prune.in-net", TL("Pruning"), TL("Enables pruning on net boundaries"));
@@ -213,6 +213,9 @@ fillOptions() {
 
     oc.doRegister("fill", new Option_Bool(true));
     oc.addDescription("fill", "Building Defaults", TL("Fills polygons by default"));
+
+    oc.doRegister("icon", new Option_String(SUMOXMLDefinitions::POIIcons.getString(POIIcon::NONE)));
+    oc.addDescription("icon", "Building Defaults", TL("Sets STR as default icon"));
 
     oc.doRegister("layer", new Option_Float(-1));
     oc.addDescription("layer", "Building Defaults", TL("Sets FLOAT as default layer"));

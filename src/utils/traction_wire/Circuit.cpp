@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -266,8 +266,6 @@ bool Circuit::solveEquationsNRmethod(double* eqn, double* vals, std::vector<int>
     Eigen::VectorXd dx;
     // initialize progressively increasing maximal number of Newton-Rhapson iterations
     int max_iter_of_NR = 10;
-    // number of tested values of alpha
-    int attemps = 0;
     // value of scaling parameter alpha
     double alpha = 1;
     // the best (maximum) value of alpha that guarantees the existence of solution
@@ -291,7 +289,6 @@ bool Circuit::solveEquationsNRmethod(double* eqn, double* vals, std::vector<int>
     // Search for the suitable scaling value alpha
     while (true) {
 
-        ++attemps;
         int iterNR = 0;
         // run Newton-Raphson methods
         while (true) {
@@ -613,8 +610,8 @@ bool Circuit::_solveNRmethod() {
     // vals are now the solution x of the circuit
     deployResults(vals, &removable_ids);
 
-    delete eqn;
-    delete vals;
+    delete[] eqn;
+    delete[] vals;
     return true;
 }
 

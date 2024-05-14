@@ -25,7 +25,7 @@ click. After this, an empty window should show up, similar to the one
 shown in the image.
 
 Using either the "File-\>Open Simulation..." menu entry or by using the
-"open"-icon (![Open_sim.gif](images/Open_sim.png "Open sim")),
+"open"-icon (![icon_open.png](images/icon_open.png "Open sim")),
 you should be able to load an existing [sumo](sumo.md)
 [configuration
 file](Basics/Using_the_Command_Line_Applications.md#configuration_files),
@@ -34,12 +34,12 @@ if it has the proper [extension](Other/File_Extensions.md)
 file](Basics/Using_the_Command_Line_Applications.md#configuration_files)
 is erroneous, the errors are reported, otherwise your network referenced
 within the configuration file should be shown. Now you can start to
-simulate by pressing the "play" button (![Play.gif](images/Play.gif "Play")). The simulation works as if being started on the
+simulate by pressing the "play" button (![icon_play.png](images/icon_play.png "Play")). The simulation works as if being started on the
 command line. The simulation can be halted using the "stop" button
-(![Stop.gif](images/Stop.gif "Stop")) and continued by pressing
+(![icon_stop.png](images/icon_stop.png "Stop")) and continued by pressing
 the "play" button again. When stopped, also single steps may be
 performed by pressing the "single step" button
-(![Step.gif](images/Step.gif "Step")).
+(![icon_step.png](images/icon_step.png "Step")).
 
 If the simulation is running, the current simulation second is shown in
 the "digital digits" field, right to "Time:"
@@ -56,13 +56,13 @@ between simulation steps.
 
 Besides loading simulation configurations, it is also possible to load
 networks by using either the "File-\>Open Network..." menu entry or by
-using the "open network"-icon (![Open_net.png](images/Open_net.png "Open net")). Please note, that normally
+using the "open network"-icon (![icon_opennet.png](images/icon_opennet.png "Open net")). Please note, that normally
 **sumo-gui** assumes networks have the
 [extension](Other/File_Extensions.md) *".net.xml"*, but also
 accepts other extensions.
 
 Both, the loaded simulation or the loaded network may be reloaded using
-the "reload" button (![Reload.gif](images/Reload.gif "Reload"))
+the "reload" button (![icon_reload.png](images/icon_reload.png "Reload"))
 or the menu entry "File-\>Reload".
 
 If a network or a simulation are loaded, the navigation through the
@@ -87,24 +87,24 @@ It is also possible to change the zoom by using the mouse wheel (holding
 *<SHIFT\>* increases the zooming speed and holding *<CTRL\>* lowers it).
 Zooming is either focused on the center of the screen or on the cursor
 position. The zoom style can be selected with the
-![Zoomstyle.png](images/Zoomstyle.png "Zoomstyle") button.
+![icon_zoomstyle.png](images/icon_zoomstyle.png "Zoomstyle") button.
 
 You can also control which part of the network is visible by directly
 setting the network coordinates which shall be at the center of the
 screen along with the zoom (given a value of 100 the whole network will
 fit onto the screen). These settings can be changed by opening the
 viewport editor using the
-![Open_viewport_editor.gif](images/Open_viewport_editor.gif
+![icon_magnify.png](images/icon_magnify.png
 "Open viewport editor") button. From this editor, it is
-possible to save the current settings (![Save.gif](images/Save.gif
+possible to save the current settings (![icon_save.png](images/icon_save.png
 "Save")) or load previously saved ones
-(![Open_sim.png](images/Open_sim.png "Open sim") within the
+(![icon_open.png](images/icon_open.png "Open sim") within the
 viewport editor).
 
 The viewport is defined as following:
-`<viewport zoom="<ZOOM>" x="<X>" y="<Y>"/>`. It can be in a gui-settings file.
+`<viewport zoom="<ZOOM>" x="<X>" y="<Y>" angle="<ANGLE>"/>`. It can be in a gui-settings file.
 
-Pressing the center-button (![Center.gif](images/Center.gif
+Pressing the center-button (![images/icon_recenter_view.png](images/icon_recenter_view.png
 "Center")) from the menu bar at the top of the view, will
 reset the viewport so that the complete network is shown.
 
@@ -117,7 +117,7 @@ methods:
 - via menu *Edit-\>Breakpoints*
 - by setting option **--breakpoints TIME1,TIME2,...**
 - by loading [Configuration Files](#configuration_files) with breakpoint information
-- by clicking on an underlined time value in the message/warning log area. The breakpoint will be set 5s *before* the time value. This offset is configurable via the 'Settings'-menu (**CTRL+H**). To investigate the reason for a teleport warning, setting the offset to 305s before the teleport event is recommended. 
+- by clicking on an underlined time value in the message/warning log area. The breakpoint will be set 5s *before* the time value. This offset is configurable via the 'Settings'-menu (**CTRL+H**). To investigate the reason for a teleport warning, setting the offset to 305s before the teleport event is recommended.
 
 ## Keyboard Shortcuts
 
@@ -134,7 +134,7 @@ are listed below:
 - \+/-, Keypad +/-: zoom in/out
 - Home/Keypad Home: recenter view
 - F9: open view settings dialog
-- Shift-LeftClick: 
+- Shift-LeftClick:
   - vehicle: start tracking
   - rerouter: change routeProbReroute probabilities
 - Double-LeftClick: stop tracking
@@ -167,7 +167,7 @@ The following objects can be accessed by right-click:
 - Polygons
 - Simulation (by clicking the background where there is no other
   object). Also accessible by clicking the
-  ![SimulationParameters.png](images/SimulationParameters.png
+  ![button_simulation_parameters.png](images/button_simulation_parameters.png
   "Simulation parameters") button.
 
   !!! note
@@ -207,14 +207,14 @@ A plotting window (acceleration over time) is shown below:
 Clicking on additional Attribute plot symbols opens up new plotting windows.
 By activating the 'Multiplot'-checkbox, any additional attribute plots wil be added to that plot window instead of opening a new plot window.
 
-When moving the mouse over a plot window, plot point closest to the mouse cursor is highlighted and it's *x* and *y* values are printed in blue along the plot axes.
+When moving the mouse over a plot window, plot point closest to the mouse cursor is highlighted and its *x* and *y* values are printed in blue along the plot axes.
 
 ## Selecting Objects
 
 **sumo-gui** allows for the selection of arbitrary
 network elements such as edges, lanes and junctions, which can be saved
 to a file (and also loaded from a file) for further processing.
-Selection is done by either choosing "Add To Selected" from the context
+Selection is done by either choosing "Add to Selected" from the context
 menu (right click) of the element or by clicking left on an element
 while pressing the "Control" key.
 
@@ -236,7 +236,7 @@ as a group in [netedit](Netedit/index.md).
 ## Locating Objects
 
 All simulation objects can be located based on their ID by using the
-locate dialog ![Locate.png](images/Locate.png "Locate"). By
+locate dialog ![button_locate.png](images/button_locate.png "Locate"). By
 clicking this button a sub-menu for selecting the object type is
 opened. The following types are available:
 
@@ -244,6 +244,7 @@ opened. The following types are available:
 - [Edge](Networks/PlainXML.md#edge_descriptions)
 - [Vehicle](Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md)
 - [Person](Specification/Persons.md)
+- [Container](Specification/Containers.md)
 - [Traffic light](Simulation/Traffic_Lights.md)
 - Additional infrastructure for [detecting](Simulation/Output/index.md#simulated_detectors) or for [influencing traffic](index.md#traffic_management_and_other_structures).
 - [Point of Interest (PoI)](Simulation/Shapes.md#poi_point_of_interest_definitions)
@@ -451,9 +452,9 @@ connections exist.
   different. Also, the indices may be freely customized by the user
   (e.g. to define signal groups). These indices are shown using the
   junction visualization option *Show link tls index*.
-  
+
 ### Check connected components
-You can show all network components that are reachable from a particular lane by right-clicking on a lane and then using the 'select reachable' menu option. A new menu opens where you have to select the vehicle class to check. After choosing a vehicle class, all reachable lanes will be added to the lane selection and the edge coloring mode will be set to 'color by selection'. 
+You can show all network components that are reachable from a particular lane by right-clicking on a lane and then using the 'select reachable' menu option. A new menu opens where you have to select the vehicle class to check. After choosing a vehicle class, all reachable lanes will be added to the lane selection and the edge coloring mode will be set to 'color by selection'.
 Consequently, all reachable lanes will be colored blue and all unreachable lanes will be gray.
 
 ### Color by reachability
@@ -466,21 +467,31 @@ The following coloring options are useful in this regard:
 - 'show edge color value': show the actual travel times for each edge
 - disable 'constant text size' for 'show edge color value': avoid cluttering the display when zoomed out
 
+## Simulation mode/model: micro or meso? sublane?
+
+- Under a meso-simulation: No lane can be selected/shown. "segment" information will be displayed by right-clicking an edge
+  or further choosing "Show Parameter" (see the example image below).
+  ![segment_example](https://github.com/eclipse-sumo/sumo/assets/26454969/74eee4d2-5799-4a0e-a96e-6032bef34a3a)
+- Under a mirco-simulation: Each lane ID can be displayed by mause overing, when the icon "View Tooltips" is toggled.
+  Each lane can be selected.
+- If specific models are used, e.g. sublane and IDM, the respective information can be seen by right-clicking
+  a road user (vehicle, pedestrian,train...) and further choosing "Show Parameter".
+
 # Changing the appearance/visualisation of the simulation
 
 The View Settings menu allows to change and customize the simulations'
 appearance and visualization. To open the visualization settings use
-![Colorwheel.gif](images/Colorwheel.gif "Colorwheel") in the
+![icon_colorwheel.png](images/icon_colorwheel.png "Colorwheel") in the
 menu bar at the top of the view.
 
 For customizing the simulation one can make changes e.g. to the
 background coloring, streets and vehicle appearance as well as the
 visualization of POIs. Furthermore one can save
-(![Save_to_registry.gif](images/Save_to_registry.gif "Save to registry")) and delete
-(![Delete_from_registry.gif](images/Delete_from_registry.gif "Delete from registry")‎) settings to the registry or export
-(![Save.gif](images/Save.gif "Save")) custom made settings
+(![icon_save_database.png](images/icon_save_database.png "Save to registry")) and delete
+(![icon_removedb.png](images/icon_removedb.png "Delete from registry")) settings to the registry or export
+(![icon_save.png](images/icon_save.png "Save")) custom made settings
 files and load previews settings again
-![Open_sim.png](images/Open_sim.png "Open sim"). So one can
+![icon_open.png](images/icon_open.png "Open sim"). So one can
 use different favorite settings files for any simulation.
 
 The current settings file is shown in a drop down menu in the top bar of
@@ -501,10 +512,10 @@ most) of these objects:
 - id options
   - *Show id*: Enable drawing of object IDs
   - *constant text size*: toggle whether the visual text size will stay constant when zooming
-  - *Size*: Size of the drawn ID  
+  - *Size*: Size of the drawn ID
   - *Color*: Color of drawn ID
   - *Background*: Background color of drawn ID
-  - *Show name*: Show optional name (either using the 'name' attribute or 'name' `<param>`)  
+  - *Show name*: Show optional name (either using the 'name' attribute or 'name' `<param>`)
 - Coloring options: Color by some attribute and change the color
 value/range
   - Show color value: show the numerical value that is used for
@@ -568,11 +579,11 @@ value/range
 
 - Show blinkers / brake lights
 - Show brake gap
-- Show route index: When activating *show route* in the vehicle context menu, each highlighted edge is annotated with it's index along the route (permitting to analyze looped routes)
+- Show route index: When activating *show route* in the vehicle context menu, each highlighted edge is annotated with its index along the route (permitting to analyze looped routes)
 - Show parking info: When activating *show route* in the vehicle context menu, the vehicle is annotated with the number of failed parking attempts and each parking area is annotated with the last target selection score
 - Show minimum gap
 - Show [Bluetooth range](Simulation/Bluetooth.md)
-- Scale length with gemeotry (see [length-geometry-mismatch](Simulation/Distances.md#vehicle_lengths_in_sumo-gui)
+- Scale length with geometry (see [length-geometry-mismatch](Simulation/Distances.md#vehicle_lengths_in_sumo-gui))
 
 ### Scaling
 
@@ -580,7 +591,7 @@ Vehicle size is affected by the following features
 
 - **Exaggerate by** : Sets a constant scaling factor
 - **Draw with constant size when zoomed out**: Increases vehicle size (relative to road network) and thereby keeps them visible when zooming out
-It is also possible to scale the size of the vehicle according it's attributes.
+It is also possible to scale the size of the vehicle according its attributes.
 - **Scale size**: Selects scaling by a given attribute (i.e. speed). The user may configure a table of scaling factors corresponding to a list of numerical values (with automatic interpolation). This works similar to color interpolation.
 
 ### Textual annotations
@@ -589,11 +600,11 @@ The following textual annotations are supported:
 
 - **vehicle id**: Renders the vehicle id and also 'line' attribute if defined for the vehicle
 - **vehicle color value**: The numerical value that forms the basis for coloring (i.e. speed) is rendered
-- **vehicle scale value**: The numerical value that forms the basis for scaling (i.e. acceleration( is rendered. It may be useful to activate scaling just for the textual value (and setting a scaling factors to 1). 
+- **vehicle scale value**: The numerical value that forms the basis for scaling (i.e. acceleration( is rendered. It may be useful to activate scaling just for the textual value (and setting a scaling factors to 1).
 - **Vehicle text param**: Renders any [Generic Parameter](Simulation/GenericParameters.md) set on the vehicle. This also supports any [virtual parameters accessible via TraCI](TraCI/Vehicle_Value_Retrieval.md#device_and_lanechangemodel_parameter_retrieval_0x7e)
 
 
-Each text can be configured with regard to it's size color and background color. By activating the option *Only for selected*, The textual annotation is limited to vehicles with the [*selected*](#selecting_objects) status.
+Each text can be configured with regard to its size color and background color. By activating the option *Only for selected*, The textual annotation is limited to vehicles with the [*selected*](#selecting_objects) status.
 
 ## Edge/Lane Visualisation Settings
 
@@ -693,7 +704,7 @@ well](#changing_the_appearancevisualisation_of_the_simulation).
 In addition to changing the appearance of simulated structures, one may
 also load additional background images ("decals") into
 **sumo-gui**. For this, open the visualization
-settings using ![Colorwheel.gif](images/Colorwheel.gif "Colorwheel") and - if you are not yet here - choose the
+settings using ![icon_colorwheel.png](images/icon_colorwheel.png "Colorwheel") and - if you are not yet here - choose the
 "Background" panel (see Figure below). You will see a table with the following
 columns: **file**, **centerX**, **centerY**, **width**,
 **height**, **rotation**, **layer** and **relative**.
@@ -753,7 +764,7 @@ The following attributes are supported
 
 !!! note
     When loading an image file with an embedded geo-reference (i.e. [GeoTIFF](https://en.wikipedia.org/wiki/GeoTIFF)) and the simulation network also has a geo-reference, then the image will be positioned automatically.
-    
+
 !!! note
     Background images for a network can be downloaded with the [tileGet tool](Tools/Misc.md#tilegetpy) or by using the [osmWebWizard](Tools/Import/OSM.md#osmwebwizardpy).
 
@@ -777,15 +788,15 @@ Additionally, the visibility of traffic light related items can be set (see [aut
 
 **sumo-gui** uses the same configuration files as
 SUMO. The recognized options can be obtained by calling *sumo --help* or
-you save a configuration file with default settings by calling `sumo --save-template <file> --save-commented`. 
+you save a configuration file with default settings by calling `sumo --save-template <file> --save-commented`.
 
 The options in the *GUI* category are specific to sumo-gui
 
 -  **--gui-settings-file** (shortcut **-g**) allows to load a previously saved gui-settings file (see below)
--  **-S, --start**: starts the simulation upon opening the gui (without the need to click the *start* button
+-  **-S, --start**: starts the simulation upon opening the gui (without the need to click the *start* button)
 -  **-Q, --quit-on-end**: closes the gui upon simulation end
 -  **-d, --delay**: sets an initial simulation delay to prevent the simulation from running to quickly
-- **--window-size WIDTH,HEIGHT**: sets the iniial window size (by default the previous size is restored)
+- **--window-size WIDTH,HEIGHT**: sets the initial window size (by default the previous size is restored)
 - **--window-pos X,Y**: sets the initial window position (by default the previous position is restored)
 
 A sumo configuration that loads gui settings is shown below:
@@ -810,9 +821,9 @@ configuration:
 
 All the settings configured in the *View Settings* dialog can be saved to a file and re-used for a new simulation. We refer to such files as gui-settings files. Such a file can also include information about breakpoints, screenshots, simulation delay and background images.
 The easiest way to obtain a gui-settings file is via the *View Settings*-Dialog
-![Open_viewsettings_editor.gif](images/Open_viewsettings_editor.gif
+![icon_colorwheel.png](images/icon_colorwheel.png
 "Open viewsettings editor"). Simply modify the settings and
-save ![Save.gif](images/Save.gif "Save").
+save ![icon_save.png](images/icon_save.png "Save").
 
 Note, that the gui-settings-file obtained this way only contain
 information about the viewport (zoom and offset), delay, breakpoints and
@@ -823,11 +834,11 @@ decals if the corresponding check-boxes are activated before saving.
 
 ```xml
     <viewsettings>
-        <scheme name="..."
+        <scheme name="...">
            ...
         </scheme>
 
-        <viewport zoom="200" x="100" y="-100"/>
+        <viewport zoom="200" x="100" y="-100" angle="0.00"/>
         <delay value="42"/>
         <decal file="background.gif" centerX="550.00" centerY="1530.00" width="64.00" height="64.00" rotation="0.00"/>
         <breakpoint value="42"/>
@@ -838,7 +849,7 @@ decals if the corresponding check-boxes are activated before saving.
 
 ## Minimal settings file
 
-It possible to reference a predefined scheme by it's name alone:
+It possible to reference a predefined scheme by its name alone:
 
 ```xml
 <viewsettings>
@@ -865,7 +876,7 @@ Alternatively, a breakpoint-file definition can be specified in the gui-settings
 The breakpoints file should hold one time-value per line.
 A file, suitable for loading breakpoints can be obtained by setting
 breakpoints in the gui and using the menu-option for saving (Edit-\>Edit
-Breakpoints-\>save). 
+Breakpoints-\>save).
 
 A further way to set breakpoints is by using the sumo option **--breakpoints** to load a comma-separated list of time values (shortcut **-B**). This circumvents the need for a gui-settings file.
 
@@ -890,7 +901,7 @@ elements to the configuration:
 
 # Multiple Views
 
-Using the (![NewView.gif](images/NewView.gif
+Using the (![icon_new_window.png](images/icon_new_window.png
 "New view"))-button, multiple viewing windows can be opened onto the same
 simulation. The visualization settings can be set
 independently for each view. The viewing windows can be managed using
@@ -901,15 +912,15 @@ viewing window is opened for each file at the start of the simulation.
 
 # 3D Visualization
 
-When sumo-gui was compiled with [OpenSceneGraph 
-(OSG)](http://www.openscenegraph.org/) support an additional
-(![NewView3D.gif](images/NewView3D.gif "New 3D view"))-button is
+When sumo-gui was compiled with [OpenSceneGraph
+(OSG)](https://www.openscenegraph.org/) support an additional
+(![icon_new_window_3d.png](images/icon_new_window_3d.png "New 3D view"))-button is
 present to open a new 3D view. A pre-compiled Windows version for testing is available
-[here](https://sumo.dlr.de/daily/sumo-win64extra-git.zip). Optionally sumo-gui will open a 3D view already from the start by 
+[here](https://sumo.dlr.de/daily/sumo-win64extra-git.zip). Optionally sumo-gui will open a 3D view already from the start by
 supplying the command line option **--osg-view true**.
 
 ## 3D Viewport
-The view of the 3D scene can be changed using two methods: The camera can be moved by mouse and keyboard or the view can be defined in the 
+The view of the 3D scene can be changed using two methods: The camera can be moved by mouse and keyboard or the view can be defined in the
 viewport dialog. The following table summarizes which mouse actions and keys can be used to control the view.
 
 | Name          | Description                                                                                                                      |
@@ -924,15 +935,15 @@ viewport dialog. The following table summarizes which mouse actions and keys can
 | RMB drag      | Zoom view in `terrain` mode                                                                                                      |
 | Mouse movement| Rotate view in `ego` mode (with eye position as pivot point)                                                                     |
 
-Open the viewport editor using the ![Open_viewport_editor.gif](images/Open_viewport_editor.gif
-"Open viewport editor") button. The camera position itself is listed in the left column wheras right "LookAt" coordinates define the 
+Open the viewport editor using the ![icon_magnify.png](images/icon_magnify.png
+"Open viewport editor") button. The camera position itself is listed in the left column whereas right "LookAt" coordinates define the
 target to look at. "LookAt" coordinates are normalized to length 1 by OSG automatically.
 
-Interacting with network elements and vehicles works like in the 2D view: Context-dependent options are available by RMB click on the object 
+Interacting with network elements and vehicles works like in the 2D view: Context-dependent options are available by RMB click on the object
 to inspect.
 
 ## Rendering statistics
-OSG draws some rendering statistics (e.g. frames per seconds) on top of the 3D view by pressing the `I` key. Pressing the key multiple times will unveal different statistics and finally hide them again.
+OSG draws some rendering statistics (e.g. frames per seconds) on top of the 3D view by pressing the `I` key. Pressing the key multiple times will unveil different statistics and finally hide them again.
 
 ## Automatically generated 3D environment
 Only some of the regular network components have been ported to the 3D view (yet). Currently the following are displayed:
@@ -942,7 +953,7 @@ Only some of the regular network components have been ported to the 3D view (yet
  - pedestrian crossings
 - traffic lights
 
-Automatically generated traffic lights come in different variants and can be shown/hidden independently of each other 
+Automatically generated traffic lights come in different variants and can be shown/hidden independently of each other
 through the 3D part of the [GUI settings](#changing_the_appearancevisualisation_of_the_simulation):
 
 - bubbles above the stop line which change their color according to the connection they belong to
@@ -951,23 +962,23 @@ through the 3D part of the [GUI settings](#changing_the_appearancevisualisation_
 ![OSGTrafficLights.png](images/OSGTrafficLights.png)
 
 ### Semi-automatic 3D traffic light
-Alternatively to automatically generated traffic lights, there is the option to place a single traffic light on a pole 
-at a custom position and orientation in the network. The [decals table](#showing_background_images) interprets the following 
-*magic* entry in the file column to a single traffic light: `tl:<TL_ID>:<TLLINKINDEX>`. The current signal state is updated 
+Alternatively to automatically generated traffic lights, there is the option to place a single traffic light on a pole
+at a custom position and orientation in the network. The [decals table](#showing_background_images) interprets the following
+*magic* entry in the file column to a single traffic light: `tl:<TL_ID>:<TLLINKINDEX>`. The current signal state is updated
 accordingly to the *tlLinkIndex* `<TLLINKINDEX>` of the traffic light `<TL_ID>`.
 
 ## Adding 3D objects
 ### Static models
 Loading individual 3D objects can be done through the [decals table](#showing_background_images) of the GUI settings.
-3D object files in file formats supported by OSG (e.g. obj, 3ds) are loaded in the scene and positioned with the 
-offset values from the decals table. For large scenes, it may be advantageous to build a single 3D object which 
+3D object files in file formats supported by OSG (e.g. obj, 3ds) are loaded in the scene and positioned with the
+offset values from the decals table. For large scenes, it may be advantageous to build a single 3D object which
 contains all elements (e.g. buildings) used in sumo-gui.
 
 Additionally, the same background images as in the 2D view can be loaded.
 
 ### Vehicle models
-Some basic vehicle models are shipped with SUMO in the `data/3D` directory. Custom vehicle models can be specified 
-in the `osgFile` attribute of the respective vehicle type (see [vehicle types](Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#available_vtype_attributes)). If the custom model 
+Some basic vehicle models are shipped with SUMO in the `data/3D` directory. Custom vehicle models can be specified
+in the `osgFile` attribute of the respective vehicle type (see [vehicle types](Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#available_vtype_attributes)). If the custom model
 cannot be used, it is replaced by a cone shape pointing to the direction of travel.
 
 
@@ -975,7 +986,7 @@ cannot be used, it is replaced by a cone shape pointing to the direction of trav
 
 !!! caution
     The 3D-Visualization is still experimental
-    
+
 - no pedestrian and cyclist models
 - performance problems when simulating several vehicles
 - reload leaves previous 3D scene in place
@@ -986,7 +997,7 @@ cannot be used, it is replaced by a cone shape pointing to the direction of trav
 Several applications generate edge-related measures for one or more
 time-intervals.
 
-- [edgeData-output files](Simulation/Output/Lane-_or_Edge-based_Traffic_Measures.md)  
+- [edgeData-output files](Simulation/Output/Lane-_or_Edge-based_Traffic_Measures.md)
 - edge-probability files generated by [randomTrips.py](Tools/Trip.md#customized_weights) with option **--weights-output-prefix**
 - [marouter netload-output](marouter.md#macroscopic_outputs)
 - [Smoothed traveltimes from device.rerouting](Demand/Automatic_Routing.md) when running [sumo](sumo.md) with option **--device.rerouting.output**.
@@ -1005,12 +1016,12 @@ contained data to see how various traffic measures changed over time
 
 ## Loading Data
 
-Edgedata files for visualization can be loaded by setting option **--edgedata-files**. 
+Edgedata files for visualization can be loaded by setting option **--edgedata-files**.
 When loaded this way, the simulation end time will be
 automatically adjusted to the end of the data range.
 
 Edgedata files can also be loaded in **sumo-gui** from
-the menu using *File-\>Open EdgeData*. 
+the menu using *File-\>Open EdgeData*.
 
 All attributes will be loaded and can be selected in the street visualization
 settings
@@ -1020,12 +1031,12 @@ settings
 Instead of loading data from a file you can visualize the aggregated data that is currently being collected by the simulation.
 For this you need to color 'by live edgeData' and select the id of the configure `edgeData` (or `laneData`) element.
 This will always show the current aggregation interval (so the collected data is reset to 0 at the start of a new interval).
-By using the option **--edgedata-output FILE** or **--lanedata-output FILE** you can quickly configure a data colletion that aggregates over the whole simulation.
+By using the option **--edgedata-output FILE** or **--lanedata-output FILE** you can quickly configure a data collection that aggregates over the whole simulation.
 
 ## Coloring by Data
 
 To make use of the loaded data, street coloring must be set to **color by
-edgeData** in the visualization settings dialog. 
+edgeData** in the visualization settings dialog.
 The button *Recalibrate Rainbow* can be used to generate a
 coloring scheme that spans the loaded data range for the selected attribute.
 
@@ -1050,7 +1061,7 @@ Simulation](Simulation/Shapes.md)
 
 ## Display Arbitrary Text in the Simulation View
 To display arbitrary text in the simulation view, the easiest way is to place a poi element with alpha channel 0 (invisible),
-set it's type attribute to the text you wish to show and load gui settings that show poi types in the desired color and size.
+set its type attribute to the text you wish to show and load gui settings that show poi types in the desired color and size.
 
 ```xml
 <poi id="textPlacement0" type="my custom text" x="myX" y="myY" color="0,0,0,0"/>
@@ -1074,7 +1085,7 @@ The [background images (decals)](#showing_background_images) support attribute `
 ## Showing routes and route-related information
 
 - To show the route(s) of a vehicle in the simulation, right-click and
-  select *Show Current Route* or *Show all Routes*. 
+  select *Show Current Route* or *Show all Routes*.
   - To show only the remaining portion of the current route, select *Show Future Route*.
   - The upcoming stops and their planned timing (or trigger condition) is automatically shown along the route. To show only the next round of a cyclic route (i.e. for public transport), disable the checkbox 'show looped route'
   - Direction reversal of rail vehicles will be shown along the route with the text 'reverse' and an index.
@@ -1111,6 +1122,8 @@ helpful:
 - Edge settings:
   - *Exaggerate width by 0.1* (otherwise the shapes overlap which makes it hard to understand them)
   - *Color by selection* (coloring individual lanes makes it easier to understand geometry before and after [internal junctions](Networks/SUMO_Road_Networks.md#internal_junctions))
+
+In the [object locator menu](#locating_objects), activate the "Show internal Structures" checkbox to have them appear in the edge and junction locator dialogs. They are found at the end of the object list since their ID starts with a ':'.
 
 -----
 

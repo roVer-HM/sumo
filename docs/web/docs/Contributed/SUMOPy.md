@@ -6,8 +6,8 @@ This document describes the capabilities and basic usage of the software
 SUMOPy. SUMOPy is intended to expand the user-base of the traffic
 micro-simulator SUMO by providing a user-friendly, yet flexible
 simulation suite. The original publication related to SUMOPy can be
-found at the [University of Bologna](https://web.archive.org/web/20181101145057/http://campus.unibo.it/200538/1/Research-A-Choudhry-657079-.pdf)
-and in the [proceedings of the SUMO2013](http://sumo.dlr.de/2013/SUMO2013_15-17May%202013_Berlin-Adlershof.pdf).
+found at the [University of Bologna](https://web.archive.org/web/20181101145057/https://campus.unibo.it/200538/1/Research-A-Choudhry-657079-.pdf)
+and in the [proceedings of the SUMO2013](https://sumo.dlr.de/2013/SUMO2013_15-17May%202013_Berlin-Adlershof.pdf).
 
 A further scope of SUMOPy is to manage the huge amount of data necessary
 to run complex multi-modal simulations. This includes different demand
@@ -101,7 +101,7 @@ following documents describe the basic functioning of the GUI.
 - [Getting started\!](../Contributed/SUMOPy/GUI/Getting_Started.md)
 - [Demand modelling with GUI](../Contributed/SUMOPy/GUI/Demand_Modelling.md)
   - [Zone to zone demand flows](../Contributed/SUMOPy/Demand/Zone_To_Zone.md)
-  - [Turn flows](../Contributed/SUMOPy/Demand/Turn_Flows.md) 
+  - [Turn flows](../Contributed/SUMOPy/Demand/Turn_Flows.md)
 
 # Simulation processes
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -64,10 +64,12 @@ GNECalibratorFlowDialog::GNECalibratorFlowDialog(GNEAdditional* editedCalibrator
 
     // 1 create combobox for type
     new FXLabel(columnLeftLabel, toString(SUMO_TAG_VTYPE).c_str(), nullptr, GUIDesignLabelThick(JUSTIFY_NORMAL));
-    myComboBoxVehicleType = new FXComboBox(columnLeftValue, GUIDesignComboBoxNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignComboBox);
+    myComboBoxVehicleType = new MFXComboBoxIcon(columnLeftValue, GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItemsMedium,
+            this, MID_GNE_SET_ATTRIBUTE, GUIDesignComboBox);
     // 2 create combobox for route
     new FXLabel(columnLeftLabel, toString(SUMO_ATTR_ROUTE).c_str(), nullptr, GUIDesignLabelThick(JUSTIFY_NORMAL));
-    myComboBoxRoute = new FXComboBox(columnLeftValue, GUIDesignComboBoxNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignComboBox);
+    myComboBoxRoute = new MFXComboBoxIcon(columnLeftValue, GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItemsMedium,
+                                          this, MID_GNE_SET_ATTRIBUTE, GUIDesignComboBox);
     // 3 create textfield for vehs per hour
     new FXLabel(columnLeftLabel, toString(SUMO_ATTR_VEHSPERHOUR).c_str(), nullptr, GUIDesignLabelThick(JUSTIFY_NORMAL));
     myTextFieldVehsPerHour = new FXTextField(columnLeftValue, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
@@ -122,15 +124,13 @@ GNECalibratorFlowDialog::GNECalibratorFlowDialog(GNEAdditional* editedCalibrator
 
     // fill comboBox of VTypes
     for (const auto& vType : myEditedAdditional->getNet()->getViewNet()->getNet()->getAttributeCarriers()->getDemandElements().at(SUMO_TAG_VTYPE)) {
-        myComboBoxVehicleType->appendItem(vType->getID().c_str());
+        myComboBoxVehicleType->appendIconItem(vType.second->getID().c_str(), vType.second->getACIcon());
     }
-    myComboBoxVehicleType->setNumVisible((int)myComboBoxVehicleType->getNumItems());
 
     // fill comboBox of Routes
     for (const auto& route : myEditedAdditional->getNet()->getViewNet()->getNet()->getAttributeCarriers()->getDemandElements().at(SUMO_TAG_ROUTE)) {
-        myComboBoxRoute->appendItem(route->getID().c_str());
+        myComboBoxRoute->appendIconItem(route.second->getID().c_str(), route.second->getACIcon());
     }
-    myComboBoxRoute->setNumVisible((int)myComboBoxRoute->getNumItems());
 
     // update tables
     updateCalibratorFlowValues();
@@ -139,7 +139,7 @@ GNECalibratorFlowDialog::GNECalibratorFlowDialog(GNEAdditional* editedCalibrator
     initChanges();
 
     // add element if we aren't updating an existent element
-    if (myUpdatingElement == false) {
+    if (!myUpdatingElement) {
         myEditedAdditional->getNet()->getViewNet()->getUndoList()->add(new GNEChange_Additional(myEditedAdditional, true), true);
     }
 
@@ -157,7 +157,7 @@ GNECalibratorFlowDialog::onCmdAccept(FXObject*, FXSelector, void*) {
     std::string operation2 = myUpdatingElement ? ("updated") : ("created");
     std::string parentTagString = myEditedAdditional->getParentAdditionals().at(0)->getTagStr();
     std::string tagString = myEditedAdditional->getTagStr();
-    if (myCalibratorFlowValid == false) {
+    if (!myCalibratorFlowValid) {
         // write warning if netedit is running in testing mode
         WRITE_DEBUG("Opening FXMessageBox of type 'warning'");
         // open warning dialog box
@@ -416,8 +416,8 @@ GNECalibratorFlowDialog::onCmdSetVariable(FXObject*, FXSelector, void*) {
 void
 GNECalibratorFlowDialog::updateCalibratorFlowValues() {
     // update fields
-    myComboBoxVehicleType->setText(myEditedAdditional->getAttribute(SUMO_ATTR_TYPE).c_str());
-    myComboBoxRoute->setText(myEditedAdditional->getAttribute(SUMO_ATTR_ROUTE).c_str());
+    myComboBoxVehicleType->setCurrentItem(myComboBoxVehicleType->findItem(myEditedAdditional->getAttribute(SUMO_ATTR_TYPE).c_str()));
+    myComboBoxRoute->setCurrentItem(myComboBoxVehicleType->findItem(myEditedAdditional->getAttribute(SUMO_ATTR_ROUTE).c_str()));
     myTextFieldVehsPerHour->setText(myEditedAdditional->getAttribute(SUMO_ATTR_VEHSPERHOUR).c_str());
     myTextFieldSpeed->setText(myEditedAdditional->getAttribute(SUMO_ATTR_SPEED).c_str());
     myTextFieldColor->setText(myEditedAdditional->getAttribute(SUMO_ATTR_COLOR).c_str());

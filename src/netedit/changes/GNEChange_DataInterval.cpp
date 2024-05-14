@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -44,7 +44,7 @@ GNEChange_DataInterval::GNEChange_DataInterval(GNEDataInterval* dataInterval, bo
 GNEChange_DataInterval::~GNEChange_DataInterval() {
     myDataInterval->decRef("GNEChange_DataInterval");
     if (myDataInterval->unreferenced() &&
-            myDataInterval->getNet()->getAttributeCarriers()->retrieveDataSet(myDataSetParent, false) &&
+            myDataInterval->getNet()->getAttributeCarriers()->retrieveDataSet(myDataSetParent->getID(), false) &&
             myDataInterval->getNet()->getAttributeCarriers()->retrieveDataInterval(myDataInterval, false)) {
         // show extra information for tests
         WRITE_DEBUG("Deleting unreferenced " + myDataInterval->getTagStr() + " [" +

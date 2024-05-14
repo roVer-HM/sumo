@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -49,9 +49,57 @@ GNELaneTemplate::getGUIGlObject() {
 }
 
 
+const GUIGlObject*
+GNELaneTemplate::getGUIGlObject() const {
+    return nullptr;
+}
+
+
 void
 GNELaneTemplate::updateGeometry() {
     throw InvalidArgument("cannot be called in templates");
+}
+
+
+bool
+GNELaneTemplate::checkDrawFromContour() const {
+    return false;
+}
+
+
+bool
+GNELaneTemplate::checkDrawToContour() const {
+    return false;
+}
+
+
+bool
+GNELaneTemplate::checkDrawRelatedContour() const {
+    return false;
+}
+
+
+bool
+GNELaneTemplate::checkDrawOverContour() const {
+    return false;
+}
+
+
+bool
+GNELaneTemplate::checkDrawDeleteContour() const {
+    return false;
+}
+
+
+bool
+GNELaneTemplate::checkDrawSelectContour() const {
+    return false;
+}
+
+
+bool
+GNELaneTemplate::checkDrawMoveContour() const {
+    return false;
 }
 
 

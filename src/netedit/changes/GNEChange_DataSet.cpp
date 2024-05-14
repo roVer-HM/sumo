@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -44,7 +44,7 @@ GNEChange_DataSet::~GNEChange_DataSet() {
     assert(myDataSet);
     myDataSet->decRef("GNEChange_DataSet");
     if (myDataSet->unreferenced() &&
-            myDataSet->getNet()->getAttributeCarriers()->retrieveDataSet(myDataSet, false)) {
+            myDataSet->getNet()->getAttributeCarriers()->retrieveDataSet(myDataSet->getID(), false)) {
         // show extra information for tests
         WRITE_DEBUG("Deleting unreferenced " + myDataSet->getTagStr() + " '" + myDataSet->getID() + "'");
         // make sure that element isn't in net before removing

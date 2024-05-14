@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -85,6 +85,12 @@ GNEVariableSpeedSignStep::getMoveOperation() {
 }
 
 
+bool
+GNEVariableSpeedSignStep::checkDrawMoveContour() const {
+    return false;
+}
+
+
 SUMOTime
 GNEVariableSpeedSignStep::getTime() const {
     return myTime;
@@ -111,9 +117,7 @@ GNEVariableSpeedSignStep::getPositionInView() const {
 
 void
 GNEVariableSpeedSignStep::updateCenteringBoundary(const bool /*updateGrid*/) {
-    myAdditionalBoundary.reset();
-    myAdditionalBoundary.add(getPositionInView());
-    myAdditionalBoundary.grow(5);
+    // nothing to do
 }
 
 
@@ -132,9 +136,9 @@ GNEVariableSpeedSignStep::getParentName() const {
 void
 GNEVariableSpeedSignStep::drawGL(const GUIVisualizationSettings& s) const {
     // draw rerouter interval as listed attribute
-    drawListedAddtional(s, getParentAdditionals().front()->getPositionInView(),
-                        0, 0, RGBColor::WHITE, RGBColor::BLACK, GUITexture::VARIABLESPEEDSIGN_STEP,
-                        getAttribute(SUMO_ATTR_TIME) + ": " + getAttribute(SUMO_ATTR_SPEED) + "km/h");
+    drawListedAdditional(s, getParentAdditionals().front()->getPositionInView(),
+                         0, 0, RGBColor::WHITE, RGBColor::BLACK, GUITexture::VARIABLESPEEDSIGN_STEP,
+                         getAttribute(SUMO_ATTR_TIME) + ": " + getAttribute(SUMO_ATTR_SPEED) + "km/h");
 }
 
 
@@ -183,7 +187,7 @@ GNEVariableSpeedSignStep::setAttribute(SumoXMLAttr key, const std::string& value
         case SUMO_ATTR_TIME:
         case SUMO_ATTR_SPEED:
         case GNE_ATTR_SELECTED:
-            undoList->changeAttribute(new GNEChange_Attribute(this, key, value));
+            GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -38,13 +38,13 @@ netedit.changeEditMode(netedit.attrs.modes.network.selectLane)
 netedit.inspectMode()
 
 # inspect edge
-netedit.leftClick(referencePosition, 250, 165)
+netedit.leftClick(referencePosition, 400, 165)
 
 # Change parameter 0 with a non valid value (empty speed)
-netedit.modifyAttribute(netedit.attrs.lane.inspect.opposite, "%%%&&&", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspect.opposite, "%%%&&&", False)
 
 # Change parameter 0 with a non valid value (dummy speed)
-netedit.modifyAttribute(netedit.attrs.lane.inspect.opposite, "gneE3_1", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspect.opposite, "gneE3_1", False)
 
 # recompute
 netedit.rebuildNetwork()

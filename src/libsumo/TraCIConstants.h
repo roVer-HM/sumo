@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2007-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2007-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -41,7 +41,7 @@ namespace libsumo {
 // ****************************************
 // VERSION
 // ****************************************
-TRACI_CONST int TRACI_VERSION = 20;
+TRACI_CONST int TRACI_VERSION = 21;
 
 // ****************************************
 // COMMANDS
@@ -635,13 +635,17 @@ TRACI_CONST int ROUTING_MODE_EFFORT = 0x02;
 TRACI_CONST int ROUTING_MODE_COMBINED = 0x03;
 // use aggregated travel times from device.rerouting enriched with custom weights
 TRACI_CONST int ROUTING_MODE_AGGREGATED_CUSTOM = 0x04;
+// when this bit is set, routing does not consider temporary permission changes (i.e. from rerouters)
+// note: can be combined with either one of the other modes (bitwise)
+TRACI_CONST int ROUTING_MODE_IGNORE_TRANSIENT_PERMISSIONS = 0x08;
 
 // ****************************************
 // Traffic light types
 // ****************************************
 TRACI_CONST int TRAFFICLIGHT_TYPE_STATIC = 0x00;
 TRACI_CONST int TRAFFICLIGHT_TYPE_ACTUATED = 0x03;
-TRACI_CONST int TRAFFICLIGHT_TYPE_DELAYBASED = 0x04;
+TRACI_CONST int TRAFFICLIGHT_TYPE_NEMA = 0x04;
+TRACI_CONST int TRAFFICLIGHT_TYPE_DELAYBASED = 0x05;
 
 // ****************************************
 // Lane change directions
@@ -718,6 +722,18 @@ TRACI_CONST int LAST_STEP_OCCUPANCY = 0x13;
 
 // last step vehicle halting number (get: e2, e3, lanes, edges)
 TRACI_CONST int LAST_STEP_VEHICLE_HALTING_NUMBER = 0x14;
+
+// upstream junction (edges)
+TRACI_CONST int FROM_JUNCTION = 0x7b;
+
+// downstream junction (edges)
+TRACI_CONST int TO_JUNCTION = 0x7c;
+
+// incoming edges (junction)
+TRACI_CONST int INCOMING_EDGES = 0x7b;
+
+// outgoing edges (junction)
+TRACI_CONST int OUTGOING_EDGES = 0x7c;
 
 // last step mean vehicle length (get: induction loops, lanes, edges)
 TRACI_CONST int LAST_STEP_LENGTH = 0x15;
@@ -889,6 +905,12 @@ TRACI_CONST int TL_CONSTRAINT_REMOVE = 0x35;
 
 // update rail signal constraints by vehID (set: traffic lights)
 TRACI_CONST int TL_CONSTRAINT_UPDATE = 0x36;
+
+// add rail signal constraint (set: traffic lights)
+TRACI_CONST int TL_CONSTRAINT_ADD = 0x37;
+
+// retrieve duration spent in the current phase (get: traffic lights)
+TRACI_CONST int TL_SPENT_DURATION = 0x38;
 
 // outgoing link number (get: lanes)
 TRACI_CONST int LANE_LINK_NUMBER = 0x30;
@@ -1142,6 +1164,9 @@ TRACI_CONST int VAR_DEPART_DELAY = 0x3b;
 
 // boarding time (get: vehicle type, vehicle, person)
 TRACI_CONST int VAR_BOARDING_DURATION = 0x2f;
+
+// impatience (get,set: vehicle type, vehicle, person)
+TRACI_CONST int VAR_IMPATIENCE = 0x26;
 
 TRACI_CONST int VAR_BUS_STOP_ID_LIST = 0x9f;
 
@@ -1424,4 +1449,3 @@ TRACI_CONST int VAR_HAS_VIEW = 0xa7;
 } // namespace libsumo
 
 #undef TRACI_CONST
-

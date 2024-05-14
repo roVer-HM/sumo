@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2006-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2006-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -16,6 +16,7 @@
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
 /// @author  Yun-Pang Floetteroed
+/// @author  Mirko Barthauer
 /// @date    05 Apr. 2006
 ///
 // An O/D (origin/destination) matrix
@@ -75,6 +76,9 @@ ODMatrix::add(double vehicleNumber, const std::pair<SUMOTime, SUMOTime>& beginEn
               const std::string& origin, const std::string& destination,
               const std::string& vehicleType, const bool originIsEdge, const bool destinationIsEdge,
               bool noScaling) {
+    if (vehicleNumber == 0) {
+        return false;
+    }
     myNumLoaded += vehicleNumber;
     if (!originIsEdge && !destinationIsEdge && myDistricts.get(origin) == nullptr && myDistricts.get(destination) == nullptr) {
         WRITE_WARNINGF(TL("Missing origin '%' and destination '%' (% vehicles)."), origin, destination, toString(vehicleNumber));
@@ -82,12 +86,12 @@ ODMatrix::add(double vehicleNumber, const std::pair<SUMOTime, SUMOTime>& beginEn
         myMissingDistricts.insert(origin);
         myMissingDistricts.insert(destination);
         return false;
-    } else if (!originIsEdge && myDistricts.get(origin) == 0 && vehicleNumber > 0) {
+    } else if (!originIsEdge && myDistricts.get(origin) == 0) {
         WRITE_ERRORF(TL("Missing origin '%' (% vehicles)."), origin, toString(vehicleNumber));
         myNumDiscarded += vehicleNumber;
         myMissingDistricts.insert(origin);
         return false;
-    } else if (!destinationIsEdge && myDistricts.get(destination) == 0 && vehicleNumber > 0) {
+    } else if (!destinationIsEdge && myDistricts.get(destination) == 0) {
         WRITE_ERRORF(TL("Missing destination '%' (% vehicles)."), destination, toString(vehicleNumber));
         myNumDiscarded += vehicleNumber;
         myMissingDistricts.insert(destination);
@@ -250,8 +254,9 @@ ODMatrix::write(SUMOTime begin, const SUMOTime end,
     const OptionsCont& oc = OptionsCont::getOptions();
     std::string personDepartPos = oc.isSet("departpos") ? oc.getString("departpos") : "random";
     std::string personArrivalPos = oc.isSet("arrivalpos") ? oc.getString("arrivalpos") : "random";
-    SumoXMLAttr fromAttr = oc.getBool("junctions") ? SUMO_ATTR_FROMJUNCTION : SUMO_ATTR_FROM;
-    SumoXMLAttr toAttr = oc.getBool("junctions") ? SUMO_ATTR_TOJUNCTION : SUMO_ATTR_TO;
+    SumoXMLAttr fromAttr = oc.getBool("junctions") ? SUMO_ATTR_FROM_JUNCTION : SUMO_ATTR_FROM;
+    SumoXMLAttr toAttr = oc.getBool("junctions") ? SUMO_ATTR_TO_JUNCTION : SUMO_ATTR_TO;
+    const std::string vType = oc.isSet("vtype") ? oc.getString("vtype") : "";
 
     // go through the time steps
     for (SUMOTime t = begin; t < end;) {
@@ -289,6 +294,9 @@ ODMatrix::write(SUMOTime begin, const SUMOTime end,
                 if (pedestrians) {
                     dev.openTag(SUMO_TAG_PERSON).writeAttr(SUMO_ATTR_ID, (*i).id).writeAttr(SUMO_ATTR_DEPART, time2string(t));
                     dev.writeAttr(SUMO_ATTR_DEPARTPOS, personDepartPos);
+                    if (!noVtype && vType.size() > 0) {
+                        dev.writeAttr(SUMO_ATTR_TYPE, vType);
+                    }
                     dev.openTag(SUMO_TAG_WALK);
                     dev.writeAttr(fromAttr, (*i).from);
                     dev.writeAttr(toAttr, (*i).to);

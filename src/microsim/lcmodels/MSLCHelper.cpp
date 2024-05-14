@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2013-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -202,7 +202,12 @@ MSLCHelper::getRoundaboutDistBonus(const MSVehicle& veh,
     const double bonus = roundaboutJunctionsAhead * 7.5;
     const double relativeJam = (occupancyOuter - occupancyInner + bonus) / (maxOccupancy + bonus);
     // no bonus if the inner lane or the left lane entering the roundabout is jammed
-    const double jamFactor = MAX2(0.0, relativeJam);
+    double jamFactor = MAX2(0.0, relativeJam);
+    if (veh.getLane()->getEdge().isRoundabout() && curr.lane->getIndex() > neigh.lane->getIndex()) {
+        // only use jamFactor when deciding to move to the inside lane but prefer
+        // staying inside if the distance allows it
+        jamFactor = 1;
+    }
     const double result = distanceInRoundabout * jamFactor * bonusParam * 9; // the 9 is abitrary and only there for backward compatibility
 #ifdef DEBUG_WANTS_CHANGE
     if (debugVehicle) {
@@ -322,6 +327,43 @@ MSLCHelper::getSpeedPreservingSecureGap(const MSVehicle& leader, const MSVehicle
         // avoid emergency deceleration
         return MAX2(vSafe, follower.getCarFollowModel().minNextSpeed(follower.getSpeed(), &follower));
     }
+}
+
+
+bool
+MSLCHelper::isBidiLeader(const MSVehicle* leader, const std::vector<MSLane*>& cont) {
+    if (leader == nullptr) {
+        return false;
+    }
+    const MSLane* lane1 = leader->getLane()->getNormalSuccessorLane()->getBidiLane();
+    const MSLane* lane2 = leader->getLane()->getNormalPredecessorLane()->getBidiLane();
+    if (lane1 == nullptr && lane2 == nullptr) {
+        return false;
+    }
+    bool result = std::find(cont.begin(), cont.end(), lane1) != cont.end();
+    if (!result && lane1 != lane2 && lane2 != nullptr) {
+        result = std::find(cont.begin(), cont.end(), lane2) != cont.end();
+    }
+    return result;
+}
+
+
+bool
+MSLCHelper::isBidiFollower(const MSVehicle* ego, const MSVehicle* follower) {
+    if (follower == nullptr) {
+        return false;
+    }
+    bool result = false;
+    const MSLane* lane1 = follower->getLane()->getNormalSuccessorLane()->getBidiLane();
+    const MSLane* lane2 = follower->getLane()->getNormalPredecessorLane()->getBidiLane();
+    const ConstMSEdgeVector& route = ego->getRoute().getEdges();
+    if (lane1 != nullptr) {
+        result = std::find(route.begin(), route.end(), &lane1->getEdge()) != route.end();
+    }
+    if (!result && lane1 != lane2 && lane2 != nullptr) {
+        result = std::find(route.begin(), route.end(), &lane2->getEdge()) != route.end();
+    }
+    return result;
 }
 
 /****************************************************************************/

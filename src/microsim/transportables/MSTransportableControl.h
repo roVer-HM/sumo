@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -317,7 +317,7 @@ protected:
     std::map<SUMOTime, TransportableVector> myWaitingUntil;
 
     /// the lists of waiting transportables
-    std::map<const MSEdge*, TransportableVector> myWaiting4Vehicle;
+    std::map<const MSEdge*, TransportableVector, ComparatorNumericalIdLess> myWaiting4Vehicle;
 
     /// @brief The number of build transportables
     int myLoadedNumber;

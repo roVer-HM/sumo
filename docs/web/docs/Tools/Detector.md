@@ -65,13 +65,13 @@ name of a typeDistribution).
 
 ## Ambiguity
 
-In many cases, the solutions for a given input is not unique. It is often the case, that a large proportion of the solution space contains "implausible" (i.e. looped / detour) routes. Some strategies for mitigation are described below. In some cases it may be better to use the [routeSampler tool instead](../Demand/Routes_from_Observation_Points.md#chosing_the_right_tool).
+In many cases, the solutions for a given input is not unique. It is often the case, that a large proportion of the solution space contains "implausible" (i.e. looped / detour) routes. Some strategies for mitigation are described below. In some cases it may be better to use the [routeSampler tool instead](../Demand/Routes_from_Observation_Points.md#choosing_the_right_tool).
 
 ### Distribution among candidate successors
 
 By setting the option **--limit** {{DT_INT}}, the flow is assigned in multiple iterations. This can increase running time but causes
 flows to be distributed more evenly so that all routes are used in
-proportion to the incoming and outgoing flows (similar to the behavir of 
+proportion to the incoming and outgoing flows (similar to the behavior of
 [dfrouter](../dfrouter.md)).
 
 
@@ -96,7 +96,7 @@ The tool [implausibleRoutes.py](Routes.md#implausibleroutespy) can be used to ge
 
 This script does the reverse of flowrouter.py and
 [dfrouter](../dfrouter.md) in generating a traffic counts for
-detectors from a route or flow file. It's main purpse  It can also be used to compare the
+detectors from a route or flow file. Its main purpose: It can also be used to compare the
 input counts with the outputs of flowrouter.py and
 [dfrouter](../dfrouter.md). Example:
 
@@ -118,7 +118,7 @@ It requires the use of an input flow file and then performs a comparison between
 This script converts [detector flow files](../Demand/Routes_from_Observation_Points.md#computing_flows) to into [edgeData format](../Simulation/Output/Lane-_or_Edge-based_Traffic_Measures.md#edge-based_network_states) (i.e. to be used by [routeSampler.py](Turns.md#edge_counts) or for [visualization in sumo-gui](../sumo-gui.md#visualizing_edge-related_data))
 Example:
 ```
-<SUMO_HOME>/tools/detector/edgeDataFromFlow.py -d input_detectors.det.xml -f input_flows.txt -o edgedata.xml 
+<SUMO_HOME>/tools/detector/edgeDataFromFlow.py -d input_detectors.det.xml -f input_flows.txt -o edgedata.xml
 ```
 
 # filterFlows.py
@@ -133,8 +133,8 @@ Filters a flow file by detector ids and time range
 Given a file `det.csv` of the following form
 ```
 id;lat;lon
-det1;52.432559;13.496612;1000
-det2;52.432373;13.496142;500
+det1;52.432559;13.496612
+det2;52.432373;13.496142
 ```
 
 It can be turned into a file with detectors with:

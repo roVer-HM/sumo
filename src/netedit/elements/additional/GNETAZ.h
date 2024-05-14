@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -79,7 +79,7 @@ public:
     */
     void writeAdditional(OutputDevice& device) const;
 
-    /// @brief check if current additional is valid to be writed into XML (must be reimplemented in all detector children)
+    /// @brief check if current additional is valid to be written into XML (must be reimplemented in all detector children)
     bool isAdditionalValid() const;
 
     /// @brief return a string with the current additional problem (must be reimplemented in all detector children)
@@ -87,6 +87,14 @@ public:
 
     /// @brief fix additional problem (must be reimplemented in all detector children)
     void fixAdditionalProblem();
+
+    /// @}
+
+    /// @name Function related with contour drawing
+    /// @{
+
+    /// @brief check if draw move contour (red)
+    bool checkDrawMoveContour() const;
 
     /// @}
 
@@ -165,7 +173,7 @@ public:
      */
     void setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList);
 
-    /* @brief method for checking if the key and their conrrespond attribute are valids
+    /* @brief method for checking if the key and their corresponding attribute are valid
      * @param[in] key The attribute key
      * @param[in] value The value associated to key key
      * @return true if the value is valid, false in other case
@@ -180,12 +188,15 @@ public:
 
     /// @}
 
-    /// @brief update TAZ Stadistic
-    void updateTAZStadistic();
+    /// @brief update TAZ Statistic
+    void updateTAZStatistic();
 
 protected:
     /// @brief TAZ center
     Position myTAZCenter;
+
+    /// @brief TAZ center contour
+    GNEContour myTAZCenterContour;
 
 private:
     /// @brief hint size of vertex
@@ -211,9 +222,6 @@ private:
 
     /// @brief Average Sink weight
     double myAverageWeightSink;
-
-    /// @brief draw dotted contours
-    void drawDottedContours(const GUIVisualizationSettings& s, const double TAZExaggeration) const;
 
     /// @brief set attribute after validation
     void setAttribute(SumoXMLAttr key, const std::string& value);

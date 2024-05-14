@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -183,12 +183,6 @@ private:
      * determined from defaultLength of carriages and vehicle length
      * passengerSeats are computed beginning at firstPassengerCarriage */
     void drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool asImage) const;
-
-    /* @brief return the previous lane in this vehicles route including internal lanes
-     * @param[in] current The lane of which the predecessor should be returned
-     * @param[in,out] routeIndex The index of the current or previous non-internal edge in the route
-     */
-    MSLane* getPreviousLane(MSLane* current, int& furtherIndex) const;
 
     /// @brief retrieve information about the current stop state
     std::string getStopInfo() const;

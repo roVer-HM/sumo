@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2007-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -155,7 +155,7 @@ def main(options):
             for edge, group in detReader.getGroups():
                 if options.idfilter is not None and options.idfilter not in group.ids[0]:
                     continue
-                assert(len(group.timeline) <= len(data))
+                assert (len(group.timeline) <= len(data))
                 for i, (flow, speed) in enumerate(group.timeline):
                     addToDataList(data, i, flow)
             allData.append(data)
@@ -169,7 +169,7 @@ def main(options):
                 for edge, group in detReader.getGroups():
                     if options.idfilter is not None and options.idfilter not in group.ids[0]:
                         continue
-                    assert(len(group.timeline) <= len(data))
+                    assert (len(group.timeline) <= len(data))
                     if group.type == detType:
                         for i, (flow, speed) in enumerate(group.timeline):
                             addToDataList(data, i, flow)
@@ -186,7 +186,7 @@ def main(options):
                     continue
                 if options.idfilter is not None and options.idfilter not in group.ids[0]:
                     continue
-                assert(len(group.timeline) <= len(data))
+                assert (len(group.timeline) <= len(data))
                 for i, (flow, speed) in enumerate(group.timeline):
                     addToDataList(data, i, flow)
                 allData.append(data)

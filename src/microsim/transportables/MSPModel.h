@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2014-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2014-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -133,12 +133,18 @@ public:
     static const double RANDOM_POS_LAT;
 
     /* @brief return the arrival direction if the route may be traversed with the given starting direction.
+     * param[out] passedEdges: the number of edges that were successfully traversed
      * returns UNDEFINED_DIRECTION if the route cannot be traversed
      */
-    static int canTraverse(int dir, const ConstMSEdgeVector& route);
+    static int canTraverse(int dir, const ConstMSEdgeVector& route, int& passedEdges);
 
     /// @brief whether movements on intersections are modelled
     virtual bool usingInternalLanes() = 0;
+
+    /// @brief whether travel times and distances can reliably be calculated from the network alone
+    virtual bool usingShortcuts() {
+        return false;
+    }
 
     /// @brief return the number of active objects
     virtual int getActiveNumber() = 0;
@@ -203,7 +209,12 @@ public:
         return false;
     }
 
-    /// @brief whether the transportable is jammed
+    /// @brief whether the transportable has finished walking
+    virtual bool isFinished() const {
+        return true;
+    }
+
+    /// @brief the current lane of the transportable
     virtual const MSLane* getLane() const {
         return nullptr;
     }

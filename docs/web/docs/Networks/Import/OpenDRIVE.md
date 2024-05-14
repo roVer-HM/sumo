@@ -2,7 +2,7 @@
 title: OpenDRIVE
 ---
 
-For reading [OpenDRIVE networks](http://www.opendrive.org/), give
+For reading [OpenDRIVE networks](https://www.opendrive.org/), give
 [netconvert](../../netconvert.md) the option **--opendrive-files** {{DT_FILE}}\[,{{DT_FILE}}\]\* or **--opendrive** {{DT_FILE}}\[,{{DT_FILE}}\]\* for short.
 
 ```
@@ -114,7 +114,13 @@ section is composed by the original lane section's
 
 ## Handling of geometry
 
-Geometry in OpenDRIVE takes the form of parametric curves (arcs, spirals and splines). These are all sampled with a configurable precision (**--opendrive.curve-resolution** {{DT_FLOAT}}) to produce polylines in the .net.xml. Junction shapes are not encoded in OpenDRIVE. They are generated based on points where the shapes of normal roads and connecting roads meet. 
+Geometry in OpenDRIVE takes the form of parametric curves (arcs, spirals and splines). These are all sampled with a configurable precision (**--opendrive.curve-resolution** {{DT_FLOAT}}) to produce polylines in the .net.xml. Junction shapes are not encoded in OpenDRIVE. They are generated based on points where the shapes of normal roads and connecting roads meet.
+
+## Handling of traffic light signaling
+
+OpenDRIVE considers traffic lights by the physical aspect of the signals, their position and the lanes they control. Optionally, signals can be grouped in a `<controller>` element.
+The car signals are imported into SUMO by default and organised into one traffic light per intersection. If the option **--opendrive.signal-groups** {{DT_FLOAT}} is set to true, netconvert will try to build the same signal groups in SUMO
+as given by the OpenDRIVE `<controller>` items. **This can generate invalid SUMO signal programs (minor "g" vs. major green "G", see [signal state](../../Simulation/Traffic_Lights.md#signal_state_definitions)) or fail due to complex signal group settings.** Currently, signals for cyclists and pedestrians are not imported.
 
 ## Referencing original IDs
 
@@ -129,6 +135,10 @@ corresponding edge id in the *.net.xml* file:
 <userData sumoId="sumo_edge_id"/>
 ```
 
+## Ignoring misplaced traffic signals
+
+The OpenDrive standard is difficult to follow and especially older versions like 1.4 had some problems. Up to this version, there was no proper way to separate the physical position (pole) of a traffic signal from the logical position (the stop line). Starting from OpenDrive 1.5, the physical position of signals can be defined explicitly. Although the standard underlines that the road the traffic signal is placed on is the one it should control, in some OpenDrive 1.4 networks the signal is placed on the sidewalk (its physical position). For OpenDrive 1.4 networks only, the option **--opendrive.ignore-misplaced-signals** allows to skip the signals defined out of "driving" lanes.
+
 # Road Objects
 
 By setting the option **--polygon-output** {{DT_FILE}}, any road objects present in the input are
@@ -142,7 +152,6 @@ will be written with geo-coordinate as well.
 Version 1.4 should generally be supported.
 You can check the feature support per version (and request new featuers) in our issue tracker:
 
-- [OpenDrive 1.4 features](https://github.com/eclipse/sumo/issues/6694)
-- [OpenDrive 1.5 features](https://github.com/eclipse/sumo/issues/6695)
-- [OpenDrive 1.6 features](https://github.com/eclipse/sumo/issues/8901)
-
+- [OpenDrive 1.4 features](https://github.com/eclipse-sumo/sumo/issues/6694)
+- [OpenDrive 1.5 features](https://github.com/eclipse-sumo/sumo/issues/6695)
+- [OpenDrive 1.6 features](https://github.com/eclipse-sumo/sumo/issues/8901)

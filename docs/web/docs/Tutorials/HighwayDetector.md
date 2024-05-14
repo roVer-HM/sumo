@@ -42,27 +42,28 @@ network. A starting point can be to use the python sumolib to match the
 positions to the network:
 
 ```python
+if 'SUMO_HOME' in os.environ:
     sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
-    import sumolib
+import sumolib
 
-    net = sumolib.net.readNet(<NETFILE>)
-    detectors = []
-    for id, lon, lat in <DETECTOR_INPUTFILE>:
-        xy_pos = net.convertLonLat2XY(lon, lat)
-        # look 10m around the position
-        lanes = net.getNeighboringLanes(xy_pos[0], xy_pos[1], 10)
-        # attention, result is unsorted
-            bestLane = None
-            ref_d = 9999.
-        for lane, dist in lanes:
-            # now process them and determine a "bestLane"
-            # ...
-                    if dist < ref_d:
-                        ref_d = dist
-                        bestLane = lane
-                pos, d = bestLane.getClosestLanePosAndDist(xy_pos)
-        detectors.append(sumolib.sensors.inductive_loop.InductiveLoop(id, bestLane.getID(), pos))
-    sumolib.files.additional.write(<DETECTORFILE>, detectors)
+net = sumolib.net.readNet(<NETFILE>)
+detectors = []
+for id, lon, lat in <DETECTOR_INPUTFILE>:
+    xy_pos = net.convertLonLat2XY(lon, lat)
+    # look 10m around the position
+    lanes = net.getNeighboringLanes(xy_pos[0], xy_pos[1], 10)
+    # attention, result is unsorted
+        bestLane = None
+        ref_d = 9999.
+    for lane, dist in lanes:
+        # now process them and determine a "bestLane"
+        # ...
+                if dist < ref_d:
+                    ref_d = dist
+                    bestLane = lane
+            pos, d = bestLane.getClosestLanePosAndDist(xy_pos)
+    detectors.append(sumolib.sensors.inductive_loop.InductiveLoop(id, bestLane.getID(), pos))
+sumolib.files.additional.write(<DETECTORFILE>, detectors)
 ```
 
 The period of data aggregation for data collection is 60 seconds by
@@ -71,7 +72,7 @@ default. The default output file name is set as none. Detector type
 of the output file is shown below.
 
 ```xml
-<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
+<additional xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://sumo.dlr.de/xsd/additional_file.xsd">
 <e1Detector id=""det0"" lane="262667814#2.7_0" pos="80.2550814486" period="60" file="NUL" friendlyPos="True"/>
 <e1Detector id=""det1"" lane="262667814#2.7_1" pos="90.2522181762" period="60" file="NUL" friendlyPos="True"/>
 <e1Detector id=""det2"" lane="262667814#2.7_2" pos="91.6879752087" period="60" file="NUL" friendlyPos="True"/>
@@ -98,7 +99,7 @@ In addition to the above mentioned detector definition, the following
 definition can also be applied.
 
 ```xml
-<detectors xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/detectors_file.xsd">
+<detectors xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://sumo.dlr.de/xsd/detectors_file.xsd">
 <detectorDefinition id="MQ11Fs1" lane="ErnstRuska2O_0" pos="5.00" type="source"/>
 <detectorDefinition id="MQ12Fs1" lane="ErnstRuska2W_0" pos="-5.00" type="between"/>
 <detectorDefinition id="MQ13Fs1N" lane="EinsteinN_0" pos="5.00" type="sink"/>
@@ -148,7 +149,7 @@ dfrouter -n net.net.xml -d detectors.det.xml -f flows.csv -o routes.rou.
 
 Moreover, it is also possible to set up a configuration file with use of
 a XML schema definition
-([dfrouterConfiguration.xsd](http://sumo.dlr.de/xsd/dfrouterConfiguration.xsd)).
+([dfrouterConfiguration.xsd](https://sumo.dlr.de/xsd/dfrouterConfiguration.xsd)).
 
 ### Comparison of the detected and the estimated flows
 

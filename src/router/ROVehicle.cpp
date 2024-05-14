@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2002-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -214,14 +214,23 @@ void
 ROVehicle::collectJumps(const ConstROEdgeVector& mandatory, std::set<ConstROEdgeVector::const_iterator>& jumpStarts) const {
     auto itM = mandatory.begin();
     auto itS = getParameter().stops.begin();
-    while (itM != mandatory.end() && itS != getParameter().stops.end()) {
+    auto itSEnd = getParameter().stops.end();
+    while (itM != mandatory.end() && itS != itSEnd) {
+        bool repeatMandatory = false;
+        // if we stop twice on the same edge, we must treat this as a repeated
+        // mandatory edge (even though the edge appears only once in the mandatory vector)
         if ((*itM)->getID() == itS->edge) {
             if (itS->jump >= 0) {
                 jumpStarts.insert(itM);
             }
             itS++;
+            if (itS != itSEnd && itS->edge == (itS - 1)->edge) {
+                repeatMandatory = true;
+            }
         }
-        itM++;
+        if (!repeatMandatory) {
+            itM++;
+        }
     }
 }
 
@@ -302,7 +311,7 @@ ROVehicle::saveAsXML(OutputDevice& os, OutputDevice* const typeos, bool asAltern
                     os.writeAttr(SUMO_ATTR_FROMXY, fromPos);
                 }
             } else if (writeJunctions) {
-                os.writeAttr(SUMO_ATTR_FROMJUNCTION, from->getFromJunction()->getID());
+                os.writeAttr(SUMO_ATTR_FROM_JUNCTION, from->getFromJunction()->getID());
             } else {
                 os.writeAttr(SUMO_ATTR_FROM, from->getID());
             }
@@ -319,7 +328,7 @@ ROVehicle::saveAsXML(OutputDevice& os, OutputDevice* const typeos, bool asAltern
                     os.writeAttr(SUMO_ATTR_TOXY, toPos);
                 }
             } else if (writeJunctions) {
-                os.writeAttr(SUMO_ATTR_TOJUNCTION, to->getToJunction()->getID());
+                os.writeAttr(SUMO_ATTR_TO_JUNCTION, to->getToJunction()->getID());
             } else {
                 os.writeAttr(SUMO_ATTR_TO, to->getID());
             }

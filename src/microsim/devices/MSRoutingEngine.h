@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2007-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2007-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -28,16 +28,13 @@
 #include <thread>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/WrappingCommand.h>
-#include <utils/router/SUMOAbstractRouter.h>
 #include <utils/router/AStarRouter.h>
-#include <utils/router/RouterProvider.h>
-#include <microsim/MSEdge.h>
-#include <microsim/MSVehicle.h>
-#include "MSDevice.h"
+#include <microsim/MSRouterDefs.h>
 
 #ifdef HAVE_FOX
 #include <utils/foxtools/MFXWorkerThread.h>
 #endif
+
 
 // ===========================================================================
 // class definitions
@@ -62,8 +59,6 @@
  */
 class MSRoutingEngine {
 public:
-    typedef RouterProvider<MSEdge, MSLane, MSJunction, SUMOVehicle> MSRouterProvider;
-
     /// @brief intialize period edge weight update
     static void initWeightUpdate();
 
@@ -100,9 +95,13 @@ public:
         return !myWithTaz && myAdaptationInterval >= 0;
     }
 
-    /// @brief return the router instance
-    static SUMOAbstractRouter<MSEdge, SUMOVehicle>& getRouterTT(const int rngIndex,
-            SUMOVehicleClass svc,
+    /// @brief return the vehicle router instance
+    static MSVehicleRouter& getRouterTT(const int rngIndex,
+                                        SUMOVehicleClass svc,
+                                        const MSEdgeVector& prohibited = MSEdgeVector());
+
+    /// @brief return the person router instance
+    static MSTransportableRouter& getIntermodalRouterTT(const int rngIndex,
             const MSEdgeVector& prohibited = MSEdgeVector());
 
     /** @brief Returns the effort to pass an edge

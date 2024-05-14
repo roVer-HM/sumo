@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -40,12 +40,33 @@ netedit.changeStopType("stopLane")
 # change triggered
 netedit.changeDefaultValue(netedit.attrs.stopLane.create.triggered, "join")
 
+# try to create stop
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x +
+                  10, netedit.positions.demandElements.edge2.y)
+
+# set invalid value
+netedit.changeDefaultValue(netedit.attrs.stopLane.create.join, ";;;;;;;;;;")
+
+# try to create stop
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x +
+                  8, netedit.positions.demandElements.edge2.y)
+
+# set invalid value
+netedit.changeDefaultValue(netedit.attrs.stopLane.create.join, "")
+
+# try to create stop
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x +
+                  6, netedit.positions.demandElements.edge2.y)
+
+# set valid value
+netedit.changeDefaultValue(netedit.attrs.stopLane.create.join, "customJoin")
+
 # create stop
-netedit.leftClick(referencePosition, 400, 185)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x +
+                  4, netedit.positions.demandElements.edge2.y)
 
 # Check undo redo
-netedit.undo(referencePosition, 1)
-netedit.redo(referencePosition, 1)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

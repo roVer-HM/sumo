@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -178,6 +178,14 @@ Boundary::around(const Position& p, double offset) const {
 
 
 bool
+Boundary::around2D(const Position& p, double offset) const {
+    return
+        (p.x() <= myXmax + offset && p.x() >= myXmin - offset) &&
+        (p.y() <= myYmax + offset && p.y() >= myYmin - offset);
+}
+
+
+bool
 Boundary::overlapsWith(const AbstractPoly& p, double offset) const {
     if (
         // check whether one of my points lies within the given poly
@@ -209,6 +217,17 @@ Boundary::crosses(const Position& p1, const Position& p2) const {
         line.intersects(Position(myXmin, myYmin), Position(myXmax, myYmin))
         ||
         line.intersects(Position(myXmax, myYmin), Position(myXmax, myYmax));
+}
+
+
+double
+Boundary::contains(const Boundary& b) const {
+    if ((myXmin <= b.xmin()) && (myYmin <= b.ymin()) &&
+            (myXmax >= b.xmax()) && (myYmax >= b.ymax())) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 

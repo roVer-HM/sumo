@@ -2,7 +2,7 @@
 
 This content is produced and maintained by the Eclipse Sumo project.
 
-* Project home: https://eclipse.org/sumo
+* Project home: https://eclipse.dev/sumo
 
 ## Trademarks
 
@@ -30,7 +30,7 @@ SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 The project maintains the following source code repositories:
 
-* https://github.com/eclipse/sumo
+* https://github.com/eclipse-sumo/sumo
 
 ## Third-party Content
 
@@ -131,4 +131,3 @@ We currently consider all modifications to [src](src/README_Contributing.md) and
 - network import modules (excluding [changes to the existing classes](src/netimport/README_Contributing.md))
 - network export modules (excluding [changes to the existing classes](src/netwrite/README_Contributing.md))
 - software that build upon the existing Python and Java tools libraries (excluding [changes to the existing](tools/README_Contributing.md))
-

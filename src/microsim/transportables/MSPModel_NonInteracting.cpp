@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2014-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2014-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -102,12 +102,13 @@ MSPModel_NonInteracting::MoveToNextEdge::execute(SUMOTime currentTime) {
         return 0; // descheduled
     }
     const MSEdge* old = myParent.getEdge();
-    const bool arrived = myParent.moveToNextEdge(myTransportable, currentTime, myParent.getState()->getDirection(myParent, currentTime));
+    const bool arrived = myParent.moveToNextEdge(myTransportable, currentTime, myParent.getPState()->getDirection(myParent, currentTime));
     if (arrived) {
         myModel->registerArrived();
         return 0;
     }
-    return static_cast<PState*>(myParent.getState())->computeDuration(old, myParent, currentTime);
+    myParent.activateEntryReminders(myTransportable);
+    return static_cast<PState*>(myParent.getPState())->computeDuration(old, myParent, currentTime);
 }
 
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2017-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2017-2024 German Aerospace Center (DLR) and others.
 // TraaS module
 // Copyright (C) 2013-2017 Dresden University of Technology
 // This program and the accompanying materials are made available under the
@@ -67,7 +67,7 @@ public class Subscription {
             for (Map.Entry<String, TraCIResults> vehEntry : vsRes.entrySet()) {
                 System.out.println("Vehicle Subscription: id=" + vehEntry.getKey());
                 vehEntry.getValue().entrySet().stream().sorted(Map.Entry.comparingByKey())
-                    .forEach(entry -> System.out.println("   variable id: " + entry.getKey() + "  value: " + entry.getValue().getString()));
+                .forEach(entry -> System.out.println("   variable id: " + entry.getKey() + "  value: " + entry.getValue().getString()));
             }
         }
 

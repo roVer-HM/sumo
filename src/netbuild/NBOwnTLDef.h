@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -102,6 +102,9 @@ public:
         myHaveSinglePhase = true;
     }
 
+    /// @brief ensure inner edges all get the green light eventually
+    static void addGreenWithin(NBTrafficLightLogic* logic, const EdgeVector& fromEdges, EdgeVector& toProc);
+
     /// @brief add an additional pedestrian phase if there are crossings that did not get green yet
     static void addPedestrianScramble(NBTrafficLightLogic* logic, int totalNumLinks, SUMOTime greenTime, SUMOTime yellowTime,
                                       const std::vector<NBNode::Crossing*>& crossings, const EdgeVector& fromEdges, const EdgeVector& toEdges);
@@ -113,6 +116,12 @@ public:
 
     /// @brief compute phase state in regard to pedestrian crossings
     static std::string patchStateForCrossings(const std::string& state, const std::vector<NBNode::Crossing*>& crossings, const EdgeVector& fromEdges, const EdgeVector& toEdges);
+
+    static std::string patchNEMAStateForCrossings(const std::string& state,
+            const std::vector<NBNode::Crossing*>& crossings,
+            const EdgeVector& fromEdges,
+            const EdgeVector& toEdges,
+            const NBEdge* greenEdge, NBEdge* otherChosen);
 
     /** @brief helper function for myCompute
      * @param[in] brakingTime Duration a vehicle needs for braking in front of the tls
@@ -180,6 +189,8 @@ protected:
 
     NBTrafficLightLogic* buildNemaPhases(
         const EdgeVector& fromEdges,
+        const EdgeVector& toEdges,
+        const std::vector<NBNode::Crossing*>& crossings,
         const std::vector<std::pair<NBEdge*, NBEdge*> >& chosenList,
         const std::vector<std::string>& straightStates,
         const std::vector<std::string>& leftStates);
@@ -258,7 +269,7 @@ protected:
     std::string allowByVClass(std::string state, const EdgeVector& fromEdges, const EdgeVector& toEdges, SVCPermissions perm);
 
     /// @brief whether the given index is forbidden by a green link in the current state
-    bool forbidden(const std::string& state, int index, const EdgeVector& fromEdges, const EdgeVector& toEdges);
+    bool forbidden(const std::string& state, int index, const EdgeVector& fromEdges, const EdgeVector& toEdges, bool allowCont);
 
     /** @brief change 'G' to 'g' for conflicting connections
      * @param[in] state

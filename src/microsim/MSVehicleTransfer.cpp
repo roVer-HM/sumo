@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -171,8 +171,11 @@ MSVehicleTransfer::checkInsertions(SUMOTime time) {
                 }
                 MSNet::getInstance()->informVehicleStateListener(desc.myVeh, MSNet::VehicleState::ENDING_TELEPORT);
                 i = vehInfos.erase(i);
+            } else if (desc.myJumping) {
+                // try again later
+                ++i;
             } else {
-                // vehicle is visible while show-route is active. Make it's state more obvious
+                // vehicle is visible while show-route is active. Make its state more obvious
                 desc.myVeh->computeAngle();
                 desc.myVeh->setLateralPositionOnLane(-desc.myVeh->getLane()->getWidth() / 2);
                 desc.myVeh->invalidateCachedPosition();
@@ -189,9 +192,11 @@ MSVehicleTransfer::checkInsertions(SUMOTime time) {
                         continue;
                     }
                     // let the vehicle move to the next edge
-                    desc.myVeh->leaveLane(MSMoveReminder::NOTIFICATION_TELEPORT);
+                    desc.myVeh->leaveLane(MSMoveReminder::NOTIFICATION_TELEPORT_CONTINUATION);
                     // active move reminders (i.e. rerouters)
-                    desc.myVeh->enterLaneAtMove(desc.myVeh->succEdge(1)->getLanes()[0], true);
+                    const std::vector<MSLane*>* allowedLanes = nextEdge->allowedLanes(vclass);
+                    MSLane* laneToEnter = (allowedLanes != nullptr) ? allowedLanes->at(0) : nextEdge->getLanes()[0];
+                    desc.myVeh->enterLaneAtMove(laneToEnter, true);
                     // use current travel time to determine when to move the vehicle forward
                     desc.myProceedTime = time + TIME2STEPS(e->getCurrentTravelTime(TeleportMinSpeed));
                 }

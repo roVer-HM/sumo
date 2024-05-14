@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2014-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2014-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -258,6 +258,7 @@ class Builder(object):
 
         options += ["--netconvert-typemap", ','.join(typefiles)]
         options += ["--netconvert-options", netconvertOptions]
+        options += ["--polyconvert-options", " -v,--osm.keep-full-type,--osm.merge-relations,1"]
 
         self.report("Converting map data")
         osmBuild.build(options)
@@ -332,8 +333,14 @@ class Builder(object):
                 if vehicle == "pedestrian" and self.data["publicTransport"]:
                     options += ["--additional-files", ",".join([self.files["stops"], self.files["ptroutes"]])]
                     options += ["--persontrip.walk-opposite-factor", "0.8"]
+                    options += ["--duarouter-weights.tls-penalty", "20"]
 
-                randomTrips.main(randomTrips.get_options(options))
+                try:
+                    randomTrips.main(randomTrips.get_options(options))
+                except ValueError:
+                    print("Could not generate %s traffic" % vehicle, file=sys.stderr)
+                    continue
+
                 randomTripsCalls.append(options)
 
                 # --validate is not called for pedestrians
@@ -412,6 +419,7 @@ class Builder(object):
                 "--duration-log.statistics",
                 "--device.rerouting.adaptation-interval", "10",
                 "--device.rerouting.adaptation-steps", "18",
+                "--tls.actuated.jam-threshold", "30",
                 "-v", "--no-step-log", "--save-configuration", self.files_relative["config"], "--ignore-route-errors"]
 
         if self.routenames:
@@ -516,11 +524,11 @@ class OSMImporterWebSocket(WebSocket):
                 self.sendMessage(u"zip " + data)
         except ssl.CertificateError:
             self.report("Error with SSL certificate, try 'pip install -U certifi'.")
-        except Exception:
+        except Exception as e:
             print(traceback.format_exc())
             # reset 'Generate Scenario' button
             while self.steps > 0:
-                self.report("Recovering")
+                self.report(str(e) + " Recovering")
             if os.path.isdir(builder.tmp) and not os.listdir(builder.tmp):
                 os.rmdir(builder.tmp)
         os.chdir(builder.origDir)

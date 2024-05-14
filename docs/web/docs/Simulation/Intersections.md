@@ -4,7 +4,7 @@ title: Intersections
 
 The vehicle dynamics at intersection are governed by the intersection
 model described in
-[\[Road Intersection Model in SUMO, Krajzewicz et al\]](http://elib.dlr.de/93669/1/LNCS_SUMOIntersections.pdf). Of course, the model in
+[\[Road Intersection Model in SUMO, Krajzewicz et al\]](https://elib.dlr.de/93669/1/LNCS_SUMOIntersections.pdf). Of course, the model in
 the latest revision may deviate somewhat due to the ongoing evolution of
 the model. This page gives an overview over the configuration options
 governing the intersection model.
@@ -12,7 +12,7 @@ governing the intersection model.
 # Internal links
 
 The most important configuration aspect is whether the dynamics within
-an intersection shall be modelled or not. This is configured while building the network or alterantively when launching the simulation.
+an intersection shall be modelled or not. This is configured while building the network or alternatively when launching the simulation.
 When simulating without internal links, Vehicles are still subject to right-of-way rules (waiting at traffic lights and at minor roads)
 but they will appear instantly on the other side of the intersection after passing the stop line.
 They cannot block the intersection, wait within the intersection for left turns nor collide on the intersection.

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,6 +20,7 @@
 
 #include <netedit/GNEApplicationWindow.h>
 #include <netedit/dialogs/tools/GNERunNetgenerateDialog.h>
+#include <utils/common/StringUtils.h>
 #include <utils/gui/events/GUIEvent_Message.h>
 
 #include "GNERunNetgenerate.h"
@@ -41,11 +42,33 @@ GNERunNetgenerate::~GNERunNetgenerate() {}
 void
 GNERunNetgenerate::run(const OptionsCont* netgenerateOptions) {
     // set command
+
 #ifdef WIN32
-    myNetgenerateCommand = getenv("SUMO_HOME") + std::string("/bin/netgenerate.exe");
+    std::string exePath = "netgenerate.exe";
 #else
-    myNetgenerateCommand = getenv("SUMO_HOME") + std::string("/bin/netgenerate");
+    std::string exePath = "netgenerate";
 #endif
+    const char* sumoHomeEnv = getenv("SUMO_HOME");
+    std::string sumoHome = "";
+    if (sumoHomeEnv != nullptr && sumoHomeEnv != std::string("")) {
+        sumoHome = std::string(sumoHomeEnv);
+        // harmonise slash
+        if (sumoHome.back() == '\\') {
+            sumoHome = sumoHome.substr(0, sumoHome.size() - 1);
+        }
+        // prevent double quotes
+        if (sumoHome.front() == '"') {
+            sumoHome.erase(sumoHome.begin());
+        }
+        if (sumoHome.size() > 0 && sumoHome.back() == '"') {
+            sumoHome.pop_back();
+        }
+        sumoHome += "/bin/";
+    }
+    // quote to handle spaces. note that this differs from GNEPythonTool because the python interpreter is a bit smarter
+    // when handling quoted parts within a path
+    myNetgenerateCommand = "\"" + sumoHome + exePath + "\"";
+
     // iterate over all topics
     for (const auto& topic : netgenerateOptions->getSubTopics()) {
         // ignore configuration
@@ -67,14 +90,16 @@ GNERunNetgenerate::run(const OptionsCont* netgenerateOptions) {
 
 void
 GNERunNetgenerate::abort() {
-    // cancel thread
-    cancel();
-    // reset flags
-    myRunning = false;
-    myErrorOccurred = false;
-    // show info
-    myEventQueue.push_back(new GUIEvent_Message(GUIEventType::ERROR_OCCURRED, std::string(TL("cancelled by user\n"))));
-    myEventThrow.signal();
+    if (myRunning) {
+        // cancel thread
+        cancel();
+        // reset flags
+        myRunning = false;
+        myErrorOccurred = false;
+        // show info
+        myEventQueue.push_back(new GUIEvent_Message(GUIEventType::ERROR_OCCURRED, std::string(TL("cancelled by user\n"))));
+        myEventThrow.signal();
+    }
 }
 
 
@@ -99,7 +124,7 @@ GNERunNetgenerate::run() {
     }
     // open process showing std::err in console
 #ifdef WIN32
-    myPipe = _popen((myNetgenerateCommand + " 2>&1").c_str(), "r");
+    myPipe = _popen(StringUtils::transcodeToLocal(myNetgenerateCommand + " 2>&1").c_str(), "r");
 #else
     myPipe = popen((myNetgenerateCommand + " 2>&1").c_str(), "r");
 #endif

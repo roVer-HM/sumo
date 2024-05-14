@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2002-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -70,6 +70,12 @@ public:
         return mySignals;
     }
 
+    void addGreenFlankSwitch(MSLink* link, int dwID) {
+        mySwitchedGreenFlanks.emplace_back(link, dwID);
+    }
+
+    /// @brief final check for driveway compatibility of signals that switched green in this step
+    void recheckGreen();
 
 private:
     /** @brief Constructor */
@@ -86,6 +92,10 @@ private:
 
     /// @brief list of all rail signals
     std::vector<MSRailSignal*> mySignals;
+
+    /// @brief list of signals that switched green along with driveway index
+    std::vector<std::pair<MSLink*, int> > mySwitchedGreenFlanks;
+    std::map<std::pair<int, int>, bool> myDriveWayCompatibility;
 
     static MSRailSignalControl* myInstance;
 

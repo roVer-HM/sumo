@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2008-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -101,7 +101,7 @@ pos2 = (498.65, 501.65)
 print("distance2D", traci.simulation.getDistance2D(pos1[0], pos1[1], pos2[0], pos2[1]))
 pos1geo = traci.simulation.convertGeo(*pos1)
 pos2geo = traci.simulation.convertGeo(*pos2)
-print("distance2Dgeo",
+print("distance2Dgeo", pos1geo, pos2geo,
       traci.simulation.getDistance2D(pos1geo[0], pos1geo[1],
                                      pos2geo[0], pos2geo[1], isGeo=True))
 

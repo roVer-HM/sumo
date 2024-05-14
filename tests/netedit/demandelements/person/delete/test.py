@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,8 +35,8 @@ netedit.supermodeDemand()
 netedit.personMode()
 
 # create person using three edges
-netedit.leftClick(referencePosition, 274, 400)
-netedit.leftClick(referencePosition, 180, 60)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x, netedit.positions.demandElements.edge2.y)
 
 # press enter to create person
 netedit.typeEnter()
@@ -44,11 +44,9 @@ netedit.typeEnter()
 # go to delete mode
 netedit.deleteMode()
 
-# change zoom
-netedit.setZoom("0", "-6", "5")
-
 # delete person
-netedit.leftClick(referencePosition, 310, 140)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.person.x,
+                  netedit.positions.demandElements.person.y)
 
 # Check undo
 netedit.undo(referencePosition, 1)
@@ -60,7 +58,7 @@ netedit.supermodeNetwork()
 netedit.deleteMode()
 
 # try to delete an edge with demand elements
-netedit.leftClick(referencePosition, 570, 160)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
 
 # wait warning
 netedit.waitDeleteWarning()
@@ -69,11 +67,10 @@ netedit.waitDeleteWarning()
 netedit.protectElements(referencePosition)
 
 # now delete edge with their person
-netedit.leftClick(referencePosition, 570, 160)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
 
 # Check undo
-netedit.undo(referencePosition, 1)
-netedit.redo(referencePosition, 1)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

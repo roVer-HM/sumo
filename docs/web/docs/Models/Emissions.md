@@ -7,13 +7,13 @@ title: Emissions
 SUMO includes the following emission models:
 
 - [HBEFA v2.1-based](../Models/Emissions/HBEFA-based.md): A
-  continuous reformulation of the [HBEFA](http://www.hbefa.net/) v2.1
+  continuous reformulation of the [HBEFA](https://www.hbefa.net/) v2.1
   emissions data base (open source);
 - [HBEFA v3.1-based](../Models/Emissions/HBEFA3-based.md): A
-  continuous reformulation of the [HBEFA](http://www.hbefa.net/) v3.1
+  continuous reformulation of the [HBEFA](https://www.hbefa.net/) v3.1
   emissions data base (open source);
 - [HBEFA v4.2-based](../Models/Emissions/HBEFA4-based.md): A
-  continuous reformulation of the [HBEFA](http://www.hbefa.net/) v4.2
+  continuous reformulation of the [HBEFA](https://www.hbefa.net/) v4.2
   emissions data base (open source);
 - [PHEMlight](../Models/Emissions/PHEMlight.md), a derivation of
   the original
@@ -32,17 +32,17 @@ SUMO includes the following emission models:
 
 Literature on the Models and their implementation can be found at [the
 DLR electronic library
-(http://elib.dlr.de/89398/)](http://elib.dlr.de/89398/).
+(https://elib.dlr.de/89398/)](https://elib.dlr.de/89398/).
 
 # Using Models
 
 All models implement different vehicle emission classes. These classes
 can be assigned to vehicles by using the vehicle type attribute
-`emissionClass`. If the model has different classes, the definition 
+`emissionClass`. If the model has different classes, the definition
 has the form `emissionClass="<model>/<class>"` e.g. `HBEFA3/PC_G_EU4`.
 If the model has only one class (for instance the Electric Vehicle Model),
-the `<class>` can be omitted in the input and will show up as `default` 
-in the output. There is one special model `Zero` which does not 
+the `<class>` can be omitted in the input and will show up as `default`
+in the output. There is one special model `Zero` which does not
 generate emissions or energy consumption at all.
 
 Available emission classes
@@ -206,19 +206,19 @@ PollutantsInterface::Helper::getCoastingDecel.
 The tool [traceExporter.py](../Tools/TraceExporter.md) converts
 SUMO's [fcd-output](../Simulation/Output/FCDOutput.md) into files
 that can be directly read by the
-[PHEM](https://www.ivt.tugraz.at/en/research/areas/em/)
+[PHEM](https://www.itna.tugraz.at/en/research/areas/em/)
 application. A [tutorial on generating trace files (including PHEM input
 files)](../Tutorials/Trace_File_Generation.md) using this tool is
 available.
 
 <div style="border:1px solid #909090; min-height: 35px;" align="right">
-<span style="float: right; margin-top: -5px;"><a href="https://wayback.archive-it.org/12090/20191127213419/https:/ec.europa.eu/research/fp7/index_en.cfm"><img src="../images/FP7-small.gif" alt="Seventh Framework Programme"></a>
+<span style="float: right; margin-top: -5px;"><a href="https://web.archive.org/web/20191005024529/https:/ec.europa.eu/research/fp7/index_en.cfm"><img src="../images/FP7-small.gif" alt="Seventh Framework Programme"></a>
 <a href="https://verkehrsforschung.dlr.de/en/projects/colombo"><img src="../images/COLOMBO-small.png" alt="COLOMBO project"></a></span>
-<span style="">This part of SUMO was developed, reworked, or extended within the project 
-<a href="https://verkehrsforschung.dlr.de/en/projects/colombo">"COLOMBO"</a>, co-funded by the European Commission within the <a href="https://wayback.archive-it.org/12090/20191127213419/https:/ec.europa.eu/research/fp7/index_en.cfm">Seventh Framework Programme</a>.</span></div>
+<span style="">This part of SUMO was developed, reworked, or extended within the project
+<a href="https://verkehrsforschung.dlr.de/en/projects/colombo">"COLOMBO"</a>, co-funded by the European Commission within the <a href="https://web.archive.org/web/20191005024529/https:/ec.europa.eu/research/fp7/index_en.cfm">Seventh Framework Programme</a>.</span></div>
 
 <div style="border:1px solid #909090; min-height: 35px;" align="right">
-<span style="float: right; margin-top: -5px;"><a href="https://wayback.archive-it.org/12090/20191127213419/https:/ec.europa.eu/research/fp7/index_en.cfm"><img src="../../images/FP7-small.gif" alt="Seventh Framework Programme"></a>
-<a href="http://amitran.eu/"><img src="../../images/AMITRAN-small.png" alt="AMITRAN project"></a></span>
-<span style="">This part of SUMO was developed, reworked, or extended within the project 
-<a href="http://amitran.eu/">"AMITRAN"</a>, co-funded by the European Commission within the <a href="https://wayback.archive-it.org/12090/20191127213419/https:/ec.europa.eu/research/fp7/index_en.cfm">Seventh Framework Programme</a>.</span></div>
+<span style="float: right; margin-top: -5px;"><a href="https://web.archive.org/web/20191005024529/https:/ec.europa.eu/research/fp7/index_en.cfm"><img src="../images/FP7-small.gif" alt="Seventh Framework Programme"></a>
+<a href="https://web.archive.org/web/20180309093847/https://amitran.eu/"><img src="../images/AMITRAN-small.png" alt="AMITRAN project"></a></span>
+<span style="">This part of SUMO was developed, reworked, or extended within the project
+<a href="https://web.archive.org/web/20180309093847/https://amitran.eu/">"AMITRAN"</a>, co-funded by the European Commission within the <a href="https://web.archive.org/web/20191005024529/https:/ec.europa.eu/research/fp7/index_en.cfm">Seventh Framework Programme</a>.</span></div>

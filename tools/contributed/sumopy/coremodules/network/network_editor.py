@@ -1,5 +1,5 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2016-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2016-2024 German Aerospace Center (DLR) and others.
 # SUMOPy module
 # Copyright (C) 2012-2021 University of Bologna - DICAM
 # This program and the accompanying materials are made available under the
@@ -1496,7 +1496,7 @@ class NeteditorApp(wx.App):
 
 
 def netediting(net):
-    app = NeteditorApp(net, output=False)  # put in True if you want output to go to it's own window.
+    app = NeteditorApp(net, output=False)  # put in True if you want output to go to its own window.
     # print 'call MainLoop'
     app.MainLoop()
 

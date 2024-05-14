@@ -38,24 +38,30 @@
 
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
 
-    <route edges="gneE0 gneE1" color="yellow" id="route_0">
-        <stop busStop="busStop" until="dummyDuration"/>
+    <route edges="Edge0 Edge1 Edge2" color="yellow" id="route_0">
+        <stop busStop="busStopA" until="dummyDuration"/>
     </route>
 
-    <route edges="gneE0 gneE1" color="yellow" id="route_1">
-        <stop busStop="busStop" until=""/>
+    <route edges="Edge0 Edge1 Edge2" color="yellow" id="route_1">
+        <stop busStop="busStopA" until=""/>
     </route>
 
-    <route edges="gneE0 gneE1" color="yellow" id="route_2">
-        <stop busStop="busStop" until="-4"/>
+    <route edges="Edge0 Edge1 Edge2" color="yellow" id="route_2">
+        <stop busStop="busStopA" until="-4"/>
     </route>
 
-    <route edges="gneE0 gneE1" color="yellow" id="route_3">
-        <stop busStop="busStop" until="0"/>
+    <route edges="Edge0 Edge1 Edge2" color="yellow" id="route_3">
+        <stop busStop="busStopA" until="0"/>
     </route>
 
-    <route edges="gneE0 gneE1" color="yellow" id="route_4">
-        <stop busStop="busStop" until="2.3"/>
+    <route edges="Edge0 Edge1 Edge2" color="yellow" id="route_4">
+        <stop busStop="busStopA" until="2.3"/>
     </route>
+	
+	<vehicle id="vehicle_0" depart="0.00" route="route_0"/>
+	<vehicle id="vehicle_1" depart="0.00" route="route_1"/>
+	<vehicle id="vehicle_2" depart="0.00" route="route_2"/>
+	<vehicle id="vehicle_3" depart="0.00" route="route_3"/>
+	<vehicle id="vehicle_4" depart="0.00" route="route_4"/>
 
 </routes>

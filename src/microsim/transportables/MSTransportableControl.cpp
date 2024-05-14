@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -30,6 +30,9 @@
 #include <microsim/transportables/MSPerson.h>
 #include <microsim/transportables/MSStageDriving.h>
 #include <microsim/transportables/MSPModel_NonInteracting.h>
+#ifdef JPS_VERSION
+#include <microsim/transportables/MSPModel_JuPedSim.h>
+#endif
 #include <microsim/transportables/MSPModel_Striping.h>
 #include <microsim/transportables/MSTransportableControl.h>
 #include <microsim/devices/MSDevice_Vehroutes.h>
@@ -58,18 +61,19 @@ MSTransportableControl::MSTransportableControl(const bool isPerson):
     myHaveNewWaiting(false) {
     const OptionsCont& oc = OptionsCont::getOptions();
     MSNet* const net = MSNet::getInstance();
+    myMovementModel = myNonInteractingModel = new MSPModel_NonInteracting(oc, net);
     if (isPerson) {
-        const std::string model = oc.getString("pedestrian.model");
-        myNonInteractingModel = new MSPModel_NonInteracting(oc, net);
+        const std::string& model = oc.getString("pedestrian.model");
         if (model == "striping") {
             myMovementModel = new MSPModel_Striping(oc, net);
-        } else if (model == "nonInteracting") {
-            myMovementModel = myNonInteractingModel;
-        } else {
+#ifdef JPS_VERSION
+        } else if (model == "jupedsim") {
+            myMovementModel = new MSPModel_JuPedSim(oc, net);
+#endif
+        } else if (model != "nonInteracting") {
+            delete myNonInteractingModel;
             throw ProcessError(TLF("Unknown pedestrian model '%'", model));
         }
-    } else {
-        myMovementModel = myNonInteractingModel = new MSPModel_NonInteracting(oc, net);
     }
     if (oc.isSet("vehroute-output")) {
         myRouteInfos.routeOut = &OutputDevice::getDeviceByOption("vehroute-output");

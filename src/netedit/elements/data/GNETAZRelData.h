@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,12 +20,13 @@
 #pragma once
 #include <config.h>
 
-
 // ===========================================================================
 // included modules
 // ===========================================================================
-#include "GNEGenericData.h"
 
+#include <netedit/elements/GNEContour.h>
+
+#include "GNEGenericData.h"
 
 // ===========================================================================
 // class definitions
@@ -77,7 +78,7 @@ public:
      */
     void writeGenericData(OutputDevice& device) const;
 
-    /// @brief check if current data set is valid to be writed into XML (by default true, can be reimplemented in children)
+    /// @brief check if current data set is valid to be written into XML (by default true, can be reimplemented in children)
     bool isGenericDataValid() const;
 
     /// @brief return a string with the current data set problem (by default empty, can be reimplemented in children)
@@ -107,22 +108,19 @@ public:
     /// @brief compute pathElement
     void computePathElement();
 
-    /**@brief Draws partial object (lane)
+    /**@brief Draws partial object over lane
      * @param[in] s The settings for the current view (may influence drawing)
-     * @param[in] lane GNELane in which draw partial
-     * @param[in] segment PathManager segment (used for segment options)
-     * @param[in] offsetFront extra front offset (used for drawing partial gl above other elements)
+     * @param[in] segment lane segment
+     * @param[in] offsetFront front offset
      */
-    void drawPartialGL(const GUIVisualizationSettings& s, const GNELane* lane, const GNEPathManager::Segment* segment, const double offsetFront) const;
+    void drawLanePartialGL(const GUIVisualizationSettings& s, const GNEPathManager::Segment* segment, const double offsetFront) const;
 
-    /**@brief Draws partial object (junction)
+    /**@brief Draws partial object over junction
      * @param[in] s The settings for the current view (may influence drawing)
-     * @param[in] fromLane from GNELane
-     * @param[in] toLane to GNELane
-     * @param[in] segment PathManager segment (used for segment options)
-     * @param[in] offsetFront extra front offset (used for drawing partial gl above other elements)
+     * @param[in] segment junction segment
+     * @param[in] offsetFront front offset
      */
-    void drawPartialGL(const GUIVisualizationSettings& s, const GNELane* fromLane, const GNELane* toLane, const GNEPathManager::Segment* segment, const double offsetFront) const;
+    void drawJunctionPartialGL(const GUIVisualizationSettings& s, const GNEPathManager::Segment* segment, const double offsetFront) const;
 
     /// @brief get first path lane
     GNELane* getFirstPathLane() const;
@@ -172,6 +170,9 @@ public:
     /// @}
 
 protected:
+    /// @brief variable used for draw contours
+    GNEContour myTAZRelDataContour;
+
     /// @brief Geometry for TAZRel data
     GUIGeometry myTAZRelGeometry;
 
@@ -199,4 +200,3 @@ private:
 };
 
 /****************************************************************************/
-

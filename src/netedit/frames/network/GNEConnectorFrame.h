@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -202,9 +202,9 @@ public:
     ~GNEConnectorFrame();
 
     /**@brief either sets the current lane or toggles the connection of the
-     * @param objectsUnderCursor collection of objects under cursor after click over view
+     * @param viewObjects collection of objects under cursor after click over view
      */
-    void handleLaneClick(const GNEViewNetHelper::ObjectsUnderCursor& objectsUnderCursor);
+    void handleLaneClick(const GNEViewNetHelper::ViewObjectsSelector& viewObjects);
 
     /// @brief get pointer to ConnectionModifications modul
     ConnectionModifications* getConnectionModifications() const;

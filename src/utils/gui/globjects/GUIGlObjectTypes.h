@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -49,10 +49,10 @@ enum GUIGlObjectType {
     GLO_LANE = 3,
     /// @brief a junction
     GLO_JUNCTION = 4,
-    /// @brief a connection
-    GLO_CONNECTION = 5,
     /// @brief a walkingArea
-    GLO_WALKINGAREA = 6,
+    GLO_WALKINGAREA = 5,
+    /// @brief a connection
+    GLO_CONNECTION = 6,
     /// @brief a tl-logic
     GLO_CROSSING = 7,
     /// @brief a tl-logic
@@ -106,7 +106,7 @@ enum GUIGlObjectType {
     GLO_REROUTER_CLOSINGLANEREROUTE = 116,
     /// @brief a parking area reroute
     GLO_REROUTER_PARKINGAREAREROUTE = 117,
-    /// @brief a destiny probability reroute
+    /// @brief a destination probability reroute
     GLO_REROUTER_DESTPROBREROUTE = 118,
     /// @brief a route probability reroute
     GLO_REROUTER_ROUTEPROBREROUTE = 119,
@@ -141,10 +141,14 @@ enum GUIGlObjectType {
 
     /// @brief reserved GLO type to pack shapes
     GLO_SHAPE = 200,
-    /// @brief a polygon
+    /// @brief polygon
     GLO_POLYGON = 201,
-    /// @brief a poi
+    /// @brief poi (over view, geo and lane)
     GLO_POI = 202,
+    /// @brief walkable area
+    GLO_JPS_WALKABLEAREA = 203,
+    /// @brief obstacles
+    GLO_JPS_OBSTACLE = 204,
 
     /// @}
 
@@ -187,10 +191,8 @@ enum GUIGlObjectType {
 
     /// @brief a stop
     GLO_STOP = 330,
-    /// @brief a person stop
-    GLO_STOP_PERSON = 331,
-    /// @brief a container stop
-    GLO_STOP_CONTAINER = 332,
+    /// @brief a stop plan stop
+    GLO_STOP_PLAN = 331,
 
     /// @}
 
@@ -258,8 +260,8 @@ enum GUIGlObjectType {
     /// @brief front element (used in netedit)
     GLO_FRONTELEMENT = 1030,
 
-    /// @brief dotted contour inspected element (used in netedit)
-    GLO_DOTTEDCONTOUR_INSPECTED = 1040,
+    /// @brief dotted contour (used in netedit)
+    GLO_DOTTEDCONTOUR = 1040,
 
     /// @brief temporal shape (used in netedit)
     GLO_TEMPORALSHAPE = 1050,

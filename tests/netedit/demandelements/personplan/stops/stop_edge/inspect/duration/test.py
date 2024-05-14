@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,54 +35,50 @@ netedit.supermodeDemand()
 netedit.personMode()
 
 # change person plan
-netedit.changePersonPlan("walk: edge->edge", False)
+netedit.changePersonPlan("walk", False)
 
-# create route using two one
-netedit.leftClick(referencePosition, 274, 400)
-netedit.leftClick(referencePosition, 180, 65)
+# create route using one edge
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x, netedit.positions.demandElements.edge2.y)
 
 # press enter to create route
 netedit.typeEnter()
 
-# go to personStopEdge mode
+# go to StopPlanEdge mode
 netedit.personPlanMode()
 
-# select person
-netedit.leftClick(referencePosition, 92, 412)
+# go to StopPlanEdge mode
+netedit.selectPerson("p_0")
 
-# go to personStopEdge mode
-netedit.changePersonPlanMode("stopPerson: edge")
+# go to StopPlanEdge mode
+netedit.changePersonPlanMode("stop")
 
-# create personStopEdge
-netedit.leftClick(referencePosition, 180, 65)
-
-# press enter to create route
-netedit.typeEnter()
+# create StopPlanEdge
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x, netedit.positions.demandElements.edge2.y)
 
 # go to inspect mode
 netedit.inspectMode()
 
-# inspect personStopEdge
-netedit.leftClick(referencePosition, 180, 45)
+# inspect StopPlanEdge
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge2.x, netedit.positions.demandElements.edge2.y)
 
 # change depart with an invalid value
-netedit.modifyBoolAttribute(netedit.attrs.personStopEdge.inspect.durationEnable, False)
+netedit.modifyBoolAttribute(netedit.attrs.stopPlanEdge.inspect.durationEnable, False)
 
 # change depart with an invalid value
-netedit.modifyBoolAttribute(netedit.attrs.personStopEdge.inspect.durationEnable, False)
+netedit.modifyBoolAttribute(netedit.attrs.stopPlanEdge.inspect.durationEnable, False)
 
 # change depart with an invalid value
-netedit.modifyAttribute(netedit.attrs.personStopEdge.inspect.duration, "dummy", False)
+netedit.modifyAttribute(netedit.attrs.stopPlanEdge.inspect.duration, "dummy", False)
 
 # change depart with an invalid value
-netedit.modifyAttribute(netedit.attrs.personStopEdge.inspect.duration, "-7.3", False)
+netedit.modifyAttribute(netedit.attrs.stopPlanEdge.inspect.duration, "-7.3", False)
 
 # change depart with an invalid value
-netedit.modifyAttribute(netedit.attrs.personStopEdge.inspect.duration, "6.7", False)
+netedit.modifyAttribute(netedit.attrs.stopPlanEdge.inspect.duration, "6.7", False)
 
 # Check undo redo
-netedit.undo(referencePosition, 3)
-netedit.redo(referencePosition, 3)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

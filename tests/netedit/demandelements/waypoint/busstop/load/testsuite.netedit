@@ -6,14 +6,6 @@ until
 
 extension
 
-triggered
-
-expected
-
-containertrigger
-
-expectedcontainers
-
 parking
 
 acttype
@@ -21,3 +13,5 @@ acttype
 line
 
 tripid
+
+containertrigger

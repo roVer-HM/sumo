@@ -16,12 +16,12 @@ To be able to run SUMO on Linux, just follow these steps:
 For ubuntu this boils down to
 
 ```
- sudo apt-get install git cmake python3 g++ libxerces-c-dev libfox-1.6-dev libgdal-dev libproj-dev libgl2ps-dev python3-dev swig default-jdk maven libeigen3-dev
- git clone --recursive https://github.com/eclipse/sumo
- export SUMO_HOME="$PWD/sumo"
- mkdir sumo/build/cmake-build && cd sumo/build/cmake-build
- cmake ../..
- make -j$(nproc)
+sudo apt-get install git cmake python3 g++ libxerces-c-dev libfox-1.6-dev libgdal-dev libproj-dev libgl2ps-dev python3-dev swig default-jdk maven libeigen3-dev
+git clone --recursive https://github.com/eclipse-sumo/sumo
+cd sumo
+export SUMO_HOME="$PWD"
+cmake -B build .
+cmake --build build -j$(nproc)
 ```
 
 Each of these steps is described in more detail and with possible
@@ -45,30 +45,26 @@ alternatives below.
   and manual build instructions for the
   libraries](Linux_Build_Libraries.md)
 - Optionally you may want to add
- - ccache (to speed up builds)
- - ffmpeg-devel (for video output),
- - libOpenSceneGraph-devel (for the experimental 3D GUI),
- - gtest (for [unit testing](../Developer/Unit_Tests.md), do not use 1.13 or later)
- - gettext (for internationalization)
- - texttest, xvfb  and tkdiff (for the acceptance tests)
- - flake, astyle and autopep for style checking
- - see also further dependencies [for GUI testing](../Developer/GUI_Testing.md)
+  - ccache (to speed up builds)
+  - ffmpeg-devel (for video output),
+  - libOpenSceneGraph-devel (for the experimental 3D GUI),
+  - gtest (for [unit testing](../Developer/Unit_Tests.md), do not use 1.13 or later)
+  - gettext (for internationalization)
+  - texttest, xvfb  and tkdiff (for the acceptance tests, include python3-gobject for the texttest GUI)
+  - flake, astyle and autopep for style checking
+  - see also further dependencies [for GUI testing](../Developer/GUI_Testing.md)
 
 The package names above are for openSUSE, for ubuntu the call to get the most important optional libraries and tools is:
-  
-```
-sudo apt-get install ccache libavformat-dev libswscale-dev libopenscenegraph-dev python3-pip python3-setuptools
-sudo apt-get install libgtest-dev gettext tkdiff xvfb flake8 astyle python3-autopep8
-pip3 install texttest
-```
-
-For the Python tools there are some requirements depending on which tools you want to use. If you want to install
-everything using pip do `pip install -r tools/requirements.txt`. To install the most common dependencies with your
-package manager on ubuntu do:
 
 ```
-sudo apt-get install python3-pandas python3-rtree python3-pyproj
+sudo apt-get install ccache libavformat-dev libswscale-dev libopenscenegraph-dev python3-pip python3-build
+sudo apt-get install libgtest-dev gettext tkdiff xvfb flake8 astyle python3-autopep8 python3-gi-cairo gir1.2-gtk-3.0
+sudo apt-get install python3-pyproj python3-rtree python3-pandas python3-pulp python3-ezdxf
+python3 -m pip install texttest
 ```
+
+For the Python tools there are some more requirements depending on which tools you want to use. If you want to install
+everything using pip do `python3 -m pip install -r tools/requirements.txt`.
 
 ## Getting the source code
 
@@ -84,7 +80,7 @@ of sumo.
 The following commands should be issued:
 
 ```
-git clone --recursive https://github.com/eclipse/sumo
+git clone --recursive https://github.com/eclipse-sumo/sumo
 cd sumo
 git fetch origin refs/replace/*:refs/replace/*
 pwd
@@ -96,7 +92,7 @@ local project history.
 ### release version or nightly tarball
 
 Download
-[sumo-src-{{Version}}.tar.gz](https://sumo.dlr.de/releases/{{Version}}/sumo-src-{{Version}}.tar.gz) or <http://sumo.dlr.de/daily/sumo-src-git.tar.gz>
+[sumo-src-{{Version}}.tar.gz](https://sumo.dlr.de/releases/{{Version}}/sumo-src-{{Version}}.tar.gz) or <https://sumo.dlr.de/daily/sumo-src-git.tar.gz>
 
 ```
 tar xzf sumo-src-<version>.tar.gz
@@ -134,57 +130,50 @@ and console shows "/home/<user\>/sumo-<version\>"
 ## Installing Python packages for the tools
 
 Calling the tools from netedit requires a list of Python packages to generate templates during compilation.
-Install them using pip:
+Many of them might be available with the package manager of your distribution and most of the time we prefer
+to use those. For ubuntu this currently means, you should first do
 
 ```
-pip install -r tools/requirements.txt
+sudo apt-get install python3-pyproj python3-rtree python3-pandas flake8 python3-autopep8 python3-pulp python3-ezdxf
 ```
-You might need to replace `pip` with `pip3` if you are using python3 on Linux.
 
+and then install the remaining parts using pip:
+
+```
+python3 -m pip install -r tools/requirements.txt
+```
+
+The pip installation will ensure that all libraries are there, so it is safe to skip the first `apt-get` step.
+If you need information about the minimum required versions of the packages read them directly
+from the [requirements.txt](https://github.com/eclipse-sumo/sumo/blob/main/tools/requirements.txt). Be aware that
+the minimum versions in the requirements file just reflect our current test server setup, so you might also get away with earlier versions.
+
+If you want to reproduce our test server setup exactly, then use the versions in
+[req_test_server.txt](https://github.com/eclipse-sumo/sumo/blob/main/tools/req_test_server.txt)
+Unfortunately some old pip packages are incomplete, so this requires `sudo apt install libspatialindex-dev`.
 
 ## Building the SUMO binaries with cmake
 
-To build with cmake version 3 or higher is required.
+To build with cmake version 3.5 or higher is required.
 
-Create a build folder for cmake (in the sumo root folder)
-
-```
-mkdir build/cmake-build
-cd build/cmake-build
-```
-
-to build sumo with the full set of available options just like GDAL and
-OpenSceneGraph support (if the libraries are installed) just run:
+Create a build folder for cmake (in the SUMO root folder)
+and configure SUMO with the full set of available options like GDAL and
+OpenSceneGraph support (if the libraries are installed):
 
 ```
-cmake ../..
+cmake -B build .
 ```
 
 to build the debug version just use
 
 ```
-cmake -D CMAKE_BUILD_TYPE=Debug ../..
+cmake -D CMAKE_BUILD_TYPE=Debug -B build .
 ```
 
 !!! note
     On some platforms the required cmake executable is called *cmake3*.
 
-after this is finished, run
-
-```
-make -j $(nproc)
-```
-
-The `nproc` command gives you the number of logical cores on your
-computer, so that make will start parallel build jobs which makes the
-build a lot faster. If `nproc` is not available on your system, insert a
-fixed number here or leave the option out. You may also try
-
-```
-make -j $(grep -c ^processor /proc/cpuinfo)
-```
-
-Other useful cmake options:
+Other useful cmake configuration options:
 
 - `-D PROFILING=ON` enable profiling instrumentation for gprof (gcc build only)
 - `-D COVERAGE=ON` enable coverage instrumentation for lcov (gcc build only)
@@ -198,6 +187,20 @@ Other useful cmake options:
 - `-D MVN_EXECUTABLE=` disable maven packaging (especially useful if you have no network connection)
 - `-D ENABLE_CS_BINDINGS=ON` enable C# bindings when compiling libsumo / libtraci
 
+After this is finished, run
+
+```
+cmake --build build -j $(nproc)
+```
+
+The `nproc` command gives you the number of logical cores on your
+computer, so that make will start parallel build jobs which makes the
+build a lot faster. If `nproc` is not available on your system, insert a
+fixed number here or leave the option out. You may also try
+
+```
+cmake --build build -j $(grep -c ^processor /proc/cpuinfo)
+```
 
 ## Building with clang
 
@@ -207,7 +210,7 @@ Our current clang configuration for additional static code checking
 enables the following CXXFLAGS:
 
 ```
--stdlib=libstdc++ -fsanitize=undefined,address,integer,unsigned-integer-overflow -fno-omit-frame-pointer -fsanitize-blacklist=$SUMO_HOME/build/clang_sanitize_blacklist.txt
+-stdlib=libstdc++ -fsanitize=undefined,address,integer -fno-omit-frame-pointer -fsanitize-blacklist=$SUMO_HOME/build_config/clang_sanitize_blacklist.txt
 ```
 
 You may of course leave out all the sanitizer-checks you don't want but
@@ -219,7 +222,7 @@ build, so for building with CMake and clang just change to your build
 dir and use
 
 ```
-CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Debug ../..
+CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Debug --build build -j $(nproc)
 ```
 
 The clang-debug-build will detect memory leaks (among other things)
@@ -227,11 +230,16 @@ If the errors are reported with cryptic hexadecimal numbers as
 
 ```
 Indirect leak of 72 byte(s) in 1 object(s) allocated from:
-    #0 0xa4ee2d  (.../sumo/bin/netconvertD+0xa4ee2d) 
+    #0 0xa4ee2d  (.../sumo/bin/netconvertD+0xa4ee2d)
 ```
 
 set the following environment variable to point to the llvm-symbolizer executable:
 `export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer` before running the executable.
+
+Please note that the undefined behavior checker is very sensitive and will report
+some false negatives also in system libraries. It is recommended to use
+`export UBSAN_OPTIONS=suppressions=$SUMO_HOME/build_config/clang_ubsan_suppressions.txt`
+before calling the executable.
 
 ## Installing the SUMO binaries
 
@@ -242,7 +250,7 @@ SUMO from the bin subfolder (bin/sumo-gui and bin/sumo).
 
 If you want to install the SUMO binaries into your system, run
 ```
-sudo make install
+sudo cmake --install build
 ```
 
 You have to adjust your SUMO_HOME variable to the install dir (usually
@@ -272,11 +280,11 @@ that nightly builds of those packages are also available on https://test.pypi.or
 ```
 pip install wheel build
 cd tools
-python build/version.py build/setup-sumolib.py ./setup.py
+python build_config/version.py build_config/setup-sumolib.py ./setup.py
 python -m build --wheel
-python build/version.py build/setup-traci.py ./setup.py
+python build_config/version.py build_config/setup-traci.py ./setup.py
 python -m build --wheel
-python build/version.py build/setup-libsumo.py ./setup.py
+python build_config/version.py build_config/setup-libsumo.py ./setup.py
 python -m build --wheel
 ```
 You will need a recent version of pip (>=22) for this to work. If for some reason
@@ -284,7 +292,7 @@ you cannot update your pip you can also use the (discouraged!) method of calling
 setup.py directly.
 ```
 cd tools
-python build/setup-sumolib.py bdist_wheel
+python build_config/setup-sumolib.py bdist_wheel
 ```
 Please note that you always need to be in the tools directory for this to work
 and your wheels will be placed in tools/dist. Furthermore the traci and the sumolib wheel
@@ -305,6 +313,46 @@ If you find yourself building very often after minor changes, consider installin
 ccache and run cmake again. It will be picked up automatically and can dramatically
 improve build speed.
 
+## How to build JuPedSim and then build SUMO with JuPedSim
+
+In this section, you will learn how to build the latest version of the pedestrian simulator JuPedSim and how to compile SUMO with this latest version of JuPedSim. First of all, clone the JuPedSim repository:
+
+``` bash
+git clone https://github.com/PedestrianDynamics/jupedsim
+```
+Note that this will clone the full repository, including the latest version of JuPedSim. **We strongly recommend to build the latest release of JuPedSim (not the master branch), which is officially supported by SUMO.** You can consult the [JuPedSim build procedure](https://github.com/PedestrianDynamics/jupedsim#readme); hereafter we propose a similar procedure. First check which is the [latest release](https://github.com/PedestrianDynamics/jupedsim/releases) then in the cloned directory checkout to the latest release and do a regular cmake build. For example, for JuPedSim release v1.1.0, you would need to type:
+
+``` bash
+cd jupedsim
+git checkout v1.1.0
+cmake -B build .
+cmake --build build
+sudo cmake --install build
+```
+
+Now you should make sure GEOS is installed (`sudo apt-get install libgeos-dev`) and
+continue with the [standard build procedure above](#building-the-sumo-binaries-with-cmake).
+
+### Tweaking the JuPedSim build
+
+If you do not want to install jupedsim into your system, you can specify an alternative install directory like this:
+
+``` bash
+cmake -B build -DCMAKE_INSTALL_PREFIX=$PWD/../jupedsim-install .
+cmake --build build
+cmake --install build
+```
+
+This will install jupedsim in the directory `jupedsim-install` right beside the checkout. If you installed jupedsim
+into the system or in a `jupedsim-install` directory beside sumo, the standard cmake call of SUMO will find it
+automatically.
+
+Please be aware that if you want to install sumo into the system, you also need to install jupedsim into the system.
+To tweak or debug the jupedsim build you can also change the configuration to Debug (with `-DCMAKE_BUILD_TYPE=Debug`)
+and also enable multithreading (with `-j4`) as usual with CMake. If you have different jupedsim versions or choose a
+different install path, you can notify CMake where JuPedSim is installed by setting `JUPEDSIM_CUSTOMDIR` when calling CMake.
+
+For further remarks on the use of JuPedSim inside SUMO, please consult [the documentation on the model](../Simulation/Pedestrians.md#jupedsim).
 
 ## Troubleshooting
 
@@ -317,7 +365,7 @@ recv ./foreign/tcpip/libtcpip.a(socket.o) (symbol belongs to implicit depe
 ```
 
 Solution:
-<http://lists.danga.com/pipermail/memcached/2005-September/001611.html>
+<https://lists.danga.com/pipermail/memcached/2005-September/001611.html>
 
 ### ld cannot find an existing library (Fedora-23)
 
@@ -337,8 +385,12 @@ sudo yum install freetype-devel
 ```
 
 For details see
-[stackoverflow](http://stackoverflow.com/questions/335928/ld-cannot-find-an-existing-library)
+[stackoverflow](https://stackoverflow.com/questions/335928/ld-cannot-find-an-existing-library)
 discussion.
+
+### ld cannot find certain functions in an existing external library
+
+Make sure you don't have an environment like anaconda installed which modifies your library search path.
 
 ### Additional notes for Cygwin users
 

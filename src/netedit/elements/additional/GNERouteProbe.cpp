@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -25,7 +25,7 @@
 #include <netedit/GNENet.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 #include <utils/gui/globjects/GLIncludes.h>
-#include <utils/gui/div/GUIGlobalPostDrawing.h>
+#include <utils/gui/div/GUIGlobalViewObjectsHandler.h>
 
 #include "GNERouteProbe.h"
 
@@ -119,17 +119,19 @@ GNERouteProbe::getPositionInView() const {
 
 void
 GNERouteProbe::updateCenteringBoundary(const bool /*pdateGrid*/) {
-    myAdditionalBoundary.reset();
-    // add center
-    myAdditionalBoundary.add(getPositionInView());
-    // grow
-    myAdditionalBoundary.grow(10);
+    // nothing to do
 }
 
 
 void
 GNERouteProbe::splitEdgeGeometry(const double /*splitPosition*/, const GNENetworkElement* /*originalElement*/, const GNENetworkElement* /*newElement*/, GNEUndoList* /*undoList*/) {
     // geometry of this element cannot be splitted
+}
+
+
+bool
+GNERouteProbe::checkDrawMoveContour() const {
+    return false;
 }
 
 
@@ -151,7 +153,7 @@ GNERouteProbe::drawGL(const GUIVisualizationSettings& s) const {
     // Obtain exaggeration of the draw
     const double routeProbeExaggeration = getExaggeration(s);
     // first check if additional has to be drawn
-    if (s.drawAdditionals(routeProbeExaggeration) && myNet->getViewNet()->getDataViewOptions().showAdditionals()) {
+    if (myNet->getViewNet()->getDataViewOptions().showAdditionals()) {
         // declare colors
         RGBColor routeProbeColor, centralLineColor;
         // set colors
@@ -162,12 +164,12 @@ GNERouteProbe::drawGL(const GUIVisualizationSettings& s) const {
             routeProbeColor = s.additionalSettings.routeProbeColor;
             centralLineColor = RGBColor::WHITE;
         }
-        // avoid draw invisible elements
-        if (routeProbeColor.alpha() != 0) {
+        // get detail level
+        const auto d = s.getDetailLevel(routeProbeExaggeration);
+        // draw geometry only if we'rent in drawForObjectUnderCursor mode
+        if (!s.drawForViewObjectsHandler) {
             // draw parent and child lines
             drawParentChildLines(s, s.additionalSettings.connectionColor);
-            // Start drawing adding an gl identificator
-            GLHelper::pushName(getGlID());
             // Add layer matrix matrix
             GLHelper::pushMatrix();
             // translate to front
@@ -175,19 +177,19 @@ GNERouteProbe::drawGL(const GUIVisualizationSettings& s) const {
             // set base color
             GLHelper::setColor(routeProbeColor);
             // Draw the area using shape, shapeRotations, shapeLengths and value of exaggeration
-            GUIGeometry::drawGeometry(s, myNet->getViewNet()->getPositionInformation(), myAdditionalGeometry, 0.3 * routeProbeExaggeration);
+            GUIGeometry::drawGeometry(d, myAdditionalGeometry, 0.3 * routeProbeExaggeration);
             // move to front
             glTranslated(0, 0, .1);
             // set central color
             GLHelper::setColor(centralLineColor);
             // Draw the area using shape, shapeRotations, shapeLengths and value of exaggeration
-            GUIGeometry::drawGeometry(s, myNet->getViewNet()->getPositionInformation(), myAdditionalGeometry, 0.05 * routeProbeExaggeration);
+            GUIGeometry::drawGeometry(d, myAdditionalGeometry, 0.05 * routeProbeExaggeration);
             // move to icon position and front
             glTranslated(myAdditionalGeometry.getShape().front().x(), myAdditionalGeometry.getShape().front().y(), .1);
             // rotate over lane
             GUIGeometry::rotateOverLane(myAdditionalGeometry.getShapeRotations().front() * -1);
-            // Draw icon depending of Route Probe is selected and if isn't being drawn for selecting
-            if (!s.drawForRectangleSelection && s.drawDetail(s.detailSettings.laneTextures, routeProbeExaggeration)) {
+            // Draw icon depending of level of detail
+            if (d <= GUIVisualizationSettings::Detail::AdditionalDetails) {
                 // set color
                 glColor3d(1, 1, 1);
                 // rotate texture
@@ -206,33 +208,13 @@ GNERouteProbe::drawGL(const GUIVisualizationSettings& s) const {
             }
             // pop layer matrix
             GLHelper::popMatrix();
-            // Pop name
-            GLHelper::popName();
+            // draw additional name
+            drawAdditionalName(s);
+            // draw dotted contour
+            myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
         }
-        // draw additional name
-        drawAdditionalName(s);
-        // check if mouse is over element
-        mouseWithinGeometry(myAdditionalGeometry.getShape(), 0.5);
-        // inspect contour
-        if (myNet->getViewNet()->isAttributeCarrierInspected(this)) {
-            GUIDottedGeometry::drawDottedContourShape(s, GUIDottedGeometry::DottedContourType::INSPECT, myAdditionalGeometry.getShape(), 0.5,
-                    routeProbeExaggeration, true, true);
-        }
-        // front contour
-        if (myNet->getViewNet()->getFrontAttributeCarrier() == this) {
-            GUIDottedGeometry::drawDottedContourShape(s, GUIDottedGeometry::DottedContourType::FRONT, myAdditionalGeometry.getShape(), 0.5,
-                    routeProbeExaggeration, true, true);
-        }
-        // delete contour
-        if (myNet->getViewNet()->drawDeleteContour(this, this)) {
-            GUIDottedGeometry::drawDottedContourShape(s, GUIDottedGeometry::DottedContourType::REMOVE, myAdditionalGeometry.getShape(), 0.5,
-                    routeProbeExaggeration, true, true);
-        }
-        // delete contour
-        if (myNet->getViewNet()->drawSelectContour(this, this)) {
-            GUIDottedGeometry::drawDottedContourShape(s, GUIDottedGeometry::DottedContourType::SELECT, myAdditionalGeometry.getShape(), 0.5,
-                    routeProbeExaggeration, true, true);
-        }
+        // calculate contour and draw dotted geometry
+        myAdditionalContour.calculateContourExtrudedShape(s, d, this, myAdditionalGeometry.getShape(), 0.5, routeProbeExaggeration, true, true, 0);
     }
 }
 
@@ -299,7 +281,7 @@ GNERouteProbe::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoLi
         case SUMO_ATTR_BEGIN:
         case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
-            undoList->changeAttribute(new GNEChange_Attribute(this, key, value));
+            GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
@@ -361,7 +343,7 @@ GNERouteProbe::setAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_ID:
             // update microsimID
-            setMicrosimID(value);
+            setAdditionalID(value);
             break;
         case SUMO_ATTR_EDGE:
             replaceAdditionalParentEdges(value);

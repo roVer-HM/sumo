@@ -42,7 +42,7 @@ By default, the geometry of an edge starts with the position of the source junct
 !!! caution
     When right-clicking the geometry point the click must be within the edge shape for this too work.
 
-Afterwards, you will have to recompute the junction shape to see how it looks (F5). If you want to modify the edge and it's reverse edge at once this works almost the same way:
+Afterwards, you will have to recompute the junction shape to see how it looks (F5). If you want to modify the edge and its reverse edge at once this works almost the same way:
 
 1.  switch to [select mode](editModesCommon.md#select)
 2.  select both edges
@@ -103,7 +103,7 @@ The reverse operation to *Setting a custom geometry endpoint* as explained above
     intersection (this will be the radius of the roundabout)
 2.  Delete the central intersection
 3.  Connect the new intersections with one-way roads going in a circle
-4.  Tweak the geometry of the roundabout by creating additional geometry points in [move mode](editModesCommon.md#move) to make it more rounded. 
+4.  Tweak the geometry of the roundabout by creating additional geometry points in [move mode](editModesCommon.md#move) to make it more rounded.
     You can also use the function 'smooth edge' from the edge context menu.
 5.  Check for correct right of way (the inside edge should have priority over the entering edges). This should work by default but may fail if the shape of the roundabout is not 'round' enough. Either correct the geometry or assign a higher priority value to the roundabout roads (compared to the adjoining roads)
 
@@ -181,7 +181,7 @@ directions. To make a unidirectional track usable in both directions,
 4.  set the new edge as [Edge template](editModesCommon.md#edge_template)
 5.  make the edge bidirectional as explained above in [Make an existing track bidirectional](#make_an_existing_track_bidirectional)
 6.  in [Create Edges](editModesNetwork.md#create_edges), set the checkbox to *Two-way* and optionally to *Chain*
-7.  continue to created edges. Each click will create bidirectional track
+7.  continue to create edges - each click will create bidirectional track
 
 ## Define rail signals that only affect one track direction
 

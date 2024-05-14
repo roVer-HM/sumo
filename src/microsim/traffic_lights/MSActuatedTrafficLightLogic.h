@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2002-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -236,6 +236,9 @@ protected:
 
     /// @brief the minimum duratin for keeping the current phase due to linkMinDur constraints
     SUMOTime getLinkMinDuration(int target) const;
+
+    /// @brief whether a given link has only weak mode foes that are green in the given state
+    bool weakConflict(int linkIndex, const std::string& state) const;
 
     template<typename T, SumoXMLTag Tag>
     const T* retrieveDetExpression(const std::string& arg, const std::string& expr, bool tryPrefix) const {

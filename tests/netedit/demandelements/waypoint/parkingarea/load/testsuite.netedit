@@ -5,15 +5,6 @@ duration
 until
 
 extension
-
-triggered
-
-expected
-
-containertrigger
-
-expectedcontainers
-
 acttype
 
 line
@@ -21,3 +12,5 @@ line
 tripid
 
 speed
+
+containertrigger

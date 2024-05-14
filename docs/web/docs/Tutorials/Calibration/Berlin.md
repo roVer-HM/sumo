@@ -19,15 +19,15 @@ loops, that supply vehicle data classified into 5+1 vehicle types
 according to TLS\[2\]. An Overview about the test track and the position
 of the induction loops is given in Fig. 1.
 
-![Berlin.png](../../images/Berlin.png "Berlin.png")
+![Berlin.png](../../images/Berlin.png)
 
 ## Modelling within the SUMO-Package
 
 Preparing a traffic simulation includes modelling the road network as
-well as modelling the traffic demand within the traffic network.  
+well as modelling the traffic demand within the traffic network.
 
-### Traffic Net Modelling  
-  
+### Traffic Net Modelling
+
 The simulation net includes the section between
 “Wegedornstraße” and “Adlergestell”. It represents the exact number of
 lanes, turn lanes and links to all side roads. Within the considered
@@ -40,10 +40,10 @@ available to model the bottleneck itself, Variable Speed Signs (VSS)
 \[3\] were placed in the model at the outbound of the junction
 “Altglienicker Brücke” towards Adlergestell. The VSS supplies all
 vehicles crossing with a new maximum speed, derived from the single
-value data from the detectors.  
-  
-### Traffic Demand Modelling  
-  
+value data from the detectors.
+
+### Traffic Demand Modelling
+
 While looking for a work day, outside of the holiday seasons, where considerable congestion occurred, Tuesday the 11 of January 2011 was chosen. The traffic data from this day
 was aggregated to intervals of one minute. This minor simplification
 enabled the use of the module dfrouter \[4\]. After defining the
@@ -67,13 +67,13 @@ within the simulation net as in reality. To assess if the congestion within the 
 shows the speed at the observation points, aggregated to intervals of
 one minute.
 
-![<File:Results1.jpg>](../../images/Results1.jpg "File:Results1.jpg")
-![<File:Results2.jpg>](../../images/Results2.jpg "File:Results2.jpg")
+![Results1.jpg](../../images/Results1.jpg)
+![Results2.jpg](../../images/Results2.jpg)
 
 Fig. 2: Speeds measured at observation points MQ 22 and MQ 32
 
-![<File:Results3.jpg>](../../images/Results3.jpg "File:Results3.jpg")
-![<File:Results4.jpg>](../../images/Results4.jpg "File:Results4.jpg")
+![Results3.jpg](../../images/Results3.jpg)
+![Results4.jpg](../../images/Results4.jpg)
 
 Fig. 3: Difference between measured and simulated speeds at observation
 points MQ 22 and MQ 32
@@ -105,7 +105,7 @@ sensors and from the simulation are compared.
 ## References
 
 - \[1\]
-  <http://www.dlr.de/fs/en/desktopdefault.aspx/tabid-1237/5441_read-11863/>
+  <https://www.dlr.de/fs/en/desktopdefault.aspx/tabid-1237/5441_read-11863/>
   last visited 07 February 2012
 - \[2\] Bundesanstalt für Straßenverkehrswesen (2002): Technische
   Lieferbedingungen für Streckenstationen. Bundesministerium für

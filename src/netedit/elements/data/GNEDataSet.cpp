@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -133,6 +133,12 @@ GNEDataSet::getGUIGlObject() {
 }
 
 
+const GUIGlObject*
+GNEDataSet::getGUIGlObject() const {
+    return nullptr;
+}
+
+
 void
 GNEDataSet::updateAttributeColors() {
     // first update attribute colors in data interval childrens
@@ -202,6 +208,48 @@ GNEDataSet::writeDataSet(OutputDevice& device) const {
 }
 
 
+bool
+GNEDataSet::checkDrawFromContour() const {
+    return false;
+}
+
+
+bool
+GNEDataSet::checkDrawToContour() const {
+    return false;
+}
+
+
+bool
+GNEDataSet::checkDrawRelatedContour() const {
+    return false;
+}
+
+
+bool
+GNEDataSet::checkDrawOverContour() const {
+    return false;
+}
+
+
+bool
+GNEDataSet::checkDrawDeleteContour() const {
+    return false;
+}
+
+
+bool
+GNEDataSet::checkDrawSelectContour() const {
+    return false;
+}
+
+
+bool
+GNEDataSet::checkDrawMoveContour() const {
+    return false;
+}
+
+
 void
 GNEDataSet::addDataIntervalChild(GNEDataInterval* dataInterval) {
     // check that dataInterval wasn't previously inserted
@@ -209,7 +257,7 @@ GNEDataSet::addDataIntervalChild(GNEDataInterval* dataInterval) {
         // add data interval child
         myDataIntervalChildren[dataInterval->getAttributeDouble(SUMO_ATTR_BEGIN)] = dataInterval;
         // add reference in attributeCarriers
-        myNet->getAttributeCarriers()->insertDataInterval(dataInterval);
+        myNet->getAttributeCarriers()->insertDataInterval(dataInterval, dataInterval);
     } else {
         throw ProcessError(TL("DataInterval was already inserted"));
     }
@@ -315,7 +363,7 @@ void
 GNEDataSet::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList) {
     switch (key) {
         case SUMO_ATTR_ID:
-            undoList->changeAttribute(new GNEChange_Attribute(this, key, value));
+            GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");

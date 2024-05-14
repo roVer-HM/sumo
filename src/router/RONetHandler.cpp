@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2002-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -45,13 +45,14 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-RONetHandler::RONetHandler(RONet& net, ROAbstractEdgeBuilder& eb, const bool ignoreInternal, const double minorPenalty) :
+RONetHandler::RONetHandler(RONet& net, ROAbstractEdgeBuilder& eb, const bool ignoreInternal, const double minorPenalty, double tlsPenalty) :
     SUMOSAXHandler("sumo-network"),
     myNet(net),
     myNetworkVersion(0, 0),
     myEdgeBuilder(eb), myIgnoreInternal(ignoreInternal),
     myCurrentName(), myCurrentEdge(nullptr), myCurrentStoppingPlace(nullptr),
-    myMinorPenalty(minorPenalty)
+    myMinorPenalty(minorPenalty),
+    myTLSPenalty(tlsPenalty)
 {}
 
 
@@ -293,6 +294,7 @@ RONetHandler::parseConnection(const SUMOSAXAttributes& attrs) {
     const int toLane = attrs.get<int>(SUMO_ATTR_TO_LANE, nullptr, ok);
     std::string dir = attrs.get<std::string>(SUMO_ATTR_DIR, nullptr, ok);
     std::string viaID = attrs.getOpt<std::string>(SUMO_ATTR_VIA, nullptr, ok, "");
+    std::string tlID = attrs.getOpt<std::string>(SUMO_ATTR_TLID, nullptr, ok, "");
     ROEdge* from = myNet.getEdge(fromID);
     ROEdge* to = myNet.getEdge(toID);
     if (from == nullptr) {
@@ -310,6 +312,9 @@ RONetHandler::parseConnection(const SUMOSAXAttributes& attrs) {
     if (myIgnoreInternal || viaID == "") {
         from->getLanes()[fromLane]->addOutgoingLane(to->getLanes()[toLane]);
         from->addSuccessor(to, nullptr, dir);
+        if (to->isCrossing()) {
+            to->setTimePenalty(myTLSPenalty);
+        }
     }  else {
         ROEdge* const via = myNet.getEdge(SUMOXMLDefinitions::getEdgeIDFromLane(viaID));
         if (via == nullptr) {
@@ -321,6 +326,12 @@ RONetHandler::parseConnection(const SUMOSAXAttributes& attrs) {
         LinkState state = SUMOXMLDefinitions::LinkStates.get(attrs.get<std::string>(SUMO_ATTR_STATE, nullptr, ok));
         if (state == LINKSTATE_MINOR || state == LINKSTATE_EQUAL || state == LINKSTATE_STOP || state == LINKSTATE_ALLWAY_STOP) {
             via->setTimePenalty(myMinorPenalty);
+        }
+        if (tlID != "") {
+            via->setTimePenalty(myTLSPenalty);
+            if (to->isCrossing()) {
+                to->setTimePenalty(myTLSPenalty);
+            }
         }
     }
 }
@@ -368,7 +379,8 @@ RONetHandler::parseAccess(const SUMOSAXAttributes& attrs) {
         WRITE_WARNINGF(TL("Ignoring invalid access from non-pedestrian edge '%'."), edge->getID());
         return;
     }
-    double pos = attrs.getOpt<double>(SUMO_ATTR_POSITION, "access", ok, 0.);
+    const bool random = attrs.getOpt<std::string>(SUMO_ATTR_POSITION, "access", ok) == "random";
+    double pos = random ? edge->getLength() / 2. : attrs.getOpt<double>(SUMO_ATTR_POSITION, "access", ok, 0.);
     double length = attrs.getOpt<double>(SUMO_ATTR_LENGTH, "access", ok, -1);
     const bool friendlyPos = attrs.getOpt<bool>(SUMO_ATTR_FRIENDLY_POS, "access", ok, false);
     if (!ok || (SUMORouteHandler::checkStopPos(pos, pos, edge->getLength(), 0., friendlyPos) != SUMORouteHandler::StopPos::STOPPOS_VALID)) {

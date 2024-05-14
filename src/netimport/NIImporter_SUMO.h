@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -308,7 +308,7 @@ private:
     /** @struct Crossing
      * @brief Describes a pedestrian crossing
      */
-    struct Crossing {
+    struct Crossing : public Parameterised {
         Crossing(const std::string& _edgeID) :
             edgeID(_edgeID), customTLIndex(-1), customTLIndex2(-1) {}
 
@@ -426,6 +426,9 @@ private:
     bool myJunctionsHigherSpeed;
     /// @brief custom settings for internal junction computation
     double myInternalJunctionsVehicleWidth;
+    /// @brief custom settings for junction shape computation
+    bool myJunctionsMinimalShape;
+    bool myJunctionsEndpointShape;
 
     /// @brief loaded roundabout edges
     std::vector<std::vector<std::string> > myRoundabouts;

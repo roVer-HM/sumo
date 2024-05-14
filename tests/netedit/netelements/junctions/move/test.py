@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -33,15 +33,14 @@ netedit.rebuildNetwork()
 netedit.moveMode()
 
 # move single edge junctions
-netedit.dragDrop(referencePosition, 45, 70, 45, 14)
-netedit.dragDrop(referencePosition, 155, 70, 155, 14)
+netedit.dragDrop(referencePosition, 190, 50, 45, 50)
+netedit.dragDrop(referencePosition, 806, 51, 932, 116)
 
 # move double edge junctions
-netedit.dragDrop(referencePosition, 268, 70, 268, 14)
-netedit.dragDrop(referencePosition, 380, 70, 380, 14)
+netedit.dragDrop(referencePosition, 187, 297, 187, 421)
 
 # move center
-netedit.dragDrop(referencePosition, 440, 295, 100, 410)
+netedit.dragDrop(referencePosition, 620, 300, 932, 363)
 
 # rebuild network
 netedit.rebuildNetwork()
@@ -52,16 +51,15 @@ netedit.undo(referencePosition, 5)
 # Change to move
 netedit.moveMode()
 
-# move single edge junctions (again)
-netedit.dragDrop(referencePosition, 45, 70, 45, 14)
-netedit.dragDrop(referencePosition, 155, 70, 155, 14)
+# move single edge junctions
+netedit.dragDrop(referencePosition, 190, 50, 45, 50)
+netedit.dragDrop(referencePosition, 806, 51, 932, 116)
 
-# move double edge junctions (again)
-netedit.dragDrop(referencePosition, 268, 70, 268, 14)
-netedit.dragDrop(referencePosition, 380, 70, 380, 14)
+# move double edge junctions
+netedit.dragDrop(referencePosition, 187, 297, 187, 421)
 
-# move center (again)
-netedit.dragDrop(referencePosition, 440, 295, 100, 410)
+# move center
+netedit.dragDrop(referencePosition, 620, 300, 932, 363)
 
 # Check undo
 netedit.undo(referencePosition, 5)

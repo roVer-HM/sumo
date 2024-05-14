@@ -32,7 +32,7 @@ A step by step description for using
 
 You may use a XML schema definition file for setting up a activitygen
 configuration:
-[activitygenConfiguration.xsd](http://sumo.dlr.de/xsd/activitygenConfiguration.xsd).
+[activitygenConfiguration.xsd](https://sumo.dlr.de/xsd/activitygenConfiguration.xsd).
 
 ### Configuration
 
@@ -94,6 +94,8 @@ Command Line Applications\#Reporting Options](Basics/Using_the_Command_Line_Appl
 | **-l** {{DT_FILE}}<br> **--log** {{DT_FILE}} | Writes all messages to FILE (implies verbose) |
 | **--message-log** {{DT_FILE}} | Writes all non-error messages to FILE (implies verbose) |
 | **--error-log** {{DT_FILE}} | Writes all warnings and errors to FILE |
+| **--log.timestamps** {{DT_BOOL}} | Writes timestamps in front of all messages; *default:* **false** |
+| **--log.processid** {{DT_BOOL}} | Writes process ID in front of all messages; *default:* **false** |
 | **--language** {{DT_STR}} | Language to use in messages; *default:* **C** |
 | **--debug** {{DT_BOOL}} | Detailed messages about every single step; *default:* **false** |
 
@@ -107,5 +109,3 @@ Applications\#Random Number Options](Basics/Using_the_Command_Line_Applications.
 |--------|-------------|
 | **--random** {{DT_BOOL}} | Initialises the random number generator with the current system time; *default:* **false** |
 | **--seed** {{DT_INT}} | Initialises the random number generator with the given value; *default:* **23423** |
-
-

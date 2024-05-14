@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -38,19 +38,19 @@ netedit.changeEditMode(netedit.attrs.modes.network.selectLane)
 netedit.inspectMode()
 
 # inspect edge
-netedit.leftClick(referencePosition, 250, 165)
+netedit.leftClick(referencePosition, 400, 165)
 
 # Change parameter 4 with a non valid value (dummy)
-netedit.modifyAttribute(netedit.attrs.lane.inspect.endOffset, "dummyEndOffset", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspect.endOffset, "dummyEndOffset", False)
 
-# Change parameter 4 with a non valid value (emtpy)
-netedit.modifyAttribute(netedit.attrs.lane.inspect.endOffset, "", True)
+# Change parameter 4 with a non valid value (empty)
+netedit.modifyAttribute(netedit.attrs.lane.inspect.endOffset, "", False)
 
 # Change parameter 4 with a non valid value (negative)
-netedit.modifyAttribute(netedit.attrs.lane.inspect.endOffset, "-3", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspect.endOffset, "-3", False)
 
 # Change parameter 4 with a valid value
-netedit.modifyAttribute(netedit.attrs.lane.inspect.endOffset, "12.5", True)
+netedit.modifyAttribute(netedit.attrs.lane.inspect.endOffset, "12.5", False)
 
 # recompute
 netedit.rebuildNetwork()

@@ -15,7 +15,7 @@ in the sumo-gui.
 # Requirements
 
 - [SUMO](../Installing/index.md) installation
-- [Python](http://www.python.org) (\>= 2.7) installation
+- [Python](https://www.python.org) (\>= 2.7) installation
 
 # Getting started
 
@@ -99,11 +99,11 @@ The next step is generating and running the scenario.
 # Road-Type Selection
 
 In the Road-Type tab of the OSM Web Wizard one can define which road types
-to be downloaded and rendered. 
+to be downloaded and rendered.
 
 ![wz01.jpg](../images/Wz05.png "wz05.png")
 
-For example, one can only choose motorways, primary, 
+For example, one can only choose motorways, primary,
 secondary and tertiary to simulate major traffic.
 This impacts the file size of the OSM map data.
 

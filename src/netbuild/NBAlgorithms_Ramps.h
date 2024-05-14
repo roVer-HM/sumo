@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2012-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -136,4 +136,18 @@ private:
 
     /// @brief shift ramp geometry to merge smoothly with the motorway
     static void patchRampGeometry(NBEdge* potRamp, NBEdge* first, NBEdge* potHighway, bool onRamp);
+
+    template <class T>
+    static std::string getUnusedID(const std::string& prefix, const T& objectCont) {
+        if (objectCont.retrieve(prefix) == nullptr) {
+            return prefix;
+        }
+        int i = 0;
+        std::string result = prefix + "#" + toString(i);
+        while (objectCont.retrieve(result) != nullptr) {
+            i++;
+            result = prefix + "#" + toString(i);
+        }
+        return result;
+    }
 };

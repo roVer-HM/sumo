@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -27,6 +27,7 @@
 #include <map>
 #include <utils/common/RGBColor.h>
 #include <utils/common/ToString.h>
+
 #include "GUIPropertySchemeStorage.h"
 
 
@@ -460,9 +461,12 @@ struct GUIVisualizationStoppingPlaceSettings {
 struct GUIVisualizationDottedContourSettings {
 
     /// @brief width of dotted contour segments
+    static const double segmentWidth;
+
+    /// @brief width of small dotted contour segments
     static const double segmentWidthSmall;
 
-    /// @brief width of dotted contour segments
+    /// @brief width of large dotted contour segments
     static const double segmentWidthLarge;
 
     /// @brief length of dotted contour segments
@@ -524,64 +528,7 @@ struct GUIVisualizationWidthSettings {
 struct GUIVisualizationDetailSettings {
 
     /// @brief draw connections in demand mode
-    static const double connectionsDemandMode;
-
-    /// @brief details for lane textures
-    static const double laneTextures;
-
-    /// @brief lock icons
-    static const double lockIcon;
-
-    /// @brief details for additional textures
-    static const double additionalTextures;
-
-    /// @brief details for Geometry Points
-    static const double geometryPointsDetails;
-
-    /// @brief details for Geometry Points Texts
-    static const double geometryPointsText;
-
-    /// @brief details for stopping places
-    static const double stoppingPlaceDetails;
-
-    /// @brief details for stopping place texts
-    static const double stoppingPlaceText;
-
-    /// @brief details for detectors
-    static const double detectorDetails;
-
-    /// @brief details for detector texts
-    static const double detectorText;
-
-    /// @brief details for calibrator text
-    static const double calibratorText;
-
-    /// @brief details for stops
-    static const double stopsDetails;
-
-    /// @brief details for stop texts
-    static const double stopsText;
-
-    /// @brief details for draw person as triangles
-    static const double vehicleTriangles;
-
-    /// @brief details for draw person as boxes
-    static const double vehicleBoxes;
-
-    /// @brief details for draw person as shapes
-    static const double vehicleShapes;
-
-    /// @brief details for draw person as triangles
-    static const double personTriangles;
-
-    /// @brief details for draw person as circles
-    static const double personCircles;
-
-    /// @brief details for draw person as person shapes
-    static const double personShapes;
-
-    /// @brief Exaggeration for persons (only used in netedit)
-    static const double personExaggeration;
+    static const double tmp;
 };
 
 
@@ -592,6 +539,42 @@ struct GUIVisualizationDetailSettings {
 class GUIVisualizationSettings {
 
 public:
+
+    enum class Detail : int {
+        Level0 = 0,
+        CircleResolution32 = 0,     // circle resolution = 32
+        DrawPolygonTesselation = 0, // draw polygons tesselated
+        LaneDetails = 0,            // offset, icons, indicators...
+        Text = 0,                   // draw text (E2, routes...)
+        VehiclePoly = 0,            // draw vehicles as polygons
+        JunctionElementDetails = 0, // draw junction elements with high detail (crossings, connections..)
+        LockedIcons = 0,            // draw lock icons
+
+        Level1 = 1,
+        CircleResolution16 = 1,         // circle resolution = 16
+        VehicleBox = 1,                 // vehicles as boxes
+        AdditionalDetails = 1,          // stoppingPlace signs, EntryExit arrows...
+        GeometryPoint = 1,              // draw geometry points
+        JunctionElement = 1,            // crossings, walking area, connections and internal lanes
+        DottedContoursResampled = 1,    // resample dotted contours
+        PreciseSelection = 1,           // precise selection using boundaries
+
+        Level2 = 2,
+        CircleResolution8 = 2,  // circle resolution = 8
+        DrawPolygonSquare = 2,  // draw polygons as squares
+        VehicleTriangle = 2,    // draw vehicles as triangles
+        Additionals = 2,        // draw additional elements
+        DottedContours = 2,     // draw dotted contours
+        GeometryBoxLines = 2,   // draw lines instead boxes in GUIGeometry::drawGeometry
+
+        Level3 = 3,
+        CircleResolution4 = 3,  // draw circle resolution as squares
+        TLSIcon = 3,            // draw TLS icons
+
+        Level4 = 4,
+        GeometryBoxSimpleLine = 4,  // draw lines with width = 1 instead boxes in GUIGeometry::drawGeometry
+    };
+
     /// @brief constructor
     GUIVisualizationSettings(const std::string& _name, bool _netedit = false);
 
@@ -639,17 +622,14 @@ public:
     /// @brief return wether the text was flipped for reading at the given angle
     bool flippedTextAngle(double objectAngle) const;
 
-    /// @brief check if additionals must be drawn
-    bool drawAdditionals(const double exaggeration) const;
+    /// @brief check if draw element depending of boundarySize
+    bool checkBoundarySizeDrawing(const double w, const double h) const;
+
+    /// @brief return the detail level
+    Detail getDetailLevel(const double exaggeration) const;
 
     /// @brief check if details can be drawn for the given GUIVisualizationDetailSettings and current scale and exxageration
     bool drawDetail(const double detail, const double exaggeration) const;
-
-    /// @brief function to calculate circle resolution for all circles drawn in drawGL(...) functions
-    int getCircleResolution() const;
-
-    /// @brief check if dotted contour can be drawn
-    bool drawDottedContour(const double exaggeration) const;
 
     /// @brief check if moving geometry point can be draw
     bool drawMovingGeometryPoint(const double exaggeration, const double radius) const;
@@ -739,6 +719,9 @@ public:
     /// @brief Whether to improve visualisation of superposed (rail) edges
     bool spreadSuperposed;
 
+    /// @brief disable hide by zoom
+    bool disableHideByZoom;
+
     /// @brief key for coloring by edge parameter
     std::string edgeParam, laneParam;
     /// @brief key for coloring by vehicle parameter
@@ -826,6 +809,12 @@ public:
 
     // Setting bundles for optional drawing person names
     GUIVisualizationTextSettings personName, personValue;
+
+    /// @brief Flag for visualizing the pedestrian network generated for JuPedSim
+    bool showPedestrianNetwork;
+
+    /// @brief The color of the pedestrian network generated for JuPedSim
+    RGBColor pedestrianNetworkColor;
     /// @}
 
 
@@ -985,14 +974,11 @@ public:
     /// @brief the current selection scaling in netedit (set in SelectorFrame)
     double selectorFrameScale;
 
-    /// @brief whether drawing is performed for the purpose of selecting objects with a single click
-    bool drawForPositionSelection;
+    /// @brief whether drawing is performed for the purpose of selecting objects in view using ViewObjectsHandler
+    bool drawForViewObjectsHandler;
 
     /// @brief whether drawing is performed for the purpose of selecting objects using a rectangle
     bool drawForRectangleSelection;
-
-    /// @brief flag to force draw for position selection (see drawForPositionSelection)
-    bool forceDrawForPositionSelection;
 
     /// @brief flag to force draw for rectangle selection (see drawForRectangleSelection)
     bool forceDrawForRectangleSelection;

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2012-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -39,6 +39,7 @@ TraCIAPI::TraCIAPI() :
     simulation(*this), trafficlights(*this),
     vehicle(*this), vehicletype(*this),
     mySocket(nullptr) {
+    std::cerr << "TraCIAPI is deprecated. Please use libtraci instead, see https://sumo.dlr.de/docs/Libtraci.html.\n";
     myDomains[libsumo::RESPONSE_SUBSCRIBE_EDGE_VARIABLE] = &edge;
     myDomains[libsumo::RESPONSE_SUBSCRIBE_GUI_VARIABLE] = &gui;
     myDomains[libsumo::RESPONSE_SUBSCRIBE_JUNCTION_VARIABLE] = &junction;
@@ -723,6 +724,11 @@ TraCIAPI::GUIScope::trackVehicle(const std::string& viewID, const std::string& v
 // ---------------------------------------------------------------------------
 // TraCIAPI::InductionLoopScope-methods
 // ---------------------------------------------------------------------------
+
+int TraCIAPI::InductionLoopScope::getIntervalVehicleNumber(const std::string& loopID) const {
+    return getInt(libsumo::VAR_LAST_INTERVAL_NUMBER, loopID);
+}
+
 double
 TraCIAPI::InductionLoopScope::getPosition(const std::string& loopID) const {
     return getDouble(libsumo::VAR_POSITION, loopID);

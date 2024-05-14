@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,11 +35,11 @@ netedit.rebuildNetwork()
 netedit.crossingMode()
 
 # select central node (there is already an Crossing in edges 3-7)
-netedit.leftClick(referencePosition, 325, 225)
+netedit.leftClick(referencePosition, 500, 225)
 
 # select two left edges and try to create crossing in edges 3 and 7
-netedit.leftClick(referencePosition, 150, 200)
-netedit.leftClick(referencePosition, 150, 250)
+netedit.leftClick(referencePosition, 300, 200)
+netedit.leftClick(referencePosition, 300, 250)
 netedit.createCrossing(True)
 
 # try to create manual crossing

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -43,6 +43,7 @@ class GUIParameterTracker;
 class GUIParameterTableWindow;
 class GUIDialog_Breakpoints;
 class MFXLCDLabel;
+class MFXLabelTooltip;
 
 
 // ===========================================================================
@@ -114,7 +115,7 @@ public:
     /// @name Inter-thread event handling
     /// @{
 
-    /// @brief a certaint event ocurred
+    /// @brief a certain event ocurred
     virtual void eventOccurred();
 
     /// @brief called when event "simulation loaded" ocurred
@@ -191,14 +192,8 @@ public:
     /// @brief called if the user selects help->Tutorial
     long onCmdTutorial(FXObject* sender, FXSelector sel, void* ptr);
 
-    /// @brief Called on menu Edit->Netedit (network)
-    long onCmdNeteditNetwork(FXObject*, FXSelector, void*);
-
-    /// @brief Called on menu Edit->Netedit (SUMOCfg)
-    long onCmdNeteditSUMOConfig(FXObject*, FXSelector, void*);
-
-    /// @brief Enable or disable open SUMOConfig in netedit
-    long onUpdNeteditSUMOConfig(FXObject*, FXSelector, void*);
+    /// @brief Called on menu Edit->open in Netedit
+    long onCmdOpenInNetedit(FXObject*, FXSelector, void*);
 
     /// @brief Opens the application settings menu (Settings->Application Settings...)
     long onCmdAppSettings(FXObject*, FXSelector, void*);
@@ -292,14 +287,23 @@ public:
     /// @brief Determines whether "step" is enabled
     long onUpdStep(FXObject*, FXSelector, void*);
 
-    /// @brief Determines whether some buttons which require an active simulation may be shown
-    long onUpdNeedsSimulation(FXObject*, FXSelector, void*);
+    /// @brief Determines whether some buttons which require an active network may be shown
+    long onUpdNeedsNetwork(FXObject*, FXSelector, void*);
+
+    /// @brief Determines whether some buttons which require an sumoConfig may be shown
+    long onUpdNeedsSumoConfig(FXObject*, FXSelector, void*);
 
     /// @brief Determines whether traci is active
     long onUpdTraCIStatus(FXObject*, FXSelector, void*);
 
     /// @brief Called if the message window shall be cleared
     long onCmdClearMsgWindow(FXObject*, FXSelector, void*);
+
+    /// @brief Called to set a breakpoint via hotkey
+    long onCmdBreakpoint(FXObject*, FXSelector, void*);
+
+    /// @brief Called to set an early breakpoint via hotkey
+    long onCmdBreakpointEarly(FXObject*, FXSelector, void*);
 
     /// @brief Called on menu commands from the Locator menu
     long onCmdLocate(FXObject*, FXSelector, void*);
@@ -332,6 +336,9 @@ public:
 
     /// @brief Sets the breakpoints of the parent application
     virtual void setBreakpoints(const std::vector<SUMOTime>& breakpoints);
+
+    /// @brief Adds the given breakpoint
+    void addBreakpoint(SUMOTime time);
 
     /// @brief Sends an event from the application thread to the GUI and waits until it is handled
     virtual void sendBlockingEvent(GUIEvent* event);
@@ -407,6 +414,15 @@ protected:
     /// @brief the menu cascades
     FXMenuCascade* mySelectLanesMenuCascade = nullptr;
 
+    /// @brief menuCheck for enable/disable load additionals in netedit
+    FXMenuCheck* myLoadAdditionalsInNetedit = nullptr;
+
+    /// @brief menuCheck for enable/disable load demand elements in netedit
+    FXMenuCheck* myLoadDemandInNetedit = nullptr;
+
+    /// @brief menuCommand for open simulation/network in netedit
+    FXMenuCommand* myOpenInNetedit = nullptr;
+
     /// @brief Buttons showing and running values and triggering statistic windows
     std::vector<FXButton*> myStatButtons;
 
@@ -436,6 +452,9 @@ protected:
 
     /// @brief Simulation delay slider
     FXSlider* mySimDelaySlider = nullptr;
+
+    /// @brief the demand scale label
+    MFXLabelTooltip* myScaleTrafficTooltip = nullptr;
 
     /// @brief the demand scale
     FXRealSpinner* myDemandScaleSpinner = nullptr;

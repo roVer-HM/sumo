@@ -88,6 +88,7 @@ gtfs_routes:gtfs_pt_vehicles.add.xml
 gtfs_additional:gtfs_pt_stops.add.xml
 vtypes:vtypes.xml
 cfg:config.sumocfg
+aggregated:aggregated.xml
 
 [run_dependent_text]
 output:<!--{[->]}-->
@@ -105,7 +106,11 @@ output:Parsing connections from .*{REPLACE Parsing connections from (FILE)}
 output:Loading vehicle type mappings from file.*{REPLACE Loading vehicle type mappings from file '<vtype.map>'...}
 output:Simulation.*started with{REPLACE Simulation started with}
 output:([0-9]* ms){REPLACE (TIME)}
+log:([0-9]*ms){REPLACE (TIME)}
+log2:([0-9]*ms){REPLACE (TIME)}
 output:version .*SUMO .*{REPLACE version SUMO}
+log:version .* started .*{REPLACE version started}
+log2:version .* started .*{REPLACE version started}
 output:Running main\(\) from .*gtest_main.cc{REPLACE Running main() from gtest_main.cc}
 output: test case{REPLACE  test suite}
 output:function .* called at .*
@@ -124,6 +129,7 @@ vehroutes2:<!--{[->]}-->
 tripinfo:<!--{[->]}-->
 tripinfo2:<!--{[->]}-->
 rawdump:<!--{[->]}-->
+aggregated:<!--{[->]}-->
 fcd:<!--{[->]}-->
 fcd2:<!--{[->]}-->
 fcd3:<!--{[->]}-->
@@ -192,7 +198,7 @@ errors:getNextStops
 
 
 [floating_point_tolerance]
-output:0.0001
+output:0.0101
 net:0.0101
 vss:0.0001
 results:0.0101

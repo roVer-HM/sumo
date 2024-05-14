@@ -4,7 +4,7 @@ title: IntermodalRouting
 
 # Basic Concepts
 
-Every person may have multiple modes of transport to chose from.
+Every person may have multiple modes of transport to choose from.
 Currently those are walking (which is assumed to be always possible),
 riding by public transport and going by car. Intermodal routing uses
 [person trips](Specification/Persons.md#persontrips) to define a
@@ -48,7 +48,7 @@ with a [public transport schedule](Simulation/Public_Transport.md#public_transpo
 An example for a bus line and a person that may uses this line are given below:
 
 ```xml
-<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+<routes xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://sumo.dlr.de/xsd/routes_file.xsd">
     <flow id="bus" from = "beg" to ="end" line="bus" begin="0" end="1000" period="300">
                 <stop busStop="busStopA" until="10"/>
                 <stop busStop="busStopB" until="110"/>
@@ -59,14 +59,14 @@ An example for a bus line and a person that may uses this line are given below:
     </person>
 </routes>
 ```
-!!! note 
+!!! note
     A vehicle/flow/trip must define the `line` attribute to be considered as public transport. Every vehicle with a line attribute is considered public transport and may be used for routing regardless of its capacity.
 
 # Switching between modes
 
 Not all places in a traffic network are suitable for transferring between walking and riding modes (i.e. parking facilities may be needed to switch from a private car to walking or public transport). The following options are provided for this purpose:
 
-- **--persontrip.transfer.car-walk**: set a list of any of the following values: parkingAreas, ptStops, allJunctions (default *parkingAreas*)  
+- **--persontrip.transfer.car-walk**: set a list of any of the following values: parkingAreas, ptStops, allJunctions (default *parkingAreas*)
 - **--persontrip.transfer.taxi-walk**: set a list of any of the following values: ptStops, allJunctions (default *allJunctions*)
 - **--persontrip.transfer.walk-taxi**: set a list of any of the following values: ptStops, allJunctions (default *allJunctions*)
 

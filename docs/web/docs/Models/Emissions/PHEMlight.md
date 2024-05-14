@@ -5,17 +5,17 @@ title: PHEMlight
 # PHEM (Passenger Car and Heavy Duty Emission Model)
 
 [PHEM (Passenger Car and Heavy Duty Emission
-Model)](https://www.ivt.tugraz.at/assets/files/areas/em/Phem_en.pdf)
+Model)](https://www.itna.tugraz.at/assets/files/areas/em/Phem_en.pdf)
 is an instantaneous vehicle emission model developed by the TU Graz
 since 1999. PHEM is based on an extensive European set of vehicle
 measurements and covers passenger cars, light duty vehicles and heavy
 duty vehicles from city buses up to 40 ton semi-trailers.
 
 Within [COLOMBO](https://verkehrsforschung.dlr.de/en/projects/colombo), a simplified version of PHEM,
-embedded into SUMO, was developed. The [PHEMlight](https://www.ivt.tugraz.at/assets/files/areas/em/PHEMlight_en.pdf) model is the result of
+embedded into SUMO, was developed. The [PHEMlight](https://www.itna.tugraz.at/assets/files/areas/em/PHEMlight_en.pdf) model is the result of
 this work. An in-depth description can be found in
 [COLOMBO](https://verkehrsforschung.dlr.de/en/projects/colombo)'s deliverable
-[D4.2](https://web.archive.org/web/20170808122505/http://www.colombo-fp7.eu/results_deliverables.php). The model
+[D4.2](https://web.archive.org/web/20170808122505/https://www.colombo-fp7.eu/results_deliverables.php). The model
 received a major update to version 2.0.0.0 in the beginning of 2016
 which also used new names for all vehicle classes, most notably all
 classes now have an english prefix distinguishing passenger cars (PC_),
@@ -57,45 +57,45 @@ and the emission standard, all connected with underscores.
   1305kg; size class II 1305kg < RM <= 1760kg; size class III 1760kg
   < RM <= 3500kg; "RM": reference mass (approx. Vehicle curb
   weight)
-  
+
 - **HDV_RT**  heavy duty vehicles - rigid trucks; size class I 2 axle
   trucks; size class II 3+ axle trucks
-  
+
 - **HDV_TT**  heavy duty vehicles - truck + trailer (incl. articulated
   trucks = tractor + semitrailer)
-  
+
 - **HDV_CB**  heavy duty vehicles - city bus
-  
+
 - **HDV_CO**  heavy duty vehicles - coach
-  
+
 - **MC_2S**  motorcycles - 2 stroke (not included)
-  
+
 - **MC_4S**  motorcycles - 4 stroke (not included)
-  
+
 - **MOP**  moped (not included)
 
 ### Technology
 
 - **G**  gasoline engine (conventional powertrain)
-  
+
 - **D**  diesel engine (conventional powertrain)
-  
+
 - **G_HEV**  gasoline engine (parallel hybrid powertrain)
-  
+
 - **D_HEV**  diesel engine (parallel hybrid powertrain)
-  
+
 - **CNG**  Compressed Natural Gas engine
-  
+
 - **BEV**  battery electric vehicles
 
 ### Examples
 
 - **PC_G_EU6**  passenger car, gasoline engine, EURO 6
-  
+
 - **PC_BEV**  passenger car, battery electric
-  
+
 - **LCV_III_CNG_EU6**  light commercial vehicle, size class III, CNG engine, Euro 6
-  
+
 - **HDV_RT_I_D_EU4**  rigid truck, size class I, diesel engine, EURO IV
 
 - **HDV_CB_D_EU5**  city bus, diesel engine, Euro V
@@ -225,11 +225,11 @@ The special class `zero` may be used to specify a vehicle without emissions.
 
 - [COLOMBO: Deliverable 4.2; Extended Simulation Tool PHEM coupled to
   SUMO with User
-  Guide](https://web.archive.org/web/20170808122505/http://www.colombo-fp7.eu/results_deliverables.php); February,
+  Guide](https://web.archive.org/web/20170808122505/https://www.colombo-fp7.eu/results_deliverables.php); February,
   2014
 
  <div style="border:1px solid #909090; min-height: 35px;" align="right">
-<span style="float: right; margin-top: -5px;"><a href="https://wayback.archive-it.org/12090/20191127213419/https:/ec.europa.eu/research/fp7/index_en.cfm"><img src="../../images/FP7-small.gif" alt="Seventh Framework Programme"></a>
+<span style="float: right; margin-top: -5px;"><a href="https://web.archive.org/web/20191005024529/https:/ec.europa.eu/research/fp7/index_en.cfm"><img src="../../images/FP7-small.gif" alt="Seventh Framework Programme"></a>
 <a href="https://verkehrsforschung.dlr.de/en/projects/colombo"><img src="../../images/COLOMBO-small.png" alt="COLOMBO project"></a></span>
-<span style="">This part of SUMO was developed, reworked, or extended within the project 
-<a href="https://verkehrsforschung.dlr.de/en/projects/colombo">"COLOMBO"</a>, co-funded by the European Commission within the <a href="https://wayback.archive-it.org/12090/20191127213419/https:/ec.europa.eu/research/fp7/index_en.cfm">Seventh Framework Programme</a>.</span></div>
+<span style="">This part of SUMO was developed, reworked, or extended within the project
+<a href="https://verkehrsforschung.dlr.de/en/projects/colombo">"COLOMBO"</a>, co-funded by the European Commission within the <a href="https://web.archive.org/web/20191005024529/https:/ec.europa.eu/research/fp7/index_en.cfm">Seventh Framework Programme</a>.</span></div>

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -58,15 +58,6 @@ MEVehicle::MEVehicle(SUMOVehicleParameter* pars, ConstMSRoutePtr route,
     myLastEntryTime(SUMOTime_MIN),
     myBlockTime(SUMOTime_MAX),
     myInfluencer(nullptr) {
-    if (!(*myCurrEdge)->isTazConnector()) {
-        if ((*myCurrEdge)->allowedLanes(type->getVehicleClass()) == nullptr) {
-            throw ProcessError("Vehicle '" + pars->id + "' is not allowed to depart on any lane of edge '" + (*myCurrEdge)->getID() + "'.");
-        }
-        if (pars->departSpeedProcedure == DepartSpeedDefinition::GIVEN && pars->departSpeed > type->getMaxSpeed() + SPEED_EPS) {
-            throw ProcessError("Departure speed for vehicle '" + pars->id +
-                               "' is too high for the vehicle type '" + type->getID() + "'.");
-        }
-    }
 }
 
 
@@ -117,7 +108,12 @@ MEVehicle::getSpeed() const {
 
 double
 MEVehicle::getAverageSpeed() const {
-    return mySegment != nullptr ? MIN2(mySegment->getLength() / STEPS2TIME(myEventTime - myLastEntryTime), getEdge()->getVehicleMaxSpeed(this)) : 0;
+    if (mySegment == nullptr || myQueIndex == MESegment::PARKING_QUEUE) {
+        return 0;
+    } else {
+        return MIN2(mySegment->getLength() / STEPS2TIME(myEventTime - myLastEntryTime),
+                    getEdge()->getLanes()[myQueIndex]->getVehicleMaxSpeed(this));
+    }
 }
 
 
@@ -357,8 +353,14 @@ MEVehicle::mayProceed() {
             break;
         }
         if (net->getCurrentTimeStep() > stop.endBoarding) {
-            stop.triggered = false;
-            stop.containerTriggered = false;
+            if (stop.triggered || stop.containerTriggered) {
+                MSDevice_Taxi* taxiDevice = static_cast<MSDevice_Taxi*>(getDevice(typeid(MSDevice_Taxi)));
+                if (taxiDevice != nullptr) {
+                    taxiDevice->cancelCurrentCustomers();
+                }
+                stop.triggered = false;
+                stop.containerTriggered = false;
+            }
             if (myAmRegisteredAsWaiting) {
                 net->getVehicleControl().unregisterOneWaiting();
                 myAmRegisteredAsWaiting = false;

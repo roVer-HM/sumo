@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -29,7 +29,13 @@
 #include <netedit/frames/network/GNETLSEditorFrame.h>
 #include <netedit/frames/network/GNEAdditionalFrame.h>
 #include <netedit/frames/demand/GNERouteFrame.h>
+#include <netedit/frames/demand/GNEVehicleFrame.h>
+#include <netedit/frames/demand/GNEPersonFrame.h>
+#include <netedit/frames/demand/GNEPersonPlanFrame.h>
+#include <netedit/frames/demand/GNEContainerFrame.h>
+#include <netedit/frames/demand/GNEContainerPlanFrame.h>
 #include <netbuild/NBEdgeCont.h>
+#include <utils/common/MsgHandler.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/globjects/GLIncludes.h>
 #include <utils/gui/globjects/GUIGLObjectPopupMenu.h>
@@ -37,7 +43,7 @@
 #include <utils/gui/images/VClassIcons.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 #include <utils/gui/div/GUIDesigns.h>
-#include <utils/gui/div/GUIGlobalPostDrawing.h>
+#include <utils/gui/div/GUIGlobalViewObjectsHandler.h>
 
 #include "GNELane.h"
 #include "GNEInternalLane.h"
@@ -59,27 +65,94 @@ FXIMPLEMENT(GNELane, FXDelegator, 0, 0)
 // GNELane::LaneDrawingConstants - methods
 // ---------------------------------------------------------------------------
 
-GNELane::LaneDrawingConstants::LaneDrawingConstants(const GUIVisualizationSettings& s, const GNELane* lane) :
-    selectionScale(lane->isAttributeCarrierSelected() || lane->myParentEdge->isAttributeCarrierSelected() ? s.selectorFrameScale : 1),
-    exaggeration(selectionScale * s.laneWidthExaggeration),
-    halfWidth2(exaggeration * (lane->myParentEdge->getNBEdge()->getLaneWidth(lane->getIndex()) / 2 - SUMO_const_laneMarkWidth / 2)),
-    halfWidth(lane->drawUsingSelectColor() ? halfWidth2 - exaggeration * 0.3 : halfWidth2) {
-    // start drawing lane checking whether it is not too small
-    //selectionScale = lane->isAttributeCarrierSelected() || lane->myParentEdge->isAttributeCarrierSelected() ? s.selectionScale : 1;
-    //exaggeration = selectionScale * s.laneWidthExaggeration; // * s.laneScaler.getScheme().getColor(getScaleValue(s.laneScaler.getActive()));
-    // compute lane-marking intersection points)
-    //halfWidth2 = exaggeration * (lane->myParentEdge->getNBEdge()->getLaneWidth(lane->getIndex()) / 2 - SUMO_const_laneMarkWidth / 2);
-
-    // Draw as a normal lane, and reduce width to make sure that a selected edge can still be seen
-    //halfWidth =  lane->drawUsingSelectColor() ? halfWidth2 - exaggeration * 0.3 : halfWidth2;
+GNELane::DrawingConstants::DrawingConstants(const GNELane* lane) :
+    myLane(lane) {
 }
 
 
-GNELane::LaneDrawingConstants::LaneDrawingConstants() :
-    selectionScale(0),
-    exaggeration(0),
-    halfWidth2(0),
-    halfWidth(0) {
+void
+GNELane::DrawingConstants::update(const GUIVisualizationSettings& s) {
+    // get NBEdge
+    const auto& NBEdge = myLane->getParentEdge()->getNBEdge();
+    // get lane struct
+    const auto& laneStruct = myLane->myParentEdge->getNBEdge()->getLaneStruct(myLane->getIndex());
+    // get selection scale
+    const double selectionScale = myLane->isAttributeCarrierSelected() || myLane->myParentEdge->isAttributeCarrierSelected() ? s.selectorFrameScale : 1;
+    // get lane width
+    const double laneWidth = (laneStruct.width == -1 ? SUMO_const_laneWidth : laneStruct.width);
+    // calculate exaggeration
+    myExaggeration = selectionScale * s.laneWidthExaggeration;
+    // get detail level
+    myDetail = s.getDetailLevel(myExaggeration);
+    // check if draw lane as railway
+    myDrawAsRailway = isRailway(laneStruct.permissions) && ((laneStruct.permissions & SVC_BUS) == 0) && s.showRails;
+    // adjust rest of parameters depending if draw as railway
+    if (myDrawAsRailway) {
+        // draw as railway: assume standard gauge of 1435mm when lane width is not set
+        myDrawingWidth = (laneWidth == SUMO_const_laneWidth ?  1.4350 : laneWidth) * myExaggeration;
+        // calculate internal drawing width
+        myInternalDrawingWidth = myDrawingWidth * 0.8;
+    } else {
+        // calculate exaggerated drawing width
+        myDrawingWidth = laneWidth * myExaggeration * 0.5;
+        // calculate internal drawing width
+        myInternalDrawingWidth = myDrawingWidth - (2 * SUMO_const_laneMarkWidth);
+    }
+    // check if draw superposed
+    myDrawSuperposed = (s.spreadSuperposed && (NBEdge->isBidiRail() || NBEdge->isBidiEdge()));
+    // adjust parameters depending of superposing
+    if (myDrawSuperposed) {
+        // apply offset
+        myOffset = myDrawingWidth * 0.5;
+        // reduce width
+        myDrawingWidth *= 0.4;
+        myInternalDrawingWidth *= 0.4;
+    } else {
+        // restore offset
+        myOffset = 0;
+    }
+}
+
+
+double
+GNELane::DrawingConstants::getExaggeration() const {
+    return myExaggeration;
+}
+
+
+double
+GNELane::DrawingConstants::getDrawingWidth() const {
+    return myDrawingWidth;
+}
+
+
+double
+GNELane::DrawingConstants::getInternalDrawingWidth() const {
+    return myInternalDrawingWidth;
+}
+
+
+double
+GNELane::DrawingConstants::getOffset() const {
+    return myOffset;
+}
+
+
+GUIVisualizationSettings::Detail
+GNELane::DrawingConstants::getDetail() const {
+    return myDetail;
+}
+
+
+bool
+GNELane::DrawingConstants::drawAsRailway() const {
+    return myDrawAsRailway;
+}
+
+
+bool
+GNELane::DrawingConstants::drawSuperposed() const {
+    return myDrawSuperposed;
 }
 
 // ---------------------------------------------------------------------------
@@ -91,6 +164,7 @@ GNELane::GNELane(GNEEdge* edge, const int index) :
                       GUIIconSubSys::getIcon(GUIIcon::LANE), {}, {}, {}, {}, {}, {}),
                                 myParentEdge(edge),
                                 myIndex(index),
+                                myDrawingConstants(new DrawingConstants(this)),
                                 mySpecialColor(nullptr),
                                 mySpecialColorValue(-1),
 myLane2laneConnections(this) {
@@ -104,13 +178,18 @@ GNELane::GNELane() :
                       GUIIconSubSys::getIcon(GUIIcon::LANE), {}, {}, {}, {}, {}, {}),
 myParentEdge(nullptr),
 myIndex(-1),
+myDrawingConstants(nullptr),
 mySpecialColor(nullptr),
 mySpecialColorValue(-1),
 myLane2laneConnections(this) {
 }
 
 
-GNELane::~GNELane() {}
+GNELane::~GNELane() {
+    if (myDrawingConstants) {
+        delete myDrawingConstants;
+    }
+}
 
 
 GNEEdge*
@@ -150,6 +229,12 @@ GNELane::getShapeRotations() const {
 const std::vector<double>&
 GNELane::getShapeLengths() const {
     return myLaneGeometry.getShapeLengths();
+}
+
+
+const GNELane::DrawingConstants*
+GNELane::getDrawingConstants() const {
+    return myDrawingConstants;
 }
 
 
@@ -236,13 +321,127 @@ GNELane::getPositionInView() const {
 }
 
 
+bool
+GNELane::checkDrawFromContour() const {
+    // get inspected ACs
+    const auto& inspectedACs = myNet->getViewNet()->getInspectedAttributeCarriers();
+    // check if we're inspecting a connection
+    if ((inspectedACs.size() == 1) && (inspectedACs.front()->getTagProperty().getTag() == SUMO_TAG_CONNECTION) &&
+            inspectedACs.front()->getAttribute(GNE_ATTR_FROM_LANEID) == getID()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool
+GNELane::checkDrawToContour() const {
+    // get inspected ACs
+    const auto& inspectedACs = myNet->getViewNet()->getInspectedAttributeCarriers();
+    // check if we're inspecting a connection
+    if ((inspectedACs.size() == 1) && (inspectedACs.front()->getTagProperty().getTag() == SUMO_TAG_CONNECTION) &&
+            inspectedACs.front()->getAttribute(GNE_ATTR_TO_LANEID) == getID()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool
+GNELane::checkDrawRelatedContour() const {
+    return false;
+}
+
+
+bool
+GNELane::checkDrawOverContour() const {
+    // get modes
+    const auto& modes = myNet->getViewNet()->getEditModes();
+    // get vehicle frame
+    const auto& vehicleFrame = myNet->getViewNet()->getViewParent()->getVehicleFrame();
+    const auto& personFramePlanSelector = myNet->getViewNet()->getViewParent()->getPersonFrame()->getPlanSelector();
+    const auto& personPlanFramePlanSelector = myNet->getViewNet()->getViewParent()->getPersonPlanFrame()->getPlanSelector();
+    const auto& containerFramePlanSelector = myNet->getViewNet()->getViewParent()->getContainerFrame()->getPlanSelector();
+    const auto& containerPlanFramePlanSelector = myNet->getViewNet()->getViewParent()->getContainerPlanFrame()->getPlanSelector();
+    // check if we're in vehicle mode
+    if (vehicleFrame->shown()) {
+        // get current vehicle template
+        const auto vehicleTemplate = vehicleFrame->getVehicleTagSelector()->getCurrentTemplateAC();
+        // check if vehicle can be placed over from-to edges
+        if (vehicleTemplate && vehicleTemplate->getTagProperty().vehicleEdges()) {
+            // check if lane is under cursor
+            return gViewObjectsHandler.isElementSelected(this);
+        } else {
+            return false;
+        }
+    } else if (modes.isCurrentSupermodeDemand()) {
+        // check if we're in person or personPlan modes
+        if (((modes.demandEditMode == DemandEditMode::DEMAND_PERSON) && personFramePlanSelector->markEdges()) ||
+                ((modes.demandEditMode == DemandEditMode::DEMAND_PERSONPLAN) && personPlanFramePlanSelector->markEdges()) ||
+                ((modes.demandEditMode == DemandEditMode::DEMAND_CONTAINER) && containerFramePlanSelector->markEdges()) ||
+                ((modes.demandEditMode == DemandEditMode::DEMAND_CONTAINERPLAN) && containerPlanFramePlanSelector->markEdges())) {
+            return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
+        }
+    }
+    return false;
+}
+
+
+bool
+GNELane::checkDrawDeleteContour() const {
+    // first check if we're selecting edges or lanes
+    if (myNet->getViewNet()->checkSelectEdges()) {
+        return false;
+    } else {
+        // get edit modes
+        const auto& editModes = myNet->getViewNet()->getEditModes();
+        // check if we're in delete mode
+        if (editModes.isCurrentSupermodeNetwork() && (editModes.networkEditMode == NetworkEditMode::NETWORK_DELETE)) {
+            return myNet->getViewNet()->checkOverLockedElement(this, mySelected);
+        } else {
+            return false;
+        }
+    }
+}
+
+
+bool
+GNELane::checkDrawSelectContour() const {
+    // first check if we're selecting edges or lanes
+    if (myNet->getViewNet()->checkSelectEdges()) {
+        return false;
+    } else {
+        // get edit modes
+        const auto& editModes = myNet->getViewNet()->getEditModes();
+        // check if we're in select mode
+        if (editModes.isCurrentSupermodeNetwork() && (editModes.networkEditMode == NetworkEditMode::NETWORK_SELECT)) {
+            return myNet->getViewNet()->checkOverLockedElement(this, mySelected);
+        } else {
+            return false;
+        }
+    }
+}
+
+
+bool
+GNELane::checkDrawMoveContour() const {
+    // only move if shape is being edited
+    if (myShapeEdited && !myNet->getViewNet()->isMovingElement()) {
+        return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
+    } else {
+        return false;
+    }
+}
+
+
 GNEMoveOperation*
 GNELane::getMoveOperation() {
     // edit depending if shape is being edited
     if (isShapeEdited()) {
         // calculate move shape operation
-        return calculateMoveShapeOperation(getLaneShape(), myNet->getViewNet()->getPositionInformation(),
-                                           myNet->getViewNet()->getVisualisationSettings().neteditSizeSettings.laneGeometryPointRadius, true);
+        return calculateMoveShapeOperation(this, getLaneShape(), false);
     } else {
         return nullptr;
     }
@@ -266,8 +465,8 @@ GNELane::removeGeometryPoint(const Position clickedPosition, GNEUndoList* undoLi
                 // remove geometry point
                 shape.erase(shape.begin() + index);
                 // commit new shape
-                undoList->begin(GUIIcon::CROSSING, "remove geometry point of " + getTagStr());
-                undoList->changeAttribute(new GNEChange_Attribute(this, SUMO_ATTR_CUSTOMSHAPE, toString(shape)));
+                undoList->begin(this, "remove geometry point of " + getTagStr());
+                GNEChange_Attribute::changeAttribute(this, SUMO_ATTR_CUSTOMSHAPE, toString(shape), undoList);
                 undoList->end();
             }
         }
@@ -276,319 +475,22 @@ GNELane::removeGeometryPoint(const Position clickedPosition, GNEUndoList* undoLi
 
 
 void
-GNELane::drawLinkNo(const GUIVisualizationSettings& s) const {
-    // only draw links number depending of the scale and if isn't being drawn for selecting
-    if ((s.scale >= 10) && !s.drawForRectangleSelection && !s.drawForPositionSelection) {
-        // first check that drawLinkJunctionIndex must be drawn
-        if (s.drawLinkJunctionIndex.show(myParentEdge->getToJunction())) {
-            // get connections
-            const std::vector<NBEdge::Connection>& cons = myParentEdge->getNBEdge()->getConnectionsFromLane(myIndex);
-            // get number of links
-            const int noLinks = (int)cons.size();
-            // only continue if there is links
-            if (noLinks > 0) {
-                // push link matrix
-                GLHelper::pushMatrix();
-                // move front
-                glTranslated(0, 0, GLO_TEXTNAME);
-                // calculate width
-                const double width = myParentEdge->getNBEdge()->getLaneWidth(myIndex) / (double) noLinks;
-                // get X1
-                double x1 = myParentEdge->getNBEdge()->getLaneWidth(myIndex) / 2;
-                // iterate over links
-                for (int i = noLinks; --i >= 0;) {
-                    // calculate x2
-                    const double x2 = x1 - (double)(width / 2.);
-                    // get link index
-                    const int linkIndex = myParentEdge->getNBEdge()->getToNode()->getConnectionIndex(myParentEdge->getNBEdge(),
-                                          cons[s.lefthand ? noLinks - 1 - i : i]);
-                    // draw link index
-                    GLHelper::drawTextAtEnd(toString(linkIndex), myLaneGeometry.getShape(), x2, s.drawLinkJunctionIndex, s.scale);
-                    // update x1
-                    x1 -= width;
-                }
-                // pop link matrix
-                GLHelper::popMatrix();
-            }
-        }
-        // draw TLSLink No
-        if (s.drawLinkTLIndex.show(myParentEdge->getToJunction()) && (myParentEdge->getToJunction()->getNBNode()->getControllingTLS().size() > 0)) {
-            // get connections
-            const std::vector<NBEdge::Connection>& cons = myParentEdge->getNBEdge()->getConnectionsFromLane(myIndex);
-            // get numer of links
-            const int noLinks = (int)cons.size();
-            // only continue if there are links
-            if (noLinks > 0) {
-                // push link matrix
-                GLHelper::pushMatrix();
-                // move t front
-                glTranslated(0, 0, GLO_TEXTNAME);
-                // calculate width
-                const double w = myParentEdge->getNBEdge()->getLaneWidth(myIndex) / (double) noLinks;
-                // calculate x1
-                double x1 = myParentEdge->getNBEdge()->getLaneWidth(myIndex) / 2;
-                // iterate over links
-                for (int i = noLinks; --i >= 0;) {
-                    // calculate x2
-                    const double x2 = x1 - (double)(w / 2.);
-                    // get link number
-                    const int linkNo = cons[s.lefthand ? noLinks - 1 - i : i].tlLinkIndex;
-                    // draw link number
-                    GLHelper::drawTextAtEnd(toString(linkNo), myLaneGeometry.getShape(), x2, s.drawLinkTLIndex, s.scale);
-                    // update x1
-                    x1 -= w;
-                }
-                // pop link matrix
-                GLHelper::popMatrix();
-            }
-        }
-    }
-}
-
-
-void
-GNELane::drawArrows(const GUIVisualizationSettings& s, const bool spreadSuperposed) const {
-    if (s.showLinkDecals && myParentEdge->getToJunction()->isLogicValid() && s.scale > 3) {
-        // calculate begin, end and rotation
-        const Position& begin = myLaneGeometry.getShape()[-2];
-        const Position& end = myLaneGeometry.getShape().back();
-        const double rot = GUIGeometry::calculateRotation(begin, end);
-        // push arrow matrix
-        GLHelper::pushMatrix();
-        // move front (note: must draw on top of junction shape?
-        glTranslated(0, 0, 0.5);
-        // change color depending of spreadSuperposed
-        if (spreadSuperposed) {
-            GLHelper::setColor(RGBColor::CYAN);
-        } else {
-            GLHelper::setColor(RGBColor::WHITE);
-        }
-        // move to end
-        glTranslated(end.x(), end.y(), 0);
-        // rotate
-        glRotated(rot, 0, 0, 1);
-        const double width = myParentEdge->getNBEdge()->getLaneWidth(myIndex);
-        if (width < SUMO_const_laneWidth) {
-            glScaled(width / SUMO_const_laneWidth, 1, 1);
-        }
-        // get destiny node
-        const NBNode* dest = myParentEdge->getNBEdge()->myTo;
-        // draw all links iterating over connections
-        for (const auto& connection : myParentEdge->getNBEdge()->myConnections) {
-            if (connection.fromLane == myIndex) {
-                // get link direction
-                LinkDirection dir = dest->getDirection(myParentEdge->getNBEdge(), connection.toEdge, s.lefthand);
-                // draw depending of link direction
-                switch (dir) {
-                    case LinkDirection::STRAIGHT:
-                        GLHelper::drawBoxLine(Position(0, 4), 0, 2, .05);
-                        GLHelper::drawTriangleAtEnd(Position(0, 4), Position(0, 1), (double) 1, (double) .25);
-                        break;
-                    case LinkDirection::LEFT:
-                        GLHelper::drawBoxLine(Position(0, 4), 0, 1.5, .05);
-                        GLHelper::drawBoxLine(Position(0, 2.5), 90, 1, .05);
-                        GLHelper::drawTriangleAtEnd(Position(0, 2.5), Position(1.5, 2.5), (double) 1, (double) .25);
-                        break;
-                    case LinkDirection::RIGHT:
-                        GLHelper::drawBoxLine(Position(0, 4), 0, 1.5, .05);
-                        GLHelper::drawBoxLine(Position(0, 2.5), -90, 1, .05);
-                        GLHelper::drawTriangleAtEnd(Position(0, 2.5), Position(-1.5, 2.5), (double) 1, (double) .25);
-                        break;
-                    case LinkDirection::TURN:
-                        GLHelper::drawBoxLine(Position(0, 4), 0, 1.5, .05);
-                        GLHelper::drawBoxLine(Position(0, 2.5), 90, .5, .05);
-                        GLHelper::drawBoxLine(Position(0.5, 2.5), 180, 1, .05);
-                        GLHelper::drawTriangleAtEnd(Position(0.5, 2.5), Position(0.5, 4), (double) 1, (double) .25);
-                        break;
-                    case LinkDirection::TURN_LEFTHAND:
-                        GLHelper::drawBoxLine(Position(0, 4), 0, 1.5, .05);
-                        GLHelper::drawBoxLine(Position(0, 2.5), -90, 1, .05);
-                        GLHelper::drawBoxLine(Position(-0.5, 2.5), -180, 1, .05);
-                        GLHelper::drawTriangleAtEnd(Position(-0.5, 2.5), Position(-0.5, 4), (double) 1, (double) .25);
-                        break;
-                    case LinkDirection::PARTLEFT:
-                        GLHelper::drawBoxLine(Position(0, 4), 0, 1.5, .05);
-                        GLHelper::drawBoxLine(Position(0, 2.5), 45, .7, .05);
-                        GLHelper::drawTriangleAtEnd(Position(0, 2.5), Position(1.2, 1.3), (double) 1, (double) .25);
-                        break;
-                    case LinkDirection::PARTRIGHT:
-                        GLHelper::drawBoxLine(Position(0, 4), 0, 1.5, .05);
-                        GLHelper::drawBoxLine(Position(0, 2.5), -45, .7, .05);
-                        GLHelper::drawTriangleAtEnd(Position(0, 2.5), Position(-1.2, 1.3), (double) 1, (double) .25);
-                        break;
-                    case LinkDirection::NODIR:
-                        GLHelper::drawBoxLine(Position(1, 5.8), 245, 2, .05);
-                        GLHelper::drawBoxLine(Position(-1, 5.8), 115, 2, .05);
-                        glTranslated(0, 5, 0);
-                        GLHelper::drawOutlineCircle(0.9, 0.8, 32);
-                        glTranslated(0, -5, 0);
-                        break;
-                }
-            }
-        }
-        // pop arrow matrix
-        GLHelper::popMatrix();
-    }
-}
-
-
-void
-GNELane::drawLane2LaneConnections() const {
-    GLHelper::pushMatrix();
-    glTranslated(0, 0, 0.1); // must draw on top of junction shape
-    std::vector<NBEdge::Connection> connections = myParentEdge->getNBEdge()->getConnectionsFromLane(myIndex);
-    NBNode* node = myParentEdge->getNBEdge()->getToNode();
-    const Position& startPos = myLaneGeometry.getShape()[-1];
-    for (auto it : connections) {
-        const LinkState state = node->getLinkState(myParentEdge->getNBEdge(), it.toEdge, it.fromLane, it.toLane, it.mayDefinitelyPass, it.tlID);
-        switch (state) {
-            case LINKSTATE_TL_OFF_NOSIGNAL:
-                glColor3d(1, 1, 0);
-                break;
-            case LINKSTATE_TL_OFF_BLINKING:
-                glColor3d(0, 1, 1);
-                break;
-            case LINKSTATE_MAJOR:
-                glColor3d(1, 1, 1);
-                break;
-            case LINKSTATE_MINOR:
-                glColor3d(.4, .4, .4);
-                break;
-            case LINKSTATE_STOP:
-                glColor3d(.7, .4, .4);
-                break;
-            case LINKSTATE_EQUAL:
-                glColor3d(.7, .7, .7);
-                break;
-            case LINKSTATE_ALLWAY_STOP:
-                glColor3d(.7, .7, 1);
-                break;
-            case LINKSTATE_ZIPPER:
-                glColor3d(.75, .5, 0.25);
-                break;
-            default:
-                throw ProcessError(TLF("Unexpected LinkState '%'", toString(state)));
-        }
-        const Position& endPos = it.toEdge->getLaneShape(it.toLane)[0];
-        glBegin(GL_LINES);
-        glVertex2d(startPos.x(), startPos.y());
-        glVertex2d(endPos.x(), endPos.y());
-        glEnd();
-        GLHelper::drawTriangleAtEnd(startPos, endPos, (double) 1.5, (double) .2);
-    }
-    GLHelper::popMatrix();
-}
-
-
-void
 GNELane::drawGL(const GUIVisualizationSettings& s) const {
-    // get lane drawing constants
-    const LaneDrawingConstants laneDrawingConstants(s, this);
-    // get lane color
-    const RGBColor color = setLaneColor(s);
-    // avoid draw invisible elements
-    if (color.alpha() == 0) {
-        return;
-    }
-    // get flag for draw lane as railway
-    const bool drawRailway = drawAsRailway(s);
-    // we draw the lanes with reduced width so that the lane markings below are visible (this avoids artifacts at geometry corners without having to)
-    const bool spreadSuperposed = s.spreadSuperposed && drawRailway && myParentEdge->getNBEdge()->isBidiRail();
-    // Push edge parent name
-    GLHelper::pushName(myParentEdge->getGlID());
-    // Push lane name
-    GLHelper::pushName(getGlID());
-    // Push layer matrix
-    GLHelper::pushMatrix();
-    // translate to front (note: Special case)
-    if (myNet->getViewNet()->getFrontAttributeCarrier() == myParentEdge) {
-        glTranslated(0, 0, GLO_FRONTELEMENT);
-    } else if (myLaneGeometry.getShape().length2D() <= (s.neteditSizeSettings.junctionBubbleRadius * 2)) {
-        myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_JUNCTION + 0.5);
-    } else {
-        myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_LANE);
-    }
-    // recognize full transparency and simply don't draw
-    if ((color.alpha() == 0) || ((s.scale * laneDrawingConstants.exaggeration) < s.laneMinSize)) {
-        // Pop draw matrix 1
-        GLHelper::popMatrix();
-        // Pop Lane Name
-        GLHelper::popName();
-    } else {
-        if ((s.scale * laneDrawingConstants.exaggeration) < 1.) {
-            // draw lane as line, depending of myShapeColors
-            if (myShapeColors.size() > 0) {
-                GLHelper::drawLine(myLaneGeometry.getShape(), myShapeColors);
-            } else {
-                GLHelper::drawLine(myLaneGeometry.getShape());
-            }
-        } else {
-            // Check if lane has to be draw as railway and if isn't being drawn for selecting
-            if (drawRailway && (!s.drawForRectangleSelection || spreadSuperposed)) {
-                // draw as railway
-                drawLaneAsRailway(s, laneDrawingConstants);
-            } else {
-                double offset = 0;
-                double widthFactor = 1;
-                if (s.spreadSuperposed && myParentEdge->getNBEdge()->getBidiEdge() != nullptr) {
-                    widthFactor = 0.4; // create visible gap
-                    offset = laneDrawingConstants.halfWidth * 0.5;
-                }
-                // draw as box lines
-                GUIGeometry::drawLaneGeometry(s, myNet->getViewNet()->getPositionInformation(), myLaneGeometry.getShape(), myLaneGeometry.getShapeRotations(), myLaneGeometry.getShapeLengths(), myShapeColors, laneDrawingConstants.halfWidth * widthFactor, 0, offset);
-            }
-            if (laneDrawingConstants.halfWidth != laneDrawingConstants.halfWidth2 && !spreadSuperposed) {
-                // Push matrix
-                GLHelper::pushMatrix();
-                // move back
-                glTranslated(0, 0, -0.1);
-                // set selected edge color
-                GLHelper::setColor(s.colorSettings.selectedEdgeColor);
-                // draw again to show the selected edge
-                GUIGeometry::drawLaneGeometry(s, myNet->getViewNet()->getPositionInformation(), myLaneGeometry.getShape(), myLaneGeometry.getShapeRotations(), myLaneGeometry.getShapeLengths(), {}, laneDrawingConstants.halfWidth2);
-                // Pop matrix
-                GLHelper::popMatrix();
-            }
-            // only draw details depending of the scale and if isn't being drawn for selecting
-            if ((s.scale >= 10) && !s.drawForRectangleSelection && !s.drawForPositionSelection) {
-                // draw markings
-                drawMarkings(s, laneDrawingConstants.exaggeration, drawRailway);
-                // Draw direction indicators
-                drawDirectionIndicators(s, laneDrawingConstants.exaggeration, drawRailway, spreadSuperposed);
-            }
-            // draw lane textures
-            drawTextures(s, laneDrawingConstants);
-            // draw start end shape points
-            drawStartEndShapePoints(s);
-        }
-        // draw stopOffsets
-        const auto& laneStopOffset = myParentEdge->getNBEdge()->getLaneStruct(myIndex).laneStopOffset;
-        if (laneStopOffset.isDefined() && (laneStopOffset.getPermissions() & SVC_PASSENGER) != 0) {
-            drawLaneStopOffset(s, laneStopOffset.getOffset());
-        }
-        // Pop layer matrix
-        GLHelper::popMatrix();
-        // draw lane arrows
-        drawLaneArrows(s, laneDrawingConstants.exaggeration, spreadSuperposed);
-        // draw shape edited
-        drawShapeEdited(s);
-        // Pop lane Name
-        GLHelper::popName();
-        // Pop edge Name
-        GLHelper::popName();
-        // draw link numbers
-        drawLinkNo(s);
+    // update lane drawing constan
+    myDrawingConstants->update(s);
+    // check drawing conditions
+    if (!s.drawForViewObjectsHandler) {
+        // draw lane
+        drawLane(s);
         // draw lock icon
-        GNEViewNetHelper::LockIcon::drawLockIcon(this, getType(), getPositionInView(), 1);
-        // check if mouse is over element
-        checkMouseOverLane(laneDrawingConstants.halfWidth);
-        // draw dotted contours
-        drawDottedContours(s, drawRailway, laneDrawingConstants.halfWidth);
-        // draw children
-        drawChildren(s);
-        // draw path additional elements
-        myNet->getPathManager()->drawLanePathElements(s, this);
+        GNEViewNetHelper::LockIcon::drawLockIcon(myDrawingConstants->getDetail(), this, getType(), getPositionInView(), 1);
+        // draw dotted contour
+        myNetworkElementContour.drawDottedContours(s, myDrawingConstants->getDetail(), this, s.dottedContourSettings.segmentWidth, true);
     }
+    // calculate contour (always before children)
+    calculateLaneContour(s);
+    // draw children
+    drawChildren(s);
 }
 
 
@@ -607,55 +509,6 @@ GNELane::updateGLObject() {
 }
 
 
-void
-GNELane::drawChildren(const GUIVisualizationSettings& s) const {
-    // draw additional children
-    for (const auto& additional : getChildAdditionals()) {
-        // check that ParkingAreas aren't draw two times
-        additional->drawGL(s);
-    }
-    // draw demand element children
-    for (const auto& demandElement : getChildDemandElements()) {
-        if (!demandElement->getTagProperty().isPlacedInRTree()) {
-            demandElement->drawGL(s);
-        }
-    }
-}
-
-
-void
-GNELane::drawMarkings(const GUIVisualizationSettings& s, const double exaggeration, const bool drawRailway) const {
-    if (s.laneShowBorders && (exaggeration == 1) && !drawRailway) {
-        const double myHalfLaneWidth = myParentEdge->getNBEdge()->getLaneWidth(myIndex) / 2;
-        GLHelper::pushMatrix();
-        glTranslated(0, 0, 0.1);
-        // optionally draw inverse markings
-        bool haveChangeProhibitions = false;
-        if (myIndex > 0 && (myParentEdge->getNBEdge()->getPermissions(myIndex - 1) & myParentEdge->getNBEdge()->getPermissions(myIndex)) != 0) {
-            const bool cl = myParentEdge->getNBEdge()->allowsChangingLeft(myIndex - 1, SVC_PASSENGER);
-            const bool cr = myParentEdge->getNBEdge()->allowsChangingRight(myIndex, SVC_PASSENGER);
-            GLHelper::drawInverseMarkings(myLaneGeometry.getShape(), myLaneGeometry.getShapeRotations(), myLaneGeometry.getShapeLengths(),
-                                          3, 6, myHalfLaneWidth, cl, cr, s.lefthand, exaggeration);
-            haveChangeProhibitions = !(cl && cr);
-        }
-        GLHelper::popMatrix();
-        GLHelper::pushMatrix();
-        if (haveChangeProhibitions) {
-            // highlightchange prohibitions
-            glTranslated(0, 0, -0.05);
-            GLHelper::setColor(RGBColor::ORANGE);
-            const double offset = myHalfLaneWidth * exaggeration * (s.lefthand ? -1 : 1);
-            GUIGeometry::drawGeometry(s, myNet->getViewNet()->getPositionInformation(), myLaneGeometry, (myHalfLaneWidth * 0.5) * exaggeration, offset);
-            glTranslated(0, 0, +0.05);
-        }
-        // draw white boundings and white markings
-        glTranslated(0, 0, -0.1);
-        GLHelper::setColor(RGBColor::WHITE);
-        GUIGeometry::drawGeometry(s, myNet->getViewNet()->getPositionInformation(), myLaneGeometry, (myHalfLaneWidth + SUMO_const_laneMarkWidth) * exaggeration);
-        GLHelper::popMatrix();
-    }
-}
-
 
 GUIGLObjectPopupMenu*
 GNELane::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
@@ -668,7 +521,7 @@ GNELane::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
     buildCenterPopupEntry(ret);
     // build copy names entry
     if (editMode != NetworkEditMode::NETWORK_TLS) {
-        GUIDesigns::buildFXMenuCommand(ret, "Copy parent edge name to clipboard", nullptr, ret, MID_COPY_EDGE_NAME);
+        GUIDesigns::buildFXMenuCommand(ret, TL("Copy parent edge name to clipboard"), nullptr, ret, MID_COPY_EDGE_NAME);
         buildNameCopyPopupEntry(ret);
     }
     // stop if we're in data mode
@@ -677,15 +530,15 @@ GNELane::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
     }
     // build lane selection
     if (isAttributeCarrierSelected()) {
-        GUIDesigns::buildFXMenuCommand(ret, "Remove Lane From Selected", GUIIconSubSys::getIcon(GUIIcon::FLAG_MINUS), myNet->getViewNet(), MID_REMOVESELECT);
+        GUIDesigns::buildFXMenuCommand(ret, TL("Remove Lane From Selected"), GUIIconSubSys::getIcon(GUIIcon::FLAG_MINUS), myNet->getViewNet(), MID_REMOVESELECT);
     } else {
-        GUIDesigns::buildFXMenuCommand(ret, "Add Lane To Selected", GUIIconSubSys::getIcon(GUIIcon::FLAG_PLUS), myNet->getViewNet(), MID_ADDSELECT);
+        GUIDesigns::buildFXMenuCommand(ret, TL("Add Lane To Selected"), GUIIconSubSys::getIcon(GUIIcon::FLAG_PLUS), myNet->getViewNet(), MID_ADDSELECT);
     }
     // build edge selection
     if (myParentEdge->isAttributeCarrierSelected()) {
-        GUIDesigns::buildFXMenuCommand(ret, "Remove Edge From Selected", GUIIconSubSys::getIcon(GUIIcon::FLAG_MINUS), myNet->getViewNet(), MID_GNE_REMOVESELECT_EDGE);
+        GUIDesigns::buildFXMenuCommand(ret, TL("Remove Edge From Selected"), GUIIconSubSys::getIcon(GUIIcon::FLAG_MINUS), myNet->getViewNet(), MID_GNE_REMOVESELECT_EDGE);
     } else {
-        GUIDesigns::buildFXMenuCommand(ret, "Add Edge To Selected", GUIIconSubSys::getIcon(GUIIcon::FLAG_PLUS), myNet->getViewNet(), MID_GNE_ADDSELECT_EDGE);
+        GUIDesigns::buildFXMenuCommand(ret, TL("Add Edge To Selected"), GUIIconSubSys::getIcon(GUIIcon::FLAG_PLUS), myNet->getViewNet(), MID_GNE_ADDSELECT_EDGE);
     }
     // stop if we're in data mode
     if (myNet->getViewNet()->getEditModes().isCurrentSupermodeDemand()) {
@@ -702,7 +555,7 @@ GNELane::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
     // check if we're in supermode network
     if (myNet->getViewNet()->getEditModes().isCurrentSupermodeNetwork()) {
         // create end point
-        FXMenuCommand* resetEndPoints = GUIDesigns::buildFXMenuCommand(ret, "Reset edge end points", nullptr, &parent, MID_GNE_RESET_GEOMETRYPOINT);
+        FXMenuCommand* resetEndPoints = GUIDesigns::buildFXMenuCommand(ret, TL("Reset edge end points"), nullptr, &parent, MID_GNE_RESET_GEOMETRYPOINT);
         // enable or disable reset end points
         if (myParentEdge->hasCustomEndPoints()) {
             resetEndPoints->enable();
@@ -711,7 +564,7 @@ GNELane::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
         }
         // check if we clicked over a geometry point
         if ((editMode == NetworkEditMode::NETWORK_MOVE) && myParentEdge->clickedOverGeometryPoint(mousePosition)) {
-            GUIDesigns::buildFXMenuCommand(ret, "Set custom Geometry Point", nullptr, &parent, MID_GNE_CUSTOM_GEOMETRYPOINT);
+            GUIDesigns::buildFXMenuCommand(ret, TL("Set custom Geometry Point"), nullptr, &parent, MID_GNE_CUSTOM_GEOMETRYPOINT);
         }
         // add separator
         new FXMenuSeparator(ret);
@@ -729,7 +582,7 @@ GNELane::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
             buildRechableOperations(parent, ret);
         } else if (editMode == NetworkEditMode::NETWORK_TLS) {
             if (myNet->getViewNet()->getViewParent()->getTLSEditorFrame()->controlsEdge(myParentEdge)) {
-                GUIDesigns::buildFXMenuCommand(ret, "Select state for all links from this edge:", nullptr, nullptr, 0);
+                GUIDesigns::buildFXMenuCommand(ret, TL("Select state for all links from this edge:"), nullptr, nullptr, 0);
                 const std::vector<std::string> names = GNEInternalLane::LinkStateNames.getStrings();
                 for (auto it : names) {
                     FXuint state = GNEInternalLane::LinkStateNames.get(it);
@@ -739,7 +592,7 @@ GNELane::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
                 }
             }
         } else {
-            FXMenuCommand* mc = GUIDesigns::buildFXMenuCommand(ret, "Additional options available in 'Inspect Mode'", nullptr, nullptr, 0);
+            FXMenuCommand* mc = GUIDesigns::buildFXMenuCommand(ret, TL("Additional options available in 'Inspect Mode'"), nullptr, nullptr, 0);
             mc->handle(&parent, FXSEL(SEL_COMMAND, FXWindow::ID_DISABLE), nullptr);
         }
         // build shape positions menu
@@ -754,13 +607,13 @@ GNELane::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
             const double angle = firstAnglePos.angleTo2D(secondAnglePos);
 
             // build menu commands
-            GUIDesigns::buildFXMenuCommand(ret, "Shape pos: " + toString(pos), nullptr, nullptr, 0);
-            GUIDesigns::buildFXMenuCommand(ret, "Length pos: " + toString(pos * getLaneParametricLength() / getLaneShapeLength()), nullptr, nullptr, 0);
+            GUIDesigns::buildFXMenuCommand(ret, TL("Shape pos: ") + toString(pos), nullptr, nullptr, 0);
+            GUIDesigns::buildFXMenuCommand(ret, TL("Length pos: ") + toString(pos * getLaneParametricLength() / getLaneShapeLength()), nullptr, nullptr, 0);
             if (myParentEdge->getNBEdge()->getDistance() != 0) {
-                GUIDesigns::buildFXMenuCommand(ret, "Distance: " + toString(myParentEdge->getNBEdge()->getDistancAt(pos)), nullptr, nullptr, 0);
+                GUIDesigns::buildFXMenuCommand(ret, TL("Distance: ") + toString(myParentEdge->getNBEdge()->getDistancAt(pos)), nullptr, nullptr, 0);
             }
-            GUIDesigns::buildFXMenuCommand(ret, "Height: " + toString(firstAnglePos.z()), nullptr, nullptr, 0);
-            GUIDesigns::buildFXMenuCommand(ret, "Angle: " + toString((GeomHelper::naviDegree(angle))), nullptr, nullptr, 0);
+            GUIDesigns::buildFXMenuCommand(ret, TL("Height: ") + toString(firstAnglePos.z()), nullptr, nullptr, 0);
+            GUIDesigns::buildFXMenuCommand(ret, TL("Angle: ") + toString((GeomHelper::naviDegree(angle))), nullptr, nullptr, 0);
         }
     }
     return ret;
@@ -773,13 +626,15 @@ GNELane::getExaggeration(const GUIVisualizationSettings& s) const {
 }
 
 
+Boundary
+GNELane::getCenteringBoundary() const {
+    return myNetworkElementContour.getContourBoundary();
+}
+
+
 void
 GNELane::updateCenteringBoundary(const bool /*updateGrid*/) {
-    if (myParentEdge->getNBEdge()->getLaneStruct(myIndex).customShape.size() == 0) {
-        myBoundary = myParentEdge->getNBEdge()->getLaneStruct(myIndex).shape.getBoxBoundary();
-    } else {
-        myBoundary = myParentEdge->getNBEdge()->getLaneStruct(myIndex).customShape.getBoxBoundary();
-    }
+    // nothing to update
 }
 
 
@@ -788,10 +643,11 @@ GNELane::getIndex() const {
     return myIndex;
 }
 
+
 void
 GNELane::setIndex(int index) {
     myIndex = index;
-    setMicrosimID(myParentEdge->getNBEdge()->getLaneID(index));
+    setNetworkElementID(myParentEdge->getNBEdge()->getLaneID(index));
 }
 
 
@@ -836,6 +692,10 @@ GNELane::getAttribute(SumoXMLAttr key) const {
     switch (key) {
         case SUMO_ATTR_ID:
             return getMicrosimID();
+        case SUMO_ATTR_FROM_JUNCTION:
+            return myParentEdge->getFromJunction()->getID();
+        case SUMO_ATTR_TO_JUNCTION:
+            return myParentEdge->getToJunction()->getID();
         case SUMO_ATTR_SPEED:
             return toString(edge->getLaneSpeed(myIndex));
         case SUMO_ATTR_ALLOW:
@@ -918,7 +778,7 @@ GNELane::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* un
         case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
             // no special handling
-            undoList->changeAttribute(new GNEChange_Attribute(this, key, value));
+            GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
@@ -997,6 +857,8 @@ GNELane::isAttributeEnabled(SumoXMLAttr key) const {
         case SUMO_ATTR_ID:
         case SUMO_ATTR_INDEX:
             return false;
+        case GNE_ATTR_STOPOEXCEPTION:
+            return myParentEdge->getNBEdge()->getLaneStruct(myIndex).laneStopOffset.getOffset() > 0;
         default:
             return true;
     }
@@ -1145,27 +1007,81 @@ GNELane::setMoveShape(const GNEMoveResult& moveResult) {
 void
 GNELane::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
     // commit new shape
-    undoList->begin(GUIIcon::LANE, "moving " + toString(SUMO_ATTR_CUSTOMSHAPE) + " of " + getTagStr());
-    undoList->changeAttribute(new GNEChange_Attribute(this, SUMO_ATTR_CUSTOMSHAPE, toString(moveResult.shapeToUpdate)));
+    undoList->begin(this, "moving " + toString(SUMO_ATTR_CUSTOMSHAPE) + " of " + getTagStr());
+    GNEChange_Attribute::changeAttribute(this, SUMO_ATTR_CUSTOMSHAPE, toString(moveResult.shapeToUpdate), undoList);
     undoList->end();
 }
 
 
 void
-GNELane::drawLaneArrows(const GUIVisualizationSettings& s, const double exaggeration, const bool spreadSuperposed) const {
-    // only draw details depending of the scale and if isn't being drawn for selecting
-    if (((s.scale * exaggeration) >= 1.) && (s.scale >= 10) && !s.drawForRectangleSelection && !s.drawForPositionSelection) {
-        // Push layer matrix
+GNELane::drawLane(const GUIVisualizationSettings& s) const {
+    // Push layer matrix
+    GLHelper::pushMatrix();
+    // translate to front (note: Special case)
+    if (myNet->getViewNet()->getFrontAttributeCarrier() == myParentEdge) {
+        glTranslated(0, 0, GLO_FRONTELEMENT);
+    } else if (myLaneGeometry.getShape().length2D() <= (s.neteditSizeSettings.junctionBubbleRadius * 2)) {
+        myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_JUNCTION + 0.5);
+    } else {
+        myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_LANE);
+    }
+    // set lane colors
+    setLaneColor(s);
+    // Check if lane has to be draw as railway and if isn't being drawn for selecting
+    if (myDrawingConstants->drawAsRailway()) {
+        // draw as railway
+        drawLaneAsRailway();
+    } else if (myShapeColors.size() > 0) {
+        // draw geometry with own colors
+        GUIGeometry::drawGeometry(myDrawingConstants->getDetail(), myLaneGeometry, myShapeColors,
+                                  myDrawingConstants->getDrawingWidth(), myDrawingConstants->getOffset());
+    } else {
+        // draw geometry with current color
+        GUIGeometry::drawGeometry(myDrawingConstants->getDetail(), myLaneGeometry, myDrawingConstants->getDrawingWidth(),
+                                  myDrawingConstants->getOffset());
+    }
+    // if lane is selected, draw a second lane over it
+    drawSelectedLane(s);
+    // draw start end shape points
+    drawStartEndGeometryPoints(s);
+    // check if draw details
+    if (myDrawingConstants->getDetail() <= GUIVisualizationSettings::Detail::LaneDetails) {
+        // draw markings
+        drawMarkingsAndBoundings(s);
+        // Draw direction indicators
+        drawDirectionIndicators(s);
+        // draw lane textures
+        drawTextures(s);
+        // draw lane arrows
+        drawArrows(s);
+        // draw link numbers
+        drawLinkNo(s);
+        // draw TLS link numbers
+        drawTLSLinkNo(s);
+        // draw stopOffsets
+        drawLaneStopOffset(s);
+    }
+    // draw shape edited
+    drawShapeEdited(s);
+    // Pop layer matrix
+    GLHelper::popMatrix();
+}
+
+
+void
+GNELane::drawSelectedLane(const GUIVisualizationSettings& s) const {
+    // only draw if lane is selected
+    if (drawUsingSelectColor()) {
+        // Push matrix
         GLHelper::pushMatrix();
-        // translate to front (note: Special case)
-        if (myNet->getViewNet()->getFrontAttributeCarrier() == myParentEdge) {
-            glTranslated(0, 0, GLO_FRONTELEMENT);
-        } else {
-            myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_LANEARROWS);
-        }
-        // draw arrows
-        drawArrows(s, spreadSuperposed);
-        // Pop layer matrix
+        // move back
+        glTranslated(0, 0, 0.1);
+        // set selected edge color
+        GLHelper::setColor(s.colorSettings.selectedLaneColor);
+        // draw geometry with current color
+        GUIGeometry::drawGeometry(myDrawingConstants->getDetail(), myLaneGeometry, myDrawingConstants->getDrawingWidth(),
+                                  myDrawingConstants->getOffset());
+        // Pop matrix
         GLHelper::popMatrix();
     }
 }
@@ -1181,15 +1097,16 @@ GNELane::drawShapeEdited(const GUIVisualizationSettings& s) const {
         myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_JUNCTION + 1);
         // set selected edge color
         GLHelper::setColor(s.colorSettings.editShapeColor);
-        // draw again to show the selected edge
-        GUIGeometry::drawLaneGeometry(s, myNet->getViewNet()->getPositionInformation(), myLaneGeometry.getShape(), myLaneGeometry.getShapeRotations(), myLaneGeometry.getShapeLengths(), {}, 0.25);
+        // draw shape around
+        GUIGeometry::drawGeometry(myDrawingConstants->getDetail(), myLaneGeometry, 0.25,
+                                  myDrawingConstants->getOffset());
         // move front
         glTranslated(0, 0, 1);
-        // color
-        const RGBColor darkerColor = s.colorSettings.editShapeColor.changedBrightness(-32);
         // draw geometry points
-        GUIGeometry::drawGeometryPoints(s, myNet->getViewNet()->getPositionInformation(), myLaneGeometry.getShape(), darkerColor, RGBColor::BLACK,
-                                        s.neteditSizeSettings.laneGeometryPointRadius, 1, myNet->getViewNet()->getNetworkViewOptions().editingElevation(), true);
+        GUIGeometry::drawGeometryPoints(myDrawingConstants->getDetail(), myLaneGeometry.getShape(),
+                                        s.colorSettings.editShapeColor.changedBrightness(-32),
+                                        s.neteditSizeSettings.laneGeometryPointRadius, 1,
+                                        myNet->getViewNet()->getNetworkViewOptions().editingElevation());
         // Pop shape edited matrix
         GLHelper::popMatrix();
     }
@@ -1197,52 +1114,300 @@ GNELane::drawShapeEdited(const GUIVisualizationSettings& s) const {
 
 
 void
-GNELane::checkMouseOverLane(const double laneWidth) const {
-    bool withinGeometry = false;
-    if (myParentEdge->getLanes().size() == 1) {
-        withinGeometry = mouseWithinGeometry(getLaneShape(), laneWidth);
-    } else if (myNet->getViewNet()->getNetworkViewOptions().selectEdges() && !myNet->getViewNet()->getMouseButtonKeyPressed().shiftKeyPressed()) {
-        withinGeometry = mouseWithinGeometry(getLaneShape(), laneWidth, myParentEdge->getGUIGlObject());
-    } else if (!myNet->getViewNet()->getNetworkViewOptions().selectEdges() && myNet->getViewNet()->getMouseButtonKeyPressed().shiftKeyPressed()) {
-        withinGeometry = mouseWithinGeometry(getLaneShape(), laneWidth, myParentEdge->getGUIGlObject());
-    } else {
-        withinGeometry = mouseWithinGeometry(getLaneShape(), laneWidth);
-    }
-    // check if mark lane (and their parent edge)
-    if (withinGeometry && (gPostDrawing.markedLane == nullptr)) {
-        // mark lane and their parent edge
-        gPostDrawing.markedLane = this;
-        gPostDrawing.markedEdge = myParentEdge;
+GNELane::drawChildren(const GUIVisualizationSettings& s) const {
+    // check if draw children elements
+    if (s.drawForViewObjectsHandler || (myDrawingConstants->getDetail() <= GUIVisualizationSettings::Detail::Additionals)) {
+        // draw additional children
+        for (const auto& additional : getChildAdditionals()) {
+            // check that ParkingAreas aren't draw two times
+            additional->drawGL(s);
+        }
+        // draw demand element children
+        for (const auto& demandElement : getChildDemandElements()) {
+            if (!demandElement->getTagProperty().isPlacedInRTree()) {
+                demandElement->drawGL(s);
+            }
+        }
+        // draw path additional elements
+        myNet->getPathManager()->drawLanePathElements(s, this);
     }
 }
 
 
 void
-GNELane::drawDottedContours(const GUIVisualizationSettings& s, const bool drawRailway, const double laneWidth) const {
-    // check if dotted contours has to be drawn
-    if (!drawRailway) {
-        // inspect contour
-        if (myNet->getViewNet()->isAttributeCarrierInspected(this) ||
-                ((myNet->getViewNet()->isAttributeCarrierInspected(myParentEdge) && (myParentEdge->getLanes().size() == 1)))) {
-            GUIDottedGeometry::drawDottedContourShape(s, GUIDottedGeometry::DottedContourType::INSPECT, getLaneShape(), laneWidth, 1, true, true);
+GNELane::drawMarkingsAndBoundings(const GUIVisualizationSettings& s) const {
+    // check conditions
+    if (s.laneShowBorders && !myDrawingConstants->drawAsRailway()) {
+        // declare separator width
+        const auto separatorWidth = SUMO_const_laneMarkWidth * 0.5;
+        // push matrix
+        GLHelper::pushMatrix();
+        // translate
+        glTranslated(0, 0, 0.1);
+        // set white color
+        GLHelper::setColor(RGBColor::WHITE);
+        // continue depending of index
+        if (myIndex == 0) {
+            // in the first lane, draw a separator
+            GUIGeometry::drawGeometry(myDrawingConstants->getDetail(), myLaneGeometry, separatorWidth,
+                                      myDrawingConstants->getOffset() + myDrawingConstants->getDrawingWidth() - separatorWidth);
+        } else {
+            // get permissions between this and previous lane
+            const auto permissionsA = myParentEdge->getNBEdge()->getPermissions(myIndex - 1);
+            const auto permissionsB = myParentEdge->getNBEdge()->getPermissions(myIndex);
+            // get change left and right for passengers
+            const bool changeLeft = myParentEdge->getNBEdge()->allowsChangingLeft(myIndex - 1, SVC_PASSENGER);
+            const bool changeRight = myParentEdge->getNBEdge()->allowsChangingRight(myIndex, SVC_PASSENGER);
+            // draw orange background under the lane and under the lane markings to highlight change prohibitions
+            if (!(changeLeft && changeRight)) {
+                GLHelper::pushMatrix();
+                glTranslated(0, 0, -0.1);
+                GLHelper::setColor(RGBColor::ORANGE);
+                GUIGeometry::drawGeometry(myDrawingConstants->getDetail(), myLaneGeometry,
+                                          myDrawingConstants->getDrawingWidth(), myDrawingConstants->getOffset());
+                GLHelper::popMatrix();
+            }
+            // if permissions are similar and we aren't drawing in spread mode, draw markings. In other case, draw a separator
+            if (!s.spreadSuperposed && (permissionsA & permissionsB)) {
+                GLHelper::drawInverseMarkings(myLaneGeometry.getShape(), myLaneGeometry.getShapeRotations(), myLaneGeometry.getShapeLengths(),
+                                              3, 6, myDrawingConstants->getDrawingWidth(), changeLeft, changeRight, s.lefthand, 1);
+            } else {
+                GUIGeometry::drawGeometry(myDrawingConstants->getDetail(), myLaneGeometry,
+                                          separatorWidth, myDrawingConstants->getOffset() + myDrawingConstants->getDrawingWidth() + separatorWidth);
+            }
         }
-        // front contour
-        if ((myNet->getViewNet()->getFrontAttributeCarrier() == this) ||
-                ((myNet->getViewNet()->getFrontAttributeCarrier() == myParentEdge) && (myParentEdge->getLanes().size() == 1))) {
-            GUIDottedGeometry::drawDottedContourShape(s, GUIDottedGeometry::DottedContourType::FRONT, getLaneShape(), laneWidth, 1, true, true);
+        // check if draw last separator
+        if (myIndex == (myParentEdge->getNBEdge()->getNumLanes() - 1)) {
+            GUIGeometry::drawGeometry(myDrawingConstants->getDetail(), myLaneGeometry, separatorWidth,
+                                      myDrawingConstants->getOffset() + (myDrawingConstants->getDrawingWidth() * -1) + separatorWidth);
         }
-        // orange contour
-        if (myNet->getViewNet()->getViewParent()->getAdditionalFrame()->getLanesSelector()->isNetworkElementSelected(this) ||
-                (myNet->getViewNet()->getViewParent()->getAdditionalFrame()->getEdgesSelector()->isNetworkElementSelected(myParentEdge) && (myParentEdge->getLanes().size() == 1))) {
-            GUIDottedGeometry::drawDottedContourShape(s, GUIDottedGeometry::DottedContourType::ORANGE, getLaneShape(), laneWidth, 1, true, true);
+        // pop matrix
+        GLHelper::popMatrix();
+    }
+}
+
+
+void
+GNELane::drawLinkNo(const GUIVisualizationSettings& s) const {
+    // check draw conditions
+    if (s.drawLinkJunctionIndex.show(myParentEdge->getToJunction())) {
+        // get connections
+        const auto& connections = myParentEdge->getNBEdge()->getConnectionsFromLane(myIndex);
+        // get number of links
+        const int noLinks = (int)connections.size();
+        // only continue if there is links
+        if (noLinks > 0) {
+            // push link matrix
+            GLHelper::pushMatrix();
+            // move front
+            glTranslated(0, 0, GLO_TEXTNAME);
+            // calculate width
+            const double width = myParentEdge->getNBEdge()->getLaneWidth(myIndex) / (double) noLinks;
+            // get X1
+            double x1 = myParentEdge->getNBEdge()->getLaneWidth(myIndex) / 2;
+            // iterate over links
+            for (int i = noLinks; i >= 0; i--) {
+                // calculate x2
+                const double x2 = x1 - (double)(width / 2.);
+                // get link index
+                const int linkIndex = myParentEdge->getNBEdge()->getToNode()->getConnectionIndex(myParentEdge->getNBEdge(),
+                                      connections[s.lefthand ? noLinks - 1 - i : i]);
+                // draw link index
+                GLHelper::drawTextAtEnd(toString(linkIndex), myLaneGeometry.getShape(), x2, s.drawLinkJunctionIndex, s.scale);
+                // update x1
+                x1 -= width;
+            }
+            // pop link matrix
+            GLHelper::popMatrix();
         }
-        // delete contour
-        if (myNet->getViewNet()->drawDeleteContour(this, this)) {
-            GUIDottedGeometry::drawDottedContourShape(s, GUIDottedGeometry::DottedContourType::REMOVE, getLaneShape(), laneWidth, 1, true, true);
+    }
+}
+
+
+void
+GNELane::drawTLSLinkNo(const GUIVisualizationSettings& s) const {
+    // check conditions
+    if ((myDrawingConstants->getDetail() <= GUIVisualizationSettings::Detail::LaneDetails) && s.drawLinkTLIndex.show(myParentEdge->getToJunction()) &&
+            (myParentEdge->getToJunction()->getNBNode()->getControllingTLS().size() > 0)) {
+        // get connections
+        const auto& connections = myParentEdge->getNBEdge()->getConnectionsFromLane(myIndex);
+        // get numer of links
+        const int noLinks = (int)connections.size();
+        // only continue if there are links
+        if (noLinks > 0) {
+            // push link matrix
+            GLHelper::pushMatrix();
+            // move t front
+            glTranslated(0, 0, GLO_TEXTNAME);
+            // calculate width
+            const double w = myParentEdge->getNBEdge()->getLaneWidth(myIndex) / (double) noLinks;
+            // calculate x1
+            double x1 = myParentEdge->getNBEdge()->getLaneWidth(myIndex) / 2;
+            // iterate over links
+            for (int i = noLinks - 1; i >= 0; --i) {
+                // calculate x2
+                const double x2 = x1 - (double)(w / 2.);
+                // get link number
+                const int linkNo = connections[s.lefthand ? noLinks - 1 - i : i].tlLinkIndex;
+                // draw link number
+                GLHelper::drawTextAtEnd(toString(linkNo), myLaneGeometry.getShape(), x2, s.drawLinkTLIndex, s.scale);
+                // update x1
+                x1 -= w;
+            }
+            // pop link matrix
+            GLHelper::popMatrix();
         }
-        // select contour
-        if (myNet->getViewNet()->drawSelectContour(this, this)) {
-            GUIDottedGeometry::drawDottedContourShape(s, GUIDottedGeometry::DottedContourType::SELECT, getLaneShape(), laneWidth, 1, true, true);
+    }
+}
+
+
+void
+GNELane::drawArrows(const GUIVisualizationSettings& s) const {
+    if (s.showLinkDecals && myParentEdge->getToJunction()->isLogicValid()) {
+        // calculate begin, end and rotation
+        const Position& begin = myLaneGeometry.getShape()[-2];
+        const Position& end = myLaneGeometry.getShape().back();
+        const double rot = GUIGeometry::calculateRotation(begin, end);
+        // push arrow matrix
+        GLHelper::pushMatrix();
+        // move front (note: must draw on top of junction shape?
+        glTranslated(0, 0, 3);
+        // change color depending of spreadSuperposed
+        if (myDrawingConstants->drawSuperposed()) {
+            GLHelper::setColor(RGBColor::CYAN);
+        } else {
+            GLHelper::setColor(RGBColor::WHITE);
+        }
+        // move to end
+        glTranslated(end.x(), end.y(), 0);
+        // rotate
+        glRotated(rot, 0, 0, 1);
+        const double width = myParentEdge->getNBEdge()->getLaneWidth(myIndex);
+        if (width < SUMO_const_laneWidth) {
+            glScaled(myDrawingConstants->getDrawingWidth() / SUMO_const_laneWidth, 1, 1);
+        }
+        // apply offset
+        glTranslated(myDrawingConstants->getOffset(), 0, 0);
+        // get destination node
+        const NBNode* dest = myParentEdge->getNBEdge()->myTo;
+        // draw all links iterating over connections
+        for (const auto& connection : myParentEdge->getNBEdge()->myConnections) {
+            if (connection.fromLane == myIndex) {
+                // get link direction
+                LinkDirection dir = dest->getDirection(myParentEdge->getNBEdge(), connection.toEdge, s.lefthand);
+                // draw depending of link direction
+                switch (dir) {
+                    case LinkDirection::STRAIGHT:
+                        GLHelper::drawBoxLine(Position(0, 4), 0, 2, .05);
+                        GLHelper::drawTriangleAtEnd(Position(0, 4), Position(0, 1), (double) 1, (double) .25);
+                        break;
+                    case LinkDirection::LEFT:
+                        GLHelper::drawBoxLine(Position(0, 4), 0, 1.5, .05);
+                        GLHelper::drawBoxLine(Position(0, 2.5), 90, 1, .05);
+                        GLHelper::drawTriangleAtEnd(Position(0, 2.5), Position(1.5, 2.5), (double) 1, (double) .25);
+                        break;
+                    case LinkDirection::RIGHT:
+                        GLHelper::drawBoxLine(Position(0, 4), 0, 1.5, .05);
+                        GLHelper::drawBoxLine(Position(0, 2.5), -90, 1, .05);
+                        GLHelper::drawTriangleAtEnd(Position(0, 2.5), Position(-1.5, 2.5), (double) 1, (double) .25);
+                        break;
+                    case LinkDirection::TURN:
+                        GLHelper::drawBoxLine(Position(0, 4), 0, 1.5, .05);
+                        GLHelper::drawBoxLine(Position(0, 2.5), 90, .5, .05);
+                        GLHelper::drawBoxLine(Position(0.5, 2.5), 180, 1, .05);
+                        GLHelper::drawTriangleAtEnd(Position(0.5, 2.5), Position(0.5, 4), (double) 1, (double) .25);
+                        break;
+                    case LinkDirection::TURN_LEFTHAND:
+                        GLHelper::drawBoxLine(Position(0, 4), 0, 1.5, .05);
+                        GLHelper::drawBoxLine(Position(0, 2.5), -90, 1, .05);
+                        GLHelper::drawBoxLine(Position(-0.5, 2.5), -180, 1, .05);
+                        GLHelper::drawTriangleAtEnd(Position(-0.5, 2.5), Position(-0.5, 4), (double) 1, (double) .25);
+                        break;
+                    case LinkDirection::PARTLEFT:
+                        GLHelper::drawBoxLine(Position(0, 4), 0, 1.5, .05);
+                        GLHelper::drawBoxLine(Position(0, 2.5), 45, .7, .05);
+                        GLHelper::drawTriangleAtEnd(Position(0, 2.5), Position(1.2, 1.3), (double) 1, (double) .25);
+                        break;
+                    case LinkDirection::PARTRIGHT:
+                        GLHelper::drawBoxLine(Position(0, 4), 0, 1.5, .05);
+                        GLHelper::drawBoxLine(Position(0, 2.5), -45, .7, .05);
+                        GLHelper::drawTriangleAtEnd(Position(0, 2.5), Position(-1.2, 1.3), (double) 1, (double) .25);
+                        break;
+                    case LinkDirection::NODIR:
+                        GLHelper::drawBoxLine(Position(1, 5.8), 245, 2, .05);
+                        GLHelper::drawBoxLine(Position(-1, 5.8), 115, 2, .05);
+                        glTranslated(0, 5, 0);
+                        GLHelper::drawOutlineCircle(0.9, 0.8, 32);
+                        glTranslated(0, -5, 0);
+                        break;
+                }
+            }
+        }
+        // pop arrow matrix
+        GLHelper::popMatrix();
+    }
+}
+
+
+void
+GNELane::drawLane2LaneConnections() const {
+    GLHelper::pushMatrix();
+    glTranslated(0, 0, 0.1); // must draw on top of junction shape
+    std::vector<NBEdge::Connection> connections = myParentEdge->getNBEdge()->getConnectionsFromLane(myIndex);
+    NBNode* node = myParentEdge->getNBEdge()->getToNode();
+    const Position& startPos = myLaneGeometry.getShape()[-1];
+    for (auto it : connections) {
+        const LinkState state = node->getLinkState(myParentEdge->getNBEdge(), it.toEdge, it.fromLane, it.toLane, it.mayDefinitelyPass, it.tlID);
+        switch (state) {
+            case LINKSTATE_TL_OFF_NOSIGNAL:
+                glColor3d(1, 1, 0);
+                break;
+            case LINKSTATE_TL_OFF_BLINKING:
+                glColor3d(0, 1, 1);
+                break;
+            case LINKSTATE_MAJOR:
+                glColor3d(1, 1, 1);
+                break;
+            case LINKSTATE_MINOR:
+                glColor3d(.4, .4, .4);
+                break;
+            case LINKSTATE_STOP:
+                glColor3d(.7, .4, .4);
+                break;
+            case LINKSTATE_EQUAL:
+                glColor3d(.7, .7, .7);
+                break;
+            case LINKSTATE_ALLWAY_STOP:
+                glColor3d(.7, .7, 1);
+                break;
+            case LINKSTATE_ZIPPER:
+                glColor3d(.75, .5, 0.25);
+                break;
+            default:
+                throw ProcessError(TLF("Unexpected LinkState '%'", toString(state)));
+        }
+        const Position& endPos = it.toEdge->getLaneShape(it.toLane)[0];
+        glBegin(GL_LINES);
+        glVertex2d(startPos.x(), startPos.y());
+        glVertex2d(endPos.x(), endPos.y());
+        glEnd();
+        GLHelper::drawTriangleAtEnd(startPos, endPos, (double) 1.5, (double) .2);
+    }
+    GLHelper::popMatrix();
+}
+
+
+void
+GNELane::calculateLaneContour(const GUIVisualizationSettings& s) const {
+    // first check if edge parent was inserted with full boundary
+    if (!gViewObjectsHandler.checkBoundaryParentElement(this, myParentEdge)) {
+        // calculate contour
+        myNetworkElementContour.calculateContourExtrudedShape(s, myDrawingConstants->getDetail(), this, myLaneGeometry.getShape(),
+                myDrawingConstants->getDrawingWidth(), 1, true, true, myDrawingConstants->getOffset());
+        // calculate geometry points contour if we're editing shape
+        if (myShapeEdited) {
+            myNetworkElementContour.calculateContourAllGeometryPoints(s, myDrawingConstants->getDetail(), this, myLaneGeometry.getShape(),
+                    s.neteditSizeSettings.laneGeometryPointRadius, myDrawingConstants->getExaggeration(), true);
         }
     }
 }
@@ -1257,7 +1422,7 @@ GNELane::setLaneColor(const GUIVisualizationSettings& s) const {
     // get inspected AC
     const GNEAttributeCarrier* inspectedAC = inspectedACs.size() > 0 ? inspectedACs.front() : nullptr;
     // we need to draw lanes with a special color if we're inspecting a Trip or Flow and this lane belongs to a via's edge.
-    if (inspectedAC && (inspectedAC->isAttributeCarrierSelected() == false) &&
+    if (inspectedAC && (!inspectedAC->isAttributeCarrierSelected()) &&
             ((inspectedAC->getTagProperty().getTag() == SUMO_TAG_TRIP) || (inspectedAC->getTagProperty().getTag() == SUMO_TAG_FLOW))) {
         // obtain attribute "via"
         std::vector<std::string> viaEdges = parse<std::vector<std::string> >(inspectedAC->getAttribute(SUMO_ATTR_VIA));
@@ -1273,9 +1438,6 @@ GNELane::setLaneColor(const GUIVisualizationSettings& s) const {
     if (mySpecialColor != nullptr) {
         // If special color is enabled, set it
         color = *mySpecialColor;
-    } else if (drawUsingSelectColor() && s.laneColorer.getActive() != 1) {
-        // override with special colors (unless the color scheme is based on selection)
-        color = s.colorSettings.selectedLaneColor;
     } else if (myParentEdge->drawUsingSelectColor() && s.laneColorer.getActive() != 1) {
         // override with special colors (unless the color scheme is based on selection)
         color = s.colorSettings.selectedEdgeColor;
@@ -1407,6 +1569,9 @@ GNELane::getColorValue(const GUIVisualizationSettings& s, int activeScheme) cons
                     return 4;
                 case SVC_AUTHORITY:
                     return 8;
+                case SVC_AIRCRAFT:
+                case SVC_DRONE:
+                    return 12;
                 default:
                     break;
             }
@@ -1455,7 +1620,7 @@ GNELane::getColorValue(const GUIVisualizationSettings& s, int activeScheme) cons
 
         case 12: {
             // by numerical edge param value
-            if (myParentEdge->getNBEdge()->knowsParameter(s.edgeParam)) {
+            if (myParentEdge->getNBEdge()->hasParameter(s.edgeParam)) {
                 try {
                     return StringUtils::toDouble(myParentEdge->getNBEdge()->getParameter(s.edgeParam, "0"));
                 } catch (NumberFormatException&) {
@@ -1471,7 +1636,7 @@ GNELane::getColorValue(const GUIVisualizationSettings& s, int activeScheme) cons
         }
         case 13: {
             // by numerical lane param value
-            if (myParentEdge->getNBEdge()->getLaneStruct(myIndex).knowsParameter(s.laneParam)) {
+            if (myParentEdge->getNBEdge()->getLaneStruct(myIndex).hasParameter(s.laneParam)) {
                 try {
                     return StringUtils::toDouble(myParentEdge->getNBEdge()->getLaneStruct(myIndex).getParameter(s.laneParam, "0"));
                 } catch (NumberFormatException&) {
@@ -1496,14 +1661,6 @@ GNELane::getColorValue(const GUIVisualizationSettings& s, int activeScheme) cons
 }
 
 
-bool
-GNELane::drawAsRailway(const GUIVisualizationSettings& s) const {
-    return isRailway(myParentEdge->getNBEdge()->getPermissions(myIndex))
-           && (myParentEdge->getNBEdge()->getPermissions(myIndex) & SVC_BUS) == 0
-           && s.showRails && (!s.drawForRectangleSelection || s.spreadSuperposed);
-}
-
-
 void
 GNELane::drawOverlappedRoutes(const int numRoutes) const {
     // get middle point and angle
@@ -1522,23 +1679,26 @@ GNELane::drawOverlappedRoutes(const int numRoutes) const {
 
 
 void
-GNELane::drawLaneStopOffset(const GUIVisualizationSettings& s, const double offset) const {
-    GNELane::LaneDrawingConstants laneDrawingConstants(s, this);
-    const Position& end = getLaneShape().back();
-    const Position& f = getLaneShape()[-2];
-    const double rot = RAD2DEG(atan2((end.x() - f.x()), (f.y() - end.y())));
-    GLHelper::setColor(s.getLinkColor(LINKSTATE_MAJOR));
-    GLHelper::pushMatrix();
-    glTranslated(end.x(), end.y(), 1);
-    glRotated(rot, 0, 0, 1);
-    glTranslated(0, offset, 0);
-    glBegin(GL_QUADS);
-    glVertex2d(-laneDrawingConstants.halfWidth, 0.0);
-    glVertex2d(-laneDrawingConstants.halfWidth, 0.2);
-    glVertex2d(laneDrawingConstants.halfWidth, 0.2);
-    glVertex2d(laneDrawingConstants.halfWidth, 0.0);
-    glEnd();
-    GLHelper::popMatrix();
+GNELane::drawLaneStopOffset(const GUIVisualizationSettings& s) const {
+    const auto& laneStopOffset = myParentEdge->getNBEdge()->getLaneStruct(myIndex).laneStopOffset;
+    // check conditions
+    if (laneStopOffset.isDefined() && (laneStopOffset.getPermissions() & SVC_PASSENGER) != 0) {
+        const Position& end = getLaneShape().back();
+        const Position& f = getLaneShape()[-2];
+        const double rot = RAD2DEG(atan2((end.x() - f.x()), (f.y() - end.y())));
+        GLHelper::setColor(s.getLinkColor(LINKSTATE_MAJOR));
+        GLHelper::pushMatrix();
+        glTranslated(end.x(), end.y(), 1);
+        glRotated(rot, 0, 0, 1);
+        glTranslated(0, laneStopOffset.getOffset(), 0);
+        glBegin(GL_QUADS);
+        glVertex2d(-myDrawingConstants->getDrawingWidth(), 0.0);
+        glVertex2d(-myDrawingConstants->getDrawingWidth(), 0.2);
+        glVertex2d(myDrawingConstants->getDrawingWidth(), 0.2);
+        glVertex2d(myDrawingConstants->getDrawingWidth(), 0.0);
+        glEnd();
+        GLHelper::popMatrix();
+    }
 }
 
 
@@ -1549,18 +1709,15 @@ GNELane::drawAsWaterway(const GUIVisualizationSettings& s) const {
 
 
 void
-GNELane::drawDirectionIndicators(const GUIVisualizationSettings& s, double exaggeration, const bool drawAsRailway, const bool spreadSuperposed) const {
+GNELane::drawDirectionIndicators(const GUIVisualizationSettings& s) const {
     // Draw direction indicators if the correspondient option is enabled
     if (s.showLaneDirection) {
         // improve visibility of superposed rail edges
-        if (drawAsRailway) {
-            setLaneColor(s);
-        } else {
+        if (!myDrawingConstants->drawAsRailway()) {
             glColor3d(0.3, 0.3, 0.3);
         }
         // get width and sideOffset
-        const double width = MAX2(NUMERICAL_EPS, (myParentEdge->getNBEdge()->getLaneWidth(myIndex) * exaggeration * (spreadSuperposed ? 0.4 : 1)));
-        const double sideOffset = spreadSuperposed ? width * -0.5 : 0;
+        const double width = MAX2(NUMERICAL_EPS, (myDrawingConstants->getDrawingWidth() * 2 * myDrawingConstants->getExaggeration()));
         // push direction indicator matrix
         GLHelper::pushMatrix();
         // move to front
@@ -1579,9 +1736,9 @@ GNELane::drawDirectionIndicators(const GUIVisualizationSettings& s, double exagg
                 const double length = MIN2(width * 0.5, myLaneGeometry.getShapeLengths()[i] - subWidth);
                 // draw triangle
                 glBegin(GL_TRIANGLES);
-                glVertex2d(sideOffset, -subWidth - length);
-                glVertex2d(sideOffset - width * 0.25, -subWidth);
-                glVertex2d(sideOffset + width * 0.25, -subWidth);
+                glVertex2d(-myDrawingConstants->getOffset(), -subWidth - length);
+                glVertex2d(-myDrawingConstants->getOffset() - width * 0.25, -subWidth);
+                glVertex2d(-myDrawingConstants->getOffset() + width * 0.25, -subWidth);
                 glEnd();
             }
             // pop triangle matrix
@@ -1594,66 +1751,57 @@ GNELane::drawDirectionIndicators(const GUIVisualizationSettings& s, double exagg
 
 
 void
-GNELane::drawLaneAsRailway(const GUIVisualizationSettings& s, const LaneDrawingConstants& laneDrawingConstants) const {
-    // we draw the lanes with reduced width so that the lane markings below are visible
-    // (this avoids artifacts at geometry corners without having to
-    const bool spreadSuperposed = s.spreadSuperposed && myParentEdge->getNBEdge()->getBidiEdge() != nullptr;
-    // get lane shape
-    PositionVector shape = myLaneGeometry.getShape();
-    // get width
-    const double width = myParentEdge->getNBEdge()->getLaneWidth(myIndex);
-    // draw as railway: assume standard gauge of 1435mm when lane width is not set
+GNELane::drawLaneAsRailway() const {
     // draw foot width 150mm, assume that distance between rail feet inner sides is reduced on both sides by 39mm with regard to the gauge
     // assume crosstie length of 181% gauge (2600mm for standard gauge)
-    double halfGauge = 0.5 * (width == SUMO_const_laneWidth ?  1.4350 : width) * laneDrawingConstants.exaggeration;
-    // check if we have to modify shape
-    if (spreadSuperposed) {
-        shape.move2side(halfGauge * 0.8);
-        halfGauge *= 0.4;
-        //std::cout << "spreadSuperposed " << getID() << " old=" << myLaneGeometry.getShape() << " new=" << shape << "\n";
-    }
-    // calculate constant
-    const double halfInnerFeetWidth = halfGauge - 0.039 * laneDrawingConstants.exaggeration;
-    const double halfRailWidth = halfInnerFeetWidth + 0.15 * laneDrawingConstants.exaggeration;
-    const double halfCrossTieWidth = halfGauge * 1.81;
-    // Draw lane geometry
-    GUIGeometry::drawLaneGeometry(s, myNet->getViewNet()->getPositionInformation(), shape, myLaneGeometry.getShapeRotations(), myLaneGeometry.getShapeLengths(), myShapeColors, halfRailWidth);
-    // Save current color
-    RGBColor current = GLHelper::getColor();
-    // Draw gray on top with reduced width (the area between the two tracks)
-    glColor3d(0.8, 0.8, 0.8);
-    // move
-    glTranslated(0, 0, 0.1);
-    // draw lane geometry again
-    GUIGeometry::drawLaneGeometry(s, myNet->getViewNet()->getPositionInformation(), shape, myLaneGeometry.getShapeRotations(), myLaneGeometry.getShapeLengths(), {}, halfInnerFeetWidth);
-    // Set current color back
-    GLHelper::setColor(current);
-    // Draw crossties
-    GLHelper::drawCrossTies(shape, myLaneGeometry.getShapeRotations(), myLaneGeometry.getShapeLengths(), 0.26 * laneDrawingConstants.exaggeration, 0.6 * laneDrawingConstants.exaggeration, halfCrossTieWidth, s.drawForRectangleSelection);
-    // check if dotted contours has to be drawn
-    if (myNet->getViewNet()->isAttributeCarrierInspected(this) ||
-            (myNet->getViewNet()->isAttributeCarrierInspected(myParentEdge) && (myParentEdge->getLanes().size() == 1))) {
-        GUIDottedGeometry::drawDottedContourShape(s, GUIDottedGeometry::DottedContourType::INSPECT, shape, halfGauge, 1, true, true);
-    }
-    if ((myNet->getViewNet()->getFrontAttributeCarrier() == this) ||
-            ((myNet->getViewNet()->getFrontAttributeCarrier() == myParentEdge) && (myParentEdge->getLanes().size() == 1))) {
-        GUIDottedGeometry::drawDottedContourShape(s, GUIDottedGeometry::DottedContourType::FRONT, shape, halfGauge, 1, true, true);
+    // first save current color (obtained from view configuration)
+    const auto currentLaneColor = GLHelper::getColor();
+    // Set current color
+    GLHelper::setColor(currentLaneColor);
+    // continue depending of detail
+    if (myDrawingConstants->getDetail() <= GUIVisualizationSettings::Detail::LaneDetails) {
+        // move
+        glTranslated(0, 0, 0.1);
+        // draw external crossbar
+        const double crossbarWidth = 0.2 * myDrawingConstants->getExaggeration();
+        // draw geometry
+        GUIGeometry::drawGeometry(myDrawingConstants->getDetail(), myLaneGeometry,
+                                  myDrawingConstants->getDrawingWidth() * 0.8,
+                                  myDrawingConstants->getOffset());
+        // move
+        glTranslated(0, 0, 0.01);
+        // Set color gray
+        glColor3d(0.8, 0.8, 0.8);
+        // draw geometry
+        GUIGeometry::drawGeometry(myDrawingConstants->getDetail(), myLaneGeometry,
+                                  myDrawingConstants->getDrawingWidth() * 0.6,
+                                  myDrawingConstants->getOffset());
+        // move
+        glTranslated(0, 0, 0.01);
+        // Set current color
+        GLHelper::setColor(currentLaneColor);
+        // Draw crossties
+        GLHelper::drawCrossTies(myLaneGeometry.getShape(), myLaneGeometry.getShapeRotations(), myLaneGeometry.getShapeLengths(),
+                                crossbarWidth, 0.6 * myDrawingConstants->getExaggeration(), myDrawingConstants->getDrawingWidth(),
+                                myDrawingConstants->getOffset(), false);
+    } else if (myShapeColors.size() > 0) {
+        // draw colored box lines
+        GUIGeometry::drawGeometry(myDrawingConstants->getDetail(), myLaneGeometry, myShapeColors,
+                                  myDrawingConstants->getDrawingWidth(), myDrawingConstants->getOffset());
+    } else {
+        // draw geometry with current color
+        GUIGeometry::drawGeometry(myDrawingConstants->getDetail(), myLaneGeometry, myDrawingConstants->getDrawingWidth(),
+                                  myDrawingConstants->getOffset());
     }
 }
 
 
 void
-GNELane::drawTextures(const GUIVisualizationSettings& s, const LaneDrawingConstants& laneDrawingConstants) const {
+GNELane::drawTextures(const GUIVisualizationSettings& s) const {
     // check all conditions for drawing textures
-    if (!s.drawForRectangleSelection && !s.drawForPositionSelection && !s.disableLaneIcons &&
-            (myLaneRestrictedTexturePositions.size() > 0) &&
-            s.drawDetail(s.detailSettings.laneTextures, laneDrawingConstants.exaggeration)) {
+    if (!s.disableLaneIcons && (myLaneRestrictedTexturePositions.size() > 0)) {
         // Declare default width of icon (3)
-        double iconWidth = 1;
-        // Obtain width of icon, if width of lane is different
-        if (myParentEdge->getNBEdge()->getLaneStruct(myIndex).width != -1) {
-            iconWidth = myParentEdge->getNBEdge()->getLaneStruct(myIndex).width / 3;
-        }
+        const double iconWidth = myDrawingConstants->getDrawingWidth() * 0.6;
         // Draw list of icons
         for (int i = 0; i < (int)myLaneRestrictedTexturePositions.size(); i++) {
             // Push draw matrix 2
@@ -1681,38 +1829,34 @@ GNELane::drawTextures(const GUIVisualizationSettings& s, const LaneDrawingConsta
 
 
 void
-GNELane::drawStartEndShapePoints(const GUIVisualizationSettings& s) const {
+GNELane::drawStartEndGeometryPoints(const GUIVisualizationSettings& s) const {
     // draw a Start/endPoints if lane has a custom shape
-    if (!s.drawForRectangleSelection && (myParentEdge->getNBEdge()->getLaneStruct(myIndex).customShape.size() > 1)) {
-        GLHelper::setColor(s.junctionColorer.getSchemes()[0].getColor(2));
-        if (drawUsingSelectColor() && s.laneColorer.getActive() != 1) {
-            // override with special colors (unless the color scheme is based on selection)
-            GLHelper::setColor(s.colorSettings.selectedEdgeColor.changedBrightness(-20));
-        }
+    if ((myDrawingConstants->getDetail() <= GUIVisualizationSettings::Detail::GeometryPoint) && (myParentEdge->getNBEdge()->getLaneStruct(myIndex).customShape.size() > 1)) {
         // obtain circle width and resolution
-        double circleWidth = GNEEdge::SNAP_RADIUS * MIN2((double)1, s.laneWidthExaggeration) / 2;
-        // Obtain exaggeration of the draw
-        const double exaggeration = getExaggeration(s);
+        const double circleWidth = GNEEdge::SNAP_RADIUS * MIN2((double)1, s.laneWidthExaggeration) / 2;
         // obtain custom shape
         const PositionVector& customShape = myParentEdge->getNBEdge()->getLaneStruct(myIndex).customShape;
-        // draw s depending of detail
-        if (s.drawDetail(s.detailSettings.geometryPointsText, exaggeration)) {
-            // push start matrix
-            GLHelper::pushMatrix();
-            // move to shape start position
-            glTranslated(customShape.front().x(), customShape.front().y(), 0.1);
-            // draw circle
-            GLHelper::drawFilledCircle(circleWidth, s.getCircleResolution());
-            // check if we can draw "S"
-            if (!s.drawForPositionSelection) {
-                // move top
-                glTranslated(0, 0, 0.1);
-                // draw "S"
-                GLHelper::drawText("S", Position(), 0.1, circleWidth, RGBColor::WHITE);
-            }
-            // pop start matrix
-            GLHelper::popMatrix();
+        // set color (override with special colors unless the color scheme is based on selection)
+        if (drawUsingSelectColor() && s.laneColorer.getActive() != 1) {
+            GLHelper::setColor(s.colorSettings.selectedEdgeColor.changedBrightness(-20));
+        } else {
+            GLHelper::setColor(s.junctionColorer.getSchemes()[0].getColor(2));
         }
+        // push start matrix
+        GLHelper::pushMatrix();
+        // move to shape start position
+        glTranslated(customShape.front().x(), customShape.front().y(), 0.1);
+        // draw circle
+        GLHelper::drawFilledCircleDetailled(myDrawingConstants->getDetail(), circleWidth);
+        // draw s depending of detail
+        if (myDrawingConstants->getDetail() <= GUIVisualizationSettings::Detail::Text) {
+            // move top
+            glTranslated(0, 0, 0.1);
+            // draw "S"
+            GLHelper::drawText("S", Position(), 0.1, circleWidth, RGBColor::WHITE);
+        }
+        // pop start matrix
+        GLHelper::popMatrix();
         // draw line between junction and start position
         GLHelper::pushMatrix();
         // move top
@@ -1723,24 +1867,21 @@ GNELane::drawStartEndShapePoints(const GUIVisualizationSettings& s) const {
         GLHelper::drawLine(customShape.front(), myParentEdge->getFromJunction()->getPositionInView());
         // pop line matrix
         GLHelper::popMatrix();
+        // push start matrix
+        GLHelper::pushMatrix();
+        // move to end position
+        glTranslated(customShape.back().x(), customShape.back().y(), 0.1);
+        // draw filled circle
+        GLHelper::drawFilledCircleDetailled(myDrawingConstants->getDetail(), circleWidth);
         // draw "e" depending of detail
-        if (s.drawDetail(s.detailSettings.geometryPointsText, exaggeration)) {
-            // push start matrix
-            GLHelper::pushMatrix();
-            // move to end position
-            glTranslated(customShape.back().x(), customShape.back().y(), 0.1);
-            // draw filled circle
-            GLHelper::drawFilledCircle(circleWidth, s.getCircleResolution());
-            // check if we can draw "E"
-            if (!s.drawForPositionSelection) {
-                // move top
-                glTranslated(0, 0, 0.1);
-                // draw "E"
-                GLHelper::drawText("E", Position(), 0, circleWidth, RGBColor::WHITE);
-            }
-            // pop start matrix
-            GLHelper::popMatrix();
+        if (myDrawingConstants->getDetail() <= GUIVisualizationSettings::Detail::Text) {
+            // move top
+            glTranslated(0, 0, 0.1);
+            // draw "E"
+            GLHelper::drawText("E", Position(), 0, circleWidth, RGBColor::WHITE);
         }
+        // pop start matrix
+        GLHelper::popMatrix();
         // draw line between Junction and end position
         GLHelper::pushMatrix();
         // move top
@@ -1776,11 +1917,11 @@ GNELane::getGNEIncomingConnections() {
     GNEJunction* junctionSource =  myParentEdge->getFromJunction();
     if (junctionSource) {
         // Iterate over incoming GNEEdges of junction
-        for (auto i : junctionSource->getGNEIncomingEdges()) {
+        for (const auto& incomingEdge : junctionSource->getGNEIncomingEdges()) {
             // Iterate over connection of incoming edges
-            for (auto j : i->getGNEConnections()) {
-                if (j->getNBEdgeConnection().fromLane == getIndex()) {
-                    incomingConnections.push_back(j);
+            for (const auto& connection : incomingEdge->getGNEConnections()) {
+                if (connection->getLaneFrom()->getIndex() == getIndex()) {
+                    incomingConnections.push_back(connection);
                 }
             }
         }
@@ -1795,9 +1936,9 @@ GNELane::getGNEOutcomingConnections() {
     const std::vector<GNEConnection*>& edgeConnections = myParentEdge->getGNEConnections();
     std::vector<GNEConnection*> outcomingConnections;
     // Obtain outgoing connections
-    for (auto i : edgeConnections) {
-        if (i->getNBEdgeConnection().fromLane == getIndex()) {
-            outcomingConnections.push_back(i);
+    for (const auto& connection : edgeConnections) {
+        if (connection->getLaneTo()->getIndex() == getIndex()) {
+            outcomingConnections.push_back(connection);
         }
     }
     return outcomingConnections;
@@ -1808,13 +1949,13 @@ void
 GNELane::updateConnectionIDs() {
     // update incoming connections of lane
     std::vector<GNEConnection*> incomingConnections = getGNEIncomingConnections();
-    for (auto i : incomingConnections) {
-        i->updateID();
+    for (const auto& incomingConnection : incomingConnections) {
+        incomingConnection->updateConnectionID();
     }
     // update outcoming connections of lane
     std::vector<GNEConnection*> outcomingConnections = getGNEOutcomingConnections();
-    for (auto i : outcomingConnections) {
-        i->updateID();
+    for (const auto& outcomingConnection : outcomingConnections) {
+        outcomingConnection->updateConnectionID();
     }
 }
 
@@ -1842,50 +1983,50 @@ GNELane::buildEdgeOperations(GUISUMOAbstractView& parent, GUIGLObjectPopupMenu* 
     FXMenuPane* edgeOperations = new FXMenuPane(ret);
     ret->insertMenuPaneChild(edgeOperations);
     if (edgeSelSize > 0) {
-        new FXMenuCascade(ret, ("edge operations (" + toString(edgeSelSize) + " selected)").c_str(), nullptr, edgeOperations);
+        new FXMenuCascade(ret, TLF("Edge operations (% selected)", toString(edgeSelSize)).c_str(), nullptr, edgeOperations);
     } else {
-        new FXMenuCascade(ret, "edge operations", nullptr, edgeOperations);
+        new FXMenuCascade(ret, TL("Edge operations"), nullptr, edgeOperations);
     }
     // create menu commands for all edge operations
-    GUIDesigns::buildFXMenuCommand(edgeOperations, "Split edge here", nullptr, &parent, MID_GNE_EDGE_SPLIT);
-    auto splitBothDirections = GUIDesigns::buildFXMenuCommand(edgeOperations, "Split edge in both directions here (no simmetric opposite edge)", nullptr, &parent, MID_GNE_EDGE_SPLIT_BIDI);
+    GUIDesigns::buildFXMenuCommand(edgeOperations, TL("Split edge here"), nullptr, &parent, MID_GNE_EDGE_SPLIT);
+    auto splitBothDirections = GUIDesigns::buildFXMenuCommand(edgeOperations, TL("Split edge in both directions here (no symmetric opposite edge)"), nullptr, &parent, MID_GNE_EDGE_SPLIT_BIDI);
     // check if allow split edge in both directions
     splitBothDirections->disable();
     const auto oppositeEdges = myParentEdge->getOppositeEdges();
     if (oppositeEdges.size() == 0) {
-        splitBothDirections->setText("Split edge in both directions here (no opposite edge)");
+        splitBothDirections->setText(TL("Split edge in both directions here (no opposite edge)"));
     } else {
         for (const auto& oppositeEdge : oppositeEdges) {
             // get reverse inner geometry
             const auto reverseGeometry = oppositeEdge->getNBEdge()->getInnerGeometry().reverse();
             if (reverseGeometry == myParentEdge->getNBEdge()->getInnerGeometry()) {
                 splitBothDirections->enable();
-                splitBothDirections->setText("Split edge in both directions here");
+                splitBothDirections->setText(TL("Split edge in both directions here"));
             }
         }
     }
-    GUIDesigns::buildFXMenuCommand(edgeOperations, "Set geometry endpoint here (shift-click)", nullptr, &parent, MID_GNE_EDGE_EDIT_ENDPOINT);
+    GUIDesigns::buildFXMenuCommand(edgeOperations, TL("Set geometry endpoint here (shift-click)"), nullptr, &parent, MID_GNE_EDGE_EDIT_ENDPOINT);
     // restore geometry points depending of selection status
     if (myParentEdge->isAttributeCarrierSelected()) {
         if (edgeSelSize == 1) {
-            GUIDesigns::buildFXMenuCommand(edgeOperations, "Restore both geometry endpoints", nullptr, &parent, MID_GNE_EDGE_RESET_ENDPOINT);
+            GUIDesigns::buildFXMenuCommand(edgeOperations, TL("Restore both geometry endpoints"), nullptr, &parent, MID_GNE_EDGE_RESET_ENDPOINT);
         } else {
-            GUIDesigns::buildFXMenuCommand(edgeOperations, "Restore geometry endpoints of all selected edges", nullptr, &parent, MID_GNE_EDGE_RESET_ENDPOINT);
+            GUIDesigns::buildFXMenuCommand(edgeOperations, TL("Restore geometry endpoints of all selected edges"), nullptr, &parent, MID_GNE_EDGE_RESET_ENDPOINT);
         }
     } else {
-        GUIDesigns::buildFXMenuCommand(edgeOperations, "Restore geometry endpoint (shift-click)", nullptr, &parent, MID_GNE_EDGE_RESET_ENDPOINT);
+        GUIDesigns::buildFXMenuCommand(edgeOperations, TL("Restore geometry endpoint (shift-click)"), nullptr, &parent, MID_GNE_EDGE_RESET_ENDPOINT);
     }
-    GUIDesigns::buildFXMenuCommand(edgeOperations, "Reverse " + edgeDescPossibleMulti, nullptr, &parent, MID_GNE_EDGE_REVERSE);
-    auto reverse = GUIDesigns::buildFXMenuCommand(edgeOperations, "Add reverse direction for " + edgeDescPossibleMulti, nullptr, &parent, MID_GNE_EDGE_ADD_REVERSE);
+    GUIDesigns::buildFXMenuCommand(edgeOperations, TLF("Reverse %", edgeDescPossibleMulti), nullptr, &parent, MID_GNE_EDGE_REVERSE);
+    auto reverse = GUIDesigns::buildFXMenuCommand(edgeOperations, TLF("Add reverse direction for %", edgeDescPossibleMulti), nullptr, &parent, MID_GNE_EDGE_ADD_REVERSE);
     if (myParentEdge->getReverseEdge() != nullptr) {
         reverse->disable();
     }
-    GUIDesigns::buildFXMenuCommand(edgeOperations, "Add reverse disconnected direction for " + edgeDescPossibleMulti, nullptr, &parent, MID_GNE_EDGE_ADD_REVERSE_DISCONNECTED);
-    GUIDesigns::buildFXMenuCommand(edgeOperations, "Reset lengths for " + edgeDescPossibleMulti, nullptr, &parent, MID_GNE_EDGE_RESET_LENGTH);
-    GUIDesigns::buildFXMenuCommand(edgeOperations, "Straighten " + edgeDescPossibleMulti, nullptr, &parent, MID_GNE_EDGE_STRAIGHTEN);
-    GUIDesigns::buildFXMenuCommand(edgeOperations, "Smooth " + edgeDescPossibleMulti, nullptr, &parent, MID_GNE_EDGE_SMOOTH);
-    GUIDesigns::buildFXMenuCommand(edgeOperations, "Straighten elevation of " + edgeDescPossibleMulti, nullptr, &parent, MID_GNE_EDGE_STRAIGHTEN_ELEVATION);
-    GUIDesigns::buildFXMenuCommand(edgeOperations, "Smooth elevation of " + edgeDescPossibleMulti, nullptr, &parent, MID_GNE_EDGE_SMOOTH_ELEVATION);
+    GUIDesigns::buildFXMenuCommand(edgeOperations, TLF("Add reverse disconnected direction for %", edgeDescPossibleMulti), nullptr, &parent, MID_GNE_EDGE_ADD_REVERSE_DISCONNECTED);
+    GUIDesigns::buildFXMenuCommand(edgeOperations, TLF("Reset lengths for %", edgeDescPossibleMulti), nullptr, &parent, MID_GNE_EDGE_RESET_LENGTH);
+    GUIDesigns::buildFXMenuCommand(edgeOperations, TLF("Straighten %", edgeDescPossibleMulti), nullptr, &parent, MID_GNE_EDGE_STRAIGHTEN);
+    GUIDesigns::buildFXMenuCommand(edgeOperations, TLF("Smooth %", edgeDescPossibleMulti), nullptr, &parent, MID_GNE_EDGE_SMOOTH);
+    GUIDesigns::buildFXMenuCommand(edgeOperations, TLF("Straighten elevation of %", edgeDescPossibleMulti), nullptr, &parent, MID_GNE_EDGE_STRAIGHTEN_ELEVATION);
+    GUIDesigns::buildFXMenuCommand(edgeOperations, TLF("Smooth elevation of %", edgeDescPossibleMulti), nullptr, &parent, MID_GNE_EDGE_SMOOTH_ELEVATION);
 }
 
 
@@ -1932,17 +2073,17 @@ GNELane::buildLaneOperations(GUISUMOAbstractView& parent, GUIGLObjectPopupMenu* 
     FXMenuPane* laneOperations = new FXMenuPane(ret);
     ret->insertMenuPaneChild(laneOperations);
     if (numSelectedLanes > 0) {
-        new FXMenuCascade(ret, ("lane operations (" + toString(numSelectedLanes) + " selected)").c_str(), nullptr, laneOperations);
+        new FXMenuCascade(ret, TLF("Lane operations (% selected)", toString(numSelectedLanes)).c_str(), nullptr, laneOperations);
     } else {
-        new FXMenuCascade(ret, "lane operations", nullptr, laneOperations);
+        new FXMenuCascade(ret, TL("Lane operations"), nullptr, laneOperations);
     }
-    GUIDesigns::buildFXMenuCommand(laneOperations, "Duplicate lane", nullptr, &parent, MID_GNE_LANE_DUPLICATE);
-    GUIDesigns::buildFXMenuCommand(laneOperations, "Set custom lane shape", nullptr, &parent, MID_GNE_LANE_EDIT_SHAPE);
-    FXMenuCommand* resetCustomShape = GUIDesigns::buildFXMenuCommand(laneOperations, "reset custom shape", nullptr, &parent, MID_GNE_LANE_RESET_CUSTOMSHAPE);
+    GUIDesigns::buildFXMenuCommand(laneOperations, TL("Duplicate lane"), nullptr, &parent, MID_GNE_LANE_DUPLICATE);
+    GUIDesigns::buildFXMenuCommand(laneOperations, TL("Set custom lane shape"), nullptr, &parent, MID_GNE_LANE_EDIT_SHAPE);
+    FXMenuCommand* resetCustomShape = GUIDesigns::buildFXMenuCommand(laneOperations, TL("Reset custom shape"), nullptr, &parent, MID_GNE_LANE_RESET_CUSTOMSHAPE);
     if (!differentLaneShapes) {
         resetCustomShape->disable();
     }
-    FXMenuCommand* resetOppositeLane = GUIDesigns::buildFXMenuCommand(laneOperations, "reset opposite lane", nullptr, &parent, MID_GNE_LANE_RESET_OPPOSITELANE);
+    FXMenuCommand* resetOppositeLane = GUIDesigns::buildFXMenuCommand(laneOperations, TL("Reset opposite lane"), nullptr, &parent, MID_GNE_LANE_RESET_OPPOSITELANE);
     if (getAttribute(GNE_ATTR_OPPOSITE).empty()) {
         resetOppositeLane->disable();
     }
@@ -1954,34 +2095,34 @@ GNELane::buildLaneOperations(GUISUMOAbstractView& parent, GUIGLObjectPopupMenu* 
     FXMenuPane* transformSlanes = new FXMenuPane(laneOperations);
     ret->insertMenuPaneChild(transformSlanes);
     // Create menu comands for all add special lanes
-    FXMenuCommand* addSidewalk = GUIDesigns::buildFXMenuCommand(addSpecialLanes, "Sidewalk", pedestrianIcon, &parent, MID_GNE_LANE_ADD_SIDEWALK);
-    FXMenuCommand* addBikelane = GUIDesigns::buildFXMenuCommand(addSpecialLanes, "Bikelane", bikeIcon, &parent, MID_GNE_LANE_ADD_BIKE);
-    FXMenuCommand* addBuslane = GUIDesigns::buildFXMenuCommand(addSpecialLanes, "Buslane", busIcon, &parent, MID_GNE_LANE_ADD_BUS);
+    FXMenuCommand* addSidewalk = GUIDesigns::buildFXMenuCommand(addSpecialLanes, TL("Sidewalk"), pedestrianIcon, &parent, MID_GNE_LANE_ADD_SIDEWALK);
+    FXMenuCommand* addBikelane = GUIDesigns::buildFXMenuCommand(addSpecialLanes, TL("Bike lane"), bikeIcon, &parent, MID_GNE_LANE_ADD_BIKE);
+    FXMenuCommand* addBuslane = GUIDesigns::buildFXMenuCommand(addSpecialLanes, TL("Bus lane"), busIcon, &parent, MID_GNE_LANE_ADD_BUS);
     // if parent edge is selected, always add greenverge in front
     if (myParentEdge->isAttributeCarrierSelected()) {
-        GUIDesigns::buildFXMenuCommand(addSpecialLanes, "Greenverge", greenVergeIcon, &parent, MID_GNE_LANE_ADD_GREENVERGE_FRONT);
+        GUIDesigns::buildFXMenuCommand(addSpecialLanes, TL("Green verge"), greenVergeIcon, &parent, MID_GNE_LANE_ADD_GREENVERGE_FRONT);
     } else {
-        GUIDesigns::buildFXMenuCommand(addSpecialLanes, "Greenverge (front)", greenVergeIcon, &parent, MID_GNE_LANE_ADD_GREENVERGE_FRONT);
-        GUIDesigns::buildFXMenuCommand(addSpecialLanes, "Greenverge (back)", greenVergeIcon, &parent, MID_GNE_LANE_ADD_GREENVERGE_BACK);
+        GUIDesigns::buildFXMenuCommand(addSpecialLanes, TL("Green verge (front)"), greenVergeIcon, &parent, MID_GNE_LANE_ADD_GREENVERGE_FRONT);
+        GUIDesigns::buildFXMenuCommand(addSpecialLanes, TL("Green verge (back)"), greenVergeIcon, &parent, MID_GNE_LANE_ADD_GREENVERGE_BACK);
     }
     // Create menu comands for all remove special lanes and disable it
-    FXMenuCommand* removeSidewalk = GUIDesigns::buildFXMenuCommand(removeSpecialLanes, "Sidewalk", pedestrianIcon, &parent, MID_GNE_LANE_REMOVE_SIDEWALK);
+    FXMenuCommand* removeSidewalk = GUIDesigns::buildFXMenuCommand(removeSpecialLanes, TL("Sidewalk"), pedestrianIcon, &parent, MID_GNE_LANE_REMOVE_SIDEWALK);
     removeSidewalk->disable();
-    FXMenuCommand* removeBikelane = GUIDesigns::buildFXMenuCommand(removeSpecialLanes, "Bikelane", bikeIcon, &parent, MID_GNE_LANE_REMOVE_BIKE);
+    FXMenuCommand* removeBikelane = GUIDesigns::buildFXMenuCommand(removeSpecialLanes, TL("Bike lane"), bikeIcon, &parent, MID_GNE_LANE_REMOVE_BIKE);
     removeBikelane->disable();
-    FXMenuCommand* removeBuslane = GUIDesigns::buildFXMenuCommand(removeSpecialLanes, "Buslane", busIcon, &parent, MID_GNE_LANE_REMOVE_BUS);
+    FXMenuCommand* removeBuslane = GUIDesigns::buildFXMenuCommand(removeSpecialLanes, TL("Bus lane"), busIcon, &parent, MID_GNE_LANE_REMOVE_BUS);
     removeBuslane->disable();
-    FXMenuCommand* removeGreenVerge = GUIDesigns::buildFXMenuCommand(removeSpecialLanes, "Greenverge", greenVergeIcon, &parent, MID_GNE_LANE_REMOVE_GREENVERGE);
+    FXMenuCommand* removeGreenVerge = GUIDesigns::buildFXMenuCommand(removeSpecialLanes, TL("Green verge"), greenVergeIcon, &parent, MID_GNE_LANE_REMOVE_GREENVERGE);
     removeGreenVerge->disable();
     // Create menu comands for all transform special lanes and disable it
-    FXMenuCommand* transformLaneToSidewalk = GUIDesigns::buildFXMenuCommand(transformSlanes, "Sidewalk", pedestrianIcon, &parent, MID_GNE_LANE_TRANSFORM_SIDEWALK);
-    FXMenuCommand* transformLaneToBikelane = GUIDesigns::buildFXMenuCommand(transformSlanes, "Bikelane", bikeIcon, &parent, MID_GNE_LANE_TRANSFORM_BIKE);
-    FXMenuCommand* transformLaneToBuslane = GUIDesigns::buildFXMenuCommand(transformSlanes, "Buslane", busIcon, &parent, MID_GNE_LANE_TRANSFORM_BUS);
-    FXMenuCommand* transformLaneToGreenVerge = GUIDesigns::buildFXMenuCommand(transformSlanes, "Greenverge", greenVergeIcon, &parent, MID_GNE_LANE_TRANSFORM_GREENVERGE);
+    FXMenuCommand* transformLaneToSidewalk = GUIDesigns::buildFXMenuCommand(transformSlanes, TL("Sidewalk"), pedestrianIcon, &parent, MID_GNE_LANE_TRANSFORM_SIDEWALK);
+    FXMenuCommand* transformLaneToBikelane = GUIDesigns::buildFXMenuCommand(transformSlanes, TL("Bike lane"), bikeIcon, &parent, MID_GNE_LANE_TRANSFORM_BIKE);
+    FXMenuCommand* transformLaneToBuslane = GUIDesigns::buildFXMenuCommand(transformSlanes, TL("Bus lane"), busIcon, &parent, MID_GNE_LANE_TRANSFORM_BUS);
+    FXMenuCommand* transformLaneToGreenVerge = GUIDesigns::buildFXMenuCommand(transformSlanes, TL("Green verge"), greenVergeIcon, &parent, MID_GNE_LANE_TRANSFORM_GREENVERGE);
     // add menuCascade for lane operations
-    new FXMenuCascade(laneOperations, ("add restricted " + toString(SUMO_TAG_LANE)).c_str(), nullptr, addSpecialLanes);
-    FXMenuCascade* cascadeRemoveSpecialLane = new FXMenuCascade(laneOperations, ("remove restricted " + toString(SUMO_TAG_LANE)).c_str(), nullptr, removeSpecialLanes);
-    new FXMenuCascade(laneOperations, ("transform to restricted " + toString(SUMO_TAG_LANE)).c_str(), nullptr, transformSlanes);
+    new FXMenuCascade(laneOperations, TLF("Add restricted %", toString(SUMO_TAG_LANE)).c_str(), nullptr, addSpecialLanes);
+    FXMenuCascade* cascadeRemoveSpecialLane = new FXMenuCascade(laneOperations, TLF("Remove restricted %", toString(SUMO_TAG_LANE)).c_str(), nullptr, removeSpecialLanes);
+    new FXMenuCascade(laneOperations, TLF("Transform to restricted %", toString(SUMO_TAG_LANE)).c_str(), nullptr, transformSlanes);
     // Enable and disable options depending of current transform of the lane
     if (edgeHasSidewalk) {
         transformLaneToSidewalk->disable();
@@ -2022,13 +2163,13 @@ GNELane::buildTemplateOperations(GUISUMOAbstractView& parent, GUIGLObjectPopupMe
     FXMenuPane* edgeOperations = new FXMenuPane(ret);
     ret->insertMenuPaneChild(edgeOperations);
     if (edgeSelSize > 0) {
-        new FXMenuCascade(ret, ("template operations (" + toString(edgeSelSize) + " selected)").c_str(), nullptr, edgeOperations);
+        new FXMenuCascade(ret, TLF("Template operations (% selected)", toString(edgeSelSize)).c_str(), nullptr, edgeOperations);
     } else {
-        new FXMenuCascade(ret, "template operations", nullptr, edgeOperations);
+        new FXMenuCascade(ret, TL("Template operations"), nullptr, edgeOperations);
     }
     // create menu commands for all edge operations
-    GUIDesigns::buildFXMenuCommand(edgeOperations, "Use edge as template", nullptr, &parent, MID_GNE_EDGE_USEASTEMPLATE);
-    auto applyTemplate = GUIDesigns::buildFXMenuCommand(edgeOperations, "Apply template", nullptr, &parent, MID_GNE_EDGE_APPLYTEMPLATE);
+    GUIDesigns::buildFXMenuCommand(edgeOperations, TL("Use edge as template"), nullptr, &parent, MID_GNE_EDGE_USEASTEMPLATE);
+    auto applyTemplate = GUIDesigns::buildFXMenuCommand(edgeOperations, TL("Apply template"), nullptr, &parent, MID_GNE_EDGE_APPLYTEMPLATE);
     // check if disable apply template
     if (myNet->getViewNet()->getViewParent()->getInspectorFrame()->getTemplateEditor()->getEdgeTemplate() == nullptr) {
         applyTemplate->disable();
@@ -2043,15 +2184,14 @@ GNELane::buildRechableOperations(GUISUMOAbstractView& parent, GUIGLObjectPopupMe
     FXMenuPane* reachableByClass = new FXMenuPane(ret);
     ret->insertMenuPaneChild(reachableByClass);
     if (myNet->isNetRecomputed()) {
-        new FXMenuCascade(ret, "Select reachable", GUIIconSubSys::getIcon(GUIIcon::MODEVEHICLE), reachableByClass);
+        new FXMenuCascade(ret, TL("Select reachable"), GUIIconSubSys::getIcon(GUIIcon::MODEVEHICLE), reachableByClass);
         for (const auto& vClass : SumoVehicleClassStrings.getStrings()) {
             GUIDesigns::buildFXMenuCommand(reachableByClass, vClass.c_str(), VClassIcons::getVClassIcon(SumoVehicleClassStrings.get(vClass)), &parent, MID_REACHABILITY);
         }
     } else {
-        FXMenuCommand* menuCommand = GUIDesigns::buildFXMenuCommand(ret, "Select reachable (compute junctions)", nullptr, nullptr, 0);
+        FXMenuCommand* menuCommand = GUIDesigns::buildFXMenuCommand(ret, TL("Select reachable (compute junctions)"), nullptr, nullptr, 0);
         menuCommand->handle(&parent, FXSEL(SEL_COMMAND, FXWindow::ID_DISABLE), nullptr);
     }
 }
 
 /****************************************************************************/
-

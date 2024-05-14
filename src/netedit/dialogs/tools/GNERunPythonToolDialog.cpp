@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -68,8 +68,8 @@ GNERunPythonToolDialog::GNERunPythonToolDialog(GNEApplicationWindow* GNEApp) :
     // adjust padding
     headerFrame->setPadLeft(0);
     headerFrame->setPadRight(0);
-    new FXButton(headerFrame, (std::string("\t\t") + TL("Save output")).c_str(),
-                 GUIIconSubSys::getIcon(GUIIcon::SAVE), this, MID_GNE_BUTTON_SAVE, GUIDesignButtonIcon);
+    GUIDesigns::buildFXButton(headerFrame, "", "", + TL("Save output"),
+                              GUIIconSubSys::getIcon(GUIIcon::SAVE), this, MID_GNE_BUTTON_SAVE, GUIDesignButtonIcon);
     new FXLabel(headerFrame, TL("Console output"), nullptr, GUIDesignLabelThick(JUSTIFY_LEFT));
     // create text
     auto textFrame = new FXVerticalFrame(contentFrame, GUIDesignFrameThick);
@@ -80,20 +80,20 @@ GNERunPythonToolDialog::GNERunPythonToolDialog(GNEApplicationWindow* GNEApp) :
     // create buttons Abort, rerun and back
     auto buttonsFrame = new FXHorizontalFrame(contentFrame, GUIDesignHorizontalFrame);
     new FXHorizontalFrame(buttonsFrame, GUIDesignAuxiliarHorizontalFrame);
-    myAbortButton = new FXButton(buttonsFrame, (TL("Abort") + std::string("\t\t") + TL("abort running")).c_str(),
-                                 GUIIconSubSys::getIcon(GUIIcon::STOP), this, MID_GNE_BUTTON_ABORT, GUIDesignButtonAccept);
-    myRerunButton = new FXButton(buttonsFrame, (TL("Rerun") + std::string("\t\t") + TL("rerun tool")).c_str(),
-                                 GUIIconSubSys::getIcon(GUIIcon::RESET),  this, MID_GNE_BUTTON_RERUN,  GUIDesignButtonReset);
-    myBackButton = new FXButton(buttonsFrame, (TL("Back") + std::string("\t\t") + TL("back to tool dialog")).c_str(),
-                                GUIIconSubSys::getIcon(GUIIcon::BACK), this, MID_GNE_BUTTON_BACK, GUIDesignButtonAccept);
+    myAbortButton = GUIDesigns::buildFXButton(buttonsFrame, TL("Abort"), "", TL("abort running"),
+                    GUIIconSubSys::getIcon(GUIIcon::STOP), this, MID_GNE_BUTTON_ABORT, GUIDesignButtonAccept);
+    myRerunButton = GUIDesigns::buildFXButton(buttonsFrame, TL("Rerun"), "", TL("rerun tool"),
+                    GUIIconSubSys::getIcon(GUIIcon::RESET),  this, MID_GNE_BUTTON_RERUN,  GUIDesignButtonReset);
+    myBackButton = GUIDesigns::buildFXButton(buttonsFrame, TL("Back"), "", TL("back to tool dialog"),
+                   GUIIconSubSys::getIcon(GUIIcon::BACK), this, MID_GNE_BUTTON_BACK, GUIDesignButtonAccept);
     new FXHorizontalFrame(buttonsFrame, GUIDesignAuxiliarHorizontalFrame);
     // add separator
     new FXSeparator(contentFrame);
     // create button ok
     buttonsFrame = new FXHorizontalFrame(contentFrame, GUIDesignHorizontalFrame);
     new FXHorizontalFrame(buttonsFrame, GUIDesignAuxiliarHorizontalFrame);
-    myCloseButton = new FXButton(buttonsFrame, (TL("Close") + std::string("\t\t") + TL("close dialog")).c_str(),
-                                 GUIIconSubSys::getIcon(GUIIcon::OK), this, MID_GNE_BUTTON_ACCEPT, GUIDesignButtonAccept);
+    myCloseButton = GUIDesigns::buildFXButton(buttonsFrame, TL("Close"), "", TL("close dialog"),
+                    GUIIconSubSys::getIcon(GUIIcon::OK), this, MID_GNE_BUTTON_ACCEPT, GUIDesignButtonAccept);
     new FXHorizontalFrame(buttonsFrame, GUIDesignAuxiliarHorizontalFrame);
     // resize
     resize(640, 480);

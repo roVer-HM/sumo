@@ -1,5 +1,5 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2012-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -169,7 +169,7 @@ class priorityDictionary(dict):
         dict.__setitem__(self, key, val)
         heap = self.__heap
         if len(heap) > 2 * len(self):
-            self.__heap = [(v, k) for k, v in self.iteritems()]
+            self.__heap = [(v, k) for k, v in self.items()]
             self.__heap.sort()  # builtin sort likely faster than O(n) heapify
         else:
             newPair = (val, key)
@@ -235,15 +235,25 @@ def humanReadableTime(seconds):
     return sign + result
 
 
+SPECIAL_TIME_STRINGS = ["triggered", "containerTriggered", "split", "begin"]
+
+
 def parseTime(t, factor=1):
     try:
         return float(t) * factor
     except ValueError:
         pass
-    # prepended zero is ignored if the date value already contains days
-    days, hours, minutes, seconds = ([0] + list(map(float, t.split(':'))))[-4:]
-    sign = -1 if t.strip()[0] == '-' else 1
-    return (3600 * 24 * days + 3600 * hours + 60 * minutes + seconds) * sign
+    try:
+        # prepended zero is ignored if the date value already contains days
+        days, hours, minutes, seconds = ([0] + list(map(float, t.split(':'))))[-4:]
+        sign = -1 if t.strip()[0] == '-' else 1
+        return (3600 * 24 * days + 3600 * hours + 60 * minutes + seconds) * sign * factor
+    except ValueError:
+        if t in SPECIAL_TIME_STRINGS:
+            # signal special case but don't crash
+            return None
+        else:
+            raise
 
 
 def parseBool(val):
@@ -260,7 +270,7 @@ def getFlowNumber(flow):
         period = 0
         if flow.period is not None:
             if 'exp' in flow.period:
-                # use expecte value
+                # use expected value
                 period = 1 / float(flow.period[4:-2])
             else:
                 period = float(flow.period)
@@ -307,10 +317,28 @@ def openz(fileOrURL, mode="r", **kwargs):
             if sys.version_info[0] < 3:
                 return codecs.getreader('utf-8')(gzip.open(fileOrURL))
             return gzip.open(fileOrURL, mode="rt", encoding=encoding)
-    except OSError:
-        pass
-    except IOError:
-        pass
+    except OSError as e:
+        if kwargs.get("printErrors"):
+            print(e, file=sys.stderr)
+    except IOError as e:
+        if kwargs.get("printErrors"):
+            print(e, file=sys.stderr)
     if "b" in mode:
         return io.open(fileOrURL, mode=mode)
     return io.open(fileOrURL, mode=mode, encoding=encoding)
+
+
+def short_names(filenames, noEmpty):
+    if len(filenames) == 1:
+        return filenames
+    reversedNames = [''.join(reversed(f)) for f in filenames]
+    prefix = os.path.commonprefix(filenames)
+    suffix = os.path.commonprefix(reversedNames)
+    prefixLen = len(prefix)
+    suffixLen = len(suffix)
+    shortened = [f[prefixLen:-suffixLen] for f in filenames]
+    if noEmpty and any([not f for f in shortened]):
+        # make longer to avoid empty file names
+        base = os.path.basename(prefix)
+        shortened = [base + f for f in shortened]
+    return shortened

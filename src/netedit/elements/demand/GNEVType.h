@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -27,7 +27,9 @@
 // ===========================================================================
 // class definitions
 // ===========================================================================
+
 class GNEVType : public GNEDemandElement, public SUMOVTypeParameter {
+
 public:
     /// @brief default constructor
     GNEVType(GNENet* net);
@@ -54,7 +56,7 @@ public:
      */
     void writeDemandElement(OutputDevice& device) const;
 
-    /// @brief check if current demand element is valid to be writed into XML
+    /// @brief check if current demand element is valid to be written into XML
     Problem isDemandElementValid() const;
 
     /// @brief return a string with the current demand element problem
@@ -111,22 +113,19 @@ public:
     /// @brief compute pathElement
     void computePathElement();
 
-    /**@brief Draws partial object
+    /**@brief Draws partial object over lane
      * @param[in] s The settings for the current view (may influence drawing)
-     * @param[in] lane lane in which draw partial
-     * @param[in] segment PathManager segment (used for segment options)
-     * @param[in] offsetFront extra front offset (used for drawing partial gl above other elements)
+     * @param[in] segment lane segment
+     * @param[in] offsetFront front offset
      */
-    void drawPartialGL(const GUIVisualizationSettings& s, const GNELane* lane, const GNEPathManager::Segment* segment, const double offsetFront) const;
+    void drawLanePartialGL(const GUIVisualizationSettings& s, const GNEPathManager::Segment* segment, const double offsetFront) const;
 
-    /**@brief Draws partial object (junction)
+    /**@brief Draws partial object over junction
      * @param[in] s The settings for the current view (may influence drawing)
-     * @param[in] fromLane from GNELane
-     * @param[in] toLane to GNELane
-     * @param[in] segment PathManager segment (used for segment options)
-     * @param[in] offsetFront extra front offset (used for drawing partial gl above other elements)
+     * @param[in] segment junction segment
+     * @param[in] offsetFront front offset
      */
-    void drawPartialGL(const GUIVisualizationSettings& s, const GNELane* fromLane, const GNELane* toLane, const GNEPathManager::Segment* segment, const double offsetFront) const;
+    void drawJunctionPartialGL(const GUIVisualizationSettings& s, const GNEPathManager::Segment* segment, const double offsetFront) const;
 
     /// @brief get first path lane
     GNELane* getFirstPathLane() const;
@@ -194,15 +193,6 @@ protected:
 
     /// @brief flag to check if this default GNEVType was modified
     bool myDefaultVehicleTypeModified;
-
-    /// @brief edit vType distribution
-    void editVTypeDistribution(const std::string& vTypeDistributionID, GNEUndoList* undoList);
-
-    /// @brief ask if add vTypeDistribution
-    bool askAddVTypeDistribution(const std::string& vTypeDistribution) const;
-
-    /// @brief ask if remove vTypeDistribution
-    bool askRemoveVTypeDistribution(const std::string& vTypeDistribution) const;
 
 private:
     /// @brief method for setting the attribute and nothing else

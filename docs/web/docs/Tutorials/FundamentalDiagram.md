@@ -18,6 +18,9 @@ aggregation interval of the output.
 Generally, this can be computed for any kind of scenario as long as this
 scenario covers the desired range of traffic densities.
 
+Plots may be created with [plotXMLAttributes](../Tools/Visualization.md#fundamental_diagram_from_edgedata).
+<img src="../images/plotAttrs_fundamental.png" width="800px"/>
+
 # Fundamental diagram of a closed circular route
 
 A common scenario that is used to generate the fundamental diagram is a
@@ -96,11 +99,11 @@ And a flow that continuously tries to add vehicles:
 ## Reducing the speed spontaneously
 
 Some car-following models permit spontaneous break-down of flow given the right configuration parameters, density or lane changing situation.
-For the default Krauss carFollowModel, it is sufficient to set sigma ~ 0.8 to observe stochastic break-down at densities of ~ 50 veh/km and given sigma = 1 the break-down may also occur at 3 veh/km.  
+For the default Krauss carFollowModel, it is sufficient to set sigma ~ 0.8 to observe stochastic break-down at densities of ~ 50 veh/km and given sigma = 1 the break-down may also occur at 3 veh/km.
 
 Some tests cases can be obtained at
 
-- [circle_krauss_d50_t0.8](https://sumo.dlr.de/extractTest.php?path=sumo/cf_model/fundamental/circle_krauss_d50_t0.8) 
+- [circle_krauss_d50_t0.8](https://sumo.dlr.de/extractTest.php?path=sumo/cf_model/fundamental/circle_krauss_d50_t0.8)
 - [circle_krauss_d30_t1](https://sumo.dlr.de/extractTest.php?path=sumo/cf_model/fundamental/circle_krauss_d30_t1)
 
 

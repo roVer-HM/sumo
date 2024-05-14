@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2013-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -193,17 +193,17 @@ std::string
 MSDevice_ToC::getOutputFilename(const SUMOVehicle& v, const OptionsCont& oc) {
     // Default of "" means no output
     std::string file = "";
-    if (v.getParameter().knowsParameter("device.toc.file")) {
+    if (v.getParameter().hasParameter("device.toc.file")) {
         try {
             file = v.getParameter().getParameter("device.toc.file", file);
         } catch (...) {
-            WRITE_WARNINGF(TL("Invalid value '%'for vehicle parameter 'ssm.measures'"), v.getParameter().getParameter("device.toc.file", file));
+            WRITE_WARNINGF(TL("Invalid value '%' for vehicle parameter 'ssm.measures'"), v.getParameter().getParameter("device.toc.file", file));
         }
-    } else if (v.getVehicleType().getParameter().knowsParameter("device.toc.file")) {
+    } else if (v.getVehicleType().getParameter().hasParameter("device.toc.file")) {
         try {
             file = v.getVehicleType().getParameter().getParameter("device.toc.file", file);
         } catch (...) {
-            WRITE_WARNINGF(TL("Invalid value '%'for vType parameter 'ssm.measures'"), v.getVehicleType().getParameter().getParameter("device.toc.file", file));
+            WRITE_WARNINGF(TL("Invalid value '%' for vType parameter 'ssm.measures'"), v.getVehicleType().getParameter().getParameter("device.toc.file", file));
         }
     } else {
         file = oc.getString("device.toc.file") == "" ? file : oc.getString("device.toc.file");
@@ -976,6 +976,22 @@ MSDevice_ToC::setParameter(const std::string& key, const std::string& value) {
         } else {
             myMaxPreparationAccel = newValue;
         }
+    } else if (key == "ogNewTimeHeadway") {
+        const double newValue = StringUtils::toDouble(value);
+        myOpenGapParams.newTimeHeadway = newValue;
+        myOpenGapParams.active = true;
+    } else if (key == "ogNewSpaceHeadway") {
+        const double newValue = StringUtils::toDouble(value);
+        myOpenGapParams.newSpaceHeadway = newValue;
+        myOpenGapParams.active = true;
+    } else if (key == "ogChangeRate") {
+        const double newValue = StringUtils::toDouble(value);
+        myOpenGapParams.changeRate = newValue;
+        myOpenGapParams.active = true;
+    } else if (key == "ogMaxDecel") {
+        const double newValue = StringUtils::toDouble(value);
+        myOpenGapParams.maxDecel = newValue;
+        myOpenGapParams.active = true;
     } else {
         throw InvalidArgument("Parameter '" + key + "' is not supported for device of type '" + deviceName() + "'");
     }

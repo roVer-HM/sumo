@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -86,6 +86,12 @@ GNEClosingReroute::fixAdditionalProblem() {
 }
 
 
+bool
+GNEClosingReroute::checkDrawMoveContour() const {
+    return false;
+}
+
+
 GNEMoveOperation*
 GNEClosingReroute::getMoveOperation() {
     // GNEClosingReroutes cannot be moved
@@ -113,9 +119,7 @@ GNEClosingReroute::getPositionInView() const {
 
 void
 GNEClosingReroute::updateCenteringBoundary(const bool /*updateGrid*/) {
-    myAdditionalBoundary.reset();
-    myAdditionalBoundary.add(getPositionInView());
-    myAdditionalBoundary.grow(5);
+    // nothing to update
 }
 
 
@@ -134,10 +138,10 @@ GNEClosingReroute::getParentName() const {
 void
 GNEClosingReroute::drawGL(const GUIVisualizationSettings& s) const {
     // draw closing reroute as listed attribute
-    drawListedAddtional(s, getParentAdditionals().front()->getParentAdditionals().front()->getPositionInView(),
-                        1, getParentAdditionals().front()->getDrawPositionIndex(),
-                        RGBColor::RED, RGBColor::YELLOW, GUITexture::REROUTER_CLOSINGREROUTE,
-                        getAttribute(SUMO_ATTR_EDGE));
+    drawListedAdditional(s, getParentAdditionals().front()->getParentAdditionals().front()->getPositionInView(),
+                         1, getParentAdditionals().front()->getDrawPositionIndex(),
+                         RGBColor::RED, RGBColor::YELLOW, GUITexture::REROUTER_CLOSINGREROUTE,
+                         getAttribute(SUMO_ATTR_EDGE));
 }
 
 
@@ -185,7 +189,7 @@ GNEClosingReroute::setAttribute(SumoXMLAttr key, const std::string& value, GNEUn
         case SUMO_ATTR_ALLOW:
         case SUMO_ATTR_DISALLOW:
         case GNE_ATTR_SELECTED:
-            undoList->changeAttribute(new GNEChange_Attribute(this, key, value));
+            GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
@@ -230,7 +234,7 @@ GNEClosingReroute::setAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_ID:
             // update microsimID
-            setMicrosimID(value);
+            setAdditionalID(value);
             break;
         case SUMO_ATTR_EDGE:
             myClosedEdge = myNet->getAttributeCarriers()->retrieveEdge(value);

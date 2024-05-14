@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2014-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2014-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -51,6 +51,29 @@ class MSPModel_Striping : public MSPModel {
     friend class GUIPerson; // for debugging
 
 public:
+
+    struct WalkingAreaPath {
+        WalkingAreaPath(const MSLane* _from, const MSLane* _walkingArea, const MSLane* _to, const PositionVector& _shape, int _dir, double _angleOverride) :
+            from(_from),
+            to(_to),
+            lane(_walkingArea),
+            shape(_shape),
+            dir(_dir),
+            angleOverride(_angleOverride),
+            length(_shape.length()) {
+        }
+
+        const MSLane* const from;
+        const MSLane* const to;
+        const MSLane* const lane; // the walkingArea;
+        const PositionVector shape;
+        const int dir; // the direction when entering this path
+        const double angleOverride;
+        const double length;
+
+    };
+
+    typedef std::map<std::pair<const MSLane*, const MSLane*>, const WalkingAreaPath> WalkingAreaPaths;
 
     /// @brief Constructor (it should not be necessary to construct more than one instance)
     MSPModel_Striping(const OptionsCont& oc, MSNet* net);
@@ -170,13 +193,11 @@ protected:
     };
 
     struct Obstacle;
-    struct WalkingAreaPath;
     class PState;
     typedef std::vector<PState*> Pedestrians;
     typedef std::map<const MSLane*, Pedestrians, lane_by_numid_sorter> ActiveLanes;
     typedef std::vector<Obstacle> Obstacles;
     typedef std::map<const MSLane*, Obstacles, lane_by_numid_sorter> NextLanesObstacles;
-    typedef std::map<std::pair<const MSLane*, const MSLane*>, const WalkingAreaPath> WalkingAreaPaths;
     typedef std::map<const MSLane*, double> MinNextLengths;
 
     struct NextLaneInfo {
@@ -217,8 +238,8 @@ protected:
         /// @brief create an obstacle from ped for ego moving in dir
         Obstacle(const PState& ped);
         /// @brief create an obstacle from explict values
-        Obstacle(double _x, double _speed, ObstacleType _type, const std::string& _description, const double width = 0.)
-            : xFwd(_x + width / 2.), xBack(_x - width / 2.), speed(_speed), type(_type), description(_description) {};
+        Obstacle(double _x, double _speed, ObstacleType _type, const std::string& _description, const double width = 0., const SUMOVehicle* veh = nullptr)
+            : xFwd(_x + width / 2.), xBack(_x - width / 2.), speed(_speed), type(_type), description(_description), vehicle(veh) {};
 
         /// @brief maximal position on the current lane in forward direction
         double xFwd;
@@ -230,29 +251,10 @@ protected:
         ObstacleType type;
         /// @brief the id / description of the obstacle
         std::string description;
+        /// @brief a pointer to the vehicle if this obstacle is one
+        const SUMOVehicle* vehicle = nullptr;
 
         bool closer(const Obstacle& o, int dir);
-    };
-
-    struct WalkingAreaPath {
-        WalkingAreaPath(const MSLane* _from, const MSLane* _walkingArea, const MSLane* _to, const PositionVector& _shape, int _dir, double _angleOverride) :
-            from(_from),
-            to(_to),
-            lane(_walkingArea),
-            shape(_shape),
-            dir(_dir),
-            angleOverride(_angleOverride),
-            length(_shape.length()) {
-        }
-
-        const MSLane* const from;
-        const MSLane* const to;
-        const MSLane* const lane; // the walkingArea;
-        const PositionVector shape;
-        const int dir; // the direction when entering this path
-        const double angleOverride;
-        const double length;
-
     };
 
     class walkingarea_path_sorter {
@@ -416,6 +418,10 @@ protected:
         ObstacleType getOType() const {
             return OBSTACLE_VEHICLE;
         }
+
+        const MSVehicle* getVehicle() const {
+            return myVehicle;
+        }
     private:
         const MSVehicle* myVehicle;
         const double myXWidth;
@@ -495,6 +501,9 @@ private:
 
     static void initWalkingAreaPaths(const MSNet* net);
 
+    /// @brief creates and inserts all paths into the given map
+    static void insertWalkArePaths(const MSEdge* edge, WalkingAreaPaths& into);
+
     static const WalkingAreaPath* getWalkingAreaPath(const MSEdge* walkingArea, const MSLane* before, const MSLane* after);
 
     /// @brief return an arbitrary path across the given walkingArea
@@ -556,6 +565,3 @@ private:
     static Pedestrians noPedestrians;
 
 };
-
-
-

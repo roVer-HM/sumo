@@ -13,14 +13,14 @@ language. Historically, this has led to a larger number of client
 implementations with varying levels of API completeness and only the python
 client was kept up-to-date by the core SUMO development team.
 
-The avoid this problem, Libtraci is provided as a SWIG compatible C++ client
+To avoid this problem, Libtraci is provided as a SWIG compatible C++ client
 library that is fully compatible with [Libsumo](Libsumo.md). It even uses the
 same header files as Libsumo.
 
 - C++ interface based on static functions and a few simple wrapper
   classes for results which can be linked directly to the client code
 - Pre-built language bindings for Java and Python (using
-  [SWIG](http://www.swig.org/))
+  [SWIG](https://www.swig.org/))
 - Future support for other programming languages via SWIG
 
 Unlike Libsumo, Libtraci allows
@@ -82,6 +82,9 @@ import as above.
 ## C++
 
 ### Example Code (test.cpp)
+
+The example assumes you have the named sumocfg file in your current working directory and the SUMO bin directory included 
+in the PATH environmental variable. Otherwise you need to provide the full file path.
 
 ```cpp
 #include <iostream>

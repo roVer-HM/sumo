@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2010-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2010-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -14,6 +14,7 @@
 # @file    generateParkingAreaRerouters.py
 # @author  Lara CODECA
 # @author  Jakob Erdmann
+# @author  Mirko Barthauer
 # @date    11-3-2019
 
 """ Generate parking area rerouters from the parking area definition. """
@@ -48,11 +49,17 @@ def get_options(cmd_args=None):
         prog='generateParkingAreaRerouters.py', usage='%(prog)s [options]',
         description='Generate parking area rerouters from the parking area definition.')
     parser.add_argument(
-        '-a', '--parking-areas', type=str, category="input", dest='parking_area_definition', required=True,
+        '-a', '--parking-areas', type=parser.additional_file, category="input", dest='paFiles', required=True,
         help='SUMO parkingArea definition.')
     parser.add_argument(
-        '-n', '--sumo-net', type=str, category="input", dest='sumo_net_definition', required=True,
+        '-n', '--sumo-net', type=parser.net_file, category="input", dest='sumo_net_definition', required=True,
         help='SUMO network definition.')
+    parser.add_argument(
+        '-b', '--begin', type=float, dest='begin', default=0.0,
+        help='Rerouter interval begin')
+    parser.add_argument(
+        '-e', '--end', type=float, dest='end', default=86400.0,
+        help='Rerouter interval end')
     parser.add_argument(
         '--max-number-alternatives', type=int, category="processing", dest='num_alternatives', default=10,
         help='Rerouter: max number of alternatives.')
@@ -86,7 +93,7 @@ def get_options(cmd_args=None):
         '--processes', type=int, category="processing", dest='processes', default=1,
         help='Number of processes spawned to compute the distance between parking areas.')
     parser.add_argument(
-        '-o', '--output', type=str, category="output", dest='output', required=True,
+        '-o', '--output', type=parser.additional_file, category="output", dest='output', required=True,
         help='Name for the output file.')
     parser.add_argument(
         '--tqdm', dest='with_tqdm', category="processing", action='store_true',
@@ -140,7 +147,7 @@ class ReroutersGeneration(object):
 
         print('Loading SUMO network: {}'.format(options.sumo_net_definition))
         self._sumo_net = sumolib.net.readNet(options.sumo_net_definition, withInternal=True)
-        for pafile in options.parking_area_definition.split(','):
+        for pafile in options.paFiles.split(','):
             print('Loading parking file: {}'.format(pafile))
             self._load_parking_areas_from_file(pafile)
 
@@ -216,7 +223,7 @@ class ReroutersGeneration(object):
 
     _REROUTER = """
     <rerouter id="{rid}" edges="{edges}">
-        <interval begin="0.0" end="86400">
+        <interval begin="{begin}" end="{end}">
             <!-- in order of distance --> {parkings}
         </interval>
     </rerouter>
@@ -265,7 +272,8 @@ class ReroutersGeneration(object):
                     edges.append(opposite.getID())
 
                 outfile.write(self._REROUTER.format(
-                    rid=rerouter['rid'], edges=' '.join(edges), parkings=alternatives))
+                    rid=rerouter['rid'], edges=' '.join(edges), begin=self._opt.begin, end=self._opt.end,
+                    parkings=alternatives))
             outfile.write("</additional>\n")
         print("{} created.".format(self._opt.output))
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2007-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -40,7 +40,7 @@ def getOptions():
     ap.add_argument("-t", "--taz-file", dest="tazfile", category="input", type=ArgumentParser.file,
                     required=True, help="the district file to be filtered")
     ap.add_argument("-o", "--output", default="taz_filtered.add.xml", category="output", type=ArgumentParser.file,
-                    help="write filtered districts to FILE (default: %default)", metavar="FILE")
+                    help="write filtered districts to FILE (default: %(default)s)", metavar="FILE")
     ap.add_argument("--vclass", type=str, required=True, help="filter taz edges that allow the given vehicle class")
     options = ap.parse_args()
     if not options.netfile or not options.tazfile or not options.vclass:

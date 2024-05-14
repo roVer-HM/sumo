@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -42,6 +42,7 @@
 #include <utils/common/NamedRTree.h>
 #include <utils/router/SUMOAbstractRouter.h>
 #include <mesosim/MESegment.h>
+#include "MSRouterDefs.h"
 #include "MSJunction.h"
 
 
@@ -108,9 +109,6 @@ public:
         /// @brief The simulation had too many teleports
         SIMSTATE_TOO_MANY_TELEPORTS
     };
-
-    typedef PedestrianRouter<MSEdge, MSLane, MSJunction, MSVehicle> MSPedestrianRouter;
-    typedef IntermodalRouter<MSEdge, MSLane, MSJunction, SUMOVehicle> MSIntermodalRouter;
 
     /// @brief collision tracking
     struct Collision {
@@ -248,6 +246,8 @@ public:
      */
     static void clearAll();
 
+    /// @brief return whether the given flow is known
+    bool hasFlow(const std::string& id) const;
 
     /** @brief Simulates from timestep start to stop
      * @param[in] start The begin time step of the simulation
@@ -582,7 +582,7 @@ public:
     /// @brief write electrical substation output
     void writeSubstationOutput() const;
 
-    /// @brief return wheter the given logic (or rather it's wrapper) is selected in the GUI
+    /// @brief return wheter the given logic (or rather its wrapper) is selected in the GUI
     virtual bool isSelected(const MSTrafficLightLogic*) const {
         return false;
     }
@@ -762,14 +762,12 @@ public:
     /* @brief get the router, initialize on first use
      * @param[in] prohibited The vector of forbidden edges (optional)
      */
-    SUMOAbstractRouter<MSEdge, SUMOVehicle>& getRouterTT(const int rngIndex,
-            const MSEdgeVector& prohibited = MSEdgeVector()) const;
-    SUMOAbstractRouter<MSEdge, SUMOVehicle>& getRouterEffort(const int rngIndex,
-            const MSEdgeVector& prohibited = MSEdgeVector()) const;
+    MSVehicleRouter& getRouterTT(const int rngIndex, const MSEdgeVector& prohibited = MSEdgeVector()) const;
+    MSVehicleRouter& getRouterEffort(const int rngIndex, const MSEdgeVector& prohibited = MSEdgeVector()) const;
     MSPedestrianRouter& getPedestrianRouter(const int rngIndex, const MSEdgeVector& prohibited = MSEdgeVector()) const;
-    MSIntermodalRouter& getIntermodalRouter(const int rngIndex, const int routingMode = 0, const MSEdgeVector& prohibited = MSEdgeVector()) const;
+    MSTransportableRouter& getIntermodalRouter(const int rngIndex, const int routingMode = 0, const MSEdgeVector& prohibited = MSEdgeVector()) const;
 
-    static void adaptIntermodalRouter(MSIntermodalRouter& router);
+    static void adaptIntermodalRouter(MSTransportableRouter& router);
 
 
     /// @brief return whether the network contains internal links
@@ -1012,10 +1010,10 @@ protected:
      * @note we provide one member for every switchable router type
      * because the class structure makes it inconvenient to use a superclass
      */
-    mutable std::map<int, SUMOAbstractRouter<MSEdge, SUMOVehicle>*> myRouterTT;
-    mutable std::map<int, SUMOAbstractRouter<MSEdge, SUMOVehicle>*> myRouterEffort;
+    mutable std::map<int, MSVehicleRouter*> myRouterTT;
+    mutable std::map<int, MSVehicleRouter*> myRouterEffort;
     mutable std::map<int, MSPedestrianRouter*> myPedestrianRouter;
-    mutable std::map<int, MSIntermodalRouter*> myIntermodalRouter;
+    mutable std::map<int, MSTransportableRouter*> myIntermodalRouter;
 
     /// @brief An RTree structure holding lane IDs
     mutable std::pair<bool, NamedRTree> myLanesRTree;

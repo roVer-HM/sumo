@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -35,6 +35,7 @@
 #include <microsim/MSNet.h>
 #include <microsim/MSLane.h>
 #include <microsim/MSEdge.h>
+#include <microsim/MSJunctionLogic.h>
 #include <netload/NLDetectorBuilder.h>
 #include "MSActuatedTrafficLightLogic.h"
 
@@ -96,7 +97,7 @@ MSActuatedTrafficLightLogic::MSActuatedTrafficLightLogic(MSTLLogicControl& tlcon
     myFreq = TIME2STEPS(StringUtils::toDouble(getParameter("freq", "300")));
     myVehicleTypes = getParameter("vTypes", "");
 
-    if (knowsParameter("hide-conditions")) {
+    if (hasParameter("hide-conditions")) {
         std::vector<std::string> hidden = StringTokenizer(getParameter("hide-conditions", "")).getVector();
         std::set<std::string> hiddenSet(hidden.begin(), hidden.end());
         for (auto item : myConditions) {
@@ -114,7 +115,7 @@ MSActuatedTrafficLightLogic::MSActuatedTrafficLightLogic(MSTLLogicControl& tlcon
             }
         }
     }
-    if (knowsParameter("extra-detectors")) {
+    if (hasParameter("extra-detectors")) {
         const std::string extraIDs = getParameter("extra-detectors", "");
         for (std::string customID : StringTokenizer(extraIDs).getVector()) {
             try {
@@ -219,15 +220,14 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
                 // Build the induct loop and set it into the container
                 const double detLength = getDouble("detector-length:" + lane->getID(), detDefaultLength);
                 std::string id = myDetectorPrefix + "D" + toString(detEdgeIndex) + "." + toString(detLaneIndex);
-                loop = static_cast<MSInductLoop*>(nb.createInductLoop(id, placementLane, ilpos, detLength, myVehicleTypes, "", "", (int)PersonMode::NONE, myShowDetectors));
+                loop = static_cast<MSInductLoop*>(nb.createInductLoop(id, placementLane, ilpos, detLength, "", myVehicleTypes, "", (int)PersonMode::NONE, myShowDetectors));
                 MSNet::getInstance()->getDetectorControl().add(SUMO_TAG_INDUCTION_LOOP, loop, myFile, myFreq);
             } else if (customID == NO_DETECTOR) {
                 continue;
             } else {
                 loop = dynamic_cast<MSInductLoop*>(MSNet::getInstance()->getDetectorControl().getTypedDetectors(SUMO_TAG_INDUCTION_LOOP).get(customID));
                 if (loop == nullptr) {
-                    WRITE_ERRORF(TL("Unknown inductionLoop '%' given as custom detector for actuated tlLogic '%', program '%."), customID, getID(), getProgramID());
-                    continue;
+                    throw ProcessError(TLF("Unknown inductionLoop '%' given as custom detector for actuated tlLogic '%', program '%.", customID, getID(), getProgramID()));
                 }
                 ilpos = loop->getPosition();
                 inductLoopPosition = length - ilpos;
@@ -251,6 +251,8 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
     //            Under the following condition we allow actuation from minor link:
     //              check1a : the minor link is minor in all phases
     //              check1b : there is another major link from the same lane in the current phase
+    //              check1e : the conflict is only with bikes/pedestrians (i.e. for a right turn, also left turn with no oncoming traffic)
+    //              check1f : the conflict is only with a link from the same edge
     //            (Under these conditions we assume that the minor link is unimportant and traffic is mostly for the major link)
     //
     //              check1c: when the edge has only one lane, we treat greenMinor as green as there would be no actuation otherwise
@@ -319,7 +321,8 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
                 } else if (state[i] == LINKSTATE_TL_GREEN_MINOR) {
                     if (((neverMajor[i] || turnaround[i])  // check1a, 1d
                             && hasMajor(state, getLanesAt(i))) // check1b
-                            || oneLane[i]) { // check1c
+                            || oneLane[i] // check1c
+                            || weakConflict(i, state)) { // check1e, check1f
                         greenLinks.insert(i);
                         if (!turnaround[i]) {
                             actuatedLinks.insert(i);
@@ -438,13 +441,17 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
         }
     }
 #endif
+    std::vector<int> warnLinks;
     for (int i : actuatedLinks) {
         if (linkToLoops[i].size() == 0 && myLinks[i].size() > 0
                 && (myLinks[i].front()->getLaneBefore()->getPermissions() & motorized) != 0) {
             if (getParameter(myLinks[i].front()->getLaneBefore()->getID()) != NO_DETECTOR) {
-                WRITE_WARNINGF(TL("At actuated tlLogic '%', linkIndex % has no controlling detector."), getID(), toString(i));
+                warnLinks.push_back(i);
             }
         }
+    }
+    if (warnLinks.size() > 0) {
+        WRITE_WARNINGF(TL("At actuated tlLogic '%', linkIndex % has no controlling detector."), getID(), joinToString(warnLinks, ","));
     }
     // parse maximum green times for each link (optional)
     for (const auto& kv : getParametersMap()) {
@@ -476,6 +483,41 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
     }
     //std::cout << SIMTIME << " linkMaxGreenTimes=" << toString(myLinkMaxGreenTimes) << "\n";
 }
+
+
+bool
+MSActuatedTrafficLightLogic::weakConflict(int tlIndex, const std::string& state) const {
+    for (MSLink* link : getLinksAt(tlIndex)) {
+        int linkIndex = link->getIndex();
+        const MSJunction* junction = link->getJunction();
+        for (int i = 0; i < (int)myLinks.size(); i++) {
+            if (i == tlIndex) {
+                continue;
+            }
+            if (state[i] == LINKSTATE_TL_GREEN_MAJOR || state[i] == LINKSTATE_TL_GREEN_MINOR) {
+                for (MSLink* foe : getLinksAt(i)) {
+                    // junction logic is based on junction link index rather than tl index
+                    int foeIndex = foe->getIndex();
+                    const MSJunction* junction2 = foe->getJunction();
+                    if (junction == junction2) {
+                        const MSJunctionLogic* logic = junction->getLogic();
+                        //std::cout << " greenLink=" << i << " isFoe=" << logic->getFoesFor(linkIndex).test(foeIndex) << "\n";
+                        if (logic->getFoesFor(linkIndex).test(foeIndex)
+                                && (foe->getPermissions() & ~SVC_WEAK) != 0 // check1e
+                                && &foe->getLaneBefore()->getEdge() != &link->getLaneBefore()->getEdge()) { // check1f
+                            //std::cout << " strongConflict " << tlIndex << " in phase " << state << " with link " << foe->getTLIndex() << "\n";
+                            return false;
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+    //std::cout << " weakConflict " << tlIndex << " in phase " << state << "\n";
+    return true;
+}
+
 
 SUMOTime
 MSActuatedTrafficLightLogic::getMinDur(int step) const {

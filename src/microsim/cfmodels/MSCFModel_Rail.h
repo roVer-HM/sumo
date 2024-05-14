@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2012-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -70,18 +70,33 @@ private:
     typedef std::map<double, double> LookUpMap;
 
     struct TrainParams {
-        double weight;
+        // the vehicle mass in tons
+        double weight;  // tons
+        // the mass factor
         double mf;
         double length;
         double decl;
         double vmax;
         double recovery;
-        double rotWeight;
-        LookUpMap traction;
-        LookUpMap resistance;
+        LookUpMap traction;  // m/s -> kN
+        LookUpMap resistance;  // m/s -> kN
+        double maxPower;  // kN
+        double maxTraction; // kN
+        double resCoef_constant; // kN
+        double resCoef_linear;  // kN / (km/h)
+        double resCoef_quadratic; // kN / (km/h)^2
+
+        double getRotWeight() const {
+            return weight * mf;
+        }
+
+        double getResistance(double speed) const;
+        double getTraction(double speed) const;
     };
 
-    double getInterpolatedValueFromLookUpMap(double speed, const LookUpMap* lookUpMap) const;
+    static double getInterpolatedValueFromLookUpMap(double speed, const LookUpMap* lookUpMap);
+
+    std::vector<double> getValueTable(const MSVehicleType* vtype, SumoXMLAttr attr);
 
 
 public:
@@ -111,6 +126,8 @@ public:
 //    };
 
 private:
+
+    static void convertMap(LookUpMap& map, double keyFactor = 1 / 3.6, double valueFactor = 1);
 
 
     TrainParams myTrainParams;
@@ -166,6 +183,7 @@ private:
         map[460] = 143.2;
         map[470] = 140.1;
         map[480] = 137.2;
+        convertMap(map);
         return map;
     }
 
@@ -220,6 +238,7 @@ private:
         map[460] = 138.7;
         map[470] = 144.6;
         map[480] = 150.6;
+        convertMap(map);
         return map;
     }
 
@@ -231,7 +250,6 @@ private:
         params.decl = 0.9;
         params.vmax = 500 / 3.6;
         params.recovery = 0.6;
-        params.rotWeight = params.weight * params.mf;
         params.traction = initNGT400Traction();
         params.resistance = initNGT400Resistance();
         return params;
@@ -287,6 +305,7 @@ private:
         map[450] = 128;
         map[460] = 125;
         map[470] = 123;
+        convertMap(map);
         return map;
     }
 
@@ -340,6 +359,7 @@ private:
         map[450] = 139.2;
         map[460] = 145.5;
         map[470] = 150.0;
+        convertMap(map);
         return map;
     }
 
@@ -351,7 +371,6 @@ private:
         params.decl = 0.9;
         params.vmax = 430 / 3.6;
         params.recovery = 0.6;
-        params.rotWeight = params.weight * params.mf;
         params.traction = initNGT400_16Traction();
         params.resistance = initNGT400_16Resistance();
         return params;
@@ -385,6 +404,7 @@ private:
         map[230] = 151;
         map[240] = 145;
         map[250] = 139;
+        convertMap(map);
         return map;
     }
 
@@ -416,6 +436,7 @@ private:
         map[230] = 108.7;
         map[240] = 115.8;
         map[250] = 123.1;
+        convertMap(map);
         return map;
     }
 
@@ -427,7 +448,6 @@ private:
         params.decl = 0.5;
         params.vmax = 250 / 3.6;
         params.recovery = 0.1;
-        params.rotWeight = params.weight * params.mf;
         params.traction = initICE1Traction();
         params.resistance = initICE1Resistance();
         return params;
@@ -441,7 +461,6 @@ private:
         params.decl = 0.5;
         params.vmax = 300 / 3.6;
         params.recovery = 0.6;
-        params.rotWeight = params.weight * params.mf;
         params.traction = initICE3Traction();
         params.resistance = initICE3Resistance();
         return params;
@@ -480,6 +499,7 @@ private:
         map[280] = 103;
         map[290] = 99;
         map[300] = 96;
+        convertMap(map);
         return map;
     }
 
@@ -516,6 +536,7 @@ private:
         map[280] = 64.1;
         map[290] = 68.1;
         map[300] = 71.8;
+        convertMap(map);
         return map;
     }
 
@@ -527,7 +548,6 @@ private:
         params.decl = 0.5;
         params.vmax = 160 / 3.6;
         params.recovery = 0.1;
-        params.rotWeight = params.weight * params.mf;
         params.traction = initREDosto7Traction();
         params.resistance = initREDosto7Resistance();
         return params;
@@ -552,6 +572,7 @@ private:
         map[140] = 144;
         map[150] = 134;
         map[160] = 125;
+        convertMap(map);
         return map;
     }
 
@@ -574,6 +595,7 @@ private:
         map[140] = 33.3;
         map[150] = 36.6;
         map[160] = 40.2;
+        convertMap(map);
         return map;
     }
 
@@ -585,7 +607,6 @@ private:
         params.decl = 0.5;
         params.vmax = 120 / 3.6;
         params.recovery = 0;
-        params.rotWeight = params.weight * params.mf;
         params.traction = initRB628Traction();
         params.resistance = initRB628Resistance();
         return params;
@@ -606,6 +627,7 @@ private:
         map[100] = 12.8;
         map[110] = 11.7;
         map[120] = 10.8;
+        convertMap(map);
         return map;
     }
 
@@ -624,6 +646,7 @@ private:
         map[100] = 7.00;
         map[110] = 8.06;
         map[120] = 9.2;
+        convertMap(map);
         return map;
     }
 
@@ -635,7 +658,6 @@ private:
         params.decl = 0.3;
         params.vmax = 120 / 3.6;
         params.recovery = 0.05;
-        params.rotWeight = params.weight * params.mf;
         params.traction = initFreightTraction();
         params.resistance = initFreightResistance();
         return params;
@@ -656,6 +678,7 @@ private:
         map[100] = 230;
         map[110] = 209;
         map[120] = 190;//guessed value
+        convertMap(map);
         return map;
     }
 
@@ -674,9 +697,9 @@ private:
         map[100] = 110.7;
         map[110] = 119.6;
         map[120] = 140.2;
+        convertMap(map);
         return map;
     }
-
     LookUpMap initRB425Traction() const {
         LookUpMap map;
         map[0] = 150;
@@ -696,6 +719,7 @@ private:
         map[140] = 52;
         map[150] = 46;
         map[160] = 40;
+        convertMap(map);
         return map;
     }
 
@@ -718,6 +742,7 @@ private:
         map[140] = 15.3;
         map[150] = 16.9;
         map[160] = 18.7;
+        convertMap(map);
         return map;
     }
 
@@ -729,14 +754,141 @@ private:
         params.decl = 1.0;
         params.vmax = 160 / 3.6;
         params.recovery = 0.6;
-        params.rotWeight = params.weight * params.mf;
         params.traction = initRB425Traction();
         params.resistance = initRB425Resistance();
         return params;
     }
 
+    LookUpMap initMireoPlusB2TTraction() const {
+        LookUpMap map;
+        map[0] = 106.15;
+        map[10] = 106.15;
+        map[20] = 106.15;
+        map[30] = 106.15;
+        map[40] = 106.15;
+        map[50] = 106.15;
+        map[60] = 103.73;
+        map[70] = 88.70;
+        map[80] = 77.47;
+        map[90] = 68.76;
+        map[100] = 61.82;
+        map[110] = 56.15;
+        map[120] = 51.43;
+        map[130] = 47.44;
+        map[140] = 44.03;
+        map[150] = 41.07;
+        map[160] = 38.49;
+        convertMap(map);
+        return map;
+    }
+
+
+    LookUpMap initMireoPlusB2TResistance() const {
+        LookUpMap map;
+        map[0] = 1.01;
+        map[10] = 1.09;
+        map[20] = 1.27;
+        map[30] = 1.55;
+        map[40] = 1.93;
+        map[50] = 2.41;
+        map[60] = 2.99;
+        map[70] = 3.67;
+        map[80] = 4.46;
+        map[90] = 5.34;
+        map[100] = 6.34;
+        map[110] = 7.44;
+        map[120] = 8.64;
+        map[130] = 9.96;
+        map[140] = 11.38;
+        map[150] = 12.91;
+        map[160] = 14.56;
+        convertMap(map);
+        return map;
+    }
+
+    TrainParams initMireoPlusB2TParams() const {
+        TrainParams params;
+        params.weight = 105.5;
+        params.mf = 1.05;
+        params.length = 46.56;
+        params.decl = 1.1;
+        params.vmax = 160 / 3.6;
+        params.recovery = 0.3;
+        params.traction = initMireoPlusB2TTraction();
+        params.resistance = initMireoPlusB2TResistance();
+        return params;
+    }
+
+    LookUpMap initMireoPlusH2TTraction() const {
+        LookUpMap map;
+        map[0] = 104.50;
+        map[10] = 104.50;
+        map[20] = 104.50;
+        map[30] = 104.50;
+        map[40] = 104.50;
+        map[50] = 104.50;
+        map[60] = 102.00;
+        map[70] = 87.43;
+        map[80] = 76.50;
+        map[90] = 68.00;
+        map[100] = 61.20;
+        map[110] = 55.64;
+        map[120] = 51.00;
+        map[130] = 47.08;
+        map[140] = 43.71;
+        map[150] = 40.80;
+        map[160] = 38.25;
+        convertMap(map);
+        return map;
+    }
+
+
+    LookUpMap initMireoPlusH2TResistance() const {
+        LookUpMap map;
+        map[0] = 1.01;
+        map[10] = 1.09;
+        map[20] = 1.27;
+        map[30] = 1.55;
+        map[40] = 1.93;
+        map[50] = 2.41;
+        map[60] = 2.99;
+        map[70] = 3.67;
+        map[80] = 4.45;
+        map[90] = 5.34;
+        map[100] = 6.34;
+        map[110] = 7.43;
+        map[120] = 8.64;
+        map[130] = 9.95;
+        map[140] = 11.38;
+        map[150] = 12.91;
+        map[160] = 14.56;
+        convertMap(map);
+        return map;
+    }
+
+    TrainParams initMireoPlusH2TParams() const {
+        TrainParams params;
+        params.weight = 105.4;
+        params.mf = 1.05;
+        params.length = 46.56;
+        params.decl = 1.1;
+        params.vmax = 160 / 3.6;
+        params.recovery = 0.3;
+        params.traction = initMireoPlusH2TTraction();
+        params.resistance = initMireoPlusH2TResistance();
+        return params;
+    }
+
+    TrainParams initCustomParams() const {
+        TrainParams params;
+        params.weight = 100;
+        params.mf = 1.05;
+        params.length = 100;
+        params.decl = 1;
+        params.vmax = 200 / 3.6;
+        params.recovery = 0.3;
+        return params;
+    }
 //    void initVehicleVariables(const MSVehicle *const pVehicle, MSCFModel_Rail::VehicleVariables *pVariables)const;
 
 };
-
-

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2010-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2010-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -36,24 +36,29 @@ import gtfs2osm  # noqa
 
 
 def add_options():
-    argParser = sumolib.options.ArgumentParser()
-    argParser.add_argument("-r", "--region", default="gtfs",
-                           help="define the region to process")
-    argParser.add_argument("--gtfs", help="define gtfs zip file to load (mandatory)", required=True, fix_path=True)
-    argParser.add_argument("--date", help="define the day to import, format: 'YYYYMMDD'", required=True)
-    argParser.add_argument("--fcd", help="directory to write / read the generated FCD files to / from")
-    argParser.add_argument("--gpsdat", help="directory to write / read the generated gpsdat files to / from")
-    argParser.add_argument("--modes", help="comma separated list of modes to import (%s)" %
-                           (", ".join(gtfs2osm.OSM2SUMO_MODES.keys())))
-    argParser.add_argument("--vtype-output", default="vtypes.xml",
-                           help="file to write the generated vehicle types to")
-    argParser.add_argument("-v", "--verbose", action="store_true", default=False, help="tell me what you are doing")
-    argParser.add_argument("-b", "--begin", default=0,
-                           type=int, help="Defines the begin time to export")
-    argParser.add_argument("-e", "--end", default=86400,
-                           type=int, help="Defines the end time for the export")
-    argParser.add_argument("--bbox", help="define the bounding box to filter the gtfs data, format: W,S,E,N")
-    return argParser
+    op = sumolib.options.ArgumentParser(
+        description="converts GTFS data into separate fcd traces for every distinct trip")
+    op.add_argument("-r", "--region", default="gtfs", category="input",
+                    help="define the region to process")
+    op.add_argument("--gtfs", category="input", required=True, type=op.data_file,
+                    help="define gtfs zip file to load (mandatory)", fix_path=True)
+    op.add_argument("--date", category="input", required=True, help="define the day to import, format: 'YYYYMMDD'")
+    op.add_argument("--fcd", category="input", type=op.data_file,
+                    help="directory to write / read the generated FCD files to / from")
+    op.add_argument("--gpsdat", category="input", type=op.data_file,
+                    help="directory to write / read the generated gpsdat files to / from")
+    op.add_argument("--modes", category="input", help="comma separated list of modes to import (%s)" %
+                    (", ".join(gtfs2osm.OSM2SUMO_MODES.keys())))
+    op.add_argument("--vtype-output", default="vtypes.xml", category="output", type=op.file,
+                    help="file to write the generated vehicle types to")
+    op.add_argument("-v", "--verbose", action="store_true", default=False,
+                    category="processing", help="tell me what you are doing")
+    op.add_argument("-b", "--begin", default=0, category="time", type=op.time,
+                    help="Defines the begin time to export")
+    op.add_argument("-e", "--end", default=86400, category="time", type=op.time,
+                    help="Defines the end time for the export")
+    op.add_argument("--bbox", category="input", help="define the bounding box to filter the gtfs data, format: W,S,E,N")
+    return op
 
 
 def check_options(options):
@@ -72,7 +77,7 @@ def time2sec(s):
 
 
 def get_merged_data(options):
-    gtfsZip = zipfile.ZipFile(sumolib.openz(options.gtfs, mode="rb", tryGZip=False))
+    gtfsZip = zipfile.ZipFile(sumolib.openz(options.gtfs, mode="rb", tryGZip=False, printErrors=True))
     routes, trips_on_day, shapes, stops, stop_times = gtfs2osm.import_gtfs(options, gtfsZip)
     gtfsZip.fp.close()
 
@@ -128,9 +133,9 @@ def main(options):
         tripFile[mode] = io.open(filePrefix + '.rou.xml', 'w', encoding="utf8")
         tripFile[mode].write(u"<routes>\n")
     timeIndex = 0
-    for _, trip_data in full_data_merged.groupby(['route_id']):
+    for _, trip_data in full_data_merged.groupby('route_id'):
         seqs = {}
-        for trip_id, data in trip_data.groupby(['trip_id']):
+        for trip_id, data in trip_data.groupby('trip_id'):
             stopSeq = []
             buf = u""
             offset = 0

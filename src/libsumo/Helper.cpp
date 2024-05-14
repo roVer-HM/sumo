@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2017-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2017-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -469,7 +469,7 @@ Helper::getDrivingDistance(std::pair<const MSLane*, double>& roadPos1, std::pair
         return libsumo::INVALID_DOUBLE_VALUE;
     }
     MSRoute route("", newRoute, false, nullptr, std::vector<SUMOVehicleParameter::Stop>());
-    return distance + route.getDistanceBetween(roadPos1.second, roadPos2.second, &roadPos1.first->getEdge(), &roadPos2.first->getEdge());
+    return distance + route.getDistanceBetween(roadPos1.second, roadPos2.second, roadPos1.first, roadPos2.first);
 }
 
 
@@ -1454,7 +1454,7 @@ Helper::moveToXYMap(const Position& pos, double maxRouteDistance, bool mayLeaveN
                     break;
                 }
             }
-            if (onRoute == false) {
+            if (!onRoute) {
                 // search backward
                 for (int i = routePosition - 1; i >= 0; i--) {
                     const MSEdge* cand = currentRoute[i];
@@ -1744,7 +1744,9 @@ Helper::moveToXYMap_matchingRoutePosition(const Position& pos, const std::string
 #ifdef DEBUG_MOVEXY
             std::cout << SIMTIME << "    prev=" << Named::getIDSecure(prev) << " cand=" << Named::getIDSecure(cand) << " internal=" << Named::getIDSecure(internalCand) << "\n";
 #endif
-            findCloserLane(internalCand, pos, vClass, bestDistance, lane);
+            if (findCloserLane(internalCand, pos, vClass, bestDistance, lane)) {
+                routeOffset = i - 1;
+            }
             prev = internalCand;
         }
         if (findCloserLane(cand, pos, vClass, bestDistance, lane)) {
@@ -1792,7 +1794,7 @@ Helper::moveToXYMap_matchingRoutePosition(const Position& pos, const std::string
         }
     }
 
-    assert(lane != 0);
+    assert(lane != nullptr);
     // quit if no solution was found, reporting a failure
     if (lane == nullptr) {
 #ifdef DEBUG_MOVEXY

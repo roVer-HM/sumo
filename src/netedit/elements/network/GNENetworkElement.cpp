@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -55,6 +55,12 @@ GNENetworkElement::getGUIGlObject() {
 }
 
 
+const GUIGlObject*
+GNENetworkElement::getGUIGlObject() const {
+    return this;
+}
+
+
 void
 GNENetworkElement::setShapeEdited(const bool value) {
     myShapeEdited = value;
@@ -100,14 +106,8 @@ GNENetworkElement::getParameterWindow(GUIMainWindow& app, GUISUMOAbstractView&) 
 }
 
 
-Boundary
-GNENetworkElement::getCenteringBoundary() const {
-    return myBoundary;
-}
-
-
 bool
-GNENetworkElement::isGLObjectLocked() {
+GNENetworkElement::isGLObjectLocked() const {
     if (myNet->getViewNet()->getEditModes().isCurrentSupermodeNetwork()) {
         return myNet->getViewNet()->getLockManager().isObjectLocked(getType(), isAttributeCarrierSelected());
     } else {
@@ -164,6 +164,37 @@ GNENetworkElement::getHierarchyName() const {
         return getPopUpID();
     } else {
         return getTagStr();
+    }
+}
+
+
+void
+GNENetworkElement::setNetworkElementID(const std::string& newID) {
+    // set microsim ID
+    setMicrosimID(newID);
+    // enable save add elements if this network element has children
+    if (getChildAdditionals().size() > 0) {
+        myNet->getSavingStatus()->requireSaveAdditionals();
+    }
+    // enable save demand elements if this network element has children
+    if (getChildDemandElements().size() > 0) {
+        myNet->getSavingStatus()->requireSaveDemandElements();
+    }
+    // enable save data elements if this network element has children
+    if (getChildGenericDatas().size() > 0) {
+        myNet->getSavingStatus()->requireSaveDataElements();
+    }
+}
+
+
+bool
+GNENetworkElement::checkDrawingBoundarySelection() const {
+    if (!gViewObjectsHandler.getSelectionBoundary().isInitialised()) {
+        return true;
+    } else if (!gViewObjectsHandler.isElementSelected(this)) {
+        return true;
+    } else {
+        return false;
     }
 }
 

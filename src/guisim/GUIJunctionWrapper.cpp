@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -66,6 +66,7 @@ GUIJunctionWrapper::GUIJunctionWrapper(MSJunction& junction, const std::string& 
     myIsInternal = myJunction.getType() == SumoXMLNodeType::INTERNAL;
     myAmWaterway = myJunction.getIncoming().size() + myJunction.getOutgoing().size() > 0;
     myAmRailway = myJunction.getIncoming().size() + myJunction.getOutgoing().size() > 0;
+    myAmAirway = myJunction.getIncoming().size() + myJunction.getOutgoing().size() > 0;
     for (auto it = myJunction.getIncoming().begin(); it != myJunction.getIncoming().end() && (myAmWaterway || myAmRailway); ++it) {
         if (!(*it)->isInternal()) {
             if (!isWaterway((*it)->getPermissions())) {
@@ -73,6 +74,9 @@ GUIJunctionWrapper::GUIJunctionWrapper(MSJunction& junction, const std::string& 
             }
             if (!isRailway((*it)->getPermissions())) {
                 myAmRailway = false;
+            }
+            if (!isAirway((*it)->getPermissions())) {
+                myAmAirway = false;
             }
         }
     }
@@ -83,6 +87,9 @@ GUIJunctionWrapper::GUIJunctionWrapper(MSJunction& junction, const std::string& 
             }
             if (!isRailway((*it)->getPermissions())) {
                 myAmRailway = false;
+            }
+            if (!isAirway((*it)->getPermissions())) {
+                myAmAirway = false;
             }
         }
     }
@@ -111,8 +118,8 @@ GUIParameterTableWindow*
 GUIJunctionWrapper::getParameterWindow(GUIMainWindow& app, GUISUMOAbstractView&) {
     GUIParameterTableWindow* ret = new GUIParameterTableWindow(app, *this);
     // add items
-    ret->mkItem("type", false, toString(myJunction.getType()));
-    ret->mkItem("name", false, myJunction.getName());
+    ret->mkItem(TL("type"), false, toString(myJunction.getType()));
+    ret->mkItem(TL("name"), false, myJunction.getName());
     // close building
     ret->closeBuilding(&myJunction);
     return ret;
@@ -213,6 +220,8 @@ GUIJunctionWrapper::getColorValue(const GUIVisualizationSettings& /* s */, int a
                 return 1;
             } else if (myAmRailway && MSNet::getInstance()->hasInternalLinks()) {
                 return 2;
+            } else if (myAmAirway) {
+                return 3;
             } else {
                 return 0;
             }

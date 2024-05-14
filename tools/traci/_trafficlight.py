@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2011-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,12 +19,24 @@ from __future__ import absolute_import
 from sumolib.net import Phase
 from .domain import Domain
 from . import constants as tc
-from .exceptions import TraCIException, deprecated
+from .exceptions import TraCIException, deprecated, alias_param
 
 
 class Logic:
 
     def __init__(self, programID, type, currentPhaseIndex, phases=None, subParameter=None):
+        """
+        Constructs a new Logic object with the following arguments:
+          programID (string) - arbitrary
+          type (integer) - one of
+             tc.TRAFFICLIGHT_TYPE_STATIC
+             tc.TRAFFICLIGHT_TYPE_ACTUATED
+             tc.TRAFFICLIGHT_TYPE_NEMA
+             tc.TRAFFICLIGHT_TYPE_DELAYBASED
+          currentPhaseIndex (integer) - must be in range [0, len(phases) - 1]
+          phases (list of Phase objects)
+          subParameter (dictl) - corresponds to generic <param> objects
+        """
         self.programID = programID
         self.type = type
         self.currentPhaseIndex = currentPhaseIndex
@@ -229,6 +241,13 @@ class TrafficLightDomain(Domain):
         """
         return self._getUniversal(tc.TL_NEXT_SWITCH, tlsID)
 
+    def getSpentDuration(self, tlsID):
+        """getSpentDuration(string) -> double
+
+        Returns the time in seconds for which the current phase has been active
+        """
+        return self._getUniversal(tc.TL_SPENT_DURATION, tlsID)
+
     def getPhaseDuration(self, tlsID):
         """getPhaseDuration(string) -> double
 
@@ -395,15 +414,16 @@ class TrafficLightDomain(Domain):
         """
         self._setCmd(tc.TL_PHASE_DURATION, tlsID, "d", phaseDuration)
 
-    def setProgramLogic(self, tlsID, tls):
+    @alias_param("logic", "tls")
+    def setProgramLogic(self, tlsID, logic):
         """setProgramLogic(string, Logic) -> None
 
         Sets a new program for the given tlsID from a Logic object.
-        See getCompleteRedYellowGreenDefinition.
+        See getAllProgramLogics which returns a list of Logic objects.
         """
         format = "tsiit"
-        values = [5, tls.programID, tls.type, tls.currentPhaseIndex, len(tls.phases)]
-        for p in tls.phases:
+        values = [5, logic.programID, logic.type, logic.currentPhaseIndex, len(logic.phases)]
+        for p in logic.phases:
             format += "tdsddt"
             values += [6, p.duration, p.state, p.minDur, p.maxDur, len(p.next)]
             for n in p.next:
@@ -413,13 +433,19 @@ class TrafficLightDomain(Domain):
             values += [p.name]
         # subparams
         format += "t"
-        values += [len(tls.subParameter)]
-        for par in tls.subParameter.items():
+        values += [len(logic.subParameter)]
+        for par in logic.subParameter.items():
             format += "l"
             values += [par]
         self._setCmd(tc.TL_COMPLETE_PROGRAM_RYG, tlsID, format, *values)
 
     setCompleteRedYellowGreenDefinition = deprecated("setCompleteRedYellowGreenDefinition")(setProgramLogic)
+
+    def addConstraint(self, tlsID, tripId, foeSignal, foeId, type=0, limit=0):
+        """addConstraint(string, string, string, string, int, int) -> None
+        Add the given constraint.
+        """
+        self._setCmd(tc.TL_CONSTRAINT_ADD, tlsID, "tsssii", 5, tripId, foeSignal, foeId, type, limit)
 
     def swapConstraints(self, tlsID, tripId, foeSignal, foeId):
         """swapConstraints(string, string, string, string) -> list(Constraint)

@@ -49,6 +49,7 @@ authors:
   - name: "Gregory Albiston"
   - name: "Harald Schaefer"
   - name: "Hollow Man"
+  - name: "Hongsheng Cui"
   - name: "Ioan-Alexandru Stef"
   - name: "Jakob Erdmann"
   - name: "Jakob Stigloher"
@@ -100,6 +101,7 @@ authors:
   - name: "Mirco Sturari"
   - name: "Mirko Barthauer"
   - name: "Moritz Gütlein"
+  - name: "Necip Güzel"
   - name: "Niklas Freund"
   - name: "Nikolaus Furian"
   - name: "Pablo Alvarez Lopez"
@@ -144,18 +146,19 @@ keywords:
   - simulation
   - microscopic
   - traffic
-date-released: "2023-04-25"
-version: 1.17.0
-repository-code: "https://github.com/eclipse/sumo"
+date-released: "2024-05-07"
+version: 1.20.0
+doi: 10.5281/zenodo.11120728
+repository-code: "https://github.com/eclipse-sumo/sumo"
 type: software
-url: "https://www.eclipse.org/sumo/"
+url: "https://www.eclipse.dev/sumo/"
 identifiers:
   - description: "The GitHub tag"
     type: url
-    value: "https://github.com/eclipse/sumo/releases/tag/v1_14_1"
+    value: "https://github.com/eclipse-sumo/sumo/releases/tag/v1_20_0"
   - description: "The download folder"
     type: url
-    value: "https://sumo.dlr.de/releases/1.14.1/"
+    value: "https://sumo.dlr.de/releases/1.20.0/"
 license:
   - "EPL-2.0"
   - "GPL-2.0-or-later"

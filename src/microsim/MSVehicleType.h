@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -77,7 +77,7 @@ public:
      * @param[in] what The parameter which one asks for
      * @return Whether the given parameter was set
      */
-    bool wasSet(int what) const {
+    bool wasSet(long long int what) const {
         return (myParameter.parametersSet & what) != 0;
     }
 
@@ -213,6 +213,14 @@ public:
      */
     const RGBColor& getColor() const {
         return myParameter.color;
+    }
+
+
+    /** @brief Returns the parking access rights of this type
+     * @return The parking access rights
+     */
+    const std::vector<std::string>& getParkingBadges() const {
+        return myParameter.parkingBadges;
     }
 
 
@@ -516,6 +524,12 @@ public:
     void setColor(const RGBColor& color);
 
 
+    /** @brief Set a new value for parking access rights of this type
+     * @param[in] badges The new parking access rights of this type
+     */
+    void setParkingBadges(const std::vector<std::string>& badges);
+
+
     /** @brief Set a new value for this type's width
      *
      * If the given value<0 then the one from the original type will
@@ -530,6 +544,12 @@ public:
      * @param[in] shape The new shape of this type
      */
     void setShape(SUMOVehicleShape shape);
+
+    /** @brief Set a new value for this type's boardingDuration
+     * @param[in] boardingDuration The new boardingDuration of this type
+     * @param[in] isPerson Whether to set boardingDuration or loadingDuration
+     */
+    void setBoardingDuration(SUMOTime duration, bool isPerson = true);
 
     /** @brief Set a new value for this type's impatience
      * @param[in] impatience The new impatience of this type

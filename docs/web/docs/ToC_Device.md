@@ -61,7 +61,7 @@ one vehicle with a ToC Device has the following form:
 The following table gives the full list of possible parameters for the
 ToC Device. Each of these parameters must be specified as a child
 element of the form `<param key=<PARAMETER NAME> value=<PARAMETER VALUE>` of the appropriate demand definition element
-(e.g. `<vehicle ... />`, `<vType ... />`, or `<flow ... />`)
+(e.g. `<vehicle ... />`, `<vType ... />`, or `<flow ... />`).
 
 | Parameter             | Type             | Default          | Description                                                                         |
 | --------------------- | ---------------- | ---------------- | ------------------------------------------------------------------------------------------------ |
@@ -135,7 +135,7 @@ State](Driver_State.md)).
 
 # References
 
-1. Lücken, L., Mintsis, E., Kallirroi, N. P., Alms, R., Flötteröd, Y. P., & Koutras, D. (2019). 
-	From Automated to Manual - Modeling Control Transitions with SUMO. 
-	EasyChair. SUMO User Conference 2019, 13.-15. May 2019, Berlin, Germany. 
-    <https://doi.org/10.29007/sfgk> 
+1. Lücken, L., Mintsis, E., Kallirroi, N. P., Alms, R., Flötteröd, Y. P., & Koutras, D. (2019).
+	From Automated to Manual - Modeling Control Transitions with SUMO.
+	EasyChair. SUMO User Conference 2019, 13.-15. May 2019, Berlin, Germany.
+    <https://doi.org/10.29007/sfgk>

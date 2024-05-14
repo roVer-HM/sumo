@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -211,7 +211,7 @@ NEMALogic::constructTimingAndPhaseDefs(std::string& barriers, std::string& coord
                     new NEMAPhase(p, barrierPhase, phaseGreenRest, coordinatePhase, minRecall, maxRecall, fixForceOff, barrierNum, ringNum, controlledStateIndexes, tempPhase)
                 );
 
-                // Add a reference to the sequetionaly prior phase
+                // Add a reference to the sequentially prior phase
                 if (phaseIter > 0) {
                     myPhaseObjs.back()->setSequentialPriorPhase(myPhaseObjs[lastPhaseIter + (phaseIter - 1)]);
                 }
@@ -428,7 +428,7 @@ NEMALogic::init(NLDetectorBuilder& nb) {
                                        detector_length, //detector length
                                        myFile, // detector information output file
                                        myFreq, // detector reading interval
-                                       0, // time-based threshold that decribes how much time has to pass until a vehicle is considerred as halting
+                                       0, // time-based threshold that describes how much time has to pass until a vehicle is considered as halting
                                        0, // speed threshold as halting
                                        0, // minimum dist to the next standing vehicle to make this vehicle count as a participant to the jam
                                        "",
@@ -437,7 +437,7 @@ NEMALogic::init(NLDetectorBuilder& nb) {
                                        (int)PersonMode::NONE, // detector vehicles, not persons
                                        true, // whether to give some slack on positioning
                                        myShowDetectors, // whether to show detectors in sumo-gui
-                                       nullptr, //traffic light that triggers aggregation when swithing
+                                       nullptr, //traffic light that triggers aggregation when switching
                                        nullptr); // outgoing lane that associated with the traffic light
 
                     //get the detector to be used in the lane detector map loading
@@ -612,7 +612,7 @@ NEMALogic::validate_timing() {
             cycleLengths[ringIndex][p->barrierNum] += p->maxDuration + p->yellow + p->red;
         }
     }
-    // Write warnings if the barrers do not sum
+    // Write warnings if the barriers do not sum
     for (int barrierNum = 0; barrierNum < 2; barrierNum++) {
         if (cycleLengths[0][barrierNum] != cycleLengths[1][barrierNum]) {
             const std::string error = "At NEMA tlLogic '" + getID() + "', the phases before barrier " + toString(barrierNum + 1) + " from both rings do not add up. (ring1="
@@ -633,7 +633,6 @@ NEMALogic::validate_timing() {
 
 void
 NEMALogic::setNewSplits(std::vector<double> newSplits) {
-    // TODO: What is the difference between splits and max greens?
     assert(newSplits.size() == 8);
     for (auto& p : myPhaseObjs) {
         if (newSplits[p->phaseName - 1] > 0) {
@@ -729,7 +728,10 @@ NEMALogic::getLaneInfoFromNEMAState(std::string state, StringVector& laneIDs, In
         if (ch == 'G') {
             stateIndex.push_back(i);
             for (auto link : myLinks[i]) {
-                laneIDs.push_back(link->getLaneBefore()->getID());
+                const MSLane* incoming = link->getLaneBefore();
+                if (incoming->isNormal()) {
+                    laneIDs.push_back(incoming->getID());
+                }
             }
         }
     }
@@ -796,7 +798,7 @@ const std::string
 NEMALogic::getParameter(const std::string& key, const std::string defaultValue) const {
     if (StringUtils::startsWith(key, "NEMA.")) {
         if (key == "NEMA.phaseCall") {
-            int activeCalls[8] = {0};
+            int activeCalls[8] = { 0 };
             for (const auto p : myPhaseObjs) {
                 // This handles the case when the controller has multiple of the same phase call
                 if (!activeCalls[p->phaseName - 1]) {
@@ -866,13 +868,13 @@ NEMALogic::calculateForceOffs170() {
         SUMOTime runningTime = 0;
         // loop through the phases for ring 0 and then 1
         for (auto& p : getPhasesByRing(i)) {
-            runningTime += p->maxDuration + p->getTransitionTime(this);
+            runningTime += p->maxDuration + p->getTransitionTimeStateless();
             // in 170, the cycle "starts" when the coordinated phase goes to yellow.
             // See https://ops.fhwa.dot.gov/publications/fhwahop08024/chapter6.html
             if (p->coordinatePhase) {
                 zeroTime[i] = runningTime;
             }
-            p->forceOffTime = runningTime - p->getTransitionTime(this);
+            p->forceOffTime = runningTime - p->getTransitionTimeStateless();
             p->greatestStartTime = p->forceOffTime - p->minDuration;
         }
     }
@@ -1141,7 +1143,7 @@ NEMALogic::trySwitch() {
 #endif
     PhaseTransitionLogic* nextPhases[2] = { nullptr, nullptr };
 
-    // update the internal time. This is a must. Could have just used a reference to the tmme
+    // update the internal time. This is a must. Could have just used a reference to the time
     setCurrentTime();
 
     // Check the Detectors
@@ -1217,7 +1219,6 @@ NEMALogic::implementTraciChanges(void) {
             p->maxDuration = p->nextMaxDuration;
         }
         offset = myNextOffset;
-        // TODO: Do we need to redo the force offs here? I thins that we do
         myCycleLength = myNextCycleLength;
         // now that we have set the cycle length, offset and max duration, we need to update force off times
         calculateForceOffs();
@@ -1280,7 +1281,7 @@ NEMAPhase::init(NEMALogic* controller, int crossPhaseTarget, int crossPhaseSourc
     recalculateTiming();
 
     for (auto p : controller->getPhasesByRing(ringNum)) {
-        // construct transitions for all potentail movements, including back to myself
+        // construct transitions for all potential movements, including back to myself
         myTransitions.push_back(new PhaseTransitionLogic(this, p));
         myTransitions.back()->setDistance(controller->measureRingDistance(phaseName, p->phaseName, ringNum));
     }
@@ -1386,6 +1387,9 @@ NEMAPhase::enter(NEMALogic* controller, NEMAPhase* lastPhase) {
     std::cout << SIMTIME << " enter tls=" << controller->getID() << " phase=" << phaseName << "\n";
 #endif
 
+    // set the last phase instance to inactive
+    lastPhase->cleanupExit();
+
     // Enter the phase
     myStartTime = controller->getCurrentTime();
     myLightState = LightState::Green;
@@ -1401,7 +1405,7 @@ NEMAPhase::enter(NEMALogic* controller, NEMAPhase* lastPhase) {
     if (!controller->coordinateMode && isGreenRest) {
         // If the controller is in free mode and the phase is a green rest phase, then it should enter as "green rest"
         myLightState = LightState::GreenRest;
-        // if the phase has "green rest" capabilities, set it's timer to the dynamic maxGreen
+        // if the phase has "green rest" capabilities, set its timer to the dynamic maxGreen
         greenRestTimer = maxDuration * isGreenRest;
     }
 
@@ -1412,9 +1416,6 @@ NEMAPhase::enter(NEMALogic* controller, NEMAPhase* lastPhase) {
     if (controller->coordinateMode) {
         if (coordinatePhase) {
             myExpectedDuration = controller->ModeCycle(forceOffTime - controller->getTimeInCycle(), controller->getCurrentCycleLength());
-#ifdef FUZZ_TESTING
-            assert(myExpectedDuration >= maxDuration);
-#endif
         } else {
             maxGreenDynamic = controller->ModeCycle(forceOffTime - controller->getTimeInCycle(), controller->getCurrentCycleLength());
             if (!fixForceOff) {
@@ -1433,75 +1434,92 @@ NEMAPhase::enter(NEMALogic* controller, NEMAPhase* lastPhase) {
     controller->setActivePhase(this);
 }
 
-void
-NEMAPhase::exit(NEMALogic* controller, PhaseTransitionLogic* nextPhases[2]) {
-    // At the first entry to this transition, the phase will be in green
+void NEMAPhase::exit(NEMALogic* controller, PhaseTransitionLogic* nextPhases[2]) {
     if (nextPhases[ringNum]->getToPhase() != this) {
-        // set the last transition decision
+        // if the next phase is not me, then I need to go into a transition
         lastTransitionDecision = nextPhases[ringNum];
         if (myLightState >= LightState::Green) {
-            // enter yellow and set that the transition is active
-            myLastEnd = controller->getCurrentTime();
-            myLightState = LightState::Yellow;
-            transitionActive = true;
-        } else {
-            if (controller->getCurrentTime() - myLastEnd >= (yellow + red)) {
-                // red xfer check. This happens at a barrier phase when the other phase is transitioning, but the yellow times are different.
-                // the phase quicker to the red should enter a redxfer state, which just means that it cannot transition out of the
-                // phase until the other phase is done. Only enters a redxfer if the next phases is a barrier cross
-                PhasePtr otherPhase = controller->getOtherPhase(this);
-                bool barrierCross = nextPhases[ringNum]->getToPhase()->barrierNum != barrierNum;
-                if (barrierCross && otherPhase->isAtBarrier && isAtBarrier && barrierNum == otherPhase->barrierNum && otherPhase->getTransitionTime(controller) >= DELTA_T) {
-                    myLightState = LightState::RedXfer;
-                } else {
-                    // check if the other phase is in redxfer and if it is, set it to red.
-                    // This needs to be done before the next phase is entered
-                    if (otherPhase->getCurrentState() == LightState::RedXfer) {
-                        otherPhase->exit(controller, nextPhases);
-                    }
-                    // triggers the entry to the next target phase.
-                    readyToSwitch = false;
-                    transitionActive = false;
-                    // Enter into the next phase, setting it to Green
-                    nextPhases[ringNum]->getToPhase()->enter(controller, this);
-                }
-            } else if (controller->getCurrentTime() - myLastEnd >= yellow) {
-                // set the light to red
+            // if I am in green, then I need to enter yellow
+            enterYellow(controller);
+            return;
+        }
+
+        if (controller->getCurrentTime() - myLastEnd < (yellow + red)) {
+            if (controller->getCurrentTime() - myLastEnd >= yellow) {
+                // if I am in yellow, then I need to enter red
                 myLightState = LightState::Red;
             }
+            // I am currently in the Red state but haven't reached max
+            return;
         }
+
+        handleRedXferOrNextPhase(controller, nextPhases);
+        return;
+    }
+
+    handleGreenRestOrTransfer(controller, nextPhases);
+}
+
+void NEMAPhase::enterYellow(NEMALogic* controller) {
+    myLastEnd = controller->getCurrentTime();
+    myLightState = LightState::Yellow;
+    transitionActive = true;
+}
+
+void NEMAPhase::handleRedXferOrNextPhase(NEMALogic* controller, PhaseTransitionLogic* nextPhases[2]) {
+    PhasePtr otherPhase = controller->getOtherPhase(this);
+    bool barrierCross = nextPhases[ringNum]->getToPhase()->barrierNum != barrierNum;
+    bool barrierCrossButOkay = barrierCross && (
+                                   nextPhases[ringNum]->getToPhase()->barrierNum == nextPhases[otherPhase->ringNum]->getToPhase()->barrierNum
+                               ) && otherPhase->okay2ForceSwitch(controller);
+
+    if (!barrierCross) {
+        nextPhases[ringNum]->getToPhase()->enter(controller, this);
+        return;
+    }
+
+    if (barrierCrossButOkay) {
+        // if the barrier is crossed, but the other phase is going to the same barrier, then I can enter red transfer
+        // enter the next phase
+        nextPhases[ringNum]->getToPhase()->enter(controller, this);
+        // trigger the other phase to enter red transfer
+        nextPhases[otherPhase->ringNum]->getToPhase()->enter(controller, this);
+        return;
+    }
+
+    myLightState = LightState::RedXfer;
+    readyToSwitch = true;
+    transitionActive = false;
+}
+
+void NEMAPhase::handleGreenRestOrTransfer(NEMALogic* controller, PhaseTransitionLogic* nextPhases[2]) {
+    NEMAPhase* otherPhase = controller->getOtherPhase(this);
+    readyToSwitch = false;
+    bool isOtherPhaseReady = nextPhases[!ringNum]->getToPhase() == otherPhase && otherPhase->readyToSwitch;
+    bool isOtherPhaseInGreenRest = otherPhase->greenRestTimer >= otherPhase->maxDuration && otherPhase->getCurrentState() == LightState::GreenRest;
+
+    if (isOtherPhaseReady || isOtherPhaseInGreenRest) {
+        myLightState = LightState::GreenRest;
+        myStartTime = controller->getCurrentTime() - minDuration;
+        myExpectedDuration = minDuration;
+        greenRestTimer = maxDuration * isGreenRest;
     } else {
-        // This is the entry to green rest or green transfer
-        NEMAPhase* otherPhase = controller->getOtherPhase(this);
-        readyToSwitch = false;
-        if ((nextPhases[!ringNum]->getToPhase() == otherPhase && otherPhase->readyToSwitch)
-                // if the other phase is already in green rest and I am in green transfer but there are no cars on the side streets,
-                // I should default to being in green rest. Side street check is done by looking at the green rest timer.
-                || (otherPhase->greenRestTimer >= otherPhase->maxDuration && otherPhase->getCurrentState() == LightState::GreenRest)) {
-            // the light state is green rest
-            myLightState = LightState::GreenRest;
-            // set the start time to be current time - the minimum timer
-            myStartTime = controller->getCurrentTime() - minDuration;
-            myExpectedDuration = minDuration;
-            // if the phase has "green rest" capabilities, set it's timer to the dynamic maxGreen
-            greenRestTimer = maxDuration * isGreenRest;
-        } else {
-            // green transfer
-            myLightState = LightState::GreenXfer;
-            if (isAtBarrier) {
-                // In green transfer, the phase will last as long as the other phase.
-                // this needs to not blindly copy, but instead be a calculation
-                myExpectedDuration = (otherPhase->myExpectedDuration + otherPhase->myStartTime) - myStartTime;
-            }
+        myLightState = LightState::GreenXfer;
+        if (isAtBarrier) {
+            myExpectedDuration = (otherPhase->myExpectedDuration + otherPhase->myStartTime) - myStartTime;
         }
     }
 }
 
 SUMOTime
 NEMAPhase::getTransitionTime(NEMALogic* controller) {
+    if (myLightState == LightState::RedXfer) {
+        // if in red xfer, I am ready to switch whenevery
+        return TIME2STEPS(0);
+    }
     if (!transitionActive) {
         // if a transition is not active, the transition is just yellow + red time
-        return (yellow + red);
+        return getTransitionTimeStateless();
     }
     // if a transition is active, then return the time left in the transition
     return MAX2(TIME2STEPS(0), ((yellow + red) - (controller->getCurrentTime() - myLastEnd)));
@@ -1564,7 +1582,7 @@ NEMAPhase::update(NEMALogic* controller) {
         // if the green rest timer is exhausted, set ready to switch
         if (greenRestTimer < DELTA_T) {
             readyToSwitch = true;
-            // force the counterparty to be ready to switch too. This needs to be latching....
+            // force the counterpart to be ready to switch too. This needs to be latching....
             NEMAPhase* otherPhase = controller->getOtherPhase(this);
             if (otherPhase->getCurrentState() > LightState::Green) {
                 otherPhase->readyToSwitch = true;
@@ -1600,7 +1618,7 @@ NEMAPhase::getTransition(int toPhase) {
 
 std::vector<PhaseTransitionLogic*>
 NEMAPhase::trySwitch(NEMALogic* controller) {
-    // this function returns the prefered valid transition for the phase
+    // this function returns the preferred valid transition for the phase
     std::vector<PhaseTransitionLogic*> nextTransitions;
     if (readyToSwitch) {
         // only try to switch if I am ready to switch
@@ -1691,8 +1709,10 @@ PhaseTransitionLogic::freeBase(NEMALogic* controller) {
         // would the transition be a barrier cross?
         if (fromPhase->barrierNum != toPhase->barrierNum) {
             PhasePtr otherPhase = controller->getOtherPhase(fromPhase);
-            // If it is a barrier cross
+            // If it is a barrier cross, then the other phase must also be ready to switch
+            // or have a transition time that is lower than mine currently. DELTA_T is critical here
             if (otherPhase->readyToSwitch) {
+                // #&& otherPhase->getTransitionTime(controller) <= fromPhase->getTransitionTime(controller)) {
                 okay = true;
             }
         } else {

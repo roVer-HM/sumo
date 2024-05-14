@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -151,22 +151,22 @@ parser.add_argument("-+", "--additional", dest="additional", type=parser.additio
                     default="", help="Additional files")
 
 parser.add_argument("-b", "--begin", dest="begin",
-                    type=parser.time, default=0, help="Set simulation/routing begin [default: %default]")
+                    type=parser.time, default=0, help="Set simulation/routing begin [default: %(default)s]")
 parser.add_argument("-e", "--end", dest="end",
-                    type=parser.time, help="Set simulation/routing end [default: %default]")
+                    type=parser.time, help="Set simulation/routing end [default: %(default)s]")
 parser.add_argument("-R", "--route-steps", dest="routeSteps",
-                    type=int, default=200, help="Set simulation route steps [default: %default]")
+                    type=int, default=200, help="Set simulation route steps [default: %(default)s]")
 parser.add_argument("-a", "--aggregation", dest="aggregation",
-                    type=parser.time, default=900, help="Set main weights aggregation period [default: %default]")
+                    type=parser.time, default=900, help="Set main weights aggregation period [default: %(default)s]")
 parser.add_argument("-A", "--gA", dest="gA",
-                    type=float, default=.5, help="Sets Gawron's Alpha [default: %default]")
+                    type=float, default=.5, help="Sets Gawron's Alpha [default: %(default)s]")
 parser.add_argument("-B", "--gBeta", dest="gBeta",
-                    type=float, default=.9, help="Sets Gawron's Beta [default: %default]")
+                    type=float, default=.9, help="Sets Gawron's Beta [default: %(default)s]")
 
 parser.add_argument("-f", "--first-step", dest="firstStep",
-                    type=int, default=0, help="First DUA step [default: %default]")
+                    type=int, default=0, help="First DUA step [default: %(default)s]")
 parser.add_argument("-l", "--last-step", dest="lastStep",
-                    type=int, default=50, help="Last DUA step [default: %default]")
+                    type=int, default=50, help="Last DUA step [default: %(default)s]")
 parser.add_argument("-p", "--path", dest="path", type=str, help="Path to binaries")
 
 parser.add_argument("-y", "--absrand", dest="absrand", action="store_true",

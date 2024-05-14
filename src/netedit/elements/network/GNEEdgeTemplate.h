@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -51,11 +51,41 @@ public:
 
     /// @name Function related with graphics
     /// @{
+
     /// @brief get GUIGlObject associated with this AttributeCarrier
     GUIGlObject* getGUIGlObject();
 
+    /// @brief get GUIGlObject associated with this AttributeCarrier (constant)
+    const GUIGlObject* getGUIGlObject() const;
+
     /// @brief update pre-computed geometry information
     void updateGeometry();
+
+    /// @}
+
+    /// @name Function related with contour drawing
+    /// @{
+
+    /// @brief check if draw from contour (green)
+    bool checkDrawFromContour() const;
+
+    /// @brief check if draw from contour (magenta)
+    bool checkDrawToContour() const;
+
+    /// @brief check if draw related contour (cyan)
+    bool checkDrawRelatedContour() const;
+
+    /// @brief check if draw over contour (orange)
+    bool checkDrawOverContour() const;
+
+    /// @brief check if draw delete contour (pink/white)
+    bool checkDrawDeleteContour() const;
+
+    /// @brief check if draw select contour (blue)
+    bool checkDrawSelectContour() const;
+
+    /// @brief check if draw move contour (red)
+    bool checkDrawMoveContour() const;
 
     /// @}
 

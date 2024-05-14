@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2017-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2017-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -152,6 +152,13 @@ double
 TrafficLight::getNextSwitch(const std::string& tlsID) {
     return Dom::getDouble(libsumo::TL_NEXT_SWITCH, tlsID);
 }
+
+
+double
+TrafficLight::getSpentDuration(const std::string& tlsID) {
+    return Dom::getDouble(libsumo::TL_SPENT_DURATION, tlsID);
+}
+
 
 int
 TrafficLight::getServedPersonCount(const std::string& tlsID, int index) {
@@ -305,12 +312,24 @@ TrafficLight::setProgramLogic(const std::string& tlsID, const libsumo::TraCILogi
 }
 
 
+void
+TrafficLight::addConstraint(const std::string& tlsID, const std::string& tripId, const std::string& foeSignal, const std::string& foeId, const int type, const int limit) {
+    tcpip::Storage content;
+    StoHelp::writeCompound(content, 5);
+    StoHelp::writeTypedString(content, tripId);
+    StoHelp::writeTypedString(content, foeSignal);
+    StoHelp::writeTypedString(content, foeId);
+    StoHelp::writeTypedInt(content, type);
+    StoHelp::writeTypedInt(content, limit);
+    Dom::set(libsumo::TL_CONSTRAINT_ADD, tlsID, &content);
+}
+
+
 std::vector<libsumo::TraCISignalConstraint>
 TrafficLight::swapConstraints(const std::string& tlsID, const std::string& tripId, const std::string& foeSignal, const std::string& foeId) {
     std::vector<libsumo::TraCISignalConstraint> result;
     tcpip::Storage content;
-    content.writeByte(libsumo::TYPE_COMPOUND);
-    content.writeInt(3);
+    StoHelp::writeCompound(content, 3);
     StoHelp::writeTypedString(content, tripId);
     StoHelp::writeTypedString(content, foeSignal);
     StoHelp::writeTypedString(content, foeId);
@@ -343,8 +362,7 @@ TrafficLight::swapConstraints(const std::string& tlsID, const std::string& tripI
 void
 TrafficLight::removeConstraints(const std::string& tlsID, const std::string& tripId, const std::string& foeSignal, const std::string& foeId) {
     tcpip::Storage content;
-    content.writeByte(libsumo::TYPE_COMPOUND);
-    content.writeInt(3);
+    StoHelp::writeCompound(content, 3);
     StoHelp::writeTypedString(content, tripId);
     StoHelp::writeTypedString(content, foeSignal);
     StoHelp::writeTypedString(content, foeId);

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -87,7 +87,7 @@ private:
     GNEViewNet* myViewNet;
 
     /// @brief ComboBox for terminate options (end, number, end/number)
-    FXComboBox* myTerminateComboBox = nullptr;
+    MFXComboBoxIcon* myTerminateComboBox = nullptr;
 
     /// @brief horizontal frame for terminate definition
     FXHorizontalFrame* myTerminateFrameTextField = nullptr;
@@ -102,7 +102,7 @@ private:
     FXHorizontalFrame* mySpacingFrameComboBox = nullptr;
 
     /// @brief ComboBox for spacing comboBox (perHour, period, probability)
-    FXComboBox* mySpacingComboBox = nullptr;
+    MFXComboBoxIcon* mySpacingComboBox = nullptr;
 
     /// @brief horizontal frame for spacing textField
     FXHorizontalFrame* mySpacingFrameTextField = nullptr;

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -729,13 +729,10 @@ RODFNet::isSource(const RODFDetector& det, ROEdge* edge,
                 // the next is a hack for the A100 scenario...
                 //  We have to look into further edges herein edges
                 const ROEdgeVector& appr = myApproachingEdges.find(edge)->second;
-                int noOk = 0;
                 int noFalse = 0;
                 int noSkipped = 0;
                 for (int i = 0; i < (int)appr.size(); i++) {
-                    if (!hasDetector(appr[i])) {
-                        noOk++;
-                    } else {
+                    if (hasDetector(appr[i])) {
                         noFalse++;
                     }
                 }
@@ -848,13 +845,11 @@ RODFNet::isDestination(const RODFDetector& det, ROEdge* edge, ROEdgeVector& seen
     }
     const ROEdgeVector& appr  = myApproachedEdges.find(edge)->second;
     bool isall = true;
-    int no = 0;
     seen.push_back(edge);
     for (int i = 0; i < (int)appr.size() && isall; i++) {
         bool had = std::find(seen.begin(), seen.end(), appr[i]) != seen.end();
         if (!had) {
             if (!isDestination(det, appr[i], seen, detectors)) {
-                no++;
                 isall = false;
             }
         }

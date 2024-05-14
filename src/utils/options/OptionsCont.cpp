@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -63,7 +63,7 @@ OptionsCont::getOptions() {
 
 
 OptionsCont::OptionsCont() {
-    myCopyrightNotices.push_back(TL("Copyright (C) 2001-2023 German Aerospace Center (DLR) and others; https://sumo.dlr.de"));
+    myCopyrightNotices.push_back(TL("Copyright (C) 2001-2024 German Aerospace Center (DLR) and others; https://sumo.dlr.de"));
 }
 
 
@@ -429,7 +429,7 @@ void
 OptionsCont::reportDoubleSetting(const std::string& arg) const {
     std::vector<std::string> synonymes = getSynonymes(arg);
     std::ostringstream s;
-    s << "A value for the option '" + arg + "' was already set.\n Possible synonymes: ";
+    s << TLF("A value for the option '%' was already set.\n Possible synonymes: ", arg);
     auto synonym = synonymes.begin();
     while (synonym != synonymes.end()) {
         s << (*synonym);
@@ -490,7 +490,7 @@ OptionsCont::isWriteable(const std::string& name) {
 
 void
 OptionsCont::clear() {
-    // delete only adresse (because synonyms placed in values aim to the same Option)
+    // delete only address (because synonyms placed in values aim to the same Option)
     for (const auto& addresse : myAddresses) {
         delete addresse.second;
     }
@@ -627,7 +627,6 @@ OptionsCont::processMetaOptions(bool missingOptions) {
         return true;
     }
 
-    myWriteLicense = getBool("write-license");
     // check whether the help shall be printed
     if (getBool("help")) {
         std::cout << myFullName << std::endl;
@@ -891,8 +890,6 @@ OptionsCont::writeConfiguration(std::ostream& os, const bool filled,
     os << "<configuration xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"http://sumo.dlr.de/xsd/";
     if (myAppName == "sumo-gui") {
         os << "sumo";
-    } else if (myAppName == "netedit") {
-        os << "netconvert";
     } else {
         os << myAppName;
     }
@@ -927,8 +924,10 @@ OptionsCont::writeConfiguration(std::ostream& os, const bool filled,
                 if (o->isFileName() && relativeTo != "") {
                     StringVector fileList = StringTokenizer(o->getValueString(), ",").getVector();
                     for (auto& file : fileList) {
-                        file = FileHelpers::fixRelative(StringUtils::urlEncode(file, " ;%"), relativeTo,
-                                                        forceRelative || getBool("save-configuration.relative"));
+                        file = FileHelpers::fixRelative(
+                                   StringUtils::urlEncode(file, " ;%"),
+                                   StringUtils::urlEncode(relativeTo, " ;%"),
+                                   forceRelative || getBool("save-configuration.relative"));
                     }
                     os << StringUtils::escapeXML(joinToString(fileList, ','), inComment);
                 } else {
@@ -1021,7 +1020,7 @@ OptionsCont::writeXMLHeader(std::ostream& os, const bool includeConfig) const {
     time(&rawtime);
     strftime(buffer, 80, "<!-- generated on %F %T by ", localtime(&rawtime));
     os << buffer << myFullName << "\n";
-    if (myWriteLicense) {
+    if (getBool("write-license")) {
         os << "This data file and the accompanying materials\n"
            "are made available under the terms of the Eclipse Public License v2.0\n"
            "which accompanies this distribution, and is available at\n"

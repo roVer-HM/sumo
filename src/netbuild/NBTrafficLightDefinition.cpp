@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -45,6 +45,8 @@ const std::string NBTrafficLightDefinition::DefaultProgramID = "0";
 const std::string NBTrafficLightDefinition::DummyID = "dummy";
 const SUMOTime NBTrafficLightDefinition::UNSPECIFIED_DURATION(-1);
 const int NBTrafficLightDefinition::MIN_YELLOW_SECONDS(3);
+const std::string NBTrafficLightDefinition::OSM_DIRECTION("osm:direction");
+const std::string NBTrafficLightDefinition::OSM_SIGNAL_DIRECTION("railway:signal:direction");
 
 
 // ===========================================================================
@@ -452,7 +454,7 @@ NBTrafficLightDefinition::getIncomingEdges() const {
 void
 NBTrafficLightDefinition::collectAllLinks(NBConnectionVector& into) {
     int tlIndex = 0;
-    // build the list of links which are controled by the traffic light
+    // build the list of links which are controlled by the traffic light
     std::vector<int> indirectLeft;
     for (EdgeVector::iterator i = myIncomingEdges.begin(); i != myIncomingEdges.end(); i++) {
         NBEdge* incoming = *i;
@@ -478,6 +480,8 @@ NBTrafficLightDefinition::collectAllLinks(NBConnectionVector& into) {
                                && (incoming->getBidiEdge() == el.toEdge)
                               ) {
                         // turnarounds stay uncontrolled at rail signal
+                    } else if (incoming->getToNode()->getType() == SumoXMLNodeType::RAIL_SIGNAL && railSignalUncontrolled(incoming, el.toEdge)) {
+                        // rail signals may stay uncontrolled in a particular direction
                     } else {
                         into.push_back(NBConnection(incoming, el.fromLane, el.toEdge, el.toLane, tlIndex++));
                         if (el.indirectLeft) {
@@ -510,6 +514,23 @@ NBTrafficLightDefinition::collectAllLinks(NBConnectionVector& into) {
     }
 }
 
+bool
+NBTrafficLightDefinition::railSignalUncontrolled(const NBEdge* in, const NBEdge* out) {
+    const NBNode* n = in->getToNode();
+    if (n->hasParameter(OSM_SIGNAL_DIRECTION) && in->hasParameter(OSM_DIRECTION) && out->hasParameter(OSM_DIRECTION)) {
+        if (in->getParameter(OSM_DIRECTION) == out->getParameter(OSM_DIRECTION)) {
+            if (n->getParameter(OSM_SIGNAL_DIRECTION) != in->getParameter(OSM_DIRECTION)) {
+                return true;
+            }
+        } else {
+            WRITE_WARNINGF(TL("Could not interpret rail signal direction at junction '%' due to inconsistent directions of edge '%' (%) and edge '%' (%)"),
+                           n->getID(),
+                           in->getID(), in->getParameter(OSM_DIRECTION),
+                           out->getID(), out->getParameter(OSM_DIRECTION));
+        }
+    }
+    return false;
+}
 
 bool
 NBTrafficLightDefinition::needsCont(const NBEdge* fromE, const NBEdge* toE, const NBEdge* otherFromE, const NBEdge* otherToE) const {
@@ -536,8 +557,8 @@ NBTrafficLightDefinition::initNeedsContRelation() const {
 }
 
 
-bool
-NBTrafficLightDefinition::rightOnRedConflict(int index, int foeIndex) const {
+void
+NBTrafficLightDefinition::initRightOnRedConflicts() const {
     if (!myRightOnRedConflictsReady) {
         NBOwnTLDef dummy(DummyID, myControlledNodes, 0, TrafficLightType::STATIC);
         dummy.setParticipantsInformation();
@@ -553,6 +574,12 @@ NBTrafficLightDefinition::rightOnRedConflict(int index, int foeIndex) const {
         //    std::cout << "   " << it->first << ", " << it->second << "\n";
         //}
     }
+}
+
+
+bool
+NBTrafficLightDefinition::rightOnRedConflict(int index, int foeIndex) const {
+    initRightOnRedConflicts();
     return std::find(myRightOnRedConflicts.begin(), myRightOnRedConflicts.end(), std::make_pair(index, foeIndex)) != myRightOnRedConflicts.end();
 }
 

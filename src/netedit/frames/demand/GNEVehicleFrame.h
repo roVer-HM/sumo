@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -26,6 +26,11 @@
 #include <netedit/frames/GNETagSelector.h>
 #include <netedit/frames/GNEDemandSelector.h>
 #include <netedit/frames/GNEPathLegendModule.h>
+
+// ===========================================================================
+// class declaration
+// ===========================================================================
+
 class MFXDynamicLabel;
 
 // ===========================================================================
@@ -84,17 +89,23 @@ public:
     void hide();
 
     /**@brief add vehicle element
-     * @param objectsUnderCursor collection of objects under cursor after click over view
+     * @param viewObjects collection of objects under cursor after click over view
      * @param mouseButtonKeyPressed key pressed during click
      * @return true if element was successfully added
      */
-    bool addVehicle(const GNEViewNetHelper::ObjectsUnderCursor& objectsUnderCursor, const GNEViewNetHelper::MouseButtonKeyPressed& mouseButtonKeyPressed);
+    bool addVehicle(const GNEViewNetHelper::ViewObjectsSelector& viewObjects, const GNEViewNetHelper::MouseButtonKeyPressed& mouseButtonKeyPressed);
 
     /// @brief get vehicle tag selector (needed for transform vehicles)
     GNETagSelector* getVehicleTagSelector() const;
 
+    /// @brief getVehicle Type selectors
+    GNEDemandElementSelector* getTypeSelector() const;
+
     /// @brief get GNEPathCreator module
     GNEPathCreator* getPathCreator() const;
+
+    /// @brief get attributes creator
+    GNEAttributesCreator* getVehicleAttributes() const;
 
 protected:
     /// @brief Tag selected in GNETagSelector
@@ -120,7 +131,7 @@ private:
     GNETagSelector* myVehicleTagSelector;
 
     /// @brief Vehicle Type selectors
-    DemandElementSelector* myTypeSelector;
+    GNEDemandElementSelector* myTypeSelector;
 
     /// @brief internal vehicle attributes
     GNEAttributesCreator* myVehicleAttributes;

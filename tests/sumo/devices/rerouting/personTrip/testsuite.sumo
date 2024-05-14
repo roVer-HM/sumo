@@ -99,6 +99,9 @@ intermodal_car_walk_junctionTaz
 # train access
 access
 
+# train access with random position
+access_random
+
 # walk to train stop via access
 access_walk
 
@@ -177,4 +180,12 @@ atJunction_ride_walk
 
 # see #11820
 toJunction_twice
+
+# trip between identical stops
+sameStops
+carNoRoute
+
+# person must transfer between trains of the same line
+pt_looped_need_transfer
+car_between_stops
 errors

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -48,28 +48,71 @@ class GNELane : public GNENetworkElement, public GNECandidateElement, public FXD
     FXDECLARE(GNELane)
 
 public:
-    /// @brief class for LaneDrawingConstants
-    class LaneDrawingConstants {
+    /// @brief class for lane drawing constants
+    class DrawingConstants {
 
     public:
-        /// @brief parameter constructor (reference)
-        LaneDrawingConstants(const GUIVisualizationSettings&  s, const GNELane* lane);
+        /// @brief parameter constructor
+        DrawingConstants(const GNELane* lane);
 
-        /// @brief selection scale
-        const double selectionScale;
+        /// @brief update lane drawing constants
+        void update(const GUIVisualizationSettings& s);
+
+        /// @brief get exaggeration
+        double getExaggeration() const;
+
+        /// @brief get lane drawing width
+        double getDrawingWidth() const;
+
+        /// @brief get internal lane drawing width
+        double getInternalDrawingWidth() const;
+
+        /// @brief get lane offset
+        double getOffset() const;
+
+        /// @brief get detail
+        GUIVisualizationSettings::Detail getDetail() const;
+
+        /// @brief draw as railway
+        bool drawAsRailway() const;
+
+        /// @brief draw superposed
+        bool drawSuperposed() const;
+
+    protected:
+        /// @brief lane
+        const GNELane* myLane;
 
         /// @brief exaggeration
-        const double exaggeration;
+        double myExaggeration = 0;
 
-        // compute lane-marking intersection points)
-        const double halfWidth2;
+        /// @brief lane drawing width
+        double myDrawingWidth = 0;
 
-        /// @brief Draw as a normal lane, and reduce width to make sure that a selected edge can still be seen
-        const double halfWidth;
+        /// @brief internal lane drawing width (used for drawing selected lanes)
+        double myInternalDrawingWidth = 0;
+
+        /// @brief lane offset
+        double myOffset = 0;
+
+        /// @brief detail level
+        GUIVisualizationSettings::Detail myDetail = GUIVisualizationSettings::Detail::Level4;
+
+        /// @brief draw as railway
+        bool myDrawAsRailway = false;
+
+        /// @brief draw supersposed (reduced width so that the lane markings below are visible)
+        bool myDrawSuperposed = false;
 
     private:
-        /// @brief default constructor
-        LaneDrawingConstants();
+        /// @brief invalidate default constructor
+        DrawingConstants() = delete;
+
+        /// @brief Invalidated copy constructor.
+        DrawingConstants(const DrawingConstants&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        DrawingConstants& operator=(const DrawingConstants&) = delete;
     };
 
     /**@brief Constructor
@@ -90,6 +133,7 @@ public:
 
     /// @name Functions related with geometry of element
     /// @{
+
     /// @brief get lane geometry
     const GUIGeometry& getLaneGeometry() const;
 
@@ -102,11 +146,41 @@ public:
     /// @brief get lengths of the single shape parts
     const std::vector<double>& getShapeLengths() const;
 
+    /// @brief get lane drawing constants (previously calculated in drawGL())
+    const DrawingConstants* getDrawingConstants() const;
+
     /// @brief update pre-computed geometry information
     void updateGeometry();
 
     /// @brief Returns position of hierarchical element in view
     Position getPositionInView() const;
+
+    /// @}
+
+    /// @name Function related with contour drawing
+    /// @{
+
+    /// @brief check if draw from contour (green)
+    bool checkDrawFromContour() const;
+
+    /// @brief check if draw from contour (magenta)
+    bool checkDrawToContour() const;
+
+    /// @brief check if draw related contour (cyan)
+    bool checkDrawRelatedContour() const;
+
+    /// @brief check if draw over contour (orange)
+    bool checkDrawOverContour() const;
+
+    /// @brief check if draw delete contour (pink/white)
+    bool checkDrawDeleteContour() const;
+
+    /// @brief check if draw select contour (blue)
+    bool checkDrawSelectContour() const;
+
+    /// @brief check if draw move contour (red)
+    bool checkDrawMoveContour() const;
+
     /// @}
 
     /// @name Functions related with move elements
@@ -150,6 +224,9 @@ public:
 
     /// @brief return exaggeration associated with this GLObject
     double getExaggeration(const GUIVisualizationSettings& s) const;
+
+    /// @brief Returns the boundary to which the view shall be centered in order to show the object
+    Boundary getCenteringBoundary() const;
 
     /// @brief update centering boundary (implies change in RTREE)
     void updateCenteringBoundary(const bool updateGrid);
@@ -237,14 +314,11 @@ public:
     /// @brief return value for lane coloring according to the given scheme
     double getColorValue(const GUIVisualizationSettings& s, int activeScheme) const;
 
-    /// @brief whether to draw this lane as a railway
-    bool drawAsRailway(const GUIVisualizationSettings& s) const;
-
     /// @brief draw overlapped routes
     void drawOverlappedRoutes(const int numRoutes) const;
 
     /// @brief draw laneStopOffset
-    void drawLaneStopOffset(const GUIVisualizationSettings& s, const double offset) const;
+    void drawLaneStopOffset(const GUIVisualizationSettings& s) const;
 
 protected:
     /// @brief FOX needs this
@@ -259,6 +333,9 @@ private:
 
     /// @brief lane geometry
     GUIGeometry myLaneGeometry;
+
+    /// @brief LaneDrawingConstants
+    DrawingConstants* myDrawingConstants;
 
     /// @name computed only once (for performance) in updateGeometry()
     /// @{
@@ -291,32 +368,35 @@ private:
     /// @brief commit move shape
     void commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList);
 
-    /// @brief draw lane arrows
-    void drawLaneArrows(const GUIVisualizationSettings& s, const double exaggeration, const bool spreadSuperposed) const;
+    /// @brief draw lane
+    void drawLane(const GUIVisualizationSettings& s) const;
+
+    /// @brief draw selected lane
+    void drawSelectedLane(const GUIVisualizationSettings& s) const;
 
     /// @brief draw shape edited
     void drawShapeEdited(const GUIVisualizationSettings& s) const;
-
-    /// @brief check if mouse is over lane
-    void checkMouseOverLane(const double laneWidth) const;
-
-    /// @brief draw dotted contours
-    void drawDottedContours(const GUIVisualizationSettings& s, const bool drawRailway, const double laneWidth) const;
 
     /// @brief draw children
     void drawChildren(const GUIVisualizationSettings& s) const;
 
     /// @brief draw lane markings
-    void drawMarkings(const GUIVisualizationSettings& s, const double exaggeration, const bool drawRailway) const;
+    void drawMarkingsAndBoundings(const GUIVisualizationSettings& s) const;
 
     /// @brief draw link Number
     void drawLinkNo(const GUIVisualizationSettings& s) const;
 
-    /// @brief draw arrows
-    void drawArrows(const GUIVisualizationSettings& s, const bool spreadSuperposed) const;
+    /// @brief draw TLS link Number
+    void drawTLSLinkNo(const GUIVisualizationSettings& s) const;
+
+    /// @brief draw lane arrows
+    void drawArrows(const GUIVisualizationSettings& s) const;
 
     /// @brief draw lane to lane connections
     void drawLane2LaneConnections() const;
+
+    /// @brief calculate contour
+    void calculateLaneContour(const GUIVisualizationSettings& s) const;
 
     /// @brief sets the color according to the current scheme index and some lane function
     bool setFunctionalColor(int activeScheme, RGBColor& col) const;
@@ -328,16 +408,16 @@ private:
     bool drawAsWaterway(const GUIVisualizationSettings& s) const;
 
     /// @brief direction indicators for lanes
-    void drawDirectionIndicators(const GUIVisualizationSettings& s, double exaggeration, const bool drawAsRailway, const bool spreadSuperposed) const;
+    void drawDirectionIndicators(const GUIVisualizationSettings& s) const;
 
     /// @brief draw lane as railway
-    void drawLaneAsRailway(const GUIVisualizationSettings& s, const LaneDrawingConstants& laneDrawingConstants) const;
+    void drawLaneAsRailway() const;
 
     /// @brief draw lane textures
-    void drawTextures(const GUIVisualizationSettings& s, const LaneDrawingConstants& laneDrawingConstants) const;
+    void drawTextures(const GUIVisualizationSettings& s) const;
 
-    /// @brief draw start and end shape points
-    void drawStartEndShapePoints(const GUIVisualizationSettings& s) const;
+    /// @brief draw start and end geometry points
+    void drawStartEndGeometryPoints(const GUIVisualizationSettings& s) const;
 
     /// @brief set color according to edit mode and visualisation settings
     RGBColor setLaneColor(const GUIVisualizationSettings& s) const;

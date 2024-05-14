@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -57,6 +57,10 @@ main(int argc, char** argv) {
     oc.setApplicationDescription(TL("GUI version of the microscopic, multi-modal traffic simulation SUMO."));
     oc.setApplicationName("sumo-gui", "Eclipse SUMO GUI Version " VERSION_STRING);
     gSimulation = true;
+    // preload registry from sumo to decide on language
+    FXRegistry reg("SUMO GUI", "sumo-gui");
+    reg.read();
+    gLanguage = reg.readStringEntry("gui", "language", gLanguage.c_str());
     int ret = 0;
     try {
         // initialise subsystems

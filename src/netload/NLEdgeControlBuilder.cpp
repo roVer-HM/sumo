@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -83,8 +83,9 @@ NLEdgeControlBuilder::addLane(const std::string& id,
                               SVCPermissions permissions,
                               SVCPermissions changeLeft, SVCPermissions changeRight,
                               int index, bool isRampAccel,
-                              const std::string& type) {
-    MSLane* lane = new MSLane(id, maxSpeed, friction, length, myActiveEdge, myCurrentNumericalLaneID++, shape, width, permissions, changeLeft, changeRight, index, isRampAccel, type);
+                              const std::string& type,
+                              const PositionVector& outlineShape) {
+    MSLane* lane = new MSLane(id, maxSpeed, friction, length, myActiveEdge, myCurrentNumericalLaneID++, shape, width, permissions, changeLeft, changeRight, index, isRampAccel, type, outlineShape);
     myLaneStorage->push_back(lane);
     myCurrentLaneIndex = index;
     return lane;
@@ -208,7 +209,6 @@ NLEdgeControlBuilder::build(const MMVersion& networkVersion) {
         if (MSGlobals::gUseMesoSim && !edge->getLanes().empty()) {
             MSGlobals::gMesoNet->buildSegmentsFor(*edge, OptionsCont::getOptions());
         }
-        edge->buildLaneChanger();
     }
     // mark internal edges belonging to a roundabout (after all edges are build)
     if (MSGlobals::gUsingInternalLanes) {
@@ -238,6 +238,10 @@ NLEdgeControlBuilder::build(const MMVersion& networkVersion) {
         for (MSEdge* e : myEdges) {
             e->checkAndRegisterBiDirEdge();
         }
+    }
+    // take into account bidi lanes when deciding on whether an edge allows changing
+    for (MSEdge* const edge : myEdges) {
+        edge->buildLaneChanger();
     }
     return new MSEdgeControl(myEdges);
 }

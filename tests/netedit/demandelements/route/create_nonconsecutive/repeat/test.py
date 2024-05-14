@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -34,15 +34,13 @@ netedit.supermodeDemand()
 # go to route mode
 netedit.routeMode()
 
-# change to non consecutive mode
-netedit.changeRouteMode("non consecutive edges")
-
-# set invalid color
+# set invalid repeat
 netedit.changeDefaultValue(netedit.attrs.route.create.repeat, "dummyrepeat")
 
 # try to create route using three edges
-netedit.leftClick(referencePosition, 274, 392)
-netedit.leftClick(referencePosition, 280, 55)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edge0.x, netedit.positions.demandElements.edge0.y)
+netedit.leftClick(referencePosition, netedit.positions.demandElements.edgeRepeat0.x,
+                  netedit.positions.demandElements.edgeRepeat0.y)
 
 # press enter to try to create route
 netedit.typeEnter()
@@ -60,8 +58,7 @@ netedit.changeDefaultValue(netedit.attrs.route.create.repeat, "13")
 netedit.typeEnter()
 
 # Check undo redo
-netedit.undo(referencePosition, 2)
-netedit.redo(referencePosition, 2)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -26,7 +26,8 @@
 #include <vector>
 #include <map>
 #include <string>
-#include "MSNet.h"
+#include <set>
+#include <microsim/MSRouterDefs.h>
 #include "MSVehicleContainer.h"
 
 
@@ -35,6 +36,7 @@
 // ===========================================================================
 class MSVehicle;
 class MSVehicleControl;
+class SUMOVehicle;
 class SUMOVehicleParameter;
 
 
@@ -151,7 +153,7 @@ public:
     /// @brief return the number of pending emits for the given lane
     int getPendingEmits(const MSLane* lane);
 
-    void adaptIntermodalRouter(MSNet::MSIntermodalRouter& router) const;
+    void adaptIntermodalRouter(MSTransportableRouter& router) const;
 
     /// @brief compute (optional) random offset to the departure time
     SUMOTime computeRandomDepartOffset() const;
@@ -167,6 +169,20 @@ public:
     SumoRNG* getFlowRNG() {
         return &myFlowRNG;
     }
+
+    /// @brief checks whether the given flow still exists
+    bool hasFlow(const std::string& id) const {
+        return myFlowIDs.count(id) != 0;
+    }
+
+    /// @brief return parameters for the given flow
+    const SUMOVehicleParameter* getFlowPars(const std::string& id) const;
+
+    /// @brief return the last vehicle for the given flow
+    SUMOVehicle* getLastFlowVehicle(const std::string& id) const;
+
+    /// @brief updates the flow scale value to keep track of TraCI-induced change
+    void updateScale(const std::string vtypeid);
 
 private:
     /** @brief Tries to emit the vehicle
@@ -231,8 +247,8 @@ private:
     /// @brief Container for periodical vehicle parameters
     std::vector<Flow> myFlows;
 
-    /// @brief Cache for periodical vehicle ids for quicker checking
-    std::set<std::string> myFlowIDs;
+    /// @brief Cache for periodical vehicle ids and their most recent index for quicker checking
+    std::map<std::string, int> myFlowIDs;
 
     /// @brief The maximum waiting time; vehicles waiting longer are deleted (-1: no deletion)
     SUMOTime myMaxDepartDelay;

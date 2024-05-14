@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2002-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -49,8 +49,8 @@
 #include <microsim/devices/MSDevice_Vehroutes.h>
 #include <microsim/output/MSStopOut.h>
 #include <utils/common/RandHelper.h>
-#include "MSFrame.h"
 #include <utils/common/SystemFrame.h>
+#include "MSFrame.h"
 
 
 // ===========================================================================
@@ -489,7 +489,7 @@ MSFrame::fillOptions() {
     oc.addSynonyme("default.carfollowmodel", "carfollow.model");
 
     oc.doRegister("default.speeddev", new Option_Float(-1));
-    oc.addDescription("default.speeddev", "Processing", TL("Select default speed deviation. A negative value implies vClass specific defaults (0.1 for the default passenger class"));
+    oc.addDescription("default.speeddev", "Processing", TL("Select default speed deviation. A negative value implies vClass specific defaults (0.1 for the default passenger class)"));
 
     oc.doRegister("default.emergencydecel", new Option_String("default"));
     oc.addDescription("default.emergencydecel", "Processing", TL("Select default emergencyDecel value among ('decel', 'default', FLOAT) which sets the value either to the same as the deceleration value, a vClass-class specific default or the given FLOAT in m/s^2"));
@@ -550,11 +550,36 @@ MSFrame::fillOptions() {
     oc.doRegister("pedestrian.striping.walkingarea-detail", new Option_Integer(4));
     oc.addDescription("pedestrian.striping.walkingarea-detail", "Processing", TL("Generate INT intermediate points to smooth out lanes within the walkingarea"));
 
-    oc.doRegister("pedestrian.remote.address", new Option_String("localhost:9000"));
-    oc.addDescription("pedestrian.remote.address", "Processing", TL("The address (host:port) of the external simulation"));
+#ifdef JPS_VERSION
+    oc.doRegister("pedestrian.jupedsim.step-length", new Option_String("0.01", "TIME"));
+    oc.addDescription("pedestrian.jupedsim.step-length", "Processing", TL("The update interval of the JuPedSim simulation (in seconds)"));
+    oc.doRegister("pedestrian.jupedsim.exit-tolerance", new Option_Float(1.));
+    oc.addDescription("pedestrian.jupedsim.exit-tolerance", "Processing", TL("The distance to accept the JuPedSim arrival point (in meters)"));
+    oc.doRegister("pedestrian.jupedsim.model", new Option_String("CollisionFreeSpeed"));
+    oc.addDescription("pedestrian.jupedsim.model", "Processing", TL("The submodel to use in JuPedSim (currently only 'CollisionFreeSpeed')"));
+    oc.doRegister("pedestrian.jupedsim.strength-neighbor-repulsion", new Option_Float(8.));
+    oc.addDescription("pedestrian.jupedsim.strength-neighbor-repulsion", "Processing", TL("The neighbor repulsion strength of the JuPedSim model"));
+    oc.doRegister("pedestrian.jupedsim.range-neighbor-repulsion", new Option_Float(.1));
+    oc.addDescription("pedestrian.jupedsim.range-neighbor-repulsion", "Processing", TL("The neighbor repulsion range of the JuPedSim model (in meters)"));
+    oc.doRegister("pedestrian.jupedsim.strength-geometry-repulsion", new Option_Float(5.));
+    oc.addDescription("pedestrian.jupedsim.strength-geometry-repulsion", "Processing", TL("The geometry repulsion strength of the JuPedSim model"));
+    oc.doRegister("pedestrian.jupedsim.range-geometry-repulsion", new Option_Float(.02));
+    oc.addDescription("pedestrian.jupedsim.range-geometry-repulsion", "Processing", TL("The geometry repulsion range of the JuPedSim model (in meters)"));
+    oc.doRegister("pedestrian.jupedsim.wkt", new Option_FileName());
+    oc.addDescription("pedestrian.jupedsim.wkt", "Output", TL("The filename to output the JuPedSim network as WKT"));
+    oc.doRegister("pedestrian.jupedsim.wkt.geo", new Option_Bool(false));
+    oc.addDescription("pedestrian.jupedsim.wkt.geo", "Output", TL("Whether to output JuPedSim network as WKT using geo-coordinates (lon/lat)"));
+#endif
 
     oc.doRegister("ride.stop-tolerance", new Option_Float(10.));
     oc.addDescription("ride.stop-tolerance", "Processing", TL("Tolerance to apply when matching pedestrian and vehicle positions on boarding at individual stops"));
+
+    oc.doRegister("mapmatch.distance", new Option_Float(100));
+    oc.addDescription("mapmatch.distance", "Processing", TL("Maximum distance when mapping input coordinates (fromXY etc.) to the road network"));
+
+    oc.doRegister("mapmatch.junctions", new Option_Bool(false));
+    oc.addDescription("mapmatch.junctions", "Processing", TL("Match positions to junctions instead of edges"));
+
 
     // generic routing options
     oc.doRegister("routing-algorithm", new Option_String("dijkstra"));

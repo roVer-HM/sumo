@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -56,6 +56,7 @@
 #include <utils/gui/div/GUIGlobalSelection.h>
 #include <utils/gui/globjects/GLIncludes.h>
 #include <utils/gui/globjects/GUIGlObjectStorage.h>
+#include <utils/gui/globjects/GUIShapeContainer.h>
 #include <utils/gui/images/GUIIconSubSys.h>
 #include <utils/gui/settings/GUICompleteSchemeStorage.h>
 #include <utils/gui/windows/GUIAppEnum.h>
@@ -91,23 +92,16 @@ GUIViewTraffic::~GUIViewTraffic() {
 
 
 void
-GUIViewTraffic::recalculateBoundaries() {
-    //
-}
-
-
-void
 GUIViewTraffic::buildViewToolBars(GUIGlChildWindow* v) {
     // build coloring tools
     {
         const std::vector<std::string>& names = gSchemeStorage.getNames();
         for (std::vector<std::string>::const_iterator i = names.begin(); i != names.end(); ++i) {
-            v->getColoringSchemesCombo()->appendItem(i->c_str());
+            v->getColoringSchemesCombo()->appendIconItem(i->c_str());
             if ((*i) == myVisualizationSettings->name) {
                 v->getColoringSchemesCombo()->setCurrentItem(v->getColoringSchemesCombo()->getNumItems() - 1);
             }
         }
-        v->getColoringSchemesCombo()->setNumVisible(MAX2(5, (int)names.size() + 1));
     }
     // for junctions
     new MFXButtonTooltip(v->getLocatorPopup(), myApp->getStaticTooltipMenu(),
@@ -237,7 +231,7 @@ GUIViewTraffic::buildColorRainbow(const GUIVisualizationSettings& s, GUIColorSch
         int step = MAX2(1, 360 / (int)codes.size());
         int hue = 0;
         for (SVCPermissions p : codes) {
-            scheme.addColor(RGBColor::fromHSV(hue, 1, 1), p);
+            scheme.addColor(RGBColor::fromHSV(hue, 1, 1), (double)p);
             hue = (hue + step) % 360;
         }
         return;
@@ -354,9 +348,6 @@ GUIViewTraffic::getPOIParamKeys() const {
 
 int
 GUIViewTraffic::doPaintGL(int mode, const Boundary& bound) {
-    if (!myVisualizationSettings->drawForPositionSelection && myVisualizationSettings->forceDrawForPositionSelection) {
-        myVisualizationSettings->drawForPositionSelection = true;
-    }
     // init view settings
     glRenderMode(mode);
     glMatrixMode(GL_MODELVIEW);
@@ -369,12 +360,10 @@ GUIViewTraffic::doPaintGL(int mode, const Boundary& bound) {
 
     // draw decals (if not in grabbing mode)
     drawDecals();
-    myVisualizationSettings->scale = myVisualizationSettings->drawForPositionSelection ? myVisualizationSettings->scale : m2p(SUMO_const_laneWidth);
+    myVisualizationSettings->scale = m2p(SUMO_const_laneWidth);
     if (myVisualizationSettings->showGrid) {
         paintGLGrid();
     }
-
-
     glLineWidth(1);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     const float minB[2] = { (float)bound.xmin(), (float)bound.ymin() };
@@ -459,13 +448,19 @@ GUIViewTraffic::onGamingClick(Position pos) {
             }
             const int ci = minTll->getCurrentPhaseIndex();
             const int n = minTll->getPhaseNumber();
+            int greenCount = 0;
+            for (auto& phase : minTll->getPhases()) {
+                if (phase->isGreenPhase()) {
+                    greenCount++;
+                }
+            }
             int nextPhase = (ci + 1) % n;
             SUMOTime nextDuration = 0;
-            if (minTll->getCurrentPhaseDef().isGreenPhase()) {
+            if (minTll->getCurrentPhaseDef().isGreenPhase() || (greenCount == 1 && minTll->getCurrentPhaseDef().isAllRedPhase())) {
                 nextDuration = minTll->getPhase(nextPhase).duration;
             } else {
                 // we are in transition to a green phase
-                // -> skip forward to the transtion into the next green phase
+                // -> skip forward to the transition into the next green phase
                 // but ensure that the total transition time is maintained
                 // taking into account how much time was already spent
                 SUMOTime spentTransition = minTll->getSpentDuration();
@@ -765,5 +760,28 @@ GUIViewTraffic::retrieveBreakpoints() const {
     return myApp->retrieveBreakpoints();
 }
 
+
+void
+GUIViewTraffic::drawPedestrianNetwork(const GUIVisualizationSettings& s) const {
+    GUIShapeContainer& shapeContainer = dynamic_cast<GUIShapeContainer&>(GUINet::getInstance()->getShapeContainer());
+    if (s.showPedestrianNetwork) {
+        shapeContainer.removeInactivePolygonTypes(std::set<std::string> {"jupedsim.pedestrian_network"});
+    } else {
+        shapeContainer.addInactivePolygonTypes(std::set<std::string> {"jupedsim.pedestrian_network"});
+    }
+    update();
+}
+
+
+void
+GUIViewTraffic::changePedestrianNetworkColor(const GUIVisualizationSettings& s) const {
+    GUIShapeContainer& shapeContainer = dynamic_cast<GUIShapeContainer&>(GUINet::getInstance()->getShapeContainer());
+    for (auto polygonwithID : shapeContainer.getPolygons()) {
+        if (polygonwithID.second->getShapeType() == "jupedsim.pedestrian_network") {
+            polygonwithID.second->setShapeColor(s.pedestrianNetworkColor);
+        }
+    }
+    update();
+}
 
 /****************************************************************************/

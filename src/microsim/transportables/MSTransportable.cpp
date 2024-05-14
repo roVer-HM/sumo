@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -26,6 +26,7 @@
 #include <utils/vehicle/SUMOVehicleParameter.h>
 #include <utils/router/PedestrianRouter.h>
 #include <utils/router/IntermodalRouter.h>
+#include <libsumo/TraCIConstants.h>
 #include <microsim/MSEdge.h>
 #include <microsim/MSLane.h>
 #include <microsim/MSNet.h>
@@ -55,6 +56,9 @@ MSTransportable::MSTransportable(const SUMOVehicleParameter* pars, MSVehicleType
     myStep = myPlan->begin();
     // init devices
     MSDevice::buildTransportableDevices(*this, myDevices);
+    for (MSStage* const stage : * myPlan) {
+        stage->init(this);
+    }
 }
 
 
@@ -88,9 +92,14 @@ MSTransportable::getRNG() const {
     return getEdge()->getLanes()[0]->getRNG();
 }
 
+int
+MSTransportable::getRNGIndex() const {
+    return getEdge()->getLanes()[0]->getRNGIndex();
+}
+
 bool
 MSTransportable::proceed(MSNet* net, SUMOTime time, const bool vehicleArrived) {
-    MSStage* prior = *myStep;
+    MSStage* const prior = *myStep;
     const std::string& error = prior->setArrived(net, this, time, vehicleArrived);
     // must be done before increasing myStep to avoid invalid state for rendering
     prior->getEdge()->removeTransportable(this);
@@ -98,6 +107,13 @@ MSTransportable::proceed(MSNet* net, SUMOTime time, const bool vehicleArrived) {
     if (error != "") {
         throw ProcessError(error);
     }
+    /* We need to check whether an access stage is needed (or maybe even two).
+       The general scheme is: If the prior stage ended at a stop and the next stage
+       starts at an edge which is not the one the stop is at, but the stop has an access to it
+       we need an access stage. The same is true if prior ends at an edge, the next stage
+       is allowed to start at any stop the edge has access to.
+       If we start at a stop or end at a stop no access is needed.
+    */
     bool accessToStop = false;
     if (prior->getStageType() == MSStageType::WALKING || prior->getStageType() == MSStageType::DRIVING) {
         accessToStop = checkAccess(prior);
@@ -191,27 +207,53 @@ MSTransportable::getSpeed() const {
 }
 
 
-int
-MSTransportable::getNumRemainingStages() const {
-    return (int)(myPlan->end() - myStep);
-}
-
-
-int
-MSTransportable::getNumStages() const {
-    return (int)myPlan->size();
-}
-
-
 void
 MSTransportable::tripInfoOutput(OutputDevice& os) const {
     os.openTag(isPerson() ? "personinfo" : "containerinfo");
-    os.writeAttr("id", getID());
-    os.writeAttr("depart", time2string(getDesiredDepart()));
-    os.writeAttr("type", getVehicleType().getID());
+    os.writeAttr(SUMO_ATTR_ID, getID());
+    os.writeAttr(SUMO_ATTR_DEPART, time2string(getDesiredDepart()));
+    os.writeAttr(SUMO_ATTR_TYPE, getVehicleType().getID());
     if (isPerson()) {
-        os.writeAttr("speedFactor", getChosenSpeedFactor());
+        os.writeAttr(SUMO_ATTR_SPEEDFACTOR, getChosenSpeedFactor());
     }
+    SUMOTime duration = 0;
+    SUMOTime waitingTime = 0;
+    SUMOTime timeLoss = 0;
+    SUMOTime travelTime = 0;
+    bool durationOK = true;
+    bool waitingTimeOK = true;
+    bool timeLossOK = true;
+    bool travelTimeOK = true;
+    for (MSStage* const i : *myPlan) {
+        SUMOTime t = i->getDuration();
+        if (t != SUMOTime_MAX) {
+            duration += t;
+        } else {
+            durationOK = false;
+        }
+        t = i->getWaitingTime();
+        if (t != SUMOTime_MAX) {
+            waitingTime += t;
+        } else {
+            waitingTimeOK = false;
+        }
+        t = i->getTimeLoss(this);
+        if (t != SUMOTime_MAX) {
+            timeLoss += t;
+        } else {
+            timeLossOK = false;
+        }
+        t = i->getTravelTime();
+        if (t != SUMOTime_MAX) {
+            travelTime += t;
+        } else {
+            travelTimeOK = false;
+        }
+    }
+    os.writeAttr(SUMO_ATTR_DURATION, durationOK ? time2string(duration) : "-1");
+    os.writeAttr(SUMO_ATTR_WAITINGTIME, waitingTimeOK ? time2string(waitingTime) : "-1");
+    os.writeAttr(SUMO_ATTR_TIMELOSS, timeLossOK ? time2string(timeLoss) : "-1");
+    os.writeAttr(SUMO_ATTR_TRAVELTIME, travelTimeOK ? time2string(travelTime) : "-1");
     for (MSStage* const i : *myPlan) {
         i->tripInfoOutput(os, this);
     }
@@ -314,6 +356,16 @@ MSTransportable::setSpeed(double speed) {
 }
 
 
+bool
+MSTransportable::replaceRoute(ConstMSRoutePtr newRoute, const std::string& /* info */, bool /* onInit */, int /* offset */, bool /* addRouteStops */, bool /* removeStops */, std::string* /* msgReturn */) {
+    if (isPerson()) {
+        static_cast<MSPerson*>(this)->reroute(newRoute->getEdges(), getPositionOnLane(), 0, 1);
+        return true;
+    }
+    return false;
+}
+
+
 void
 MSTransportable::replaceVehicleType(MSVehicleType* type) {
     const SUMOVehicleClass oldVClass = myVType->getVehicleClass();
@@ -364,6 +416,18 @@ MSTransportable::getStageSummary(int stageIndex) const {
     assert(stageIndex < (int)myPlan->size());
     assert(stageIndex >= 0);
     return (*myPlan)[stageIndex]->getStageSummary(myAmPerson);
+}
+
+
+const std::set<SUMOTrafficObject::NumericalID>
+MSTransportable::getUpcomingEdgeIDs() const {
+    std::set<SUMOTrafficObject::NumericalID> result;
+    for (auto step = myStep; step != myPlan->end(); ++step) {
+        for (const MSEdge* const e : (*step)->getEdges()) {
+            result.insert(e->getNumericalID());
+        }
+    }
+    return result;
 }
 
 
@@ -462,7 +526,7 @@ MSTransportable::rerouteParkingArea(MSStoppingPlace* orig, MSStoppingPlace* repl
 }
 
 
-MSTransportableDevice*
+MSDevice*
 MSTransportable::getDevice(const std::type_info& type) const {
     for (MSTransportableDevice* const dev : myDevices) {
         if (typeid(*dev) == type) {
@@ -493,21 +557,30 @@ MSTransportable::getSlope() const {
     return edge->getLanes()[0]->getShape().slopeDegreeAtOffset(gp);
 }
 
+
 SUMOTime
-MSTransportable::getWaitingTime() const {
+MSTransportable::getWaitingTime(const bool /* accumulated */) const {
     return (*myStep)->getWaitingTime(MSNet::getInstance()->getCurrentTimeStep());
 }
+
 
 double
 MSTransportable::getMaxSpeed() const {
     return MIN2(getVehicleType().getMaxSpeed(), getVehicleType().getDesiredMaxSpeed() * getChosenSpeedFactor());
 }
 
+
 SUMOVehicleClass
 MSTransportable::getVClass() const {
     return getVehicleType().getVehicleClass();
 }
 
+
+int
+MSTransportable::getRoutingMode() const {
+    /// @todo: allow configuring routing mode
+    return libsumo::ROUTING_MODE_DEFAULT;
+}
 
 void
 MSTransportable::saveState(OutputDevice& out) {

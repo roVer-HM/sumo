@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -195,7 +195,7 @@ public:
      * @param[in,out] from The coordinate to be transformed
      * @param[in] includeInBoundary Whether to patch the convex boundary of the GeoConvHelper default instance
      * @param[in] from_srs The spatial reference system of the input coordinate
-     * @notde These methods are located outside of GeoConvHelper to avoid linker-dependencies on GDAL for libgeom
+     * @note These methods are located outside of GeoConvHelper to avoid linker-dependencies on GDAL for libgeom
      */
     static bool transformCoordinate(Position& from, bool includeInBoundary = true, GeoConvHelper* from_srs = nullptr);
     static bool transformCoordinates(PositionVector& from, bool includeInBoundary = true, GeoConvHelper* from_srs = nullptr);

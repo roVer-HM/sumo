@@ -33,7 +33,7 @@ described at [sumo#mesoscopic](../sumo.md#mesoscopic)
 
 # Model Description
 
-The simulation model is based on the work of [Eissfeldt, Vehicle-based modelling of traffic](http://kups.ub.uni-koeln.de/1274/). The original
+The simulation model is based on the work of [Eissfeldt, Vehicle-based modelling of traffic](https://kups.ub.uni-koeln.de/1274/). The original
 model was focused on motorway traffic. The current implementation
 contains significant extensions to support the simulation of
 heterogeneous urban traffic as well.
@@ -126,7 +126,7 @@ On multi-lane edges, [overtaking can be enabled](#lateral_model) to reduce this 
 
 ### Jam-Resolution
 
-The option **--meso-recheck** {{DT_TIME}} can be used to delay traffic flow into a fully occupied segment. Whenever a vehicle cannot move into the next segment because it is full, the given value acts as a time delay before checking again whether the segment has capacity to receive another vehicle. By default this delay is set to 0. 
+The option **--meso-recheck** {{DT_TIME}} can be used to delay traffic flow into a fully occupied segment. Whenever a vehicle cannot move into the next segment because it is full, the given value acts as a time delay before checking again whether the segment has capacity to receive another vehicle. By default this delay is set to 0.
 
 ## Lateral Model
 
@@ -188,7 +188,7 @@ junction control is active for that link)
 
 ### Impatience
 
-Vehicles that reach an [impatience](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#impatience) value of 1 (maximum) can pass an intersection regardless of foe traffic with higher priority. The time to reach maximum impatience can be configured with option **--time-to-impatience** {{DT_TIME}}. 
+Vehicles that reach an [impatience](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#impatience) value of 1 (maximum) can pass an intersection regardless of foe traffic with higher priority. The time to reach maximum impatience can be configured with option **--time-to-impatience** {{DT_TIME}}.
 
 ## Configuration by edge type
 
@@ -206,7 +206,7 @@ All attributes are optional and default to the value of the option with the corr
 
 ## Multimodal simulation
 
-By default, meso is meant to be used for road vehicles (i.e. cars and trucks). To make use of bicycles and edges that do not permit paasenger cars, option **--meso-lane-queue** must be set.
+By default, meso is meant to be used for road vehicles (i.e. cars and trucks). To make use of bicycles and edges that do not permit passenger cars, option **--meso-lane-queue** must be set.
 This will turn every lane into a distinct queue instead of treating parallel lanes as a single queue.
 
 ## Outputs

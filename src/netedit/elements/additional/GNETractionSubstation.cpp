@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2021-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2021-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,6 +18,7 @@
 //
 /****************************************************************************/
 #include <netedit/GNENet.h>
+#include <netedit/GNEViewNet.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 
@@ -90,6 +91,21 @@ GNETractionSubstation::fixAdditionalProblem() {
 }
 
 
+bool
+GNETractionSubstation::checkDrawMoveContour() const {
+    // get edit modes
+    const auto& editModes = myNet->getViewNet()->getEditModes();
+    // check if we're in move mode
+    if (!myNet->getViewNet()->isMovingElement() && editModes.isCurrentSupermodeNetwork() &&
+            (editModes.networkEditMode == NetworkEditMode::NETWORK_MOVE) && myNet->getViewNet()->checkOverLockedElement(this, mySelected)) {
+        // only move the first element
+        return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
+    } else {
+        return false;
+    }
+}
+
+
 GNEMoveOperation*
 GNETractionSubstation::getMoveOperation() {
     // return move operation for additional placed in view
@@ -121,7 +137,7 @@ GNETractionSubstation::updateCenteringBoundary(const bool updateGrid) {
     // add shape boundary
     myAdditionalBoundary = myAdditionalGeometry.getShape().getBoxBoundary();
     // grow
-    myAdditionalBoundary.grow(10);
+    myAdditionalBoundary.grow(5);
     // add additional into RTREE again
     if (updateGrid) {
         myNet->addGLObjectIntoGrid(this);
@@ -206,7 +222,7 @@ GNETractionSubstation::setAttribute(SumoXMLAttr key, const std::string& value, G
         case SUMO_ATTR_CURRENTLIMIT:
         case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
-            undoList->changeAttribute(new GNEChange_Attribute(this, key, value));
+            GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
@@ -262,7 +278,7 @@ GNETractionSubstation::setAttribute(SumoXMLAttr key, const std::string& value) {
             throw InvalidArgument(getTagStr() + " cannot be edited");
         case SUMO_ATTR_ID:
             // update microsimID
-            setMicrosimID(value);
+            setAdditionalID(value);
             break;
         case SUMO_ATTR_POSITION:
             myPosition = parse<Position>(value);
@@ -304,8 +320,8 @@ GNETractionSubstation::setMoveShape(const GNEMoveResult& moveResult) {
 
 void
 GNETractionSubstation::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
-    undoList->begin(GUIIcon::TRACTION_SUBSTATION, "position of " + getTagStr());
-    undoList->changeAttribute(new GNEChange_Attribute(this, SUMO_ATTR_POSITION, toString(moveResult.shapeToUpdate.front())));
+    undoList->begin(this, "position of " + getTagStr());
+    GNEChange_Attribute::changeAttribute(this, SUMO_ATTR_POSITION, toString(moveResult.shapeToUpdate.front()), undoList);
     undoList->end();
 }
 

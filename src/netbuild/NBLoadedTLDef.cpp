@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -415,13 +415,13 @@ NBLoadedTLDef::mustBrake(const NBConnection& possProhibited,
     int pos = 0;
     for (SignalGroupCont::const_iterator i = mySignalGroups.begin(); i != mySignalGroups.end(); i++) {
         SignalGroup* group = (*i).second;
-        // get otherlinks that have green
+        // get other links that have green
         int linkNo = group->getLinkNo();
         for (int j = 0; j < linkNo; j++) {
             // get the current connection (possible foe)
             const NBConnection& other = group->getConnection(j);
             NBConnection possProhibitor(other);
-            // if the connction ist still valid ...
+            // if the connection ist still valid ...
             if (possProhibitor.check(*myEdgeCont)) {
                 // ... do nothing if it starts at the same edge
                 if (possProhibited.getFrom() == possProhibitor.getFrom()) {
@@ -471,7 +471,7 @@ NBLoadedTLDef::collectNodes() {
 void
 NBLoadedTLDef::collectLinks() {
     myControlledLinks.clear();
-    // build the list of links which are controled by the traffic light
+    // build the list of links which are controlled by the traffic light
     for (EdgeVector::iterator i = myIncomingEdges.begin(); i != myIncomingEdges.end(); i++) {
         NBEdge* incoming = *i;
         int noLanes = incoming->getNumLanes();
@@ -609,7 +609,7 @@ NBLoadedTLDef::replaceRemoved(NBEdge* removed, int removedLane,
 void
 NBLoadedTLDef::initNeedsContRelation() const {
     if (!myNeedsContRelationReady) {
-        throw ProcessError(TL("myNeedsContRelation was not propperly initialized\n"));
+        throw ProcessError(TL("myNeedsContRelation was not properly initialized\n"));
     }
 }
 

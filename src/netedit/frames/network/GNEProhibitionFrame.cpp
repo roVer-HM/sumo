@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -117,7 +117,7 @@ GNEProhibitionFrame::Legend::Legend(GNEProhibitionFrame* prohibitionFrameParent)
     legendLabel = new MFXLabelTooltip(getCollapsableFrame(),
                                       prohibitionFrameParent->getViewNet()->getViewParent()->getGNEAppWindows()->getStaticTooltipMenu(),
                                       TL("Unregulated conflict"), nullptr, GUIDesignLabelFrameInformation);
-    legendLabel->setTipText(TL("Connection has a unregulated conflict with the selected connection"));
+    legendLabel->setTipText(TL("Connection has an unregulated conflict with the selected connection"));
     legendLabel->setBackColor(MFXUtils::getFXColor(myUnregulatedConflictColor));
     // label for mutual conflict
     legendLabel = new MFXLabelTooltip(getCollapsableFrame(),
@@ -235,7 +235,7 @@ GNEProhibitionFrame::GNEProhibitionFrame(GNEViewParent* viewParent, GNEViewNet* 
     // create legend
     myLegend = new Legend(this);
 
-    // create Selection modul
+    // create Selection module
     mySelectionModul = new Selection(this);
 }
 
@@ -244,9 +244,9 @@ GNEProhibitionFrame::~GNEProhibitionFrame() {}
 
 
 void
-GNEProhibitionFrame::handleProhibitionClick(const GNEViewNetHelper::ObjectsUnderCursor& objectsUnderCursor) {
+GNEProhibitionFrame::handleProhibitionClick(const GNEViewNetHelper::ViewObjectsSelector& viewObjects) {
     // build prohibition
-    buildProhibition(objectsUnderCursor.getConnectionFront(), myViewNet->getMouseButtonKeyPressed().shiftKeyPressed(), myViewNet->getMouseButtonKeyPressed().controlKeyPressed(), true);
+    buildProhibition(viewObjects.getConnectionFront(), myViewNet->getMouseButtonKeyPressed().shiftKeyPressed(), myViewNet->getMouseButtonKeyPressed().controlKeyPressed(), true);
 }
 
 

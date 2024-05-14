@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -509,7 +509,8 @@ public:
         const bool transferWalkTaxi = (category == SUMO_TAG_BUS_STOP && (myCarWalkTransfer & TAXI_PICKUP_PT) != 0);
         const double pos = (startPos + endPos) / 2.;
 #ifdef IntermodalRouter_DEBUG_ACCESS
-        std::cout << "addAccess stopId=" << stopId << " stopEdge=" << stopEdge->getID() << " pos=" << pos << " length=" << length << " cat=" << category << "\n";
+        std::cout << "addAccess stopId=" << stopId << " stopEdge=" << stopEdge->getID() << " pos=" << pos << " length=" << length << " tag=" << toString(category)
+                  << " access=" << isAccess << " tWait=" << taxiWait << "\n";
 #endif
         if (myStopConnections.count(stopId) == 0) {
             myStopConnections[stopId] = new StopEdge<E, L, N, V>(stopId, myNumericalID++, stopEdge, startPos, endPos);
@@ -600,6 +601,36 @@ public:
                 ++splitIt;
             }
             splitList.insert(splitIt, stopConn);
+
+            if (!isAccess && (transferWalkTaxi || transferCarWalk || transferTaxiWalk)) {
+                _IntermodalEdge* carEdge =  myCarLookup[stopEdge];
+                double relPos;
+                bool needSplit;
+                const int splitIndex = findSplitIndex(carEdge, pos, relPos, needSplit);
+                if (needSplit) {
+                    _IntermodalEdge* carSplit = new CarEdge<E, L, N, V>(myNumericalID++, stopEdge, pos);
+                    splitEdge(carEdge, splitIndex, carSplit, relPos, length, needSplit, stopConn, true, false, false);
+
+                    if (transferCarWalk || transferTaxiWalk) {
+                        // adding access from car to walk
+                        _IntermodalEdge* const beforeSplit = myAccessSplits[myCarLookup[stopEdge]][splitIndex];
+                        if (transferCarWalk) {
+                            _AccessEdge* access = new _AccessEdge(myNumericalID++, beforeSplit, stopConn, length);
+                            addEdge(access);
+                            beforeSplit->addSuccessor(access);
+                            access->addSuccessor(stopConn);
+                        } else if (transferTaxiWalk) {
+                            addRestrictedCarExit(beforeSplit, stopConn, SVC_TAXI);
+                        }
+                    }
+                    if (transferWalkTaxi) {
+                        _AccessEdge* access = new _AccessEdge(myNumericalID++, stopConn, carSplit, 0, SVC_TAXI, SVC_IGNORING, taxiWait);
+                        addEdge(access);
+                        stopConn->addSuccessor(access);
+                        access->addSuccessor(carSplit);
+                    }
+                }
+            }
         }
     }
 
@@ -658,6 +689,9 @@ public:
                 lastStop = currStop;
                 lastPos = stopPos;
             }
+            if (pars.line != "taxi" && validStops.front().busstop == validStops.back().busstop) {
+                myLoopedLines.insert(pars.line);
+            }
         } else {
             if (validStops.size() != lineEdges.size() + 1) {
                 WRITE_WARNINGF("Number of stops for public transport line '%' does not match earlier definitions, ignoring schedule.", pars.line);
@@ -713,6 +747,10 @@ public:
         addEdge(access);
         from->addSuccessor(access);
         access->addSuccessor(to);
+    }
+
+    bool isLooped(const std::string lineID) const {
+        return myLoopedLines.count(lineID) != 0;
     }
 
 private:
@@ -779,11 +817,11 @@ private:
             beforeSplit->transferSuccessors(afterSplit);
             beforeSplit->addSuccessor(afterSplit);
             if (forward) {
-                afterSplit->setLength(beforeSplit->getLength() - relPos);
+                afterSplit->setLength(MAX2(0.0, beforeSplit->getLength() - relPos));
                 beforeSplit->setLength(relPos);
             } else {
                 afterSplit->setLength(relPos);
-                beforeSplit->setLength(beforeSplit->getLength() - relPos);
+                beforeSplit->setLength(MAX2(0.0, beforeSplit->getLength() - relPos));
                 // rename backward edges for easier referencing
                 const std::string newID = beforeSplit->getID();
                 beforeSplit->setID(afterSplit->getID());
@@ -838,6 +876,9 @@ private:
 
     /// @brief retrieve the splitted edges for the given "original"
     std::map<_IntermodalEdge*, std::vector<_IntermodalEdge*> > myAccessSplits;
+
+    /// @brief looped lines need extra checking when building itineraries
+    std::set<std::string > myLoopedLines;
 
     int myNumericalID;
     const int myCarWalkTransfer;

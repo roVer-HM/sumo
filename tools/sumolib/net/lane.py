@@ -1,5 +1,5 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2011-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -57,8 +57,26 @@ SUMO_VEHICLE_CLASSES = set([
     "pedestrian",
     "evehicle",
     "ship",
+    "container",
+    "cable_car",
+    "subway",
+    "aircraft",
+    "wheelchair",
+    "scooter",
+    "drone",
     "custom1",
     "custom2"])
+
+SUMO_VEHICLE_CLASSES_DEPRECATED = set([
+    "public_emergency",
+    "public_authority",
+    "public_army",
+    "public_transport",
+    "transport",
+    "lightrail",
+    "cityrail",
+    "rail_slow",
+    "rail_fast"])
 
 
 def is_vehicle_class(s):
@@ -105,6 +123,7 @@ class Lane:
         self._params = {}
         self._allowed = get_allowed(allow, disallow)
         self._neigh = None
+        self._selected = False
         edge.addLane(self)
 
     def getSpeed(self):

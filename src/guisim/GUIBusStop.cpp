@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -46,6 +46,7 @@
 #include <foreign/fontstash/fontstash.h>
 #include <utils/geom/GeomHelper.h>
 #include <guisim/GUIBusStop.h>
+#include <utils/common/MsgHandler.h>
 #include <utils/gui/globjects/GLIncludes.h>
 
 
@@ -101,10 +102,10 @@ GUIBusStop::initShape(PositionVector& fgShape,
 
 
 bool
-GUIBusStop::addAccess(MSLane* lane, const double pos, double length) {
-    const bool added = MSStoppingPlace::addAccess(lane, pos, length);
+GUIBusStop::addAccess(MSLane* const lane, const double startPos, const double endPos, double length, const bool doors) {
+    const bool added = MSStoppingPlace::addAccess(lane, startPos, endPos, length, doors);
     if (added) {
-        myAccessCoords.push_back(lane->geometryPositionAtOffset(pos));
+        myAccessCoords.push_back(lane->geometryPositionAtOffset((startPos + endPos) / 2.));
     }
     return added;
 }
@@ -130,16 +131,16 @@ GUIBusStop::getParameterWindow(GUIMainWindow& app,
     GUIParameterTableWindow* ret =
         new GUIParameterTableWindow(app, *this);
     // add items
-    ret->mkItem("name", false, getMyName());
-    ret->mkItem("begin position [m]", false, myBegPos);
-    ret->mkItem("end position [m]", false, myEndPos);
-    ret->mkItem("lines", false, joinToString(myLines, " "));
-    ret->mkItem("parking length [m]", false, (myEndPos - myBegPos) / myParkingFactor);
+    ret->mkItem(TL("name"), false, getMyName());
+    ret->mkItem(TL("begin position [m]"), false, myBegPos);
+    ret->mkItem(TL("end position [m]"), false, myEndPos);
+    ret->mkItem(TL("lines"), false, joinToString(myLines, " "));
+    ret->mkItem(TL("parking length [m]"), false, (myEndPos - myBegPos) / myParkingFactor);
     const std::string transportable = (myElement == SUMO_TAG_CONTAINER_STOP ? "container" : "person");
     ret->mkItem((transportable + " capacity [#]").c_str(), false, myTransportableCapacity);
     ret->mkItem((transportable + " number [#]").c_str(), true, new FunctionBinding<GUIBusStop, int>(this, &MSStoppingPlace::getTransportableNumber));
-    ret->mkItem("stopped vehicles[#]", true, new FunctionBinding<GUIBusStop, int>(this, &MSStoppingPlace::getStoppedVehicleNumber));
-    ret->mkItem("last free pos[m]", true, new FunctionBinding<GUIBusStop, double>(this, &MSStoppingPlace::getLastFreePos));
+    ret->mkItem(TL("stopped vehicles [#]"), true, new FunctionBinding<GUIBusStop, int>(this, &MSStoppingPlace::getStoppedVehicleNumber));
+    ret->mkItem(TL("last free pos [m]"), true, new FunctionBinding<GUIBusStop, double>(this, &GUIBusStop::getCroppedLastFreePos));
     // rides-being-waited-on statistic
     std::map<std::string, int> stats;
     for (const MSTransportable* t : getTransportables()) {
@@ -153,7 +154,7 @@ GUIBusStop::getParameterWindow(GUIMainWindow& app,
         }
     }
     if (stats.size() > 0) {
-        ret->mkItem("waiting for:", false, "[#]");
+        ret->mkItem(TL("waiting for:"), false, "[#]");
         for (auto item : stats) {
             ret->mkItem(item.first.c_str(), false, toString(item.second));
         }
@@ -199,7 +200,7 @@ GUIBusStop::drawGL(const GUIVisualizationSettings& s) const {
     const double signRot = s2 ? myFGSignRot2 : myFGSignRot;
     const Position& signPos = s2 ? myFGSignPos2 : myFGSignPos;
     // draw details unless zoomed out to far
-    if (s.drawDetail(s.detailSettings.stoppingPlaceDetails, exaggeration)) {
+    if (s.drawDetail(10, exaggeration)) {
         GLHelper::pushMatrix();
         // draw the lines
         const double rotSign = MSGlobals::gLefthand ? 1 : -1;
@@ -235,7 +236,7 @@ GUIBusStop::drawGL(const GUIVisualizationSettings& s) const {
         glTranslated(0, 0, .1);
         GLHelper::setColor(colorSign);
         GLHelper::drawFilledCircle((double) 0.9, noPoints);
-        if (s.drawDetail(s.detailSettings.stoppingPlaceText, exaggeration)) {
+        if (s.drawDetail(10, exaggeration)) {
             if (myElement == SUMO_TAG_CONTAINER_STOP) {
                 GLHelper::drawText("C", Position(), .1, 1.6, color, signRot);
             } else if (myElement == SUMO_TAG_TRAIN_STOP) {
@@ -275,6 +276,11 @@ GUIBusStop::getCenteringBoundary() const {
 const std::string
 GUIBusStop::getOptionalName() const {
     return myName;
+}
+
+double
+GUIBusStop::getCroppedLastFreePos() const {
+    return MAX2(0., getLastFreePos());
 }
 
 /****************************************************************************/

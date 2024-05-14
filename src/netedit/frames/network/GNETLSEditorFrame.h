@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -68,9 +68,6 @@ public:
         /// @brief update junction description
         void updateJunctionDescription();
 
-        /// @brief disable joining junction mode
-        void disableJoiningJunctionMode();
-
         /// @brief is joining junctions
         bool isJoiningJunctions() const;
 
@@ -109,6 +106,12 @@ public:
         /// @brief Called when update join TLS
         long onUpdDisjoinTLS(FXObject*, FXSelector, void*);
 
+        /// @brief accept join
+        long onCmdAcceptJoin(FXObject*, FXSelector, void*);
+
+        /// @brief cancel join
+        long onCmdCancelJoin(FXObject*, FXSelector, void*);
+
         /// @}
 
     protected:
@@ -137,11 +140,17 @@ public:
         /// @brief button for disjoin TLS
         MFXButtonTooltip* myDisjoinTLSButton = nullptr;
 
+        /// @brief frame for accept/cancel buttons
+        FXHorizontalFrame* myJoinControlButtons = nullptr;
+
         /// @brief the junction of the tls is being modified
         GNEJunction* myCurrentJunction = nullptr;
 
         /// @brief selected junction (used for join)
         std::vector<std::string> mySelectedJunctionIDs;
+
+        /// @brief original selected junction (used for join)
+        std::vector<std::string> myOriginalSelectedJunctionIDs;
     };
 
     // ===========================================================================
@@ -247,7 +256,7 @@ public:
         std::vector<NBTrafficLightDefinition*> myTLSDefinitions;
 
         /// @brief the comboBox for selecting the tl-definition to edit
-        FXComboBox* myProgramComboBox;
+        MFXComboBoxIcon* myProgramComboBox;
 
         /// @brief whether the current tls was modified
         bool myHaveModifications = false;
@@ -473,7 +482,7 @@ public:
         bool setState(const int col, const int row, const std::string& value);
 
         /// @brief set next
-        bool setNext(const int col, const int row, const std::string& value);
+        bool setNext(const int row, const std::string& value);
 
         /// @brief set name
         bool setName(const int row, const std::string& value);
@@ -574,9 +583,9 @@ public:
 
     /**@brief edits the traffic light for the given clicked junction
      * @param[in] clickedPosition clicked position
-     * @param[in] objectsUnderCursor The clicked objects under cursor
+     * @param[in] viewObjects The clicked objects under cursor
      */
-    void editTLS(const Position& clickedPosition, const GNEViewNetHelper::ObjectsUnderCursor& objectsUnderCursor);
+    void editTLS(const Position& clickedPosition, const GNEViewNetHelper::ViewObjectsSelector& viewObjects);
 
     /// @brief check if modifications in TLS was saved
     bool isTLSSaved();

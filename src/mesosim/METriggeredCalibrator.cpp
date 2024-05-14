@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -101,13 +101,8 @@ METriggeredCalibrator::execute(SUMOTime currentTime) {
         myEdgeMeanData.reset(); // discard collected values
         if (!mySpeedIsDefault) {
             // if not, reset adaptation values
-            mySegment->getEdge().setMaxSpeed(myDefaultSpeed);
-            MESegment* first = MSGlobals::gMesoNet->getSegmentForEdge(mySegment->getEdge());
             const double jamThresh = OptionsCont::getOptions().getFloat("meso-jam-threshold");
-            while (first != nullptr) {
-                first->setSpeed(myDefaultSpeed, currentTime, jamThresh);
-                first = first->getNextSegment();
-            }
+            myEdge->setMaxSpeed(myDefaultSpeed, jamThresh);
             mySpeedIsDefault = true;
         }
         if (myCurrentStateInterval == myIntervals.end()) {
@@ -120,12 +115,7 @@ METriggeredCalibrator::execute(SUMOTime currentTime) {
     const bool calibrateSpeed = myCurrentStateInterval->v >= 0;
     // we are active
     if (!myDidSpeedAdaption && calibrateSpeed && myCurrentStateInterval->v != mySegment->getEdge().getSpeedLimit()) {
-        mySegment->getEdge().setMaxSpeed(myCurrentStateInterval->v);
-        MESegment* first = MSGlobals::gMesoNet->getSegmentForEdge(mySegment->getEdge());
-        while (first != nullptr) {
-            first->setSpeed(myCurrentStateInterval->v, currentTime, -1);
-            first = first->getNextSegment();
-        }
+        myEdge->setMaxSpeed(myCurrentStateInterval->v);
         mySpeedIsDefault = false;
         myDidSpeedAdaption = true;
     }
@@ -192,6 +182,10 @@ METriggeredCalibrator::execute(SUMOTime currentTime) {
                 MEVehicle* vehicle;
                 try {
                     vehicle = static_cast<MEVehicle*>(vc.buildVehicle(newPars, route, vtype, false, false));
+                    std::string msg;
+                    if (!vehicle->hasValidRouteStart(msg)) {
+                        throw ProcessError(msg);
+                    }
                 } catch (const ProcessError& e) {
                     if (!MSGlobals::gCheckRoutes) {
                         WRITE_WARNING(e.what());

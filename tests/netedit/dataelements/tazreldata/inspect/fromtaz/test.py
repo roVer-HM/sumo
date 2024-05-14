@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2023 German Aerospace Center (DLR) and others.
+# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+# Copyright (C) 2009-2024 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -41,15 +41,15 @@ netedit.createDataSet()
 netedit.createDataInterval()
 
 # create TAZRelData
-netedit.leftClick(referencePosition, 180, 180)
-netedit.leftClick(referencePosition, 460, 180)
+netedit.leftClick(referencePosition, 300, 180)
+netedit.leftClick(referencePosition, 700, 180)
 netedit.typeEnter()
 
 # go to inspect mode
 netedit.inspectMode()
 
 # inspect TAZRelData
-netedit.leftClick(referencePosition, 300, 250)
+netedit.leftClick(referencePosition, 425, 254)
 
 # Change parameter 3 with a non valid value (empty speed)
 netedit.modifyAttribute(netedit.attrs.TAZRelData.inspect.fromTAZ, "", False)
@@ -64,8 +64,7 @@ netedit.modifyAttribute(netedit.attrs.TAZRelData.inspect.fromTAZ, "taz_1", False
 netedit.modifyAttribute(netedit.attrs.TAZRelData.inspect.fromTAZ, "taz_2", False)
 
 # Check undo
-netedit.undo(referencePosition, 1)
-netedit.redo(referencePosition, 1)
+netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
 netedit.saveNeteditConfig(referencePosition)

@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -31,7 +31,7 @@ class GNEBusStop;
 // ===========================================================================
 /**
  * @class GNEAccess
- * class for busStop acces
+ * class for busStop access
  */
 class GNEAccess : public GNEAdditional, public Parameterised {
 
@@ -49,8 +49,8 @@ public:
      * @param[in] friendlyPos enable or disable friendly positions
      * @param[in] parameters generic parameters
      */
-    GNEAccess(GNEAdditional* busStop, GNELane* lane, GNENet* net, double pos, const double length,
-              bool friendlyPos, const Parameterised::Map& parameters);
+    GNEAccess(GNEAdditional* busStop, GNELane* lane, GNENet* net, const double pos, const std::string& specialPos,
+              const bool friendlyPos, const double length, const Parameterised::Map& parameters);
 
     /// @brief Destructor
     ~GNEAccess();
@@ -74,7 +74,7 @@ public:
     */
     void writeAdditional(OutputDevice& device) const;
 
-    /// @brief check if current additional is valid to be writed into XML (must be reimplemented in all detector children)
+    /// @brief check if current additional is valid to be written into XML (must be reimplemented in all detector children)
     bool isAdditionalValid() const;
 
     /// @brief return a string with the current additional problem (must be reimplemented in all detector children)
@@ -82,6 +82,14 @@ public:
 
     /// @brief fix additional problem (must be reimplemented in all detector children)
     void fixAdditionalProblem();
+
+    /// @}
+
+    /// @name Function related with contour drawing
+    /// @{
+
+    /// @brief check if draw move contour (red)
+    bool checkDrawMoveContour() const;
 
     /// @}
 
@@ -141,7 +149,7 @@ public:
      */
     void setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList);
 
-    /* @brief method for checking if the key and their correspond attribute are valids
+    /* @brief method for checking if the key and their correspond attribute are valid
      * @param[in] key The attribute key
      * @param[in] value The value associated to key key
      * @return true if the value is valid, false in other case
@@ -159,6 +167,9 @@ public:
 protected:
     /// @brief position over lane
     double myPositionOverLane;
+
+    /// @brief position over lane
+    std::string mySpecialPosition;
 
     /// @brief Access length
     double myLength;

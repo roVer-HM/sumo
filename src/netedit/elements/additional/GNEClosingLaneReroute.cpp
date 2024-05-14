@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -57,7 +57,7 @@ void
 GNEClosingLaneReroute::writeAdditional(OutputDevice& device) const {
     device.openTag(SUMO_TAG_CLOSING_LANE_REROUTE);
     device.writeAttr(SUMO_ATTR_ID, getAttribute(SUMO_ATTR_LANE));
-    if (getAttribute(SUMO_ATTR_ALLOW) != "authority") {
+    if (getAttribute(SUMO_ATTR_ALLOW) != getVehicleClassNames(SVCAll)) {
         if (!getAttribute(SUMO_ATTR_ALLOW).empty()) {
             device.writeAttr(SUMO_ATTR_ALLOW, getAttribute(SUMO_ATTR_ALLOW));
         } else {
@@ -83,6 +83,12 @@ GNEClosingLaneReroute::getAdditionalProblem() const {
 void
 GNEClosingLaneReroute::fixAdditionalProblem() {
     // nothing to fix
+}
+
+
+bool
+GNEClosingLaneReroute::checkDrawMoveContour() const {
+    return false;
 }
 
 
@@ -113,9 +119,7 @@ GNEClosingLaneReroute::getPositionInView() const {
 
 void
 GNEClosingLaneReroute::updateCenteringBoundary(const bool /*updateGrid*/) {
-    myAdditionalBoundary.reset();
-    myAdditionalBoundary.add(getPositionInView());
-    myAdditionalBoundary.grow(5);
+    // nothing to update
 }
 
 
@@ -134,10 +138,10 @@ GNEClosingLaneReroute::getParentName() const {
 void
 GNEClosingLaneReroute::drawGL(const GUIVisualizationSettings& s) const {
     // draw closing lane reroute as listed attribute
-    drawListedAddtional(s, getParentAdditionals().front()->getParentAdditionals().front()->getPositionInView(),
-                        1, getParentAdditionals().front()->getDrawPositionIndex(),
-                        RGBColor::RED, RGBColor::YELLOW, GUITexture::REROUTER_CLOSINGLANEREROUTE,
-                        getAttribute(SUMO_ATTR_LANE));
+    drawListedAdditional(s, getParentAdditionals().front()->getParentAdditionals().front()->getPositionInView(),
+                         1, getParentAdditionals().front()->getDrawPositionIndex(),
+                         RGBColor::RED, RGBColor::YELLOW, GUITexture::REROUTER_CLOSINGLANEREROUTE,
+                         getAttribute(SUMO_ATTR_LANE));
 }
 
 
@@ -185,7 +189,7 @@ GNEClosingLaneReroute::setAttribute(SumoXMLAttr key, const std::string& value, G
         case SUMO_ATTR_DISALLOW:
         case GNE_ATTR_SELECTED:
         case GNE_ATTR_SHIFTLANEINDEX:
-            undoList->changeAttribute(new GNEChange_Attribute(this, key, value));
+            GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
@@ -231,7 +235,7 @@ GNEClosingLaneReroute::setAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_ID:
             // update microsimID
-            setMicrosimID(value);
+            setAdditionalID(value);
             break;
         case SUMO_ATTR_LANE:
             myClosedLane = myNet->getAttributeCarriers()->retrieveLane(value);

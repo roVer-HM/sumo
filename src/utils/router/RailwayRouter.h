@@ -1,6 +1,6 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2023 German Aerospace Center (DLR) and others.
+// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
+// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -122,6 +122,33 @@ public:
     }
 
 
+    double recomputeCosts(const std::vector<const E*>& edges, const V* const v, SUMOTime msTime, double* lengthp = nullptr) const {
+        double effort = SUMOAbstractRouter<E, V>::recomputeCosts(edges, v, msTime, lengthp);
+        const E* prev = nullptr;
+        // reversal corrections
+        double timeCorrection = STEPS2TIME(msTime);
+        for (const E* const e : edges) {
+            if (prev != nullptr && e->getBidiEdge() == prev) {
+                if (e->getLength() > v->getLength()) {
+                    // vehicle doesn't need to drive to the end of the edge
+                    // @note exact timing correction for time-dependent effort is not done
+                    const double savingsFactor = 1 - v->getLength() / e->getLength();
+                    double effortCorrection = 0;
+                    double lengthCorrection = 0.;
+                    effortCorrection += this->getEffort(prev, v, timeCorrection);
+                    this->updateViaCost(prev, e, v, timeCorrection, effortCorrection, lengthCorrection);
+                    effort -= savingsFactor * effortCorrection;
+                    if (lengthp != nullptr) {
+                        *lengthp -= savingsFactor * lengthCorrection;
+                    }
+                }
+            }
+            prev = e;
+        }
+        return effort;
+    }
+
+
 private:
     RailwayRouter(RailwayRouter* other) :
         SUMOAbstractRouter<E, V>(other),
@@ -166,8 +193,8 @@ private:
                 }
             }
             backLengths.push_back(prev->getLength() + (backLengths.empty()
-                        ? MIN2(vehicle->getLength(), from->getLength())
-                        : backLengths.back()));
+                                  ? MIN2(vehicle->getLength(), from->getLength())
+                                  : backLengths.back()));
             start = prev;
         }
 
@@ -262,9 +289,11 @@ private:
                 const double lengthOnLastEdge = MAX2(0.0, veh->getLength() - seenDist);
                 return result + myReversalPenalty + lengthOnLastEdge * myReversalPenaltyFactor;
             } else {
-                // XXX if the edge from which this turnaround starts is longer
-                // than the vehicle, we could return a negative value here
-                // because the turnaround may happen once the vehicle has driven onto the edge
+                // if the edge from which this turnaround starts is longer
+                // than the vehicle then we are overstimating the cost
+                // (because the turnaround may happen before driving to the end)
+                // However, unless the vehicle starts on this edge, we should be taking a
+                // virtual turnaround at the end of the previous edge. Otherwise, the exaggerated cost doesn't
                 return myReversalPenalty;
             }
         }
@@ -329,5 +358,3 @@ template<class E, class V>
 double RailwayRouter<E, V>::myReversalPenalty(60);
 template<class E, class V>
 double RailwayRouter<E, V>::myReversalPenaltyFactor(0.2); // 1/v
-
-
