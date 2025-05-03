@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -41,6 +41,7 @@
 
 //#define DEBUG_DETECTORS
 //#define DEBUG_PHASE_SELECTION
+//#define DEBUG_PHASE_SELECTION_CUSTOM
 #define DEBUG_COND (getID()=="C")
 
 // ===========================================================================
@@ -60,11 +61,14 @@ const std::vector<std::string> MSActuatedTrafficLightLogic::OPERATOR_PRECEDENCE(
 #define DEFAULT_DETECTOR_GAP "2.0"
 #define DEFAULT_INACTIVE_THRESHOLD "180"
 #define DEFAULT_CURRENT_PRIORITY 10
+#define DEFAULT_CROSSING_PRIORITY 100
 
 #define DEFAULT_LENGTH_WITH_GAP 7.5
 #define DEFAULT_BIKE_LENGTH_WITH_GAP (getDefaultVehicleLength(SVC_BICYCLE) + 0.5)
+#define DEFAULT_STATIC_MINDUR TIME2STEPS(0) // loop position for non-stretchable phases
 
 #define NO_DETECTOR "NO_DETECTOR"
+#define DEFAULT_CONDITION "DEFAULT"
 
 // ===========================================================================
 // method definitions
@@ -93,6 +97,7 @@ MSActuatedTrafficLightLogic::MSActuatedTrafficLightLogic(MSTLLogicControl& tlcon
     myDetectorGap = StringUtils::toDouble(getParameter("detector-gap", DEFAULT_DETECTOR_GAP));
     myInactiveThreshold = string2time(getParameter("inactive-threshold", DEFAULT_INACTIVE_THRESHOLD));
     myShowDetectors = StringUtils::toBool(getParameter("show-detectors", toString(OptionsCont::getOptions().getBool("tls.actuated.show-detectors"))));
+    myBuildAllDetectors = StringUtils::toBool(getParameter("build-all-detectors", "false"));
     myFile = FileHelpers::checkForRelativity(getParameter("file", "NUL"), basePath);
     myFreq = TIME2STEPS(StringUtils::toDouble(getParameter("freq", "300")));
     myVehicleTypes = getParameter("vTypes", "");
@@ -136,6 +141,9 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
     MSTrafficLightLogic::init(nb);
     initAttributeOverride();
     initSwitchingRules();
+    for (int i = 0; i < (int)myPhases.size(); i++) {
+        initTargets(i);
+    }
     if (myLanes.size() == 0) {
         // must be an older network
         WRITE_WARNINGF(TL("Traffic light '%' does not control any links"), getID());
@@ -161,6 +169,7 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
     // detector distance to avoid it
 
 
+    std::set<int> multiNextTargets = getMultiNextTargets();
     // change values for setting the loops and lanestate-detectors, here
     //SUMOTime inductLoopInterval = 1; //
     // build the induct loops
@@ -182,8 +191,8 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
                 // only build one detector per lane
                 continue;
             }
-            const SUMOTime minDur = getMinimumMinDuration(lane);
-            if (minDur == std::numeric_limits<SUMOTime>::max() && customID == "") {
+            const SUMOTime minDur = getMinimumMinDuration(lane, multiNextTargets);
+            if (minDur == std::numeric_limits<SUMOTime>::max() && customID == "" && !myBuildAllDetectors) {
                 // only build detector if this lane is relevant for an actuated phase
                 continue;
             }
@@ -301,11 +310,10 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
         }
     }
 
-
     for (const MSPhaseDefinition* phase : myPhases) {
         const int phaseIndex = (int)myInductLoopsForPhase.size();
         std::set<MSInductLoop*> loops;
-        if (phase->isActuated()) {
+        if (phase->isActuated() || multiNextTargets.count(phaseIndex) != 0) {
             const std::string& state = phase->getState();
             // collect indices of all green links for the phase
             std::set<int> greenLinks;
@@ -317,7 +325,19 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
             for (int i = 0; i < numLinks; i++)  {
                 if (state[i] == LINKSTATE_TL_GREEN_MAJOR) {
                     greenLinks.insert(i);
-                    actuatedLinks.insert(i);
+                    if (phase->isActuated()) {
+                        actuatedLinks.insert(i);
+                    }
+
+                    for (MSLink* link : getLinksAt(i)) {
+                        if (link->getLane()->isCrossing()) {
+                            while (myCrossingsForPhase.size() < myPhases.size()) {
+                                myCrossingsForPhase.push_back(std::vector<const MSLink*>());
+                            }
+                            myCrossingsForPhase[phaseIndex].push_back(link);
+                        }
+                    }
+
                 } else if (state[i] == LINKSTATE_TL_GREEN_MINOR) {
                     if (((neverMajor[i] || turnaround[i])  // check1a, 1d
                             && hasMajor(state, getLanesAt(i))) // check1b
@@ -325,7 +345,9 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
                             || weakConflict(i, state)) { // check1e, check1f
                         greenLinks.insert(i);
                         if (!turnaround[i]) {
-                            actuatedLinks.insert(i);
+                            if (phase->isActuated()) {
+                                actuatedLinks.insert(i);
+                            }
                         }
                     } else {
                         greenLinksPermissive.insert(i);
@@ -407,7 +429,7 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
                     }
                 }
             }
-            if (loops.size() == 0) {
+            if (loops.size() == 0 && phase->isActuated()) {
                 WRITE_WARNINGF(TL("At actuated tlLogic '%', actuated phase % has no controlling detector."), getID(), toString(phaseIndex));
             }
         }
@@ -477,7 +499,14 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
             myLinkMinGreenTimes[link] = string2time(kv.second);
         }
     }
-    if (myLinkMaxGreenTimes.size() > 0 || myLinkMinGreenTimes.size() > 0 || mySwitchingRules.size() > 0) {
+    bool haveSwitchingRules = myConditions.size() > 0 || myAssignments.size() > 0 || myFunctions.size() > 0;
+    for (auto sr : mySwitchingRules) {
+        if (sr.enabled) {
+            haveSwitchingRules = true;
+            break;
+        }
+    }
+    if (myLinkMaxGreenTimes.size() > 0 || myLinkMinGreenTimes.size() > 0 || haveSwitchingRules) {
         myLinkGreenTimes = std::vector<SUMOTime>(myNumLinks, 0);
         myLinkRedTimes = std::vector<SUMOTime>(myNumLinks, 0);
     }
@@ -503,7 +532,7 @@ MSActuatedTrafficLightLogic::weakConflict(int tlIndex, const std::string& state)
                         const MSJunctionLogic* logic = junction->getLogic();
                         //std::cout << " greenLink=" << i << " isFoe=" << logic->getFoesFor(linkIndex).test(foeIndex) << "\n";
                         if (logic->getFoesFor(linkIndex).test(foeIndex)
-                                && (foe->getPermissions() & ~SVC_WEAK) != 0 // check1e
+                                && (foe->getPermissions() & ~SVC_VULNERABLE) != 0 // check1e
                                 && &foe->getLaneBefore()->getEdge() != &link->getLaneBefore()->getEdge()) { // check1f
                             //std::cout << " strongConflict " << tlIndex << " in phase " << state << " with link " << foe->getTLIndex() << "\n";
                             return false;
@@ -606,18 +635,93 @@ MSActuatedTrafficLightLogic::initSwitchingRules() {
                 const MSPhaseDefinition* nextPhase = myPhases[next];
                 if (nextPhase->earlyTarget != "" || nextPhase->finalTarget != "") {
                     sr.enabled = true;
-                    // simplifies later code
-                    phase->nextPhases = nextPhases;
                 }
             }
         }
+        // simplifies later code
+        phase->nextPhases = nextPhases;
         mySwitchingRules.push_back(sr);
     }
 }
 
 
+void
+MSActuatedTrafficLightLogic::initTargets(int step) {
+    // next -> target -> transitionTime starting from step
+    std::map<int, std::map<int, SUMOTime> > reached;
+    const std::vector<int>& next = myPhases[step]->nextPhases;
+    for (int n : next) {
+        findTargets(step, n, 0, reached[n]);
+    }
+    for (int target = 0; target < (int)myPhases.size(); target++) {
+        int bestNext = next[0];
+        SUMOTime bestTime = SUMOTime_MAX;
+        for (auto item : reached) {
+            auto it = item.second.find(target);
+            if (it != item.second.end()) {
+                SUMOTime transitionTime = it->second;
+                if (transitionTime < bestTime) {
+                    bestTime = transitionTime;
+                    bestNext = item.first;
+                }
+            }
+        }
+        if (bestTime != SUMOTime_MAX) {
+            myTargets[step][bestNext].push_back(target);
+            //std::cout << " myTargets step=" << step << " bestNext=" << bestNext << " target=" << target << "\n";
+        }
+    }
+}
+
+
+void
+MSActuatedTrafficLightLogic::findTargets(int origStep, int n, SUMOTime priorTransition, std::map<int, SUMOTime>& found) {
+    std::pair<int, SUMOTime> tDur = getTarget(n);
+    int target = tDur.first;
+    SUMOTime transitionTime = tDur.second + priorTransition;
+    //std::cout << "   findTargets origStep=" << origStep << " n=" << n << " ptt=" << priorTransition << " target=" << target << " tt=" << transitionTime << "\n";
+    if (target == origStep) {
+        // full circle
+        //std::cout << "     foundCircle\n";
+        return;
+    }
+    auto it = found.find(target);
+    if (it != found.end()) {
+        if (it->second <= transitionTime) {
+            //std::cout << "     oldShorterTime=" << it->second << "\n";
+            // found the same target again
+            return;
+        } else {
+            //std::cout << "     newShorterTime=" << it->second << "\n";
+        }
+    } else {
+        //std::cout << "     newTarget\n";
+    }
+    found[target] = transitionTime;
+    //std::cout << "    targetNext=" << toString(myPhases[target]->nextPhases) << "\n";
+    for (int n2 : myPhases[target]->nextPhases) {
+        findTargets(origStep, n2, transitionTime, found);
+    }
+}
+
+
+std::set<int>
+MSActuatedTrafficLightLogic::getMultiNextTargets() const {
+    std::set<int> result;
+    if (myHasMultiTarget) {
+        // find all phase that are the target green phase of a 'next' attribute
+        for (const MSPhaseDefinition* p : myPhases) {
+            for (int next : p->nextPhases) {
+                result.insert(getTarget(next).first);
+            }
+        }
+    }
+    return result;
+}
+
+
 SUMOTime
-MSActuatedTrafficLightLogic::getMinimumMinDuration(MSLane* lane) const {
+MSActuatedTrafficLightLogic::getMinimumMinDuration(MSLane* lane, const std::set<int>& multiNextTargets) const {
     SUMOTime result = std::numeric_limits<SUMOTime>::max();
     for (int pI = 0; pI < (int)myPhases.size(); pI++) {
         const MSPhaseDefinition* phase = myPhases[pI];
@@ -628,6 +732,8 @@ MSActuatedTrafficLightLogic::getMinimumMinDuration(MSLane* lane) const {
                     if (lane == cand) {
                         if (phase->isActuated()) {
                             result = MIN2(result, getMinDur(pI));
+                        } else if (multiNextTargets.count(pI) != 0) {
+                            result = MIN2(result, DEFAULT_STATIC_MINDUR);
                         }
                     }
                 }
@@ -767,7 +873,7 @@ MSActuatedTrafficLightLogic::trySwitch() {
 
     myTraCISwitch = false;
     if (myLinkMinGreenTimes.size() > 0) {
-        SUMOTime linkMinDur = getLinkMinDuration(getTarget(nextStep));
+        SUMOTime linkMinDur = getLinkMinDuration(getTarget(nextStep).first);
         if (linkMinDur > 0) {
             // for multiTarget, the current phase must be extended but if another
             // targer is chosen, earlier switching than linkMinDur is possible
@@ -903,48 +1009,33 @@ MSActuatedTrafficLightLogic::decideNextPhase() {
         }
     }
     for (int step : cands) {
-        int target = getTarget(step);
-        int prio = getPhasePriority(target);
-#ifdef DEBUG_PHASE_SELECTION
-        if (DEBUG_COND) {
-            std::cout << SIMTIME << " p=" << myStep << " step=" << step << " target=" << target << " loops=" << myInductLoopsForPhase[target].size() << " prio=" << prio << "\n";
-        }
-#endif
-        if (prio > maxPrio && canExtendLinkGreen(target)) {
-            maxPrio = prio;
-            result = step;
-        }
-    }
-    // prevent starvation in phases that are not direct targets
-    for (const InductLoopInfo& loopInfo : myInductLoops) {
-        int prio = getDetectorPriority(loopInfo);
-        if (prio > maxPrio) {
-            result = cands.front();
-            if (result == myStep) {
-                WRITE_WARNING("At actuated tlLogic '" + getID()
-                              + "', starvation at e1Detector '" + loopInfo.loop->getID()
-                              + "' which cannot be reached from the default phase " + toString(myStep) + ".");
-            }
-            // use default phase to reach other phases
+        int prio = 0;
+        for (int target : myTargets[myStep][step]) {
+            prio += getPhasePriority(target);
 #ifdef DEBUG_PHASE_SELECTION
             if (DEBUG_COND) {
-                std::cout << SIMTIME << " p=" << myStep << " loop=" << loopInfo.loop->getID() << " prio=" << prio << " next=" << result << "\n";
+                std::cout << SIMTIME << " p=" << myStep << " step=" << step << " target=" << target << " loops=" << myInductLoopsForPhase[target].size() << " prio=" << prio << "\n";
             }
 #endif
-            break;
+        }
+        if (prio > maxPrio && canExtendLinkGreen(getTarget(step).first)) {
+            maxPrio = prio;
+            result = step;
         }
     }
     return result;
 }
 
 
-int
-MSActuatedTrafficLightLogic::getTarget(int step) {
+std::pair<int, SUMOTime>
+MSActuatedTrafficLightLogic::getTarget(int step) const {
     int origStep = step;
+    SUMOTime dur = 0;
     // if step is a transition, find the upcoming green phase
     while (!myPhases[step]->isGreenPhase()) {
+        dur += myPhases[step]->duration;
         if (myPhases[step]->nextPhases.size() > 0 && myPhases[step]->nextPhases.front() >= 0) {
-            if (myPhases[step]->nextPhases.size() > 1) {
+            if (myPhases[step]->nextPhases.size() > 1 && !mySwitchingRules[step].enabled) {
                 WRITE_WARNINGF(TL("At actuated tlLogic '%', transition phase % should not have multiple next phases"), getID(), toString(step));
             }
             step = myPhases[step]->nextPhases.front();
@@ -953,10 +1044,10 @@ MSActuatedTrafficLightLogic::getTarget(int step) {
         }
         if (step == origStep) {
             WRITE_WARNING("At actuated tlLogic '" + getID() + "', infinite transition loop from phase " + toString(origStep));
-            return 0;
+            return std::make_pair(0, 0);
         }
     }
-    return step;
+    return std::make_pair(step, dur);
 }
 
 int
@@ -1007,6 +1098,14 @@ MSActuatedTrafficLightLogic::getPhasePriority(int step) const {
     int result = 0;
     for (const InductLoopInfo* loopInfo : myInductLoopsForPhase[step]) {
         result += getDetectorPriority(*loopInfo);
+    }
+    if (myCrossingsForPhase.size() > 0) {
+        for (const MSLink* crossingEntry : myCrossingsForPhase[step]) {
+            auto* aPersons = crossingEntry->getApproachingPersons();
+            if (aPersons != nullptr && aPersons->size() > 0) {
+                result += DEFAULT_CROSSING_PRIORITY;
+            }
+        }
     }
     return result;
 }
@@ -1075,9 +1174,21 @@ MSActuatedTrafficLightLogic::decideNextPhaseCustom(bool mustSwitch) {
     for (int next : getCurrentPhaseDef().nextPhases) {
         const MSPhaseDefinition* phase = myPhases[next];
         const std::string& condition = mustSwitch ? phase->finalTarget : phase->earlyTarget;
-        //std::cout << SIMTIME << " mustSwitch=" << mustSwitch << " condition=" << condition << "\n";
-        if (condition != "" && evalExpression(condition)) {
-            return next;
+#ifdef DEBUG_PHASE_SELECTION_CUSTOM
+        if (DEBUG_COND) {
+            std::cout << SIMTIME << " mustSwitch=" << mustSwitch << " cur=" << myStep << " next=" << next << " condition=" << condition
+                << " eval=" << (condition == "" ? NAN : evalExpression(condition)) << "\n";
+        }
+#endif
+        if (condition != "") {
+            // backward compatibility if a user redefined DEFAULT_CONDITION
+            if (condition == DEFAULT_CONDITION && myConditions.count(DEFAULT_CONDITION) == 0) {
+                if (gapControl() == std::numeric_limits<double>::max()) {
+                    return next;
+                }
+            } else if (evalExpression(condition)) {
+                return next;
+            }
         }
     }
     return mustSwitch ? getCurrentPhaseDef().nextPhases.back() : myStep;
@@ -1347,6 +1458,18 @@ MSActuatedTrafficLightLogic::getDetectorStates() const {
     return result;
 }
 
+double
+MSActuatedTrafficLightLogic::getDetectorState(const std::string laneID) const {
+    double result = 0.0;
+    for (auto li : myInductLoops) {
+        if (li.lane->getID() == laneID) {
+            result = li.loop->getOccupancy() > 0 ? 1 : 0;
+            break;
+        }
+    }
+    return result;
+}
+
 std::map<std::string, double>
 MSActuatedTrafficLightLogic::getConditions() const {
     std::map<std::string, double> result;
@@ -1381,6 +1504,7 @@ void
 MSActuatedTrafficLightLogic::setParameter(const std::string& key, const std::string& value) {
     // some pre-defined parameters can be updated at runtime
     if (key == "detector-gap" || key == "passing-time" || key == "file" || key == "freq" || key == "vTypes"
+            || key == "build-all-detectors"
             || StringUtils::startsWith(key, "linkMaxDur")
             || StringUtils::startsWith(key, "linkMinDur")) {
         throw InvalidArgument(key + " cannot be changed dynamically for actuated traffic light '" + getID() + "'");

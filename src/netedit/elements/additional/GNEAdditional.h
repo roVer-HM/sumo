@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,13 +20,14 @@
 #pragma once
 #include <config.h>
 
-#include <netedit/elements/GNEHierarchicalElement.h>
-#include <utils/gui/div/GUIGeometry.h>
-#include <netedit/GNEPathManager.h>
 #include <netedit/GNEMoveElement.h>
+#include <netedit/GNEPathManager.h>
 #include <netedit/elements/GNEContour.h>
+#include <netedit/elements/GNEHierarchicalElement.h>
+#include <netedit/elements/GNEPathElement.h>
 #include <utils/common/Parameterised.h>
 #include <utils/geom/PositionVector.h>
+#include <utils/gui/div/GUIGeometry.h>
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <utils/gui/images/GUITextureSubSys.h>
 
@@ -46,7 +47,7 @@ class GUIGLObjectPopupMenu;
  * @class GNEAdditional
  * @brief An Element which don't belong to GNENet but has influence in the simulation
  */
-class GNEAdditional : public GNEPathManager::PathElement, public GNEHierarchicalElement, public GNEMoveElement {
+class GNEAdditional : public GNEPathElement, public GNEHierarchicalElement, public GNEMoveElement {
 
 public:
     /**@brief Constructor
@@ -117,6 +118,9 @@ public:
 
     /// @brief set special color
     void setSpecialColor(const RGBColor* color);
+
+    /// @brief reset additional contour
+    void resetAdditionalContour();
 
     /// @name members and functions relative to write additionals into XML
     /// @{
@@ -239,7 +243,7 @@ public:
 
     /// @}
 
-    /// @name inherited from GNEPathManager::PathElement
+    /// @name inherited from GNEPathElement
     /// @{
 
     /// @brief compute pathElement
@@ -253,14 +257,14 @@ public:
      * @param[in] segment lane segment
      * @param[in] offsetFront front offset
      */
-    virtual void drawLanePartialGL(const GUIVisualizationSettings& s, const GNEPathManager::Segment* segment, const double offsetFront) const;
+    virtual void drawLanePartialGL(const GUIVisualizationSettings& s, const GNESegment* segment, const double offsetFront) const;
 
     /**@brief Draws partial object over junction
      * @param[in] s The settings for the current view (may influence drawing)
      * @param[in] segment junction segment
      * @param[in] offsetFront front offset
      */
-    virtual void drawJunctionPartialGL(const GUIVisualizationSettings& s, const GNEPathManager::Segment* segment, const double offsetFront) const;
+    virtual void drawJunctionPartialGL(const GUIVisualizationSettings& s, const GNESegment* segment, const double offsetFront) const;
 
     /// @brief get first path lane
     GNELane* getFirstPathLane() const;
@@ -411,11 +415,13 @@ protected:
     void calculatePerpendicularLine(const double endLaneposition);
 
     /// @brief draw squared additional
-    void drawSquaredAdditional(const GUIVisualizationSettings& s, const Position& pos, const double size, GUITexture texture, GUITexture selectedTexture) const;
+    void drawSquaredAdditional(const GUIVisualizationSettings& s, const Position& pos, const double size,
+                               GUITexture texture, GUITexture selectedTexture) const;
 
     /// @brief draw listed additional
-    void drawListedAdditional(const GUIVisualizationSettings& s, const Position& parentPosition, const double offsetX, const double extraOffsetY,
-                              const RGBColor baseCol, const RGBColor textCol, GUITexture texture, const std::string text) const;
+    void drawListedAdditional(const GUIVisualizationSettings& s, const Position& parentPosition, const double offsetX,
+                              const double extraOffsetY, const RGBColor baseCol, const RGBColor textCol, GUITexture texture,
+                              const std::string text) const;
 
     /// @brief check if draw additional extrem geometry points
     bool drawMovingGeometryPoints(const bool ignoreShift) const;
@@ -457,7 +463,7 @@ protected:
 
     /// @brief calculate contour for polygons
     void calculateContourPolygons(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
-                                  const double exaggeration, const bool contouredShape) const;
+                                  const double layer, const double exaggeration, const bool filledShape) const;
 
     /// @}
 

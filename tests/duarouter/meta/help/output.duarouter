@@ -1,5 +1,5 @@
-Eclipse SUMO duarouter Version v1_19_0+1662-cc3005420e0
- Copyright (C) 2001-2024 German Aerospace Center (DLR) and others; https://sumo.dlr.de
+Eclipse SUMO duarouter Version v1_21_0+1212-c8e3c67cccc
+ Copyright (C) 2001-2025 German Aerospace Center (DLR) and others; https://sumo.dlr.de
 Shortest path router and DUE computer for the microscopic, multi-modal traffic
  simulation SUMO.
 
@@ -98,6 +98,7 @@ Processing Options:
                                        network
   --mapmatch.junctions                Match positions to junctions instead of
                                        edges
+  --mapmatch.taz                      Match positions to taz instead of edges
   --bulk-routing                      Aggregate routing queries with the same
                                        origin
   --routing-threads INT               The number of parallel execution threads
@@ -116,6 +117,9 @@ Processing Options:
   --weights.tls-penalty FLOAT         Apply the given time penalty when
                                        computing routing costs across a traffic
                                        light
+  --weights.turnaround-penalty FLOAT  Apply the given time penalty when
+                                       computing routing costs for turnaround
+                                       internal lanes
   --weights.random-factor FLOAT       Edge weights for routing are dynamically
                                        disturbed by a random factor drawn
                                        uniformly from [1,FLOAT)
@@ -132,6 +136,10 @@ Processing Options:
                                        ALT-variant from the given file
   --astar.save-landmark-distances FILE  Save lookup table for astar ALT-variant
                                        to the given file
+  --scale FLOAT                       Scale demand by the given factor (by
+                                       discarding or duplicating vehicles)
+  --scale-suffix STR                  Suffix to be added when creating ids for
+                                       cloned vehicles
   --gawron.beta FLOAT                 Use FLOAT as Gawron's beta
   --gawron.a FLOAT                    Use FLOAT as Gawron's a
   --keep-all-routes                   Save routes with near zero probability
@@ -224,5 +232,5 @@ Examples:
   duarouter -c <CONFIGURATION>
     run routing with options from file
 
-Report bugs at <https://github.com/eclipse/sumo/issues>.
+Report bugs at <https://github.com/eclipse-sumo/sumo/issues>.
 Get in contact via <sumo@dlr.de>.

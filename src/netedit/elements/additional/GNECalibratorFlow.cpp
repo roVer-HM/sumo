@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,6 +18,7 @@
 //
 /****************************************************************************/
 #include <netedit/GNENet.h>
+#include <netedit/GNEViewNet.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 #include <utils/options/OptionsCont.h>
@@ -166,16 +167,18 @@ GNECalibratorFlow::getParentName() const {
 
 void
 GNECalibratorFlow::drawGL(const GUIVisualizationSettings& s) const {
-    // push rotation matrix
-    GLHelper::pushMatrix();
-    // move to parent additional position
-    glTranslated(getParentAdditionals().front()->getPositionInView().x(), getParentAdditionals().front()->getPositionInView().y(), 0);
-    // rotate
-    glRotated((-1 * getParentAdditionals().front()->getAdditionalGeometry().getShapeRotations().front()) + 180, 0, 0, 1);
-    // draw rerouter interval as listed attribute
-    drawListedAdditional(s, Position(0, 0), 0.05, 1, s.additionalSettings.calibratorColor, RGBColor::BLACK, GUITexture::VARIABLESPEEDSIGN_STEP, "Flow: " + getID());
-    // pop rotation matrix
-    GLHelper::popMatrix();
+    if (myNet->getViewNet()->getDataViewOptions().showAdditionals()) {
+        // push rotation matrix
+        GLHelper::pushMatrix();
+        // move to parent additional position
+        glTranslated(getParentAdditionals().front()->getPositionInView().x(), getParentAdditionals().front()->getPositionInView().y(), 0);
+        // rotate
+        glRotated((-1 * getParentAdditionals().front()->getAdditionalGeometry().getShapeRotations().front()) + 180, 0, 0, 1);
+        // draw rerouter interval as listed attribute
+        drawListedAdditional(s, Position(0, 0), 0.05, 1, s.additionalSettings.calibratorColor, RGBColor::BLACK, GUITexture::VARIABLESPEEDSIGN_STEP, "Flow: " + getID());
+        // pop rotation matrix
+        GLHelper::popMatrix();
+    }
 }
 
 
@@ -286,12 +289,10 @@ GNECalibratorFlow::getAttribute(SumoXMLAttr key) const {
             return getInsertionChecks();
         case GNE_ATTR_PARENT:
             return getParentAdditionals().at(0)->getID();
-        case GNE_ATTR_SELECTED:
-            return toString(isAttributeCarrierSelected());
         case GNE_ATTR_PARAMETERS:
             return SUMOVehicleParameter::getParametersStr();
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttribute(key);
     }
 }
 
@@ -360,12 +361,12 @@ GNECalibratorFlow::setAttribute(SumoXMLAttr key, const std::string& value, GNEUn
         case SUMO_ATTR_DEPARTPOS_LAT:
         case SUMO_ATTR_ARRIVALPOS_LAT:
         case SUMO_ATTR_INSERTIONCHECKS:
-        case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -471,12 +472,10 @@ GNECalibratorFlow::isValid(SumoXMLAttr key, const std::string& value) {
             }
         case SUMO_ATTR_INSERTIONCHECKS:
             return areInsertionChecksValid(value);
-        case GNE_ATTR_SELECTED:
-            return canParse<bool>(value);
         case GNE_ATTR_PARAMETERS:
             return areParametersValid(value);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
@@ -721,20 +720,14 @@ GNECalibratorFlow::setAttribute(SumoXMLAttr key, const std::string& value) {
             parseArrivalPosLat(value, myTagProperty.getTagStr(), id, arrivalPosLat, arrivalPosLatProcedure, error);
             break;
         case SUMO_ATTR_INSERTIONCHECKS:
-            parseInsertionChecks(value);
-            break;
-        case GNE_ATTR_SELECTED:
-            if (parse<bool>(value)) {
-                selectAttributeCarrier();
-            } else {
-                unselectAttributeCarrier();
-            }
+            insertionChecks = parseInsertionChecks(value);
             break;
         case GNE_ATTR_PARAMETERS:
             SUMOVehicleParameter::setParametersStr(value);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value);
+            break;
     }
 }
 

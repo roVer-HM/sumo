@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2011-2024 German Aerospace Center (DLR) and others.
+# Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -215,6 +215,13 @@ class EdgeDomain(Domain):
         Returns the id of the junction at the end of this edge
         """
         return self._getUniversal(tc.TO_JUNCTION, edgeID)
+
+    def getBidiEdge(self, edgeID):
+        """getBidiEdge(string) -> string
+
+        Returns the id of the bidi edge or ""
+        """
+        return self._getUniversal(tc.VAR_BIDI, edgeID)
 
     def adaptTraveltime(self, edgeID, time, begin=None, end=None):
         """adaptTraveltime(string, double, double, double) -> None

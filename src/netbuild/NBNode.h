@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -885,7 +885,10 @@ private:
     void recheckVClassConnections(NBEdge* currentOutgoing);
 
     /// @brief get the reduction in driving lanes at this junction
-    void getReduction(const NBEdge* in, const NBEdge* out, int& inOffset, int& outOffset, int& reduction) const;
+    void getReduction(const NBEdge* in, const NBEdge* out, int& inOffset, int& inEnd, int& outOffset, int& outEnd, int& reduction) const;
+
+    /// @brief helper function to add connections for unsatisfied modes
+    SVCPermissions findToLaneForPermissions(NBEdge* currentOutgoing, int fromLane, NBEdge* incoming, SVCPermissions unsatisfied);
 
     /// @brief check whether this edge has extra lanes on the right side
     int addedLanesRight(NBEdge* out, int addedLanes) const;
@@ -901,6 +904,9 @@ private:
 
     /// @brief geometry helper that cuts the first shape where bordered by the other two
     PositionVector cutAtShapes(const PositionVector& cut, const PositionVector& border1, const PositionVector& border2, const PositionVector& def);
+
+    /// @brief compute offset for centering path-across-street crossings
+    void patchOffset_pathAcrossStreet(double& offset);
 
 private:
     /// @brief The position the node lies at

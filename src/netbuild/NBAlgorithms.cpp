@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2012-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -513,7 +513,7 @@ NBEdgePriorityComputer::setPriorityJunctionPriorities(NBNode& n, bool forceStrai
         // let's mark this road as the best
         NBEdge* best1 = extractAndMarkFirst(n, bestIncoming);
         if (!mainDirectionExplicit && counterIncomingEdges.find(best1) != counterIncomingEdges.end()) {
-            // ok, look, what we want is the opposit of the straight continuation edge
+            // ok, look, what we want is the opposite of the straight continuation edge
             // but, what if such an edge does not exist? By now, we'll determine it
             // geometrically
             NBEdge* s = counterIncomingEdges.find(best1)->second;
@@ -532,7 +532,7 @@ NBEdgePriorityComputer::setPriorityJunctionPriorities(NBNode& n, bool forceStrai
         if (!mainDirectionExplicit && counterOutgoingEdges.find(bestOut) != counterOutgoingEdges.end()) {
             NBEdge* s = counterOutgoingEdges.find(bestOut)->second;
             if (GeomHelper::getMinAngleDiff(bestOut->getAngleAtNode(&n), s->getAngleAtNode(&n)) > 180 - 45) {
-                s->setJunctionPriority(&n, 1);
+                s->setJunctionPriority(&n, NBEdge::PRIORITY_ROAD);
             }
         }
         const bool isBent = n.getDirection(best1, bestOut) != LinkDirection::STRAIGHT;
@@ -580,7 +580,7 @@ NBEdgePriorityComputer::setPriorityJunctionPriorities(NBNode& n, bool forceStrai
             }
         }
     }
-    bestFirst->setJunctionPriority(&n, 1);
+    bestFirst->setJunctionPriority(&n, NBEdge::PRIORITY_ROAD);
     sort(bestOutgoing.begin(), bestOutgoing.end(), NBContHelper::edge_similar_direction_sorter(bestFirst));
 #ifdef DEBUG_SETPRIORITIES
     if (DEBUGCOND) {
@@ -590,7 +590,7 @@ NBEdgePriorityComputer::setPriorityJunctionPriorities(NBNode& n, bool forceStrai
     if (bestOutgoing.size() != 0) {
         extractAndMarkFirst(n, bestOutgoing);
     }
-    bestSecond->setJunctionPriority(&n, 1);
+    bestSecond->setJunctionPriority(&n, NBEdge::PRIORITY_ROAD);
     sort(bestOutgoing.begin(), bestOutgoing.end(), NBContHelper::edge_similar_direction_sorter(bestSecond));
 #ifdef DEBUG_SETPRIORITIES
     if (DEBUGCOND) {
@@ -641,7 +641,7 @@ NBEdgePriorityComputer::markBestParallel(const NBNode& n, NBEdge* bestFirst, NBE
         if (((GeomHelper::getMinAngleDiff(e->getAngleAtNode(&n), a1) < 10
                 || GeomHelper::getMinAngleDiff(e->getAngleAtNode(&n), a2) < 10))
                 && (p1 & perm) == 0 && (p2 & perm) == 0) {
-            e->setJunctionPriority(&n, 1);
+            e->setJunctionPriority(&n, NBEdge::PRIORITY_ROAD);
         }
     }
 }

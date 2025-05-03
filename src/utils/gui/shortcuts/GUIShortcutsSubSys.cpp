@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -260,6 +260,8 @@ GUIShortcutsSubSys::buildAccelerators(FXAccelTable* accelTable, FXObject* target
     accelTable->addAccel(parseKey(KEY_F10, KEYMODIFIER_SHIFT), target, FXSEL(SEL_COMMAND, MID_HOTKEY_SHIFT_F10_SUMOOPTIONSMENU));
     accelTable->addAccel(parseKey(KEY_F11, KEYMODIFIER_SHIFT), target, FXSEL(SEL_COMMAND, MID_HOTKEY_SHIFT_F11_HALLOFFAME));
     accelTable->addAccel(parseKey(KEY_F12, KEYMODIFIER_SHIFT), target, FXSEL(SEL_COMMAND, MID_HOTKEY_SHIFT_F12_FOCUSUPPERELEMENT));
+
+    accelTable->addAccel(parseKey(KEY_ESC, KEYMODIFIER_SHIFT),  target, FXSEL(SEL_COMMAND, MID_HOTKEY_SHIFT_ESC_CLEARSELECTION));
 
     // alt hotkeys
 

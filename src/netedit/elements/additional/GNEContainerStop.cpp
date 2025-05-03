@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -107,12 +107,12 @@ GNEContainerStop::updateGeometry() {
     // Obtain a copy of the shape
     PositionVector tmpShape = myAdditionalGeometry.getShape();
     // move entire shape and update
-    tmpShape.move2side(2);
+    tmpShape.move2side(2 * offsetSign);
     myAdditionalGeometry.updateGeometry(tmpShape);
     // Move shape to side
     tmpShape.move2side(myNet->getViewNet()->getVisualisationSettings().stoppingPlaceSettings.stoppingPlaceSignOffset * offsetSign);
     // Get position of the sign
-    mySignPos = tmpShape.getLineCenter();
+    mySymbolPosition = tmpShape.getLineCenter();
 }
 
 
@@ -127,7 +127,7 @@ GNEContainerStop::drawGL(const GUIVisualizationSettings& s) const {
         // get detail level
         const auto d = s.getDetailLevel(containerStopExaggeration);
         // draw geometry only if we'rent in drawForObjectUnderCursor mode
-        if (!s.drawForViewObjectsHandler) {
+        if (s.checkDrawAdditional(d, isAttributeCarrierSelected())) {
             // declare colors
             RGBColor baseColor, signColor;
             // set colors
@@ -149,7 +149,7 @@ GNEContainerStop::drawGL(const GUIVisualizationSettings& s) const {
             // Add a layer matrix
             GLHelper::pushMatrix();
             // translate to front
-            myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_CONTAINER_STOP);
+            drawInLayer(GLO_CONTAINER_STOP);
             // set base color
             GLHelper::setColor(baseColor);
             // Draw the area using shape, shapeRotations, shapeLengths and value of exaggeration
@@ -157,7 +157,7 @@ GNEContainerStop::drawGL(const GUIVisualizationSettings& s) const {
             // draw lines
             drawLines(d, myLines, baseColor);
             // draw sign
-            drawSign(d, containerStopExaggeration, baseColor, signColor, "C");
+            drawSign(s, d, containerStopExaggeration, baseColor, signColor, "C");
             // draw geometry points
             if (movingGeometryPoints && (myStartPosition != INVALID_DOUBLE)) {
                 drawLeftGeometryPoint(s, d, myAdditionalGeometry.getShape().front(), myAdditionalGeometry.getShapeRotations().front(), baseColor);
@@ -173,16 +173,19 @@ GNEContainerStop::drawGL(const GUIVisualizationSettings& s) const {
             drawAdditionalID(s);
             // draw additional name
             drawAdditionalName(s);
-            // draw dotted contour
-            myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
-            // draw dotted contours for geometry points
-            myAdditionalContour.drawDottedContourGeometryPoints(s, d, this, myAdditionalGeometry.getShape(), s.neteditSizeSettings.additionalGeometryPointRadius,
-                    1, s.dottedContourSettings.segmentWidthSmall);
+            // draw dotted contours
+            if (movingGeometryPoints) {
+                myAdditionalContour.drawDottedContourGeometryPoints(s, d, this, myAdditionalGeometry.getShape(), s.neteditSizeSettings.additionalGeometryPointRadius,
+                        1, s.dottedContourSettings.segmentWidthSmall);
+            } else {
+                myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
+                mySymbolContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidthSmall, true);
+            }
         }
         // draw demand element children
         drawDemandElementChildren(s);
-        // calculate contour
-        calculateStoppingPlaceContour(s, d, s.stoppingPlaceSettings.containerStopWidth, movingGeometryPoints);
+        // calculate contours
+        calculateStoppingPlaceContour(s, d, s.stoppingPlaceSettings.containerStopWidth, containerStopExaggeration, movingGeometryPoints);
     }
 }
 
@@ -222,14 +225,12 @@ GNEContainerStop::getAttribute(SumoXMLAttr key) const {
             } else {
                 return toString(myColor);
             }
-        case GNE_ATTR_SELECTED:
-            return toString(isAttributeCarrierSelected());
         case GNE_ATTR_PARAMETERS:
             return getParametersStr();
         case GNE_ATTR_SHIFTLANEINDEX:
             return "";
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttribute(key);
     }
 }
 
@@ -247,13 +248,13 @@ GNEContainerStop::setAttribute(SumoXMLAttr key, const std::string& value, GNEUnd
         case SUMO_ATTR_CONTAINER_CAPACITY:
         case SUMO_ATTR_PARKING_LENGTH:
         case SUMO_ATTR_COLOR:
-        case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
         case GNE_ATTR_SHIFTLANEINDEX:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -301,12 +302,10 @@ GNEContainerStop::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return canParse<RGBColor>(value);
             }
-        case GNE_ATTR_SELECTED:
-            return canParse<bool>(value);
         case GNE_ATTR_PARAMETERS:
             return areParametersValid(value);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
@@ -360,13 +359,6 @@ GNEContainerStop::setAttribute(SumoXMLAttr key, const std::string& value) {
                 myColor = GNEAttributeCarrier::parse<RGBColor>(value);
             }
             break;
-        case GNE_ATTR_SELECTED:
-            if (parse<bool>(value)) {
-                selectAttributeCarrier();
-            } else {
-                unselectAttributeCarrier();
-            }
-            break;
         case GNE_ATTR_PARAMETERS:
             setParametersStr(value);
             break;
@@ -374,7 +366,8 @@ GNEContainerStop::setAttribute(SumoXMLAttr key, const std::string& value) {
             shiftLaneIndex();
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value);
+            break;
     }
 }
 

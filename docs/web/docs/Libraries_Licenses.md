@@ -88,7 +88,7 @@ can be omitted, but [sumo-gui](sumo-gui.md),
     zlib](http://www.libpng.org/pub/png/src/libpng-LICENSE.txt)
   - libjpeg - [self made license, free also for commercial use and
     binary
-    distribution](https://github.com/winlibs/libjpeg/blob/master/README)
+    distribution](https://github.com/winlibs/libjpeg/blob/master/README.md)
 
 ### [PROJ.4](https://proj.org/) - Cartographic Projections Library
 
@@ -132,6 +132,10 @@ won't work
 
 Please note that the tools needed for processing the translation files (so for compiling SUMO)
 are distributed under GPL and are not part of the SUMO download.
+
+### [{fmt}](https://fmt.dev) - Formatting library
+
+- [​MIT License](https://github.com/fmtlib/fmt/blob/master/LICENSE)
 
 
 ## Data and Documentation

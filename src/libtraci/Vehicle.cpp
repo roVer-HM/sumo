@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2017-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2017-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -123,6 +123,18 @@ Vehicle::getLaneID(const std::string& vehID) {
 int
 Vehicle::getLaneIndex(const std::string& vehID) {
     return Dom::getInt(libsumo::VAR_LANE_INDEX, vehID);
+}
+
+
+std::string
+Vehicle::getSegmentID(const std::string& vehID) {
+    return Dom::getString(libsumo::VAR_SEGMENT_ID, vehID);
+}
+
+
+int
+Vehicle::getSegmentIndex(const std::string& vehID) {
+    return Dom::getInt(libsumo::VAR_SEGMENT_INDEX, vehID);
 }
 
 
@@ -761,6 +773,12 @@ Vehicle::getHeight(const std::string& vehID) {
 }
 
 
+double
+Vehicle::getMass(const std::string& vehID) {
+    return Dom::getDouble(libsumo::VAR_MASS, vehID);
+}
+
+
 void
 Vehicle::setStop(const std::string& vehID,
                  const std::string& edgeID,
@@ -1132,11 +1150,11 @@ Vehicle::setSignals(const std::string& vehID, int signals) {
 
 
 void
-Vehicle::moveTo(const std::string& vehID, const std::string& laneID, double position, int reason) {
+Vehicle::moveTo(const std::string& vehID, const std::string& laneID, double pos, int reason) {
     tcpip::Storage content;
     StoHelp::writeCompound(content, 3);
     StoHelp::writeTypedString(content, laneID);
-    StoHelp::writeTypedDouble(content, position);
+    StoHelp::writeTypedDouble(content, pos);
     StoHelp::writeTypedInt(content, reason);
     Dom::set(libsumo::VAR_MOVE_TO, vehID, &content);
 }
@@ -1227,6 +1245,12 @@ Vehicle::setWidth(const std::string& vehID, double width) {
 void
 Vehicle::setHeight(const std::string& vehID, double height) {
     Dom::setDouble(libsumo::VAR_HEIGHT, vehID, height);
+}
+
+
+void
+Vehicle::setMass(const std::string& vehID, double mass) {
+    Dom::setDouble(libsumo::VAR_MASS, vehID, mass);
 }
 
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -52,7 +52,7 @@ GNEDemandElementSelector::GNEDemandElementSelector(GNEFrame* frameParent, SumoXM
                     myTagType(tagType),
 mySelectingMultipleElements(false) {
     // Create MFXComboBoxIcon
-    myDemandElementsComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItemsMedium,
+    myDemandElementsComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItems,
             this, MID_GNE_SET_TYPE, GUIDesignComboBox);
     // refresh demand element MatchBox
     refreshDemandElementSelector();
@@ -68,13 +68,13 @@ GNEDemandElementSelector::GNEDemandElementSelector(GNEFrame* frameParent, const 
     mySelectingMultipleElements(false) {
     // fill myDemandElementTags
     for (const auto& tagType : tagTypes) {
-        const auto tagProperties = GNEAttributeCarrier::getTagPropertiesByType(tagType);
+        const auto tagProperties = GNEAttributeCarrier::getTagPropertiesByType(tagType, false);
         for (const auto& tagProperty : tagProperties) {
             myDemandElementTags.push_back(tagProperty.getTag());
         }
     }
     // Create MFXComboBoxIcon
-    myDemandElementsComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItemsMedium,
+    myDemandElementsComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItems,
             this, MID_GNE_SET_TYPE, GUIDesignComboBox);
     // refresh demand element MatchBox
     refreshDemandElementSelector();
@@ -265,8 +265,6 @@ GNEDemandElementSelector::onCmdSelectDemandElement(FXObject*, FXSelector, void*)
                 myCurrentDemandElement = demandElement.second;
                 // call demandElementSelected function
                 myFrameParent->demandElementSelected();
-                // Write Warning in console if we're in testing mode
-                WRITE_DEBUG((TL("Selected item '") + myDemandElementsComboBox->getText() + TL("' in DemandElementSelector")).text());
                 return 1;
             }
         }
@@ -277,8 +275,6 @@ GNEDemandElementSelector::onCmdSelectDemandElement(FXObject*, FXSelector, void*)
     myFrameParent->demandElementSelected();
     // change color of myDemandElementsComboBox to red (invalid)
     myDemandElementsComboBox->setTextColor(FXRGB(255, 0, 0));
-    // Write Warning in console if we're in testing mode
-    WRITE_DEBUG(TL("Selected invalid item in DemandElementSelector"));
     return 1;
 }
 

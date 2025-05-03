@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -67,8 +67,6 @@ GNELoadThread::run() {
     auto& neteditOptions = OptionsCont::getOptions();
     // register message callbacks
     MsgHandler::getMessageInstance()->addRetriever(myMessageRetriever);
-    MsgHandler::getDebugInstance()->addRetriever(myDebugRetriever);
-    MsgHandler::getGLDebugInstance()->addRetriever(myGLDebugRetriever);
     MsgHandler::getErrorInstance()->addRetriever(myErrorRetriever);
     MsgHandler::getWarningInstance()->addRetriever(myWarningRetriever);
     // flag for check if input is valid
@@ -138,8 +136,6 @@ GNELoadThread::run() {
         return 0;
     }
     // clear message instances
-    MsgHandler::getGLDebugInstance()->clear();
-    MsgHandler::getDebugInstance()->clear();
     MsgHandler::getErrorInstance()->clear();
     MsgHandler::getWarningInstance()->clear();
     MsgHandler::getMessageInstance()->clear();
@@ -240,8 +236,6 @@ GNELoadThread::run() {
 void
 GNELoadThread::submitEndAndCleanup(GNENet* net, const std::string& loadedFile, const std::string& guiSettingsFile, const bool viewportFromRegistry) {
     // remove message callbacks
-    MsgHandler::getDebugInstance()->removeRetriever(myDebugRetriever);
-    MsgHandler::getGLDebugInstance()->removeRetriever(myGLDebugRetriever);
     MsgHandler::getErrorInstance()->removeRetriever(myErrorRetriever);
     MsgHandler::getWarningInstance()->removeRetriever(myWarningRetriever);
     MsgHandler::getMessageInstance()->removeRetriever(myMessageRetriever);
@@ -283,6 +277,7 @@ GNELoadThread::fillOptions(OptionsCont& neteditOptions) {
     neteditOptions.doRegister("sumocfg-file", new Option_FileName());
     neteditOptions.addSynonyme("sumocfg-file", "sumocfg");
     neteditOptions.addDescription("sumocfg-file", "Input", TL("Load sumo config"));
+    neteditOptions.addXMLDefault("sumocfg-file", "sumoConfiguration");
 
     neteditOptions.doRegister("additional-files", 'a', new Option_FileName());
     neteditOptions.addSynonyme("additional-files", "additional");
@@ -302,6 +297,9 @@ GNELoadThread::fillOptions(OptionsCont& neteditOptions) {
 
     neteditOptions.doRegister("ignore-missing-inputs", new Option_Bool(false));
     neteditOptions.addDescription("ignore-missing-inputs", "Input", TL("Reset path values (additional, route, data...) after loading netedit config"));
+
+    neteditOptions.doRegister("selection-file", new Option_FileName());
+    neteditOptions.addDescription("selection-file", "Input", TL("Load element selection"));
 
     // TOPIC: Output
 
@@ -328,6 +326,12 @@ GNELoadThread::fillOptions(OptionsCont& neteditOptions) {
 
     neteditOptions.doRegister("ignore.routeelements", new Option_Bool(false));
     neteditOptions.addDescription("ignore.routeelements", "Netedit", TL("Ignore route elements during loading of sumo-configs"));
+
+    neteditOptions.doRegister("e2.friendlyPos.automatic", new Option_Bool(true));
+    neteditOptions.addDescription("e2.friendlyPos.automatic", "Netedit", TL("If the lane is shorter than the additional, automatically enable friendlyPos"));
+
+    neteditOptions.doRegister("force-saving", new Option_Bool(false));
+    neteditOptions.addDescription("force-saving", "Netedit", TL("If enabled, elements will be saved regardless of whether they have been edited or not"));
 
     // network prefixes
 

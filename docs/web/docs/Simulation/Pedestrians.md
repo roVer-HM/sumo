@@ -151,7 +151,7 @@ pedestrian traffic.
 
 Crossings may be defined explicitly in plain XML input when describing
 [connections (plain.con.xml) using the XML element `crossings`](../Networks/PlainXML.md#pedestrian_crossings).
-They can also be placed with [netedit](../Netedit/index.md#crossings).
+They can also be placed with [netedit](../Netedit/editModesNetwork.md#crossings).
 
 The second available method for adding crossing information to a network
 is with the [netconvert](../netconvert.md) option **--crossings.guess** {{DT_BOOL}}. This enables a heuristic which adds crossings
@@ -238,7 +238,7 @@ demand by setting option **--persontrips**.
 
 ## From local counting data
 
-The tools [routeSampler](../Tools/Turns.md#routesamplerpy) and [flowrouter](../Tools/Detector.md#flowrouterpy) both suppor option **--pedestrians** to generate pedestrians instead of vehicular traffic based on countint data. See also [Choosing the right tool](../Demand/Routes_from_Observation_Points.md#choosing_the_right_tool).
+The tools [routeSampler](../Tools/Turns.md#routesamplerpy) and [flowrouter](../Tools/Detector.md#flowrouterpy) both support the option **--pedestrians** to generate pedestrians instead of vehicular traffic based on counting data. See also [Choosing the right tool](../Demand/Routes_from_Observation_Points.md#choosing_the_right_tool).
 
 # Pedestrian-related Attributes
 See [Person attributes](../Specification/Persons.md#available_vtype_attributes)
@@ -293,7 +293,7 @@ both. The algorithm for selecting the preferred stripe is based on the
 direction of movement (preferring evasion to the right for oncoming
 pedestrians) and the expected distance the pedestrian will be able to
 walk in that stripe without a collision. The model assumes that the pedestrian
-can fit into a single strip when walking in its center. When **--pedestrian.striping-width** {{DT_FLOAT}}
+can fit into a single strip when walking in its center. When **--pedestrian.striping.stripe-width** {{DT_FLOAT}}
 is lower than a given path width, 100% safety is not guaranteed on shared lanes, i.e. collisions may occur.
 The warning to change the stripe-width will then be shown during simulation.
 
@@ -325,7 +325,7 @@ There are several situations in which pedestrian jams are possible
 - trying to reach a busStop when it has reached its `personCapacity` limit
 - oncoming traffic on narrow sidewalks
 
-There are several mitigations to prevent the frequency of jams and to resolve them after they have occured
+There are several mitigations to prevent the frequency of jams and to resolve them after they have occurred
 
 - on crossings and walkingareas, pedestrians reserve 1/3 of the road space for oncoming traffic (configurable with option **--pedestrian.striping.reserve-oncoming.junctions**)
 - on normal lanes / sidewalks, such a reservation can be activated with option **--pedestrian.striping.reserve-oncoming**
@@ -339,7 +339,7 @@ JuPedSim is a pedestrian simulator developed by the Jülich Research Center. It 
 
 ### Installation
 
-If you are on Windows, the latest release of JuPedSim is distributed together with the SUMO software distribution so no additional steps are required. Alternatively, if you want to build the latest JuPedSim version available on Windows, please have a look at [the build instructions](../Installing/Windows_Build.md#how-to-build-jupedsim-and-then-build-sumo-with-jupedsim). If you are on Linux or MacOS, you need to [build JuPedSim, then build SUMO](../Installing/Linux_Build.md#how_to_build_jupedsim_and_then_build_sumo_with_jupedsim).
+If you are on Windows, the latest release of JuPedSim is distributed together with the SUMO software distribution so no additional steps are required. Alternatively, if you want to build the latest JuPedSim version available on Windows, please have a look at [the build instructions](../Installing/Windows_Build.md#how_to_build_jupedsim_and_then_build_sumo_with_jupedsim). If you are on Linux or MacOS, you need to [build JuPedSim, then build SUMO](../Installing/Linux_Build.md#how_to_build_jupedsim_and_then_build_sumo_with_jupedsim).
 
 ### Use
 
@@ -379,6 +379,11 @@ In JuPedSim, pedestrians have a radius. At that time, the radius is computed as 
 ### Jamming
 
 Sometimes pedestrians get jammed at the front of a gate, which represents the last waypoint into their journey. In this case you can remove the pedestrians by creating a special polygon type named `jupedsim.vanishing_area`. The attribute `period` of this polygon defines the rate at which a pedestrian will be removed in this special polygon (a pedestrian will be removed every period, the period being given in seconds).
+
+### Speed modification
+
+In order to modify the speed of agents depending on location it is possible to define a special polygon type named `jupedsim.influencer`. The attribute `speed` of this polygon defines the new maximum speed of any agent entering the polygon. Be aware that currently the speed change is permanent (it will persist even if the agent leaves the polygon). This might change in future versions. Furthermore the functionality will probably be adapted to allow the change of other parameters as well.
+
 
 # Pedestrian Routing
 
@@ -493,7 +498,7 @@ can be generated which use cases they have and what is to be expected concerning
 - Non-interacting model: Persons walk on the sidewalk and jump over junctions
 
 You could think of other subtypes here which have only walking areas and no crossings or the other way round but this would make things too complicated.
-The one property which distinguishs these networks from the next type is the presence of at least one walking area.
+The one property which distinguishes these networks from the next type is the presence of at least one walking area.
 
 ## Full pedestrian infrastructure
 

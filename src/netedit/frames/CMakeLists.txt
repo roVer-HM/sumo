@@ -44,6 +44,10 @@ set(netedit_frames_SRCS
    GNEPlanCreator.cpp
    GNEPlanCreatorLegend.h
    GNEPlanCreatorLegend.cpp
+   GNEAttributesEditorRow.h
+   GNEAttributesEditorRow.cpp
+   GNEAttributesEditor.h
+   GNEAttributesEditor.cpp
    )
 
 add_library(netedit_frames STATIC ${netedit_frames_SRCS})

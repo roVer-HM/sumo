@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -21,6 +21,8 @@
 
 #include <netedit/GNENet.h>
 #include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <utils/gui/div/GUIDesigns.h>
 
 #include "GNEStopFrame.h"
@@ -117,7 +119,7 @@ GNEStopFrame::HelpCreation::updateHelpCreation() {
 
 GNEStopFrame::GNEStopFrame(GNEViewParent* viewParent, GNEViewNet* viewNet) :
     GNEFrame(viewParent, viewNet, TL("Stops")),
-    myRouteHandler("", viewNet->getNet(), true, false),
+    myRouteHandler("", viewNet->getNet(), myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false),
     myStopParentBaseObject(new CommonXMLStructure::SumoBaseObject(nullptr)) {
 
     // Create Stop parent selector
@@ -210,7 +212,7 @@ GNEStopFrame::addStop(const GNEViewNetHelper::ViewObjectsSelector& viewObjects, 
         getStopParameter(myStopTagSelector->getCurrentTemplateAC()->getTagProperty().getTag(),
                          viewObjects.getLaneFront(), viewObjects.getAdditionalFront());
         if (myStopParentBaseObject->getTag() != SUMO_TAG_NOTHING) {
-            myRouteHandler.buildStop(myStopParentBaseObject->getSumoBaseObjectChildren().front(),
+            myRouteHandler.buildStop(myStopParentBaseObject->getSumoBaseObjectChildren().front(), myPlanParameters,
                                      myStopParentBaseObject->getSumoBaseObjectChildren().front()->getStopParameter());
             // show all trips
             if (myStopTagSelector->getCurrentTemplateAC()->getTagProperty().isVehicleStop()) {
@@ -228,8 +230,9 @@ GNEStopFrame::addStop(const GNEViewNetHelper::ViewObjectsSelector& viewObjects, 
 
 bool
 GNEStopFrame::getStopParameter(const SumoXMLTag stopTag, const GNELane* lane, const GNEAdditional* stoppingPlace) {
-    // first clear stop base object
+    // first clear containers
     myStopParentBaseObject->clear();
+    myPlanParameters.clear();
     // declare stop parameters
     SUMOVehicleParameter::Stop stop;
     // first check that current selected Stop is valid
@@ -246,9 +249,10 @@ GNEStopFrame::getStopParameter(const SumoXMLTag stopTag, const GNELane* lane, co
             WRITE_WARNING("Click over a " + toString(SUMO_TAG_LANE) + " to create a stop placed in a " + toString(SUMO_TAG_LANE));
             return false;
         }
-    } else if (stopTag == GNE_TAG_STOPPERSON_EDGE) {
+    } else if ((stopTag == GNE_TAG_STOPPERSON_EDGE) || (stopTag == GNE_TAG_STOPCONTAINER_EDGE)) {
         if (lane) {
             stop.edge = lane->getParentEdge()->getID();
+            myPlanParameters.toEdge = stop.edge;
         } else {
             WRITE_WARNING("Click over a " + toString(SUMO_TAG_EDGE) + " to create a stop placed in a " + toString(SUMO_TAG_EDGE));
             return false;
@@ -260,6 +264,7 @@ GNEStopFrame::getStopParameter(const SumoXMLTag stopTag, const GNELane* lane, co
                 return false;
             } else {
                 stop.busstop = stoppingPlace->getID();
+                myPlanParameters.toBusStop = stop.busstop;
                 if ((stopTag == GNE_TAG_WAYPOINT_BUSSTOP) && (stop.speed == 0)) {
                     stop.speed = stoppingPlace->getParentLanes().front()->getSpeed();
                 }
@@ -272,6 +277,7 @@ GNEStopFrame::getStopParameter(const SumoXMLTag stopTag, const GNELane* lane, co
                 return false;
             } else {
                 stop.busstop = stoppingPlace->getID();
+                myPlanParameters.toTrainStop = stop.busstop;
                 if ((stopTag == GNE_TAG_WAYPOINT_TRAINSTOP) && (stop.speed == 0)) {
                     stop.speed = stoppingPlace->getParentLanes().front()->getSpeed();
                 }
@@ -284,6 +290,7 @@ GNEStopFrame::getStopParameter(const SumoXMLTag stopTag, const GNELane* lane, co
                 return false;
             } else {
                 stop.containerstop = stoppingPlace->getID();
+                myPlanParameters.toContainerStop = stop.containerstop;
                 if ((stopTag == GNE_TAG_WAYPOINT_CONTAINERSTOP) && (stop.speed == 0)) {
                     stop.speed = stoppingPlace->getParentLanes().front()->getSpeed();
                 }
@@ -296,6 +303,7 @@ GNEStopFrame::getStopParameter(const SumoXMLTag stopTag, const GNELane* lane, co
                 return false;
             } else {
                 stop.chargingStation = stoppingPlace->getID();
+                myPlanParameters.toChargingStation = stop.chargingStation;
                 if ((stopTag == GNE_TAG_WAYPOINT_CHARGINGSTATION) && (stop.speed == 0)) {
                     stop.speed = stoppingPlace->getParentLanes().front()->getSpeed();
                 }
@@ -308,6 +316,7 @@ GNEStopFrame::getStopParameter(const SumoXMLTag stopTag, const GNELane* lane, co
                 return false;
             } else {
                 stop.parkingarea = stoppingPlace->getID();
+                myPlanParameters.toParkingArea = stop.parkingarea;
                 if ((stopTag == GNE_TAG_WAYPOINT_PARKINGAREA) && (stop.speed == 0)) {
                     stop.speed = stoppingPlace->getParentLanes().front()->getSpeed();
                 }
@@ -480,11 +489,15 @@ GNEStopFrame::getStopParameter(const SumoXMLTag stopTag, const GNELane* lane, co
             }
         }
     }
-    if (stopBaseObject->hasBoolAttribute(SUMO_ATTR_PARKING)) {
-        if (stopBaseObject->getBoolAttribute(SUMO_ATTR_PARKING)) {
-            // temporal, currently OPPORTUNISTIC don't supported
+    if (stopBaseObject->hasStringAttribute(SUMO_ATTR_PARKING)) {
+        if (stopBaseObject->getStringAttribute(SUMO_ATTR_PARKING) == "true") {
             stop.parking = ParkingType::ONROAD;
             stop.parametersSet |= STOP_PARKING_SET;
+        } else if (stopBaseObject->getStringAttribute(SUMO_ATTR_PARKING) == "opportunistic") {
+            stop.parking = ParkingType::OPPORTUNISTIC;
+            stop.parametersSet |= STOP_PARKING_SET;
+        } else {
+            stop.parking = ParkingType::OFFROAD;
         }
     }
     if (stopBaseObject->hasTimeAttribute(SUMO_ATTR_JUMP)) {

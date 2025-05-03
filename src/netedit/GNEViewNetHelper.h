@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,6 +20,7 @@
 #pragma once
 #include <config.h>
 
+#include <unordered_set>
 #include <utils/foxtools/MFXButtonTooltip.h>
 #include <utils/foxtools/MFXMenuButtonTooltip.h>
 #include <utils/foxtools/MFXCheckableButton.h>
@@ -160,6 +161,7 @@ class GNEDataSet;
 class GNEGenericData;
 class GNEEdgeData;
 class GNEEdgeRelData;
+class GNETAZRelData;
 
 // ===========================================================================
 // classes and structs definitions
@@ -216,6 +218,108 @@ struct GNEViewNetHelper {
 
         /// @brief map with locked elements
         std::map<GUIGlObjectType, OperationLocked> myLockedElements;
+
+        /// @brief Invalidated copy constructor.
+        LockManager(const LockManager&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        LockManager& operator=(const LockManager&) = delete;
+    };
+
+    /// @brief class used for group inspected elements
+    class InspectedElements {
+
+    public:
+        /// @brief constructor
+        InspectedElements();
+
+        /// @name inspect functions
+        /// @{
+        /// @brief inspect AC
+        void inspectAC(GNEAttributeCarrier* AC);
+
+        /// @brief inspect multiple ACs
+        void inspectACs(const std::vector<GNEAttributeCarrier*>& ACs);
+
+        /// @brief uninspect AC
+        void uninspectAC(GNEAttributeCarrier* AC);
+
+        /// @brief clear inspected AC
+        void clearInspectedElements();
+
+        /// @}
+
+        /// @name get functions
+        /// @{
+        /// @brief get first inspected AC (needed because the main container is a hash)
+        GNEAttributeCarrier* getFirstAC() const;
+
+        /// @brief get hash table with all inspected ACs
+        const std::unordered_set<GNEAttributeCarrier*>& getACs() const;
+
+        /// @}
+
+        /// @name check functions
+        /// @{
+        // @brief check if the given AC is inspected
+        bool isACInspected(GNEAttributeCarrier* AC) const;
+
+        // @brief check if the given constant AC is inspected
+        bool isACInspected(const GNEAttributeCarrier* AC) const;
+
+        /// @brief check if we're inspecting at least one element
+        bool isInspectingElements() const;
+
+        /// @brief check if we're inspecting exactly one element
+        bool isInspectingSingleElement() const;
+
+        /// @brief check if we're inspecting more than one elements
+        bool isInspectingMultipleElements() const;
+
+        /// @}
+
+    private:
+        /// @brief first inspected element (usually the clicked element)
+        GNEAttributeCarrier* myFirstInspectedAC = nullptr;
+
+        /// @brief hash table with all inspected ACs (we use a set to make deletion of massive elements more quickly)
+        std::unordered_set<GNEAttributeCarrier*> myInspectedACs;
+
+        /// @brief Invalidated copy constructor.
+        InspectedElements(const InspectedElements&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        InspectedElements& operator=(const InspectedElements&) = delete;
+    };
+
+    /// @brief class used for group front elements
+    class MarkFrontElements {
+
+    public:
+        /// @brief constructor
+        MarkFrontElements();
+
+        /// @brief mark AC as drawing front
+        void markAC(GNEAttributeCarrier* AC);
+
+        /// @brief unmark AC for drawing front
+        void unmarkAC(GNEAttributeCarrier* AC);
+
+        /// @brief unmark all ACs
+        void unmarkAll();
+
+        /// @brief get hash table with all fronted ACs
+        const std::unordered_set<GNEAttributeCarrier*>& getACs() const;
+
+    private:
+        /// @brief hash table with all marked ACs (we use a set to make deletion of massive elements more quickly)
+        std::unordered_set<GNEAttributeCarrier*> myMarkedACs;
+
+        /// @brief Invalidated copy constructor.
+        MarkFrontElements(const MarkFrontElements&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        MarkFrontElements& operator=(const MarkFrontElements&) = delete;
     };
 
     /// @brief class used to group all variables related with objects under cursor after a click over view
@@ -228,16 +332,52 @@ struct GNEViewNetHelper {
         /// @brief update objects (using gViewObjectsHandler)
         void updateObjects();
 
+        /// @brief update merging junctions
+        void updateMergingJunctions();
+
+        /// @brief filter all elements except the given GLO type
+        void filterAllExcept(GUIGlObjectType exception);
+
+        /// @brief filter by supermode
+        void filterBySuperMode();
+
+        /// @brief filter (remove) junctions
+        void filterJunctions();
+
         /// @brief filter (remove) edges
         void filterEdges();
 
         /// @brief filter (remove) lanes
         void filterLanes();
 
+        /// @brief filter (remove) connections
+        void filterConnections();
+
+        /// @brief filter (remove) crossings
+        void filterCrossings();
+
+        /// @brief filter (remove) walkingAreas
+        void filterWalkingAreas();
+
+        /// @brief filter (remove) polys and POIs
+        void filterShapes();
+
+        /// @brief filter (remove) additionals
+        void filterAdditionals(const bool includeStoppigPlaces, const bool includeTAZs);
+
+        /// @brief filter (remove) network elements
+        void filterNetworkElements();
+
+        /// @brief filter (remove) demand elements
+        void filterDemandElements(const bool includeRoutes);
+
+        /// @brief filter (remove) datga elements
+        void filterDataElements();
+
         /// @brief filter locked elements (except the ignoreFilter)
         void filterLockedElements(const std::vector<GUIGlObjectType> ignoreFilter = {});
 
-        /// @brief get front attribute carrier or a pointer to nullptr
+        /// @brief get front GUIGLObject or a pointer to nullptr
         const GUIGlObject* getGUIGlObjectFront() const;
 
         /// @brief get front attribute carrier or a pointer to nullptr
@@ -297,6 +437,9 @@ struct GNEViewNetHelper {
         /// @brief get edge rel data element or a pointer to nullptr
         GNEEdgeRelData* getEdgeRelDataElementFront() const;
 
+        /// @brief get TAZ rel data element or a pointer to nullptr
+        GNETAZRelData* getTAZRelDataElementFront() const;
+
         /// @brief get vector with GL objects
         const std::vector<GUIGlObject*>& getGLObjects() const;
 
@@ -318,6 +461,9 @@ struct GNEViewNetHelper {
         /// @brief get vector with Demand Elements
         const std::vector<GNEDemandElement*>& getDemandElements() const;
 
+        /// @brief get merging junctions
+        const std::vector<const GNEJunction*>& getMergingJunctions() const;
+
     protected:
         /// @brief objects container
         class ViewObjectsContainer {
@@ -328,6 +474,9 @@ struct GNEViewNetHelper {
 
             /// @brief clear elements
             void clearElements();
+
+            /// @brief reseve memory for all elements
+            void reserve(int size);
 
             /// @brief filter elements
             void filterElements(const std::vector<const GUIGlObject*>& objects);
@@ -386,9 +535,15 @@ struct GNEViewNetHelper {
             /// @brief vector with the edge relation datas
             std::vector<GNEEdgeRelData*> edgeRelDatas;
 
+            /// @brief vector with the TAZ relation datas
+            std::vector<GNETAZRelData*> TAZRelDatas;
+
         private:
             /// @brief Invalidated copy constructor.
             ViewObjectsContainer(const ViewObjectsContainer&) = delete;
+
+            /// @brief Invalidated assignment operator.
+            ViewObjectsContainer& operator=(const ViewObjectsContainer&) = delete;
         };
 
         /// @brief pointer to viewNet
@@ -396,6 +551,9 @@ struct GNEViewNetHelper {
 
         /// @brief objects container with selected objects
         ViewObjectsContainer myViewObjects;
+
+        /// @brief merging junctions
+        std::vector<const GNEJunction*> myMergingJunctions;
 
     private:
         /// @brief update network elements
@@ -701,8 +859,8 @@ struct GNEViewNetHelper {
         /// @brief checkable button to set change all phases
         MFXCheckableButton* menuCheckChangeAllPhases = nullptr;
 
-        /// @brief checkable button to we should warn about merging junctions
-        MFXCheckableButton* menuCheckWarnAboutMerge = nullptr;
+        /// @brief checkable button to we should't warn about merging junctions
+        MFXCheckableButton* menuCheckMergeAutomatically = nullptr;
 
         /// @brief checkable button to show connection as bubble in "Move" mode.
         MFXCheckableButton* menuCheckShowJunctionBubble = nullptr;
@@ -1005,7 +1163,6 @@ struct GNEViewNetHelper {
         /// @brief current parameters
         std::set<std::string> myParameters;
 
-    private:
         /// @brief Invalidated copy constructor.
         IntervalBar(const IntervalBar&) = delete;
 
@@ -1035,7 +1192,10 @@ struct GNEViewNetHelper {
         void finishMoveSingleElement();
 
         /// @brief check if there are moving elements
-        bool isMovingElements() const;
+        bool isCurrentlyMovingSingleElement() const;
+
+        /// @brief get moved element
+        GNEMoveElement* getMovedElement() const;
 
     protected:
         /// @brief calculate offset
@@ -1049,7 +1209,13 @@ struct GNEViewNetHelper {
         Position myRelativeClickedPosition;
 
         /// @brief move operations
-        std::vector<GNEMoveOperation*> myMoveOperations;
+        GNEMoveOperation* myMoveOperation = nullptr;
+
+        /// @brief Invalidated copy constructor.
+        MoveSingleElementModul(const MoveSingleElementModul&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        MoveSingleElementModul& operator=(const MoveSingleElementModul&) = delete;
     };
 
     /// @brief struct used to group all variables related with movement of groups of elements
@@ -1080,7 +1246,7 @@ struct GNEViewNetHelper {
         double getEdgeOffset() const;
 
         /// @brief check if there are moving elements
-        bool isMovingElements() const;
+        bool isCurrentlyMovingMultipleElements() const;
 
     protected:
         /// @brief calculate move offset
@@ -1107,6 +1273,12 @@ struct GNEViewNetHelper {
 
         /// @brief move operations
         std::vector<GNEMoveOperation*> myMoveOperations;
+
+        /// @brief Invalidated copy constructor.
+        MoveMultipleElementModul(const MoveMultipleElementModul&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        MoveMultipleElementModul& operator=(const MoveMultipleElementModul&) = delete;
     };
 
     /// @brief struct used to group all variables related with movement of groups of elements
@@ -1124,6 +1296,12 @@ struct GNEViewNetHelper {
     private:
         /// @brief pointer to net
         GNEViewNet* myViewNet;
+
+        /// @brief Invalidated copy constructor.
+        VehicleOptions(const VehicleOptions&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        VehicleOptions& operator=(const VehicleOptions&) = delete;
     };
 
     /// @brief struct used to group all variables related with movement of groups of elements
@@ -1141,6 +1319,12 @@ struct GNEViewNetHelper {
     private:
         /// @brief pointer to net
         GNEViewNet* myViewNet;
+
+        /// @brief Invalidated copy constructor.
+        VehicleTypeOptions(const VehicleTypeOptions&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        VehicleTypeOptions& operator=(const VehicleTypeOptions&) = delete;
     };
 
     /// @brief struct used to group all variables related with selecting using a square or polygon
@@ -1186,6 +1370,12 @@ struct GNEViewNetHelper {
 
         /// @brief pointer to net
         GNEViewNet* myViewNet;
+
+        /// @brief Invalidated copy constructor.
+        SelectingArea(const SelectingArea&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        SelectingArea& operator=(const SelectingArea&) = delete;
     };
 
     /// @brief struct used to group all variables related with testing
@@ -1209,6 +1399,12 @@ struct GNEViewNetHelper {
 
         /// @brief Height of net in testing mode
         int myTestingHeight = 0;
+
+        /// @brief Invalidated copy constructor.
+        TestingMode(const TestingMode&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        TestingMode& operator=(const TestingMode&) = delete;
     };
 
     /// @brief struct used to group all variables related with common checkable Buttons
@@ -1244,6 +1440,12 @@ struct GNEViewNetHelper {
     private:
         /// @brief pointer to net
         GNEViewNet* myViewNet;
+
+        /// @brief Invalidated copy constructor.
+        CommonCheckableButtons(const CommonCheckableButtons&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        CommonCheckableButtons& operator=(const CommonCheckableButtons&) = delete;
     };
 
     /// @brief struct used to group all variables related with Network checkable Buttons
@@ -1303,6 +1505,12 @@ struct GNEViewNetHelper {
     private:
         /// @brief pointer to net
         GNEViewNet* myViewNet;
+
+        /// @brief Invalidated copy constructor.
+        NetworkCheckableButtons(const NetworkCheckableButtons&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        NetworkCheckableButtons& operator=(const NetworkCheckableButtons&) = delete;
     };
 
     /// @brief struct used to group all variables related with Demand checkable Buttons
@@ -1362,6 +1570,12 @@ struct GNEViewNetHelper {
     private:
         /// @brief pointer to net
         GNEViewNet* myViewNet;
+
+        /// @brief Invalidated copy constructor.
+        DemandCheckableButtons(const DemandCheckableButtons&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        DemandCheckableButtons& operator=(const DemandCheckableButtons&) = delete;
     };
 
     /// @brief struct used to group all variables related with Data checkable Buttons
@@ -1400,6 +1614,12 @@ struct GNEViewNetHelper {
     private:
         /// @brief pointer to net
         GNEViewNet* myViewNet;
+
+        /// @brief Invalidated copy constructor.
+        DataCheckableButtons(const DataCheckableButtons&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        DataCheckableButtons& operator=(const DataCheckableButtons&) = delete;
     };
 
     /// @brief struct used to group all variables related with edit shapes of NetworkElements
@@ -1415,7 +1635,7 @@ struct GNEViewNetHelper {
         void stopEditCustomShape();
 
         /// @brief save edited shape
-        void commitEditedShape();
+        void commitShapeEdited();
 
         /// @brief pointer to edited network element
         GNENetworkElement* getEditedNetworkElement() const;
@@ -1430,6 +1650,11 @@ struct GNEViewNetHelper {
         /// @brief the previous edit mode before edit NetworkElement's shapes
         NetworkEditMode myPreviousNetworkEditMode;
 
+        /// @brief Invalidated copy constructor.
+        EditNetworkElementShapes(const EditNetworkElementShapes&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        EditNetworkElementShapes& operator=(const EditNetworkElementShapes&) = delete;
     };
 
     /// @brief struct for pack all variables and functions related with Block Icon
@@ -1446,8 +1671,11 @@ struct GNEViewNetHelper {
         /// @brief constructor
         LockIcon();
 
-        /// @brief Invalidated assignment operator
-        LockIcon& operator=(const LockIcon& other) = delete;
+        /// @brief Invalidated copy constructor.
+        LockIcon(const LockIcon&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        LockIcon& operator=(const LockIcon&) = delete;
     };
 
     /// @brief get scaled rainbow colors

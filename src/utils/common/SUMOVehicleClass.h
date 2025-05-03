@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -225,7 +225,7 @@ enum SUMOVehicleClass : int64_t {
                         | SVC_WHEELCHAIR | SVC_SCOOTER),
     /// @brief classes which (normally) do not drive on normal roads
     SVC_NON_ROAD = SVC_RAIL_CLASSES | SVC_SHIP | SVC_AIRCRAFT | SVC_DRONE | SVC_CONTAINER,
-    SVC_WEAK = SVC_PEDESTRIAN | SVC_WHEELCHAIR | SVC_BICYCLE | SVC_SCOOTER
+    SVC_VULNERABLE = SVC_PEDESTRIAN | SVC_WHEELCHAIR | SVC_BICYCLE | SVC_SCOOTER
 };
 
 extern const SUMOVehicleClass SUMOVehicleClass_MAX;
@@ -397,55 +397,55 @@ extern SUMOVehicleShape getVehicleShapeID(const std::string& name);
 /// @brief Checks whether the given string contains only known vehicle shape
 extern bool canParseVehicleShape(const std::string& shape);
 
-/** @brief Returns whether an edge with the given permission is a railway edge
+/** @brief Returns whether an edge with the given permissions is a railway edge
  * @param[in] permissions The permissions of the edge
  * @return Whether the edge is a railway edge
  */
 extern bool isRailway(SVCPermissions permissions);
 
-/** @brief Returns whether an edge with the given permission is a tram edge
+/** @brief Returns whether an edge with the given permissions is a tram edge
  * @param[in] permissions The permissions of the edge
  * @return Whether the edge is a tram edge
  */
 extern bool isTram(SVCPermissions permissions);
 
-/** @brief Returns whether an edge with the given permission is a bicycle edge
+/** @brief Returns whether an edge with the given permissions is a bicycle edge
  * @param[in] permissions The permissions of the edge
  * @return Whether the edge is a bicycle edge
  */
 extern bool isBikepath(SVCPermissions permissions);
 
-/** @brief Returns whether an edge with the given permission is a waterway edge
+/** @brief Returns whether an edge with the given permissions is a waterway edge
  * @param[in] permissions The permissions of the edge
  * @return Whether the edge is a waterway edge
  */
 extern bool isWaterway(SVCPermissions permissions);
 
-/** @brief Returns whether an edge with the given permission is an airway edge
+/** @brief Returns whether an edge with the given permissions is an airway edge
  * @param[in] permissions The permissions of the edge
  * @return Whether the edge is an airway edge
  */
 extern bool isAirway(SVCPermissions permissions);
 
-/** @brief Returns whether an edge with the given permission is a forbidden edge
+/** @brief Returns whether an edge with the given permissions is a forbidden edge
  * @param[in] permissions The permissions of the edge
  * @return Whether the edge is forbidden
  */
 extern bool isForbidden(SVCPermissions permissions);
 
-/** @brief Returns whether an edge with the given permission is a sidewalk
+/** @brief Returns whether an edge with the given permissions is a sidewalk
  * @param[in] permissions The permissions of the edge
  * @return Whether the edge is a sidewalk
  */
 extern bool isSidewalk(SVCPermissions permissions);
 
-/** @brief Returns whether an edge with the given permission is a sidewalk
+/** @brief Returns whether an edge with the given permissions allows only vulnerable road users
  * @param[in] permissions The permissions of the edge
- * @return Whether the edge is a sidewalk
+ * @return Whether the edge allows only a (non-empty) subset of SVC_PEDESTRIAN, SVC_WHEELCHAIR, SVC_BICYCLE, SVC_SCOOTER
  */
-extern bool isForWeakModes(SVCPermissions permissions);
+extern bool isForVulnerableModes(SVCPermissions permissions);
 
-/** @brief Returns whether an edge with the given permission forbids vehicles
+/** @brief Returns whether an edge with the given permissions forbids vehicles
  * @param[in] permissions The permissions of the edge
  * @return Whether the edge is forbidden for vehicles
  */
@@ -470,6 +470,10 @@ extern const std::string DEFAULT_RAILTYPE_ID;
 extern const std::set<std::string> DEFAULT_VTYPES;
 
 extern const double DEFAULT_VEH_PROB; // !!! does this belong here?
+extern const double DEFAULT_VEH_MASS;
+extern const double DEFAULT_VEH_WIDTH;
+extern const double DEFAULT_VEH_HEIGHT;
+extern const double DEFAULT_VEH_SHUT_OFF_STOP;
 
 extern const double DEFAULT_PEDESTRIAN_SPEED;
 extern const double DEFAULT_BICYCLE_SPEED;

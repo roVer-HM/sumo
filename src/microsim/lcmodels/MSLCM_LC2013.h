@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -231,6 +231,8 @@ protected:
     double myAssertive;
     // @brief lookahead for speedGain in seconds
     double mySpeedGainLookahead;
+    // @brief the minimum time to spent driving without lane change after a speed-gain change
+    double mySpeedGainRemainTime;
     // @brief bounus factor staying on the inside of multi-lane roundabout
     double myRoundaboutBonus;
     // @brief factor for cooperative speed adjustment

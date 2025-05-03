@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -424,7 +424,11 @@ NBOwnTLDef::computeLogicAndConts(int brakingTimeSeconds, bool onlyConts) {
             if (perms == SVC_TRAM) {
                 groupTram = true;
             } else if ((perms & ~(SVC_PEDESTRIAN | SVC_BICYCLE | SVC_DELIVERY)) == 0) {
-                groupOther = true;
+                if (OptionsCont::getOptions().getBool("tls.ignore-internal-junction-jam")) {
+                    // otherwise, we can get a mutual conflict for minor green
+                    // streams which would create deadlock
+                    groupOther = true;
+                }
             }
             // group all edges with the same permissions into a single phase (later)
             if (groupTram || groupOther) {
@@ -907,6 +911,12 @@ NBOwnTLDef::addPedestrianPhases(NBTrafficLightLogic* logic, const SUMOTime green
         if (pedTime >= minPedTime) {
             // ensure clearing time for pedestrians
             const int pedStates = (int)crossings.size();
+            const bool isSimpleActuatedCrossing = logic->getType() == TrafficLightType::ACTUATED
+                && minDur == UNSPECIFIED_DURATION && logic->getPhases().size() == 2;
+            if (isSimpleActuatedCrossing) {
+                // permit green phase to extend when there are no pedestrians
+                logic->setPhaseNext(0, {0, 1});
+            }
             logic->addStep(pedTime, state, minDur, maxDur, earliestEnd, latestEnd);
 #ifdef DEBUG_PHASES
             if (DEBUGCOND2(logic)) {
@@ -1017,6 +1027,10 @@ NBOwnTLDef::patchNEMAStateForCrossings(const std::string& state,
     //std::cout << " patchNEMAStateForCrossings green=" << greenEdge->getID() << " other=" << Named::getIDSecure(otherChosen) << " end=" << Named::getIDSecure(end) << " all=" << toString(all) << "\n";
 
     EdgeVector::const_iterator end = std::find(all.begin(), all.end(), endEdge);
+    if (end == all.end()) {
+        // at least prevent an infinite loop
+        end = start;
+    }
     auto it = start;
     NBContHelper::nextCCW(all, it);
     for (; it != end; NBContHelper::nextCCW(all, it)) {
@@ -1552,7 +1566,7 @@ NBOwnTLDef::deactivateAlwaysGreen(NBTrafficLightLogic* logic) const {
 
 void
 NBOwnTLDef::deactivateInsideEdges(NBTrafficLightLogic* logic, const EdgeVector& fromEdges) const {
-    const int n = logic->getNumLinks();
+    const int n = (int)fromEdges.size();
     const int p = (int)logic->getPhases().size();
     for (int i1 = 0; i1 < n; ++i1) {
         if (fromEdges[i1]->isInsideTLS()) {
@@ -1566,7 +1580,7 @@ NBOwnTLDef::deactivateInsideEdges(NBTrafficLightLogic* logic, const EdgeVector& 
 
 SUMOTime
 NBOwnTLDef::computeEscapeTime(const std::string& state, const EdgeVector& fromEdges, const EdgeVector& toEdges) const {
-    const int n = (int)state.size();
+    const int n = (int)fromEdges.size();
     double maxTime = 0;
     for (int i1 = 0; i1 < n; ++i1) {
         if (state[i1] == 'y' && !fromEdges[i1]->isInsideTLS()) {
@@ -1686,8 +1700,11 @@ NBOwnTLDef::buildNemaPhases(
 
     filterMissingNames(ring1, names, false);
     filterMissingNames(ring2, names, false);
-    filterMissingNames(barrier1, names, true);
-    filterMissingNames(barrier2, names, true);
+    filterMissingNames(barrier1, names, true, 8);
+    filterMissingNames(barrier2, names, true, 6);
+    if (ring1[0] == 0 && ring1[1] == 0) {
+        ring1[1] = 6;
+    }
     if (ring1[2] == 0 && ring1[3] == 0) {
         ring1[3] = 8;
     }
@@ -1720,14 +1737,14 @@ NBOwnTLDef::filterState(std::string state, const EdgeVector& fromEdges, const NB
 }
 
 void
-NBOwnTLDef::filterMissingNames(std::vector<int>& vec, const std::map<int, int>& names, bool isBarrier) {
+NBOwnTLDef::filterMissingNames(std::vector<int>& vec, const std::map<int, int>& names, bool isBarrier, int barrierDefault) {
     for (int i = 0; i < (int)vec.size(); i++) {
         if (names.count(vec[i]) == 0) {
             if (isBarrier) {
                 if (names.count(vec[i] - 1) > 0) {
                     vec[i] = vec[i] - 1;
                 } else {
-                    vec[i] = 8;
+                    vec[i] = barrierDefault;
                 }
             } else {
                 vec[i] = 0;

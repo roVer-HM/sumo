@@ -1,5 +1,5 @@
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2008-2024 German Aerospace Center (DLR) and others.
+# Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -40,6 +40,7 @@ from itertools import chain
 
 try:
     import lxml.etree
+    import pathlib
     HAVE_LXML = True
 except ImportError:
     HAVE_LXML = False
@@ -199,6 +200,7 @@ class Net:
         self._origIdx = None
         self._proj = None
         self.hasInternal = False
+        self.hasWalkingArea = False
         # store dijsktra heap for reuse if the same origin is used repeatedly
         self._shortestPathCache = None
         self._version = None
@@ -270,6 +272,8 @@ class Net:
             self._id2edge[id] = e
             if function:
                 self.hasInternal = True
+                if function == "walkingarea":
+                    self.hasWalkingArea = True
         return self._id2edge[id]
 
     def addLane(self, edge, speed, length, width, allow=None, disallow=None):
@@ -581,6 +585,12 @@ class Net:
                 return min(-pos, edge.getLength())
             return max(0., edge.getLength() - pos)
 
+        def getToNormalIncoming(edge):
+            if edge.getFunction() == '':
+                return [(e, None) for e in edge.getToNode().getIncoming() if e.getFunction() == '']
+            else:
+                return []
+
         if self.hasInternal:
             appendix = ()
             appendixCost = 0.
@@ -616,20 +626,24 @@ class Net:
                     removeTo = toEdge.getLength() if len(path) > 1 else 0.
                 cost -= removeTo / speedFunc(fromEdge)
                 if self.hasInternal:
-                    return path + appendix, cost + appendixCost
+                    if appendix:
+                        return path + appendix, cost + appendixCost
+                    elif ignoreDirection and self.hasWalkingArea and not withInternal:
+                        return [e for e in path if e.getFunction() == ''], cost
                 return path, cost
             if cost > maxCost:
                 return None, cost
 
             for e2, conn in chain(e1.getAllowedOutgoing(vClass).items(),
-                                  e1.getIncoming().items() if ignoreDirection else []):
+                                  e1.getIncoming().items() if ignoreDirection else [],
+                                  getToNormalIncoming(e1) if ignoreDirection and not self.hasWalkingArea else []):
                 # print(cost, e1.getID(), e2.getID(), e2 in seen)
                 if e2 not in seen:
                     newCost = cost + e2.getLength() / speedFunc(e2)
                     if e2 == e1.getBidi():
                         newCost += reversalPenalty
                     minPath = (e2,)
-                    if self.hasInternal:
+                    if self.hasInternal and conn is not None:
                         viaPath, minInternalCost = self.getInternalPath(conn, fastest=fastest)
                         if viaPath is not None:
                             newCost += minInternalCost
@@ -965,11 +979,14 @@ def readNet(filename, **others):
     except IOError:
         source = filename
     if HAVE_LXML and others.get("lxml", True):
+        if isinstance(source, pathlib.Path):
+            source = str(source)
         for event, v in lxml.etree.iterparse(source, events=("start", "end")):
             if event == "start":
                 netreader.startElement(v.tag, v.attrib)
             elif event == "end":
                 netreader.endElement(v.tag)
+            v.clear()  # reduce memory footprint
     else:
         parse(source, netreader)
     return netreader.getNet()

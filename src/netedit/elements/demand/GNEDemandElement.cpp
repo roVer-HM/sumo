@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,6 +19,7 @@
 /****************************************************************************/
 
 #include <netedit/GNENet.h>
+#include <netedit/GNESegment.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
 #include <netedit/frames/common/GNESelectorFrame.h>
@@ -47,7 +48,7 @@ GNEDemandElement::GNEDemandElement(const std::string& id, GNENet* net, GUIGlObje
                                    const std::vector<GNEAdditional*>& additionalParents,
                                    const std::vector<GNEDemandElement*>& demandElementParents,
                                    const std::vector<GNEGenericData*>& genericDataParents) :
-    GNEPathManager::PathElement(type, id, icon, options),
+    GNEPathElement(type, id, icon, options),
     GNEHierarchicalElement(net, tag, junctionParents, edgeParents, laneParents, additionalParents, demandElementParents, genericDataParents),
     GNEDemandElementDistribution(this),
     myStackedLabelNumber(0) {
@@ -63,7 +64,7 @@ GNEDemandElement::GNEDemandElement(GNEDemandElement* demandElementParent, GNENet
                                    const std::vector<GNEAdditional*>& additionalParents,
                                    const std::vector<GNEDemandElement*>& demandElementParents,
                                    const std::vector<GNEGenericData*>& genericDataParents) :
-    GNEPathManager::PathElement(type, demandElementParent->getID(), icon, options),
+    GNEPathElement(type, demandElementParent->getID(), icon, options),
     GNEHierarchicalElement(net, tag, junctionParents, edgeParents, laneParents, additionalParents, demandElementParents, genericDataParents),
     GNEDemandElementDistribution(this),
     myStackedLabelNumber(0) {
@@ -171,7 +172,21 @@ GNEDemandElement::checkDrawToContour() const {
 
 bool
 GNEDemandElement::checkDrawRelatedContour() const {
-    return false;
+    if (myTagProperty.getTag() == GNE_TAG_ROUTE_EMBEDDED) {
+        // check if inspected parent is inspected
+        for (const auto& inspectedAC : myNet->getViewNet()->getInspectedElements().getACs()) {
+            if (inspectedAC->getTagProperty().vehicleRouteEmbedded()) {
+                const auto demandElement = dynamic_cast<GNEDemandElement*>(inspectedAC);
+                if (demandElement && (demandElement->getChildDemandElements().size() > 0) &&
+                        (demandElement->getChildDemandElements().at(0) == this)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    } else {
+        return false;
+    }
 }
 
 
@@ -240,11 +255,26 @@ bool
 GNEDemandElement::checkDrawMoveContour() const {
     // get edit modes
     const auto& editModes = myNet->getViewNet()->getEditModes();
-    // check if we're in select mode
-    if (!myNet->getViewNet()->isMovingElement() && editModes.isCurrentSupermodeDemand() &&
-            (editModes.demandEditMode == DemandEditMode::DEMAND_MOVE) && myNet->getViewNet()->checkOverLockedElement(this, mySelected)) {
-        // only move the first element
-        return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
+    // check first set of conditions
+    if (!myNet->getViewNet()->isCurrentlyMovingElements() &&                            // another elements are not currently moved
+            editModes.isCurrentSupermodeDemand() &&                                         // supermode demand
+            (editModes.demandEditMode == DemandEditMode::DEMAND_MOVE) &&                    // move mode
+            myNet->getViewNet()->checkOverLockedElement(this, mySelected) &&                // no locked
+            myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this) {  // first element
+        // continue depending of subtype
+        if (myTagProperty.isVehicle()) {
+            // only vehicles over edges can be moved
+            if (myTagProperty.vehicleEdges() || myTagProperty.vehicleRoute() || myTagProperty.vehicleRouteEmbedded()) {
+                return true;
+            } else {
+                return false;
+            }
+        } else if ((myTagProperty.isPerson() || myTagProperty.isContainer()) && (getChildDemandElements().size() > 0)) {
+            // only persons/containers with their first plan over edge can be moved
+            return getChildDemandElements().front()->getTagProperty().planFromEdge();
+        } else {
+            return false;
+        }
     } else {
         return false;
     }
@@ -313,7 +343,7 @@ GNEDemandElement::isGLObjectLocked() const {
 
 void
 GNEDemandElement::markAsFrontElement() {
-    myNet->getViewNet()->setFrontAttributeCarrier(this);
+    markForDrawingFront();
 }
 
 
@@ -329,7 +359,7 @@ GNEDemandElement::deleteGLObject() {
         } else {
             myNet->deleteDemandElement(this, myNet->getViewNet()->getUndoList());
         }
-    } else if (getTagProperty().getTag() == GNE_TAG_ROUTE_EMBEDDED) {
+    } else if (myTagProperty.getTag() == GNE_TAG_ROUTE_EMBEDDED) {
         // remove parent demand element
         getParentDemandElements().front()->deleteGLObject();
     } else {
@@ -367,7 +397,7 @@ GNEDemandElement::isPathElementSelected() const {
 
 bool
 GNEDemandElement::isValidDemandElementID(const std::string& value) const {
-    if (value == getID()) {
+    if (!isTemplate() && (value == getID())) {
         return true;
     } else if (SUMOXMLDefinitions::isValidVehicleID(value)) {
         return (myNet->getAttributeCarriers()->retrieveDemandElement(myTagProperty.getTag(), value, false) == nullptr);
@@ -391,8 +421,12 @@ GNEDemandElement::isValidDemandElementID(const std::vector<SumoXMLTag>& tags, co
 
 void
 GNEDemandElement::setDemandElementID(const std::string& newID) {
-    // set microsim ID
-    setMicrosimID(newID);
+    // update ID
+    if (isTemplate() || !myTagProperty.hasAttribute(SUMO_ATTR_ID)) {
+        setMicrosimID(newID);
+    } else {
+        myNet->getAttributeCarriers()->updateDemandElementID(this, newID);
+    }
     // check if update ids of child elements
     if (myTagProperty.isPerson() || myTagProperty.isContainer()) {
         // Change IDs of all person plans children (stops, embedded routes...)
@@ -478,7 +512,7 @@ GNEDemandElement::drawJunctionLine(const GNEDemandElement* element) const {
     // push draw matrix
     GLHelper::pushMatrix();
     // Start with the drawing of the area traslating matrix to origin
-    myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, element->getType() + 0.1);
+    drawInLayer(element->getType() + 0.1);
     // set trip color
     GLHelper::setColor(RGBColor::RED);
     // draw line
@@ -489,15 +523,16 @@ GNEDemandElement::drawJunctionLine(const GNEDemandElement* element) const {
 
 
 void
-GNEDemandElement::drawStackLabel(const int number, const std::string& element, const Position& position, const double rotation, const double width, const double length, const double exaggeration) const {
+GNEDemandElement::drawStackLabel(const int number, const std::string& element, const Position& position, const double rotation,
+                                 const double width, const double length, const double exaggeration) const {
     // declare contour width
     const double contourWidth = (0.05 * exaggeration);
     // Push matrix
     GLHelper::pushMatrix();
     // Traslate to  top
-    glTranslated(position.x(), position.y(), GLO_ROUTE + getType() + 0.1 + GLO_PERSONFLOW);
+    glTranslated(position.x(), position.y(), GLO_VEHICLELABELS);
     glRotated(rotation, 0, 0, -1);
-    glTranslated((width * exaggeration * 0.5) + (0.35 * exaggeration), 0, 0);
+    glTranslated((width * exaggeration * 0.5) + (0.35 * exaggeration) + 0.05, 0, 0);
     // draw external box
     GLHelper::setColor(RGBColor::GREY);
     GLHelper::drawBoxLine(Position(), 0, (length * exaggeration), 0.3 * exaggeration);
@@ -628,7 +663,7 @@ GNEDemandElement::getEdgeStopIndex() const {
             // get last parent edge
             const auto lastEdge = parent->getParentEdges().back();
             bool stop = false;
-            const auto& pathElementSegments = myNet->getPathManager()->getPathElementSegments(parent);
+            const auto& pathElementSegments = myNet->getDemandPathManager()->getPathElementSegments(parent);
             // extract all edges from pathElement parent
             for (auto it = pathElementSegments.begin(); (it != pathElementSegments.end()) && !stop; it++) {
                 if ((*it)->getLane()) {
@@ -703,6 +738,95 @@ GNEDemandElement::getEdgeStopIndex() const {
 }
 
 
+RGBColor
+GNEDemandElement::getColorByScheme(const GUIColorer& c, const SUMOVehicleParameter* parameters) const {
+    // set color depending of color active
+    switch (c.getActive()) {
+        case 0: {
+            // test for emergency vehicle
+            if (getTypeParent()->getAttribute(SUMO_ATTR_GUISHAPE) == "emergency") {
+                return RGBColor::WHITE;
+            }
+            // test for firebrigade
+            if (getTypeParent()->getAttribute(SUMO_ATTR_GUISHAPE) == "firebrigade") {
+                return RGBColor::RED;
+            }
+            // test for police car
+            if (getTypeParent()->getAttribute(SUMO_ATTR_GUISHAPE) == "police") {
+                return RGBColor::BLUE;
+            }
+            if (getTypeParent()->getAttribute(SUMO_ATTR_GUISHAPE) == "scooter") {
+                return RGBColor::WHITE;
+            }
+            // check if color was set
+            if (parameters->wasSet(VEHPARS_COLOR_SET)) {
+                return parameters->color;
+            } else {
+                // take their parent's color)
+                return getTypeParent()->getColor();
+            }
+        }
+        case 2: {
+            if (parameters->wasSet(VEHPARS_COLOR_SET)) {
+                return parameters->color;
+            } else {
+                return c.getScheme().getColor(0);
+            }
+        }
+        case 3: {
+            if (getTypeParent()->isAttributeEnabled(SUMO_ATTR_COLOR)) {
+                return getTypeParent()->getColor();
+            } else {
+                return c.getScheme().getColor(0);
+            }
+            break;
+        }
+        case 4: {
+            if (getRouteParent()->getColor() != RGBColor::DEFAULT_COLOR) {
+                return getRouteParent()->getColor();
+            } else {
+                return c.getScheme().getColor(0);
+            }
+        }
+        case 5: {
+            Position p = getRouteParent()->getParentEdges().at(0)->getLanes().at(0)->getLaneShape()[0];
+            const Boundary& b = myNet->getBoundary();
+            Position center = b.getCenter();
+            double hue = 180. + atan2(center.x() - p.x(), center.y() - p.y()) * 180. / M_PI;
+            double sat = p.distanceTo(center) / center.distanceTo(Position(b.xmin(), b.ymin()));
+            return RGBColor::fromHSV(hue, sat, 1.);
+        }
+        case 6: {
+            Position p = getRouteParent()->getParentEdges().back()->getLanes().at(0)->getLaneShape()[-1];
+            const Boundary& b = myNet->getBoundary();
+            Position center = b.getCenter();
+            double hue = 180. + atan2(center.x() - p.x(), center.y() - p.y()) * 180. / M_PI;
+            double sat = p.distanceTo(center) / center.distanceTo(Position(b.xmin(), b.ymin()));
+            return RGBColor::fromHSV(hue, sat, 1.);
+        }
+        case 7: {
+            Position pb = getRouteParent()->getParentEdges().at(0)->getLanes().at(0)->getLaneShape()[0];
+            Position pe = getRouteParent()->getParentEdges().back()->getLanes().at(0)->getLaneShape()[-1];
+            const Boundary& b = myNet->getBoundary();
+            double hue = 180. + atan2(pb.x() - pe.x(), pb.y() - pe.y()) * 180. / M_PI;
+            Position minp(b.xmin(), b.ymin());
+            Position maxp(b.xmax(), b.ymax());
+            double sat = pb.distanceTo(pe) / minp.distanceTo(maxp);
+            return RGBColor::fromHSV(hue, sat, 1.);
+        }
+        case 35: { // color randomly (by pointer hash)
+            std::hash<const GNEDemandElement*> ptr_hash;
+            const double hue = (double)(ptr_hash(this) % 360); // [0-360]
+            const double sat = (double)((ptr_hash(this) / 360) % 67) / 100. + 0.33; // [0.33-1]
+            return RGBColor::fromHSV(hue, sat, 1.);
+        }
+        default: {
+            return c.getScheme().getColor(0);
+        }
+    }
+}
+
+
 std::string
 GNEDemandElement::getDistributionParents() const {
     SumoXMLTag tagDistribution = SUMO_TAG_NOTHING;
@@ -737,7 +861,7 @@ GNEDemandElement::buildMenuCommandRouteLength(GUIGLObjectPopupMenu* ret) const {
         edges = getParentEdges();
     }
     // calculate path
-    const auto path = myNet->getPathManager()->getPathCalculator()->calculateDijkstraPath(getVClass(), edges);
+    const auto path = myNet->getDemandPathManager()->getPathCalculator()->calculateDijkstraPath(getVClass(), edges);
     // check path size
     if (path.size() > 0) {
         double length = 0;

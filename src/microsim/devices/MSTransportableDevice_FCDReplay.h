@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2013-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -67,6 +67,7 @@ public:
 
     void setTrajectory(MSDevice_FCDReplay::Trajectory* const t) {
         myTrajectory = t;
+        myTrajectoryIndex = 1;
     }
 
     bool move(SUMOTime currentTime);
@@ -81,6 +82,7 @@ private:
 
     class MovePedestrians : public Command {
     public:
+        MovePedestrians();
         SUMOTime execute(SUMOTime currentTime);
     private:
         /// @brief Invalidated assignment operator.
@@ -88,7 +90,9 @@ private:
     };
 
 private:
-    MSDevice_FCDReplay::Trajectory* myTrajectory = nullptr;
+    const MSDevice_FCDReplay::Trajectory* myTrajectory = nullptr;
+
+    int myTrajectoryIndex = 0;
 
     /// @brief whether an event for pedestrian processing was added
     static bool myAmActive;

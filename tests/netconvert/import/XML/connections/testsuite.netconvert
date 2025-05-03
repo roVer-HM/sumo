@@ -95,6 +95,9 @@ prohibit_changing
 # some edges are disconnected explicitly
 unconnected
 
+# test for #15944
+unconnected_all
+
 # make sure that parallel left turns all use the same curve
 parallel_left_turns
 
@@ -106,3 +109,6 @@ indirect_left_priority
 
 # set custom edgeType for connection
 edgeType
+
+# conflicting (crossed) connections from the same edge to the same target edge
+sameEdge_crossed

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2010-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2010-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -43,6 +43,8 @@ class MSDevice_Transportable;
 class MSDevice_Emissions;
 class MSVehicleDevice;
 class MSEdgeWeightsStorage;
+class MSChargingStation;
+class StoppingPlaceMemory;
 
 
 // ===========================================================================
@@ -148,8 +150,15 @@ public:
     /** @brief Returns the vehicle's type definition
      * @return The vehicle's type definition
      */
-    inline const MSVehicleType& getVehicleType() const  {
+    inline const MSVehicleType& getVehicleType() const {
         return *myType;
+    }
+
+    /** @brief Returns the vehicle's type parameter
+     * @return The vehicle's type parameter
+     */
+    inline const SUMOVTypeParameter& getVTypeParameter() const {
+        return myType->getParameter();
     }
 
     /** @brief Returns the vehicle's access class
@@ -329,10 +338,11 @@ public:
      *
      * @param[in] route The new route to pass
      * @param[in] info Information regarding the replacement
+     * @param[in] addRouteStops Whether stops from the replacement route should be added
      * @param[in] removeStops Whether stops should be removed if they do not fit onto the new route
      * @return Whether the new route was accepted
      */
-    virtual bool replaceRoute(ConstMSRoutePtr route, const std::string& info, bool onInit = false, int offset = 0, bool addStops = true, bool removeStops = true,
+    virtual bool replaceRoute(ConstMSRoutePtr route, const std::string& info, bool onInit = false, int offset = 0, bool addRouteStops = true, bool removeStops = true,
                               std::string* msgReturn = nullptr);
 
     /** @brief Returns the vehicle's acceleration
@@ -544,6 +554,9 @@ public:
         return myType->getLength();
     }
 
+    /* @brief Return whether this vehicle must be treated like a railway vehicle
+     * either due to its vClass or the vClass of it's edge */
+    bool isRail() const;
 
     /** @brief Returns the vehicle's width
      * @return vehicle's width
@@ -734,6 +747,9 @@ public:
     */
     virtual bool resumeFromStopping() = 0;
 
+    /// @brief mark vehicle as active
+    void unregisterWaiting();
+
     /// @brief deletes the next stop at the given index if it exists
     bool abortNextStop(int nextStopIndex = 0);
 
@@ -833,6 +849,11 @@ public:
     * @return The energy charged to the battery in the current time step.
     */
     double getChargedEnergy() const;
+
+    /** @brief Returns the maximum charge rate allowed by the battery in the current time step (W)
+    * @return The maximum charge rate in the current time step.
+    */
+    double getMaxChargeRate() const;
 
     /** @brief Returns actual current (A) of ElecHybrid device
     * RICE_CHECK: Is this the current consumed from the overhead wire or the current driving the powertrain of the vehicle?
@@ -961,26 +982,23 @@ public:
     /// @brief apply departEdge and arrivalEdge attributes
     void setDepartAndArrivalEdge();
 
+    int getInsertionChecks() const;
+
     /// @brief interpret stop lane on opposite side of the road
     static MSLane* interpretOppositeStop(SUMOVehicleParameter::Stop& stop);
 
     /// @name state io
     //@{
-    void rememberBlockedParkingArea(const MSParkingArea* pa, bool local);
-    SUMOTime sawBlockedParkingArea(const MSParkingArea* pa, bool local) const;
+    void rememberBlockedParkingArea(const MSStoppingPlace* pa, bool local);
+    SUMOTime sawBlockedParkingArea(const MSStoppingPlace* pa, bool local) const;
+    void rememberBlockedChargingStation(const MSStoppingPlace* cs, bool local);
+    SUMOTime sawBlockedChargingStation(const MSStoppingPlace* cs, bool local) const;
 
     /// @brief score only needed when running with gui
-    void rememberParkingAreaScore(const MSParkingArea* pa, const std::string& score);
+    void rememberParkingAreaScore(const MSStoppingPlace* pa, const std::string& score);
     void resetParkingAreaScores();
-
-    /// @brief store information for a single parking area
-    struct PaMemory {
-        PaMemory() : blockedAtTime(-1), blockedAtTimeLocal(-1) {}
-
-        SUMOTime blockedAtTime;
-        SUMOTime blockedAtTimeLocal;
-        std::string score;
-    };
+    void rememberChargingStationScore(const MSStoppingPlace* cs, const std::string& score);
+    void resetChargingStationScores();
 
     int getNumberParkingReroutes() const {
         return myNumberParkingReroutes;
@@ -989,9 +1007,12 @@ public:
         myNumberParkingReroutes = value;
     }
 
-    typedef std::map<const MSParkingArea*, PaMemory, ComparatorIdLess> ParkingMemory;
-    const ParkingMemory* getParkingMemory() const {
+    const StoppingPlaceMemory* getParkingMemory() const {
         return myParkingMemory;
+    }
+
+    const StoppingPlaceMemory* getChargingMemory() const {
+        return myChargingMemory;
     }
     //@}
 
@@ -1069,7 +1090,8 @@ protected:
     int myRouteValidity;
 
     /// memory for parking search
-    ParkingMemory* myParkingMemory = nullptr;
+    StoppingPlaceMemory* myParkingMemory = nullptr;
+    StoppingPlaceMemory* myChargingMemory = nullptr;
     int myNumberParkingReroutes = 0;
 
     /// @brief Whether this vehicle is registered as waiting for a person or container (for deadlock-recognition)
@@ -1112,6 +1134,9 @@ private:
 
     /// @brief helper function
     bool insertJump(int nextStopIndex, MSRouteIterator itStart, std::string& errorMsg);
+
+    /// @brief patch stop.pars.index to record the number of skipped candidate edges before stop.edge (in a looped route)
+    void setSkips(MSStop& stop, int prevActiveStops);
 
 private:
     /// invalidated assignment operator

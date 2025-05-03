@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -68,10 +68,10 @@ GNEMeanDataFrame::MeanDataTypeSelector::MeanDataTypeSelector(GNEMeanDataFrame* m
     MFXGroupBoxModule(meanDataFrameParent, TL("MeanData Type")),
     myMeanDataFrameParent(meanDataFrameParent) {
     // Create MFXComboBoxIcon
-    myTypeComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, false, GUIDesignComboBoxVisibleItemsMedium,
+    myTypeComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, false, GUIDesignComboBoxVisibleItems,
                                          this, MID_GNE_SET_TYPE, GUIDesignComboBox);
     // add mean data types
-    const auto meanDataTypes = GNEAttributeCarrier::getTagPropertiesByType(GNETagProperties::MEANDATA);
+    const auto meanDataTypes = GNEAttributeCarrier::getTagPropertiesByType(GNETagProperties::MEANDATA, false);
     for (const auto& meanDataType : meanDataTypes) {
         myTypeComboBox->appendIconItem(meanDataType.getTagStr().c_str(), GUIIconSubSys::getIcon(meanDataType.getGUIIcon()));
     }
@@ -96,7 +96,7 @@ GNEMeanDataFrame::MeanDataTypeSelector::refreshMeanDataTypeSelector() {
     // clear items
     myTypeComboBox->clearItems();
     // add mean data types
-    const auto meanDataTypes = GNEAttributeCarrier::getTagPropertiesByType(GNETagProperties::MEANDATA);
+    const auto meanDataTypes = GNEAttributeCarrier::getTagPropertiesByType(GNETagProperties::MEANDATA, false);
     for (const auto& meanDataType : meanDataTypes) {
         myTypeComboBox->appendIconItem(meanDataType.getTagStr().c_str(), GUIIconSubSys::getIcon(meanDataType.getGUIIcon()));
     }
@@ -121,7 +121,7 @@ GNEMeanDataFrame::MeanDataTypeSelector::refreshMeanDataTypeSelector() {
 long
 GNEMeanDataFrame::MeanDataTypeSelector::onCmdSelectItem(FXObject*, FXSelector, void*) {
     // add mean data types
-    const auto meanDataTypes = GNEAttributeCarrier::getTagPropertiesByType(GNETagProperties::MEANDATA);
+    const auto meanDataTypes = GNEAttributeCarrier::getTagPropertiesByType(GNETagProperties::MEANDATA, false);
     // Check if value of myTypeMatchBox correspond of an allowed additional tags
     for (const auto& meanDataType : meanDataTypes) {
         if (meanDataType.getTagStr() == myTypeComboBox->getText().text()) {
@@ -134,8 +134,6 @@ GNEMeanDataFrame::MeanDataTypeSelector::onCmdSelectItem(FXObject*, FXSelector, v
             // show modules if selected item is valid
             myMeanDataFrameParent->myMeanDataEditor->showMeanDataEditorModule();
             myMeanDataFrameParent->myMeanDataSelector->showMeanDataSelector();
-            // Write Warning in console if we're in testing mode
-            WRITE_DEBUG(("Selected item '" + myTypeComboBox->getText() + "' in MeanDataTypeSelector").text());
             return 1;
         }
     }
@@ -147,8 +145,6 @@ GNEMeanDataFrame::MeanDataTypeSelector::onCmdSelectItem(FXObject*, FXSelector, v
     myMeanDataFrameParent->myMeanDataSelector->hideMeanDataSelector();
     // set color of myTypeMatchBox to red (invalid)
     myTypeComboBox->setTextColor(FXRGB(255, 0, 0));
-    // Write Warning in console if we're in testing mode
-    WRITE_DEBUG("Selected invalid item in MeanDataTypeSelector");
     return 1;
 }
 
@@ -278,7 +274,7 @@ GNEMeanDataFrame::MeanDataSelector::MeanDataSelector(GNEMeanDataFrame* typeFrame
     // get current meanData type
     SumoXMLTag meanDataTag = myMeanDataFrameParent->myMeanDataTypeSelector->getCurrentMeanData().getTag();
     // Create MFXComboBoxIcon
-    myMeanDataComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, false, GUIDesignComboBoxVisibleItemsMedium,
+    myMeanDataComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, false, GUIDesignComboBoxVisibleItems,
             this, MID_GNE_SET_TYPE, GUIDesignComboBox);
     // add meanDatas
     for (const auto& meanData : myMeanDataFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getMeanDatas().at(meanDataTag)) {
@@ -309,7 +305,7 @@ GNEMeanDataFrame::MeanDataSelector::showMeanDataSelector() {
 void
 GNEMeanDataFrame::MeanDataSelector::hideMeanDataSelector() {
     // hide attributes editor
-    myMeanDataFrameParent->myMeanDataAttributesEditor->hideAttributesEditorModule();
+    myMeanDataFrameParent->myMeanDataAttributesEditor->hideAttributesEditor();
     // hide
     hide();
 }
@@ -373,13 +369,9 @@ GNEMeanDataFrame::MeanDataSelector::refreshMeanDataSelector(bool afterChangingID
     // check if show attribute editor
     if (!afterChangingID) {
         if (myCurrentMeanData) {
-            // set myCurrentMeanData as inspected element (needed for attribute editor)
-            myMeanDataFrameParent->getViewNet()->setInspectedAttributeCarriers({myCurrentMeanData});
-            myMeanDataFrameParent->myMeanDataAttributesEditor->showAttributeEditorModule(false);
+            myMeanDataFrameParent->myMeanDataAttributesEditor->showAttributesEditor(myCurrentMeanData);
         } else {
-            // set myCurrentMeanData as inspected element (needed for attribute editor)
-            myMeanDataFrameParent->getViewNet()->setInspectedAttributeCarriers({});
-            myMeanDataFrameParent->myMeanDataAttributesEditor->hideAttributesEditorModule();
+            myMeanDataFrameParent->myMeanDataAttributesEditor->hideAttributesEditor();
         }
     }
 }
@@ -406,12 +398,8 @@ GNEMeanDataFrame::MeanDataSelector::onCmdSelectItem(FXObject*, FXSelector, void*
             myMeanDataComboBox->setTextColor(FXRGB(0, 0, 0));
             // refresh meanData editor module
             myMeanDataFrameParent->myMeanDataEditor->refreshMeanDataEditorModule();
-            // set myCurrentMeanData as inspected element
-            myMeanDataFrameParent->getViewNet()->setInspectedAttributeCarriers({myCurrentMeanData});
             // show modules if selected item is valid
-            myMeanDataFrameParent->myMeanDataAttributesEditor->showAttributeEditorModule(false);
-            // Write Warning in console if we're in testing mode
-            WRITE_DEBUG(("Selected item '" + myMeanDataComboBox->getText() + "' in MeanDataSelector").text());
+            myMeanDataFrameParent->myMeanDataAttributesEditor->showAttributesEditor(myCurrentMeanData);
             // update viewNet
             myMeanDataFrameParent->getViewNet()->updateViewNet();
             return 1;
@@ -421,11 +409,9 @@ GNEMeanDataFrame::MeanDataSelector::onCmdSelectItem(FXObject*, FXSelector, void*
     // refresh meanData editor module
     myMeanDataFrameParent->myMeanDataEditor->refreshMeanDataEditorModule();
     // hide all modules if selected item isn't valid
-    myMeanDataFrameParent->myMeanDataAttributesEditor->hideAttributesEditorModule();
+    myMeanDataFrameParent->myMeanDataAttributesEditor->hideAttributesEditor();
     // set color of myMeanDataMatchBox to red (invalid)
     myMeanDataComboBox->setTextColor(FXRGB(255, 0, 0));
-    // Write Warning in console if we're in testing mode
-    WRITE_DEBUG("Selected invalid item in MeanDataSelector");
     // update viewNet
     myMeanDataFrameParent->getViewNet()->updateViewNet();
     return 1;
@@ -444,7 +430,7 @@ GNEMeanDataFrame::GNEMeanDataFrame(GNEViewParent* viewParent, GNEViewNet* viewNe
     // build meanData selector
     myMeanDataSelector = new MeanDataSelector(this);
     // build meanData attributes editor
-    myMeanDataAttributesEditor = new GNEFrameAttributeModules::AttributesEditor(this);
+    myMeanDataAttributesEditor = new GNEAttributesEditor(this, TL("Attributes"), GNEAttributesEditor::EditorOptions::BASIC_ATTRIBUTES);
 }
 
 

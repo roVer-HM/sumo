@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -155,6 +155,7 @@ GNERerouterInterval::getParentName() const {
 
 void
 GNERerouterInterval::drawGL(const GUIVisualizationSettings& s) const {
+    const auto& inspectedElements = myNet->getViewNet()->getInspectedElements();
     // draw rerouter interval as listed attribute
     drawListedAdditional(s, getParentAdditionals().front()->getPositionInView(),
                          0, 0, RGBColor::RED, RGBColor::YELLOW, GUITexture::REROUTER_INTERVAL,
@@ -162,9 +163,9 @@ GNERerouterInterval::drawGL(const GUIVisualizationSettings& s) const {
     // iterate over additionals and check if drawn
     for (const auto& rerouterElement : getChildAdditionals()) {
         // if rerouter or their child is selected, then draw
-        if (isAttributeCarrierSelected() || myNet->getViewNet()->isAttributeCarrierInspected(this) ||
-                rerouterElement->isAttributeCarrierSelected() || myNet->getViewNet()->isAttributeCarrierInspected(rerouterElement) ||
-                (myNet->getViewNet()->getFrontAttributeCarrier() == rerouterElement)) {
+        if (isAttributeCarrierSelected() || inspectedElements.isACInspected(this) ||
+                rerouterElement->isAttributeCarrierSelected() || inspectedElements.isACInspected(rerouterElement) ||
+                rerouterElement->isMarkedForDrawingFront()) {
             rerouterElement->drawGL(s);
         }
     }
@@ -182,10 +183,8 @@ GNERerouterInterval::getAttribute(SumoXMLAttr key) const {
             return time2string(myEnd);
         case GNE_ATTR_PARENT:
             return getParentAdditionals().at(0)->getID();
-        case GNE_ATTR_SELECTED:
-            return toString(isAttributeCarrierSelected());
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttribute(key);
     }
 }
 
@@ -217,11 +216,11 @@ GNERerouterInterval::setAttribute(SumoXMLAttr key, const std::string& value, GNE
     switch (key) {
         case SUMO_ATTR_BEGIN:
         case SUMO_ATTR_END:
-        case GNE_ATTR_SELECTED:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -233,10 +232,8 @@ GNERerouterInterval::isValid(SumoXMLAttr key, const std::string& value) {
             return canParse<SUMOTime>(value) && (parse<SUMOTime>(value) < myEnd);
         case SUMO_ATTR_END:
             return canParse<SUMOTime>(value) && (parse<SUMOTime>(value) > myBegin);
-        case GNE_ATTR_SELECTED:
-            return canParse<bool>(value);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
@@ -265,15 +262,9 @@ GNERerouterInterval::setAttribute(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_END:
             myEnd = parse<SUMOTime>(value);
             break;
-        case GNE_ATTR_SELECTED:
-            if (parse<bool>(value)) {
-                selectAttributeCarrier();
-            } else {
-                unselectAttributeCarrier();
-            }
-            break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value);
+            break;
     }
 }
 

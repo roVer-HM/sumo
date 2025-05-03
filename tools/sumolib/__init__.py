@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2011-2024 German Aerospace Center (DLR) and others.
+# Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -72,6 +72,15 @@ def checkBinary(name, bindir=None):
         binary = exe(os.path.join(env.get("SUMO_HOME"), "bin", name))
         if os.path.exists(binary):
             return binary
+    try:
+        import sumo
+        # If there is a directory "sumo" in the current path, the import will succeed, so we need to double check.
+        if hasattr(sumo, "SUMO_HOME"):
+            binary = exe(os.path.join(sumo.SUMO_HOME, "bin", name))
+            if os.path.exists(binary):
+                return binary
+    except ImportError:
+        pass
     if bindir is None:
         binary = exe(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'bin', name)))
         if os.path.exists(binary):

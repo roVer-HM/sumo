@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -38,7 +38,7 @@
 
 GNEContainerPlanFrame::GNEContainerPlanFrame(GNEViewParent* viewParent, GNEViewNet* viewNet) :
     GNEFrame(viewParent, viewNet, TL("ContainerPlans")),
-    myRouteHandler("", viewNet->getNet(), true, false) {
+    myRouteHandler("", viewNet->getNet(), myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false) {
 
     // create container types selector module
     myContainerSelector = new GNEDemandElementSelector(this, {GNETagProperties::TagType::CONTAINER});
@@ -50,7 +50,7 @@ GNEContainerPlanFrame::GNEContainerPlanFrame(GNEViewParent* viewParent, GNEViewN
     myContainerPlanAttributes = new GNEAttributesCreator(this);
 
     // create plan creator Module
-    myPlanCreator = new GNEPlanCreator(this);
+    myPlanCreator = new GNEPlanCreator(this, viewNet->getNet()->getDemandPathManager());
 
     // Create GNEElementTree module
     myContainerHierarchy = new GNEElementTree(this);
@@ -92,10 +92,10 @@ void
 GNEContainerPlanFrame::hide() {
     // reset candidate edges
     for (const auto& edge : myViewNet->getNet()->getAttributeCarriers()->getEdges()) {
-        edge.second.second->resetCandidateFlags();
+        edge.second->resetCandidateFlags();
     }
     // enable undo/redo
-    myViewNet->getViewParent()->getGNEAppWindows()->enableUndoRedo();
+    myViewNet->getViewParent()->getGNEAppWindows()->enableUndoRedoTemporally();
     // hide frame
     GNEFrame::hide();
 }
@@ -133,13 +133,13 @@ GNEContainerPlanFrame::addContainerPlanElement(const GNEViewNetHelper::ViewObjec
     if (myPlanSelector->markRoutes() && viewObjects.getDemandElementFront() &&
             (viewObjects.getDemandElementFront()->getTagProperty().getTag() == SUMO_TAG_ROUTE)) {
         return myPlanCreator->addRoute(viewObjects.getDemandElementFront());
-    } else if (myPlanSelector->markContainerStops() && viewObjects.getAdditionalFront() &&
+    } else if (myPlanSelector->markStoppingPlaces() && viewObjects.getAdditionalFront() &&
                (viewObjects.getAdditionalFront()->getTagProperty().isStoppingPlace())) {
         return myPlanCreator->addStoppingPlace(viewObjects.getAdditionalFront());
-    } else if (myPlanSelector->markEdges() && viewObjects.getLaneFront()) {
-        return myPlanCreator->addEdge(viewObjects.getLaneFront());
     } else if (myPlanSelector->markJunctions() && viewObjects.getJunctionFront()) {
         return myPlanCreator->addJunction(viewObjects.getJunctionFront());
+    } else if (myPlanSelector->markEdges() && viewObjects.getLaneFront()) {
+        return myPlanCreator->addEdge(viewObjects.getLaneFront());
     } else if (myPlanSelector->markTAZs() && viewObjects.getTAZFront()) {
         return myPlanCreator->addTAZ(viewObjects.getTAZFront());
     } else {

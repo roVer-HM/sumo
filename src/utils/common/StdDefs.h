@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2005-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2005-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -118,11 +118,15 @@ extern int gPrecisionGeo; // for lon,lat
 extern int gPrecisionRandom; // for randomized values (i.e. speedFactor)
 extern bool gHumanReadableTime;
 extern bool gSimulation; // whether the current application is sumo or sumo-gui (as opposed to a router)
+extern bool gIgnoreUnknownVClass; // whether the unknown vehicle classes shall be ignored on loading (for upward compatibility)
 extern double gWeightsRandomFactor; // randomization for edge weights
 extern double gWeightsWalkOppositeFactor; // factor for walking against flow of traffic
 
 /// the language for GUI elements and messages
 extern std::string gLanguage;
+
+/// the default size for GUI elements
+extern int GUIDesignHeight;
 
 
 /// @brief global utility flags for debugging

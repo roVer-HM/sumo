@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -86,6 +86,7 @@ MSTransportableControl::MSTransportableControl(const bool isPerson):
         OutputDevice::createDeviceByOption("personinfo-output", "tripinfos", "tripinfo_file.xsd");
     }
     myAbortWaitingTimeout = string2time(oc.getString("time-to-teleport.ride"));
+    myMaxTransportableNumber = isPerson ? oc.getInt("max-num-persons") : -1;
 }
 
 
@@ -198,9 +199,16 @@ MSTransportableControl::checkWaiting(MSNet* net, const SUMOTime time) {
         // we cannot use an iterator here because there might be additions to the vector while proceeding
         for (auto it = transportables.begin(); it != transportables.end();) {
             MSTransportable* t = *it;
+            if (myMaxTransportableNumber > 0 && myRunningNumber >= myMaxTransportableNumber) {
+                TransportableVector& nextStep = myWaiting4Departure[time + DELTA_T];
+                nextStep.insert(nextStep.begin(), transportables.begin(), transportables.end());
+                transportables.clear();
+                break;
+            }
             it = transportables.erase(it);
             myWaitingForDepartureNumber--;
             const bool isPerson = t->isPerson();
+            t->setDeparted(time);
             if (t->proceed(net, time)) {
                 myRunningNumber++;
                 MSNet::getInstance()->informTransportableStateListener(t,
@@ -268,7 +276,7 @@ MSTransportableControl::hasAnyWaiting(const MSEdge* edge, SUMOVehicle* vehicle) 
 
 
 bool
-MSTransportableControl::loadAnyWaiting(const MSEdge* edge, SUMOVehicle* vehicle, SUMOTime& timeToLoadNext, SUMOTime& stopDuration) {
+MSTransportableControl::loadAnyWaiting(const MSEdge* edge, SUMOVehicle* vehicle, SUMOTime& timeToLoadNext, SUMOTime& stopDuration, MSTransportable* const force) {
     bool ret = false;
     const auto wait = myWaiting4Vehicle.find(edge);
     if (wait != myWaiting4Vehicle.end()) {
@@ -276,17 +284,17 @@ MSTransportableControl::loadAnyWaiting(const MSEdge* edge, SUMOVehicle* vehicle,
         TransportableVector& transportables = wait->second;
         for (TransportableVector::iterator i = transportables.begin(); i != transportables.end();) {
             MSTransportable* const t = *i;
-            if (t->isWaitingFor(vehicle)
-                    && vehicle->allowsBoarding(t)
-                    && timeToLoadNext - DELTA_T <= currentTime
-                    && vehicle->isStoppedInRange(t->getEdgePos(), MSGlobals::gStopTolerance)) {
+            if (t->isWaitingFor(vehicle) && (t == force ||
+                                             (vehicle->allowsBoarding(t)
+                                              && timeToLoadNext - DELTA_T <= currentTime
+                                              && vehicle->isStoppedInRange(t->getEdgePos(), MSGlobals::gStopTolerance)))) {
                 edge->removeTransportable(t);
                 vehicle->addTransportable(t);
                 if (myAbortWaitingTimeout >= 0) {
                     t->setAbortWaiting(-1);
                 }
                 if (timeToLoadNext >= 0) { // meso does not have loading times
-                    const SUMOTime loadingDuration = vehicle->getVehicleType().getLoadingDuration(t->isPerson());
+                    const SUMOTime loadingDuration = (SUMOTime)((double)vehicle->getVehicleType().getLoadingDuration(t->isPerson()) * t->getVehicleType().getBoardingFactor());
                     //update the time point at which the next transportable can be loaded on the vehicle
                     if (timeToLoadNext > currentTime - DELTA_T) {
                         timeToLoadNext += loadingDuration;

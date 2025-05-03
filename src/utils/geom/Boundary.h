@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -98,8 +98,11 @@ public:
     /// @brief Returns whether the boundary contains the given coordinate
     bool around(const Position& p, double offset = 0) const;
 
-    /// @brief Returns whether the boundary contains the given 2D coordinate
+    /// @brief Returns whether the boundary contains the given 2D coordinate (position)
     bool around2D(const Position& p, double offset = 0) const;
+
+    /// @brief Returns whether the boundary contains the given 2D coordinate (x-y version)
+    bool around2D(const double x, const double y) const;
 
     /// @brief Returns whether the boundary overlaps with the given polygon
     bool overlapsWith(const AbstractPoly& poly, double offset = 0) const;
@@ -113,7 +116,10 @@ public:
     /// @}
 
     /// @brief return true if this boundary contains the given boundary (only X-Y)
-    double contains(const Boundary& b) const;
+    bool contains2D(const Boundary& b) const;
+
+    /// @brief return true if at least one point of the given boundary is in boundary(only X-Y)
+    bool overlaps2D(const Boundary& b) const;
 
     /// @brief check if Boundary is Initialised
     bool isInitialised() const;

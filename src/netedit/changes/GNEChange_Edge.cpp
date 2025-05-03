@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,7 +20,9 @@
 #include <config.h>
 
 #include <netedit/GNENet.h>
-
+#include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/GNEApplicationWindow.h>
 
 #include "GNEChange_Edge.h"
 
@@ -52,12 +54,13 @@ GNEChange_Edge::GNEChange_Edge(GNEEdge* edge, bool forward):
 
 
 GNEChange_Edge::~GNEChange_Edge() {
-    myEdge->decRef("GNEChange_Edge");
-    if (myEdge->unreferenced()) {
-        // show extra information for tests
-        WRITE_DEBUG("Deleting unreferenced " + myEdge->getTagStr() + " '" + myEdge->getID() + "' GNEChange_Edge");
-        // delete edge
-        delete myEdge;
+    // only continue we have undo-redo mode enabled
+    if (myEdge->getNet()->getViewNet()->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed()) {
+        myEdge->decRef("GNEChange_Edge");
+        if (myEdge->unreferenced()) {
+            // delete edge
+            delete myEdge;
+        }
     }
 }
 
@@ -65,8 +68,6 @@ GNEChange_Edge::~GNEChange_Edge() {
 void
 GNEChange_Edge::undo() {
     if (myForward) {
-        // show extra information for tests
-        WRITE_DEBUG("Removing " + myEdge->getTagStr() + " '" + myEdge->getID() + "' from " + toString(SUMO_TAG_NET));
         // unselect if mySelectedElement is enabled
         if (mySelectedElement) {
             myEdge->unselectAttributeCarrier();
@@ -78,8 +79,6 @@ GNEChange_Edge::undo() {
         // delete edge from net
         myEdge->getNet()->getAttributeCarriers()->deleteSingleEdge(myEdge);
     } else {
-        // show extra information for tests
-        WRITE_DEBUG("Adding " + myEdge->getTagStr() + " '" + myEdge->getID() + "' from " + toString(SUMO_TAG_NET));
         // select if mySelectedElement is enabled
         if (mySelectedElement) {
             myEdge->selectAttributeCarrier();
@@ -99,8 +98,6 @@ GNEChange_Edge::undo() {
 void
 GNEChange_Edge::redo() {
     if (myForward) {
-        // show extra information for tests
-        WRITE_DEBUG("Adding " + myEdge->getTagStr() + " '" + myEdge->getID() + "' from " + toString(SUMO_TAG_NET));
         // select if mySelectedElement is enabled
         if (mySelectedElement) {
             myEdge->selectAttributeCarrier();
@@ -112,8 +109,6 @@ GNEChange_Edge::redo() {
         // add edge lanes into parents and children
         addEdgeLanes();
     } else {
-        // show extra information for tests
-        WRITE_DEBUG("Removing " + myEdge->getTagStr() + " '" + myEdge->getID() + "' from " + toString(SUMO_TAG_NET));
         // unselect if mySelectedElement is enabled
         if (mySelectedElement) {
             myEdge->unselectAttributeCarrier();

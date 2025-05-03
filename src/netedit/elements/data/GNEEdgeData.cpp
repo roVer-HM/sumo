@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,14 +18,9 @@
 // class for edge data
 /****************************************************************************/
 
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-#include <config.h>
-
-#include <netedit/GNEUndoList.h>
 #include <netedit/GNENet.h>
+#include <netedit/GNESegment.h>
+#include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
 #include <netedit/changes/GNEChange_Attribute.h>
@@ -143,7 +138,7 @@ GNEEdgeData::isGenericDataVisible() const {
 void
 GNEEdgeData::updateGeometry() {
     // calculate path
-    myNet->getPathManager()->calculateConsecutivePathEdges(this, SVC_IGNORING, getParentEdges());
+    myNet->getDataPathManager()->calculateConsecutivePathEdges(this, SVC_IGNORING, getParentEdges());
 }
 
 
@@ -200,7 +195,7 @@ GNEEdgeData::computePathElement() {
 
 
 void
-GNEEdgeData::drawLanePartialGL(const GUIVisualizationSettings& s, const GNEPathManager::Segment* segment, const double offsetFront) const {
+GNEEdgeData::drawLanePartialGL(const GUIVisualizationSettings& s, const GNESegment* segment, const double offsetFront) const {
     // get color
     const auto color = setColor(s);
     if (segment->getLane() && (color.alpha() != 0) && myNet->getViewNet()->getEditModes().isCurrentSupermodeData()) {
@@ -213,7 +208,7 @@ GNEEdgeData::drawLanePartialGL(const GUIVisualizationSettings& s, const GNEPathM
                 // Add a draw matrix
                 GLHelper::pushMatrix();
                 // Start with the drawing of the area translating matrix to origin
-                myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_EDGEDATA, offsetFront);
+                drawInLayer(GLO_EDGEDATA, offsetFront);
                 GLHelper::setColor(RGBColor::BLACK);
                 // draw geometry
                 GUIGeometry::drawGeometry(laneEdge->getDrawingConstants()->getDetail(), laneEdge->getLaneGeometry(), laneEdge->getDrawingConstants()->getDrawingWidth());
@@ -237,13 +232,13 @@ GNEEdgeData::drawLanePartialGL(const GUIVisualizationSettings& s, const GNEPathM
             segment->getContour()->drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
         }
         // calculate contour and draw dotted geometry
-        segment->getContour()->calculateContourEdge(s, d, segment->getLane()->getParentEdge(), true, true);
+        segment->getContour()->calculateContourEdge(s, d, segment->getLane()->getParentEdge(), this, getType(), true, true);
     }
 }
 
 
 void
-GNEEdgeData::drawJunctionPartialGL(const GUIVisualizationSettings& /*s*/, const GNEPathManager::Segment* /*segment*/, const double /*offsetFront*/) const {
+GNEEdgeData::drawJunctionPartialGL(const GUIVisualizationSettings& /*s*/, const GNESegment* /*segment*/, const double /*offsetFront*/) const {
     // EdgeDatas don't use drawJunctionPartialGL over junction
 }
 
@@ -279,12 +274,10 @@ GNEEdgeData::getAttribute(SumoXMLAttr key) const {
             return myDataIntervalParent->getAttribute(SUMO_ATTR_BEGIN);
         case SUMO_ATTR_END:
             return myDataIntervalParent->getAttribute(SUMO_ATTR_END);
-        case GNE_ATTR_SELECTED:
-            return toString(isAttributeCarrierSelected());
         case GNE_ATTR_PARAMETERS:
             return getParametersStr();
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttribute(key);
     }
 }
 
@@ -301,12 +294,12 @@ GNEEdgeData::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList
         return; //avoid needless changes, later logic relies on the fact that attributes have changed
     }
     switch (key) {
-        case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -314,12 +307,10 @@ GNEEdgeData::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList
 bool
 GNEEdgeData::isValid(SumoXMLAttr key, const std::string& value) {
     switch (key) {
-        case GNE_ATTR_SELECTED:
-            return canParse<bool>(value);
         case GNE_ATTR_PARAMETERS:
             return Parameterised::areAttributesValid(value, true);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
@@ -349,20 +340,14 @@ GNEEdgeData::getHierarchyName() const {
 void
 GNEEdgeData::setAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
-        case GNE_ATTR_SELECTED:
-            if (parse<bool>(value)) {
-                selectAttributeCarrier();
-            } else {
-                unselectAttributeCarrier();
-            }
-            break;
         case GNE_ATTR_PARAMETERS:
             setParametersStr(value);
             // update attribute colors
             myDataIntervalParent->getDataSetParent()->updateAttributeColors();
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value);
+            break;
     }
 }
 

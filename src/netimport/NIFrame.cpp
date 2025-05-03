@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -124,7 +124,7 @@ NIFrame::fillOptions(OptionsCont& oc, bool forNetedit) {
 
     oc.doRegister("matsim-files", new Option_FileName());
     oc.addSynonyme("matsim-files", "matsim");
-    oc.addDescription("matsim-files", "Input", TL("Read MATsim-net from FILE"));
+    oc.addDescription("matsim-files", "Input", TL("Read MATSim-net from FILE"));
 
     oc.doRegister("itsumo-files", new Option_FileName());
     oc.addSynonyme("itsumo-files", "itsumo");
@@ -203,6 +203,9 @@ NIFrame::fillOptions(OptionsCont& oc, bool forNetedit) {
     oc.doRegister("osm.sidewalks", new Option_Bool(false));
     oc.addDescription("osm.sidewalks", "Formats", TL("Import sidewalks"));
 
+    oc.doRegister("osm.oneway-reverse-sidewalk", new Option_Bool(false));
+    oc.addDescription("osm.oneway-reverse-sidewalk", "Formats", TL("Default to building two sidewals on oneway streets (may affect divided roads)"));
+
     oc.doRegister("osm.crossings", new Option_Bool(false));
     oc.addDescription("osm.crossings", "Formats", TL("Import crossings"));
 
@@ -234,7 +237,7 @@ NIFrame::fillOptions(OptionsCont& oc, bool forNetedit) {
 
     // register matsim options
     oc.doRegister("matsim.keep-length", new Option_Bool(false));
-    oc.addDescription("matsim.keep-length", "Formats", TL("The edge lengths given in the MATSIM-file will be kept"));
+    oc.addDescription("matsim.keep-length", "Formats", TL("The edge lengths given in the MATSim-file will be kept"));
 
     oc.doRegister("matsim.lanes-from-capacity", new Option_Bool(false));
     oc.addDescription("matsim.lanes-from-capacity", "Formats", TL("The lane number will be computed from the capacity"));
@@ -462,7 +465,7 @@ NIFrame::checkOptions(OptionsCont& oc) {
         oc.setDefault("osm.all-attributes", "true");
     }
     if (oc.getBool("osm.crossings") && !oc.getBool("osm.sidewalks")) {
-        WRITE_WARNING(TL("It is recommend to use option osm.crossings with osm.sidewalks"));
+        WRITE_WARNING(TL("It is recommended to use option osm.crossings with osm.sidewalks"));
     }
     if (oc.isSet("shapefile-prefix") && !oc.isDefault("shapefile.name")) {
         oc.setDefault("output.street-names", "true");

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2007-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2007-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -196,7 +196,7 @@ MSIdling_TaxiStand::idle(MSDevice_Taxi* taxi) {
         lastStop = &veh.getStop((int)veh.getStops().size() - 1);
     }
     if (lastStop == nullptr || lastStop->parkingarea == nullptr) {
-        const MSParkingArea* pa = rerouteDef->parkProbs.getVals().front().first;
+        const MSParkingArea* pa = dynamic_cast<MSParkingArea*>(rerouteDef->parkProbs.getVals().front().first);
         SUMOVehicleParameter::Stop stop;
         stop.lane = pa->getLane().getID();
         stop.startPos = pa->getBeginLanePosition();

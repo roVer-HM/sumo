@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -234,13 +234,26 @@ protected:
     /// @brief shape height of POI
     PositionVector myShapeHeight;
 
+    /// @brief variable used for moving contour up
+    GNEContour myMovingContourUp;
+
+    /// @brief variable used for moving contour down
+    GNEContour myMovingContourDown;
+
+    /// @brief variable used for moving contour left
+    GNEContour myMovingContourLeft;
+
+    /// @brief variable used for moving contour right
+    GNEContour myMovingContourRight;
+
 private:
     /// @brief draw POI
-    void drawPOI(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d) const;
+    void drawPOI(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
+                 const bool movingGeometryPoints) const;
 
     /// @brief calculate contour
     void calculatePOIContour(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
-                             const double exaggeration) const;
+                             const double exaggeration, const bool movingGeometryPoints) const;
 
     /// @brief set attribute after validation
     void setAttribute(SumoXMLAttr key, const std::string& value) override;

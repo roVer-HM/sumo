@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -68,8 +68,12 @@ public:
         EXTENDED =          1 << 20,    // Attribute is extended (in Frame will not be shown, but is editable in a Dialog, see VType attributes)
         UPDATEGEOMETRY =    1 << 21,    // Attribute require update geometry at the end of function setAttribute(...)
         ACTIVATABLE =       1 << 22,    // Attribute can be switch on/off using a checkbox in frame
-        FLOWDEFINITION =    1 << 23,    // Attribute is part of a flow definition (Number, vehsPerHour...)
+        FLOW =              1 << 23,    // Attribute is part of a flow definition (Number, vehsPerHour...)
         AUTOMATICID =       1 << 24,    // Attribute id can generate their own ID (used by additionals, vehicles, etc...)
+        COPYABLE =          1 << 25,    // Attribute can be copied over other element with the same tagProperty (used for edge/lane templates)
+        ALWAYSENABLED =     1 << 26,    // Attribute cannot be disabled
+        GEO =               1 << 27,    // Attribute is of type GEO
+        NETEDIT =           1 << 28,    // Attribute is exclusive of netedit
     };
 
     /// @brief default constructor
@@ -208,10 +212,22 @@ public:
     bool isActivatable() const;
 
     /// @brief return true if attribute is part of a flow definition
-    bool isFlowDefinition() const;
+    bool isFlow() const;
 
     /// @brief return true if attribute ID can generate an automatic ID
     bool hasAutomaticID() const;
+
+    /// @brief return true if attribute is copyable
+    bool isCopyable() const;
+
+    /// @brief return true if attribute is always enabled
+    bool isAlwaysEnabled() const;
+
+    /// @brief return true if attribute is GEO
+    bool isGEO() const;
+
+    /// @brief return true if attribute is exclusive of netedit
+    bool isNetedit() const;
 
 private:
     /// @brief XML Attribute

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -233,7 +233,8 @@ GNEPoly::checkDrawMoveContour() const {
     // get edit modes
     const auto& editModes = myNet->getViewNet()->getEditModes();
     // check if we're in move mode
-    if (!myNet->getViewNet()->isMovingElement() && editModes.isCurrentSupermodeNetwork() &&
+    if (!myNet->getViewNet()->isCurrentlyMovingElements() && editModes.isCurrentSupermodeNetwork() &&
+            !myNet->getViewNet()->getEditNetworkElementShapes().getEditedNetworkElement() &&
             (editModes.networkEditMode == NetworkEditMode::NETWORK_MOVE) && myNet->getViewNet()->checkOverLockedElement(this, mySelected)) {
         // only move the first element
         return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
@@ -274,6 +275,9 @@ GNEPoly::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
         }
     }
     GUIDesigns::buildFXMenuCommand(ret, TL("Select elements within polygon"), TL("Select elements within polygon boundary"), nullptr, &parent, MID_GNE_POLYGON_SELECT);
+    if (myShape.size() > 3) {
+        GUIDesigns::buildFXMenuCommand(ret, TL("Triangulate polygon"), TL("Convert the current polygon in triangles"), nullptr, &parent, MID_GNE_POLYGON_TRIANGULATE);
+    }
     // add separator
     new FXMenuSeparator(ret);
     // create a extra FXMenuCommand if mouse is over a vertex
@@ -301,22 +305,24 @@ GNEPoly::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
 void
 GNEPoly::drawGL(const GUIVisualizationSettings& s) const {
     // first check if poly can be drawn
-    if (myNet->getViewNet()->getDemandViewOptions().showShapes() && myNet->getViewNet()->getDataViewOptions().showShapes() &&
+    if (myNet->getViewNet()->getDemandViewOptions().showShapes() &&
+            myNet->getViewNet()->getDataViewOptions().showShapes() &&
             GUIPolygon::checkDraw(s, this, this)) {
-        // draw boundaries
+        // draw boundary
+        const auto boundary = getCenteringBoundary();
         GLHelper::drawBoundary(s, getCenteringBoundary());
         // get exaggeration
         const double polyExaggeration = getExaggeration(s);
         // get detail level
         const auto d = s.getDetailLevel(polyExaggeration);
         // draw geometry only if we'rent in drawForObjectUnderCursor mode
-        if (!s.drawForViewObjectsHandler) {
+        if (s.checkDrawPoly(boundary, isAttributeCarrierSelected())) {
             // get colors
             const RGBColor color = isAttributeCarrierSelected() ? s.colorSettings.selectionColor : getShapeColor();
             // push layer matrix
             GLHelper::pushMatrix();
             // translate to front
-            myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, getShapeLayer());
+            drawInLayer(s.polyUseCustomLayer ? s.polyCustomLayer : getShapeLayer());
             // draw polygon
             drawPolygon(s, d, color, polyExaggeration);
             // draw contour if don't move whole polygon
@@ -338,7 +344,7 @@ GNEPoly::drawGL(const GUIVisualizationSettings& s) const {
             myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
         }
         // calculate contour
-        calculateContourPolygons(s, d, polyExaggeration, (getFill() || myAdditionalGeometry.getShape().isClosed()));
+        calculateContourPolygons(s, d, getShapeLayer(), polyExaggeration, getFill());
     }
 }
 
@@ -487,18 +493,14 @@ void
 GNEPoly::simplifyShape(bool allowUndo) {
     if (!mySimplifiedShape && myShape.size() > 2) {
         const Boundary b =  myShape.getBoxBoundary();
+        // create a square as simplified shape
         PositionVector simplifiedShape;
+        simplifiedShape.push_back(Position(b.xmin(), b.ymin()));
+        simplifiedShape.push_back(Position(b.xmin(), b.ymax()));
+        simplifiedShape.push_back(Position(b.xmax(), b.ymax()));
+        simplifiedShape.push_back(Position(b.xmax(), b.ymin()));
         if (myShape.isClosed()) {
-            // create a square as simplified shape
-            simplifiedShape.push_back(Position(b.xmin(), b.ymin()));
-            simplifiedShape.push_back(Position(b.xmin(), b.ymax()));
-            simplifiedShape.push_back(Position(b.xmax(), b.ymax()));
-            simplifiedShape.push_back(Position(b.xmax(), b.ymin()));
             simplifiedShape.push_back(simplifiedShape[0]);
-        } else {
-            // create a line as simplified shape
-            simplifiedShape.push_back(myShape.front());
-            simplifiedShape.push_back(myShape.back());
         }
         // set new shape depending of allowUndo
         if (allowUndo) {
@@ -519,15 +521,50 @@ GNEPoly::simplifyShape(bool allowUndo) {
 }
 
 
+CommonXMLStructure::SumoBaseObject*
+GNEPoly::getSumoBaseObject() const {
+    CommonXMLStructure::SumoBaseObject* polygonBaseObject = new CommonXMLStructure::SumoBaseObject(nullptr);
+    polygonBaseObject->setTag(myTagProperty.getTag());
+    // fill attributes
+    polygonBaseObject->addStringAttribute(SUMO_ATTR_ID, myID);
+    polygonBaseObject->addPositionVectorAttribute(SUMO_ATTR_SHAPE, myShape);
+    polygonBaseObject->addBoolAttribute(SUMO_ATTR_GEO, myGEO);
+    polygonBaseObject->addBoolAttribute(SUMO_ATTR_FILL, myFill);
+    polygonBaseObject->addDoubleAttribute(SUMO_ATTR_LINEWIDTH, myLineWidth);
+    polygonBaseObject->addColorAttribute(SUMO_ATTR_COLOR, getShapeColor());
+    polygonBaseObject->addStringAttribute(SUMO_ATTR_TYPE, getShapeType());
+    polygonBaseObject->addDoubleAttribute(SUMO_ATTR_LAYER, getShapeLayer());
+    polygonBaseObject->addStringAttribute(SUMO_ATTR_IMGFILE, getShapeImgFile());
+    polygonBaseObject->addDoubleAttribute(SUMO_ATTR_ANGLE, getShapeNaviDegree());
+    polygonBaseObject->addStringAttribute(SUMO_ATTR_NAME, getShapeName());
+    polygonBaseObject->addBoolAttribute(SUMO_ATTR_RELATIVEPATH, getShapeRelativePath());
+    return polygonBaseObject;
+}
+
+
 std::string
 GNEPoly::getAttribute(SumoXMLAttr key) const {
     switch (key) {
         case SUMO_ATTR_ID:
             return myID;
         case SUMO_ATTR_SHAPE:
-            return toString(myShape);
+            if ((GeoConvHelper::getFinal().getProjString() != "!") && myGEO) {
+                return TL("Using GEO Shape");
+            } else {
+                return toString(myShape);
+            }
         case SUMO_ATTR_GEOSHAPE:
-            return toString(myGeoShape, gPrecisionGeo);
+            if (GeoConvHelper::getFinal().getProjString() != "!") {
+                return toString(myGeoShape, gPrecisionGeo);
+            } else {
+                return TL("No geo-conversion defined");
+            }
+        case GNE_ATTR_CLOSESHAPE:
+            if ((myShape.size() > 1) && (myShape.front() == myShape.back())) {
+                return True;
+            } else {
+                return False;
+            }
         case SUMO_ATTR_COLOR:
             return toString(getShapeColor());
         case SUMO_ATTR_FILL:
@@ -554,12 +591,10 @@ GNEPoly::getAttribute(SumoXMLAttr key) const {
             return getShapeName();
         case GNE_ATTR_CLOSE_SHAPE:
             return toString(myShape.isClosed());
-        case GNE_ATTR_SELECTED:
-            return toString(isAttributeCarrierSelected());
         case GNE_ATTR_PARAMETERS:
             return SUMOPolygon::getParametersStr();
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttribute(key);
     }
 }
 
@@ -585,6 +620,7 @@ GNEPoly::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* un
         case SUMO_ATTR_ID:
         case SUMO_ATTR_SHAPE:
         case SUMO_ATTR_GEOSHAPE:
+        case GNE_ATTR_CLOSESHAPE:
         case SUMO_ATTR_COLOR:
         case SUMO_ATTR_FILL:
         case SUMO_ATTR_LINEWIDTH:
@@ -596,12 +632,12 @@ GNEPoly::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* un
         case SUMO_ATTR_GEO:
         case SUMO_ATTR_NAME:
         case GNE_ATTR_CLOSE_SHAPE:
-        case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -619,6 +655,8 @@ GNEPoly::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return canParse<PositionVector>(value);
             }
+        case GNE_ATTR_CLOSESHAPE:
+            return canParse<bool>(value);
         case SUMO_ATTR_COLOR:
             return canParse<RGBColor>(value);
         case SUMO_ATTR_FILL:
@@ -649,7 +687,7 @@ GNEPoly::isValid(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_NAME:
             return SUMOXMLDefinitions::isValidAttribute(value);
         case GNE_ATTR_CLOSE_SHAPE:
-            if (canParse<bool>(value)) {
+            if (canParse<bool>(value) && (myShape.size() > 0)) {
                 bool closePolygon = parse<bool>(value);
                 if (closePolygon && (myShape.begin() == myShape.end())) {
                     // Polygon already closed, then invalid value
@@ -663,23 +701,35 @@ GNEPoly::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return false;
             }
-        case GNE_ATTR_SELECTED:
-            return canParse<bool>(value);
         case GNE_ATTR_PARAMETERS:
             return areParametersValid(value);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
 
 bool
-GNEPoly::isAttributeEnabled(SumoXMLAttr /* key */) const {
-    // check if we're in supermode Network
-    if (myNet->getViewNet()->getEditModes().isCurrentSupermodeNetwork()) {
-        return true;
-    } else {
-        return false;
+GNEPoly::isAttributeEnabled(SumoXMLAttr key) const {
+    switch (key) {
+        case SUMO_ATTR_SHAPE:
+            if (GeoConvHelper::getFinal().getProjString() != "!") {
+                return myGEO == false;
+            } else {
+                return true;
+            }
+        case SUMO_ATTR_GEO:
+            return GeoConvHelper::getFinal().getProjString() != "!";
+        case SUMO_ATTR_GEOSHAPE:
+            if (GeoConvHelper::getFinal().getProjString() != "!") {
+                return myGEO == true;
+            } else {
+                return false;
+            }
+        case GNE_ATTR_CLOSESHAPE:
+            return myShape.size() > 1;
+        default:
+            return true;
     }
 }
 
@@ -741,11 +791,22 @@ GNEPoly::setAttribute(SumoXMLAttr key, const std::string& value) {
             updateCenteringBoundary(true);
             break;
         }
+        case GNE_ATTR_CLOSESHAPE: {
+            auto shape = myShape;
+            if (parse<bool>(value)) {
+                shape.push_back(shape.front());
+            } else {
+                shape.pop_back();
+            }
+            setAttribute(SUMO_ATTR_SHAPE, toString(shape));
+            break;
+        }
         case SUMO_ATTR_COLOR:
             setShapeColor(parse<RGBColor>(value));
             break;
         case SUMO_ATTR_FILL:
             myFill = parse<bool>(value);
+            myAdditionalContour.clearContour();
             break;
         case SUMO_ATTR_LINEWIDTH:
             myLineWidth = parse<double>(value);
@@ -784,8 +845,8 @@ GNEPoly::setAttribute(SumoXMLAttr key, const std::string& value) {
                 myShape.closePolygon();
                 myGeoShape.closePolygon();
             } else {
-                myShape.pop_back();
-                myGeoShape.pop_back();
+                myShape.openPolygon();
+                myGeoShape.openPolygon();
             }
             // disable simplified shape flag
             mySimplifiedShape = false;
@@ -794,18 +855,12 @@ GNEPoly::setAttribute(SumoXMLAttr key, const std::string& value) {
             // update centering boundary
             updateCenteringBoundary(true);
             break;
-        case GNE_ATTR_SELECTED:
-            if (parse<bool>(value)) {
-                selectAttributeCarrier();
-            } else {
-                unselectAttributeCarrier();
-            }
-            break;
         case GNE_ATTR_PARAMETERS:
             SUMOPolygon::setParametersStr(value);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value);
+            break;
     }
 }
 

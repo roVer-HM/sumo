@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -95,22 +95,23 @@ GNEPOI::getMoveOperation() {
             (myNet->getViewNet()->getEditModes().networkEditMode == NetworkEditMode::NETWORK_MOVE) &&
             myNet->getViewNet()->getMouseButtonKeyPressed().shiftKeyPressed()) {
         // get snap radius
-        const double snap_radius = myNet->getViewNet()->getVisualisationSettings().neteditSizeSettings.additionalGeometryPointRadius;
+        const double snapRadius = myNet->getViewNet()->getVisualisationSettings().neteditSizeSettings.additionalGeometryPointRadius;
+        const double snapRadiusSquared = snapRadius * snapRadius;
         // get mouse position
         const Position mousePosition = myNet->getViewNet()->getPositionInformation();
         // check if we're editing width or height
         if ((myShapeWidth.size() == 0) || (myShapeHeight.size() == 0)) {
             return nullptr;
-        } else if (myShapeHeight.front().distanceSquaredTo2D(mousePosition) <= (snap_radius * snap_radius)) {
+        } else if (myShapeHeight.front().distanceSquaredTo2D(mousePosition) <= snapRadiusSquared) {
             // edit height
             return new GNEMoveOperation(this, myShapeHeight, true, GNEMoveOperation::OperationType::HEIGHT);
-        } else if (myShapeHeight.back().distanceSquaredTo2D(mousePosition) <= (snap_radius * snap_radius)) {
+        } else if (myShapeHeight.back().distanceSquaredTo2D(mousePosition) <= snapRadiusSquared) {
             // edit height
             return new GNEMoveOperation(this, myShapeHeight, false, GNEMoveOperation::OperationType::HEIGHT);
-        } else if (myShapeWidth.front().distanceSquaredTo2D(mousePosition) <= (snap_radius * snap_radius)) {
+        } else if (myShapeWidth.front().distanceSquaredTo2D(mousePosition) <= snapRadiusSquared) {
             // edit width
             return new GNEMoveOperation(this, myShapeWidth, true, GNEMoveOperation::OperationType::WIDTH);
-        } else if (myShapeWidth.back().distanceSquaredTo2D(mousePosition) <= (snap_radius * snap_radius)) {
+        } else if (myShapeWidth.back().distanceSquaredTo2D(mousePosition) <= snapRadiusSquared) {
             // edit width
             return new GNEMoveOperation(this, myShapeWidth, false, GNEMoveOperation::OperationType::WIDTH);
         } else {
@@ -304,7 +305,8 @@ GNEPOI::checkDrawMoveContour() const {
     // get edit modes
     const auto& editModes = myNet->getViewNet()->getEditModes();
     // check if we're in move mode
-    if (!myNet->getViewNet()->isMovingElement() && editModes.isCurrentSupermodeNetwork() &&
+    if (!myNet->getViewNet()->isCurrentlyMovingElements() && editModes.isCurrentSupermodeNetwork() &&
+            !myNet->getViewNet()->getEditNetworkElementShapes().getEditedNetworkElement() &&
             (editModes.networkEditMode == NetworkEditMode::NETWORK_MOVE) && myNet->getViewNet()->checkOverLockedElement(this, mySelected)) {
         // only move the first element
         return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
@@ -353,25 +355,46 @@ GNEPOI::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
 
 void
 GNEPOI::drawGL(const GUIVisualizationSettings& s) const {
-    // draw boundaries
-    GLHelper::drawBoundary(s, getCenteringBoundary());
     // first check if POI can be drawn
-    if (myNet->getViewNet()->getDemandViewOptions().showShapes() && myNet->getViewNet()->getDataViewOptions().showShapes()) {
+    if (myNet->getViewNet()->getDemandViewOptions().showShapes() &&
+            myNet->getViewNet()->getDataViewOptions().showShapes()) {
+        // draw boundaries
+        GLHelper::drawBoundary(s, getCenteringBoundary());
         // obtain POIExaggeration
         const double POIExaggeration = getExaggeration(s);
         // get detail level
         const auto d = s.getDetailLevel(POIExaggeration);
+        // check if draw moving geometry points (only if we have a defined image
+        const bool movingGeometryPoints = getShapeImgFile().empty() ? false : drawMovingGeometryPoints(false);
         // draw geometry only if we'rent in drawForObjectUnderCursor mode
-        if (!s.drawForViewObjectsHandler) {
+        if (s.checkDrawPOI(getWidth(), getHeight(), d, isAttributeCarrierSelected())) {
             // draw POI
-            drawPOI(s, d);
+            drawPOI(s, d, movingGeometryPoints);
             // draw lock icon
             GNEViewNetHelper::LockIcon::drawLockIcon(d, this, getType(), getPositionInView(), POIExaggeration);
-            // draw dotted contour
-            myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
+            // draw dotted contours
+            if (movingGeometryPoints) {
+                // get snap radius
+                const double snapRadius = myNet->getViewNet()->getVisualisationSettings().neteditSizeSettings.additionalGeometryPointRadius;
+                const double snapRadiusSquared = snapRadius * snapRadius;
+                // get mouse position
+                const Position mousePosition = myNet->getViewNet()->getPositionInformation();
+                // check if we're editing width or height
+                if ((myShapeHeight.front().distanceSquaredTo2D(mousePosition) <= snapRadiusSquared) ||
+                        (myShapeHeight.back().distanceSquaredTo2D(mousePosition) <= snapRadiusSquared)) {
+                    myMovingContourUp.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidthSmall, true);
+                    myMovingContourDown.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidthSmall, true);
+                } else if ((myShapeWidth.front().distanceSquaredTo2D(mousePosition) <= snapRadiusSquared) ||
+                           (myShapeWidth.back().distanceSquaredTo2D(mousePosition) <= snapRadiusSquared)) {
+                    myMovingContourLeft.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidthSmall, true);
+                    myMovingContourRight.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidthSmall, true);
+                }
+            } else {
+                myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
+            }
         }
         // calculate contour
-        calculatePOIContour(s, d, POIExaggeration);
+        calculatePOIContour(s, d, POIExaggeration, movingGeometryPoints);
     }
 }
 
@@ -395,20 +418,26 @@ GNEPOI::getAttribute(SumoXMLAttr key) const {
             return toString(getFriendlyPos());
         case SUMO_ATTR_POSITION_LAT:
             return toString(myPosLat);
-        case SUMO_ATTR_LON: {
-            // calculate geo position
-            Position GEOPosition(x(), y());
-            GeoConvHelper::getFinal().cartesian2geo(GEOPosition);
-            // return lon
-            return toString(GEOPosition.x(), 8);
-        }
-        case SUMO_ATTR_LAT: {
-            // calculate geo position
-            Position GEOPosition(x(), y());
-            GeoConvHelper::getFinal().cartesian2geo(GEOPosition);
-            // return lat
-            return toString(GEOPosition.y(), 8);
-        }
+        case SUMO_ATTR_LON:
+            if (GeoConvHelper::getFinal().getProjString() != "!") {
+                // calculate geo position
+                Position GEOPosition(x(), y());
+                GeoConvHelper::getFinal().cartesian2geo(GEOPosition);
+                // return lon
+                return toString(GEOPosition.x(), 8);
+            } else {
+                return TL("No geo-conversion defined");
+            }
+        case SUMO_ATTR_LAT:
+            if (GeoConvHelper::getFinal().getProjString() != "!") {
+                // calculate geo position
+                Position GEOPosition(x(), y());
+                GeoConvHelper::getFinal().cartesian2geo(GEOPosition);
+                // return lat
+                return toString(GEOPosition.y(), 8);
+            } else {
+                return TL("No geo-conversion defined");
+            }
         case SUMO_ATTR_TYPE:
             return getShapeType();
         case SUMO_ATTR_ICON:
@@ -431,14 +460,12 @@ GNEPOI::getAttribute(SumoXMLAttr key) const {
             return toString(getShapeNaviDegree());
         case SUMO_ATTR_NAME:
             return getShapeName();
-        case GNE_ATTR_SELECTED:
-            return toString(isAttributeCarrierSelected());
         case GNE_ATTR_PARAMETERS:
             return PointOfInterest::getParametersStr();
         case GNE_ATTR_SHIFTLANEINDEX:
             return "";
         default:
-            throw InvalidArgument(getTagStr() + " attribute '" + toString(key) + "' not allowed");
+            return getCommonAttribute(key);
     }
 }
 
@@ -475,13 +502,13 @@ GNEPOI::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* und
         case SUMO_ATTR_HEIGHT:
         case SUMO_ATTR_ANGLE:
         case SUMO_ATTR_NAME:
-        case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
         case GNE_ATTR_SHIFTLANEINDEX:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -536,23 +563,28 @@ GNEPOI::isValid(SumoXMLAttr key, const std::string& value) {
             return canParse<double>(value);
         case SUMO_ATTR_NAME:
             return SUMOXMLDefinitions::isValidAttribute(value);
-        case GNE_ATTR_SELECTED:
-            return canParse<bool>(value);
         case GNE_ATTR_PARAMETERS:
             return areParametersValid(value);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
 
 bool
-GNEPOI::isAttributeEnabled(SumoXMLAttr /* key */) const {
-    // check if we're in supermode Network
-    if (myNet->getViewNet()->getEditModes().isCurrentSupermodeNetwork()) {
-        return true;
-    } else {
-        return false;
+GNEPOI::isAttributeEnabled(SumoXMLAttr key) const {
+    switch (key) {
+        case SUMO_ATTR_POSITION:
+            if (myTagProperty.getTag() == GNE_TAG_POIGEO) {
+                return (GeoConvHelper::getFinal().getProjString() != "!");
+            } else {
+                return true;
+            }
+        case SUMO_ATTR_LON:
+        case SUMO_ATTR_LAT:
+            return (GeoConvHelper::getFinal().getProjString() != "!");
+        default:
+            return true;
     }
 }
 
@@ -573,33 +605,27 @@ GNEPOI::getHierarchyName() const {
 // ===========================================================================
 
 void
-GNEPOI::drawPOI(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d) const {
+GNEPOI::drawPOI(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
+                const bool movingGeometryPoints) const {
     if (GUIPointOfInterest::checkDraw(s, this)) {
         // draw inner polygon
-        if (myNet->getViewNet()->getFrontAttributeCarrier() == this) {
+        if (myDrawInFront) {
             GUIPointOfInterest::drawInnerPOI(s, this, this, drawUsingSelectColor(), GLO_FRONTELEMENT,
                                              myShapeWidth.length2D(), myShapeHeight.length2D());
         } else {
-            GUIPointOfInterest::drawInnerPOI(s, this, this, drawUsingSelectColor(), getShapeLayer(),
+            GUIPointOfInterest::drawInnerPOI(s, this, this, drawUsingSelectColor(), s.poiUseCustomLayer ? s.poiCustomLayer : getShapeLayer(),
                                              myShapeWidth.length2D(), myShapeHeight.length2D());
         }
-        // draw an orange square mode if there is an image(see #4036)
-        if (!getShapeImgFile().empty() && OptionsCont::getOptions().getBool("gui-testing")) {
-            // Add a draw matrix for drawing logo
-            GLHelper::pushMatrix();
-            glTranslated(x(), y(), getType() + 0.01);
-            GLHelper::setColor(RGBColor::ORANGE);
-            GLHelper::drawBoxLine(Position(0, 1), 0, 2, 1);
-            GLHelper::popMatrix();
-        }
         // draw geometry points
-        if (myShapeHeight.size() > 0) {
-            drawUpGeometryPoint(s, d, myShapeHeight.front(), 180, RGBColor::ORANGE);
-            drawDownGeometryPoint(s, d, myShapeHeight.back(), 180, RGBColor::ORANGE);
-        }
-        if (myShapeWidth.size() > 0) {
-            drawLeftGeometryPoint(s, d, myShapeWidth.back(), -90, RGBColor::ORANGE);
-            drawRightGeometryPoint(s, d, myShapeWidth.front(), -90, RGBColor::ORANGE);
+        if (movingGeometryPoints) {
+            if (myShapeHeight.size() > 0) {
+                drawUpGeometryPoint(s, d, myShapeHeight.front(), 180, RGBColor::ORANGE);
+                drawDownGeometryPoint(s, d, myShapeHeight.back(), 180, RGBColor::ORANGE);
+            }
+            if (myShapeWidth.size() > 0) {
+                drawLeftGeometryPoint(s, d, myShapeWidth.back(), -90, RGBColor::ORANGE);
+                drawRightGeometryPoint(s, d, myShapeWidth.front(), -90, RGBColor::ORANGE);
+            }
         }
     }
 }
@@ -607,12 +633,25 @@ GNEPOI::drawPOI(const GUIVisualizationSettings& s, const GUIVisualizationSetting
 
 void
 GNEPOI::calculatePOIContour(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
-                            const double exaggeration) const {
-    // draw contour depending of shape img file
-    if (getShapeImgFile().empty()) {
-        myAdditionalContour.calculateContourCircleShape(s, d, this, *this, 1.3, exaggeration);
+                            const double exaggeration, const bool movingGeometryPoints) const {
+    // check if we're calculating the contour or the moving geometry points
+    if (movingGeometryPoints) {
+        myMovingContourUp.calculateContourCircleShape(s, d, this, myShapeHeight.front(), s.neteditSizeSettings.additionalGeometryPointRadius,
+                getShapeLayer(), exaggeration, nullptr);
+        myMovingContourDown.calculateContourCircleShape(s, d, this, myShapeHeight.back(), s.neteditSizeSettings.additionalGeometryPointRadius,
+                getShapeLayer(), exaggeration, nullptr);
+        myMovingContourLeft.calculateContourCircleShape(s, d, this, myShapeWidth.front(), s.neteditSizeSettings.additionalGeometryPointRadius,
+                getShapeLayer(), exaggeration, nullptr);
+        myMovingContourRight.calculateContourCircleShape(s, d, this, myShapeWidth.back(), s.neteditSizeSettings.additionalGeometryPointRadius,
+                getShapeLayer(), exaggeration, nullptr);
     } else {
-        myAdditionalContour.calculateContourRectangleShape(s, d, this, *this, getHeight() * 0.5, getWidth() * 0.5, 0, 0, getShapeNaviDegree(), exaggeration);
+        const auto parentEdgeBoundary = (getParentLanes().size() > 0) ? getParentLanes().front()->getParentEdge() : nullptr;
+        if (getShapeImgFile().empty()) {
+            const double radius = getWidth() > getHeight() ? getWidth() : getHeight();
+            myAdditionalContour.calculateContourCircleShape(s, d, this, *this, radius * 0.5, getShapeLayer(), exaggeration, parentEdgeBoundary);
+        } else {
+            myAdditionalContour.calculateContourRectangleShape(s, d, this, *this, getHeight() * 0.5, getWidth() * 0.5, getShapeLayer(), 0, 0, getShapeNaviDegree(), exaggeration, parentEdgeBoundary);
+        }
     }
 }
 
@@ -736,13 +775,6 @@ GNEPOI::setAttribute(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_NAME:
             setShapeName(value);
             break;
-        case GNE_ATTR_SELECTED:
-            if (parse<bool>(value)) {
-                selectAttributeCarrier();
-            } else {
-                unselectAttributeCarrier();
-            }
-            break;
         case GNE_ATTR_PARAMETERS:
             PointOfInterest::setParametersStr(value);
             break;
@@ -750,7 +782,8 @@ GNEPOI::setAttribute(SumoXMLAttr key, const std::string& value) {
             shiftLaneIndex();
             break;
         default:
-            throw InvalidArgument(getTagStr() + " attribute '" + toString(key) + "' not allowed");
+            return setCommonAttribute(key, value);
+            break;
     }
 }
 

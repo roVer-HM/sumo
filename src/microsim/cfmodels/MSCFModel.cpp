@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -893,7 +893,7 @@ MSCFModel::maximumSafeStopSpeedBallistic(double gap, double decel, double curren
                 return 0.;
             }
         }
-        // In general we solve g = v0^2/(-2a), where the the rhs is the distance
+        // In general we solve g = v0^2/(-2a), where the rhs is the distance
         // covered until stop when breaking with a<0
         const double a = -v0 * v0 / (2 * g);
         return v0 + a * TS;

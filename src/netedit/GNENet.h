@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -57,8 +57,14 @@ public:
     /// @brief get saving status
     GNENetHelper::SavingStatus* getSavingStatus() const;
 
-    /// @brief get path manager
-    GNEPathManager* getPathManager();
+    /// @brief get network path manager
+    GNEPathManager* getNetworkPathManager();
+
+    /// @brief get demand path manager
+    GNEPathManager* getDemandPathManager();
+
+    /// @brief get data path manager
+    GNEPathManager* getDataPathManager();
 
     /// @name inherited from GUIGlObject
     /// @{
@@ -109,7 +115,7 @@ public:
 
     /**@brief Returns the RTree used for visualisation speed-up
      * @return The visualisation speed-up
-     * @note only use in GNEViewNet constructor
+     * @note only use in GNEViewNet constructor. For edit grid ALWAYS use addGLObjectIntoGrid/removeGLObjectIntoGrid
      */
     SUMORTree& getGrid();
 
@@ -183,10 +189,16 @@ public:
     void deleteCrossing(GNECrossing* crossing, GNEUndoList* undoList);
 
     /**@brief remove additional
-     * @param[in] additional The Shape to be removed
+     * @param[in] additional The additional to be removed
      * @param[in] undoList The undolist in which to mark changes
      */
     void deleteAdditional(GNEAdditional* additional, GNEUndoList* undoList);
+
+    /**@brief remove TAZSourceSink
+     * @param[in] TAZSourceSink The TAZSourceSink to be removed
+     * @param[in] undoList The undolist in which to mark changes
+     */
+    void deleteTAZSourceSink(GNETAZSourceSink* TAZSourceSink, GNEUndoList* undoList);
 
     /**@brief remove demand element
      * @param[in] demandElement The Shape to be removed
@@ -256,9 +268,9 @@ public:
     /**@brief split edge at position by inserting a new junction
      * @param[in] edge The edge to be split
      * @param[in] pos The position on which to insert the new junction
-     * @return The new junction
+     * @return The new junction and the new edge
      */
-    GNEJunction* splitEdge(GNEEdge* edge, const Position& pos, GNEUndoList* undoList, GNEJunction* newJunction = 0);
+    std::pair<GNEJunction*, GNEEdge*> splitEdge(GNEEdge* edge, const Position& pos, GNEUndoList* undoList, GNEJunction* newJunction = 0);
 
     /**@brief split all edges at position by inserting one new junction
      * @param[in] edge The edge to be split
@@ -285,7 +297,7 @@ public:
      * @param[in] target The junction that will be enlarged
      * @param[in] undoList The undo list with which to register changes
      */
-    void mergeJunctions(GNEJunction* moved, GNEJunction* target, GNEUndoList* undoList);
+    void mergeJunctions(GNEJunction* moved, const GNEJunction* target, GNEUndoList* undoList);
 
     /// @brief select all roundabout edges and junctions for the current roundabout
     void selectRoundabout(GNEJunction* junction, GNEUndoList* undoList);
@@ -420,16 +432,16 @@ public:
     void removeExplicitTurnaround(std::string id);
 
     /// @brief save additional elements
-    void saveAdditionals();
+    bool saveAdditionals();
 
     /// @brief save JuPedSim elements
-    void saveJuPedSimElements(const std::string& file);
+    bool saveJuPedSimElements(const std::string& file);
 
     /// @brief save demand element elements of the network
-    void saveDemandElements();
+    bool saveDemandElements();
 
     /// @brief save data set elements of the network
-    void saveDataElements();
+    bool saveDataElements();
 
     /// @brief get minimum interval
     double getDataSetIntervalMinimumBegin() const;
@@ -438,7 +450,7 @@ public:
     double getDataSetIntervalMaximumEnd() const;
 
     /// @brief save meanData elements of the network
-    void saveMeanDatas();
+    bool saveMeanDatas();
 
     /**@brief save TLS Programs elements of the network
      * @param[in] filename name of the file in which save TLS Programs
@@ -498,8 +510,14 @@ protected:
     /// @brief AttributeCarriers of net
     GNENetHelper::SavingStatus* mySavingStatus;
 
-    /// @brief Path manager
-    GNEPathManager* myPathManager;
+    /// @brief Network path manager
+    GNEPathManager* myNetworkPathManager;
+
+    /// @brief Demand path manager
+    GNEPathManager* myDemandPathManager;
+
+    /// @brief Data path manager
+    GNEPathManager* myDataPathManager;
 
     /// @name counters for junction/edge IDs
     // @{

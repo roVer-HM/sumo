@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2011-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -50,11 +50,11 @@ NGFrame::fillOptions() {
     oc.addDescription("turn-lanes.length", "Processing", TL("Set the length of generated turning lanes to FLOAT"));
 
     oc.doRegister("perturb-x", new Option_String("0"));
-    oc.addDescription("perturb-x", "Processing", TL("Apply random spatial perturbation in x direction according the the given distribution"));
+    oc.addDescription("perturb-x", "Processing", TL("Apply random spatial perturbation in x direction according to the given distribution"));
     oc.doRegister("perturb-y", new Option_String("0"));
-    oc.addDescription("perturb-y", "Processing", TL("Apply random spatial perturbation in y direction according the the given distribution"));
+    oc.addDescription("perturb-y", "Processing", TL("Apply random spatial perturbation in y direction according to the given distribution"));
     oc.doRegister("perturb-z", new Option_String("0"));
-    oc.addDescription("perturb-z", "Processing", TL("Apply random spatial perturbation in z direction according the the given distribution"));
+    oc.addDescription("perturb-z", "Processing", TL("Apply random spatial perturbation in z direction according to the given distribution"));
 
     oc.doRegister("bidi-probability", new Option_Float(1));
     oc.addSynonyme("bidi-probability", "rand-bidi-probability", true);
@@ -272,6 +272,10 @@ NGFrame::checkOptions() {
     }
     if (oc.getBool("random-type") && !oc.isSet("type-files")) {
         WRITE_WARNING(TL("Option 'random-type' takes no effect unless 'type-files' are loaded"));
+    }
+    if (oc.getFloat("rand.connectivity") > 0.999) {
+        WRITE_ERROR(TL("Option 'rand.connectivity' requires a value below 0.999"));
+        ok = false;
     }
     return ok;
 }

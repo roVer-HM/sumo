@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -42,6 +42,7 @@ class MSVehicleType;
 class OutputDevice;
 class SUMOVehicleParameter;
 class SUMOVehicle;
+class MSStageTrip;
 class MSTransportableDevice;
 class MSTransportable;
 class MSTransportableStateAdapter;
@@ -67,6 +68,9 @@ enum class MSStageType {
 */
 class MSStage : public Parameterised {
 public:
+    /// @brief sentinel value
+    static const double ARRIVALPOS_UNSPECIFIED;
+
     /// constructor
     MSStage(const MSStageType type, const MSEdge* destination, MSStoppingPlace* toStop, const double arrivalPos,
             const double arrivalPosLat = 0.0, const std::string& group = "");
@@ -93,6 +97,9 @@ public:
     virtual double getArrivalPos() const {
         return myArrivalPos;
     }
+
+    bool unspecifiedArrivalPos() const;
+
 
     virtual double getArrivalPosLat() const {
         return myArrivalPosLat;
@@ -264,6 +271,23 @@ public:
         myCosts = costs;
     }
 
+    MSStageTrip* getTrip() const {
+        return myTrip;
+    }
+
+    void setTrip(MSStageTrip* trip) {
+        myTrip = trip;
+    }
+
+    virtual bool equals(const MSStage& s) const {
+        return myDestination == s.myDestination &&
+               myDestinationStop == s.myDestinationStop &&
+               myArrivalPos == s.myArrivalPos &&
+               myArrivalPosLat == s.myArrivalPosLat &&
+               myType == s.myType &&
+               myGroup == s.myGroup;
+    }
+
 protected:
     /// the next edge to reach by getting transported
     const MSEdge* myDestination;
@@ -294,6 +318,8 @@ protected:
 
     /// @brief Information on which parameter were set (mainly for vehroute output)
     int myParametersSet;
+
+    MSStageTrip* myTrip = nullptr;
 
     /// @brief the offset for computing positions when standing at an edge
     static const double ROADSIDE_OFFSET;

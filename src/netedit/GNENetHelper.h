@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -21,6 +21,7 @@
 #pragma once
 #include <config.h>
 
+#include <unordered_map>
 #include <utils/foxtools/fxheader.h>
 #include <foreign/rtree/SUMORTree.h>
 #include <netbuild/NBEdge.h>
@@ -30,6 +31,7 @@
 #include <utils/common/IDSupplier.h>
 #include <utils/common/SUMOVehicleClass.h>
 #include <utils/geom/Boundary.h>
+#include <utils/geom/Triangle.h>
 #include <utils/geom/PositionVector.h>
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <utils/gui/globjects/GUIShapeContainer.h>
@@ -78,6 +80,7 @@ struct GNENetHelper {
         friend class GNEAdditionalHandler;
         friend class GNERouteHandler;
         friend class GNEDataHandler;
+        friend class GNEMeanDataHandler;
         friend class GNEJunction;
         friend class GNEEdge;
         friend class GNEDataSet;
@@ -85,6 +88,7 @@ struct GNENetHelper {
         friend class GNEChange_Junction;
         friend class GNEChange_EdgeType;
         friend class GNEChange_Edge;
+        friend class GNEChange_TAZSourceSink;
         friend class GNEChange_Additional;
         friend class GNEChange_Shape;
         friend class GNEChange_TAZElement;
@@ -105,8 +109,21 @@ struct GNENetHelper {
         /// @brief remap junction and edge IDs
         void remapJunctionAndEdgeIds();
 
-        /// @brief check if shape of given AC (network element) is around the given shape
-        bool isNetworkElementAroundShape(GNEAttributeCarrier* AC, const PositionVector& shape) const;
+        /// @brief check if shape of given AC (network element) is around the given triangle
+        bool isNetworkElementAroundTriangle(GNEAttributeCarrier* AC, const Triangle& triangle) const;
+
+        /// @brief functions related with number of elements sorted by categories
+        /// @{
+        /// @brief get number of current network elements saved in AttributeCarriers
+        int getNumberOfNetworkElements() const;
+
+        /// @brief get number of current demand elements saved in AttributeCarriers (default vTypes are NOT included)
+        int getNumberOfDemandElements() const;
+
+        /// @brief get number of current data elements saved in AttributeCarriers
+        int getNumberOfDataElements() const;
+
+        /// @}
 
         /// @name function for attribute carriers
         /// @{
@@ -140,15 +157,8 @@ struct GNENetHelper {
          */
         GNEJunction* retrieveJunction(const std::string& id, bool hardFail = true) const;
 
-        /**@brief get junction by glObject
-         * @param[in] glObject The GUIGlObject associated with the element
-         * @param[in] hardFail Whether attempts to retrieve a nonexisting junction should result in an exception
-         * @throws UnknownElement
-         */
-        GNEJunction* retrieveJunction(const GUIGlObject* glObject, bool hardFail = true) const;
-
         /// @brief get junctions
-        const std::map<std::string, std::pair<const GUIGlObject*, GNEJunction*> >& getJunctions() const;
+        const std::map<std::string, GNEJunction*>& getJunctions() const;
 
         /// @brief return selected junctions
         std::vector<GNEJunction*> getSelectedJunctions() const;
@@ -180,7 +190,7 @@ struct GNENetHelper {
         GNECrossing* retrieveCrossing(const GUIGlObject* glObject, bool hardFail = true) const;
 
         /// @brief get crossings
-        const std::map<const GUIGlObject*, GNECrossing*>& getCrossings() const;
+        const std::unordered_map<const GUIGlObject*, GNECrossing*>& getCrossings() const;
 
         /// @brief return all selected crossings
         std::vector<GNECrossing*> getSelectedCrossings() const;
@@ -200,7 +210,7 @@ struct GNENetHelper {
         GNEWalkingArea* retrieveWalkingArea(const GUIGlObject* glObject, bool hardFail = true) const;
 
         /// @brief get walkingAreas
-        const std::map<const GUIGlObject*, GNEWalkingArea*>& getWalkingAreas() const;
+        const std::unordered_map<const GUIGlObject*, GNEWalkingArea*>& getWalkingAreas() const;
 
         /// @brief return all selected walkingAreas
         std::vector<GNEWalkingArea*> getSelectedWalkingAreas() const;
@@ -245,13 +255,6 @@ struct GNENetHelper {
          */
         GNEEdge* retrieveEdge(const std::string& id, bool hardFail = true) const;
 
-        /**@brief get edge by glObject
-         * @param[in] glObject The GUIGlObject associated with the element
-         * @param[in] hardFail Whether attempts to retrieve a nonexisting edge should result in an exception
-         * @throws UnknownElement
-         */
-        GNEEdge* retrieveEdge(const GUIGlObject* glObject, bool hardFail = true) const;
-
         /**@brief get all edges by from and to GNEJunction
          * @param[in] id The id of the desired edge
          * @param[in] hardFail Whether attempts to retrieve a nonexisting edge should result in an exception
@@ -260,7 +263,7 @@ struct GNENetHelper {
         std::vector<GNEEdge*> retrieveEdges(GNEJunction* from, GNEJunction* to) const;
 
         /// @brief map with the ID and pointer to edges of net
-        const std::map<std::string, std::pair<const GUIGlObject*, GNEEdge*> >& getEdges() const;
+        const std::map<std::string, GNEEdge*>& getEdges() const;
 
         /**@brief return all edges
          * @param[in] onlySelected Whether to return only selected edges
@@ -302,7 +305,7 @@ struct GNENetHelper {
         GNELane* retrieveLane(const GUIGlObject* glObject, bool hardFail = true) const;
 
         /// @brief get lanes
-        const std::map<const GUIGlObject*, GNELane*>& getLanes() const;
+        const std::unordered_map<const GUIGlObject*, GNELane*>& getLanes() const;
 
         /// @brief get selected lanes
         std::vector<GNELane*> getSelectedLanes() const;
@@ -329,7 +332,7 @@ struct GNENetHelper {
         GNEConnection* retrieveConnection(const GUIGlObject* glObject, bool hardFail = true) const;
 
         /// @brief get connections
-        const std::map<const GUIGlObject*, GNEConnection*>& getConnections() const;
+        const std::unordered_map<const GUIGlObject*, GNEConnection*>& getConnections() const;
 
         /// @brief get selected connections
         std::vector<GNEConnection*> getSelectedConnections() const;
@@ -383,7 +386,7 @@ struct GNENetHelper {
         GNEAdditional* retrieveRerouterInterval(const std::string& rerouterID, const SUMOTime begin, const SUMOTime end) const;
 
         /// @brief get additionals
-        const std::map<SumoXMLTag, std::map<const GUIGlObject*, GNEAdditional*> >& getAdditionals() const;
+        const std::unordered_map<SumoXMLTag, std::unordered_map<const GUIGlObject*, GNEAdditional*> >& getAdditionals() const;
 
         /// @brief get selected additionals
         std::vector<GNEAdditional*> getSelectedAdditionals() const;
@@ -396,6 +399,9 @@ struct GNENetHelper {
 
         /// @brief clear additionals
         void clearAdditionals();
+
+        /// @brief update additional ID in container
+        void updateAdditionalID(GNEAdditional* additional, const std::string& newID);
 
         /// @brief generate additional id
         std::string generateAdditionalID(SumoXMLTag type) const;
@@ -458,10 +464,7 @@ struct GNENetHelper {
         std::vector<GNEDemandElement*> getSelectedDemandElements() const;
 
         /// @brief get demand elements
-        const std::map<SumoXMLTag, std::map<const GUIGlObject*, GNEDemandElement*> >& getDemandElements() const;
-
-        /// @brief Return the number of demand elements
-        int getNumberOfDemandElements() const;
+        const std::unordered_map<SumoXMLTag, std::unordered_map<const GUIGlObject*, GNEDemandElement*> >& getDemandElements() const;
 
         /// @brief generate demand element id
         std::string generateDemandElementID(SumoXMLTag tag) const;
@@ -471,6 +474,9 @@ struct GNENetHelper {
 
         /// @brief clear demand elements
         void clearDemandElements();
+
+        /// @brief update demand element ID in container
+        void updateDemandElementID(GNEDemandElement* demandElement, const std::string& newID);
 
         /// @brief add default VTypes
         void addDefaultVTypes();
@@ -538,7 +544,7 @@ struct GNENetHelper {
         GNEDataInterval* retrieveDataInterval(const GNEAttributeCarrier* AC, bool hardFail = true) const;
 
         /// @brief get all data intervals of network
-        const std::map<const GNEAttributeCarrier*, GNEDataInterval*>& getDataIntervals() const;
+        const std::unordered_map<const GNEAttributeCarrier*, GNEDataInterval*>& getDataIntervals() const;
 
         /// @}
 
@@ -554,7 +560,7 @@ struct GNENetHelper {
         std::vector<GNEGenericData*> getSelectedGenericDatas() const;
 
         /// @brief get all generic datas
-        const std::map<SumoXMLTag, std::map<const GUIGlObject*, GNEGenericData*> >& getGenericDatas() const;
+        const std::unordered_map<SumoXMLTag, std::unordered_map<const GUIGlObject*, GNEGenericData*> >& getGenericDatas() const;
 
         /// @brief retrieve generic datas within the given interval
         std::vector<GNEGenericData*> retrieveGenericDatas(const SumoXMLTag genericDataTag, const double begin, const double end);
@@ -591,13 +597,16 @@ struct GNENetHelper {
         GNEMeanData* retrieveMeanData(SumoXMLTag type, const std::string& id, bool hardFail = true) const;
 
         /// @brief get meanDatas
-        const std::map<SumoXMLTag, std::map<const std::string, GNEMeanData*> >& getMeanDatas() const;
+        const std::unordered_map<SumoXMLTag, std::map<const std::string, GNEMeanData*> >& getMeanDatas() const;
 
         /// @brief get number of meanDatas
         int getNumberOfMeanDatas() const;
 
         /// @brief clear meanDatas
         void clearMeanDatas();
+
+        /// @brief update meanData ID in container
+        void updateMeanDataID(GNEMeanData* meanData, const std::string& newID);
 
         /// @brief generate meanData id
         std::string generateMeanDataID(SumoXMLTag type) const;
@@ -768,47 +777,65 @@ struct GNENetHelper {
         /// @brief stop index
         int myStopIndex;
 
+        /// @brief number of network elemements inserted in AttributeCarriers
+        int myNumberOfNetworkElements = 0;
+
+        /// @brief number of demand elemements inserted in AttributeCarriers (excluding default vTypes)
+        int myNumberOfDemandElements = 0;
+
+        /// @brief number of data elemements inserted in AttributeCarriers
+        int myNumberOfDataElements = 0;
+
+        /// @brief number of mean data elemements inserted in AttributeCarriers
+        int myNumberOfMeanDataElements = 0;
+
         /// @brief map with the ID and pointer to junctions of net
-        std::map<std::string, std::pair<const GUIGlObject*, GNEJunction*> > myJunctions;
+        std::map<std::string, GNEJunction*> myJunctions;
 
         /// @brief set with crossings
-        std::map<const GUIGlObject*, GNECrossing*> myCrossings;
+        std::unordered_map<const GUIGlObject*, GNECrossing*> myCrossings;
 
         /// @brief set with walkingAreas
-        std::map<const GUIGlObject*, GNEWalkingArea*> myWalkingAreas;
+        std::unordered_map<const GUIGlObject*, GNEWalkingArea*> myWalkingAreas;
 
         /// @brief map with the ID and pointer to edgeTypes of net
         std::map<std::string, GNEEdgeType*> myEdgeTypes;
 
         /// @brief map with the ID and pointer to edges of net
-        std::map<std::string, std::pair<const GUIGlObject*, GNEEdge*> > myEdges;
+        std::map<std::string, GNEEdge*> myEdges;
 
         /// @brief map with lanes
-        std::map<const GUIGlObject*, GNELane*> myLanes;
+        std::unordered_map<const GUIGlObject*, GNELane*> myLanes;
 
         /// @brief map with connetions
-        std::map<const GUIGlObject*, GNEConnection*> myConnections;
+        std::unordered_map<const GUIGlObject*, GNEConnection*> myConnections;
 
         /// @brief map with internal lanes
-        std::map<const GUIGlObject*, GNEInternalLane*> myInternalLanes;
+        std::unordered_map<const GUIGlObject*, GNEInternalLane*> myInternalLanes;
+
+        /// @brief map with the tag and pointer to additional elements of net, sorted by IDs
+        std::unordered_map<SumoXMLTag, std::map<const std::string, GNEAdditional*> > myAdditionalIDs;
 
         /// @brief map with the tag and pointer to additional elements of net
-        std::map<SumoXMLTag, std::map<const GUIGlObject*, GNEAdditional*> > myAdditionals;
+        std::unordered_map<SumoXMLTag, std::unordered_map<const GUIGlObject*, GNEAdditional*> > myAdditionals;
 
-        /// @brief map with the tag and pointer to demand elements of net
-        std::map<SumoXMLTag, std::map<const GUIGlObject*, GNEDemandElement*> > myDemandElements;
+        /// @brief map with the tag and pointer to demand elements of net, sorted by IDs
+        std::unordered_map<SumoXMLTag, std::map<const std::string, GNEDemandElement*> > myDemandElementIDs;
+
+        /// @brief map with the tag and pointer to additional elements of net
+        std::unordered_map<SumoXMLTag, std::unordered_map<const GUIGlObject*, GNEDemandElement*> > myDemandElements;
 
         /// @brief map with the ID and pointer to all datasets of net
         std::map<const std::string, GNEDataSet*> myDataSets;
 
         /// @brief map with all data intervals of network
-        std::map<const GNEAttributeCarrier*, GNEDataInterval*> myDataIntervals;
+        std::unordered_map<const GNEAttributeCarrier*, GNEDataInterval*> myDataIntervals;
 
         /// @brief map with the tag and pointer to all generic datas
-        std::map<SumoXMLTag, std::map<const GUIGlObject*, GNEGenericData*> > myGenericDatas;
+        std::unordered_map<SumoXMLTag, std::unordered_map<const GUIGlObject*, GNEGenericData*> > myGenericDatas;
 
         /// @brief map with the tag and pointer to meanData elements of net
-        std::map<SumoXMLTag, std::map<const std::string, GNEMeanData*> > myMeanDatas;
+        std::unordered_map<SumoXMLTag, std::map<const std::string, GNEMeanData*> > myMeanDatas;
 
         /// @brief Invalidated copy constructor.
         AttributeCarriers(const AttributeCarriers&) = delete;
@@ -821,8 +848,16 @@ struct GNENetHelper {
     class SavingStatus {
 
     public:
+        /// @brief enum used to keep the result of ask about saving elements
+        enum class AskSaving {
+            CONTINUE,   // nothing to save
+            SAVE,       // save elements
+            DISCARD,    // discard saving
+            ABORT,      // abort saving
+        };
+
         /// @brief constructor
-        SavingStatus();
+        SavingStatus(GNENet* net);
 
         /// @name SumoConfig
         /// @{
@@ -950,7 +985,30 @@ struct GNENetHelper {
 
         /// @}
 
+        /// @name function to ask if save elements before close/quit
+        /// @{
+
+        /// @brief warns about unsaved changes in network and gives the user the option to abort
+        AskSaving askSaveNetwork() const;
+
+        /// @brief warns about unsaved changes in additionals and gives the user the option to abort
+        AskSaving askSaveAdditionalElements() const;
+
+        /// @brief warns about unsaved changes in demand elements and gives the user the option to abort
+        AskSaving askSaveDemandElements() const;
+
+        /// @brief warns about unsaved changes in data elements and gives the user the option to abort
+        AskSaving askSaveDataElements() const;
+
+        /// @brief warns about unsaved changes in meanData elements and gives the user the option to abort
+        AskSaving askSaveMeanDataElements() const;
+
+        /// @}
+
     private:
+        /// @brief pointer to net
+        GNENet* myNet;
+
         /// @brief flag for SumoConfigSumoConfig saved
         bool mySumoConfigSaved = true;
 
@@ -977,6 +1035,9 @@ struct GNENetHelper {
 
         /// @brief flag for meanData elements saved
         bool myMeanDataElementSaved = true;
+
+        /// @brief invalidate default constructor
+        SavingStatus() = delete;
 
         /// @brief Invalidated copy constructor.
         SavingStatus(const SavingStatus&) = delete;

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2017-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2017-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -301,6 +301,12 @@ Edge::getToJunction(const std::string& edgeID) {
 }
 
 std::string
+Edge::getBidiEdge(const std::string& edgeID) {
+    const MSEdge* bidi = getEdge(edgeID)->getBidiEdge();
+    return bidi == nullptr ? "" : bidi->getID();
+}
+
+std::string
 Edge::getParameter(const std::string& edgeID, const std::string& param) {
     return getEdge(edgeID)->getParameter(param, "");
 }
@@ -449,6 +455,8 @@ Edge::handleVariable(const std::string& objID, const int variable, VariableWrapp
             return wrapper->wrapString(objID, variable, getFromJunction(objID));
         case TO_JUNCTION:
             return wrapper->wrapString(objID, variable, getToJunction(objID));
+        case VAR_BIDI:
+            return wrapper->wrapString(objID, variable, getBidiEdge(objID));
         case libsumo::VAR_PARAMETER:
             paramData->readUnsignedByte();
             return wrapper->wrapString(objID, variable, getParameter(objID, paramData->readString()));

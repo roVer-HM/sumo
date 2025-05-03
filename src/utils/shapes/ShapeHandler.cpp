@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -86,7 +86,6 @@ ShapeHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
                         } else if (!SUMOXMLDefinitions::isValidParameterKey(key)) {
                             WRITE_WARNING(TL("Error parsing key from shape generic parameter. Key contains invalid characters"));
                         } else {
-                            WRITE_DEBUG("Inserting generic parameter '" + key + "|" + val + "' into shape.");
                             myLastParameterised->setParameter(key, val);
                         }
                     }
@@ -189,7 +188,7 @@ ShapeHandler::addPOI(const SUMOSAXAttributes& attrs, const bool ignorePruning, c
                     success = gch->x2cartesian_const(pos);
                 }
                 if (!success) {
-                    WRITE_ERRORF(TL("Unable to project coordinates for PoI '%'."), id);
+                    WRITE_ERRORF(TL("Unable to project coordinates for POI '%'."), id);
                     return;
                 }
             }

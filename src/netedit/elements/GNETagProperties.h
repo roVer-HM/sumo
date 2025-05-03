@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -93,11 +93,12 @@ public:
         NOTSELECTABLE =         1 << 7,     // Element cannot be selected
         MASKSTARTENDPOS =       1 << 8,     // Element mask attributes StartPos and EndPos as "length" (Only used in the appropiate GNEFrame)
         NOPARAMETERS =          1 << 9,     // Element doesn't accept parameters "key1=value1|key2=value2|...|keyN=valueN" (by default all tags supports parameters)
-        RTREE =                 1 << 10,     // Element is placed in RTREE
+        RTREE =                 1 << 10,    // Element is placed in RTREE
         CENTERAFTERCREATION =   1 << 11,    // Camera is moved after element creation
         REQUIRE_PROJ =          1 << 12,    // Element require a geo-projection defined in network
         VCLASS_ICON =           1 << 13,    // Element returns icon depending of their vClass
-        SYMBOL =                1 << 14,    // Symbol elements (VSSSymbols, RerouterSymbols...)
+        SYMBOL =                1 << 14,    // Element is a symbol (VSSSymbols, RerouterSymbols...)
+        EXTENDED =              1 << 15,    // Element contains extended attributes (Usually vTypes)
     };
 
     /// @brief tag parents
@@ -112,22 +113,28 @@ public:
         // exclusive of plans
         PLAN_CONSECUTIVE_EDGES =    1 << 6,     // Plan placed in consecutive edges
         PLAN_ROUTE =                1 << 7,     // Plan placed in route
-        PLAN_EDGE =                 1 << 8,     // Plan placed in edge
-        PLAN_BUSSTOP =              1 << 9,     // Plan placed in busStop
-        PLAN_TRAINSTOP =            1 << 10,    // Plan placed in trainStop
-        PLAN_CONTAINERSTOP =        1 << 11,    // Plan placed in containerStop
-        PLAN_FROM_EDGE =            1 << 12,    // Plan starts in edge
-        PLAN_FROM_TAZ =             1 << 13,    // Plan starts in TAZ
-        PLAN_FROM_JUNCTION =        1 << 14,    // Plan starts in junction
-        PLAN_FROM_BUSSTOP =         1 << 15,    // Plan starts in busStop
-        PLAN_FROM_TRAINSTOP =       1 << 16,    // Plan starts in trainStop
-        PLAN_FROM_CONTAINERSTOP =   1 << 17,    // Plan starts in containerStop
-        PLAN_TO_EDGE =              1 << 18,    // Plan ends in edge
-        PLAN_TO_TAZ =               1 << 19,    // Plan ends in TAZ
-        PLAN_TO_JUNCTION =          1 << 20,    // Plan ends in junction
-        PLAN_TO_BUSSTOP =           1 << 21,    // Plan ends in busStop
-        PLAN_TO_TRAINSTOP =         1 << 22,    // Plan ends in trainStop
-        PLAN_TO_CONTAINERSTOP =     1 << 23,    // Plan ends in containerStop
+        PLAN_EDGE =                 1 << 8,     // Plan placed in single edge
+        PLAN_BUSSTOP =              1 << 9,     // Plan placed in single busStop
+        PLAN_TRAINSTOP =            1 << 10,    // Plan placed in single trainStop
+        PLAN_CONTAINERSTOP =        1 << 11,    // Plan placed in single containerStop
+        PLAN_CHARGINGSTATION =      1 << 12,    // Plan placed in single charging station
+        PLAN_PARKINGAREA =          1 << 13,    // Plan placed in single parking area
+        PLAN_FROM_EDGE =            1 << 14,    // Plan starts in edge
+        PLAN_FROM_TAZ =             1 << 15,    // Plan starts in TAZ
+        PLAN_FROM_JUNCTION =        1 << 16,    // Plan starts in junction
+        PLAN_FROM_BUSSTOP =         1 << 17,    // Plan starts in busStop
+        PLAN_FROM_TRAINSTOP =       1 << 18,    // Plan starts in trainStop
+        PLAN_FROM_CONTAINERSTOP =   1 << 19,    // Plan starts in containerStop
+        PLAN_FROM_CHARGINGSTATION = 1 << 20,    // Plan starts in chargingStation
+        PLAN_FROM_PARKINGAREA =     1 << 21,    // Plan starts in parkingArea
+        PLAN_TO_EDGE =              1 << 22,    // Plan ends in edge
+        PLAN_TO_TAZ =               1 << 23,    // Plan ends in TAZ
+        PLAN_TO_JUNCTION =          1 << 24,    // Plan ends in junction
+        PLAN_TO_BUSSTOP =           1 << 25,    // Plan ends in busStop
+        PLAN_TO_TRAINSTOP =         1 << 26,    // Plan ends in trainStop
+        PLAN_TO_CONTAINERSTOP =     1 << 27,    // Plan ends in containerStop
+        PLAN_TO_CHARGINGSTATION =   1 << 28,    // Plan ends in chargingStation
+        PLAN_TO_PARKINGAREA =       1 << 29,    // Plan ends in parkingArea
     };
 
     // @brief conflicts
@@ -174,8 +181,11 @@ public:
     /// @brief get background color
     unsigned int getBackGroundColor() const;
 
-    /// @brief get attribute (throw error if doesn't exist)
+    /// @brief get attribute propety associated with the given Sumo XML Attribute (throw error if doesn't exist)
     const GNEAttributeProperties& getAttributeProperties(SumoXMLAttr attr) const;
+
+    /// @brief get attribute propety by index (throw error if doesn't exist)
+    const GNEAttributeProperties& getAttributeProperties(const int index) const;
 
     /// @brief get begin of attribute values (used for iterate)
     std::vector<GNEAttributeProperties>::const_iterator begin() const;
@@ -278,6 +288,9 @@ public:
     /// @brief return true if tag correspond to a container element
     bool isContainer() const;
 
+    /// @brief return true if tag correspond to an element with a type as a first parent
+    bool hasTypeParent() const;
+
     /// @}
 
     /// @brief plans
@@ -291,8 +304,8 @@ public:
     /// @brief return true if tag correspond to a container plan
     bool isPlanContainer() const;
 
-    /// @brief return true if tag correspond to a person trip
-    bool isPersonTrip() const;
+    /// @brief return true if tag correspond to a person trip plan
+    bool isPlanPersonTrip() const;
 
     /// @brief return true if tag correspond to a walk plan
     bool isPlanWalk() const;
@@ -367,6 +380,12 @@ public:
     /// @brief return true if tag correspond to a plan placed over containerStop
     bool planContainerStop() const;
 
+    /// @brief return true if tag correspond to a plan placed over chargingStation
+    bool planChargingStation() const;
+
+    /// @brief return true if tag correspond to a plan placed over parkingArea
+    bool planParkingArea() const;
+
     /// @brief return true if tag correspond to a plan placed in stoppingPlace
     bool planStoppingPlace() const;
 
@@ -382,9 +401,6 @@ public:
     /// @brief return true if tag correspond to a plan that starts in junction
     bool planFromJunction() const;
 
-    /// @brief return true if tag correspond to a plan that starts in stoppingPlace
-    bool planFromStoppingPlace() const;
-
     /// @brief return true if tag correspond to a plan that starts in busStop
     bool planFromBusStop() const;
 
@@ -393,6 +409,15 @@ public:
 
     /// @brief return true if tag correspond to a plan that starts in containerStop
     bool planFromContainerStop() const;
+
+    /// @brief return true if tag correspond to a plan that starts in chargingStation
+    bool planFromChargingStation() const;
+
+    /// @brief return true if tag correspond to a plan that starts in parkingAera
+    bool planFromParkingArea() const;
+
+    /// @brief return true if tag correspond to a plan that starts in stoppingPlace
+    bool planFromStoppingPlace() const;
 
     /// @brief return true if tag correspond to a plan that starts in edge
     bool planToEdge() const;
@@ -403,9 +428,6 @@ public:
     /// @brief return true if tag correspond to a plan that starts in junction
     bool planToJunction() const;
 
-    /// @brief return true if tag correspond to a plan that ends in stoppingPlace
-    bool planToStoppingPlace() const;
-
     /// @brief return true if tag correspond to a plan that starts in busStop
     bool planToBusStop() const;
 
@@ -414,6 +436,15 @@ public:
 
     /// @brief return true if tag correspond to a plan that starts in containerStop
     bool planToContainerStop() const;
+
+    /// @brief return true if tag correspond to a plan that starts in chargingStation
+    bool planToChargingStation() const;
+
+    /// @brief return true if tag correspond to a plan that starts in parkingArea
+    bool planToParkingArea() const;
+
+    /// @brief return true if tag correspond to a plan that ends in stoppingPlace
+    bool planToStoppingPlace() const;
 
     /// @}
 
@@ -440,6 +471,9 @@ public:
 
     /// @brief return true if tag correspond to an element that can be edited using a dialog
     bool hasDialog() const;
+
+    /// @brief return true if tag correspond to an element that contains extended attributes
+    bool hasExtendedAttributes() const;
 
     /// @brief return true if Tag correspond to an element that supports parameters "key1=value1|key2=value2|...|keyN=valueN"
     bool hasParameters() const;

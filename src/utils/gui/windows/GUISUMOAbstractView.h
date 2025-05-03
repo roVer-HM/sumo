@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -262,12 +262,7 @@ public:
 
     /// @brief recalibrate color scheme according to the current value range
     virtual void buildColorRainbow(const GUIVisualizationSettings& /*s*/, GUIColorScheme& /*scheme*/, int /*active*/, GUIGlObjectType /*objectType*/,
-                                   bool hide = false, double hideThreshold = 0,
-                                   bool hide2 = false, double hideThreshold2 = 0) {
-        UNUSED_PARAMETER(hide);
-        UNUSED_PARAMETER(hideThreshold);
-        UNUSED_PARAMETER(hide2);
-        UNUSED_PARAMETER(hideThreshold2);
+                                   const GUIVisualizationRainbowSettings& /*rs*/) {
     }
 
     /// @brief return list of loaded edgeData attributes
@@ -500,7 +495,7 @@ protected:
     void displayLegends();
 
     /// @brief Draws a legend for the given scheme
-    void displayColorLegend(const GUIColorScheme& scheme, bool leftSide);
+    void displayColorLegend(const GUIColorScheme& scheme, bool leftSide, const std::string& key);
 
     /// @brief Draws frames-per-second indicator
     void drawFPS();
@@ -546,6 +541,9 @@ protected:
 
     /// @brief open popup dialog
     void openPopupDialog();
+
+    /// @brief helper function for buildColorRainbow
+    void buildMinMaxRainbow(const GUIVisualizationSettings& s, GUIColorScheme& scheme, const GUIVisualizationRainbowSettings& rs, double minValue, double maxValue, bool hasMissingData);
 
     /// @brief applies gl-transformations to fit the Boundary given by myChanger onto the canvas.
     /// If fixRatio is true, this boundary will be enlarged to prevent anisotropic stretching.

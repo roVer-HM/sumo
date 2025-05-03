@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -54,8 +54,6 @@
 #include <netbuild/NBPTStop.h>
 #include "NILoader.h"
 #include "NIImporter_OpenStreetMap.h"
-
-#define KM_PER_MILE 1.609344
 
 //#define DEBUG_LAYER_ELEVATION
 //#define DEBUG_RAIL_DIRECTION
@@ -142,6 +140,7 @@ NIImporter_OpenStreetMap::load(const OptionsCont& oc, NBNetBuilder& nb) {
     myImportSidewalks = oc.getBool("osm.sidewalks");
     myImportBikeAccess = oc.getBool("osm.bike-access");
     myImportCrossings = oc.getBool("osm.crossings");
+    myOnewayDualSidewalk = oc.getBool("osm.oneway-reverse-sidewalk");
 
     myAllAttributes = OptionsCont::getOptions().getBool("osm.all-attributes");
     std::vector<std::string> extra = OptionsCont::getOptions().getStringVector("osm.extra-attributes");
@@ -268,7 +267,7 @@ NIImporter_OpenStreetMap::load(const OptionsCont& oc, NBNetBuilder& nb) {
         insertEdge(e, running, currentFrom, last, passed, nb, first, last);
     }
 
-    /* Collect edges which explictly are part of a roundabout and store the edges of each
+    /* Collect edges which explicitly are part of a roundabout and store the edges of each
      * detected roundabout */
     nb.getEdgeCont().extractRoundabouts();
 
@@ -278,9 +277,10 @@ NIImporter_OpenStreetMap::load(const OptionsCont& oc, NBNetBuilder& nb) {
          * This is only executed if crossings are imported and not guessed */
         const double crossingWidth = OptionsCont::getOptions().getFloat("default.crossing-width");
 
-        for (const auto& nodeIt : nc) {
-            NBNode* const n = nodeIt.second;
-            if (n->hasParameter("computePedestrianCrossing")) {
+        for (auto item : nodeUsage) {
+            NIOSMNode* osmNode = myOSMNodes.find(item.first)->second;
+            if (osmNode->pedestrianCrossing) {
+                NBNode* n = osmNode->node;
                 EdgeVector incomingEdges = n->getIncomingEdges();
                 EdgeVector outgoingEdges = n->getOutgoingEdges();
                 size_t incomingEdgesNo = incomingEdges.size();
@@ -346,7 +346,6 @@ NIImporter_OpenStreetMap::load(const OptionsCont& oc, NBNetBuilder& nb) {
                         }
                     }
                 }
-                n->unsetParameter("computePedestrianCrossing");
             }
         }
     }
@@ -432,8 +431,6 @@ NIImporter_OpenStreetMap::insertNodeChecking(long long int id, NBNodeCont& nc, N
                 delete tlDef;
                 throw ProcessError(TLF("Could not allocate tls '%'.", toString(id)));
             }
-        } else if (n->pedestrianCrossing && myImportCrossings) {
-            node->setParameter("computePedestrianCrossing", "true");
         }
         if (n->railwayBufferStop) {
             node->setParameter("buffer_stop", "true");
@@ -498,9 +495,12 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
     double speed = tc.getEdgeTypeSpeed(type);
     bool defaultsToOneWay = tc.getEdgeTypeIsOneWay(type);
     const SVCPermissions defaultPermissions = tc.getEdgeTypePermissions(type);
-    const SVCPermissions extra = myImportBikeAccess ? e->myExtraAllowed : (e->myExtraAllowed & ~SVC_BICYCLE);
+    SVCPermissions extra = myImportBikeAccess ? e->myExtraAllowed : (e->myExtraAllowed & ~SVC_BICYCLE);
     const SVCPermissions extraDis = myImportBikeAccess ? e->myExtraDisallowed : (e->myExtraDisallowed & ~SVC_BICYCLE);
-    // extra permissions are more specific than extra prohibitions
+    // extra permissions are more specific than extra prohibitions except for buses (which come from the less specific psv tag)
+    if ((extraDis & SVC_BUS) && (extra & SVC_BUS)) {
+        extra = extra & ~SVC_BUS;
+    }
     SVCPermissions permissions = (defaultPermissions & ~extraDis) | extra;
     if (defaultPermissions == SVC_SHIP) {
         // extra permission apply to the ships operating on the route rather than the waterway
@@ -569,7 +569,7 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
     if (e->myRailDirection == WAY_UNKNOWN && nodeDirection != WAY_UNKNOWN && nodeDirection != WAY_FORWARD
             && nodeDirection != (WAY_FORWARD | WAY_UNKNOWN)) {
         //std::cout << "way " << e->id << " nodeDirection=" << nodeDirection << " origDirection=" << e->myRailDirection << "\n";
-        // heuristc: assume that the mapped way direction indicates
+        // heuristic: assume that the mapped way direction indicates
         // potential driving direction
         e->myRailDirection = WAY_BOTH;
     }
@@ -665,9 +665,15 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
         // the total number of lanes is not known but at least one direction
         if (e->myNoLanesForward > 0) {
             numLanesForward = e->myNoLanesForward;
+        } else if ((e->myBuswayType & WAY_FORWARD) != 0 && (extraDis & SVC_PASSENGER) == 0) {
+            // if we have a busway lane, yet cars may drive this implies at least two lanes
+            numLanesForward = MAX2(numLanesForward, 2);
         }
         if (e->myNoLanesForward < 0) {
             numLanesBackward = -e->myNoLanesForward;
+        } else if ((e->myBuswayType & WAY_BACKWARD) != 0 && (extraDis & SVC_PASSENGER) == 0) {
+            // if we have a busway lane, yet cars may drive this implies at least two lanes
+            numLanesBackward = MAX2(numLanesForward, 2);
         }
     }
     // deal with busways that run in the opposite direction of a one-way street
@@ -692,11 +698,11 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
 
     // if we had been able to extract the maximum speed, override the type's default
     if (e->myMaxSpeed != MAXSPEED_UNGIVEN) {
-        speed = e->myMaxSpeed / 3.6;
+        speed = e->myMaxSpeed;
     }
     double speedBackward = speed;
     if (e->myMaxSpeedBackward != MAXSPEED_UNGIVEN) {
-        speedBackward = e->myMaxSpeedBackward / 3.6;
+        speedBackward = e->myMaxSpeedBackward;
     }
     if (speed <= 0 || speedBackward <= 0) {
         WRITE_WARNINGF(TL("Skipping edge '%' because it has speed %."), id, speed);
@@ -726,7 +732,9 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
     WayType sidewalkType = e->mySidewalkType; // make a copy because we do some temporary modifications
     if (sidewalkType == WAY_UNKNOWN && (e->myExtraAllowed & SVC_PEDESTRIAN) != 0 && (permissions & SVC_PASSENGER) != 0) {
         // do not assume shared space unless sidewalk is actively disabled
-        sidewalkType = WAY_BOTH;
+        if (myOnewayDualSidewalk) {
+            sidewalkType = WAY_BOTH;
+        }
     }
     if (addSidewalk || (myImportSidewalks && (permissions & SVC_ROAD_CLASSES) != 0 && defaultPermissions != SVC_PEDESTRIAN)) {
         if (!addForward && (sidewalkType & WAY_FORWARD) != 0) {
@@ -1051,7 +1059,7 @@ NIImporter_OpenStreetMap::NodesHandler::myStartElement(int element, const SUMOSA
                 myCurrentNode->name = value;
             } else if (myImportElevation && key == "ele") {
                 try {
-                    const double elevation = StringUtils::toDouble(value);
+                    const double elevation = StringUtils::parseDist(value);
                     if (std::isnan(elevation)) {
                         WRITE_WARNINGF(TL("Value of key '%' is invalid ('%') in node '%'."), key, value, myLastNodeID);
                     } else {
@@ -1095,91 +1103,93 @@ NIImporter_OpenStreetMap::EdgesHandler::EdgesHandler(
     myEdgeMap(toFill),
     myPlatformShapesMap(platformShapes) {
 
-    const double unlimitedSpeed = OptionsCont::getOptions().getFloat("osm.speedlimit-none") * 3.6;
+    const double unlimitedSpeed = OptionsCont::getOptions().getFloat("osm.speedlimit-none");
 
     mySpeedMap["nan"] = MAXSPEED_UNGIVEN;
     mySpeedMap["sign"] = MAXSPEED_UNGIVEN;
     mySpeedMap["signals"] = MAXSPEED_UNGIVEN;
     mySpeedMap["none"] = unlimitedSpeed;
     mySpeedMap["no"] = unlimitedSpeed;
-    mySpeedMap["walk"] = 5.;
+    mySpeedMap["walk"] = 5. / 3.6;
     // https://wiki.openstreetmap.org/wiki/Key:source:maxspeed#Commonly_used_values
-    mySpeedMap["AT:urban"] = 50;
-    mySpeedMap["AT:rural"] = 100;
-    mySpeedMap["AT:trunk"] = 100;
-    mySpeedMap["AT:motorway"] = 130;
-    mySpeedMap["AU:urban"] = 50;
-    mySpeedMap["BE:urban"] = 50;
-    mySpeedMap["BE:zone"] = 30;
-    mySpeedMap["BE:motorway"] = 120;
-    mySpeedMap["BE:zone30"] = 30;
-    mySpeedMap["BE-VLG:rural"] = 70;
-    mySpeedMap["BE-WAL:rural"] = 90;
-    mySpeedMap["BE:school"] = 30;
-    mySpeedMap["CZ:motorway"] = 130;
-    mySpeedMap["CZ:trunk"] = 110;
-    mySpeedMap["CZ:rural"] = 90;
-    mySpeedMap["CZ:urban_motorway"] = 80;
-    mySpeedMap["CZ:urban_trunk"] = 80;
-    mySpeedMap["CZ:urban"] = 50;
+    mySpeedMap["AT:urban"] = 50. / 3.6;
+    mySpeedMap["AT:rural"] = 100. / 3.6;
+    mySpeedMap["AT:trunk"] = 100. / 3.6;
+    mySpeedMap["AT:motorway"] = 130. / 3.6;
+    mySpeedMap["AU:urban"] = 50. / 3.6;
+    mySpeedMap["BE:urban"] = 50. / 3.6;
+    mySpeedMap["BE:zone"] = 30. / 3.6;
+    mySpeedMap["BE:motorway"] = 120. / 3.6;
+    mySpeedMap["BE:zone30"] = 30. / 3.6;
+    mySpeedMap["BE-VLG:rural"] = 70. / 3.6;
+    mySpeedMap["BE-WAL:rural"] = 90. / 3.6;
+    mySpeedMap["BE:school"] = 30. / 3.6;
+    mySpeedMap["CZ:motorway"] = 130. / 3.6;
+    mySpeedMap["CZ:trunk"] = 110. / 3.6;
+    mySpeedMap["CZ:rural"] = 90. / 3.6;
+    mySpeedMap["CZ:urban_motorway"] = 80. / 3.6;
+    mySpeedMap["CZ:urban_trunk"] = 80. / 3.6;
+    mySpeedMap["CZ:urban"] = 50. / 3.6;
     mySpeedMap["DE:motorway"] = unlimitedSpeed;
-    mySpeedMap["DE:rural"] = 100;
-    mySpeedMap["DE:urban"] = 50;
-    mySpeedMap["DE:bicycle_road"] = 30;
-    mySpeedMap["DK:motorway"] = 130;
-    mySpeedMap["DK:rural"] = 80;
-    mySpeedMap["DK:urban"] = 50;
-    mySpeedMap["EE:urban"] = 50;
-    mySpeedMap["EE:rural"] = 90;
-    mySpeedMap["ES:urban"] = 50;
-    mySpeedMap["ES:zone30"] = 30;
-    mySpeedMap["FR:motorway"] = 130; // 110 (raining)
-    mySpeedMap["FR:rural"] = 80;
-    mySpeedMap["FR:urban"] = 50;
-    mySpeedMap["FR:zone30"] = 30;
-    mySpeedMap["HU:living_street"] = 20;
-    mySpeedMap["HU:motorway"] = 130;
-    mySpeedMap["HU:rural"] = 90;
-    mySpeedMap["HU:trunk"] = 110;
-    mySpeedMap["HU:urban"] = 50;
-    mySpeedMap["IT:rural"] = 90;
-    mySpeedMap["IT:motorway"] = 130;
-    mySpeedMap["IT:urban"] = 50;
-    mySpeedMap["JP:nsl"] = 60;
-    mySpeedMap["JP:express"] = 100;
-    mySpeedMap["LT:rural"] = 90;
-    mySpeedMap["LT:urban"] = 50;
-    mySpeedMap["NO:rural"] = 80;
-    mySpeedMap["NO:urban"] = 50;
-    mySpeedMap["ON:urban"] = 50;
-    mySpeedMap["ON:rural"] = 80;
-    mySpeedMap["PT:motorway"] = 120;
-    mySpeedMap["PT:rural"] = 90;
-    mySpeedMap["PT:trunk"] = 100;
-    mySpeedMap["PT:urban"] = 50;
-    mySpeedMap["RO:motorway"] = 130;
-    mySpeedMap["RO:rural"] = 90;
-    mySpeedMap["RO:trunk"] = 100;
-    mySpeedMap["RO:urban"] = 50;
-    mySpeedMap["RS:living_street"] = 30;
-    mySpeedMap["RS:motorway"] = 130;
-    mySpeedMap["RS:rural"] = 80;
-    mySpeedMap["RS:trunk"] = 100;
-    mySpeedMap["RS:urban"] = 50;
-    mySpeedMap["RU:living_street"] = 20;
-    mySpeedMap["RU:urban"] = 60;
-    mySpeedMap["RU:rural"] = 90;
-    mySpeedMap["RU:motorway"] = 110;
-    mySpeedMap["GB:motorway"] = 70 * KM_PER_MILE;
-    mySpeedMap["GB:nsl_dual"] = 70 * KM_PER_MILE;
-    mySpeedMap["GB:nsl_single"] = 60 * KM_PER_MILE;
-    mySpeedMap["UK:motorway"] = 70 * KM_PER_MILE;
-    mySpeedMap["UK:nsl_dual"] = 70 * KM_PER_MILE;
-    mySpeedMap["UK:nsl_single"] = 60 * KM_PER_MILE;
-    mySpeedMap["UZ:living_street"] = 30;
-    mySpeedMap["UZ:urban"] = 70;
-    mySpeedMap["UZ:rural"] = 100;
-    mySpeedMap["UZ:motorway"] = 110;
+    mySpeedMap["DE:rural"] = 100. / 3.6;
+    mySpeedMap["DE:urban"] = 50. / 3.6;
+    mySpeedMap["DE:bicycle_road"] = 30. / 3.6;
+    mySpeedMap["DK:motorway"] = 130. / 3.6;
+    mySpeedMap["DK:rural"] = 80. / 3.6;
+    mySpeedMap["DK:urban"] = 50. / 3.6;
+    mySpeedMap["EE:urban"] = 50. / 3.6;
+    mySpeedMap["EE:rural"] = 90. / 3.6;
+    mySpeedMap["ES:urban"] = 50. / 3.6;
+    mySpeedMap["ES:zone30"] = 30. / 3.6;
+    mySpeedMap["FR:motorway"] = 130. / 3.6; // 110 (raining)
+    mySpeedMap["FR:rural"] = 80. / 3.6;
+    mySpeedMap["FR:urban"] = 50. / 3.6;
+    mySpeedMap["FR:zone30"] = 30. / 3.6;
+    mySpeedMap["HU:living_street"] = 20. / 3.6;
+    mySpeedMap["HU:motorway"] = 130. / 3.6;
+    mySpeedMap["HU:rural"] = 90. / 3.6;
+    mySpeedMap["HU:trunk"] = 110. / 3.6;
+    mySpeedMap["HU:urban"] = 50. / 3.6;
+    mySpeedMap["IT:rural"] = 90. / 3.6;
+    mySpeedMap["IT:motorway"] = 130. / 3.6;
+    mySpeedMap["IT:urban"] = 50. / 3.6;
+    mySpeedMap["JP:nsl"] = 60. / 3.6;
+    mySpeedMap["JP:express"] = 100. / 3.6;
+    mySpeedMap["LT:rural"] = 90. / 3.6;
+    mySpeedMap["LT:urban"] = 50. / 3.6;
+    mySpeedMap["NO:rural"] = 80. / 3.6;
+    mySpeedMap["NO:urban"] = 50. / 3.6;
+    mySpeedMap["ON:urban"] = 50. / 3.6;
+    mySpeedMap["ON:rural"] = 80. / 3.6;
+    mySpeedMap["PT:motorway"] = 120. / 3.6;
+    mySpeedMap["PT:rural"] = 90. / 3.6;
+    mySpeedMap["PT:trunk"] = 100. / 3.6;
+    mySpeedMap["PT:urban"] = 50. / 3.6;
+    mySpeedMap["RO:motorway"] = 130. / 3.6;
+    mySpeedMap["RO:rural"] = 90. / 3.6;
+    mySpeedMap["RO:trunk"] = 100. / 3.6;
+    mySpeedMap["RO:urban"] = 50. / 3.6;
+    mySpeedMap["RS:living_street"] = 30. / 3.6;
+    mySpeedMap["RS:motorway"] = 130. / 3.6;
+    mySpeedMap["RS:rural"] = 80. / 3.6;
+    mySpeedMap["RS:trunk"] = 100. / 3.6;
+    mySpeedMap["RS:urban"] = 50. / 3.6;
+    mySpeedMap["RU:living_street"] = 20. / 3.6;
+    mySpeedMap["RU:urban"] = 60. / 3.6;
+    mySpeedMap["RU:rural"] = 90. / 3.6;
+    mySpeedMap["RU:motorway"] = 110. / 3.6;
+    const double seventy = StringUtils::parseSpeed("70mph");
+    const double sixty = StringUtils::parseSpeed("60mph");
+    mySpeedMap["GB:motorway"] = seventy;
+    mySpeedMap["GB:nsl_dual"] = seventy;
+    mySpeedMap["GB:nsl_single"] = sixty;
+    mySpeedMap["UK:motorway"] = seventy;
+    mySpeedMap["UK:nsl_dual"] = seventy;
+    mySpeedMap["UK:nsl_single"] = sixty;
+    mySpeedMap["UZ:living_street"] = 30. / 3.6;
+    mySpeedMap["UZ:urban"] = 70. / 3.6;
+    mySpeedMap["UZ:rural"] = 100. / 3.6;
+    mySpeedMap["UZ:motorway"] = 110. / 3.6;
 }
 
 NIImporter_OpenStreetMap::EdgesHandler::~EdgesHandler() = default;
@@ -1267,6 +1277,7 @@ NIImporter_OpenStreetMap::EdgesHandler::myStartElement(int element, const SUMOSA
                 && key != "bicycle"
                 && key != "oneway:bicycle"
                 && key != "oneway:bus"
+                && key != "oneway:psv"
                 && key != "bus:lanes"
                 && key != "bus:lanes:forward"
                 && key != "bus:lanes:backward"
@@ -1448,9 +1459,7 @@ NIImporter_OpenStreetMap::EdgesHandler::myStartElement(int element, const SUMOSA
                 const std::vector<std::string> values = StringTokenizer(value, "|").getVector();
                 std::vector<double> widthLanes;
                 for (std::string width : values) {
-                    double parsedWidth = width == ""
-                                         ? -1
-                                         : StringUtils::toDouble(width);
+                    const double parsedWidth = width == "" ? -1 : StringUtils::parseDist(width);
                     widthLanes.push_back(parsedWidth);
                 }
 
@@ -1466,7 +1475,7 @@ NIImporter_OpenStreetMap::EdgesHandler::myStartElement(int element, const SUMOSA
             }
         } else if (key == "width") {
             try {
-                myCurrentEdge->myWidth = StringUtils::toDouble(value);
+                myCurrentEdge->myWidth = StringUtils::parseDist(value);
             } catch (const NumberFormatException&) {
                 WRITE_WARNINGF(TL("Using default width for edge '%' as value '%' could not be parsed."), toString(myCurrentEdge->id), value);
             }
@@ -1484,7 +1493,7 @@ NIImporter_OpenStreetMap::EdgesHandler::myStartElement(int element, const SUMOSA
             }
         } else if (key == "oneway:bicycle") {
             myCurrentEdge->myExtraTags["oneway:bicycle"] = value;
-        } else if (key == "oneway:bus") {
+        } else if (key == "oneway:bus" || key == "oneway:psv") {
             if (value == "no") {
                 // need to add a bus way in reversed direction of way
                 myCurrentEdge->myBuswayType = WAY_BACKWARD;
@@ -1689,15 +1698,8 @@ NIImporter_OpenStreetMap::EdgesHandler::interpretSpeed(const std::string& key, s
                 value = value.substr(3);
             }
         }
-        double conversion = 1; // OSM default is km/h
-        if (StringUtils::to_lower_case(value).find("km/h") != std::string::npos) {
-            value = StringUtils::prune(value.substr(0, value.find_first_not_of("0123456789")));
-        } else if (StringUtils::to_lower_case(value).find("mph") != std::string::npos) {
-            value = StringUtils::prune(value.substr(0, value.find_first_not_of("0123456789")));
-            conversion = KM_PER_MILE;
-        }
         try {
-            return StringUtils::toDouble(value) * conversion;
+            return StringUtils::parseSpeed(value);
         } catch (...) {
             WRITE_WARNING("Value of key '" + key + "' is not numeric ('" + value + "') in edge '" +
                           toString(myCurrentEdge->id) + "'.");
@@ -1867,9 +1869,11 @@ NIImporter_OpenStreetMap::RelationHandler::myStartElement(int element, const SUM
             myFromWay = ref;
         } else if (role == "to" && checkEdgeRef(ref)) {
             myToWay = ref;
-        } else if (role == "stop") {
+        } else if (StringUtils::startsWith(role, "stop")) {
+            // permit _entry_only and _exit_only variants
             myStops.push_back(ref);
-        } else if (role == "platform") {
+        } else if (StringUtils::startsWith(role, "platform")) {
+            // permit _entry_only and _exit_only variants
             std::string memberType = attrs.get<std::string>(SUMO_ATTR_TYPE, nullptr, ok);
             if (memberType == "way") {
                 const std::map<long long int, NIImporter_OpenStreetMap::Edge*>::const_iterator& wayIt = myPlatformShapes.find(ref);
@@ -2083,9 +2087,7 @@ NIImporter_OpenStreetMap::RelationHandler::myEndElement(int element) {
             bool hadGap = false;
             int missingBefore = 0;
             int missingAfter = 0;
-            int stopIndex = 0;
             for (long long ref : myStops) {
-                stopIndex++;
                 const auto& nodeIt = myOSMNodes.find(ref);
                 if (nodeIt == myOSMNodes.end()) {
                     if (ptLine->getStops().empty()) {
@@ -2641,6 +2643,8 @@ NIImporter_OpenStreetMap::interpretTransportType(const std::string& type, NIOSMN
     } else if (type == "share_taxi") {
         result = SVC_TAXI;
     } else if (type == "minibus") {
+        result = SVC_BUS;
+    } else if (type == "trolleybus") {
         result = SVC_BUS;
     } else if (SumoVehicleClassStrings.hasString(type)) {
         result = SumoVehicleClassStrings.get(type);

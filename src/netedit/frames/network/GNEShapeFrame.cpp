@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -24,9 +24,10 @@
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/div/GUIUserIO.h>
 #include <netedit/elements/additional/GNEAdditionalHandler.h>
-#include <netedit/GNEViewParent.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/GNEApplicationWindow.h>
 
 #include "GNEShapeFrame.h"
 
@@ -277,7 +278,7 @@ GNEShapeFrame::processClick(const Position& clickedPosition, const GNEViewNetHel
             case GNE_TAG_POIGEO:
                 return processClickPOIGeo(clickedPosition, viewObjects);
             case GNE_TAG_POILANE:
-                return processClickPOILanes(clickedPosition, viewObjects);
+                return processClickPOILanes(viewObjects);
             case SUMO_TAG_POLY:
             case GNE_TAG_JPS_WALKABLEAREA:
             case GNE_TAG_JPS_OBSTACLE:
@@ -402,7 +403,7 @@ GNEShapeFrame::tagSelected() {
 void
 GNEShapeFrame::addShape() {
     // declare additional handler
-    GNEAdditionalHandler additionalHandler(myViewNet->getNet(), true, false);
+    GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
     // build shape
     additionalHandler.parseSumoBaseObject(myBaseShape);
 }
@@ -492,7 +493,7 @@ GNEShapeFrame::processClickPOIGeo(const Position& clickedPosition, const GNEView
 
 
 bool
-GNEShapeFrame::processClickPOILanes(const Position& clickedPosition, const GNEViewNetHelper::ViewObjectsSelector& viewObjects) {
+GNEShapeFrame::processClickPOILanes(const GNEViewNetHelper::ViewObjectsSelector& viewObjects) {
     // abort if lane is nullptr
     if (viewObjects.getLaneFront() == nullptr) {
         WRITE_WARNING(TL("POILane can be only placed over lanes"));
@@ -516,7 +517,7 @@ GNEShapeFrame::processClickPOILanes(const Position& clickedPosition, const GNEVi
     // obtain Lane
     myBaseShape->addStringAttribute(SUMO_ATTR_LANE, viewObjects.getLaneFront()->getID());
     // obtain position over lane
-    myBaseShape->addDoubleAttribute(SUMO_ATTR_POSITION, viewObjects.getLaneFront()->getLaneShape().nearest_offset_to_point2D(clickedPosition));
+    myBaseShape->addDoubleAttribute(SUMO_ATTR_POSITION, viewObjects.getLaneFront()->getLaneShape().nearest_offset_to_point2D(myViewNet->snapToActiveGrid(myViewNet->getPositionInformation())) / viewObjects.getLaneFront()->getLengthGeometryFactor());
     // add shape
     addShape();
     // refresh shape attributes

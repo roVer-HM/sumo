@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -37,6 +37,8 @@
 #include <microsim/transportables/MSTransportableControl.h>
 #include <netload/NLHandler.h>
 #include <traci-server/TraCIServer.h>
+#include <utils/common/MsgHandler.h>
+#include <utils/common/StringUtils.h>
 #include <utils/foxtools/MFXButtonTooltip.h>
 #include <utils/foxtools/MFXLabelTooltip.h>
 #include <utils/foxtools/MFXLCDLabel.h>
@@ -157,6 +159,8 @@ FXDEFMAP(GUIApplicationWindow) GUIApplicationWindowMap[] = {
     FXMAPFUNC(SEL_UPDATE,   MID_SIMLOAD,                                                GUIApplicationWindow::onUpdNeedsNetwork),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_E_EDITSELECTION_LOADNETEDITCONFIG,          GUIApplicationWindow::onUpdNeedsNetwork),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_B_EDITBREAKPOINT_OPENDATAELEMENTS,          GUIApplicationWindow::onUpdNeedsNetwork),
+    FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_B_BREAKPOINT,                                    GUIApplicationWindow::onUpdNeedsNetwork),
+    FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_ALT_B_BREAKPOINT_EARLY,                          GUIApplicationWindow::onUpdNeedsNetwork),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_F9_EDIT_VIEWSCHEME,                              GUIApplicationWindow::onUpdNeedsNetwork),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_I_EDITVIEWPORT,                             GUIApplicationWindow::onUpdNeedsNetwork),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_T_OPENNETEDIT_OPENSUMO,                     GUIApplicationWindow::onUpdNeedsNetwork),
@@ -862,7 +866,7 @@ GUIApplicationWindow::onCmdQuit(FXObject*, FXSelector, void*) {
 long
 GUIApplicationWindow::onCmdEditChosen(FXObject* menu, FXSelector, void*) {
     FXMenuCommand* mc = dynamic_cast<FXMenuCommand*>(menu);
-    if (mc->getText() == "Edit Selected...") {
+    if (mc->getText() == StringUtils::replace(TL("Edit Selected..."), "&", "").c_str()) {
         GUIDialog_GLChosenEditor* chooser =
             new GUIDialog_GLChosenEditor(this, &gSelected);
         chooser->create();
@@ -1409,7 +1413,9 @@ GUIApplicationWindow::onCmdClearMsgWindow(FXObject*, FXSelector, void*) {
 long
 GUIApplicationWindow::onCmdBreakpoint(FXObject*, FXSelector, void*) {
     // see updateTimeLCD for the DELTA_T
-    addBreakpoint(SIMSTEP - DELTA_T);
+    if (myRunThread->networkAvailable()) {
+        addBreakpoint(SIMSTEP - DELTA_T);
+    }
     return 1;
 }
 
@@ -1417,7 +1423,9 @@ GUIApplicationWindow::onCmdBreakpoint(FXObject*, FXSelector, void*) {
 long
 GUIApplicationWindow::onCmdBreakpointEarly(FXObject*, FXSelector, void*) {
     // see updateTimeLCD for the DELTA_T
-    addBreakpoint(SIMSTEP - DELTA_T + GUIMessageWindow::getBreakPointOffset());
+    if (myRunThread->networkAvailable()) {
+        addBreakpoint(SIMSTEP - DELTA_T + GUIMessageWindow::getBreakPointOffset());
+    }
     return 1;
 }
 
@@ -1911,12 +1919,32 @@ GUIApplicationWindow::handleEvent_SimulationLoaded(GUIEvent* e) {
                 myRunThread->getBreakpoints().assign(breakpoints.begin(), breakpoints.end());
                 myRunThread->getBreakpointLock().unlock();
             }
+            if (!OptionsCont::getOptions().isDefault("selection-file")) {
+                delete myDynamicSelection;
+                myDynamicSelection = new std::stringstream();
+                std::string msg = gSelected.load(OptionsCont::getOptions().getString("selection-file"), GLO_MAX, myDynamicSelection);
+                if (msg != "") {
+                    WRITE_ERRORF("Errors while loading selection: %", msg.c_str());
+                }
+                if (!myDynamicSelection->str().empty()) {
+                    std::string dummy;
+                    int numNotFound = 0;
+                    while (myDynamicSelection->good()) {
+                        (*myDynamicSelection) >> dummy;
+                        numNotFound++;
+                    }
+                    myDynamicSelection->clear(); // first clear error state before seek works
+                    myDynamicSelection->seekg(0);
+                    // @note for some reason the last line is read twice
+                    WRITE_MESSAGEF("% dynamic objects not present while loading selection", numNotFound - 1);
+                }
+            }
             myTLSGame = OptionsCont::getOptions().getString("game.mode") == "tls";
             if (OptionsCont::getOptions().getBool("game")) {
                 if (myTLSGame) {
-                    setTitle("SUMO Interactive Traffic Light");
+                    setTitle(TL("SUMO Interactive Traffic Light"));
                 } else {
-                    setTitle("SUMO Interactive Demand-Responsive-Transport");
+                    setTitle(TL("SUMO Interactive Demand-Responsive-Transport"));
                 }
                 onCmdGaming(nullptr, 0, nullptr);
             } else {
@@ -1999,6 +2027,19 @@ GUIApplicationWindow::handleEvent_SimulationStep(GUIEvent*) {
     if (myRunThread->simulationIsStartable()) {
         getApp()->forceRefresh(); // restores keyboard focus
     }
+    // try to load dynamic selection
+    if (myDynamicSelection != nullptr) {
+        std::stringstream tmp;
+        gSelected.load(*myDynamicSelection, GLO_MAX, &tmp);
+        if (tmp.str().empty()) {
+            delete myDynamicSelection;
+            myDynamicSelection = nullptr;
+        } else {
+            myDynamicSelection->str(tmp.str());
+            myDynamicSelection->clear(); // first clear error state before seek works
+            myDynamicSelection->seekg(0);
+        }
+    }
     updateChildren();
     update();
 }
@@ -2032,11 +2073,11 @@ GUIApplicationWindow::handleEvent_SimulationEnded(GUIEvent* e) {
         // to avoid a duplicate log entry)
         myMessageWindow->appendMsg(GUIEventType::MESSAGE_OCCURRED,
                                    TLF("Simulation ended at time: %. (%)",
-                                       time2string(ec->getTimeStep()), MSNet::getStateMessage(ec->getReason())));
+                                       time2string(ec->getTimeStep()), MSNet::getStateMessage(ec->getReason())) + "\n");
         // build the text
-        const std::string text = "Simulation ended at time: " + time2string(ec->getTimeStep()) +
-                                 ".\nReason: " + MSNet::getStateMessage(ec->getReason()) +
-                                 "\nDo you want to close all open files and views?";
+        const std::string text = TLF("Simulation ended at time: %.", time2string(ec->getTimeStep())) + "\n" +
+                                 TL("Reason:") + MSNet::getStateMessage(ec->getReason()) + "\n" +
+                                 TL("Do you want to close all open files and views?");
         FXuint answer = FXMessageBox::question(this, MBOX_YES_NO, TL("Simulation ended"), "%s", text.c_str());
         if (answer == 1) { //1:yes, 2:no, 4:esc
             closeAllWindows();
@@ -2426,12 +2467,17 @@ GUIApplicationWindow::setBreakpoints(const std::vector<SUMOTime>& breakpoints) {
 
 void
 GUIApplicationWindow::addBreakpoint(SUMOTime time) {
-    std::vector<SUMOTime> breakpoints = retrieveBreakpoints();
-    if (std::find(breakpoints.begin(), breakpoints.end(), time) == breakpoints.end()) {
-        breakpoints.push_back(time);
-        std::sort(breakpoints.begin(), breakpoints.end());
-        setBreakpoints(breakpoints);
-        setStatusBarText(TLF("Set breakpoint at %", time2string(time)));
+    const SUMOTime begin = string2time(OptionsCont::getOptions().getString("begin"));
+    if (time >= begin) {
+        // ensure breakpoint is valid
+        time -= (time - begin) % DELTA_T;
+        std::vector<SUMOTime> breakpoints = retrieveBreakpoints();
+        if (std::find(breakpoints.begin(), breakpoints.end(), time) == breakpoints.end()) {
+            breakpoints.push_back(time);
+            std::sort(breakpoints.begin(), breakpoints.end());
+            setBreakpoints(breakpoints);
+            setStatusBarText(TLF("Set breakpoint at %", time2string(time)));
+        }
     }
 }
 

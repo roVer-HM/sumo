@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -178,6 +178,9 @@ struct GNEApplicationWindowHelper {
 
         /// @brief set JuPedSim view
         void setJuPedSimView();
+
+        /// @brief checkBox for allow undo-redo loading
+        MFXMenuCheckIcon* menuCheckAllowUndoRedoLoading = nullptr;
 
     private:
         /// @brief build netedit config section
@@ -513,7 +516,7 @@ struct GNEApplicationWindowHelper {
             MFXMenuCheckIcon* menuCheckChangeAllPhases = nullptr;
 
             /// @brief menu check to we should warn about merging junctions
-            MFXMenuCheckIcon* menuCheckWarnAboutMerge = nullptr;
+            MFXMenuCheckIcon* menuCheckMergeAutomatically = nullptr;
 
             /// @brief menu check to show connection as bubble in "Move" mode.
             MFXMenuCheckIcon* menuCheckShowJunctionBubble = nullptr;
@@ -679,6 +682,9 @@ struct GNEApplicationWindowHelper {
 
         /// @brief FXMenuCommand for open undolist dialog
         FXMenuCommand* openUndolistDialog = nullptr;
+
+        /// @brief checkBox for allow undo-redo
+        MFXMenuCheckIcon* menuCheckAllowUndoRedo = nullptr;
 
         /// @brief network view options
         NetworkViewOptions networkViewOptions;
@@ -1130,6 +1136,12 @@ struct GNEApplicationWindowHelper {
 
         /// @brief SUMO config file
         const std::string myFile;
+
+        /// @brief Invalidated copy constructor.
+        GNESumoConfigHandler(const GNESumoConfigHandler&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        GNESumoConfigHandler& operator=(const GNESumoConfigHandler&) = delete;
     };
 
     /// @brief netedit config handler
@@ -1145,19 +1157,25 @@ struct GNEApplicationWindowHelper {
     private:
         /// @brief netedit config file
         const std::string myFile;
+
+        /// @brief Invalidated copy constructor.
+        GNENeteditConfigHandler(const GNENeteditConfigHandler&) = delete;
+
+        /// @brief Invalidated assignment operator.
+        GNENeteditConfigHandler& operator=(const GNENeteditConfigHandler&) = delete;
     };
 
     /// @brief toggle edit options Network menu commands (called in GNEApplicationWindow::onCmdToggleEditOptions)
     static bool toggleEditOptionsNetwork(GNEViewNet* viewNet, const MFXCheckableButton* menuCheck,
-                                         const int numericalKeyPressed, FXObject* obj, FXSelector sel);
+                                         FXObject* obj, FXSelector sel);
 
     /// @brief toggle edit options Demand menu commands (called in GNEApplicationWindow::onCmdToggleEditOptions)
     static bool toggleEditOptionsDemand(GNEViewNet* viewNet, const MFXCheckableButton* menuCheck,
-                                        const int numericalKeyPressed, FXObject* obj, FXSelector sel);
+                                        FXObject* obj, FXSelector sel);
 
     /// @brief toggle edit options Data menu commands (called in GNEApplicationWindow::onCmdToggleEditOptions)
     static bool toggleEditOptionsData(GNEViewNet* viewNet, const MFXCheckableButton* menuCheck,
-                                      const int numericalKeyPressed, FXObject* obj, FXSelector sel);
+                                      FXObject* obj, FXSelector sel);
 
     /// @brief check if a string ends with another string
     static bool stringEndsWith(const std::string& str, const std::string& suffix);

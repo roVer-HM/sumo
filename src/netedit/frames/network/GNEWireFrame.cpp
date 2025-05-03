@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2021-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2021-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -21,6 +21,8 @@
 
 #include <netedit/GNENet.h>
 #include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <netedit/elements/additional/GNEAdditionalHandler.h>
 
 #include "GNEWireFrame.h"
@@ -65,6 +67,10 @@ GNEWireFrame::show() {
     myWireTagSelector->refreshTagSelector();
     // show frame
     GNEFrame::show();
+    if (!myWarnedExperimental) {
+        FXMessageBox::warning(getApp(), MBOX_OK, TL("Experimental Part"), "%s", TL("Warning: The netedit overhead editor is still in experimental state."));
+        myWarnedExperimental = true;
+    }
 }
 
 
@@ -134,7 +140,7 @@ GNEWireFrame::createPath(const bool /* useLastRoute */) {
                     myWireAttributes->showWarningMessage();
                 } else {
                     // declare additional handler
-                    GNEAdditionalHandler additionalHandler(getViewNet()->getNet(), true, false);
+                    GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
                     // build additional
                     additionalHandler.parseSumoBaseObject(myBaseWire);
                     // Refresh wire Parent Selector (For additionals that have a limited number of children)
@@ -254,7 +260,7 @@ GNEWireFrame::buildWireOverView(const GNETagProperties& tagProperties) {
         return false;
     } else {
         // declare additional handler
-        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), true, false);
+        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
         // build wire
         additionalHandler.parseSumoBaseObject(myBaseWire);
         // Refresh wire Parent Selector (For wires that have a limited number of children)

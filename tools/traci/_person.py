@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2011-2024 German Aerospace Center (DLR) and others.
+# Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -82,6 +82,9 @@ _RETURN_VALUE_FUNC = {tc.VAR_STAGE: simulation._readStage,
 
 
 class PersonDomain(VTypeDomain):
+
+    Reservation = Reservation
+
     def __init__(self):
         VTypeDomain.__init__(self, "person", tc.CMD_GET_PERSON_VARIABLE, tc.CMD_SET_PERSON_VARIABLE,
                              tc.CMD_SUBSCRIBE_PERSON_VARIABLE, tc.RESPONSE_SUBSCRIBE_PERSON_VARIABLE,
@@ -183,7 +186,7 @@ class PersonDomain(VTypeDomain):
 
     def getStage(self, personID, nextStageIndex=0):
         """getStage(string, int) -> stage
-        Returns the the nth stage object (type simulation.Stage)
+        Returns the nth stage object (type simulation.Stage)
         Attribute type of this object has the following meaning:
           0 for not-yet-departed
           1 for waiting

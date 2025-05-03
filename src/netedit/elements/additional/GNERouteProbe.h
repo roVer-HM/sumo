@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -43,10 +43,12 @@ public:
      * @oaran[in] name Route Probe Name
      * @param[in] filename The file for generated output
      * @param[in] begin The time at which to start generating output
+     * @param[in] vTypes list of vehicle types to be affected
      * @param[in] parameters generic parameters
      */
     GNERouteProbe(const std::string& id, GNENet* net, GNEEdge* edge, const SUMOTime period, const std::string& name,
-                  const std::string& filename, SUMOTime begin, const Parameterised::Map& parameters);
+                  const std::string& filename, SUMOTime begin, const std::vector<std::string>& vehicleTypes,
+                  const Parameterised::Map& parameters);
 
     /// @brief Destructor
     ~GNERouteProbe();
@@ -165,8 +167,14 @@ protected:
     /// @brief begin of rerouter
     SUMOTime myBegin;
 
+    /// @brief vehicle types
+    std::vector<std::string> myVehicleTypes;
+
     /// @brief route probe logo offset
     Position myRouteProbeLogoOffset;
+
+    /// @brief symbol base contour
+    GNEContour mySymbolBaseContour;
 
 private:
     /// @brief set attribute after validation

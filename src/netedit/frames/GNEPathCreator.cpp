@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -64,14 +64,14 @@ myConflictDisconnected(false) {
 }
 
 
-GNEPathCreator::Path::Path(GNEViewNet* viewNet, const SUMOVehicleClass vClass, GNEEdge* edgeFrom, GNEEdge* edgeTo) :
+GNEPathCreator::Path::Path(GNEPathManager* pathManager, const SUMOVehicleClass vClass, GNEEdge* edgeFrom, GNEEdge* edgeTo) :
     myConflictVClass(false),
     myConflictDisconnected(false) {
     // calculate subpath
-    mySubPath = viewNet->getNet()->getPathManager()->getPathCalculator()->calculateDijkstraPath(vClass, {edgeFrom, edgeTo});
+    mySubPath = pathManager->getPathCalculator()->calculateDijkstraPath(vClass, {edgeFrom, edgeTo});
     // if subPath is empty, try it with pedestrian (i.e. ignoring vCass)
     if (mySubPath.empty()) {
-        mySubPath = viewNet->getNet()->getPathManager()->getPathCalculator()->calculateDijkstraPath(SVC_PEDESTRIAN, {edgeFrom, edgeTo});
+        mySubPath = pathManager->getPathCalculator()->calculateDijkstraPath(SVC_PEDESTRIAN, {edgeFrom, edgeTo});
         if (mySubPath.empty()) {
             mySubPath = { edgeFrom, edgeTo };
             myConflictDisconnected = true;
@@ -82,14 +82,14 @@ GNEPathCreator::Path::Path(GNEViewNet* viewNet, const SUMOVehicleClass vClass, G
 }
 
 
-GNEPathCreator::Path::Path(GNEViewNet* viewNet, const SUMOVehicleClass vClass, GNEJunction* junctionFrom, GNEJunction* junctionTo) :
+GNEPathCreator::Path::Path(GNEPathManager* pathManager, const SUMOVehicleClass vClass, GNEJunction* junctionFrom, GNEJunction* junctionTo) :
     myConflictVClass(false),
     myConflictDisconnected(false) {
     // calculate subpath
-    mySubPath = viewNet->getNet()->getPathManager()->getPathCalculator()->calculateDijkstraPath(vClass, junctionFrom, junctionTo);
+    mySubPath = pathManager->getPathCalculator()->calculateDijkstraPath(vClass, junctionFrom, junctionTo);
     // if subPath is empty, try it with pedestrian (i.e. ignoring vCass)
     if (mySubPath.empty()) {
-        mySubPath = viewNet->getNet()->getPathManager()->getPathCalculator()->calculateDijkstraPath(SVC_PEDESTRIAN, junctionFrom, junctionTo);
+        mySubPath = pathManager->getPathCalculator()->calculateDijkstraPath(SVC_PEDESTRIAN, junctionFrom, junctionTo);
         if (mySubPath.empty()) {
             myConflictDisconnected = true;
         } else {
@@ -123,9 +123,10 @@ GNEPathCreator::Path::Path() :
 }
 
 
-GNEPathCreator::GNEPathCreator(GNEFrame* frameParent) :
+GNEPathCreator::GNEPathCreator(GNEFrame* frameParent, GNEPathManager* pathManager) :
     MFXGroupBoxModule(frameParent, TL("Route creator")),
     myFrameParent(frameParent),
+    myPathManager(pathManager),
     myVClass(SVC_PASSENGER),
     myCreationMode(0),
     myRoute(nullptr) {
@@ -293,7 +294,7 @@ GNEPathCreator::addJunction(GNEJunction* junction) {
     // enable finish button
     myFinishCreationButton->enable();
     // disable undo/redo
-    myFrameParent->getViewNet()->getViewParent()->getGNEAppWindows()->disableUndoRedo(TL("route creation"));
+    myFrameParent->getViewNet()->getViewParent()->getGNEAppWindows()->disableUndoRedoTemporally(TL("creation of path between junctions"));
     // enable or disable remove last junction button
     if (mySelectedJunctions.size() > 1) {
         myRemoveLastInsertedElement->enable();
@@ -340,7 +341,7 @@ GNEPathCreator::addTAZ(GNETAZ* TAZ) {
     // enable finish button
     myFinishCreationButton->enable();
     // disable undo/redo
-    myFrameParent->getViewNet()->getViewParent()->getGNEAppWindows()->disableUndoRedo(TL("route creation"));
+    myFrameParent->getViewNet()->getViewParent()->getGNEAppWindows()->disableUndoRedoTemporally(TL("creation of path between TAZs"));
     // enable or disable remove last TAZ button
     if (mySelectedTAZs.size() > 1) {
         myRemoveLastInsertedElement->enable();
@@ -412,7 +413,7 @@ GNEPathCreator::addEdge(GNEEdge* edge, const bool shiftKeyPressed, const bool co
     // enable finish button
     myFinishCreationButton->enable();
     // disable undo/redo
-    myFrameParent->getViewNet()->getViewParent()->getGNEAppWindows()->disableUndoRedo(TL("route creation"));
+    myFrameParent->getViewNet()->getViewParent()->getGNEAppWindows()->disableUndoRedoTemporally(TL("creation of path between edges"));
     // enable or disable remove last edge button
     if (mySelectedEdges.size() > 1) {
         myRemoveLastInsertedElement->enable();
@@ -496,8 +497,8 @@ GNEPathCreator::updateJunctionColors() {
     if (myCreationMode & SHOW_CANDIDATE_JUNCTIONS) {
         // set candidate flags
         for (const auto& junction : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getJunctions()) {
-            junction.second.second->resetCandidateFlags();
-            junction.second.second->setPossibleCandidate(true);
+            junction.second->resetCandidateFlags();
+            junction.second->setPossibleCandidate(true);
         }
     }
     // set selected junctions
@@ -524,10 +525,10 @@ GNEPathCreator::updateEdgeColors() {
     if (myShowCandidateEdges->getCheck() == TRUE && (myCreationMode & SHOW_CANDIDATE_EDGES)) {
         // mark all edges that have at least one lane that allow given vClass
         for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
-            if (edge.second.second->getNBEdge()->getNumLanesThatAllow(myVClass) > 0) {
-                edge.second.second->setPossibleCandidate(true);
+            if (edge.second->getNBEdge()->getNumLanesThatAllow(myVClass) > 0) {
+                edge.second->setPossibleCandidate(true);
             } else {
-                edge.second.second->setSpecialCandidate(true);
+                edge.second->setSpecialCandidate(true);
             }
         }
     }
@@ -537,14 +538,14 @@ GNEPathCreator::updateEdgeColors() {
         if ((myShowCandidateEdges->getCheck() == TRUE) && (myCreationMode & SHOW_CANDIDATE_EDGES)) {
             // mark all edges as conflicted (to mark special candidates)
             for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
-                edge.second.second->resetCandidateFlags();
-                edge.second.second->setConflictedCandidate(true);
+                edge.second->resetCandidateFlags();
+                edge.second->setConflictedCandidate(true);
             }
             // set special candidates (Edges that are connected but aren't compatibles with current vClass
             setSpecialCandidates(mySelectedEdges.back());
             // mark again all edges as conflicted (to mark possible candidates)
             for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
-                edge.second.second->setConflictedCandidate(true);
+                edge.second->setConflictedCandidate(true);
             }
             // set possible candidates (Edges that are connected AND are compatibles with current vClass
             setPossibleCandidates(mySelectedEdges.back(), myVClass);
@@ -567,7 +568,7 @@ void
 GNEPathCreator::clearJunctionColors() {
     // reset all junction flags
     for (const auto& junction : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getJunctions()) {
-        junction.second.second->resetCandidateFlags();
+        junction.second->resetCandidateFlags();
     }
 }
 
@@ -576,7 +577,7 @@ void
 GNEPathCreator::clearEdgeColors() {
     // reset all junction flags
     for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
-        edge.second.second->resetCandidateFlags();
+        edge.second->resetCandidateFlags();
     }
 }
 
@@ -690,7 +691,7 @@ GNEPathCreator::abortPathCreation() {
     // first check that there is elements
     if ((mySelectedJunctions.size() > 0) || (mySelectedTAZs.size() > 0) || (mySelectedEdges.size() > 0) || myRoute) {
         // unblock undo/redo
-        myFrameParent->getViewNet()->getViewParent()->getGNEAppWindows()->enableUndoRedo();
+        myFrameParent->getViewNet()->getViewParent()->getGNEAppWindows()->enableUndoRedoTemporally();
         // clear edges
         clearPath();
         // disable buttons
@@ -863,11 +864,11 @@ GNEPathCreator::recalculatePath() {
         myPath.push_back(Path(myVClass, edges.front()));
     } else if (mySelectedJunctions.size() == 2) {
         // add path between two junctions
-        myPath.push_back(Path(myFrameParent->getViewNet(), myVClass, mySelectedJunctions.front(), mySelectedJunctions.back()));
+        myPath.push_back(Path(myPathManager, myVClass, mySelectedJunctions.front(), mySelectedJunctions.back()));
     } else {
         // add every segment
         for (int i = 1; i < (int)edges.size(); i++) {
-            myPath.push_back(Path(myFrameParent->getViewNet(), myVClass, edges.at(i - 1), edges.at(i)));
+            myPath.push_back(Path(myPathManager, myVClass, edges.at(i - 1), edges.at(i)));
         }
     }
 }
@@ -876,10 +877,10 @@ GNEPathCreator::recalculatePath() {
 void
 GNEPathCreator::setSpecialCandidates(GNEEdge* originEdge) {
     // first calculate reachability for pedestrians (we use it, because pedestran can walk in almost all edges)
-    myFrameParent->getViewNet()->getNet()->getPathManager()->getPathCalculator()->calculateReachability(SVC_PEDESTRIAN, originEdge);
+    myPathManager->getPathCalculator()->calculateReachability(SVC_PEDESTRIAN, originEdge);
     // change flags
     for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
-        for (const auto& lane : edge.second.second->getLanes()) {
+        for (const auto& lane : edge.second->getLanes()) {
             if (lane->getReachability() > 0) {
                 lane->getParentEdge()->resetCandidateFlags();
                 lane->getParentEdge()->setSpecialCandidate(true);
@@ -891,10 +892,10 @@ GNEPathCreator::setSpecialCandidates(GNEEdge* originEdge) {
 void
 GNEPathCreator::setPossibleCandidates(GNEEdge* originEdge, const SUMOVehicleClass vClass) {
     // first calculate reachability for pedestrians
-    myFrameParent->getViewNet()->getNet()->getPathManager()->getPathCalculator()->calculateReachability(vClass, originEdge);
+    myPathManager->getPathCalculator()->calculateReachability(vClass, originEdge);
     // change flags
     for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
-        for (const auto& lane : edge.second.second->getLanes()) {
+        for (const auto& lane : edge.second->getLanes()) {
             if (lane->getReachability() > 0) {
                 lane->getParentEdge()->resetCandidateFlags();
                 lane->getParentEdge()->setPossibleCandidate(true);

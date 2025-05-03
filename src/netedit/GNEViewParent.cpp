@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -494,12 +494,8 @@ GNEViewParent::onCmdMakeSnapshot(FXObject*, FXSelector, void*) {
     }
     std::string error = myView->makeSnapshot(file);
     if (error != "") {
-        // write warning if netedit is running in testing mode
-        WRITE_DEBUG("Opening FXMessageBox 'error saving snapshot'");
         // open message box
         FXMessageBox::error(this, MBOX_OK, TL("Saving failed."), "%s", error.c_str());
-        // write warning if netedit is running in testing mode
-        WRITE_DEBUG("Closed FXMessageBox 'error saving snapshot' with 'OK'");
     } else {
         WRITE_MESSAGE(TL("Snapshot successfully saved!"));
     }
@@ -529,14 +525,14 @@ GNEViewParent::onCmdLocate(FXObject*, FXSelector sel, void*) {
                 chooserLoc = &myACChoosers.ACChooserJunction;
                 locateTitle = TL("Junction Chooser");
                 for (const auto& junction : viewNet->getNet()->getAttributeCarriers()->getJunctions()) {
-                    ACsToLocate.push_back(junction.second.second);
+                    ACsToLocate.push_back(junction.second);
                 }
                 break;
             case MID_HOTKEY_SHIFT_E_LOCATEEDGE:
                 chooserLoc = &myACChoosers.ACChooserEdges;
                 locateTitle = TL("Edge Chooser");
                 for (const auto& edge : viewNet->getNet()->getAttributeCarriers()->getEdges()) {
-                    ACsToLocate.push_back(edge.second.second);
+                    ACsToLocate.push_back(edge.second);
                 }
                 break;
             case MID_HOTKEY_SHIFT_W_LOCATEWALKINGAREA:
@@ -600,8 +596,8 @@ GNEViewParent::onCmdLocate(FXObject*, FXSelector sel, void*) {
                 locateTitle = TL("TLS Chooser");
                 // fill ACsToLocate with junctions that haven TLS
                 for (const auto& junction : viewNet->getNet()->getAttributeCarriers()->getJunctions()) {
-                    if (junction.second.second->getNBNode()->getControllingTLS().size() > 0) {
-                        ACsToLocate.push_back(junction.second.second);
+                    if (junction.second->getNBNode()->getControllingTLS().size() > 0) {
+                        ACsToLocate.push_back(junction.second);
                     }
                 }
                 break;

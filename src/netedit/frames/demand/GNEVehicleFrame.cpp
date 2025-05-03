@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -21,11 +21,14 @@
 
 #include <netedit/GNENet.h>
 #include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <netedit/elements/additional/GNETAZ.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/vehicle/SUMOVehicleParserHelper.h>
 #include <utils/xml/SUMOSAXAttributesImpl_Cached.h>
 #include <utils/foxtools/MFXDynamicLabel.h>
+
 #include "GNEVehicleFrame.h"
 
 // ===========================================================================
@@ -121,7 +124,7 @@ GNEVehicleFrame::HelpCreation::updateHelpCreation() {
 
 GNEVehicleFrame::GNEVehicleFrame(GNEViewParent* viewParent, GNEViewNet* viewNet) :
     GNEFrame(viewParent, viewNet, TL("Vehicles")),
-    myRouteHandler("", viewNet->getNet(), true, false),
+    myRouteHandler("", viewNet->getNet(), myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false),
     myVehicleBaseObject(new CommonXMLStructure::SumoBaseObject(nullptr)) {
 
     // Create item Selector module for vehicles
@@ -134,7 +137,7 @@ GNEVehicleFrame::GNEVehicleFrame(GNEViewParent* viewParent, GNEViewNet* viewNet)
     myVehicleAttributes = new GNEAttributesCreator(this);
 
     // create GNEPathCreator Module
-    myPathCreator = new GNEPathCreator(this);
+    myPathCreator = new GNEPathCreator(this, viewNet->getNet()->getDemandPathManager());
 
     // Create Help Creation Module
     myHelpCreation = new HelpCreation(this);
@@ -162,11 +165,11 @@ void
 GNEVehicleFrame::hide() {
     // reset edge candidates
     for (const auto& edge : myViewNet->getNet()->getAttributeCarriers()->getEdges()) {
-        edge.second.second->resetCandidateFlags();
+        edge.second->resetCandidateFlags();
     }
     // reset junctioncandidates
     for (const auto& junction : myViewNet->getNet()->getAttributeCarriers()->getJunctions()) {
-        junction.second.second->resetCandidateFlags();
+        junction.second->resetCandidateFlags();
     }
     // hide frame
     GNEFrame::hide();
@@ -377,13 +380,13 @@ GNEVehicleFrame::createPath(const bool useLastRoute) {
                     // create route base object
                     CommonXMLStructure::SumoBaseObject* embeddedRouteObject = new CommonXMLStructure::SumoBaseObject(myVehicleBaseObject);
                     embeddedRouteObject->setTag(SUMO_TAG_ROUTE);
-                    embeddedRouteObject->addStringAttribute(SUMO_ATTR_ID, "");
                     embeddedRouteObject->addStringListAttribute(SUMO_ATTR_EDGES, routeEdges);
-                    embeddedRouteObject->addColorAttribute(SUMO_ATTR_COLOR, RGBColor::INVISIBLE),
-                                        embeddedRouteObject->addIntAttribute(SUMO_ATTR_REPEAT, 0),
-                                        embeddedRouteObject->addTimeAttribute(SUMO_ATTR_CYCLETIME, 0),
-                                        // parse route
-                                        myRouteHandler.parseSumoBaseObject(embeddedRouteObject);
+                    embeddedRouteObject->addColorAttribute(SUMO_ATTR_COLOR, RGBColor::INVISIBLE);
+                    embeddedRouteObject->addIntAttribute(SUMO_ATTR_REPEAT, 0);
+                    embeddedRouteObject->addTimeAttribute(SUMO_ATTR_CYCLETIME, 0);
+                    embeddedRouteObject->addDoubleAttribute(SUMO_ATTR_PROB, 1.0);
+                    // parse route
+                    myRouteHandler.parseSumoBaseObject(myVehicleBaseObject);
                     // delete vehicleParamters
                     delete vehicleParameters;
                 }
@@ -443,13 +446,13 @@ GNEVehicleFrame::createPath(const bool useLastRoute) {
                     // create under base object
                     CommonXMLStructure::SumoBaseObject* embeddedRouteObject = new CommonXMLStructure::SumoBaseObject(myVehicleBaseObject);
                     embeddedRouteObject->setTag(SUMO_TAG_ROUTE);
-                    embeddedRouteObject->addStringAttribute(SUMO_ATTR_ID, "");
                     embeddedRouteObject->addStringListAttribute(SUMO_ATTR_EDGES, routeEdges);
-                    embeddedRouteObject->addColorAttribute(SUMO_ATTR_COLOR, RGBColor::INVISIBLE),
-                                        embeddedRouteObject->addIntAttribute(SUMO_ATTR_REPEAT, 0),
-                                        embeddedRouteObject->addTimeAttribute(SUMO_ATTR_CYCLETIME, 0),
-                                        // parse route
-                                        myRouteHandler.parseSumoBaseObject(embeddedRouteObject);
+                    embeddedRouteObject->addColorAttribute(SUMO_ATTR_COLOR, RGBColor::INVISIBLE);
+                    embeddedRouteObject->addIntAttribute(SUMO_ATTR_REPEAT, 0);
+                    embeddedRouteObject->addTimeAttribute(SUMO_ATTR_CYCLETIME, 0);
+                    embeddedRouteObject->addDoubleAttribute(SUMO_ATTR_PROB, 1.0);
+                    // parse route
+                    myRouteHandler.parseSumoBaseObject(myVehicleBaseObject);
                     // delete vehicleParamters
                     delete flowParameters;
                 }

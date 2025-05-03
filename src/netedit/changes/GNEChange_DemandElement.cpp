@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,9 +20,10 @@
 #include <config.h>
 
 #include <netedit/GNENet.h>
-#include <netedit/frames/demand/GNETypeFrame.h>
-#include <netedit/GNEViewParent.h>
 #include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/GNEApplicationWindow.h>
+#include <netedit/frames/demand/GNETypeFrame.h>
 
 #include "GNEChange_DemandElement.h"
 
@@ -43,16 +44,17 @@ GNEChange_DemandElement::GNEChange_DemandElement(GNEDemandElement* demandElement
 
 
 GNEChange_DemandElement::~GNEChange_DemandElement() {
-    myDemandElement->decRef("GNEChange_DemandElement");
-    if (myDemandElement->unreferenced()) {
-        // show extra information for tests
-        WRITE_DEBUG("Deleting unreferenced " + myDemandElement->getTagStr());
-        // make sure that element isn't in net before removing
-        if (myDemandElement->getNet()->getAttributeCarriers()->retrieveDemandElement(myDemandElement, false)) {
-            // remove demand element of network
-            myDemandElement->getNet()->getAttributeCarriers()->deleteDemandElement(myDemandElement, false);
+    // only continue we have undo-redo mode enabled
+    if (myDemandElement->getNet()->getViewNet()->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed()) {
+        myDemandElement->decRef("GNEChange_DemandElement");
+        if (myDemandElement->unreferenced()) {
+            // make sure that element isn't in net before removing
+            if (myDemandElement->getNet()->getAttributeCarriers()->retrieveDemandElement(myDemandElement, false)) {
+                // remove demand element of network
+                myDemandElement->getNet()->getAttributeCarriers()->deleteDemandElement(myDemandElement, false);
+            }
+            delete myDemandElement;
         }
-        delete myDemandElement;
     }
 }
 
@@ -60,8 +62,6 @@ GNEChange_DemandElement::~GNEChange_DemandElement() {
 void
 GNEChange_DemandElement::undo() {
     if (myForward) {
-        // show extra information for tests
-        WRITE_DEBUG("Removing " + myDemandElement->getTagStr() + " '" + myDemandElement->getID() + "' in GNEChange_DemandElement");
         // unselect if mySelectedElement is enabled
         if (mySelectedElement) {
             myDemandElement->unselectAttributeCarrier();
@@ -71,8 +71,6 @@ GNEChange_DemandElement::undo() {
         // restore container
         restoreHierarchicalContainers();
     } else {
-        // show extra information for tests
-        WRITE_DEBUG("Adding " + myDemandElement->getTagStr() + " '" + myDemandElement->getID() + "' in GNEChange_DemandElement");
         // select if mySelectedElement is enabled
         if (mySelectedElement) {
             myDemandElement->selectAttributeCarrier();
@@ -87,7 +85,7 @@ GNEChange_DemandElement::undo() {
         myDemandElement->getNet()->getViewNet()->getViewParent()->getTypeFrame()->getTypeSelector()->refreshTypeSelector(true);
     }
     // update stack labels
-    const auto parentEdges = myOriginalHierarchicalContainer.getParents<std::vector<GNEEdge*> >();
+    const auto parentEdges = myOriginalHierarchicalContainer.getParents<GNEEdge*>();
     if (parentEdges.size() > 0) {
         parentEdges.front()->updateVehicleStackLabels();
         parentEdges.front()->updatePersonStackLabels();
@@ -101,8 +99,6 @@ GNEChange_DemandElement::undo() {
 void
 GNEChange_DemandElement::redo() {
     if (myForward) {
-        // show extra information for tests
-        WRITE_DEBUG("Adding " + myDemandElement->getTagStr() + " '" + myDemandElement->getID() + "' in GNEChange_DemandElement");
         // select if mySelectedElement is enabled
         if (mySelectedElement) {
             myDemandElement->selectAttributeCarrier();
@@ -112,8 +108,6 @@ GNEChange_DemandElement::redo() {
         // add demand element in parents and children
         addElementInParentsAndChildren(myDemandElement);
     } else {
-        // show extra information for tests
-        WRITE_DEBUG("Removing " + myDemandElement->getTagStr() + " '" + myDemandElement->getID() + "' in GNEChange_DemandElement");
         // unselect if mySelectedElement is enabled
         if (mySelectedElement) {
             myDemandElement->unselectAttributeCarrier();
@@ -128,7 +122,7 @@ GNEChange_DemandElement::redo() {
         myDemandElement->getNet()->getViewNet()->getViewParent()->getTypeFrame()->getTypeSelector()->refreshTypeSelector(true);
     }
     // update stack labels
-    const auto parentEdges = myOriginalHierarchicalContainer.getParents<std::vector<GNEEdge*> >();
+    const auto parentEdges = myOriginalHierarchicalContainer.getParents<GNEEdge*>();
     if (parentEdges.size() > 0) {
         parentEdges.front()->updateVehicleStackLabels();
         parentEdges.front()->updatePersonStackLabels();

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -45,14 +45,15 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-RONetHandler::RONetHandler(RONet& net, ROAbstractEdgeBuilder& eb, const bool ignoreInternal, const double minorPenalty, double tlsPenalty) :
+RONetHandler::RONetHandler(RONet& net, ROAbstractEdgeBuilder& eb, const bool ignoreInternal, const double minorPenalty, double tlsPenalty, double turnaroundPenalty) :
     SUMOSAXHandler("sumo-network"),
     myNet(net),
     myNetworkVersion(0, 0),
     myEdgeBuilder(eb), myIgnoreInternal(ignoreInternal),
     myCurrentName(), myCurrentEdge(nullptr), myCurrentStoppingPlace(nullptr),
     myMinorPenalty(minorPenalty),
-    myTLSPenalty(tlsPenalty)
+    myTLSPenalty(tlsPenalty),
+    myTurnaroundPenalty(turnaroundPenalty)
 {}
 
 
@@ -310,12 +311,22 @@ RONetHandler::parseConnection(const SUMOSAXAttributes& attrs) {
         throw ProcessError("invalid toLane '" + toString(toLane) + "' in connection to '" + toID + "'.");
     }
     if (myIgnoreInternal || viaID == "") {
-        from->getLanes()[fromLane]->addOutgoingLane(to->getLanes()[toLane]);
-        from->addSuccessor(to, nullptr, dir);
-        if (to->isCrossing()) {
-            to->setTimePenalty(myTLSPenalty);
+        std::string allow = attrs.getOpt<std::string>(SUMO_ATTR_ALLOW, nullptr, ok, "");
+        std::string disallow = attrs.getOpt<std::string>(SUMO_ATTR_DISALLOW, nullptr, ok, "");
+        ROEdge* dummyVia = nullptr;
+        SVCPermissions permissions;
+        if (allow == "" && disallow == "") {
+            permissions = SVC_UNSPECIFIED;
+        } else {
+            myNet.setPermissionsFound();
+            // dummyVia is only needed to hold permissions
+            permissions = parseVehicleClasses(allow, disallow);
+            dummyVia = new ROEdge("dummyVia_" + from->getLanes()[fromLane]->getID() + "->" + to->getLanes()[toLane]->getID(),
+                    from->getToJunction(), from->getToJunction(), permissions);
         }
-    }  else {
+        from->getLanes()[fromLane]->addOutgoingLane(to->getLanes()[toLane], dummyVia);
+        from->addSuccessor(to, nullptr, dir);
+    } else {
         ROEdge* const via = myNet.getEdge(SUMOXMLDefinitions::getEdgeIDFromLane(viaID));
         if (via == nullptr) {
             throw ProcessError(TLF("unknown via-edge '%' in connection", viaID));
@@ -327,12 +338,15 @@ RONetHandler::parseConnection(const SUMOSAXAttributes& attrs) {
         if (state == LINKSTATE_MINOR || state == LINKSTATE_EQUAL || state == LINKSTATE_STOP || state == LINKSTATE_ALLWAY_STOP) {
             via->setTimePenalty(myMinorPenalty);
         }
+        if (dir == toString(LinkDirection::TURN) || dir == toString(LinkDirection::TURN_LEFTHAND)) {
+            via->setTimePenalty(myTurnaroundPenalty);
+        }
         if (tlID != "") {
             via->setTimePenalty(myTLSPenalty);
-            if (to->isCrossing()) {
-                to->setTimePenalty(myTLSPenalty);
-            }
         }
+    }
+    if (to->isCrossing()) {
+        to->setTimePenalty(myTLSPenalty);
     }
 }
 

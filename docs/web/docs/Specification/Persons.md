@@ -16,15 +16,15 @@ below. Each person must have at least one stage in its plan.
 
 ```xml
 <person id="foo" depart="0">
-    <walk edges="a b c"/>
-    <ride from="c" to="d" lines="busline1"/>
-    <ride .../>
-    <walk .../>
-    <stop .../>
+    <walk edges="a b c"/>
+    <ride from="c" to="d" lines="busline1"/>
+    <ride .../>
+    <walk .../>
+    <stop .../>
 </person>
 ```
 
-## Availabe Person Attributes
+## Available Person Attributes
 
 | Attribute           | Type      | Range              | Default         | Remark      |
 |---------------------|-----------|--------------------|-----------------|---------------------------|
@@ -87,19 +87,19 @@ known:
 ## Examples
 
 ```xml
-   <personFlow id="p" begin="0" end="10" period="2">
-       <walk from="beg" to="end"/>
-   </personFlow>
+   <personFlow id="p" begin="0" end="10" period="2">
+       <walk from="beg" to="end"/>
+   </personFlow>
 ```
 
 ```xml
-   <personFlow id="person" begin="0" end="1" number="4" departPos="80">
-       <walk from="2/3to1/3" to="1/3to0/3" arrivalPos="55"/>
-       <ride from="1/3to0/3" to="0/4to1/4" lines="train0"/>
-       <walk from="0/4to1/4" to="1/4to2/4" arrivalPos="45"/>
-       <stop lane="1/4to2/4_0" duration="20" startPos="40" actType="singing"/>
-       <ride from="1/4to2/4" to="3/4to4/4" lines="car0"/>
-   </personFlow>
+   <personFlow id="person" begin="0" end="1" number="4" departPos="80">
+       <walk from="2/3to1/3" to="1/3to0/3" arrivalPos="55"/>
+       <ride from="1/3to0/3" to="0/4to1/4" lines="train0"/>
+       <walk from="0/4to1/4" to="1/4to2/4" arrivalPos="45"/>
+       <stop lane="1/4to2/4_0" duration="20" startPos="40" actType="singing"/>
+       <ride from="1/4to2/4" to="3/4to4/4" lines="car0"/>
+   </personFlow>
 ```
 
 # Simulation input
@@ -270,12 +270,14 @@ It is possible to start the person simulation simultaneously with the start of a
 ## Starting a person in a vehicle
 To start the simulation of a person while riding in a vehicle, the `depart` attribute of the person must be set to `triggered`.
 Additionally the first stage of the plan must be a `ride`. The `from` attribute is not necessary, since the vehicle start position is already defined and used.
-The vehicle is indicated by using only the vehicle ID for the `lines` attribute of the ride.
+The vehicle is indicated by using only the vehicle ID for the `lines` attribute of the ride. Alternatively, the lines attribute may hold the id of a flow. In this case, most recent vehicle belonging to that flow will receive the person.
 
 ## Starting multiple persons in a vehicle
-To start the simulation of multiple persons with the same plan while riding in a vehicle, `personFlow` can be used. This only works for the distribution attribute `number`, which defines the number of persons inserted into the vehicle, and the attribute `begin="triggered"`. The `end` attribute is ignored or can be left.
+To start the simulation of multiple persons with the same plan while riding in a vehicle, `personFlow` can be used. This works by setting the attribute `begin="triggered"`.
 Additionally the first stage of the plan must be a `ride`. The `from` attribute is not necessary, since the vehicle start position is already defined and used.
-The vehicle is indicated by using only the vehicle ID for the `lines` attribute of the ride.
+The vehicle is indicated by using only the vehicle ID for the `lines` attribute of the ride. Alternatively, the lines attribute may hold the id of a flow. In this case, most recent vehicle belonging to that flow will receive the person.
+If the personFlow is defined with attribute `number`, then all persons will be inserted into the same vehicle.
+If the personFlow is defined with attribute `period`, then the persons will be created with the indicated period and be put in the vehicle at a later time (and possibly different vehicles if a flow id was used in `lines`).
 
 ## Examples
 Person `p0` starts within the vehicle defined by trip `v0` at edge `gneE0`. The ride ends at edge `gneE1`.
@@ -326,6 +328,7 @@ If the computed plan starts with a car or bicycle, a vehicle for use by the pers
 | vTypes     | list     | valid vType ids                               | \-      | list of possible vehicle types to take                        |
 | modes      | list     | any combination of "public", "car", "bicycle", ["taxi"](../Simulation/Taxi.md) | \-      | list of possible traffic modes (separated by ' '). Walking is always possible regardless of this value.     |
 | departPos  | float(m) |                                               | 0       | initial position on the starting edge (deprecated, determined by the departPos of the person or the arrival pos of the previous step) |
+| departPosLat  | float(m) |            | 0       | initial lateral position on the starting edge when walking |
 | arrivalPos | float(m) |                                               | middle of edge | arrival position on the destination edge                      |
 | group| string           |               | ""      | id of the travel group. Persons with the same group may share a taxi ride     |
 
@@ -336,7 +339,7 @@ If the computed plan starts with a car or bicycle, a vehicle for use by the pers
     If no itinerary for performing the trip is found and the option **--ignore-route-errors** is set, the trip will be transformed into a walk which consists of the start and arrival edge. The person will teleport to complete the walk.
 
 !!! note
-    when attribute vTypes is used, the person may start with any of the given vehicle types at the from-edge. Including 'car' in modes is equivalent to vTypes="DEFAULT_VEHTYPE". Including 'bicycle' in modes is equivalent to vTypes="DEFAULT_BIKETYPE". The vehicles will be automatically generated when used.
+    When attribute vTypes is used, the person may start with any of the given vehicle types at the from-edge. Including 'car' in modes is equivalent to vTypes="DEFAULT_VEHTYPE". Including 'bicycle' in modes is equivalent to vTypes="DEFAULT_BIKETYPE". The vehicles will be automatically generated when used.
 
 # Example
 

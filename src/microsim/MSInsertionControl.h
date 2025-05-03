@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -27,6 +27,7 @@
 #include <map>
 #include <string>
 #include <set>
+#include <utils/foxtools/MFXSynchSet.h>
 #include <microsim/MSRouterDefs.h>
 #include "MSVehicleContainer.h"
 
@@ -230,7 +231,12 @@ private:
     std::set<SUMOVehicle*> myEmitCandidates;
 
     /// @brief Set of vehicles which shall not be inserted anymore
+
+#ifdef HAVE_FOX
+    MFXSynchSet<const SUMOVehicle*> myAbortedEmits;
+#else
     std::set<const SUMOVehicle*> myAbortedEmits;
+#endif
 
     /** @struct Flow
      * @brief Definition of vehicle flow with the current index for vehicle numbering

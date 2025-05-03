@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2024-04-29 13:52:17 by Eclipse SUMO duarouter Version v1_19_0+1975-c861cc8fbcc
+<!-- generated on 2024-12-06 13:15:06 by Eclipse SUMO duarouter Version v1_21_0+1212-c8e3c67cccc
 -->
 
-<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/duarouterConfiguration.xsd">
+<duarouterConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/duarouterConfiguration.xsd">
 
     <configuration>
         <!-- Loads the named config on startup -->
@@ -156,6 +156,9 @@
         <!-- Match positions to junctions instead of edges -->
         <mapmatch.junctions value="false" type="BOOL"/>
 
+        <!-- Match positions to taz instead of edges -->
+        <mapmatch.taz value="false" type="BOOL"/>
+
         <!-- Aggregate routing queries with the same origin -->
         <bulk-routing value="false" type="BOOL"/>
 
@@ -180,6 +183,9 @@
         <!-- Apply the given time penalty when computing routing costs across a traffic light -->
         <weights.tls-penalty value="0" type="FLOAT"/>
 
+        <!-- Apply the given time penalty when computing routing costs for turnaround internal lanes -->
+        <weights.turnaround-penalty value="5" type="FLOAT"/>
+
         <!-- Edge weights for routing are dynamically disturbed by a random factor drawn uniformly from [1,FLOAT) -->
         <weights.random-factor value="1" type="FLOAT"/>
 
@@ -197,6 +203,12 @@
 
         <!-- Save lookup table for astar ALT-variant to the given file -->
         <astar.save-landmark-distances value="" type="FILE"/>
+
+        <!-- Scale demand by the given factor (by discarding or duplicating vehicles) -->
+        <scale value="1" type="FLOAT"/>
+
+        <!-- Suffix to be added when creating ids for cloned vehicles -->
+        <scale-suffix value="." type="STR"/>
 
         <!-- Use FLOAT as Gawron&apos;s beta -->
         <gawron.beta value="0.9" synonymes="gBeta" type="FLOAT"/>
@@ -353,4 +365,4 @@
 
     </random_number>
 
-</configuration>
+</duarouterConfiguration>

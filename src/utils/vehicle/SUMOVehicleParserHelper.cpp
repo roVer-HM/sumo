@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2008-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -33,6 +33,7 @@
 #include <utils/common/UtilExceptions.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/emissions/PollutantsInterface.h>
+#include <utils/router/IntermodalNetwork.h>
 #include <utils/vehicle/SUMOVTypeParameter.h>
 #include <utils/vehicle/SUMOVehicleParameter.h>
 #include <utils/xml/SUMOSAXAttributes.h>
@@ -682,17 +683,16 @@ SUMOVehicleParserHelper::parseCommonAttributes(const SUMOSAXAttributes& attrs, S
     }
     // parse insertion checks
     if (attrs.hasAttribute(SUMO_ATTR_INSERTIONCHECKS)) {
-        ret->insertionChecks = 0;
+        ret->parametersSet |= VEHPARS_INSERTION_CHECKS_SET;
         bool ok = true;
-        std::vector<std::string> checks = attrs.get<std::vector<std::string> >(SUMO_ATTR_INSERTIONCHECKS, ret->id.c_str(), ok);
+        std::string checks = attrs.get<std::string>(SUMO_ATTR_INSERTIONCHECKS, ret->id.c_str(), ok);
         if (!ok) {
             handleVehicleError(true, ret);
         } else {
-            for (std::string check : checks) {
-                if (!SUMOXMLDefinitions::InsertionChecks.hasString(check)) {
-                    handleVehicleError(true, ret, "Unknown value '" + check + "' in " + toString(SUMO_ATTR_INSERTIONCHECKS));
-                }
-                ret->insertionChecks |= (int)SUMOXMLDefinitions::InsertionChecks.get(check);
+            try {
+                ret->insertionChecks = SUMOVehicleParameter::parseInsertionChecks(checks);
+            } catch (InvalidArgument& e) {
+                handleVehicleError(true, ret, e.what());
             }
         }
     }
@@ -705,6 +705,28 @@ SUMOVehicleParserHelper::parseCommonAttributes(const SUMOSAXAttributes& attrs, S
         } else {
             ret->parametersSet |= VEHPARS_PARKING_BADGES_SET;
             ret->parkingBadges = badges;
+        }
+    }
+    // parse modes (transportables only)
+    ret->modes = 0;
+    if (attrs.hasAttribute(SUMO_ATTR_MODES)) {
+        bool ok = true;
+        const std::string modeString = attrs.get<std::string>(SUMO_ATTR_MODES, ret->id.c_str(), ok);
+        if (!ok) {
+            handleVehicleError(true, ret);
+        } else {
+            std::string errorMsg;
+            if (!SUMOVehicleParameter::parsePersonModes(modeString, toString(tag), ret->id, ret->modes, errorMsg)) {
+                handleVehicleError(true, ret, errorMsg);
+            }
+        }
+    }
+    // parse usable vehicle types (transportables only)
+    if (attrs.hasAttribute(SUMO_ATTR_VTYPES)) {
+        bool ok = true;
+        ret->vTypes = attrs.get<std::string>(SUMO_ATTR_VTYPES, ret->id.c_str(), ok);
+        if (!ok) {
+            handleVehicleError(true, ret);
         }
     }
     // parse speed (only used by calibrators flow)
@@ -826,8 +848,8 @@ SUMOVehicleParserHelper::beginVTypeParsing(const SUMOSAXAttributes& attrs, const
             }
         }
         // validate speed distribution
-        std::string error;
-        if (!vType->speedFactor.isValid(error)) {
+        const std::string& error = vType->speedFactor.isValid();
+        if (error != "") {
             return handleVehicleTypeError(hardFail, vType, "Invalid speed distribution when parsing vType '" + vType->id + "' (" + error + ")");
         }
         if (attrs.hasAttribute(SUMO_ATTR_ACTIONSTEPLENGTH)) {
@@ -1081,6 +1103,18 @@ SUMOVehicleParserHelper::beginVTypeParsing(const SUMOSAXAttributes& attrs, const
             } else {
                 vType->speedFactorPremature = sfp;
                 vType->parametersSet |= VTYPEPARS_SPEEDFACTOR_PREMATURE_SET;
+            }
+        }
+        if (attrs.hasAttribute(SUMO_ATTR_BOARDING_FACTOR)) {
+            bool ok = true;
+            const double bf = attrs.get<double>(SUMO_ATTR_BOARDING_FACTOR, id.c_str(), ok);
+            if (!ok) {
+                return handleVehicleTypeError(hardFail, vType);
+            } else if (bf < 0) {
+                return handleVehicleTypeError(hardFail, vType, toString(SUMO_ATTR_BOARDING_FACTOR) + " must be equal or greater than 0");
+            } else {
+                vType->boardingFactor = bf;
+                vType->parametersSet |= VTYPEPARS_BOARDING_FACTOR_SET;
             }
         }
         if (attrs.hasAttribute(SUMO_ATTR_MAXSPEED_LAT)) {
@@ -1508,13 +1542,16 @@ SUMOVehicleParserHelper::parseLCParams(SUMOVTypeParameter* into, LaneChangeModel
         lc2013Params.insert(SUMO_ATTR_LCA_MAXSPEEDLATFACTOR);
         lc2013Params.insert(SUMO_ATTR_LCA_MAXDISTLATSTANDING);
         lc2013Params.insert(SUMO_ATTR_LCA_ASSERTIVE);
+        lc2013Params.insert(SUMO_ATTR_LCA_STRATEGIC_LOOKAHEAD);
         lc2013Params.insert(SUMO_ATTR_LCA_SPEEDGAIN_LOOKAHEAD);
+        lc2013Params.insert(SUMO_ATTR_LCA_SPEEDGAIN_REMAIN_TIME);
         lc2013Params.insert(SUMO_ATTR_LCA_COOPERATIVE_ROUNDABOUT);
         lc2013Params.insert(SUMO_ATTR_LCA_COOPERATIVE_SPEED);
         lc2013Params.insert(SUMO_ATTR_LCA_OVERTAKE_RIGHT);
         lc2013Params.insert(SUMO_ATTR_LCA_SIGMA);
         lc2013Params.insert(SUMO_ATTR_LCA_KEEPRIGHT_ACCEPTANCE_TIME);
         lc2013Params.insert(SUMO_ATTR_LCA_OVERTAKE_DELTASPEED_FACTOR);
+        lc2013Params.insert(SUMO_ATTR_LCA_CONTRIGHT);
         lc2013Params.insert(SUMO_ATTR_LCA_EXPERIMENTAL1);
         allowedLCModelAttrs[LaneChangeModel::LC2013] = lc2013Params;
         // sl2015 (extension of lc2013)
@@ -1734,6 +1771,56 @@ SUMOVehicleParserHelper::processActionStepLength(double given) {
 bool
 SUMOVehicleParserHelper::isInternalRouteID(const std::string& id) {
     return id.substr(0, 1) == "!";
+}
+
+
+int
+SUMOVehicleParserHelper::parseCarWalkTransfer(const OptionsCont& oc, const bool hasTaxi) {
+    int carWalk = 0;
+    for (const std::string& opt : oc.getStringVector("persontrip.transfer.car-walk")) {
+        if (opt == "parkingAreas") {
+            carWalk |= ModeChangeOptions::PARKING_AREAS;
+        } else if (opt == "ptStops") {
+            carWalk |= ModeChangeOptions::PT_STOPS;
+        } else if (opt == "allJunctions") {
+            carWalk |= ModeChangeOptions::ALL_JUNCTIONS;
+        } else {
+            WRITE_ERRORF(TL("Invalid transfer option '%'. Must be one of 'parkingAreas', 'ptStops' and 'allJunctions'"), opt);
+        }
+    }
+    const StringVector taxiDropoff = oc.getStringVector("persontrip.transfer.taxi-walk");
+    const StringVector taxiPickup = oc.getStringVector("persontrip.transfer.walk-taxi");
+    if (taxiDropoff.empty() && hasTaxi) {
+        carWalk |= ModeChangeOptions::TAXI_DROPOFF_ANYWHERE;
+    } else {
+        for (const std::string& opt : taxiDropoff) {
+            if (opt == "parkingAreas") {
+                carWalk |= ModeChangeOptions::TAXI_DROPOFF_PARKING_AREAS;
+            } else if (opt == "ptStops") {
+                carWalk |= ModeChangeOptions::TAXI_DROPOFF_PT;
+            } else if (opt == "allJunctions") {
+                carWalk |= ModeChangeOptions::TAXI_DROPOFF_ANYWHERE;
+            } else {
+                WRITE_ERRORF(TL("Invalid transfer option '%'. Must be one of 'parkingAreas', 'ptStops' and 'allJunctions'"), opt);
+            }
+        }
+    }
+    if (taxiPickup.empty() && hasTaxi) {
+        carWalk |= ModeChangeOptions::TAXI_PICKUP_ANYWHERE;
+    } else {
+        for (const std::string& opt : taxiPickup) {
+            if (opt == "parkingAreas") {
+                carWalk |= ModeChangeOptions::TAXI_PICKUP_PARKING_AREAS;
+            } else if (opt == "ptStops") {
+                carWalk |= ModeChangeOptions::TAXI_PICKUP_PT;
+            } else if (opt == "allJunctions") {
+                carWalk |= ModeChangeOptions::TAXI_PICKUP_ANYWHERE;
+            } else {
+                WRITE_ERRORF(TL("Invalid transfer option '%'. Must be one of 'parkingAreas', 'ptStops' and 'allJunctions'"), opt);
+            }
+        }
+    }
+    return carWalk;
 }
 
 

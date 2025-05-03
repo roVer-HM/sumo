@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -97,12 +97,12 @@ GNEMeanData::writeMeanData(OutputDevice& device) const {
         device.writeAttr(SUMO_ATTR_PERIOD, STEPS2TIME(myPeriod));
     }
     if (myBegin != -1) {
-        device.writeAttr(SUMO_ATTR_BEGIN, myBegin);
+        device.writeAttr(SUMO_ATTR_BEGIN, STEPS2TIME(myBegin));
     }
     if (myEnd != -1) {
-        device.writeAttr(SUMO_ATTR_END, myEnd);
+        device.writeAttr(SUMO_ATTR_END, STEPS2TIME(myEnd));
     }
-    if (myExcludeEmpty != "default") {
+    if (myExcludeEmpty != myTagProperty.getDefaultValue(SUMO_ATTR_EXCLUDE_EMPTY)) {
         device.writeAttr(SUMO_ATTR_EXCLUDE_EMPTY, myExcludeEmpty);
     }
     if (myWithInternal) {
@@ -250,7 +250,7 @@ GNEMeanData::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_DETECT_PERSONS:
             return toString(myDetectPersons);
         case SUMO_ATTR_WRITE_ATTRIBUTES:
-            return toString(myWrittenAttributes);
+            return joinToString(myWrittenAttributes, " ");
         case SUMO_ATTR_EDGES:
             return toString(myEdges);
         case SUMO_ATTR_EDGESFILE:
@@ -258,7 +258,7 @@ GNEMeanData::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_AGGREGATE:
             return toString(myAggregate);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttribute(key);
     }
 }
 
@@ -295,7 +295,8 @@ GNEMeanData::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -304,7 +305,7 @@ bool
 GNEMeanData::isValid(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_ID:
-            return (myNet->getAttributeCarriers()->retrieveMeanData(myTagProperty.getTag(), value, false) == nullptr);
+            return SUMOXMLDefinitions::isValidNetID(value) && (myNet->getAttributeCarriers()->retrieveMeanData(myTagProperty.getTag(), value, false) == nullptr);
         case SUMO_ATTR_FILE:
             return SUMOXMLDefinitions::isValidFilename(value);
         case SUMO_ATTR_PERIOD:
@@ -313,13 +314,13 @@ GNEMeanData::isValid(SumoXMLAttr key, const std::string& value) {
             if (value.empty()) {
                 return true;
             } else {
-                return (canParse<double>(value) && (parse<double>(value) >= 0));
+                return (canParse<SUMOTime>(value) && (parse<SUMOTime>(value) >= 0));
             }
         case SUMO_ATTR_EXCLUDE_EMPTY:
             if (canParse<bool>(value)) {
                 return true;
             } else {
-                return (value == "default");
+                return (value == SUMOXMLDefinitions::ExcludeEmptys.getString(ExcludeEmpty::DEFAULTS));
             }
         case SUMO_ATTR_WITH_INTERNAL:
             return (canParse<bool>(value));
@@ -352,7 +353,7 @@ GNEMeanData::isValid(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_AGGREGATE:
             return (canParse<bool>(value));
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
@@ -379,6 +380,7 @@ void
 GNEMeanData::setAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_ID:
+            myNet->getAttributeCarriers()->updateMeanDataID(this, value);
             myID = value;
             break;
         case SUMO_ATTR_FILE:
@@ -406,7 +408,13 @@ GNEMeanData::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         case SUMO_ATTR_EXCLUDE_EMPTY:
-            myExcludeEmpty = value;
+            if (value == SUMOXMLDefinitions::ExcludeEmptys.getString(ExcludeEmpty::DEFAULTS)) {
+                myExcludeEmpty = value;
+            } else if (parse<bool>(value)) {
+                myExcludeEmpty = SUMOXMLDefinitions::ExcludeEmptys.getString(ExcludeEmpty::TRUES);
+            } else {
+                myExcludeEmpty = SUMOXMLDefinitions::ExcludeEmptys.getString(ExcludeEmpty::FALSES);
+            }
             break;
         case SUMO_ATTR_WITH_INTERNAL:
             myWithInternal = parse<bool>(value);
@@ -446,7 +454,8 @@ GNEMeanData::setAttribute(SumoXMLAttr key, const std::string& value) {
             myAggregate = parse<bool>(value);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value);
+            break;
     }
 }
 

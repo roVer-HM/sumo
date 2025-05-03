@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2017-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2017-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -350,6 +350,12 @@ Lane::getAngle(const std::string& laneID, double relativePosition) {
 }
 
 
+std::string
+Lane::getBidiLane(const std::string& laneID) {
+    const MSLane* bidi = getLane(laneID)->getBidiLane();
+    return bidi == nullptr ? "" : bidi->getID();
+}
+
 void
 Lane::setAllowed(const std::string& laneID, std::string allowedClass) {
     setAllowed(laneID, std::vector<std::string>({allowedClass}));
@@ -514,6 +520,8 @@ Lane::handleVariable(const std::string& objID, const int variable, VariableWrapp
         case VAR_ANGLE:
             paramData->readUnsignedByte();
             return wrapper->wrapDouble(objID, variable, getAngle(objID, paramData->readDouble()));
+        case VAR_BIDI:
+            return wrapper->wrapString(objID, variable, getBidiLane(objID));
         case libsumo::VAR_PARAMETER:
             paramData->readUnsignedByte();
             return wrapper->wrapString(objID, variable, getParameter(objID, paramData->readString()));

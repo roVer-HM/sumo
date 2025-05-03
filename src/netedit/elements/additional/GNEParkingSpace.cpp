@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -138,7 +138,8 @@ GNEParkingSpace::checkDrawMoveContour() const {
     // get edit modes
     const auto& editModes = myNet->getViewNet()->getEditModes();
     // check if we're in move mode
-    if (!myNet->getViewNet()->isMovingElement() && editModes.isCurrentSupermodeNetwork() &&
+    if (!myNet->getViewNet()->isCurrentlyMovingElements() && editModes.isCurrentSupermodeNetwork() &&
+            !myNet->getViewNet()->getEditNetworkElementShapes().getEditedNetworkElement() &&
             (editModes.networkEditMode == NetworkEditMode::NETWORK_MOVE) && myNet->getViewNet()->checkOverLockedElement(this, mySelected)) {
         // only move the first element
         return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
@@ -214,20 +215,22 @@ GNEParkingSpace::getParentName() const {
 
 void
 GNEParkingSpace::drawGL(const GUIVisualizationSettings& s) const {
-    // draw boundaries
-    GLHelper::drawBoundary(s, getCenteringBoundary());
     // first check if additional has to be drawn
     if (myNet->getViewNet()->getDataViewOptions().showAdditionals()) {
+        // draw boundaries
+        GLHelper::drawBoundary(s, getCenteringBoundary());
         // get exaggeration
         const double spaceExaggeration = getExaggeration(s);
         // get witdh
         const double parkingSpaceWidth = myShapeWidth.length2D() * 0.5 + (spaceExaggeration * 0.1);
         // get detail level
         const auto d = s.getDetailLevel(spaceExaggeration);
+        // check if draw moving geometry points
+        const bool movingGeometryPoints = drawMovingGeometryPoints(false);
         // draw geometry only if we'rent in drawForObjectUnderCursor mode
-        if (!s.drawForViewObjectsHandler) {
+        if (s.checkDrawAdditional(d, isAttributeCarrierSelected())) {
             // draw space
-            drawSpace(s, d, parkingSpaceWidth);
+            drawSpace(s, d, parkingSpaceWidth, movingGeometryPoints);
             // draw parent and child lines
             drawParentChildLines(s, s.additionalSettings.connectionColor);
             // draw lock icon
@@ -236,11 +239,29 @@ GNEParkingSpace::drawGL(const GUIVisualizationSettings& s) const {
             drawAdditionalID(s);
             // draw additional name
             drawAdditionalName(s);
-            // draw dotted contour
-            myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
+            // draw dotted contours
+            if (movingGeometryPoints) {
+                // get snap radius
+                const double snapRadius = myNet->getViewNet()->getVisualisationSettings().neteditSizeSettings.additionalGeometryPointRadius;
+                const double snapRadiusSquared = snapRadius * snapRadius;
+                // get mouse position
+                const Position mousePosition = myNet->getViewNet()->getPositionInformation();
+                // check if we're editing width or height
+                if (myShapeLength.back().distanceSquaredTo2D(mousePosition) <= snapRadiusSquared) {
+                    myMovingContourUp.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidthSmall, true);
+                    myMovingContourDown.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidthSmall, true);
+                } else if ((myShapeWidth.front().distanceSquaredTo2D(mousePosition) <= snapRadiusSquared) ||
+                           (myShapeWidth.back().distanceSquaredTo2D(mousePosition) <= snapRadiusSquared)) {
+                    myMovingContourLeft.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidthSmall, true);
+                    myMovingContourRight.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidthSmall, true);
+                }
+            } else {
+                myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
+            }
+
         }
         // calculate contour
-        calculateSpaceContour(s, d, parkingSpaceWidth, spaceExaggeration);
+        calculateSpaceContour(s, d, parkingSpaceWidth, spaceExaggeration, movingGeometryPoints);
     }
 }
 
@@ -263,13 +284,15 @@ GNEParkingSpace::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_SLOPE:
             return toString(mySlope);
         case GNE_ATTR_PARENT:
-            return getParentAdditionals().at(0)->getID();
-        case GNE_ATTR_SELECTED:
-            return toString(isAttributeCarrierSelected());
+            if (isTemplate()) {
+                return "";
+            } else {
+                return getParentAdditionals().at(0)->getID();
+            }
         case GNE_ATTR_PARAMETERS:
             return getParametersStr();
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttribute(key);
     }
 }
 
@@ -308,12 +331,12 @@ GNEParkingSpace::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndo
         case SUMO_ATTR_ANGLE:
         case SUMO_ATTR_SLOPE:
         case GNE_ATTR_PARENT:
-        case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -335,12 +358,10 @@ GNEParkingSpace::isValid(SumoXMLAttr key, const std::string& value) {
             return canParse<double>(value);
         case GNE_ATTR_PARENT:
             return (myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_PARKING_AREA, value, false) != nullptr);
-        case GNE_ATTR_SELECTED:
-            return canParse<bool>(value);
         case GNE_ATTR_PARAMETERS:
             return areParametersValid(value);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
@@ -362,7 +383,7 @@ GNEParkingSpace::getHierarchyName() const {
 
 void
 GNEParkingSpace::drawSpace(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
-                           const double width) const {
+                           const double width, const bool movingGeometryPoints) const {
     // get angle
     const double angle = getAttributeDouble(SUMO_ATTR_ANGLE);
     // get contour color
@@ -375,7 +396,7 @@ GNEParkingSpace::drawSpace(const GUIVisualizationSettings& s, const GUIVisualiza
     // push later matrix
     GLHelper::pushMatrix();
     // translate to front
-    myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_PARKING_SPACE);
+    drawInLayer(GLO_PARKING_SPACE);
     // set contour color
     GLHelper::setColor(contourColor);
     // draw extern
@@ -393,9 +414,15 @@ GNEParkingSpace::drawSpace(const GUIVisualizationSettings& s, const GUIVisualiza
         GLHelper::drawBoxLines(shapeLengthInner, width - 0.1);
     }
     // draw geometry points
-    drawUpGeometryPoint(s, d, myShapeLength.back(), angle, contourColor);
-    drawLeftGeometryPoint(s, d, myShapeWidth.back(), angle - 90, contourColor);
-    drawRightGeometryPoint(s, d, myShapeWidth.front(), angle - 90, contourColor);
+    if (movingGeometryPoints) {
+        if (myShapeLength.size() > 0) {
+            drawUpGeometryPoint(s, d, myShapeLength.back(), angle, RGBColor::ORANGE);
+        }
+        if (myShapeWidth.size() > 0) {
+            drawLeftGeometryPoint(s, d, myShapeWidth.back(), angle - 90, RGBColor::ORANGE);
+            drawRightGeometryPoint(s, d, myShapeWidth.front(), angle - 90, RGBColor::ORANGE);
+        }
+    }
     // pop layer matrix
     GLHelper::popMatrix();
 }
@@ -403,9 +430,18 @@ GNEParkingSpace::drawSpace(const GUIVisualizationSettings& s, const GUIVisualiza
 
 void
 GNEParkingSpace::calculateSpaceContour(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
-                                       const double width, const double exaggeration) const {
-    // calculate contour and draw dotted geometry
-    myAdditionalContour.calculateContourExtrudedShape(s, d, this, myShapeLength, width, exaggeration, true, true, 0);
+                                       const double width, const double exaggeration, const bool movingGeometryPoints) const {
+    // check if we're calculating the contour or the moving geometry points
+    if (movingGeometryPoints) {
+        myMovingContourUp.calculateContourCircleShape(s, d, this, myShapeLength.back(), s.neteditSizeSettings.additionalGeometryPointRadius,
+                getType(), exaggeration, nullptr);
+        myMovingContourLeft.calculateContourCircleShape(s, d, this, myShapeWidth.front(), s.neteditSizeSettings.additionalGeometryPointRadius, getType(),
+                exaggeration, nullptr);
+        myMovingContourRight.calculateContourCircleShape(s, d, this, myShapeWidth.back(), s.neteditSizeSettings.additionalGeometryPointRadius, getType(),
+                exaggeration, nullptr);
+    } else {
+        myAdditionalContour.calculateContourExtrudedShape(s, d, this, myShapeLength, getType(), width, exaggeration, true, true, 0, nullptr, nullptr);
+    }
 }
 
 
@@ -447,18 +483,12 @@ GNEParkingSpace::setAttribute(SumoXMLAttr key, const std::string& value) {
         case GNE_ATTR_PARENT:
             replaceAdditionalParent(SUMO_TAG_PARKING_AREA, value, 0);
             break;
-        case GNE_ATTR_SELECTED:
-            if (parse<bool>(value)) {
-                selectAttributeCarrier();
-            } else {
-                unselectAttributeCarrier();
-            }
-            break;
         case GNE_ATTR_PARAMETERS:
             setParametersStr(value);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value);
+            break;
     }
 }
 

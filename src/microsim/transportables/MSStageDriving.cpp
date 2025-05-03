@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -104,8 +104,6 @@ MSStageDriving::init(MSTransportable* transportable) {
         myReservationCommand = new BookReservation(transportable, earliestPickupTime, this);
         MSNet::getInstance()->getBeginOfTimestepEvents()->addEvent(myReservationCommand, reservationTime);
     }
-
-
 }
 
 
@@ -244,6 +242,19 @@ MSStageDriving::proceed(MSNet* net, MSTransportable* transportable, SUMOTime now
             throw ProcessError("Vehicle '" + vehID + "' not found for triggered departure of " +
                                (isPerson ? "person" : "container") + " '" + transportable->getID() + "'.");
         }
+        if (transportable->isPerson()) {
+            const int pCap = startVeh->getVehicleType().getParameter().personCapacity;
+            if (startVeh->getPersonNumber() >= pCap) {
+                WRITE_WARNING(TLF("Vehicle '%' exceeds personCapacity % when placing triggered person '%', time=%",
+                                  startVeh->getID(), pCap, transportable->getID(), time2string(SIMSTEP)));
+            }
+        } else {
+            const int cCap = startVeh->getVehicleType().getParameter().containerCapacity;
+            if (startVeh->getContainerNumber() >= cCap) {
+                WRITE_WARNING(TLF("Vehicle '%' exceeds containerCapacity % when placing triggered container '%', time=%",
+                                  startVeh->getID(), cCap, transportable->getID(), time2string(SIMSTEP)));
+            }
+        }
         myDeparted = now;
         setVehicle(startVeh);
         if (myOriginStop != nullptr) {
@@ -334,6 +345,17 @@ MSStageDriving::registerWaiting(MSTransportable* transportable, SUMOTime now) {
     myWaitingEdge->addTransportable(transportable);
 }
 
+SUMOTime
+MSStageDriving::getDuration() const {
+    return myArrived >= 0 ? myArrived - myWaitingSince : SUMOTime_MAX;
+}
+
+
+SUMOTime
+MSStageDriving::getTravelTime() const {
+    return myArrived >= 0 ? myArrived - myDeparted : SUMOTime_MAX;
+}
+
 
 SUMOTime
 MSStageDriving::getWaitingTime() const {
@@ -350,7 +372,6 @@ MSStageDriving::getTimeLoss(const MSTransportable* /*transportable*/) const {
 void
 MSStageDriving::tripInfoOutput(OutputDevice& os, const MSTransportable* const transportable) const {
     const SUMOTime now = MSNet::getInstance()->getCurrentTimeStep();
-    const SUMOTime departed = myDeparted >= 0 ? myDeparted : now;
     const SUMOTime waitingTime = getWaitingTime();
     const SUMOTime duration = myArrived - myDeparted;
     MSDevice_Tripinfo::addRideTransportData(transportable->isPerson(), myVehicleDistance, duration, myVehicleVClass, myVehicleLine, waitingTime);
@@ -455,12 +476,6 @@ MSStageDriving::getArrivalPos() const {
 }
 
 
-bool
-MSStageDriving::unspecifiedArrivalPos() const {
-    return myArrivalPos == std::numeric_limits<double>::infinity();
-}
-
-
 const std::string
 MSStageDriving::setArrived(MSNet* net, MSTransportable* transportable, SUMOTime now, const bool vehicleArrived) {
     MSStage::setArrived(net, transportable, now, vehicleArrived);
@@ -475,14 +490,14 @@ MSStageDriving::setArrived(MSNet* net, MSTransportable* transportable, SUMOTime 
         }
         const MSStoppingPlace* const stop = getDestinationStop();
         if (stop != nullptr) {
-            bool useDoors = false;
+            MSStoppingPlace::AccessExit exit = MSStoppingPlace::AccessExit::PLATFORM;
             for (const auto& access : stop->getAllAccessPos()) {
-                if (access.useDoors) {
-                    useDoors = true;
+                if (access.exit != exit) {
+                    exit = access.exit;
                     break;
                 }
             }
-            if (useDoors) {
+            if (exit != MSStoppingPlace::AccessExit::PLATFORM) {
                 MSVehicle* train = dynamic_cast<MSVehicle*>(myVehicle);
                 if (train != nullptr) {
                     MSTrainHelper trainHelper = MSTrainHelper(train);
@@ -547,6 +562,7 @@ MSStageDriving::setVehicle(SUMOVehicle* v) {
     }
 }
 
+
 void
 MSStageDriving::abort(MSTransportable* t) {
     myDestinationStop = nullptr;
@@ -562,6 +578,7 @@ MSStageDriving::abort(MSTransportable* t) {
         tc.abortWaitingForVehicle(t);
         MSDevice_Taxi::removeReservation(t, getLines(), myWaitingEdge, myWaitingPos, myDestination, getArrivalPos(), myGroup);
         myDestination = myWaitingEdge;
+        myDestinationStop = myOriginStop;
     }
 }
 
@@ -569,9 +586,9 @@ MSStageDriving::abort(MSTransportable* t) {
 std::string
 MSStageDriving::getWaitingDescription() const {
     return isWaiting4Vehicle() ? ("waiting for " + joinToString(myLines, ",")
-                                  + " at " + (myDestinationStop == nullptr
+                                  + " at " + (myOriginStop == nullptr
                                           ? ("edge '" + myWaitingEdge->getID() + "'")
-                                          : ("busStop '" + myDestinationStop->getID() + "'"))
+                                          : (toString(myOriginStop->getElement()) + " '" + myOriginStop->getID() + "'"))
                                  ) : "";
 }
 

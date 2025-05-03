@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -25,6 +25,7 @@
 #include <utils/geom/PositionVector.h>
 #include <utils/vehicle/SUMOVehicleParameter.h>
 #include <utils/vehicle/SUMOVTypeParameter.h>
+#include <utils/xml/SUMOSAXHandler.h>
 #include <utils/xml/SUMOXMLDefinitions.h>
 
 
@@ -35,6 +36,102 @@
 class CommonXMLStructure {
 
 public:
+
+    /// @brief class declaration
+    class SumoBaseObject;
+
+    /// @brief plan parameters (used for group all from-to parameters related with plans)
+    class PlanParameters {
+
+    public:
+        // @brief default constructor
+        PlanParameters();
+
+        /// @brief constructor for parsing the parameters from SUMOSAXAttributes
+        PlanParameters(const CommonXMLStructure::SumoBaseObject* sumoBaseObject,
+                       const SUMOSAXAttributes& attrs, bool& parsedOk);
+
+        /// @brief clear parameters
+        void clear();
+
+        /// @brief check if this is a single-edge plan
+        bool isSingleEdgePlan() const;
+
+        /// @brief get number of defined plans
+        int getNumberOfDefinedParameters() const;
+
+        /// @brief from edge
+        std::string fromEdge;
+
+        /// @brief to edge
+        std::string toEdge;
+
+        /// @brief consecutive edges
+        std::vector<std::string> consecutiveEdges;
+
+        /// @brief from junction
+        std::string fromJunction;
+
+        /// @brief to junction
+        std::string toJunction;
+
+        /// @brief from TAZ
+        std::string fromTAZ;
+
+        /// @brief to TAZ
+        std::string toTAZ;
+
+        /// @brief from busStop
+        std::string fromBusStop;
+
+        /// @brief to busStop
+        std::string toBusStop;
+
+        /// @brief from trainStop
+        std::string fromTrainStop;
+
+        /// @brief to trainStop
+        std::string toTrainStop;
+
+        /// @brief from containerStop
+        std::string fromContainerStop;
+
+        /// @brief to containerStop
+        std::string toContainerStop;
+
+        /// @brief from chargingStation
+        std::string fromChargingStation;
+
+        /// @brief to chargingStation
+        std::string toChargingStation;
+
+        /// @brief from parkingArea
+        std::string fromParkingArea;
+
+        /// @brief to parkingArea
+        std::string toParkingArea;
+
+        /// @brief from route
+        std::string fromRoute;
+
+        /// @brief to route
+        std::string toRoute;
+
+    private:
+        /// @brief get previous plan obj
+        const CommonXMLStructure::SumoBaseObject* getPreviousPlanObj(const CommonXMLStructure::SumoBaseObject* sumoBaseObject) const;
+
+        /// @brief update the from attributes
+        void updateFromAttributes(const CommonXMLStructure::SumoBaseObject* sumoBaseObject);
+
+        /// @brief reste all previous from attributes
+        void resetPreviousFromAttributes(const CommonXMLStructure::SumoBaseObject* previousPlanObj, const std::string& newType, const std::string& newId) const;
+
+        /// @brief write ignoring message
+        void writeIgnoringMessage(const CommonXMLStructure::SumoBaseObject* previousPlanObj, const std::string& oldType, const std::string& oldId,
+                                  const std::string& newType, const std::string& newId) const;
+    };
+
     /// @brief SumoBaseObject
     class SumoBaseObject {
 
@@ -51,11 +148,17 @@ public:
         /// @brief set SumoBaseObject tag
         void setTag(const SumoXMLTag tag);
 
+        /// @brief mark as successfully created
+        void markAsCreated();
+
         /// @name get functions
         /// @{
 
         /// @brief get XML myTag
         SumoXMLTag getTag() const;
+
+        /// @brief check if the object was successfully created in build<...> function
+        bool wasCreated() const;
 
         /// @brief get pointer to mySumoBaseObjectParent SumoBaseObject (if is null, then is the root)
         SumoBaseObject* getParentSumoBaseObject() const;
@@ -110,6 +213,9 @@ public:
 
         /// @brief get parameters
         const std::map<std::string, std::string>& getParameters() const;
+
+        /// @brief get plan parameteres
+        const CommonXMLStructure::PlanParameters& getPlanParameters() const;
 
         /// @brief get SumoBaseObject children
         const std::vector<SumoBaseObject*>& getSumoBaseObjectChildren() const;
@@ -184,6 +290,9 @@ public:
         /// @brief add PositionVector attribute into current SumoBaseObject node
         void addPositionVectorAttribute(const SumoXMLAttr attr, const PositionVector& value);
 
+        /// @brief add parameter into current SumoBaseObject node
+        void addParameter(const std::string& key, const std::string& value);
+
         /// @brief set vehicle class
         void setVClass(SUMOVehicleClass vClass);
 
@@ -196,8 +305,8 @@ public:
         /// @brief add stop parameters
         void setStopParameter(const SUMOVehicleParameter::Stop& stopParameter);
 
-        /// @brief add parameter into current SumoBaseObject node
-        void addParameter(const std::string& key, const std::string& value);
+        /// @brief set plan parmeter
+        void setPlanParameters(const CommonXMLStructure::PlanParameters& planParameters);
 
         /// @}
 
@@ -206,7 +315,10 @@ public:
         SumoBaseObject* mySumoBaseObjectParent;
 
         /// @brief XML myTag
-        SumoXMLTag myTag;
+        SumoXMLTag myTag = SUMO_TAG_NOTHING;
+
+        /// @brief flag to check if object was created in build<..> function (by default false)
+        bool myWasCreated = false;
 
         /// @brief string attributes
         std::map<const SumoXMLAttr, std::string> myStringAttributes;
@@ -245,7 +357,7 @@ public:
         std::vector<SumoBaseObject*> mySumoBaseObjectChildren;
 
         /// @brief vehicle class
-        SUMOVehicleClass myVClass;
+        SUMOVehicleClass myVClass = SVC_IGNORING;
 
         /// @brief vehicle type parameter
         SUMOVTypeParameter myVehicleTypeParameter;
@@ -256,6 +368,9 @@ public:
         /// @brief stop parameter
         SUMOVehicleParameter::Stop myStopParameter;
 
+        /// @brief plan parameters
+        CommonXMLStructure::PlanParameters myPlanParameters;
+
         /// @brief add SumoBaseObject child
         void addSumoBaseObjectChild(SumoBaseObject* sumoBaseObject);
 
@@ -264,13 +379,13 @@ public:
 
     private:
         /// @brief flag for defined vehicle type parameter
-        bool myDefinedVehicleTypeParameter;
+        bool myDefinedVehicleTypeParameter = false;
 
         /// @brief @brief flag for defined vehicle parameter
-        bool myDefinedVehicleParameter;
+        bool myDefinedVehicleParameter = false;
 
         /// @brief @brief flag for defined stop parameter
-        bool myDefinedStopParameter;
+        bool myDefinedStopParameter = false;
 
         /// @brief handle attribute error
         void handleAttributeError(const SumoXMLAttr attr, const std::string& type) const;
@@ -291,8 +406,11 @@ public:
     /// @brief open SUMOBaseOBject
     void openSUMOBaseOBject();
 
-    /// @brief close myTag
+    /// @brief close SUMOBaseOBject
     void closeSUMOBaseOBject();
+
+    /// @brief abort SUMOBaseOBject
+    void abortSUMOBaseOBject();
 
     /// @brief get SumoBaseObject root
     CommonXMLStructure::SumoBaseObject* getSumoBaseObjectRoot() const;

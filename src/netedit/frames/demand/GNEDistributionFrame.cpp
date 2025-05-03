@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -161,7 +161,7 @@ GNEDistributionFrame::DistributionSelector::DistributionSelector(GNEFrame* frame
     MFXGroupBoxModule(frameParent, TL("Distribution selector")),
     myFrameParent(frameParent) {
     // Create MFXComboBoxIcon
-    myDistributionsComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItemsMedium,
+    myDistributionsComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItems,
             this, MID_GNE_SET_TYPE, GUIDesignComboBox);
     // DistributionSelector is always shown
     show();
@@ -217,16 +217,12 @@ GNEDistributionFrame::DistributionSelector::refreshDistributionSelector() {
     }
     // continue depending of myCurrentDistribution
     if (myCurrentDistribution) {
-        // set distribtution as inspected element
-        myFrameParent->getViewNet()->setInspectedAttributeCarriers({myCurrentDistribution});
         // show modules
-        myAttributesEditor->showAttributeEditorModule(true);
+        myAttributesEditor->showAttributesEditor(myCurrentDistribution);
         myDistributionValuesEditor->showDistributionValuesEditor();
     } else {
-        // remove inspected elements
-        myFrameParent->getViewNet()->setInspectedAttributeCarriers({});
         // hide modules
-        myAttributesEditor->hideAttributesEditorModule();
+        myAttributesEditor->hideAttributesEditor();
         myDistributionValuesEditor->hideDistributionValuesEditor();
     }
 }
@@ -243,13 +239,9 @@ GNEDistributionFrame::DistributionSelector::onCmdSelectDistribution(FXObject*, F
             myCurrentDistribution = distribution.second;
             // set color of myTypeMatchBox to black (valid)
             myDistributionsComboBox->setTextColor(FXRGB(0, 0, 0));
-            // set myCurrentType as inspected element
-            viewNet->setInspectedAttributeCarriers({distribution.second});
             // show modules
-            myAttributesEditor->showAttributeEditorModule(true);
+            myAttributesEditor->showAttributesEditor(distribution.second);
             myDistributionValuesEditor->showDistributionValuesEditor();
-            // Write Warning in console if we're in testing mode
-            WRITE_DEBUG(("Selected item '" + myDistributionsComboBox->getText() + "' in DistributionSelector").text());
             // update viewNet
             viewNet->updateViewNet();
             return 1;
@@ -258,12 +250,10 @@ GNEDistributionFrame::DistributionSelector::onCmdSelectDistribution(FXObject*, F
     // not found, then reset myCurrentDistribution
     myCurrentDistribution = nullptr;
     // hide modules
-    myAttributesEditor->hideAttributesEditorModule();
+    myAttributesEditor->hideAttributesEditor();
     myDistributionValuesEditor->hideDistributionValuesEditor();
     // set color of myTypeMatchBox to red (invalid)
     myDistributionsComboBox->setTextColor(FXRGB(255, 0, 0));
-    // Write Warning in console if we're in testing mode
-    WRITE_DEBUG("Selected invalid item in DistributionSelector");
     // update viewNet
     viewNet->updateViewNet();
     return 1;
@@ -313,7 +303,7 @@ GNEDistributionFrame::DistributionRow::DistributionRow(DistributionValuesEditor*
     // create label
     myIconLabel = new FXLabel(this, "", key->getACIcon(), GUIDesignLabelIconThick);
     // Create and hide MFXTextFieldTooltip for string attributes
-    myComboBoxKeys = new MFXComboBoxIcon(this, GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItemsMedium,
+    myComboBoxKeys = new MFXComboBoxIcon(this, GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItems,
                                          this, MID_GNE_SET_TYPE, GUIDesignComboBox);
     // Create and hide MFXTextFieldTooltip for string attributes
     myProbabilityTextField = new MFXTextFieldTooltip(this, staticTooltipMenu,
@@ -477,7 +467,7 @@ GNEDistributionFrame::DistributionRow::isValidNewKey() const {
 // ---------------------------------------------------------------------------
 
 GNEDistributionFrame::DistributionValuesEditor::DistributionValuesEditor(GNEFrame* frameParent, DistributionEditor* distributionEditor,
-        DistributionSelector* distributionSelector, GNEFrameAttributeModules::AttributesEditor* attributesEditor, SumoXMLTag distributionValueTag) :
+        DistributionSelector* distributionSelector, GNEAttributesEditor* attributesEditor, SumoXMLTag distributionValueTag) :
     MFXGroupBoxModule(frameParent, TL("Distribution values")),
     myFrameParent(frameParent),
     myDistributionEditor(distributionEditor),

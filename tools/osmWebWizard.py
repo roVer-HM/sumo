@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2014-2024 German Aerospace Center (DLR) and others.
+# Copyright (C) 2014-2025 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -88,13 +88,13 @@ def getParams(vClass, prefix=None):
 vehicleParameters = {
     "passenger":   CP + getParams("passenger", "veh") + ["--min-distance", "300", "--min-distance.fringe", "10",
                                                          "--allow-fringe.min-length", "1000", "--lanes"],
-    "truck":       CP + getParams("truck")            + ["--min-distance", "600", "--min-distance.fringe", "10"],   # noqa
-    "bus":         CP + getParams("bus")              + ["--min-distance", "600", "--min-distance.fringe", "10"],   # noqa
-    "motorcycle":  CP + getParams("motorcycle")       + ["--max-distance", "1200"],                                 # noqa
-    "bicycle":     CP + getParams("bicycle", "bike")  + ["--max-distance", "8000"],                                 # noqa
-    "tram":        CP + getParams("tram")             + ["--min-distance", "1200", "--min-distance.fringe", "10"],  # noqa
-    "rail_urban":  CP + getParams("rail_urban")       + ["--min-distance", "1800", "--min-distance.fringe", "10"],  # noqa
-    "rail":        CP + getParams("rail")             + ["--min-distance", "2400", "--min-distance.fringe", "10"],  # noqa
+    "truck":       CP + getParams("truck") + ["--min-distance", "600", "--min-distance.fringe", "10"],   # noqa
+    "bus":         CP + getParams("bus") + ["--min-distance", "600", "--min-distance.fringe", "10"],   # noqa
+    "motorcycle":  CP + getParams("motorcycle") + ["--max-distance", "1200"],                                 # noqa
+    "bicycle":     CP + getParams("bicycle", "bike") + ["--max-distance", "8000"],                                 # noqa
+    "tram":        CP + getParams("tram") + ["--min-distance", "1200", "--min-distance.fringe", "10"],  # noqa
+    "rail_urban":  CP + getParams("rail_urban") + ["--min-distance", "1800", "--min-distance.fringe", "10"],  # noqa
+    "rail":        CP + getParams("rail") + ["--min-distance", "2400", "--min-distance.fringe", "10"],  # noqa
     "ship":             getParams("ship") + ["--fringe-start-attributes", 'departSpeed="max"', "--validate"],
     "pedestrian":  PP + ["--pedestrians", "--max-distance", "2000"],
     "persontrips": PP + ["--persontrips", "--trip-attributes", 'modes="public"'],
@@ -121,9 +121,9 @@ BATCH_MODE |= stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
 
 
 def quoted_str(s):
-    if type(s) == float:
+    if isinstance(s, float):
         return "%.6f" % s
-    elif type(s) != str:
+    elif not isinstance(s, str):
         return str(s)
     elif '"' in s or ' ' in s:
         return '"' + s.replace('"', '\\"') + '"'
@@ -145,7 +145,7 @@ class Builder(object):
             for base in ['', os.path.expanduser('~/Sumo')]:
                 try:
                     self.tmp = os.path.abspath(os.path.join(base, now))
-                    os.makedirs(self.tmp)
+                    os.makedirs(self.tmp, exist_ok=data.get("outputDirExistOk", False))
                     break
                 except Exception:
                     print("Cannot create directory '%s'." % self.tmp, file=sys.stderr)

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -103,6 +103,9 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
     oc.doRegister("default.connection-length", new Option_Float((double) NBEdge::UNSPECIFIED_LOADED_LENGTH));
     oc.addDescription("default.connection-length", "Building Defaults", TL("The default length when overriding connection lengths"));
 
+    oc.doRegister("default.connection.cont-pos", new Option_Float((double)NBEdge::UNSPECIFIED_CONTPOS));
+    oc.addDescription("default.connection.cont-pos", "Building Defaults", TL("Whether/where connections should have an internal junction"));
+
     oc.doRegister("default.right-of-way", new Option_String("default"));
     oc.addDescription("default.right-of-way", "Building Defaults", TL("The default algorithm for computing right of way rules ('default', 'edgePriority')"));
 
@@ -198,6 +201,9 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
         oc.doRegister("geometry.max-angle", new Option_Float(99));
         oc.addDescription("geometry.max-angle", "Processing", TL("Warn about edge geometries with an angle above DEGREES in successive segments"));
 
+        oc.doRegister("geometry.max-angle.fix", new Option_Bool(false));
+        oc.addDescription("geometry.max-angle.fix", "Processing", TL("Straighten edge geometries with an angle above max-angle successive segments"));
+
         oc.doRegister("geometry.min-radius", new Option_Float(9));
         oc.addDescription("geometry.min-radius", "Processing", TL("Warn about edge geometries with a turning radius less than METERS at the start or end"));
 
@@ -252,6 +258,9 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
 
         oc.doRegister("railway.topology.extend-priority", new Option_Bool(false));
         oc.addDescription("railway.topology.extend-priority", "Railway", TL("Extend loaded edge priority values based on estimated main direction"));
+
+        oc.doRegister("railway.geometry.straighten", new Option_Bool(false));
+        oc.addDescription("railway.geometry.straighten", "Railway", TL("Move junctions to straighten a sequence of rail edges"));
 
         oc.doRegister("railway.signal.guess.by-stops", new Option_Bool(false));
         oc.addDescription("railway.signal.guess.by-stops", "Railway", TL("Guess signals that guard public transport stops"));
@@ -474,6 +483,10 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
     oc.addDescription("crossings.guess.speed-threshold", "Pedestrian",
                       "At uncontrolled nodes, do not build crossings across edges with a speed above the threshold");
 
+    oc.doRegister("crossings.guess.roundabout-priority", new Option_Bool(true));
+    oc.addDescription("crossings.guess.roundabout-priority", "Pedestrian",
+                      "Give priority to guessed crossings at roundabouts");
+
     oc.doRegister("walkingareas", new Option_Bool(false));
     oc.addDescription("walkingareas", "Pedestrian", TL("Always build walking areas even if there are no crossings"));
 
@@ -674,6 +687,9 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
         oc.addDescription("remove-edges.isolated", "Edge Removal", TL("Removes isolated edges"));
     }
 
+    oc.doRegister("keep-lanes.min-width", new Option_Float(0.01));
+    oc.addDescription("keep-lanes.min-width", "Edge Removal", TL("Only keep lanes with width in meters > FLOAT"));
+
 
     // unregulated nodes options
     oc.doRegister("keep-nodes-unregulated", new Option_Bool(false));
@@ -750,6 +766,10 @@ NBFrame::checkOptions(OptionsCont& oc) {
     }
     if (!oc.isDefault("tls.green.time") && !oc.isDefault("tls.cycle.time")) {
         WRITE_ERROR(TL("only one of the options 'tls.green.time' or 'tls.cycle.time' may be given"));
+        ok = false;
+    }
+    if (oc.getInt("tls.green.time") <= 0) {
+        WRITE_ERROR(TL("'tls.green.time' must be positive"));
         ok = false;
     }
     if (oc.getInt("default.lanenumber") < 1) {

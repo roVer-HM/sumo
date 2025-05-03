@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2011-2024 German Aerospace Center (DLR) and others.
+# Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -145,7 +145,7 @@ def updatePotFile(gettextPath, potFile, replaceRules, options):
         # apply the changes to the source code
         for sourceFile, replaceCommands in fileReplaceCommands.items():
             lines = []
-            with io.open(sourceFile, "r", encoding="utf-8") as f:
+            with io.open(os.path.join(SUMO_HOME, sourceFile), "r", encoding="utf-8") as f:
                 lines.extend([line for line in f])
             lineCount = len(lines)
             updated = False
@@ -155,7 +155,7 @@ def updatePotFile(gettextPath, potFile, replaceRules, options):
                     updated = True
             if updated:
                 print("\tUpdate %s" % sourceFile)
-                with io.open(sourceFile, "w", encoding="utf-8", newline="\n") as f:
+                with io.open(os.path.join(SUMO_HOME, sourceFile), "w", encoding="utf-8", newline="\n") as f:
                     f.writelines(lines)
 
         # change the msgid in other language files accordingly

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -31,7 +31,7 @@
 
 GNEVType::GNEVType(GNENet* net) :
     GNEDemandElement("", net, GLO_VTYPE, SUMO_TAG_VTYPE, GUIIconSubSys::getIcon(GUIIcon::VTYPE),
-                     GNEPathManager::PathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {}, {}),
+                     GNEPathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {}, {}),
                                 SUMOVTypeParameter(""),
                                 myDefaultVehicleType(true),
 myDefaultVehicleTypeModified(false) {
@@ -44,7 +44,7 @@ myDefaultVehicleTypeModified(false) {
 
 GNEVType::GNEVType(GNENet* net, const std::string& vTypeID, const SUMOVehicleClass& defaultVClass) :
     GNEDemandElement(vTypeID, net, GLO_VTYPE, SUMO_TAG_VTYPE, GUIIconSubSys::getIcon(GUIIcon::VTYPE),
-                     GNEPathManager::PathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {}, {}),
+                     GNEPathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {}, {}),
 SUMOVTypeParameter(vTypeID),
 myDefaultVehicleType(true),
 myDefaultVehicleTypeModified(false) {
@@ -57,7 +57,7 @@ myDefaultVehicleTypeModified(false) {
 
 GNEVType::GNEVType(GNENet* net, const SUMOVTypeParameter& vTypeParameter) :
     GNEDemandElement(vTypeParameter.id, net, GLO_VTYPE, SUMO_TAG_VTYPE, GUIIconSubSys::getIcon(GUIIcon::VTYPE),
-                     GNEPathManager::PathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {}, {}),
+                     GNEPathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {}, {}),
 SUMOVTypeParameter(vTypeParameter),
 myDefaultVehicleType(false),
 myDefaultVehicleTypeModified(false) {
@@ -68,7 +68,7 @@ myDefaultVehicleTypeModified(false) {
 
 GNEVType::GNEVType(GNENet* net, const std::string& vTypeID, GNEVType* vTypeOriginal) :
     GNEDemandElement(vTypeID, net, GLO_VTYPE, vTypeOriginal->getTagProperty().getTag(), GUIIconSubSys::getIcon(GUIIcon::VTYPE),
-                     GNEPathManager::PathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {}, {}),
+                     GNEPathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {}, {}),
 SUMOVTypeParameter(*vTypeOriginal),
 myDefaultVehicleType(false),
 myDefaultVehicleTypeModified(false) {
@@ -179,13 +179,13 @@ GNEVType::computePathElement() {
 
 
 void
-GNEVType::drawLanePartialGL(const GUIVisualizationSettings& /*s*/, const GNEPathManager::Segment* /*segment*/, const double /*offsetFront*/) const {
+GNEVType::drawLanePartialGL(const GUIVisualizationSettings& /*s*/, const GNESegment* /*segment*/, const double /*offsetFront*/) const {
     // vehicleTypes don't use drawJunctionPartialGL
 }
 
 
 void
-GNEVType::drawJunctionPartialGL(const GUIVisualizationSettings& /*s*/, const GNEPathManager::Segment* /*segment*/, const double /*offsetFront*/) const {
+GNEVType::drawJunctionPartialGL(const GUIVisualizationSettings& /*s*/, const GNESegment* /*segment*/, const double /*offsetFront*/) const {
     // vehicleTypes don't use drawJunctionPartialGL
 }
 
@@ -478,8 +478,6 @@ GNEVType::getAttribute(SumoXMLAttr key) const {
             } else {
                 return myTagProperty.getDefaultValue(SUMO_ATTR_CARRIAGE_GAP);
             }
-        case GNE_ATTR_SELECTED:
-            return toString(isAttributeCarrierSelected());
         case GNE_ATTR_PARAMETERS:
             return getParametersStr();
         // other
@@ -491,11 +489,10 @@ GNEVType::getAttribute(SumoXMLAttr key) const {
             } else {
                 return False;
             }
-        case GNE_ATTR_VTYPE_DISTRIBUTION: {
+        case GNE_ATTR_VTYPE_DISTRIBUTION:
             return getDistributionParents();
-        }
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttribute(key);
     }
 }
 
@@ -671,7 +668,6 @@ GNEVType::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* u
         case SUMO_ATTR_CARRIAGE_LENGTH:
         case SUMO_ATTR_LOCOMOTIVE_LENGTH:
         case SUMO_ATTR_CARRIAGE_GAP:
-        case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
             // if we change the original value of a default vehicle Type, change also flag "myDefaultVehicleType"
             if (myDefaultVehicleType) {
@@ -680,10 +676,11 @@ GNEVType::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* u
             GNEChange_Attribute::changeAttribute(this, key, value, undoList, true);
             break;
         case GNE_ATTR_DEFAULT_VTYPE_MODIFIED:
-            GNEChange_Attribute::changeAttribute(this, GNE_ATTR_DEFAULT_VTYPE_MODIFIED, "true", undoList, true);
+            GNEChange_Attribute::changeAttribute(this, GNE_ATTR_DEFAULT_VTYPE_MODIFIED, value, undoList, true);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -842,8 +839,8 @@ GNEVType::isValid(SumoXMLAttr key, const std::string& value) {
             }
             return false;
         case SUMO_ATTR_GUISHAPE:
-            if (value == "all") {
-                return false;
+            if (value.empty() || (value == "default")) {
+                return true;
             } else {
                 return canParseVehicleShape(value);
             }
@@ -883,8 +880,6 @@ GNEVType::isValid(SumoXMLAttr key, const std::string& value) {
             return canParse<double>(value) && (parse<double>(value) >= -1);
         case SUMO_ATTR_CARRIAGE_GAP:
             return canParse<double>(value) && (parse<double>(value) >= 0);
-        case GNE_ATTR_SELECTED:
-            return canParse<bool>(value);
         case GNE_ATTR_PARAMETERS:
             return Parameterised::areParametersValid(value);
         case GNE_ATTR_DEFAULT_VTYPE_MODIFIED:
@@ -894,7 +889,7 @@ GNEVType::isValid(SumoXMLAttr key, const std::string& value) {
                 return false;
             }
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
@@ -960,7 +955,7 @@ GNEVType::getACParametersMap() const {
 }
 
 
-void
+bool
 GNEVType::overwriteVType(GNEDemandElement* vType, const SUMOVTypeParameter newVTypeParameter, GNEUndoList* undoList) {
     // open undo list and overwrite all values of default VType
     undoList->begin(vType, "update default " + vType->getTagStr() + " '" + DEFAULT_VTYPE_ID + "'");
@@ -1305,6 +1300,7 @@ GNEVType::overwriteVType(GNEDemandElement* vType, const SUMOVTypeParameter newVT
     }
     // close undo list
     undoList->end();
+    return true;
 }
 
 // ===========================================================================
@@ -1585,7 +1581,12 @@ GNEVType::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         case SUMO_ATTR_GUISHAPE:
-            if (!value.empty() && (value != SumoVehicleShapeStrings.getString(defaultValues.shape))) {
+            if (value.empty() || (value == "default")) {
+                // set default value
+                shape = defaultValues.shape;
+                // unset parameter
+                parametersSet &= ~VTYPEPARS_SHAPE_SET;
+            } else if (!value.empty() && (value != SumoVehicleShapeStrings.getString(defaultValues.shape))) {
                 shape = getVehicleShapeID(value);
                 // mark parameter as set
                 parametersSet |= VTYPEPARS_SHAPE_SET;
@@ -1824,13 +1825,6 @@ GNEVType::setAttribute(SumoXMLAttr key, const std::string& value) {
                 SUMOVTypeParameter::unsetParameter(toString(key));
             }
             break;
-        case GNE_ATTR_SELECTED:
-            if (parse<bool>(value)) {
-                selectAttributeCarrier();
-            } else {
-                unselectAttributeCarrier();
-            }
-            break;
         case GNE_ATTR_PARAMETERS:
             setParametersStr(value);
             break;
@@ -1838,7 +1832,8 @@ GNEVType::setAttribute(SumoXMLAttr key, const std::string& value) {
             myDefaultVehicleTypeModified = parse<bool>(value);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value);
+            break;
     }
     // check if geometry must be marked as deprecated
     if (myTagProperty.hasAttribute(key) && (myTagProperty.getAttributeProperties(key).requireUpdateGeometry())) {

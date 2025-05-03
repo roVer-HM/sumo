@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -704,16 +704,29 @@ GUISUMOAbstractView::displayLegends() {
     if (myVisualizationSettings->showSizeLegend) {
         displayLegend();
     }
+    std::string key = "";
     if (myVisualizationSettings->showColorLegend) {
-        displayColorLegend(myVisualizationSettings->getLaneEdgeScheme(), false);
+        auto const& scheme = myVisualizationSettings->getLaneEdgeScheme();
+        if (scheme.getName() == GUIVisualizationSettings::SCHEME_NAME_EDGEDATA_NUMERICAL) {
+            key = myVisualizationSettings->edgeData;
+        } else if (scheme.getName() == GUIVisualizationSettings::SCHEME_NAME_EDGE_PARAM_NUMERICAL) {
+            key = myVisualizationSettings->edgeParam;
+        } else if (scheme.getName() == GUIVisualizationSettings::SCHEME_NAME_LANE_PARAM_NUMERICAL) {
+            key = myVisualizationSettings->laneParam;
+        }
+        displayColorLegend(scheme, false, key);
     }
     if (myVisualizationSettings->showVehicleColorLegend) {
-        displayColorLegend(myVisualizationSettings->vehicleColorer.getScheme(), true);
+        auto const& scheme = myVisualizationSettings->vehicleColorer.getScheme();
+        if (scheme.getName() == GUIVisualizationSettings::SCHEME_NAME_PARAM_NUMERICAL) {
+            key = myVisualizationSettings->vehicleParam;
+        }
+        displayColorLegend(myVisualizationSettings->vehicleColorer.getScheme(), true, key);
     }
 }
 
 void
-GUISUMOAbstractView::displayColorLegend(const GUIColorScheme& scheme, bool leftSide) {
+GUISUMOAbstractView::displayColorLegend(const GUIColorScheme& scheme, bool leftSide, const std::string& key) {
     // compute the scale bar length
     glLineWidth(1.0);
     glMatrixMode(GL_PROJECTION);
@@ -839,7 +852,17 @@ GUISUMOAbstractView::displayColorLegend(const GUIColorScheme& scheme, bool leftS
     }
     // draw scheme name
     std::string name = scheme.getName();
-    if (StringUtils::startsWith(name, "by ")) {
+    if (name == GUIVisualizationSettings::SCHEME_NAME_EDGEDATA_NUMERICAL) {
+        name = "edgeData (" + key + ")";
+    } else if (name == GUIVisualizationSettings::SCHEME_NAME_EDGE_PARAM_NUMERICAL) {
+        name = "edgeParam (" + key + ")";
+    } else if (name == GUIVisualizationSettings::SCHEME_NAME_LANE_PARAM_NUMERICAL) {
+        name = "laneParam (" + key + ")";
+    } else if (name == GUIVisualizationSettings::SCHEME_NAME_PARAM_NUMERICAL) {
+        name = "param (" + key + ")";
+    } else if (name == GUIVisualizationSettings::SCHEME_NAME_DATA_ATTRIBUTE_NUMERICAL) {
+        name = "attribute (" + key + ")";
+    } else if (StringUtils::startsWith(name, "by ")) {
         name = name.substr(3);
     }
     const double topN = -0.8;
@@ -1293,13 +1316,6 @@ GUISUMOAbstractView::openObjectDialog(const std::vector<GUIGlObject*>& objects, 
 long
 GUISUMOAbstractView::onKeyPress(FXObject* o, FXSelector sel, void* ptr) {
     const FXEvent* e = (FXEvent*) ptr;
-    if (e->state & ALTMASK) {
-        myVisualizationSettings->altKeyPressed = true;
-        // update view (for polygon layers)
-        update();
-    } else {
-        myVisualizationSettings->altKeyPressed = false;
-    }
     // check if process canvas or popup
     if (myPopup != nullptr) {
         return myPopup->onKeyPress(o, sel, ptr);
@@ -1325,12 +1341,6 @@ GUISUMOAbstractView::onKeyPress(FXObject* o, FXSelector sel, void* ptr) {
 
 long
 GUISUMOAbstractView::onKeyRelease(FXObject* o, FXSelector sel, void* ptr) {
-    const FXEvent* e = (FXEvent*) ptr;
-    if ((e->state & ALTMASK) == 0) {
-        myVisualizationSettings->altKeyPressed = false;
-        // update view (for polygon layers)
-        update();
-    }
     // check if process canvas or popup
     if (myPopup != nullptr) {
         return myPopup->onKeyRelease(o, sel, ptr);
@@ -1937,6 +1947,67 @@ GUISUMOAbstractView::setDelay(double delay) {
 void
 GUISUMOAbstractView::setBreakpoints(const std::vector<SUMOTime>& breakpoints) {
     myApp->setBreakpoints(breakpoints);
+}
+
+
+void
+GUISUMOAbstractView::buildMinMaxRainbow(const GUIVisualizationSettings& s, GUIColorScheme& scheme,
+                                        const GUIVisualizationRainbowSettings& rs, double minValue, double maxValue, bool hasMissingData) {
+    if (rs.hideMin && rs.hideMax && minValue == std::numeric_limits<double>::infinity()) {
+        minValue = rs.minThreshold;
+        maxValue = rs.maxThreshold;
+    }
+    if (rs.fixRange) {
+        if (rs.hideMin) {
+            minValue = rs.minThreshold;
+        }
+        if (rs.hideMax) {
+            maxValue = rs.maxThreshold;
+        }
+    }
+    if (minValue != std::numeric_limits<double>::infinity()) {
+        scheme.clear();
+        // add new thresholds
+        if (scheme.getName() == GUIVisualizationSettings::SCHEME_NAME_EDGEDATA_NUMERICAL
+                || scheme.getName() == GUIVisualizationSettings::SCHEME_NAME_EDGE_PARAM_NUMERICAL
+                || scheme.getName() == GUIVisualizationSettings::SCHEME_NAME_LANE_PARAM_NUMERICAL
+                || scheme.getName() == GUIVisualizationSettings::SCHEME_NAME_DATA_ATTRIBUTE_NUMERICAL
+                || scheme.getName() == GUIVisualizationSettings::SCHEME_NAME_PARAM_NUMERICAL
+                || hasMissingData) {
+            scheme.addColor(s.COL_MISSING_DATA, s.MISSING_DATA, "missing data");
+        }
+        if (rs.hideMin && !rs.fixRange) {
+            const double rawRange = maxValue - minValue;
+            minValue = MAX2(rs.minThreshold + MIN2(1.0, rawRange / 100.0), minValue);
+            scheme.addColor(RGBColor(204, 204, 204), rs.minThreshold);
+        }
+        if (rs.hideMax && !rs.fixRange) {
+            const double rawRange = maxValue - minValue;
+            maxValue = MIN2(rs.maxThreshold - MIN2(1.0, rawRange / 100.0), maxValue);
+            scheme.addColor(RGBColor(204, 204, 204), rs.maxThreshold);
+        }
+        const double range = maxValue - minValue;
+        scheme.addColor(rs.colors.front(), minValue);
+        const int steps = (int)rs.colors.size() - 1;
+        if (rs.setNeutral) {
+            const int steps1 = steps / 2;
+            const int steps2 = steps - steps1;
+            const double range1 = rs.neutralThreshold - minValue;
+            const double range2 = maxValue - rs.neutralThreshold;
+            for (int i = 1; i < steps1; i++) {
+                scheme.addColor(rs.colors[i], (minValue + range1 * i / steps1));
+            }
+            scheme.addColor(rs.colors[steps1], rs.neutralThreshold);
+            for (int i = 1; i < steps2; i++) {
+                scheme.addColor(rs.colors[steps1 + i], (rs.neutralThreshold + range2 * i / steps2));
+            }
+        } else {
+            for (int i = 1; i < steps; i++) {
+                scheme.addColor(rs.colors[i], (minValue + range * i / steps));
+            }
+        }
+        scheme.addColor(rs.colors.back(), maxValue);
+    }
 }
 
 

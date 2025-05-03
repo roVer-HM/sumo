@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2008-2024 German Aerospace Center (DLR) and others.
+# Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -39,27 +39,28 @@ tlsID = "C"
 
 
 logics = [
-        Logic("customActuated", tc.TRAFFICLIGHT_TYPE_ACTUATED, 0,
-              [Phase(33, "GGGggrrrrrGGGggrrrrr", 5, 50),
-               Phase(3,  "yyyyyrrrrryyyyyrrrrr"),
-               Phase(33, "rrrrrGGGggrrrrrGGGgg", 5, 50),
-               Phase(3,  "rrrrryyyyyrrrrryyyyy")]),
-        Logic("customStatic", tc.TRAFFICLIGHT_TYPE_STATIC, 0,
-              [Phase(33, "GGGggrrrrrGGGggrrrrr"),
-               Phase(3,  "yyyyyrrrrryyyyyrrrrr"),
-               Phase(33, "rrrrrGGGggrrrrrGGGgg"),
-               Phase(3,  "rrrrryyyyyrrrrryyyyy")]),
-        Logic("customDelayBased", tc.TRAFFICLIGHT_TYPE_DELAYBASED, 0,
-              [Phase(33, "GGGggrrrrrGGGggrrrrr", 5, 50),
-               Phase(3,  "yyyyyrrrrryyyyyrrrrr"),
-               Phase(33, "rrrrrGGGggrrrrrGGGgg", 5, 50),
-               Phase(3,  "rrrrryyyyyrrrrryyyyy")]),
-        # Logic("customNEMA", tc.TRAFFICLIGHT_TYPE_NEMA, 0,
-        #      [Phase(33, "GGGggrrrrrGGGggrrrrr", 5, 50),
-        #       Phase(3,  "yyyyyrrrrryyyyyrrrrr"),
-        #       Phase(33, "rrrrrGGGggrrrrrGGGgg", 5, 50),
-        #       Phase(3,  "rrrrryyyyyrrrrryyyyy")]),
-        ]
+    Logic(programID="customActuated", type=tc.TRAFFICLIGHT_TYPE_ACTUATED,
+          currentPhaseIndex=0, phases=[
+              Phase(33, "GGGggrrrrrGGGggrrrrr", 5, 50),
+              Phase(3,  "yyyyyrrrrryyyyyrrrrr"),
+              Phase(33, "rrrrrGGGggrrrrrGGGgg", 5, 50),
+              Phase(3,  "rrrrryyyyyrrrrryyyyy")]),
+    Logic("customStatic", tc.TRAFFICLIGHT_TYPE_STATIC, 0,
+          [Phase(33, "GGGggrrrrrGGGggrrrrr"),
+           Phase(3,  "yyyyyrrrrryyyyyrrrrr"),
+           Phase(33, "rrrrrGGGggrrrrrGGGgg"),
+           Phase(3,  "rrrrryyyyyrrrrryyyyy")]),
+    Logic("customDelayBased", tc.TRAFFICLIGHT_TYPE_DELAYBASED, 0,
+          [Phase(33, "GGGggrrrrrGGGggrrrrr", 5, 50),
+           Phase(3,  "yyyyyrrrrryyyyyrrrrr"),
+           Phase(33, "rrrrrGGGggrrrrrGGGgg", 5, 50),
+           Phase(3,  "rrrrryyyyyrrrrryyyyy")]),
+    # Logic("customNEMA", tc.TRAFFICLIGHT_TYPE_NEMA, 0,
+    #      [Phase(33, "GGGggrrrrrGGGggrrrrr", 5, 50),
+    #       Phase(3,  "yyyyyrrrrryyyyyrrrrr"),
+    #       Phase(33, "rrrrrGGGggrrrrrGGGgg", 5, 50),
+    #       Phase(3,  "rrrrryyyyyrrrrryyyyy")]),
+]
 
 for logic in logics:
     traci.trafficlight.setProgramLogic(tlsID, logic)

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2024-04-02 19:59:09 by Eclipse SUMO netconvert Version v1_19_0+1644-497bdaaec19
+<!-- generated on 2025-01-23 14:36:52 by Eclipse SUMO netconvert Version v1_21_0+1983-aac325cbcaf
 -->
 
-<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
+<netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <configuration>
         <!-- Loads the named config on startup -->
@@ -75,7 +75,7 @@
         <!-- Read RoboCup-net from DIR -->
         <robocup-dir value="" synonymes="robocup robocup-net" type="FILE"/>
 
-        <!-- Read MATsim-net from FILE -->
+        <!-- Read MATSim-net from FILE -->
         <matsim-files value="" synonymes="matsim" type="FILE"/>
 
         <!-- Read ITSUMO-net from FILE -->
@@ -123,7 +123,7 @@
         <!-- The generated net will be written to FILE using Amitran format -->
         <amitran-output value="" type="FILE"/>
 
-        <!-- The generated net will be written to FILE using MATsim format -->
+        <!-- The generated net will be written to FILE using MATSim format -->
         <matsim-output value="" type="FILE"/>
 
         <!-- The generated net will be written to FILE using OpenDRIVE format -->
@@ -165,7 +165,7 @@
         <!-- Write shapes that are embedded in the network input and that are not supported by polyconvert (OpenDRIVE) -->
         <polygon-output value="" synonymes="taz-output" type="FILE"/>
 
-        <!-- Builds parameterized curves whenever the angular change  between straight segments exceeds FLOAT degrees -->
+        <!-- Builds parameterized curves whenever the angular change between straight segments exceeds FLOAT degrees -->
         <opendrive-output.straight-threshold value="1e-08" type="FLOAT"/>
 
         <!-- Write lanes in lefthand networks on the left side (positive indices) -->
@@ -266,6 +266,9 @@
 
         <!-- Warn about edge geometries with an angle above DEGREES in successive segments -->
         <geometry.max-angle value="99" type="FLOAT"/>
+
+        <!-- Straighten edge geometries with an angle above max-angle successive segments -->
+        <geometry.max-angle.fix value="false" type="BOOL"/>
 
         <!-- Warn about edge geometries with a turning radius less than METERS at the start or end -->
         <geometry.min-radius value="9" type="FLOAT"/>
@@ -410,6 +413,9 @@
 
         <!-- The default length when overriding connection lengths -->
         <default.connection-length value="-1" type="FLOAT"/>
+
+        <!-- Whether/where connections should have an internal junction -->
+        <default.connection.cont-pos value="-1" type="FLOAT"/>
 
         <!-- The default algorithm for computing right of way rules (&apos;default&apos;, &apos;edgePriority&apos;) -->
         <default.right-of-way value="default" type="STR"/>
@@ -615,6 +621,9 @@
         <!-- Removes isolated edges -->
         <remove-edges.isolated value="false" synonymes="remove-isolated" type="BOOL"/>
 
+        <!-- Only keep lanes with width in meters &gt; FLOAT -->
+        <keep-lanes.min-width value="0.01" type="FLOAT"/>
+
     </edge_removal>
 
     <unregulated_nodes>
@@ -750,6 +759,9 @@
         <!-- At uncontrolled nodes, do not build crossings across edges with a speed above the threshold -->
         <crossings.guess.speed-threshold value="13.89" type="FLOAT"/>
 
+        <!-- Give priority to guessed crossings at roundabouts -->
+        <crossings.guess.roundabout-priority value="true" type="BOOL"/>
+
         <!-- Always build walking areas even if there are no crossings -->
         <walkingareas value="false" type="BOOL"/>
 
@@ -807,6 +819,9 @@
         <!-- Extend loaded edge priority values based on estimated main direction -->
         <railway.topology.extend-priority value="false" type="BOOL"/>
 
+        <!-- Move junctions to straighten a sequence of rail edges -->
+        <railway.geometry.straighten value="false" type="BOOL"/>
+
         <!-- Guess signals that guard public transport stops -->
         <railway.signal.guess.by-stops value="false" type="BOOL"/>
 
@@ -855,6 +870,9 @@
         <!-- Import sidewalks -->
         <osm.sidewalks value="false" type="BOOL"/>
 
+        <!-- Default to building two sidewals on oneway streets (may affect divided roads) -->
+        <osm.oneway-reverse-sidewalk value="false" type="BOOL"/>
+
         <!-- Import crossings -->
         <osm.crossings value="false" type="BOOL"/>
 
@@ -885,7 +903,7 @@
         <!-- The speed limit to be set when there is no actual speed limit in reality -->
         <osm.speedlimit-none value="39.4444" type="FLOAT"/>
 
-        <!-- The edge lengths given in the MATSIM-file will be kept -->
+        <!-- The edge lengths given in the MATSim-file will be kept -->
         <matsim.keep-length value="false" type="BOOL"/>
 
         <!-- The lane number will be computed from the capacity -->
@@ -1079,4 +1097,4 @@
 
     </random_number>
 
-</configuration>
+</netconvertConfiguration>

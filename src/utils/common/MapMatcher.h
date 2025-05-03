@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -23,6 +23,7 @@
 #include <utils/geom/GeoConvHelper.h>
 #include <utils/vehicle/SUMOVTypeParameter.h>
 #include "NamedRTree.h"
+#include "RandHelper.h"
 #include "SUMOVehicleClass.h"
 #include "MsgHandler.h"
 
@@ -42,8 +43,60 @@
 
 template<class E, class L, class N>
 class MapMatcher {
+
+public:
+    void parseGeoEdges(const PositionVector& positions, bool geo, SUMOVehicleClass vClass,
+                       std::vector<const E*>& into, const std::string& rid, bool isFrom, bool& ok, bool forceEdge = false) {
+        if (geo && !GeoConvHelper::getFinal().usingGeoProjection()) {
+            WRITE_ERROR(TL("Cannot convert geo-positions because the network has no geo-reference"));
+            ok = false;
+            return;
+        }
+        for (Position pos : positions) {
+            Position orig = pos;
+            if (geo) {
+                GeoConvHelper::getFinal().x2cartesian_const(pos);
+            }
+            double dist = MIN2(10.0, myMapMatchingDistance);
+            const L* best = getClosestLane(pos, vClass, dist);
+            while (best == nullptr && dist < myMapMatchingDistance) {
+                dist = MIN2(dist * 2, myMapMatchingDistance);
+                best = getClosestLane(pos, vClass, dist);
+            }
+            if (best == nullptr) {
+                myErrorOutput->inform("No edge found near position " + toString(orig, geo ? gPrecisionGeo : gPrecision) + " within the route " + rid + ".");
+                ok = false;
+            } else {
+                const E* bestEdge = &best->getEdge();
+                while (bestEdge->isInternal()) {
+                    bestEdge = bestEdge->getSuccessors().front();
+                }
+                if ((myMapMatchJunctions || myMapMatchTAZ) && !forceEdge) {
+                    if (myMapMatchTAZ) {
+                        bestEdge = getTaz(pos, bestEdge, isFrom);
+                    } else {
+                        bestEdge = getJunctionTaz(pos, bestEdge, vClass, isFrom);
+                    }
+                    if (bestEdge != nullptr) {
+                        into.push_back(bestEdge);
+                    } else {
+                        ok = false;
+                    }
+                } else {
+                    // handle multiple via locations on the same edge without loops
+                    if (positions.size() == 1 || into.empty() || into.back() != bestEdge) {
+                        into.push_back(bestEdge);
+                    }
+                }
+            }
+        }
+    }
+
+
+
 protected:
-    MapMatcher(bool matchJunctions, double matchDistance, MsgHandler* errorOutput):
+    MapMatcher(bool matchJunctions, bool matchTAZ, double matchDistance, MsgHandler* errorOutput):
+        myMapMatchTAZ(matchTAZ),
         myLaneTree(nullptr),
         myMapMatchJunctions(matchJunctions),
         myMapMatchingDistance(matchDistance),
@@ -53,49 +106,12 @@ protected:
         delete myLaneTree;
     }
 
-    void parseGeoEdges(const PositionVector& positions, bool geo, SUMOVehicleClass vClass,
-                       std::vector<const E*>& into, const std::string& rid, bool isFrom, bool& ok) {
-        if (geo && !GeoConvHelper::getFinal().usingGeoProjection()) {
-            WRITE_ERROR(TL("Cannot convert geo-positions because the network has no geo-reference"));
-            return;
-        }
-        for (Position pos : positions) {
-            Position orig = pos;
-            if (geo) {
-                GeoConvHelper::getFinal().x2cartesian_const(pos);
-            }
-            double dist = MIN2(10.0, myMapMatchingDistance);
-            const E* best = getClosestEdge(pos, dist, vClass);
-            while (best == nullptr && dist < myMapMatchingDistance) {
-                dist = MIN2(dist * 2, myMapMatchingDistance);
-                best = getClosestEdge(pos, dist, vClass);
-            }
-            if (best == nullptr) {
-                myErrorOutput->inform("No edge found near position " + toString(orig, geo ? gPrecisionGeo : gPrecision) + " within the route " + rid + ".");
-                ok = false;
-            } else {
-                if (myMapMatchJunctions) {
-                    best = getJunctionTaz(pos, best, vClass, isFrom);
-                    if (best != nullptr) {
-                        into.push_back(best);
-                    }
-                } else {
-                    // handle multiple via locations on the same edge without loops
-                    if (positions.size() == 1 || into.empty() || into.back() != best) {
-                        into.push_back(best);
-                    }
-                }
-            }
-        }
-    }
-
-
-    /// @brief find closest edge within distance for the given position or nullptr
-    const E* getClosestEdge(const Position& pos, double distance, SUMOVehicleClass vClass) {
+    /// @brief find closest lane within distance for the given position or nullptr
+    const L* getClosestLane(const Position& pos, SUMOVehicleClass vClass, double distance = -1.) {
         NamedRTree* t = getLaneTree();
         Boundary b;
         b.add(pos);
-        b.grow(distance);
+        b.grow(distance < 0 ? myMapMatchingDistance : distance);
         const float cmin[2] = {(float) b.xmin(), (float) b.ymin()};
         const float cmax[2] = {(float) b.xmax(), (float) b.ymax()};
         std::set<const Named*> lanes;
@@ -115,15 +131,7 @@ protected:
                 best = cand;
             }
         }
-        if (best == nullptr) {
-            return nullptr;
-        } else {
-            const E* bestEdge = &best->getEdge();
-            while (bestEdge->isInternal()) {
-                bestEdge = bestEdge->getSuccessors().front();
-            }
-            return bestEdge;
-        }
+        return best;
     }
 
     /// @brief find closest junction taz given the closest edge
@@ -167,10 +175,46 @@ protected:
         }
     }
 
+    /// @brief find closest junction taz given the closest edge
+    const E* getTaz(const Position& pos, const E* closestEdge, bool isFrom) {
+        if (closestEdge == nullptr) {
+            return nullptr;
+        } else {
+            std::vector<const E*> cands;
+            if (isFrom) {
+                for (const E* e : closestEdge->getPredecessors()) {
+                    if (e->isTazConnector()) {
+                        cands.push_back(e);
+                    }
+                }
+            } else {
+                for (const E* e : closestEdge->getSuccessors()) {
+                    if (e->isTazConnector()) {
+                        cands.push_back(e);
+                    }
+                }
+            }
+            if (cands.size() == 0) {
+                myErrorOutput->inform("Taz for edge '" + closestEdge->getID() + "' not found when mapping position " + toString(pos) + "." + JUNCTION_TAZ_MISSING_HELP);
+                return nullptr;
+            }
+            if (cands.size() > 1) {
+                return cands[RandHelper::rand((int)cands.size(), getRNG())];
+            } else {
+                return cands.front();
+            }
+        }
+    }
+
+    virtual SumoRNG* getRNG() {
+        return nullptr;
+    }
 
     virtual void initLaneTree(NamedRTree* tree) = 0;
 
     virtual E* retrieveEdge(const std::string& id) = 0;
+
+    bool myMapMatchTAZ;
 
 private:
     /// @brief initialize lane-RTree

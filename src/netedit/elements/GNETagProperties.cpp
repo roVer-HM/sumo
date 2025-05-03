@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,18 +18,9 @@
 // Abstract Base class for tag properties used in GNEAttributeCarrier
 /****************************************************************************/
 
-
-// ===========================================================================
-// defines
-// ===========================================================================
-
-#define MAXNUMBEROFATTRIBUTES 128
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-
 #include "GNETagProperties.h"
+
+#define MAXATTRIBUTES 128
 
 // ===========================================================================
 // method definitions
@@ -113,7 +104,7 @@ GNETagProperties::checkTagIntegrity() const {
     if ((isShapeElement() + isTAZElement() + isWireElement()) > 1) {
         throw ProcessError(TL("element can be either shape or TAZ or wire element at the same time"));
     }
-    // if element can mask the start and end position, check that bot attributes exist
+    // if element can mask the start and end position, check that both attributes exist
     if (canMaskStartEndPos() && (!hasAttribute(SUMO_ATTR_STARTPOS) || !hasAttribute(SUMO_ATTR_ENDPOS))) {
         throw ProcessError(TL("If attributes mask the start and end position, both attributes have to be defined"));
     }
@@ -171,7 +162,7 @@ GNETagProperties::getDefaultValue(SumoXMLAttr attr) const {
 
 void
 GNETagProperties::addAttribute(const GNEAttributeProperties& attributeProperty) {
-    if ((myAttributeProperties.size() + 1) >= MAXNUMBEROFATTRIBUTES) {
+    if ((myAttributeProperties.size() + 1) >= MAXATTRIBUTES) {
         throw ProcessError(TLF("Maximum number of attributes for tag % exceeded", attributeProperty.getAttrStr()));
     } else {
         // Check that attribute wasn't already inserted
@@ -215,6 +206,16 @@ GNETagProperties::getAttributeProperties(SumoXMLAttr attr) const {
     }
     // throw error if these attribute doesn't exist
     throw ProcessError(TLF("Attribute '%' doesn't exist", toString(attr)));
+}
+
+
+const GNEAttributeProperties&
+GNETagProperties::getAttributeProperties(const int index) const {
+    if (index < 0 || index >= (int)myAttributeProperties.size()) {
+        throw ProcessError(TLF("Invalid index '%' used in getAttributeProperties(int)", toString(index)));
+    } else {
+        return myAttributeProperties.at(index);
+    }
 }
 
 
@@ -397,6 +398,12 @@ GNETagProperties::isContainer() const {
 
 
 bool
+GNETagProperties::hasTypeParent() const {
+    return isVehicle() || isPerson() || isContainer();
+}
+
+
+bool
 GNETagProperties::isPlan() const {
     return isPlanPerson() || isPlanContainer();
 }
@@ -415,7 +422,7 @@ GNETagProperties::isPlanContainer() const {
 
 
 bool
-GNETagProperties::isPersonTrip() const {
+GNETagProperties::isPlanPersonTrip() const {
     return (myTagType & PERSONTRIP) != 0;
 }
 
@@ -541,8 +548,21 @@ GNETagProperties::planContainerStop() const {
 
 
 bool
+GNETagProperties::planChargingStation() const {
+    return (myTagParents & PLAN_CHARGINGSTATION) != 0;
+}
+
+
+bool
+GNETagProperties::planParkingArea() const {
+    return (myTagParents & PLAN_PARKINGAREA) != 0;
+}
+
+
+bool
 GNETagProperties::planStoppingPlace() const {
-    return planBusStop() || planTrainStop() || planContainerStop();
+    return planBusStop() || planTrainStop() || planContainerStop() ||
+           planChargingStation() || planParkingArea();
 }
 
 
@@ -574,12 +594,6 @@ GNETagProperties::planFromJunction() const {
 
 
 bool
-GNETagProperties::planFromStoppingPlace() const {
-    return planFromBusStop() || planFromTrainStop() || planFromContainerStop();
-}
-
-
-bool
 GNETagProperties::planFromBusStop() const {
     return (myTagParents & PLAN_FROM_BUSSTOP) != 0;
 }
@@ -594,6 +608,25 @@ GNETagProperties::planFromTrainStop() const {
 bool
 GNETagProperties::planFromContainerStop() const {
     return (myTagParents & PLAN_FROM_CONTAINERSTOP) != 0;
+}
+
+
+bool
+GNETagProperties::planFromChargingStation() const {
+    return (myTagParents & PLAN_FROM_CHARGINGSTATION) != 0;
+}
+
+
+bool
+GNETagProperties::planFromParkingArea() const {
+    return (myTagParents & PLAN_FROM_PARKINGAREA) != 0;
+}
+
+
+bool
+GNETagProperties::planFromStoppingPlace() const {
+    return planFromBusStop() || planFromTrainStop() || planFromContainerStop() ||
+           planFromChargingStation() || planFromParkingArea();
 }
 
 
@@ -614,13 +647,6 @@ GNETagProperties::planToJunction() const {
     return (myTagParents & PLAN_TO_JUNCTION) != 0;
 }
 
-
-bool
-GNETagProperties::planToStoppingPlace() const {
-    return planToBusStop() || planToTrainStop() || planToContainerStop();
-}
-
-
 bool
 GNETagProperties::planToBusStop() const {
     return (myTagParents & PLAN_TO_BUSSTOP) != 0;
@@ -636,6 +662,25 @@ GNETagProperties::planToTrainStop() const {
 bool
 GNETagProperties::planToContainerStop() const {
     return (myTagParents & PLAN_TO_CONTAINERSTOP) != 0;
+}
+
+
+bool
+GNETagProperties::planToChargingStation() const {
+    return (myTagParents & PLAN_TO_CHARGINGSTATION) != 0;
+}
+
+
+bool
+GNETagProperties::planToParkingArea() const {
+    return (myTagParents & PLAN_TO_PARKINGAREA) != 0;
+}
+
+
+bool
+GNETagProperties::planToStoppingPlace() const {
+    return planToBusStop() || planToTrainStop() || planToContainerStop() ||
+           planToChargingStation() || planToParkingArea();
 }
 
 
@@ -685,6 +730,12 @@ GNETagProperties::hasGEOShape() const {
 bool
 GNETagProperties::hasDialog() const {
     return (myTagProperty & DIALOG) != 0;
+}
+
+
+bool
+GNETagProperties::hasExtendedAttributes() const {
+    return (myTagProperty & EXTENDED) != 0;
 }
 
 

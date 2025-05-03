@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -66,14 +66,14 @@ GNEFrame::GNEFrame(GNEViewParent* viewParent, GNEViewNet* viewNet, const std::st
     myHeaderFrame = new FXHorizontalFrame(this, GUIDesignAuxiliarHorizontalFrame);
 
     // Create frame for left elements of header (By default unused)
-    myHeaderLeftFrame = new FXHorizontalFrame(myHeaderFrame, GUIDesignAuxiliarHorizontalFrame);
+    myHeaderLeftFrame = new FXHorizontalFrame(myHeaderFrame, GUIDesignAuxiliarHorizontalFrameCenteredVertically);
     myHeaderLeftFrame->hide();
 
-    // Create titel frame
+    // Create title frame
     myFrameHeaderLabel = new FXLabel(myHeaderFrame, frameLabel.c_str(), nullptr, GUIDesignLabelFrameInformation);
 
     // Create frame for right elements of header (By default unused)
-    myHeaderRightFrame = new FXHorizontalFrame(myHeaderFrame, GUIDesignAuxiliarHorizontalFrame);
+    myHeaderRightFrame = new FXHorizontalFrame(myHeaderFrame, GUIDesignAuxiliarHorizontalFrameCenteredVertically);
     myHeaderRightFrame->hide();
 
     // Add separator
@@ -131,10 +131,10 @@ GNEFrame::hide() {
 
 void
 GNEFrame::setFrameWidth(const int newWidth) {
-    // set scroll windows size (minus MARGING)
-    myScrollWindowsContents->setWidth(newWidth - GUIDesignFrameAreaMarging - DEFAULT_SPACING - 1);
+    // set scroll windows size (minus MARGIN)
+    myScrollWindowsContents->setWidth(newWidth - GUIDesignFrameAreaMargin - DEFAULT_SPACING - 1);
     // calculate new contentWidth
-    int contentWidth = (newWidth - GUIDesignFrameAreaMarging - DEFAULT_SPACING - 1 - 15);
+    int contentWidth = (newWidth - GUIDesignFrameAreaMargin - DEFAULT_SPACING - 1 - 15);
     // adjust contents frame
     myContentFrame->setWidth(contentWidth);
     // set size of all contents frame children
@@ -233,8 +233,6 @@ GNEFrame::openHelpAttributesDialog(const GNEAttributeCarrier* AC) const {
     new FXHorizontalFrame(myHorizontalFrameOKButton, GUIDesignAuxiliarHorizontalFrame);
     GUIDesigns::buildFXButton(myHorizontalFrameOKButton, TL("OK"), "", TL("close"), GUIIconSubSys::getIcon(GUIIcon::ACCEPT), attributesHelpDialog, FXDialogBox::ID_ACCEPT, GUIDesignButtonOK);
     new FXHorizontalFrame(myHorizontalFrameOKButton, GUIDesignAuxiliarHorizontalFrame);
-    // Write Warning in console if we're in testing mode
-    WRITE_DEBUG(TLF("Opening HelpAttributes dialog for tag '%' showing % attributes", AC->getTagProperty().getTagStr(), toString(AC->getTagProperty().getNumberOfAttributes())));
     // create Dialog
     attributesHelpDialog->create();
     // show in the given position
@@ -243,20 +241,18 @@ GNEFrame::openHelpAttributesDialog(const GNEAttributeCarrier* AC) const {
     getApp()->refresh();
     // open as modal dialog (will block all windows until stop() or stopModal() is called)
     getApp()->runModalFor(attributesHelpDialog);
-    // Write Warning in console if we're in testing mode
-    WRITE_DEBUG(TL("Closing HelpAttributes dialog for tag '") + AC->getTagProperty().getTagStr() + "'");
 }
 
 
 void
 GNEFrame::updateFrameAfterUndoRedo() {
-    // this function has to be reimplemente in all child frames that needs to draw a polygon (for example, GNEFrame or GNETAZFrame)
+    // this function has to be reimplemented in all child frames that needs to draw a polygon (for example, GNEFrame or GNETAZFrame)
 }
 
 
 void
 GNEFrame::frameWidthUpdated() {
-    // this function can be reimplemente in all child frames
+    // this function can be reimplemented in all child frames
 }
 
 // ---------------------------------------------------------------------------
@@ -265,44 +261,38 @@ GNEFrame::frameWidthUpdated() {
 
 void
 GNEFrame::tagSelected() {
-    // this function has to be reimplemente in all child frames that uses a GNETagSelector modul
+    // this function has to be reimplemented in all child frames that uses a GNETagSelector module
 }
 
 
 void
 GNEFrame::demandElementSelected() {
-    // this function has to be reimplemente in all child frames that uses a DemandElementSelector
+    // this function has to be reimplemented in all child frames that uses a DemandElementSelector
 }
 
 
 bool
 GNEFrame::shapeDrawed() {
-    // this function has to be reimplemente in all child frames that needs to draw a polygon (for example, GNEFrame or GNETAZFrame)
+    // this function has to be reimplemented in all child frames that needs to draw a polygon (for example, GNEFrame or GNETAZFrame)
     return false;
 }
 
 
 void
 GNEFrame::attributeUpdated(SumoXMLAttr /*attribute*/) {
-    // this function has to be reimplemente in all child frames that uses a AttributeEditor modul
-}
-
-
-void
-GNEFrame::attributesEditorExtendedDialogOpened()  {
-    // this function has to be reimplemente in all child frames that uses a GNEAttributesCreator editor with extended attributes
+    // this function has to be reimplemented in all child frames that uses a AttributeEditor module
 }
 
 
 void
 GNEFrame::selectedOverlappedElement(GNEAttributeCarrier* /* AC */) {
-    // this function has to be reimplemente in all child frames that uses a GNEOverlappedInspection
+    // this function has to be reimplemented in all child frames that uses a GNEOverlappedInspection
 }
 
 
 bool
 GNEFrame::createPath(const bool /*useLastRoute*/) {
-    // this function has to be reimplemente in all child frames that uses a path or consecutiveLanePath
+    // this function has to be reimplemented in all child frames that uses a path or consecutiveLanePath
     return false;
 }
 

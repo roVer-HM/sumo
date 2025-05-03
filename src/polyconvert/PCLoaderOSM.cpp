@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2008-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -205,7 +205,7 @@ PCLoaderOSM::loadIfSet(OptionsCont& oc, PCPolyContainer& toFill, PCTypeMap& tm) 
                 }
                 WRITE_MESSAGEF(TL("Assembled polygon from relation '%' (name:%)%"), toString(rel->id), e->name, frontBackMsg);
             } else {
-                WRITE_WARNINGF(TL("Could not import polygon from relation '%' (name:% reason: found gap of %m)\n."), rel->id, rel->name, maxDist)
+                WRITE_WARNINGF(TL("Could not import polygon from relation '%' (name:% reason: found gap of %m)."), rel->id, rel->name, maxDist)
                 delete e;
                 // export ways by themselves
                 for (long long int wayID : rel->myWays) {
@@ -216,7 +216,7 @@ PCLoaderOSM::loadIfSet(OptionsCont& oc, PCPolyContainer& toFill, PCTypeMap& tm) 
         }
     }
 
-    // instatiate polygons
+    // instantiate polygons
     for (EdgeMap::iterator i = edges.begin(); i != edges.end(); ++i) {
         PCOSMEdge* e = (*i).second;
         if (e->myAttributes.size() == 0) {

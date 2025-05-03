@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -96,7 +96,7 @@ GUIPointOfInterest::drawGL(const GUIVisualizationSettings& s) const {
         // push name (needed for getGUIGlObjectsUnderCursor(...)
         GLHelper::pushName(getGlID());
         // draw inner polygon
-        drawInnerPOI(s, this, this, false, s.altKeyPressed ? 0 : getShapeLayer(), getWidth(), getHeight());
+        drawInnerPOI(s, this, this, false, s.poiUseCustomLayer ? s.poiCustomLayer : getShapeLayer(), getWidth(), getHeight());
         // pop name
         GLHelper::popName();
     }
@@ -149,7 +149,7 @@ GUIPointOfInterest::drawInnerPOI(const GUIVisualizationSettings& s, const PointO
         }
     } else {
         // fallback if no image is defined
-        GLHelper::drawFilledCircle((double) 1.3 * exaggeration, s.poiDetail);
+        GLHelper::drawFilledCircle(width * 0.5 * exaggeration, s.poiDetail);
         // check if draw polygon
         if (POI->getIcon() != POIIcon::NONE) {
             // translate

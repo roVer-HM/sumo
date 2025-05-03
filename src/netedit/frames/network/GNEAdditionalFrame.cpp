@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -96,10 +96,10 @@ GNEAdditionalFrame::HelpCreationModule::HelpCreationModule(GNEFrame* frameParent
             addTLString(TL("-Requires at least one Entry\n and one Exit"));
     // E3 Entry
     myHelpMap[SUMO_TAG_DET_ENTRY] = addTLString(TL("-Requires EntryExitDetector\n parent\n")) +
-                                    addTLString(TL("-Select EntryExitDetector\n before creating either\n clicking over one in view\n oder selecting in list"));
+                                    addTLString(TL("-Select EntryExitDetector\n before creating either\n clicking over one in view\n or by selecting from list"));
     // E3 Exit
     myHelpMap[SUMO_TAG_DET_EXIT] = addTLString(TL("-Requires EntryExitDetector\n parent\n")) +
-                                   addTLString(TL("-Select EntryExitDetector\n before creating either\n clicking over one in view\n oder selecting in list"));
+                                   addTLString(TL("-Select EntryExitDetector\n before creating either\n clicking over one in view\n or by selecting from list"));
 }
 
 
@@ -269,7 +269,7 @@ GNEAdditionalFrame::createPath(const bool /* useLastRoute */) {
             // fill netedit attributes
             if (myNeteditAttributes->getNeteditAttributesAndValues(myBaseAdditional, nullptr)) {
                 // Check if ID has to be generated
-                if (!myBaseAdditional->hasStringAttribute(SUMO_ATTR_ID)) {
+                if (tagProperty.hasAttribute(SUMO_ATTR_ID)) {
                     myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, myViewNet->getNet()->getAttributeCarriers()->generateAdditionalID(tagProperty.getTag()));
                 }
                 // add lane IDs
@@ -284,7 +284,7 @@ GNEAdditionalFrame::createPath(const bool /* useLastRoute */) {
                         myAdditionalAttributes->showWarningMessage();
                     } else {
                         // declare additional handler
-                        GNEAdditionalHandler additionalHandler(getViewNet()->getNet(), true, false);
+                        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
                         // build additional
                         additionalHandler.parseSumoBaseObject(myBaseAdditional);
                         // Refresh additional Parent Selector (For additionals that have a limited number of children)
@@ -466,7 +466,7 @@ GNEAdditionalFrame::buildAdditionalOverEdge(GNELane* lane, const GNETagPropertie
         // Check if ID has to be generated
         if (tagProperties.getTag() == SUMO_TAG_VAPORIZER) {
             myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, lane->getParentEdge()->getID());
-        } else if (!myBaseAdditional->hasStringAttribute(SUMO_ATTR_ID)) {
+        } else if (tagProperties.hasAttribute(SUMO_ATTR_ID) && !myBaseAdditional->hasStringAttribute(SUMO_ATTR_ID)) {
             myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, myViewNet->getNet()->getAttributeCarriers()->generateAdditionalID(tagProperties.getTag()));
         }
     } else {
@@ -482,7 +482,7 @@ GNEAdditionalFrame::buildAdditionalOverEdge(GNELane* lane, const GNETagPropertie
         return false;
     } else {
         // declare additional handler
-        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), true, false);
+        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
         // build additional
         additionalHandler.parseSumoBaseObject(myBaseAdditional);
         // Refresh additional Parent Selector (For additionals that have a limited number of children)
@@ -504,7 +504,7 @@ GNEAdditionalFrame::buildAdditionalOverLane(GNELane* lane, const GNETagPropertie
         // Get attribute lane
         myBaseAdditional->addStringAttribute(SUMO_ATTR_LANE, lane->getID());
         // Check if ID has to be generated
-        if (!myBaseAdditional->hasStringAttribute(SUMO_ATTR_ID)) {
+        if (tagProperties.hasAttribute(SUMO_ATTR_ID) && !myBaseAdditional->hasStringAttribute(SUMO_ATTR_ID)) {
             myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, myViewNet->getNet()->getAttributeCarriers()->generateAdditionalID(tagProperties.getTag()));
         }
     } else {
@@ -528,7 +528,7 @@ GNEAdditionalFrame::buildAdditionalOverLane(GNELane* lane, const GNETagPropertie
         return false;
     } else {
         // declare additional handler
-        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), true, false);
+        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
         // build additional
         additionalHandler.parseSumoBaseObject(myBaseAdditional);
         // Refresh additional Parent Selector (For additionals that have a limited number of children)
@@ -566,7 +566,7 @@ GNEAdditionalFrame::buildAdditionalOverView(const GNETagProperties& tagPropertie
         return false;
     }
     // Check if ID has to be generated
-    if (!myBaseAdditional->hasStringAttribute(SUMO_ATTR_ID)) {
+    if (tagProperties.hasAttribute(SUMO_ATTR_ID)) {
         myBaseAdditional->addStringAttribute(SUMO_ATTR_ID, myViewNet->getNet()->getAttributeCarriers()->generateAdditionalID(tagProperties.getTag()));
     }
     // Obtain position as the clicked position over view
@@ -605,7 +605,7 @@ GNEAdditionalFrame::buildAdditionalOverView(const GNETagProperties& tagPropertie
         return false;
     } else {
         // declare additional handler
-        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), true, false);
+        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
         // build additional
         additionalHandler.parseSumoBaseObject(myBaseAdditional);
         // Refresh additional Parent Selector (For additionals that have a limited number of children)

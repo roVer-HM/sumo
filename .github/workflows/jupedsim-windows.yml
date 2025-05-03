@@ -16,7 +16,6 @@ on:
 
 jobs:
   build:
-    if: github.repository == 'DLR-TS/sumo' || github.event_name == 'pull_request'
     runs-on: windows-latest
     strategy:
       # Allow all other matrix-jobs to continue running, even if one of the jobs fails
@@ -50,11 +49,6 @@ jobs:
       with:
         path: sumo
         fetch-depth: 0
-
-    - name: Fetching SUMO tags
-      run: |
-        cd sumo
-        git fetch --tags --force
 
     - name: Cloning SUMO Libraries
       uses: actions/checkout@v4

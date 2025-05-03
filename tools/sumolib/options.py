@@ -1,5 +1,5 @@
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2012-2024 German Aerospace Center (DLR) and others.
+# Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -30,8 +30,7 @@ import io
 from argparse import RawDescriptionHelpFormatter  # noqa
 from copy import deepcopy
 from functools import wraps
-from .miscutils import openz
-from .miscutils import parseTime
+from .miscutils import openz, parseTime
 
 
 class ConfigurationReader(handler.ContentHandler):
@@ -313,7 +312,7 @@ class ArgumentParser(argparse.ArgumentParser):
                                 v = a.default
                             # help
                             if a.help is not None:
-                                help = ' help="%s"' % a.help
+                                help = ' help="%s"' % xmlescape(a.help)
 
                             # note: missing time, filename, list of vehicles, edges and lanes
                             # category
@@ -414,11 +413,9 @@ class ArgumentParser(argparse.ArgumentParser):
                                 config_args += value.split()
                             elif option.name in multi_value:
                                 config_args += ["--" + option.name] + value.split()
-                            elif value:
-                                # permit negative values in cfg files
-                                config_args += ["--" + option.name + "=" + value]
                             else:
-                                config_args += ["--" + option.name]
+                                # permit negative values and empty strings in cfg files
+                                config_args += ["--" + option.name + "=" + value]
         combined_args = args + config_args + [p for p in pos_args if p is not None]
         namespace, unknown_args = argparse.ArgumentParser.parse_known_args(
             self, args=combined_args, namespace=namespace)

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -130,6 +130,46 @@ public:
 
         /// @brief GLObject type associated with this size
         GUIGlObjectType myType = GLO_NETWORK;
+    };
+
+    /// @brief NamePanel
+    class RainbowPanel {
+
+    public:
+        /// @brief constructor
+        RainbowPanel(FXComposite* parent, GUIDialog_ViewSettings* target,
+                     const GUIVisualizationRainbowSettings& settings);
+
+        /// @brief get settings
+        GUIVisualizationRainbowSettings getSettings();
+
+        /// @brief update
+        void update(const GUIVisualizationRainbowSettings& settings);
+
+        FXButton* myColorRainbow = nullptr;
+
+        MFXComboBoxIcon* myRainbowStyle = nullptr;
+
+        /// @brief check button
+        FXCheckButton* myHideMinCheck = nullptr;
+
+        /// @brief threshold dial
+        FXRealSpinner* myMinThreshold = nullptr;
+
+        /// @brief check button
+        FXCheckButton* myHideMaxCheck = nullptr;
+
+        /// @brief threshold dial
+        FXRealSpinner* myMaxThreshold = nullptr;
+
+        /// @brief check button
+        FXCheckButton* mySetNeutral = nullptr;
+
+        /// @brief threshold dial
+        FXRealSpinner* myNeutralThreshold = nullptr;
+
+        /// @brief check button
+        FXCheckButton* myFixRange = nullptr;
     };
 
     /** @brief Constructor
@@ -293,12 +333,7 @@ protected:
     std::vector<FXRealSpinner*> myLaneThresholds;
     std::vector<FXButton*> myLaneButtons;
     FXCheckButton* myLaneColorInterpolation = nullptr;
-    FXButton* myLaneColorRainbow = nullptr;
-    FXCheckButton* myLaneColorRainbowCheck = nullptr;
-    FXRealSpinner* myLaneColorRainbowThreshold = nullptr;
-    FXCheckButton* myLaneColorRainbowCheck2 = nullptr;
-    FXRealSpinner* myLaneColorRainbowThreshold2 = nullptr;
-    FXButton* myJunctionColorRainbow = nullptr;
+    RainbowPanel* myJunctionRainbowPanel = nullptr;
     FXComboBox* myParamKey = nullptr;
     FXComboBox* myScalingParamKey = nullptr;
     MFXComboBoxIcon* myMeanDataID = nullptr;
@@ -350,6 +385,7 @@ protected:
     FXCheckButton* myScaleLength = nullptr;
     FXCheckButton* myDrawReversed = nullptr;
     FXCheckButton* myShowParkingInfo = nullptr;
+    FXCheckButton* myShowChargingInfo = nullptr;
     /*FXCheckButton* myShowLaneChangePreference = nullptr;*/
 
     FXComboBox* myVehicleParamKey = nullptr;
@@ -392,6 +428,8 @@ protected:
     FXCheckButton* myPOIColorInterpolation = nullptr;
     FXComboBox* myPOITextParamKey = nullptr;
     FXSpinner* myPoiDetail = nullptr;
+    FXCheckButton* myPOIUseCustomLayer = nullptr;
+    FXRealSpinner* myPOICustomLayer = nullptr;
 
     /// @brief Polygons
     MFXComboBoxIcon* myPolyColorMode, *myPolyShapeDetail = nullptr;
@@ -400,6 +438,8 @@ protected:
     std::vector<FXRealSpinner*> myPolyThresholds;
     std::vector<FXButton*> myPolyButtons;
     FXCheckButton* myPolyColorInterpolation = nullptr;
+    FXCheckButton* myPolyUseCustomLayer = nullptr;
+    FXRealSpinner* myPolyCustomLayer = nullptr;
 
     /// @brief Data
     MFXComboBoxIcon* myDataColorMode = nullptr;
@@ -411,9 +451,7 @@ protected:
     FXComboBox* myDataParamKey = nullptr;
     FXRealSpinner* myEdgeRelationUpscaleDialer = nullptr;
     FXRealSpinner* myTazRelationUpscaleDialer = nullptr;
-    FXButton* myDataColorRainbow = nullptr;
-    FXCheckButton* myDataColorRainbowCheck = nullptr;
-    FXRealSpinner* myDataColorRainbowThreshold = nullptr;
+    RainbowPanel* myDataRainbowPanel = nullptr;
 
     /// @brief buttons
     FXCheckButton* myShowLane2Lane = nullptr;
@@ -436,6 +474,7 @@ protected:
     /// @brief openGL
     FXCheckButton* myDither = nullptr;
     FXCheckButton* myFPS = nullptr;
+    FXCheckButton* myTrueZ = nullptr;
     FXCheckButton* myDrawBoundaries = nullptr;
     FXCheckButton* myForceDrawForRectangleSelection = nullptr;
     FXCheckButton* myDisableDottedContours = nullptr;
@@ -481,6 +520,9 @@ protected:
     SizePanel* myPolySizePanel = nullptr;
     SizePanel* myAddSizePanel = nullptr;
     SizePanel* myJunctionSizePanel = nullptr;
+
+    /// @brief rainbow panels
+    RainbowPanel* myEdgeRainbowPanel = nullptr;
 
     /// @brief load/save-menu
     FXCheckButton* mySaveViewPort = nullptr;

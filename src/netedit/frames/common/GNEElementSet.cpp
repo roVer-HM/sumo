@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,6 +20,7 @@
 #include <config.h>
 
 #include <netedit/GNEViewNet.h>
+#include <utils/common/MsgHandler.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 
@@ -51,25 +52,25 @@ GNEElementSet::GNEElementSet(GNESelectorFrame* selectorFrameParent, Supermode su
     myMatchGenericDataAttribute(nullptr),
     myCurrentSet(Type::INVALID) {
     // Create MatchTagBox for tags and fill it
-    mySetComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, false, GUIDesignComboBoxVisibleItemsMedium,
+    mySetComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, false, GUIDesignComboBoxVisibleItems,
                                         this, MID_CHOOSEN_ELEMENTS, GUIDesignComboBox);
     // continue depending of supermode
     if (supermode == Supermode::NETWORK) {
         // append elements
-        mySetComboBox->appendIconItem("Network", GUIIconSubSys::getIcon(GUIIcon::MODECREATEEDGE));
-        mySetComboBox->appendIconItem("Additional", GUIIconSubSys::getIcon(GUIIcon::MODEADDITIONAL));
-        mySetComboBox->appendIconItem("Shape", GUIIconSubSys::getIcon(GUIIcon::MODESHAPE));
-        mySetComboBox->appendIconItem("TAZ", GUIIconSubSys::getIcon(GUIIcon::MODETAZ));
+        mySetComboBox->appendIconItem(TL("Network"), GUIIconSubSys::getIcon(GUIIcon::MODECREATEEDGE));
+        mySetComboBox->appendIconItem(TL("Additional"), GUIIconSubSys::getIcon(GUIIcon::MODEADDITIONAL));
+        mySetComboBox->appendIconItem(TL("Shape"), GUIIconSubSys::getIcon(GUIIcon::MODESHAPE));
+        mySetComboBox->appendIconItem(TL("TAZ"), GUIIconSubSys::getIcon(GUIIcon::MODETAZ));
         // set default set
         myCurrentSet = Type::NETWORK;
     } else if (supermode == Supermode::DEMAND) {
         // append elements
-        mySetComboBox->appendIconItem("Demand", GUIIconSubSys::getIcon(GUIIcon::SUPERMODEDEMAND));
+        mySetComboBox->appendIconItem(TL("Demand"), GUIIconSubSys::getIcon(GUIIcon::SUPERMODEDEMAND));
         // set default set
         myCurrentSet = Type::DEMAND;
     } else if (supermode == Supermode::DATA) {
         // append elements
-        mySetComboBox->appendIconItem("GenericDatas", GUIIconSubSys::getIcon(GUIIcon::SUPERMODEDATA));
+        mySetComboBox->appendIconItem(TL("GenericDatas"), GUIIconSubSys::getIcon(GUIIcon::SUPERMODEDATA));
         // set default set
         myCurrentSet = Type::GENERICDATA;
     } else {
@@ -105,7 +106,7 @@ GNEElementSet::showElementSet() {
         myMatchGenericDataAttribute->showMatchGenericDataAttribute();
         // first check if myCurrentSet is invalid
         if (myCurrentSet == Type::INVALID) {
-            // disable macht attribute
+            // disable match attribute
             myMatchGenericDataAttribute->disableMatchGenericDataAttribute();
         } else {
             // enable match attribute
@@ -116,7 +117,7 @@ GNEElementSet::showElementSet() {
         myMatchGenericDataAttribute->hideMatchGenericDataAttribute();
         // first check if myCurrentSet is invalid
         if (myCurrentSet == Type::INVALID) {
-            // disable macht attribute
+            // disable match attribute
             myMatchAttribute->disableMatchAttribute();
         } else {
             // enable match attribute
@@ -142,26 +143,26 @@ long
 GNEElementSet::onCmdSelectElementSet(FXObject*, FXSelector, void*) {
     // check depending of current supermode
     if (mySelectorFrameParent->getViewNet()->getEditModes().isCurrentSupermodeNetwork()) {
-        if (mySetComboBox->getText() == "Network") {
+        if (mySetComboBox->getText() == TL("Network")) {
             myCurrentSet = Type::NETWORK;
-        } else if (mySetComboBox->getText() == "Additional") {
+        } else if (mySetComboBox->getText() == TL("Additional")) {
             myCurrentSet = Type::ADDITIONAL;
-        } else if (mySetComboBox->getText() == "TAZ") {
+        } else if (mySetComboBox->getText() == TL("TAZ")) {
             myCurrentSet = Type::TAZ;
             mySetComboBox->setTextColor(FXRGB(0, 0, 0));
-        } else if (mySetComboBox->getText() == "Shape") {
+        } else if (mySetComboBox->getText() == TL("Shape")) {
             myCurrentSet = Type::SHAPE;
         } else {
             myCurrentSet = Type::INVALID;
         }
     } else if (mySelectorFrameParent->getViewNet()->getEditModes().isCurrentSupermodeDemand()) {
-        if (mySetComboBox->getText() == "Demand") {
+        if (mySetComboBox->getText() == TL("Demand")) {
             myCurrentSet = Type::DEMAND;
         } else {
             myCurrentSet = Type::INVALID;
         }
     } else if (mySelectorFrameParent->getViewNet()->getEditModes().isCurrentSupermodeData()) {
-        if (mySetComboBox->getText() == "GenericDatas") {
+        if (mySetComboBox->getText() == TL("GenericDatas")) {
             myCurrentSet = Type::GENERICDATA;
         } else {
             myCurrentSet = Type::INVALID;

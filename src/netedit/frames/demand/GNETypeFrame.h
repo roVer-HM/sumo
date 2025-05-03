@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -162,9 +162,6 @@ protected:
     /// @brief function called after set a valid attribute in AttributeCreator/AttributeEditor/ParametersEditor/...
     void attributeUpdated(SumoXMLAttr attribute);
 
-    /// @brief open GNEAttributesCreator extended dialog (used for editing advance attributes of Vehicle Types)
-    void attributesEditorExtendedDialogOpened();
-
 private:
     /// @brief vehicle type selector
     TypeSelector* myTypeSelector;
@@ -173,10 +170,10 @@ private:
     TypeEditor* myTypeEditor;
 
     /// @brief editorinternal vehicle type attributes
-    GNEFrameAttributeModules::AttributesEditor* myTypeAttributesEditor = nullptr;
+    GNEAttributesEditor* myTypeAttributesEditor = nullptr;
 
-    /// @brief modul for open extended attributes dialog
-    GNEFrameAttributeModules::AttributesEditorExtended* myAttributesEditorExtended = nullptr;
+    /// @brief attributes editor extended
+    GNEAttributesEditor* myAttributesEditorExtended = nullptr;
 
     /// @brief Parameters editor inspector
     GNEFrameAttributeModules::ParametersEditor* myParametersEditor;

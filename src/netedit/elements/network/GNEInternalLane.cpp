@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -194,7 +194,7 @@ GNEInternalLane::drawGL(const GUIVisualizationSettings& s) const {
             // push layer matrix
             GLHelper::pushMatrix();
             // translate to front
-            myEditor->getViewNet()->drawTranslateFrontAttributeCarrier(myJunctionParent, GLO_TLLOGIC);
+            myJunctionParent->drawInLayer(GLO_TLLOGIC);
             // move front again
             glTranslated(0, 0, 0.5);
             // set color
@@ -213,8 +213,8 @@ GNEInternalLane::drawGL(const GUIVisualizationSettings& s) const {
             myNetworkElementContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
         }
         // calculate contour
-        myNetworkElementContour.calculateContourExtrudedShape(s, d, this, myInternalLaneGeometry.getShape(),
-                s.connectionSettings.connectionWidth, 1, true, true, 0);
+        myNetworkElementContour.calculateContourExtrudedShape(s, d, this, myInternalLaneGeometry.getShape(), getType(),
+                s.connectionSettings.connectionWidth, 1, true, true, 0, nullptr, myJunctionParent);
     }
 }
 
@@ -303,6 +303,12 @@ GNEInternalLane::colorForLinksState(FXuint state) {
 
 std::string
 GNEInternalLane::getAttribute(SumoXMLAttr key) const {
+    throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+}
+
+
+PositionVector
+GNEInternalLane::getAttributePositionVector(SumoXMLAttr key) const {
     throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
 }
 

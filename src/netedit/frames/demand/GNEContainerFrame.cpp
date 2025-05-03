@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -23,6 +23,8 @@
 #include <netedit/GNENet.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <utils/vehicle/SUMOVehicleParserHelper.h>
 #include <utils/xml/SUMOSAXAttributesImpl_Cached.h>
 
@@ -38,7 +40,7 @@
 
 GNEContainerFrame::GNEContainerFrame(GNEViewParent* viewParent, GNEViewNet* viewNet) :
     GNEFrame(viewParent, viewNet, TL("Containers")),
-    myRouteHandler("", viewNet->getNet(), true, false),
+    myRouteHandler("", viewNet->getNet(), myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false),
     myContainerBaseObject(new CommonXMLStructure::SumoBaseObject(nullptr)) {
 
     // create tag Selector module for containers
@@ -60,7 +62,7 @@ GNEContainerFrame::GNEContainerFrame(GNEViewParent* viewParent, GNEViewNet* view
     myNeteditAttributes = new GNENeteditAttributes(this);
 
     // create GNEPlanCreator Module
-    myPlanCreator = new GNEPlanCreator(this);
+    myPlanCreator = new GNEPlanCreator(this, viewNet->getNet()->getDemandPathManager());
 
     // create plan creator legend
     myPlanCreatorLegend = new GNEPlanCreatorLegend(this);
@@ -87,7 +89,7 @@ void
 GNEContainerFrame::hide() {
     // reset candidate edges
     for (const auto& edge : myViewNet->getNet()->getAttributeCarriers()->getEdges()) {
-        edge.second.second->resetCandidateFlags();
+        edge.second->resetCandidateFlags();
     }
     // hide frame
     GNEFrame::hide();
@@ -102,7 +104,6 @@ GNEContainerFrame::addContainer(const GNEViewNetHelper::ViewObjectsSelector& vie
     }
     // obtain tags (only for improve code legibility)
     SumoXMLTag containerTag = myContainerTagSelector->getCurrentTemplateAC()->getTagProperty().getTag();
-    SumoXMLTag clickedACTag = viewObjects.getAttributeCarrierFront()->getTagProperty().getTag();
     // first check that current selected container is valid
     if (containerTag == SUMO_TAG_NOTHING) {
         myViewNet->setStatusBarText(TL("Current selected container isn't valid."));
@@ -118,20 +119,26 @@ GNEContainerFrame::addContainer(const GNEViewNetHelper::ViewObjectsSelector& vie
         myViewNet->setStatusBarText(TL("Current selected container plan isn't valid."));
         return false;
     }
-    // add elements to path creator
-    if (clickedACTag == SUMO_TAG_LANE) {
-        return myPlanCreator->addEdge(viewObjects.getLaneFront());
-    } else if (viewObjects.getAttributeCarrierFront()->getTagProperty().isStoppingPlace()) {
-        return myPlanCreator->addStoppingPlace(viewObjects.getAdditionalFront());
-    } else if (clickedACTag == SUMO_TAG_ROUTE) {
-        return myPlanCreator->addRoute(viewObjects.getDemandElementFront());
-    } else if (clickedACTag == SUMO_TAG_JUNCTION) {
-        return myPlanCreator->addJunction(viewObjects.getJunctionFront());
-    } else if (clickedACTag == SUMO_TAG_TAZ) {
-        return myPlanCreator->addTAZ(viewObjects.getTAZFront());
-    } else {
-        return false;
+    for (GNEAdditional* o : viewObjects.getAdditionals()) {
+        if (o->getTagProperty().isStoppingPlace()) {
+            return myPlanCreator->addStoppingPlace(o);
+        }
     }
+    for (GNEDemandElement* o : viewObjects.getDemandElements()) {
+        if (o->getTagProperty().getTag() == SUMO_TAG_ROUTE) {
+            return myPlanCreator->addRoute(o);
+        }
+    }
+    if (viewObjects.getAttributeCarrierFront() == viewObjects.getJunctionFront()) {
+        return myPlanCreator->addJunction(viewObjects.getJunctions().front());
+    }
+    if (viewObjects.getAttributeCarrierFront() == viewObjects.getLaneFront()) {
+        return myPlanCreator->addEdge(viewObjects.getLanes().front());
+    }
+    if (viewObjects.getAttributeCarrierFront() == viewObjects.getTAZFront()) {
+        return myPlanCreator->addTAZ(viewObjects.getTAZs().front());
+    }
+    return false;
 }
 
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -271,7 +271,7 @@ GNEDataSet::removeDataIntervalChild(GNEDataInterval* dataInterval) {
         // remove data interval child
         myDataIntervalChildren.erase(dataInterval->getAttributeDouble(SUMO_ATTR_BEGIN));
         // remove it from inspected elements and GNEElementTree
-        myNet->getViewNet()->removeFromAttributeCarrierInspected(dataInterval);
+        myNet->getViewNet()->getInspectedElements().uninspectAC(dataInterval);
         myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(dataInterval);
         // remove reference from attributeCarriers
         myNet->getAttributeCarriers()->deleteDataInterval(dataInterval);
@@ -348,7 +348,7 @@ GNEDataSet::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_ID:
             return myDataSetID;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttribute(key);
     }
 }
 
@@ -366,7 +366,8 @@ GNEDataSet::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList*
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -381,7 +382,7 @@ GNEDataSet::isValid(SumoXMLAttr key, const std::string& value) {
                 return false;
             }
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
@@ -415,7 +416,8 @@ GNEDataSet::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value);
+            break;
     }
     // mark interval toolbar for update
     myNet->getViewNet()->getIntervalBar().markForUpdate();

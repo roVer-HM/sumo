@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -347,7 +347,17 @@ NBNodeShapeComputer::computeNodeShapeDefault(bool simpleContinuation) {
                             } else {
                                 distances[*i] = MAX2(a1, a2);
                             }
-                        } else if (ccad > DEG2RAD(90. + 45.) && cad > DEG2RAD(90. + 45.)) {
+                        } else if (ccad > DEG2RAD(90. + 45.) && cad > DEG2RAD(90. + 45.)
+                                   && (fabs(ccad - cad) > DEG2RAD(10)
+                                       || MAX2(ccad, cad) > DEG2RAD(160)
+                                       || (a2 - a1) > 7
+                                       // keep roundabouts nodes small
+                                       || myNode.isRoundabout())) {
+#ifdef DEBUG_NODE_SHAPE
+                            if (DEBUGCOND) {
+                                std::cout << "     ignore a2\n";
+                            }
+#endif
                             // do nothing.
                         } else if (farAngleDist < DEG2RAD(135) || (fabs(RAD2DEG(farAngleDist) - 180) > 1 && fabs(a2 - a1) < 10)) {
                             if (keepBothDistances) {

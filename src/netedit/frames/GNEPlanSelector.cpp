@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,6 +20,7 @@
 #include <config.h>
 
 #include <netedit/GNEViewNet.h>
+#include <netedit/GNENet.h>
 #include <netedit/elements/additional/GNEAccess.h>
 #include <netedit/elements/additional/GNEBusStop.h>
 #include <netedit/elements/additional/GNECalibrator.h>
@@ -91,7 +92,7 @@ GNEPlanSelector::GNEPlanSelector(GNEFrame* frameParent, SumoXMLTag planType) :
     MFXGroupBoxModule(frameParent, TL("Plan type")),
     myFrameParent(frameParent) {
     // Create MFXComboBoxIcon
-    myPlansComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, false, GUIDesignComboBoxVisibleItemsLarge,
+    myPlansComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, false, GUIDesignComboBoxVisibleItems,
                                           this, MID_GNE_TAG_SELECTED, GUIDesignComboBox);
     // get net
     const auto net = myFrameParent->getViewNet()->getNet();
@@ -130,12 +131,16 @@ GNEPlanSelector::~GNEPlanSelector() {
 void
 GNEPlanSelector::showPlanSelector() {
     show();
+    updateEdgeColors();
+    updateJunctionColors();
 }
 
 
 void
 GNEPlanSelector::hidePlanSelector() {
     hide();
+    clearEdgeColors();
+    clearJunctionColors();
 }
 
 
@@ -201,38 +206,12 @@ GNEPlanSelector::markJunctions() const {
 
 
 bool
-GNEPlanSelector::markBusStops() const {
+GNEPlanSelector::markStoppingPlaces() const {
     // first check if this modul is shown and selected plan is valid
     if (isPlanValid()) {
-        return myCurrentPlanTemplate.first.planBusStop() ||
-               myCurrentPlanTemplate.first.planFromBusStop() ||
-               myCurrentPlanTemplate.first.planToBusStop();
-    } else {
-        return false;
-    }
-}
-
-
-bool
-GNEPlanSelector::markTrainStops() const {
-    // first check if this modul is shown and selected plan is valid
-    if (isPlanValid()) {
-        return myCurrentPlanTemplate.first.planTrainStop() ||
-               myCurrentPlanTemplate.first.planFromTrainStop() ||
-               myCurrentPlanTemplate.first.planToTrainStop();
-    } else {
-        return false;
-    }
-}
-
-
-bool
-GNEPlanSelector::markContainerStops() const {
-    // first check if this modul is shown and selected plan is valid
-    if (isPlanValid()) {
-        return myCurrentPlanTemplate.first.planContainerStop() ||
-               myCurrentPlanTemplate.first.planFromContainerStop() ||
-               myCurrentPlanTemplate.first.planToContainerStop();
+        return myCurrentPlanTemplate.first.planStoppingPlace() ||
+               myCurrentPlanTemplate.first.planFromStoppingPlace() ||
+               myCurrentPlanTemplate.first.planToStoppingPlace();
     } else {
         return false;
     }
@@ -251,6 +230,69 @@ GNEPlanSelector::markTAZs() const {
 }
 
 
+void
+GNEPlanSelector::updateJunctionColors() {
+    // clear junction colors
+    clearJunctionColors();
+    // we assume that all junctions don't support pedestrians
+    for (const auto& junction : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getJunctions()) {
+        junction.second->setInvalidCandidate(true);
+    }
+    // mark junctions that supports pedestrian as candidates
+    for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
+        for (int i = 0; i < (int)edge.second->getLanes().size(); i++) {
+            if (edge.second->getNBEdge()->getLanes().at(i).permissions & SVC_PEDESTRIAN) {
+                edge.second->getFromJunction()->setPossibleCandidate(true);
+                edge.second->getToJunction()->setPossibleCandidate(true);
+            }
+        }
+    }
+    // update view net
+    myFrameParent->getViewNet()->updateViewNet();
+}
+
+
+void
+GNEPlanSelector::updateEdgeColors() {
+    // clear edge colors
+    clearEdgeColors();
+    // mark edges that supports pedestrian as candidates
+    for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
+        bool allowPedestrian = false;
+        for (int i = 0; i < (int)edge.second->getLanes().size(); i++) {
+            if (edge.second->getNBEdge()->getLanes().at(i).permissions & SVC_PEDESTRIAN) {
+                allowPedestrian = true;
+            }
+        }
+        if (allowPedestrian) {
+            edge.second->setPossibleCandidate(true);
+        } else {
+            edge.second->setInvalidCandidate(true);
+        }
+    }
+    // update view net
+    myFrameParent->getViewNet()->updateViewNet();
+}
+
+
+void
+GNEPlanSelector::clearJunctionColors() {
+    // reset all junction flags
+    for (const auto& junction : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getJunctions()) {
+        junction.second->resetCandidateFlags();
+    }
+}
+
+
+void
+GNEPlanSelector::clearEdgeColors() {
+    // reset all junction flags
+    for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
+        edge.second->resetCandidateFlags();
+    }
+}
+
+
 long
 GNEPlanSelector::onCmdSelectPlan(FXObject*, FXSelector, void*) {
     // check if selected plan of comboBox exists in plans
@@ -263,8 +305,6 @@ GNEPlanSelector::onCmdSelectPlan(FXObject*, FXSelector, void*) {
             myPlansComboBox->killFocus();
             // call tag selected function
             myFrameParent->tagSelected();
-            // Write Warning in console if we're in testing mode
-            WRITE_DEBUG(("Selected item '" + myPlansComboBox->getText() + "' in GNEPlanSelector").text());
             return 1;
         }
     }
@@ -272,8 +312,6 @@ GNEPlanSelector::onCmdSelectPlan(FXObject*, FXSelector, void*) {
     myCurrentPlanTemplate = std::make_pair(GNETagProperties(), nullptr);
     // set color of myTypeMatchBox to red (invalid)
     myPlansComboBox->setTextColor(FXRGB(255, 0, 0));
-    // Write Warning in console if we're in testing mode
-    WRITE_DEBUG("Selected invalid item in TemplatePlanSelector");
     // call tag selected function
     myFrameParent->tagSelected();
     return 1;
@@ -301,7 +339,10 @@ GNEPlanSelector::fillPersonPlanTemplates(GNENet* net) {
                                    GNETagProperties::TagParents::PLAN_FROM_TAZ | GNETagProperties::TagParents::PLAN_TO_TAZ |
                                    GNETagProperties::TagParents::PLAN_FROM_JUNCTION | GNETagProperties::TagParents::PLAN_TO_JUNCTION |
                                    GNETagProperties::TagParents::PLAN_FROM_BUSSTOP | GNETagProperties::TagParents::PLAN_TO_BUSSTOP |
-                                   GNETagProperties::TagParents::PLAN_FROM_TRAINSTOP | GNETagProperties::TagParents::PLAN_TO_TRAINSTOP,
+                                   GNETagProperties::TagParents::PLAN_FROM_TRAINSTOP | GNETagProperties::TagParents::PLAN_TO_TRAINSTOP |
+                                   GNETagProperties::TagParents::PLAN_FROM_CONTAINERSTOP | GNETagProperties::TagParents::PLAN_TO_CONTAINERSTOP |
+                                   GNETagProperties::TagParents::PLAN_FROM_CHARGINGSTATION | GNETagProperties::TagParents::PLAN_TO_CHARGINGSTATION |
+                                   GNETagProperties::TagParents::PLAN_FROM_PARKINGAREA | GNETagProperties::TagParents::PLAN_TO_PARKINGAREA,
                                    GNETagProperties::Conflicts::NO_CONFLICTS,
                                    GUIIcon::EMPTY, SUMO_TAG_PERSONTRIP, "PersonTrip");
     myPlanTemplates.push_back(std::make_pair(tagProperty, new GNEPersonTrip(GNE_TAG_PERSONTRIP_EDGE_EDGE, net)));
@@ -310,8 +351,13 @@ GNEPlanSelector::fillPersonPlanTemplates(GNENet* net) {
                                    GNETagProperties::TagType::PERSONPLAN,
                                    GNETagProperties::TagProperty::NO_PROPERTY,
                                    GNETagProperties::TagParents::PLAN_FROM_EDGE | GNETagProperties::TagParents::PLAN_TO_EDGE |
+                                   GNETagProperties::TagParents::PLAN_FROM_TAZ | GNETagProperties::TagParents::PLAN_TO_TAZ |
+                                   GNETagProperties::TagParents::PLAN_FROM_JUNCTION | GNETagProperties::TagParents::PLAN_TO_JUNCTION |
                                    GNETagProperties::TagParents::PLAN_FROM_BUSSTOP | GNETagProperties::TagParents::PLAN_TO_BUSSTOP |
-                                   GNETagProperties::TagParents::PLAN_FROM_TRAINSTOP | GNETagProperties::TagParents::PLAN_TO_TRAINSTOP,
+                                   GNETagProperties::TagParents::PLAN_FROM_TRAINSTOP | GNETagProperties::TagParents::PLAN_TO_TRAINSTOP |
+                                   GNETagProperties::TagParents::PLAN_FROM_CONTAINERSTOP | GNETagProperties::TagParents::PLAN_TO_CONTAINERSTOP |
+                                   GNETagProperties::TagParents::PLAN_FROM_CHARGINGSTATION | GNETagProperties::TagParents::PLAN_TO_CHARGINGSTATION |
+                                   GNETagProperties::TagParents::PLAN_FROM_PARKINGAREA | GNETagProperties::TagParents::PLAN_TO_PARKINGAREA,
                                    GNETagProperties::Conflicts::NO_CONFLICTS,
                                    GUIIcon::EMPTY, SUMO_TAG_RIDE, "Ride");
     myPlanTemplates.push_back(std::make_pair(tagProperty, new GNERide(GNE_TAG_RIDE_EDGE_EDGE, net)));
@@ -323,7 +369,10 @@ GNEPlanSelector::fillPersonPlanTemplates(GNENet* net) {
                                    GNETagProperties::TagParents::PLAN_FROM_TAZ | GNETagProperties::TagParents::PLAN_TO_TAZ |
                                    GNETagProperties::TagParents::PLAN_FROM_JUNCTION | GNETagProperties::TagParents::PLAN_TO_JUNCTION |
                                    GNETagProperties::TagParents::PLAN_FROM_BUSSTOP | GNETagProperties::TagParents::PLAN_TO_BUSSTOP |
-                                   GNETagProperties::TagParents::PLAN_FROM_TRAINSTOP | GNETagProperties::TagParents::PLAN_TO_TRAINSTOP,
+                                   GNETagProperties::TagParents::PLAN_FROM_TRAINSTOP | GNETagProperties::TagParents::PLAN_TO_TRAINSTOP |
+                                   GNETagProperties::TagParents::PLAN_FROM_CONTAINERSTOP | GNETagProperties::TagParents::PLAN_TO_CONTAINERSTOP |
+                                   GNETagProperties::TagParents::PLAN_FROM_CHARGINGSTATION | GNETagProperties::TagParents::PLAN_TO_CHARGINGSTATION |
+                                   GNETagProperties::TagParents::PLAN_FROM_PARKINGAREA | GNETagProperties::TagParents::PLAN_TO_PARKINGAREA,
                                    GNETagProperties::Conflicts::NO_CONFLICTS,
                                    GUIIcon::EMPTY, SUMO_TAG_WALK, "Walk");
     myPlanTemplates.push_back(std::make_pair(tagProperty, new GNEWalk(GNE_TAG_WALK_EDGE_EDGE, net)));
@@ -348,9 +397,10 @@ GNEPlanSelector::fillPersonPlanTemplates(GNENet* net) {
                                    GNETagProperties::TagType::PERSONPLAN,
                                    GNETagProperties::TagProperty::NO_PROPERTY,
                                    GNETagProperties::TagParents::PLAN_EDGE | GNETagProperties::TagParents::PLAN_BUSSTOP |
-                                   GNETagProperties::TagParents::PLAN_TRAINSTOP,
+                                   GNETagProperties::TagParents::PLAN_TRAINSTOP | GNETagProperties::TagParents::PLAN_CONTAINERSTOP |
+                                   GNETagProperties::TagParents::PLAN_CHARGINGSTATION | GNETagProperties::TagParents::PLAN_PARKINGAREA,
                                    GNETagProperties::Conflicts::NO_CONFLICTS,
-                                   GUIIcon::EMPTY, SUMO_TAG_STOP, "Stop");
+                                   GUIIcon::EMPTY, SUMO_TAG_STOP, "Person Stop");
     myPlanTemplates.push_back(std::make_pair(tagProperty, new GNEStopPlan(GNE_TAG_STOPPERSON_EDGE, net)));
 }
 
@@ -358,31 +408,45 @@ GNEPlanSelector::fillPersonPlanTemplates(GNENet* net) {
 void
 GNEPlanSelector::fillContainerPlanTemplates(GNENet* net) {
     GNETagProperties tagProperty;
-    // person trip
+    // transport
     tagProperty = GNETagProperties(SUMO_TAG_TRANSPORT, 0, 0,
                                    GNETagProperties::TagParents::PLAN_FROM_EDGE | GNETagProperties::TagParents::PLAN_TO_EDGE |
+                                   //GNETagProperties::TagParents::PLAN_FROM_TAZ | GNETagProperties::TagParents::PLAN_TO_TAZ |
+                                   //GNETagProperties::TagParents::PLAN_FROM_JUNCTION | GNETagProperties::TagParents::PLAN_TO_JUNCTION |
+                                   //GNETagProperties::TagParents::PLAN_FROM_BUSSTOP | GNETagProperties::TagParents::PLAN_TO_BUSSTOP |
+                                   //GNETagProperties::TagParents::PLAN_FROM_TRAINSTOP | GNETagProperties::TagParents::PLAN_TO_TRAINSTOP |
                                    GNETagProperties::TagParents::PLAN_FROM_CONTAINERSTOP | GNETagProperties::TagParents::PLAN_TO_CONTAINERSTOP,
-                                   0,
+                                   //GNETagProperties::TagParents::PLAN_FROM_CHARGINGSTATION | GNETagProperties::TagParents::PLAN_TO_CHARGINGSTATION |
+                                   //GNETagProperties::TagParents::PLAN_FROM_PARKINGAREA | GNETagProperties::TagParents::PLAN_TO_PARKINGAREA,
+                                   GNETagProperties::Conflicts::NO_CONFLICTS,
                                    GUIIcon::EMPTY, SUMO_TAG_PERSONTRIP, "Transport");
     myPlanTemplates.push_back(std::make_pair(tagProperty, new GNETransport(GNE_TAG_TRANSPORT_EDGE_EDGE, net)));
-    // walk
+    // tranship
     tagProperty = GNETagProperties(SUMO_TAG_TRANSHIP, 0, 0,
                                    GNETagProperties::TagParents::PLAN_FROM_EDGE | GNETagProperties::TagParents::PLAN_TO_EDGE |
+                                   //GNETagProperties::TagParents::PLAN_FROM_TAZ | GNETagProperties::TagParents::PLAN_TO_TAZ |
+                                   //GNETagProperties::TagParents::PLAN_FROM_JUNCTION | GNETagProperties::TagParents::PLAN_TO_JUNCTION |
+                                   //GNETagProperties::TagParents::PLAN_FROM_BUSSTOP | GNETagProperties::TagParents::PLAN_TO_BUSSTOP |
+                                   //GNETagProperties::TagParents::PLAN_FROM_TRAINSTOP | GNETagProperties::TagParents::PLAN_TO_TRAINSTOP |
                                    GNETagProperties::TagParents::PLAN_FROM_CONTAINERSTOP | GNETagProperties::TagParents::PLAN_TO_CONTAINERSTOP,
-                                   0,
+                                   //GNETagProperties::TagParents::PLAN_FROM_CHARGINGSTATION | GNETagProperties::TagParents::PLAN_TO_CHARGINGSTATION |
+                                   //GNETagProperties::TagParents::PLAN_FROM_PARKINGAREA | GNETagProperties::TagParents::PLAN_TO_PARKINGAREA,
+                                   GNETagProperties::Conflicts::NO_CONFLICTS,
                                    GUIIcon::EMPTY, SUMO_TAG_PERSONTRIP, "Tranship");
     myPlanTemplates.push_back(std::make_pair(tagProperty, new GNETranship(GNE_TAG_TRANSHIP_EDGE_EDGE, net)));
-    // walk (edges)
+    // tranship (edges)
     tagProperty = GNETagProperties(SUMO_TAG_TRANSHIP, 0, 0,
                                    GNETagProperties::TagParents::PLAN_CONSECUTIVE_EDGES,
-                                   0,
+                                   GNETagProperties::Conflicts::NO_CONFLICTS,
                                    GUIIcon::EMPTY, SUMO_TAG_PERSONTRIP, "Tranship (edges)");
     myPlanTemplates.push_back(std::make_pair(tagProperty, new GNETranship(GNE_TAG_TRANSHIP_EDGES, net)));
     // stop
     tagProperty = GNETagProperties(SUMO_TAG_STOP, 0, 0,
-                                   GNETagProperties::TagParents::PLAN_EDGE | GNETagProperties::TagParents::PLAN_CONTAINERSTOP,
-                                   0,
-                                   GUIIcon::EMPTY, SUMO_TAG_STOP, "Stop");
+                                   GNETagProperties::TagParents::PLAN_EDGE | GNETagProperties::TagParents::PLAN_BUSSTOP |
+                                   GNETagProperties::TagParents::PLAN_TRAINSTOP | GNETagProperties::TagParents::PLAN_CONTAINERSTOP |
+                                   GNETagProperties::TagParents::PLAN_CHARGINGSTATION | GNETagProperties::TagParents::PLAN_PARKINGAREA,
+                                   GNETagProperties::Conflicts::NO_CONFLICTS,
+                                   GUIIcon::EMPTY, SUMO_TAG_STOP, "Container Stop");
     myPlanTemplates.push_back(std::make_pair(tagProperty, new GNEStopPlan(GNE_TAG_STOPCONTAINER_EDGE, net)));
 }
 

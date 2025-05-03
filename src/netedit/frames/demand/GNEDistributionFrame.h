@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -150,7 +150,7 @@ public:
         DistributionEditor* myDistributionEditor = nullptr;
 
         /// @brief attributes editor
-        GNEFrameAttributeModules::AttributesEditor* myAttributesEditor = nullptr;
+        GNEAttributesEditor* myAttributesEditor = nullptr;
 
         /// @brief distribution values editor
         DistributionValuesEditor* myDistributionValuesEditor = nullptr;
@@ -243,7 +243,7 @@ public:
         /// @brief constructor
         DistributionValuesEditor(GNEFrame* frameParent, DistributionEditor* distributionEditor,
                                  DistributionSelector* distributionSelector,
-                                 GNEFrameAttributeModules::AttributesEditor* attributesEditor,
+                                 GNEAttributesEditor* attributesEditor,
                                  SumoXMLTag distributionValueTag);
 
         /// @brief show attributes of multiple ACs
@@ -290,7 +290,7 @@ public:
         DistributionSelector* myDistributionSelector;
 
         /// @brief attributes editor
-        GNEFrameAttributeModules::AttributesEditor* myAttributesEditor;
+        GNEAttributesEditor* myAttributesEditor;
 
         /// @brief distribution value tag
         SumoXMLTag myDistributionValueTag;

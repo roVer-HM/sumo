@@ -34,6 +34,13 @@ both_near_explicite
 # network with both ramps, guessing enabled but the default ids cannot be used
 both_ramp_id_clash
 
+# edge length is the same as the desired ramp length
+both_ramp_split_threshold
+
+# two ramps are build and they overlap
+both_ramp_overlap
+both_ramp_connection_input
+
 # real_world1: bs
 real_world1
 no_ramps_for_railways

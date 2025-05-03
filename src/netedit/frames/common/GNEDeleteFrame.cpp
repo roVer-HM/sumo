@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -222,12 +222,8 @@ GNEDeleteFrame::SubordinatedElements::openWarningDialog(const std::string& type,
               "' cannot be deleted because it is part of " + toString(number) + " " + type + " element" + plural + ".\n" +
               "To delete it, uncheck 'protect " + type + " elements'.";
     }
-    // write warning
-    WRITE_DEBUG("Opened FXMessageBox " + header);
     // open message box
     FXMessageBox::warning(myViewNet->getApp(), MBOX_OK, header.c_str(), "%s", msg.c_str());
-    // write warning if netedit is running in testing mode
-    WRITE_DEBUG("Closed FXMessageBox " + header);
 }
 
 // ---------------------------------------------------------------------------
@@ -442,8 +438,6 @@ GNEDeleteFrame::removeAttributeCarrier(const GNEViewNetHelper::ViewObjectsSelect
     }
     // enable update geometry
     myViewNet->getNet()->enableUpdateGeometry();
-    // update view to show changes
-    myViewNet->updateViewNet();
 }
 
 
@@ -489,11 +483,11 @@ GNEDeleteFrame::selectedACsToDelete() const {
     if (myViewNet->getEditModes().isCurrentSupermodeNetwork()) {
         // iterate over junctions
         for (const auto& junction : myViewNet->getNet()->getAttributeCarriers()->getJunctions()) {
-            if (junction.second.second->isAttributeCarrierSelected()) {
+            if (junction.second->isAttributeCarrierSelected()) {
                 return true;
             }
             // since we iterate over all junctions, it's only necessary to iterate over incoming edges
-            for (const auto& edge : junction.second.second->getGNEIncomingEdges()) {
+            for (const auto& edge : junction.second->getGNEIncomingEdges()) {
                 if (edge->isAttributeCarrierSelected()) {
                     return true;
                 }
@@ -511,7 +505,7 @@ GNEDeleteFrame::selectedACsToDelete() const {
                 }
             }
             // check crossings
-            for (const auto& crossing : junction.second.second->getGNECrossings()) {
+            for (const auto& crossing : junction.second->getGNECrossings()) {
                 if (crossing->isAttributeCarrierSelected()) {
                     return true;
                 }

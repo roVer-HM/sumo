@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -206,7 +206,7 @@ GNEDataInterval::addGenericDataChild(GNEGenericData* genericData) {
         updateGenericDataIDs();
         // check if add to boundary
         if (genericData->getTagProperty().isPlacedInRTree()) {
-            myNet->getGrid().addAdditionalGLObject(genericData->getGUIGlObject());
+            myNet->addGLObjectIntoGrid(genericData);
         }
         // update geometry after insertion if myUpdateGeometryEnabled is enabled
         if (myNet->isUpdateGeometryEnabled()) {
@@ -231,15 +231,15 @@ GNEDataInterval::removeGenericDataChild(GNEGenericData* genericData) {
         // remove generic data child
         myGenericDataChildren.erase(it);
         // remove it from inspected ACs and GNEElementTree
-        myDataSetParent->getNet()->getViewNet()->removeFromAttributeCarrierInspected(genericData);
+        myDataSetParent->getNet()->getViewNet()->getInspectedElements().uninspectAC(genericData);
         myDataSetParent->getNet()->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(genericData);
         // update colors
         genericData->getDataIntervalParent()->getDataSetParent()->updateAttributeColors();
         // delete path element
-        myNet->getPathManager()->removePath(genericData);
+        myNet->getDataPathManager()->removePath(genericData);
         // check if remove from RTREE
         if (genericData->getTagProperty().isPlacedInRTree()) {
-            myNet->getGrid().removeAdditionalGLObject(genericData->getGUIGlObject());
+            myNet->removeGLObjectFromGrid(genericData);
         }
         // remove reference from attributeCarriers
         myNet->getAttributeCarriers()->deleteGenericData(genericData);
@@ -314,7 +314,7 @@ GNEDataInterval::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_END:
             return toString(myEnd);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttribute(key);
     }
 }
 
@@ -340,7 +340,8 @@ GNEDataInterval::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndo
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -353,7 +354,7 @@ GNEDataInterval::isValid(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_END:
             return canParse<double>(value);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
@@ -401,7 +402,8 @@ GNEDataInterval::setAttribute(SumoXMLAttr key, const std::string& value) {
             updateGenericDataIDs();
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value);
+            break;
     }
     // mark interval toolbar for update
     myNet->getViewNet()->getIntervalBar().markForUpdate();

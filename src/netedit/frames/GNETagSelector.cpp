@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -93,7 +93,7 @@ GNETagSelector::GNETagSelector(GNEFrame* frameParent, GNETagProperties::TagType 
     myTagType(type),
     myCurrentTemplateAC(nullptr) {
     // Create MFXComboBoxIcon
-    myTagsMatchBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItemsLarge,
+    myTagsMatchBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItems,
                                          this, MID_GNE_TAG_SELECTED, GUIDesignComboBox);
     // set current tag type without notifying
     setCurrentTagType(myTagType, onlyDrawables, false);
@@ -206,7 +206,7 @@ GNETagSelector::setCurrentTagType(GNETagProperties::TagType tagType, const bool 
     myACTemplates.clear();
     myTagsMatchBox->clearItems();
     // get tag properties
-    const auto tagProperties = GNEAttributeCarrier::getTagPropertiesByType(myTagType);
+    const auto tagProperties = GNEAttributeCarrier::getTagPropertiesByType(myTagType, true);
     // fill myACTemplates and myTagsMatchBox
     for (const auto& tagProperty : tagProperties) {
         if ((!onlyDrawables || tagProperty.isDrawable()) && (!tagProperty.requireProj() || proj)) {
@@ -268,8 +268,6 @@ GNETagSelector::onCmdSelectTag(FXObject*, FXSelector, void*) {
             myTagsMatchBox->killFocus();
             // call tag selected function
             myFrameParent->tagSelected();
-            // Write Warning in console if we're in testing mode
-            WRITE_DEBUG(("Selected item '" + myTagsMatchBox->getText() + "' in GNETagSelector").text());
             return 1;
         }
     }
@@ -277,8 +275,6 @@ GNETagSelector::onCmdSelectTag(FXObject*, FXSelector, void*) {
     myCurrentTemplateAC = nullptr;
     // set color of myTypeMatchBox to red (invalid)
     myTagsMatchBox->setTextColor(FXRGB(255, 0, 0));
-    // Write Warning in console if we're in testing mode
-    WRITE_DEBUG("Selected invalid item in GNETagSelector");
     // call tag selected function
     myFrameParent->tagSelected();
     return 1;
@@ -297,8 +293,10 @@ GNETagSelector::ACTemplate::ACTemplate(GNENet* net, const GNETagProperties tagPr
     switch (tagProperty.getTag()) {
         // additional elements
         case SUMO_TAG_BUS_STOP:
+            myAC = GNEBusStop::buildBusStop(net);
+            break;
         case SUMO_TAG_TRAIN_STOP:
-            myAC = new GNEBusStop(tagProperty.getTag(), net);
+            myAC = GNEBusStop::buildTrainStop(net);
             break;
         case SUMO_TAG_ACCESS:
             myAC = new GNEAccess(net);

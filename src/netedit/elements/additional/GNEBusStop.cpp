@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -36,24 +36,35 @@
 // method definitions
 // ===========================================================================
 
-GNEBusStop::GNEBusStop(SumoXMLTag tag, GNENet* net) :
-    GNEStoppingPlace("", net, GLO_BUS_STOP, tag, GUIIconSubSys::getIcon(GUIIcon::BUSSTOP), nullptr, 0, 0, "", false, Parameterised::Map()),
-    myPersonCapacity(0),
-    myParkingLength(0),
-    myColor(RGBColor::BLACK) {
-    // reset default values
-    resetDefaultValues();
+GNEBusStop*
+GNEBusStop::buildBusStop(GNENet* net) {
+    return new GNEBusStop(SUMO_TAG_BUS_STOP, GLO_BUS_STOP, GUIIcon::BUSSTOP, net);
 }
 
 
-GNEBusStop::GNEBusStop(SumoXMLTag tag, const std::string& id, GNELane* lane, GNENet* net, const double startPos, const double endPos,
-                       const std::string& name, const std::vector<std::string>& lines, int personCapacity, double parkingLength, const RGBColor& color,
-                       bool friendlyPosition, const Parameterised::Map& parameters) :
-    GNEStoppingPlace(id, net, GLO_BUS_STOP, tag, GUIIconSubSys::getIcon(GUIIcon::BUSSTOP), lane, startPos, endPos, name, friendlyPosition, parameters),
-    myLines(lines),
-    myPersonCapacity(personCapacity),
-    myParkingLength(parkingLength),
-    myColor(color) {
+GNEBusStop*
+GNEBusStop::buildTrainStop(GNENet* net) {
+    return new GNEBusStop(SUMO_TAG_TRAIN_STOP, GLO_TRAIN_STOP, GUIIcon::TRAINSTOP, net);
+}
+
+
+GNEBusStop*
+GNEBusStop::buildBusStop(const std::string& id, GNELane* lane, GNENet* net,
+                         const double startPos, const double endPos, const std::string& name, const std::vector<std::string>& lines,
+                         int personCapacity, double parkingLength, const RGBColor& color, bool friendlyPosition,
+                         const Parameterised::Map& parameters) {
+    return new GNEBusStop(SUMO_TAG_BUS_STOP, GLO_BUS_STOP, GUIIcon::BUSSTOP, id, lane, net, startPos, endPos, name, lines,
+                          personCapacity, parkingLength, color, friendlyPosition, parameters);
+}
+
+
+GNEBusStop*
+GNEBusStop::buildTrainStop(const std::string& id, GNELane* lane, GNENet* net,
+                           const double startPos, const double endPos, const std::string& name, const std::vector<std::string>& lines,
+                           int personCapacity, double parkingLength, const RGBColor& color, bool friendlyPosition,
+                           const Parameterised::Map& parameters) {
+    return new GNEBusStop(SUMO_TAG_TRAIN_STOP, GLO_TRAIN_STOP, GUIIcon::TRAINSTOP, id, lane, net, startPos, endPos, name, lines,
+                          personCapacity, parkingLength, color, friendlyPosition, parameters);
 }
 
 
@@ -110,7 +121,7 @@ GNEBusStop::updateGeometry() {
     // Move shape to side
     tmpShape.move2side(myNet->getViewNet()->getVisualisationSettings().stoppingPlaceSettings.stoppingPlaceSignOffset * offsetSign);
     // Get position of the sign
-    mySignPos = tmpShape.getLineCenter();
+    mySymbolPosition = tmpShape.getLineCenter();
     // update demand element children
     for (const auto& demandElement : getChildDemandElements()) {
         demandElement->updateGeometry();
@@ -131,7 +142,7 @@ GNEBusStop::drawGL(const GUIVisualizationSettings& s) const {
         // get detail level
         const auto d = s.getDetailLevel(busStopExaggeration);
         // draw geometry only if we'rent in drawForObjectUnderCursor mode
-        if (!s.drawForViewObjectsHandler) {
+        if (s.checkDrawAdditional(d, isAttributeCarrierSelected())) {
             // declare colors
             RGBColor baseColor, signColor;
             // set colors
@@ -156,7 +167,7 @@ GNEBusStop::drawGL(const GUIVisualizationSettings& s) const {
             // Add layer matrix
             GLHelper::pushMatrix();
             // translate to front
-            myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_BUS_STOP);
+            drawInLayer(GLO_BUS_STOP);
             // set base color
             GLHelper::setColor(baseColor);
             // Draw the area using shape, shapeRotations, shapeLengths and value of exaggeration
@@ -164,7 +175,7 @@ GNEBusStop::drawGL(const GUIVisualizationSettings& s) const {
             // draw lines
             drawLines(d, myLines, baseColor);
             // draw sign
-            drawSign(d, busStopExaggeration, baseColor, signColor, (myTagProperty.getTag() == SUMO_TAG_BUS_STOP) ? "H" : "T");
+            drawSign(s, d, busStopExaggeration, baseColor, signColor, (myTagProperty.getTag() == SUMO_TAG_BUS_STOP) ? "H" : "T");
             // draw geometry points
             if (movingGeometryPoints && (myStartPosition != INVALID_DOUBLE)) {
                 drawLeftGeometryPoint(s, d, myAdditionalGeometry.getShape().front(), myAdditionalGeometry.getShapeRotations().front(), baseColor);
@@ -184,16 +195,19 @@ GNEBusStop::drawGL(const GUIVisualizationSettings& s) const {
             drawAdditionalID(s);
             // draw additional name
             drawAdditionalName(s);
-            // draw dotted contour
-            myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
-            // draw dotted contours for geometry points
-            myAdditionalContour.drawDottedContourGeometryPoints(s, d, this, myAdditionalGeometry.getShape(), s.neteditSizeSettings.additionalGeometryPointRadius,
-                    1, s.dottedContourSettings.segmentWidthSmall);
+            // draw dotted contours
+            if (movingGeometryPoints) {
+                myAdditionalContour.drawDottedContourGeometryPoints(s, d, this, myAdditionalGeometry.getShape(), s.neteditSizeSettings.additionalGeometryPointRadius,
+                        1, s.dottedContourSettings.segmentWidthSmall);
+            } else {
+                myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
+                mySymbolContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidthSmall, true);
+            }
         }
         // draw demand element children
         drawDemandElementChildren(s);
-        // calculate contour
-        calculateStoppingPlaceContour(s, d, stopWidth, movingGeometryPoints);
+        // calculate contours
+        calculateStoppingPlaceContour(s, d, stopWidth, busStopExaggeration, movingGeometryPoints);
     }
 }
 
@@ -233,14 +247,12 @@ GNEBusStop::getAttribute(SumoXMLAttr key) const {
             } else {
                 return toString(myColor);
             }
-        case GNE_ATTR_SELECTED:
-            return toString(isAttributeCarrierSelected());
         case GNE_ATTR_PARAMETERS:
             return getParametersStr();
         case GNE_ATTR_SHIFTLANEINDEX:
             return "";
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttribute(key);
     }
 }
 
@@ -258,13 +270,13 @@ GNEBusStop::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList*
         case SUMO_ATTR_PERSON_CAPACITY:
         case SUMO_ATTR_COLOR:
         case SUMO_ATTR_PARKING_LENGTH:
-        case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
         case GNE_ATTR_SHIFTLANEINDEX:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -312,12 +324,11 @@ GNEBusStop::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return canParse<RGBColor>(value);
             }
-        case GNE_ATTR_SELECTED:
-            return canParse<bool>(value);
+
         case GNE_ATTR_PARAMETERS:
             return areParametersValid(value);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
@@ -371,13 +382,6 @@ GNEBusStop::setAttribute(SumoXMLAttr key, const std::string& value) {
                 myColor = GNEAttributeCarrier::parse<RGBColor>(value);
             }
             break;
-        case GNE_ATTR_SELECTED:
-            if (parse<bool>(value)) {
-                selectAttributeCarrier();
-            } else {
-                unselectAttributeCarrier();
-            }
-            break;
         case GNE_ATTR_PARAMETERS:
             setParametersStr(value);
             break;
@@ -385,8 +389,30 @@ GNEBusStop::setAttribute(SumoXMLAttr key, const std::string& value) {
             shiftLaneIndex();
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value);
+            break;
     }
+}
+
+
+GNEBusStop::GNEBusStop(SumoXMLTag tag, GUIGlObjectType type, GUIIcon icon, GNENet* net) :
+    GNEStoppingPlace("", net, type, tag, GUIIconSubSys::getIcon(icon), nullptr, 0, 0, "", false, Parameterised::Map()),
+    myPersonCapacity(0),
+    myParkingLength(0),
+    myColor(RGBColor::BLACK) {
+    // reset default values
+    resetDefaultValues();
+}
+
+
+GNEBusStop::GNEBusStop(SumoXMLTag tag, GUIGlObjectType type, GUIIcon icon, const std::string& id, GNELane* lane, GNENet* net,
+                       const double startPos, const double endPos, const std::string& name, const std::vector<std::string>& lines,
+                       int personCapacity, double parkingLength, const RGBColor& color, bool friendlyPosition, const Parameterised::Map& parameters) :
+    GNEStoppingPlace(id, net, type, tag, GUIIconSubSys::getIcon(icon), lane, startPos, endPos, name, friendlyPosition, parameters),
+    myLines(lines),
+    myPersonCapacity(personCapacity),
+    myParkingLength(parkingLength),
+    myColor(color) {
 }
 
 /****************************************************************************/

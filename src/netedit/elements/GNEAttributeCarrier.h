@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -72,10 +72,10 @@ public:
     GNENet* getNet() const;
 
     /// @brief select attribute carrier using GUIGlobalSelection
-    void selectAttributeCarrier(const bool changeFlag = true);
+    void selectAttributeCarrier();
 
     /// @brief unselect attribute carrier using GUIGlobalSelection
-    void unselectAttributeCarrier(const bool changeFlag = true);
+    void unselectAttributeCarrier();
 
     /// @brief check if attribute carrier is selected
     bool isAttributeCarrierSelected() const;
@@ -83,8 +83,35 @@ public:
     /// @brief check if attribute carrier must be drawn using selecting color.
     bool drawUsingSelectColor() const;
 
+    /// @name Function related front elements
+    /// @{
+
+    /// @brief mark for drawing front
+    void markForDrawingFront();
+
+    /// @brief unmark for drawing front
+    void unmarkForDrawingFront();
+
+    /// @brief check if this AC is marked for drawing front
+    bool isMarkedForDrawingFront() const;
+
+    /// @brief draw element in the given layer, or in front if corresponding flag is enabled
+    void drawInLayer(const double typeOrLayer, const double extraOffset = 0) const;
+
+    /// @}
+
     /// @brief get GNEHierarchicalElement associated with this AttributeCarrier
     virtual GNEHierarchicalElement* getHierarchicalElement() = 0;
+
+    /// @name Function related with grid (needed for elements that aren't always in grid)
+    /// @{
+    /// @brief mark if this AC was inserted in grid or not
+    void setInGrid(bool value);
+
+    /// @brief check if this AC was inserted in grid
+    bool inGrid() const;
+
+    /// @}
 
     /// @name Function related with graphics (must be implemented in all children)
     /// @{
@@ -244,7 +271,10 @@ public:
     static const GNETagProperties& getTagProperty(SumoXMLTag tag);
 
     /// @brief get tagProperties associated to the given GNETagProperties::TagType (NETWORKELEMENT, ADDITIONALELEMENT, VEHICLE, etc.)
-    static const std::vector<GNETagProperties> getTagPropertiesByType(const int tagPropertyCategory);
+    static const std::vector<GNETagProperties> getTagPropertiesByType(const int tagPropertyCategory, const bool mergeCommonPlans);
+
+    /// @brief get tagProperties associated to the given merging tag
+    static const std::vector<GNETagProperties> getTagPropertiesByMergingTag(SumoXMLTag mergingTag);
 
     /// @brief true if a value of type T can be parsed from string
     template<typename T>
@@ -310,8 +340,17 @@ public:
 
     /// @}
 
-    /// @brief max number of attributes allowed for every tag
-    static const size_t MAXNUMBEROFATTRIBUTES;
+    /// @brief max number of editable (non extended) attributes (needed for attributes editor)
+    static int maxNumberOfEditableAttributes;
+
+    /// @brief max number of geo attributes (needed for geo attributes editor)
+    static int maxNumberOfGeoAttributes;
+
+    /// @brief max number of flow attributes (needed for geo attributes editor)
+    static int maxNumberOfFlowAttributes;
+
+    /// @brief max number of netedit attributes (needed for netedit attributes editor)
+    static int maxNumberOfNeteditAttributes;
 
     /// @brief empty parameter maps (used by ACs without parameters)
     static const Parameterised::Map PARAMETERS_EMPTY;
@@ -327,16 +366,48 @@ protected:
     const GNETagProperties& myTagProperty;
 
     /// @brief pointer to net
-    GNENet* myNet;
+    GNENet* myNet = nullptr;
 
-    /// @brief boolean to check if this AC is selected (instead of GUIGlObjectStorage)
-    bool mySelected;
+    /// @brief boolean to check if this AC is selected (more quickly as checking GUIGlObjectStorage)
+    bool mySelected = false;
+
+    /// @brief boolean to check if drawn this AC over other elements
+    bool myDrawInFront = false;
+
+    /// @brief boolean to check if this AC is in grid
+    bool myInGrid = false;
 
     /// @brief whether the current object is a template object (not drawn in the view)
-    bool myIsTemplate;
+    bool myIsTemplate = false;
 
     /// @brief method for enable or disable the attribute and nothing else (used in GNEChange_ToggleAttribute)
     virtual void toggleAttribute(SumoXMLAttr key, const bool value);
+
+    /// @name Functions related with common attributes
+    /// @{
+    /* @brief method for getting the common attribute of an XML key
+     * @param[in] key The attribute key
+     * @return string with the value associated to key
+     */
+    std::string getCommonAttribute(SumoXMLAttr key) const;
+
+    /* @brief method for setting the common attribute and letting the object perform additional changes
+     * @param[in] key The attribute key
+     * @param[in] value The new value
+     * @param[in] undoList The undoList on which to register changes
+     */
+    void setCommonAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList);
+
+    /* @brief method for check if new value for certain common attribute is valid
+     * @param[in] key The attribute key
+     * @param[in] value The new value
+     */
+    bool isCommonValid(SumoXMLAttr key, const std::string& value);
+
+    /// @brief method for setting the common attribute and nothing else (used in GNEChange_Attribute)
+    void setCommonAttribute(SumoXMLAttr key, const std::string& value);
+
+    /// @}
 
 private:
     /// @brief method for setting the attribute and nothing else (used in GNEChange_Attribute)
@@ -406,61 +477,70 @@ private:
     static void fillContainerStopElements();
 
     /// @brief fill common POI attributes
-    static void fillPOIAttributes(SumoXMLTag currentTag);
+    static void fillCommonAttributes(GNETagProperties& tagProperties);
+
+    /// @brief fill common POI attributes
+    static void fillPOIAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill common vehicle attributes (used by vehicles, trips, routeFlows and flows)
-    static void fillCommonVehicleAttributes(SumoXMLTag currentTag);
+    static void fillCommonVehicleAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill common flow attributes (used by flows, routeFlows and personFlows)
-    static void fillCommonFlowAttributes(SumoXMLTag currentTag, SumoXMLAttr perHour);
+    static void fillCommonFlowAttributes(GNETagProperties& tagProperties, SumoXMLAttr perHour);
 
     /// @brief fill Car Following Model of Vehicle/Person Types
-    static void fillCarFollowingModelAttributes(SumoXMLTag currentTag);
+    static void fillCarFollowingModelAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill Junction Model Attributes of Vehicle/Person Types
-    static void fillJunctionModelAttributes(SumoXMLTag currentTag);
+    static void fillJunctionModelAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill Junction Model Attributes of Vehicle/Person Types
-    static void fillLaneChangingModelAttributes(SumoXMLTag currentTag);
+    static void fillLaneChangingModelAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill common person attributes (used by person and personFlows)
-    static void fillCommonPersonAttributes(SumoXMLTag currentTag);
+    static void fillCommonPersonAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill common container attributes (used by container and containerFlows)
-    static void fillCommonContainerAttributes(SumoXMLTag currentTag);
+    static void fillCommonContainerAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill stop person attributes
-    static void fillCommonStopAttributes(SumoXMLTag currentTag, const bool waypoint);
+    static void fillCommonStopAttributes(GNETagProperties& tagProperties, const bool waypoint);
 
     /// @brief fill plan from-to attribute
-    static void fillPlanParentAttributes(SumoXMLTag currentTag);
+    static void fillPlanParentAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill person trip common attributes
-    static void fillPersonTripCommonAttributes(SumoXMLTag currentTag);
+    static void fillPersonTripCommonAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill walk common attributes
-    static void fillWalkCommonAttributes(SumoXMLTag currentTag);
+    static void fillWalkCommonAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill ride common attributes
-    static void fillRideCommonAttributes(SumoXMLTag currentTag);
+    static void fillRideCommonAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill transport common attributes
-    static void fillTransportCommonAttributes(SumoXMLTag currentTag);
+    static void fillTransportCommonAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill ride common attributes
-    static void fillTranshipCommonAttributes(SumoXMLTag currentTag);
+    static void fillTranshipCommonAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill plan stop common attributes
-    static void fillPlanStopCommonAttributes(SumoXMLTag currentTag);
+    static void fillPlanStopCommonAttributes(GNETagProperties& tagProperties);
 
     /// @brief fill Data elements
     static void fillDataElements();
 
     /// @brief fill stop person attributes
-    static void fillCommonMeanDataAttributes(SumoXMLTag currentTag);
+    static void fillCommonMeanDataAttributes(GNETagProperties& tagProperties);
+
+    /// @brief update max number of attributes by type
+    static void updateMaxNumberOfAttributes();
 
     /// @brief map with the tags properties
     static std::map<SumoXMLTag, GNETagProperties> myTagProperties;
+
+    /// @brief map with the merged tags properties
+    static std::map<SumoXMLTag, GNETagProperties> myMergedPlanTagProperties;
 
     /// @brief Invalidated copy constructor.
     GNEAttributeCarrier(const GNEAttributeCarrier&) = delete;

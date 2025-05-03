@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2011-2024 German Aerospace Center (DLR) and others.
+# Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -46,7 +46,7 @@ def _readLinks(result):
         length = result.readDouble()
         links.append((approachedLane, hasPrio, isOpen, hasFoe,
                       approachedInternal, state, direction, length))
-    return links
+    return tuple(links)
 
 
 _RETURN_VALUE_FUNC = {tc.LANE_LINKS: _readLinks}
@@ -301,6 +301,13 @@ class LaneDomain(Domain):
         formed by the lane, from its start point to its end point.
         """
         return self._getUniversal(tc.VAR_ANGLE, laneID, "d", relativePosition)
+
+    def getBidiLane(self, laneID):
+        """getBidiLane(string) -> string
+
+        Returns the id of the bidi lane or ""
+        """
+        return self._getUniversal(tc.VAR_BIDI, laneID)
 
     def setAllowed(self, laneID, allowedClasses):
         """setAllowed(string, list) -> None

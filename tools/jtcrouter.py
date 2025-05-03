@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2012-2024 German Aerospace Center (DLR) and others.
+# Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -24,7 +24,6 @@ from __future__ import print_function
 
 import os
 import sys
-from argparse import ArgumentParser
 from collections import defaultdict
 import subprocess
 
@@ -36,6 +35,7 @@ else:
     sys.path.append(os.path.join(THIS_DIR, 'turn-defs'))
 
 import sumolib  # noqa
+from sumolib.options import ArgumentParser
 from turnCount2EdgeCount import parseEdgeCounts  # noqa
 
 

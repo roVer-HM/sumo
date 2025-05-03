@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -23,6 +23,8 @@
 #include <netedit/GNENet.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <utils/vehicle/SUMOVehicleParserHelper.h>
 #include <utils/xml/SUMOSAXAttributesImpl_Cached.h>
 
@@ -38,7 +40,7 @@
 
 GNEPersonFrame::GNEPersonFrame(GNEViewParent* viewParent, GNEViewNet* viewNet) :
     GNEFrame(viewParent, viewNet, TL("Persons")),
-    myRouteHandler("", viewNet->getNet(), true, false),
+    myRouteHandler("", viewNet->getNet(), myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false),
     myPersonBaseObject(new CommonXMLStructure::SumoBaseObject(nullptr)) {
 
     // create tag Selector module for persons
@@ -60,7 +62,7 @@ GNEPersonFrame::GNEPersonFrame(GNEViewParent* viewParent, GNEViewNet* viewNet) :
     myNeteditAttributes = new GNENeteditAttributes(this);
 
     // create GNEPlanCreator Module
-    myPlanCreator = new GNEPlanCreator(this);
+    myPlanCreator = new GNEPlanCreator(this, viewNet->getNet()->getDemandPathManager());
 
     // create plan creator legend
     myPlanCreatorLegend = new GNEPlanCreatorLegend(this);
@@ -87,7 +89,7 @@ void
 GNEPersonFrame::hide() {
     // reset candidate edges
     for (const auto& edge : myViewNet->getNet()->getAttributeCarriers()->getEdges()) {
-        edge.second.second->resetCandidateFlags();
+        edge.second->resetCandidateFlags();
     }
     // hide frame
     GNEFrame::hide();
@@ -127,13 +129,13 @@ GNEPersonFrame::addPerson(const GNEViewNetHelper::ViewObjectsSelector& viewObjec
             return myPlanCreator->addRoute(o);
         }
     }
-    if (!viewObjects.getLanes().empty()) {
-        return myPlanCreator->addEdge(viewObjects.getLanes().front());
-    }
-    if (!viewObjects.getJunctions().empty()) {
+    if (viewObjects.getAttributeCarrierFront() == viewObjects.getJunctionFront()) {
         return myPlanCreator->addJunction(viewObjects.getJunctions().front());
     }
-    if (!viewObjects.getTAZs().empty()) {
+    if (viewObjects.getAttributeCarrierFront() == viewObjects.getLaneFront()) {
+        return myPlanCreator->addEdge(viewObjects.getLanes().front());
+    }
+    if (viewObjects.getAttributeCarrierFront() == viewObjects.getTAZFront()) {
         return myPlanCreator->addTAZ(viewObjects.getTAZs().front());
     }
     return false;

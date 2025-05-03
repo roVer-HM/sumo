@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -171,7 +171,7 @@ NBNodeCont::extract(NBNode* node, bool remember) {
 
 
 // ----------- Adapting the input
-void
+int
 NBNodeCont::removeSelfLoops(NBDistrictCont& dc, NBEdgeCont& ec, NBTrafficLightLogicCont& tc) {
     int no = 0;
     for (NodeCont::iterator i = myNodes.begin(); i != myNodes.end(); i++) {
@@ -180,6 +180,7 @@ NBNodeCont::removeSelfLoops(NBDistrictCont& dc, NBEdgeCont& ec, NBTrafficLightLo
     if (no != 0) {
         WRITE_WARNING(toString(no) + " self-looping edge(s) removed.");
     }
+    return no;
 }
 
 
@@ -234,8 +235,9 @@ NBNodeCont::joinSimilarEdges(NBDistrictCont& dc, NBEdgeCont& ec, NBTrafficLightL
 }
 
 
-void
+int
 NBNodeCont::removeIsolatedRoads(NBDistrictCont& dc, NBEdgeCont& ec) {
+    int numRemovedEdges = 0;
     // Warn of isolated edges, i.e. a single edge with no connection to another edge
     const std::vector<std::string>& edgeNames = ec.getAllNames();
     for (std::vector<std::string>::const_iterator it = edgeNames.begin(); it != edgeNames.end(); ++it) {
@@ -307,6 +309,7 @@ NBNodeCont::removeIsolatedRoads(NBDistrictCont& dc, NBEdgeCont& ec) {
                 NBNode* fromNode = (*roadIt)->getFromNode();
                 NBNode* toNode = (*roadIt)->getToNode();
                 ec.erase(dc, *roadIt);
+                numRemovedEdges++;
                 if (fromNode->getIncomingEdges().size() == 0 && fromNode->getOutgoingEdges().size() == 0) {
                     // Node is empty; can be removed
                     erase(fromNode);
@@ -319,10 +322,11 @@ NBNodeCont::removeIsolatedRoads(NBDistrictCont& dc, NBEdgeCont& ec) {
             WRITE_WARNINGF(TL("Removed a road without junctions: %."), warningString);
         }
     }
+    return numRemovedEdges;
 }
 
 
-void
+int
 NBNodeCont::removeComponents(NBDistrictCont& dc, NBEdgeCont& ec, const int numKeep, bool hasPTStops) {
     myRailComponents.clear();
     std::vector<std::set<NBEdge*> > components;
@@ -405,10 +409,11 @@ NBNodeCont::removeComponents(NBDistrictCont& dc, NBEdgeCont& ec, const int numKe
     if (foundComponents > 1) {
         WRITE_MESSAGEF(TL("Found % components and removed % (% edges)."), toString(foundComponents), toString(numRemoved), toString(toRemove.size()));
     }
+    return (int)toRemove.size();
 }
 
 
-void
+int
 NBNodeCont::removeRailComponents(NBDistrictCont& dc, NBEdgeCont& ec, NBPTStopCont& sc) {
     std::set<std::string> stopEdges;
     for (const auto& item : sc.getStops()) {
@@ -446,6 +451,7 @@ NBNodeCont::removeRailComponents(NBDistrictCont& dc, NBEdgeCont& ec, NBPTStopCon
     if (numRemoved > 0) {
         WRITE_MESSAGEF(TL("Removed % railway components (% edges)."), toString(numRemoved), toString(numRemovedEdges));
     }
+    return numRemoved;
 }
 
 
@@ -637,7 +643,7 @@ NBNodeCont::generateNodeClusters(double maxDist, NodeClusters& into) const {
                 if (length + dist < maxDist) {
                     // don't add long "boring" appendages but always join the whole rail crossing or tls
                     const bool trueGeomLike = s->geometryLike();
-                    if (trueGeomLike || geometryLikeForClass(s, SVC_WEAK | SVC_DELIVERY)) {
+                    if (trueGeomLike || geometryLikeForClass(s, SVC_VULNERABLE | SVC_DELIVERY)) {
                         const bool hasTLS = n->isTrafficLight() || s->isTrafficLight();
                         const double fullLength = e->getGeometry().length2D();
                         const double length2 = bothCrossing || hasTLS || trueGeomLike ? length : fullLength;
@@ -993,8 +999,7 @@ NBNodeCont::pruneClusterFringe(NodeSet& cluster, double maxDist) const {
                             || isRailway(e->getPermissions()) // join railway crossings
                             || (clusterDist <= pedestrianFringeThreshold
                                 && (!pruneNoisyFringe
-                                    || ((e->getPermissions() & SVC_WEAK) != 0 &&
-                                        (e->getPermissions() & ~SVC_WEAK) == 0)
+                                    || isForVulnerableModes(e->getPermissions())
                                     // permit joining small opposite merges
                                     || getDiameter(cluster) < maxDist
                                     || cluster.size() == 2))
@@ -1059,9 +1064,9 @@ NBNodeCont::pruneLongEdges(NodeSet& cluster, double maxDist, const bool dryRun) 
     }
     for (NBNode* n : cluster) {
         for (NBEdge* edge : n->getOutgoingEdges()) {
-            // we must track the edge length accross geometry like nodes
-            // Also, intersecions that are geometry-like
-            // from the perspective of passenger traffic should be tracked accross
+            // we must track the edge length across geometry like nodes
+            // Also, intersections that are geometry-like
+            // from the perspective of passenger traffic should be tracked across
             std::vector<NBNode*> passed;
             double length = 0;
             NBEdge* cur = edge;
@@ -1970,6 +1975,19 @@ NBNodeCont::registerJoinedCluster(const NodeSet& cluster) {
     myJoinedClusters.push_back(ids);
 }
 
+void
+NBNodeCont::registerJoinedCluster(const std::set<std::string>& cluster) {
+    myJoinedClusters.push_back(cluster);
+}
+
+void
+NBNodeCont::unregisterJoinedCluster(const std::set<std::string>& cluster) {
+    auto it = std::find(myJoinedClusters.begin(), myJoinedClusters.end(), cluster);
+    if (it != myJoinedClusters.end()) {
+        myJoinedClusters.erase(it);
+    }
+}
+
 
 void
 NBNodeCont::analyzeCluster(NodeSet cluster, std::string& id, Position& pos,
@@ -2036,7 +2054,7 @@ NBNodeCont::shouldBeTLSControlled(const NodeSet& c, double laneSpeedThreshold, b
             }
         }
     }
-    //std::cout << " c=" << joinNamedToString(c, ' ') << " f=" << f << " size=" << c.size() << " thresh=" << laneSpeedThreshold << " tooFast=" << tooFast << "\n";
+    //std::cout << " c=" << joinNamedToString(c, ' ') << " size=" << c.size() << " laneSpeedSum=" << laneSpeedSum << " thresh=" << laneSpeedThreshold << " tooFast=" << tooFast << "\n";
     return !tooFast && laneSpeedSum >= laneSpeedThreshold && c.size() != 0;
 }
 
@@ -2678,7 +2696,11 @@ NBNodeCont::discardTrafficLights(NBTrafficLightLogicCont& tlc, bool geometryLike
                 // do not remove joined tls when only removing geometry-like tls
                 continue;
             }
-            if (guessSignals && node->isTLControlled() && node->geometryLike()) {
+            if (node->getCrossings().size() > 0) {
+                // keep controlled pedestrian crossings
+                continue;
+            }
+            if (guessSignals && node->geometryLike()) {
                 // record signal location
                 for (NBEdge* edge : node->getOutgoingEdges()) {
                     edge->setSignalPosition(node->getPosition(), nullptr);

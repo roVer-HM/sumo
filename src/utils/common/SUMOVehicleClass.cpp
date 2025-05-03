@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -171,6 +171,10 @@ const std::string DEFAULT_RAILTYPE_ID("DEFAULT_RAILTYPE");
 const std::set<std::string> DEFAULT_VTYPES({DEFAULT_VTYPE_ID, DEFAULT_PEDTYPE_ID, DEFAULT_BIKETYPE_ID, DEFAULT_CONTAINERTYPE_ID, DEFAULT_TAXITYPE_ID, DEFAULT_RAILTYPE_ID});
 
 const double DEFAULT_VEH_PROB(1.);
+const double DEFAULT_VEH_MASS(1500.);
+const double DEFAULT_VEH_WIDTH(1.8);
+const double DEFAULT_VEH_HEIGHT(1.5);
+const double DEFAULT_VEH_SHUT_OFF_STOP(300.);
 
 const double DEFAULT_PEDESTRIAN_SPEED(5. / 3.6);
 
@@ -350,7 +354,11 @@ parseVehicleClasses(const std::string& allowedS) {
         while (sta.hasNext()) {
             const std::string s = sta.next();
             if (!SumoVehicleClassStrings.hasString(s)) {
-                WRITE_ERRORF(TL("Unknown vehicle class '%' encountered."), s);
+                if (gIgnoreUnknownVClass) {
+                    WRITE_WARNINGF(TL("Unknown vehicle class '%' ignored."), s);
+                } else {
+                    WRITE_ERRORF(TL("Unknown vehicle class '%' encountered."), s);
+                }
             } else {
                 const SUMOVehicleClass vc = getVehicleClassID(s);
                 const std::string& realName = SumoVehicleClassStrings.getString(vc);
@@ -530,8 +538,8 @@ isSidewalk(SVCPermissions permissions) {
 
 
 bool
-isForWeakModes(SVCPermissions permissions) {
-    return ((permissions & SVC_WEAK) != 0 && (permissions & ~SVC_WEAK) == 0);
+isForVulnerableModes(SVCPermissions permissions) {
+    return ((permissions & SVC_VULNERABLE) != 0 && (permissions & ~SVC_VULNERABLE) == 0);
 }
 
 

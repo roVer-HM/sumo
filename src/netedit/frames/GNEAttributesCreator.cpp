@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -51,7 +51,7 @@ GNEAttributesCreator::GNEAttributesCreator(GNEFrame* frameParent) :
     myFrameParent(frameParent),
     myTemplateAC(nullptr) {
     // resize myAttributesCreatorRows
-    myAttributesCreatorRows.resize(GNEAttributeCarrier::MAXNUMBEROFATTRIBUTES, nullptr);
+    myAttributesCreatorRows.resize(128 /*this will be removed */, nullptr);
     // create myFlowEditor
     myFlowEditor = new GNEFlowEditor(frameParent->getViewNet(), frameParent);
     // create reset and help button
@@ -117,7 +117,7 @@ GNEAttributesCreator::getAttributesAndValues(CommonXMLStructure::SumoBaseObject*
             // flag for default attributes
             const bool hasDefaultStaticValue = !attrProperties.hasDefaultValue() || (attrProperties.getDefaultValue() != row->getValue());
             // flag for enablitables attributes
-            const bool isFlowDefinitionAttribute = attrProperties.isFlowDefinition();
+            const bool isFlowDefinitionAttribute = attrProperties.isFlow();
             // flag for Terminatel attributes
             const bool isActivatableAttribute = attrProperties.isActivatable() && row->getAttributeCheckButtonCheck();
             // check if flags configuration allow to include values
@@ -179,8 +179,6 @@ GNEAttributesCreator::showWarningMessage(std::string extra) const {
     }
     // set message in status bar
     myFrameParent->getViewNet()->setStatusBarText(errorMessage);
-    // Write Warning in console if we're in testing mode
-    WRITE_DEBUG(errorMessage);
 }
 
 
@@ -253,12 +251,19 @@ GNEAttributesCreator::refreshRows(const bool createRows) {
         if (attribute.isUnique() && (attribute.getAttr() != SUMO_ATTR_ID)) {
             showAttribute = false;
         }
+        // avoid selected and row (temporal, until unification with attributesEditor)
+        if ((attribute.getAttr() == GNE_ATTR_SELECTED) ||
+                (attribute.getAttr() == GNE_ATTR_FRONTELEMENT) ||
+                (attribute.getAttr() == GNE_ATTR_PARENT) ||
+                (attribute.getAttr() == GNE_ATTR_CLOSESHAPE)) {
+            showAttribute = false;
+        }
         // check if attribute must stay hidden
         if (std::find(myHiddenAttributes.begin(), myHiddenAttributes.end(), attribute.getAttr()) != myHiddenAttributes.end()) {
             showAttribute = false;
         }
         // check if attribute is a flow definitionattribute
-        if (attribute.isFlowDefinition()) {
+        if (attribute.isFlow()) {
             showAttribute = false;
             showFlowEditor = true;
         }
@@ -289,7 +294,7 @@ GNEAttributesCreator::refreshRows(const bool createRows) {
     recalc();
     // check if flow editor has to be shown
     if (showFlowEditor) {
-        myFlowEditor->showFlowEditor({ myTemplateAC });
+        myFlowEditor->showFlowEditor(myTemplateAC, { myTemplateAC });
     } else {
         myFlowEditor->hideFlowEditor();
     }

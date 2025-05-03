@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,6 +20,9 @@
 #include <config.h>
 
 #include <netedit/GNENet.h>
+#include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/GNEApplicationWindow.h>
 
 #include "GNEChange_Additional.h"
 
@@ -40,16 +43,17 @@ GNEChange_Additional::GNEChange_Additional(GNEAdditional* additional, bool forwa
 
 
 GNEChange_Additional::~GNEChange_Additional() {
-    myAdditional->decRef("GNEChange_Additional");
-    if (myAdditional->unreferenced()) {
-        // show extra information for tests
-        WRITE_DEBUG("Deleting unreferenced " + myAdditional->getTagStr());
-        // make sure that additional isn't in net before removing
-        if (myAdditional->getNet()->getAttributeCarriers()->retrieveAdditional(myAdditional, false)) {
-            // delete additional from net
-            myAdditional->getNet()->getAttributeCarriers()->deleteAdditional(myAdditional);
+    // only continue we have undo-redo mode enabled
+    if (myAdditional->getNet()->getViewNet()->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed()) {
+        myAdditional->decRef("GNEChange_Additional");
+        if (myAdditional->unreferenced()) {
+            // make sure that additional isn't in net before removing
+            if (myAdditional->getNet()->getAttributeCarriers()->retrieveAdditional(myAdditional, false)) {
+                // delete additional from net
+                myAdditional->getNet()->getAttributeCarriers()->deleteAdditional(myAdditional);
+            }
+            delete myAdditional;
         }
-        delete myAdditional;
     }
 }
 
@@ -57,8 +61,6 @@ GNEChange_Additional::~GNEChange_Additional() {
 void
 GNEChange_Additional::undo() {
     if (myForward) {
-        // show extra information for tests
-        WRITE_DEBUG("Removing " + myAdditional->getTagStr() + " '" + myAdditional->getID() + "' in GNEChange_Additional");
         // unselect if mySelectedElement is enabled
         if (mySelectedElement) {
             myAdditional->unselectAttributeCarrier();
@@ -68,8 +70,6 @@ GNEChange_Additional::undo() {
         // restore container
         restoreHierarchicalContainers();
     } else {
-        // show extra information for tests
-        WRITE_DEBUG("Adding " + myAdditional->getTagStr() + " '" + myAdditional->getID() + "' in GNEChange_Additional");
         // select if mySelectedElement is enabled
         if (mySelectedElement) {
             myAdditional->selectAttributeCarrier();
@@ -87,8 +87,6 @@ GNEChange_Additional::undo() {
 void
 GNEChange_Additional::redo() {
     if (myForward) {
-        // show extra information for tests
-        WRITE_DEBUG("Adding " + myAdditional->getTagStr() + " '" + myAdditional->getID() + "' in GNEChange_Additional");
         // select if mySelectedElement is enabled
         if (mySelectedElement) {
             myAdditional->selectAttributeCarrier();
@@ -98,8 +96,6 @@ GNEChange_Additional::redo() {
         // add additional in parent elements
         addElementInParentsAndChildren(myAdditional);
     } else {
-        // show extra information for tests
-        WRITE_DEBUG("Removing " + myAdditional->getTagStr() + " '" + myAdditional->getID() + "' in GNEChange_Additional");
         // unselect if mySelectedElement is enabled
         if (mySelectedElement) {
             myAdditional->unselectAttributeCarrier();

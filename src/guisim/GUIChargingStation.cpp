@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -88,9 +88,9 @@ GUIChargingStation::getParameterWindow(GUIMainWindow& app, GUISUMOAbstractView&)
     ret->mkItem(TL("charging power [W]"), false, myChargingPower);
     ret->mkItem(TL("charging efficiency [#]"), false, myEfficiency);
     ret->mkItem(TL("charge in transit [true/false]"), false, myChargeInTransit);
-    ret->mkItem(TL("charge delay [s]"), false, myChargeDelay);
-    ret->mkItem(TL("charge type"), false, myChargeType);
-    ret->mkItem(TL("waiting time [s]"), false, myWaitingTime);
+    ret->mkItem(TL("charge delay [s]"), false, STEPS2TIME(myChargeDelay));
+    ret->mkItem(TL("charge type"), false, chargeTypeToString(myChargeType));
+    ret->mkItem(TL("waiting time [s]"), false, STEPS2TIME(myWaitingTime));
     // close building
     ret->closeBuilding();
     return ret;
@@ -144,14 +144,16 @@ GUIChargingStation::drawGL(const GUIVisualizationSettings& s) const {
 
     // draw details unless zoomed out to far
     if (s.drawDetail(10, exaggeration)) {
-
         // push charging power matrix
         GLHelper::pushMatrix();
         // translate and rotate
+        const double rotSign = MSGlobals::gLefthand ? 1 : -1;
+        const double lineAngle = s.getTextAngle(myFGSignRot);
         glTranslated(myFGSignPos.x(), myFGSignPos.y(), 0);
-        glRotated(-myFGSignRot, 0, 0, 1);
+        glRotated(-lineAngle, 0, 0, 1);
         // draw charging power
-        GLHelper::drawText((toString(myChargingPower) + " W").c_str(), Position(1.2, 0), .1, 1.f, s.colorSettings.chargingStationColor, 0, FONS_ALIGN_LEFT);
+        const double textOffset = s.flippedTextAngle(rotSign * myFGSignRot) ? -0.5 : -0.1;
+        GLHelper::drawText((toString(myChargingPower) + " W").c_str(), Position(1.2, textOffset), .1, 1.f, s.colorSettings.chargingStationColor, 0, FONS_ALIGN_LEFT);
         // pop charging power matrix
         GLHelper::popMatrix();
 
@@ -169,10 +171,7 @@ GUIChargingStation::drawGL(const GUIVisualizationSettings& s) const {
 
         GLHelper::setColor(s.colorSettings.chargingStationColorSign);
         GLHelper::drawFilledCircle((double) 0.9, noPoints);
-
-        if (s.drawDetail(10, exaggeration)) {
-            GLHelper::drawText("C", Position(), .1, 1.6, s.colorSettings.chargingStationColor, myFGSignRot);
-        }
+        GLHelper::drawText("C", Position(), .1, 1.6, s.colorSettings.chargingStationColor, myFGSignRot);
 
         glTranslated(5, 0, 0);
         GLHelper::popMatrix();
@@ -203,12 +202,13 @@ GUIChargingStation::initAppearance(MSLane& lane, double frompos, double topos) {
         myFGShapeRotations.push_back((double)atan2((s.x() - f.x()), (f.y() - s.y())) * (double) 180.0 / (double)M_PI);
     }
     PositionVector tmp = myFGShape;
-    tmp.move2side(1.5);
+    const double rotSign = MSGlobals::gLefthand ? -1 : 1;
+    tmp.move2side(1.5 * rotSign);
     myFGSignPos = tmp.getLineCenter();
     myFGSignRot = 0;
     if (tmp.length() != 0) {
         myFGSignRot = myFGShape.rotationDegreeAtOffset(double((myFGShape.length() / 2.)));
-        myFGSignRot -= 90;
+        myFGSignRot -= 90 * rotSign;
     }
 }
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -59,7 +59,7 @@ GNENeteditAttributes::GNENeteditAttributes(GNEFrame* frameParent) :
     myReferencePoints.push_back(std::make_pair(TL("Extended Right"), ReferencePoint::EXTENDEDRIGHT));
     myReferencePoints.push_back(std::make_pair(TL("Extended"), ReferencePoint::EXTENDED));
     // Create FXListBox for the reference points and fill it
-    myReferencePointComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, false, GUIDesignComboBoxVisibleItemsMedium,
+    myReferencePointComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, false, GUIDesignComboBoxVisibleItems,
             this, MID_GNE_SET_ATTRIBUTE, GUIDesignComboBox);
     for (const auto& referencePoint : myReferencePoints) {
         myReferencePointComboBox->appendIconItem(referencePoint.first.c_str());
@@ -401,8 +401,6 @@ GNENeteditAttributes::onCmdHelp(FXObject*, FXSelector, void*) {
     new FXHorizontalFrame(myHorizontalFrameOKButton, GUIDesignAuxiliarHorizontalFrame);
     GUIDesigns::buildFXButton(myHorizontalFrameOKButton, TL("OK"), "", TL("close"), GUIIconSubSys::getIcon(GUIIcon::ACCEPT), additionalNeteditAttributesHelpDialog, FXDialogBox::ID_ACCEPT, GUIDesignButtonOK);
     new FXHorizontalFrame(myHorizontalFrameOKButton, GUIDesignAuxiliarHorizontalFrame);
-    // Write Warning in console if we're in testing mode
-    WRITE_DEBUG("Opening GNENeteditAttributes help dialog");
     // create Dialog
     additionalNeteditAttributesHelpDialog->create();
     // show in the given position
@@ -411,8 +409,6 @@ GNENeteditAttributes::onCmdHelp(FXObject*, FXSelector, void*) {
     getApp()->refresh();
     // open as modal dialog (will block all windows until stop() or stopModal() is called)
     getApp()->runModalFor(additionalNeteditAttributesHelpDialog);
-    // Write Warning in console if we're in testing mode
-    WRITE_DEBUG("Closing GNENeteditAttributes help dialog");
     return 1;
 }
 

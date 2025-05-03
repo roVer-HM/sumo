@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -38,11 +38,6 @@
 
 
 // ===========================================================================
-// static member definitions
-// ===========================================================================
-static const int NUM_POINTS = 5;
-
-// ===========================================================================
 // method definitions
 // ===========================================================================
 
@@ -75,61 +70,41 @@ GNEConnection::getConnectionShape() const {
 
 void
 GNEConnection::updateGeometry() {
+    // check if adjust shape
     if (myShapeDeprecated && existNBEdgeConnection()) {
         // Get shape of from and to lanes
         const NBEdge::Connection& nbCon = getNBEdgeConnection();
-        // obtain lane shape from
-        PositionVector laneShapeFrom;
-        if ((int)getEdgeFrom()->getNBEdge()->getLanes().size() > nbCon.fromLane) {
-            laneShapeFrom = getEdgeFrom()->getNBEdge()->getLanes().at(nbCon.fromLane).shape;
-        } else {
-            return;
-        }
-        // obtain lane shape to
-        PositionVector laneShapeTo;
-        if ((int)nbCon.toEdge->getLanes().size() > nbCon.toLane) {
-            laneShapeTo = nbCon.toEdge->getLanes().at(nbCon.toLane).shape;
-        } else {
-            return;
-        }
+        // obtain lane shapes
+        auto laneShapeFrom = myFromLane->getLaneShape();
+        auto laneShapeTo = myToLane->getLaneShape();
         // Calculate shape of connection depending of the size of Junction shape
-        // value obtained from GNEJunction::drawgl
-        if (nbCon.customShape.size() != 0) {
+        if (nbCon.customShape.size() > 0) {
             myConnectionGeometry.updateGeometry(nbCon.customShape);
-        } else if (getEdgeFrom()->getNBEdge()->getToNode()->getShape().area() > 4) {
-            if (nbCon.shape.size() > 1) {
-                PositionVector connectionShape;
-                if (nbCon.shape.front() == nbCon.shape.back()) {
-                    laneShapeFrom.move2side(0.7);
-                    laneShapeTo.move2side(0.7);
-                    connectionShape.push_back(laneShapeFrom.back());
-                    connectionShape.push_back(laneShapeTo.front());
-                } else {
-                    connectionShape = nbCon.shape;
-                }
-                // only append via shape if it exists
-                if (nbCon.haveVia) {
-                    connectionShape.append(nbCon.viaShape);
-                }
-                myConnectionGeometry.updateGeometry(connectionShape);
+        } else if (nbCon.shape.size() > 1) {
+            PositionVector connectionShape;
+            if (nbCon.shape.front() == nbCon.shape.back()) {
+                laneShapeFrom.move2side(0.7);
+                laneShapeTo.move2side(0.7);
+                connectionShape.push_back(laneShapeFrom.back());
+                connectionShape.push_back(laneShapeTo.front());
             } else {
-                // Calculate shape so something can be drawn immediately
-                myConnectionGeometry.updateGeometry(getEdgeFrom()->getNBEdge()->getToNode()->computeSmoothShape(
-                                                        laneShapeFrom, laneShapeTo, NUM_POINTS,
-                                                        getEdgeFrom()->getNBEdge()->getTurnDestination() == nbCon.toEdge,
-                                                        (double) 5. * (double) getEdgeFrom()->getNBEdge()->getNumLanes(),
-                                                        (double) 5. * (double) nbCon.toEdge->getNumLanes()));
+                connectionShape = nbCon.shape;
             }
+            // only append via shape if it exists
+            if (nbCon.haveVia) {
+                connectionShape.append(nbCon.viaShape);
+            }
+            myConnectionGeometry.updateGeometry(connectionShape);
+        } else if (myFromLane->getLane2laneConnections().exist(myToLane)) {
+            myConnectionGeometry = myFromLane->getLane2laneConnections().getLane2laneGeometry(myToLane);
         } else {
-            myConnectionGeometry.updateGeometry({laneShapeFrom.positionAtOffset(MAX2(0.0, laneShapeFrom.length() - 1)),
-                                                 laneShapeTo.positionAtOffset(MIN2(1.0, laneShapeFrom.length()))});
+            myConnectionGeometry.clearGeometry();
         }
         // check if internal junction marker must be calculated
-        if (nbCon.haveVia && (nbCon.shape.size() != 0)) {
+        if (nbCon.haveVia && (nbCon.shape.size() > 0)) {
             // create marker for internal junction waiting position (contPos)
             const double orthoLength = 0.5;
-            Position pos = nbCon.shape.back();
-            myInternalJunctionMarker = nbCon.shape.getOrthogonal(pos, 10, true, 0.1);
+            myInternalJunctionMarker = nbCon.shape.getOrthogonal(nbCon.shape.back(), 10, true, 0.1);
             if (myInternalJunctionMarker.length() < orthoLength) {
                 myInternalJunctionMarker.extrapolate(orthoLength - myInternalJunctionMarker.length());
             }
@@ -204,10 +179,16 @@ GNEConnection::checkDrawMoveContour() const {
     // get edit modes
     const auto& editModes = myNet->getViewNet()->getEditModes();
     // check if we're in move mode
-    if (!myNet->getViewNet()->isMovingElement() && editModes.isCurrentSupermodeNetwork() &&
+    if (!myNet->getViewNet()->isCurrentlyMovingElements() && editModes.isCurrentSupermodeNetwork() &&
             (editModes.networkEditMode == NetworkEditMode::NETWORK_MOVE) && myNet->getViewNet()->checkOverLockedElement(this, mySelected)) {
-        // only move the first element
-        return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
+        // check if we're editing this network element
+        const GNENetworkElement* editedNetworkElement = myNet->getViewNet()->getEditNetworkElementShapes().getEditedNetworkElement();
+        if (editedNetworkElement) {
+            return editedNetworkElement == this;
+        } else {
+            // only move the first element
+            return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
+        }
     } else {
         return false;
     }
@@ -347,28 +328,32 @@ GNEConnection::smootShape() {
 
 GUIGLObjectPopupMenu*
 GNEConnection::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
-    GUIGLObjectPopupMenu* ret = new GUIGLObjectPopupMenu(app, parent, *this);
-    buildPopupHeader(ret, app);
-    buildCenterPopupEntry(ret);
-    buildNameCopyPopupEntry(ret);
-    // build selection and show parameters menu
-    myNet->getViewNet()->buildSelectionACPopupEntry(ret, this);
-    buildShowParamsPopupEntry(ret);
-    // build position copy entry
-    buildPositionCopyEntry(ret, app);
-    // check if we're in supermode network
-    if (myNet->getViewNet()->getEditModes().isCurrentSupermodeNetwork()) {
-        // create menu commands
-        FXMenuCommand* mcCustomShape = GUIDesigns::buildFXMenuCommand(ret, "Set custom connection shape", nullptr, &parent, MID_GNE_CONNECTION_EDIT_SHAPE);
-        GUIDesigns::buildFXMenuCommand(ret, "Smooth connection shape", nullptr, &parent, MID_GNE_CONNECTION_SMOOTH_SHAPE);
-        // check if menu commands has to be disabled
-        NetworkEditMode editMode = myNet->getViewNet()->getEditModes().networkEditMode;
-        // check if we're in the correct edit mode
-        if ((editMode == NetworkEditMode::NETWORK_CONNECT) || (editMode == NetworkEditMode::NETWORK_TLS) || (editMode == NetworkEditMode::NETWORK_CREATE_EDGE)) {
-            mcCustomShape->disable();
+    if (myShapeEdited) {
+        return getShapeEditedPopUpMenu(app, parent, getNBEdgeConnection().customShape);
+    } else {
+        GUIGLObjectPopupMenu* ret = new GUIGLObjectPopupMenu(app, parent, *this);
+        buildPopupHeader(ret, app);
+        buildCenterPopupEntry(ret);
+        buildNameCopyPopupEntry(ret);
+        // build selection and show parameters menu
+        myNet->getViewNet()->buildSelectionACPopupEntry(ret, this);
+        buildShowParamsPopupEntry(ret);
+        // build position copy entry
+        buildPositionCopyEntry(ret, app);
+        // check if we're in supermode network
+        if (myNet->getViewNet()->getEditModes().isCurrentSupermodeNetwork()) {
+            // create menu commands
+            FXMenuCommand* mcCustomShape = GUIDesigns::buildFXMenuCommand(ret, "Set custom connection shape", nullptr, &parent, MID_GNE_CONNECTION_EDIT_SHAPE);
+            GUIDesigns::buildFXMenuCommand(ret, "Smooth connection shape", nullptr, &parent, MID_GNE_CONNECTION_SMOOTH_SHAPE);
+            // check if menu commands has to be disabled
+            NetworkEditMode editMode = myNet->getViewNet()->getEditModes().networkEditMode;
+            // check if we're in the correct edit mode
+            if ((editMode == NetworkEditMode::NETWORK_CONNECT) || (editMode == NetworkEditMode::NETWORK_TLS) || (editMode == NetworkEditMode::NETWORK_CREATE_EDGE)) {
+                mcCustomShape->disable();
+            }
         }
+        return ret;
     }
-    return ret;
 }
 
 
@@ -409,8 +394,16 @@ GNEConnection::drawGL(const GUIVisualizationSettings& s) const {
             drawConnection(s, d, shapeSuperposed, connectionExaggeration);
             // draw lock icon
             GNEViewNetHelper::LockIcon::drawLockIcon(d, this, getType(), getPositionInView(), 0.1);
-            // draw dotted contour
-            myNetworkElementContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
+            // draw dotted contour depending if we're editing the custom shape
+            const GNENetworkElement* editedNetworkElement = myNet->getViewNet()->getEditNetworkElementShapes().getEditedNetworkElement();
+            if (editedNetworkElement && (editedNetworkElement == this)) {
+                // draw dotted contour geometry points
+                myNetworkElementContour.drawDottedContourGeometryPoints(s, d, this, shapeSuperposed, s.neteditSizeSettings.connectionGeometryPointRadius,
+                        connectionExaggeration, s.dottedContourSettings.segmentWidthSmall);
+            } else {
+                // draw dotted contour
+                myNetworkElementContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
+            }
         }
         // calculate contour
         calculateConnectionContour(s, d, shapeSuperposed, connectionExaggeration);
@@ -455,7 +448,8 @@ GNEConnection::getAttribute(SumoXMLAttr key) const {
         case GNE_ATTR_TO_LANEID:
             return myToLane->getID();
         case GNE_ATTR_SELECTED:
-            return toString(isAttributeCarrierSelected());
+        case GNE_ATTR_FRONTELEMENT:
+            return getCommonAttribute(key);
         case GNE_ATTR_PARENT:
             return getEdgeFrom()->getToJunction()->getID();
         default:
@@ -520,10 +514,23 @@ GNEConnection::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_STATE:
             return toString(getEdgeFrom()->getNBEdge()->getToNode()->getLinkState(
                                 getEdgeFrom()->getNBEdge(), nbCon.toEdge, nbCon.fromLane, nbCon.toLane, nbCon.mayDefinitelyPass, nbCon.tlID));
+        case SUMO_ATTR_SHAPE:
         case SUMO_ATTR_CUSTOMSHAPE:
             return toString(nbCon.customShape);
         case GNE_ATTR_PARAMETERS:
             return nbCon.getParametersStr();
+        default:
+            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+    }
+}
+
+
+PositionVector
+GNEConnection::getAttributePositionVector(SumoXMLAttr key) const {
+    switch (key) {
+        case SUMO_ATTR_SHAPE:
+        case SUMO_ATTR_CUSTOMSHAPE:
+            return getNBEdgeConnection().customShape;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
     }
@@ -549,9 +556,9 @@ GNEConnection::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoLi
         case SUMO_ATTR_CHANGE_RIGHT:
         case SUMO_ATTR_SPEED:
         case SUMO_ATTR_LENGTH:
+        case SUMO_ATTR_SHAPE:
         case SUMO_ATTR_CUSTOMSHAPE:
         case SUMO_ATTR_TYPE:
-        case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
             // no special handling
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
@@ -596,7 +603,8 @@ GNEConnection::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoLi
         case SUMO_ATTR_STATE:
             throw InvalidArgument("Attribute of '" + toString(key) + "' cannot be modified");
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value, undoList);
+            break;
     }
 }
 
@@ -690,9 +698,9 @@ GNEConnection::drawConnection(const GUIVisualizationSettings& s, const GUIVisual
     GLHelper::pushMatrix();
     // translate to front
     if (myNet->getViewNet()->getEditNetworkElementShapes().getEditedNetworkElement() == this) {
-        myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_CONNECTION, 1);
+        drawInLayer(GLO_CONNECTION, 1);
     } else {
-        myNet->getViewNet()->drawTranslateFrontAttributeCarrier(this, GLO_CONNECTION, 0);
+        drawInLayer(GLO_CONNECTION, 0);
     }
     // Set color
     GLHelper::setColor(connectionColor);
@@ -764,13 +772,19 @@ void
 GNEConnection::calculateConnectionContour(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
         const PositionVector& shape, const double exaggeration) const {
     // first check if junction parent was inserted with full boundary
-    if (!gViewObjectsHandler.checkBoundaryParentElement(this, myFromLane->getParentEdge()->getToJunction())) {
-        // calculate connection shape contour
-        myNetworkElementContour.calculateContourExtrudedShape(s, d, this, shape, s.connectionSettings.connectionWidth, exaggeration, true, true, 0);
+    if (!gViewObjectsHandler.checkBoundaryParentObject(this, getType(), myFromLane->getParentEdge()->getToJunction())) {
         // calculate geometry points contour if we're editing shape
         if (myShapeEdited) {
-            myNetworkElementContour.calculateContourAllGeometryPoints(s, d, this, shape, s.neteditSizeSettings.connectionGeometryPointRadius,
+            myNetworkElementContour.calculateContourAllGeometryPoints(s, d, this, shape, getType(), s.neteditSizeSettings.connectionGeometryPointRadius,
                     exaggeration, true);
+        } else {
+            // in move mode, add to selected object if this is the edited element
+            const auto& editModes = myNet->getViewNet()->getEditModes();
+            const bool addToSelectedObjects = (editModes.isCurrentSupermodeNetwork() && editModes.networkEditMode == NetworkEditMode::NETWORK_MOVE) ?
+                                              (myNet->getViewNet()->getEditNetworkElementShapes().getEditedNetworkElement() == this) : true;
+            // calculate connection shape contour
+            myNetworkElementContour.calculateContourExtrudedShape(s, d, this, shape, getType(), s.connectionSettings.connectionWidth, exaggeration,
+                    true, true, 0, nullptr, myFromLane->getParentEdge()->getToJunction(), addToSelectedObjects);
         }
     }
 }
@@ -825,20 +839,18 @@ GNEConnection::isValid(SumoXMLAttr key, const std::string& value) {
             }
         case SUMO_ATTR_LENGTH:
             return canParse<double>(value) && (parse<double>(value) >= -1);
-        case SUMO_ATTR_CUSTOMSHAPE: {
+        case SUMO_ATTR_SHAPE:
+        case SUMO_ATTR_CUSTOMSHAPE:
             // empty custom shapes are allowed
             return canParse<PositionVector>(value);
-        }
         case SUMO_ATTR_STATE:
             return false;
         case SUMO_ATTR_DIR:
             return false;
-        case GNE_ATTR_SELECTED:
-            return canParse<bool>(value);
         case GNE_ATTR_PARAMETERS:
             return Parameterised::areParametersValid(value);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return isCommonValid(key, value);
     }
 }
 
@@ -896,6 +908,10 @@ GNEConnection::getACParametersMap() const {
 
 void
 GNEConnection::setAttribute(SumoXMLAttr key, const std::string& value) {
+    if (!existNBEdgeConnection()) {
+        WRITE_WARNINGF("Cannot restore attribute '%=%' for computed connection from lane '%'", toString(key), value, myFromLane->getID());
+        return;
+    }
     NBEdge::Connection& nbCon = getNBEdgeConnection();
     switch (key) {
         case SUMO_ATTR_PASS:
@@ -905,7 +921,11 @@ GNEConnection::setAttribute(SumoXMLAttr key, const std::string& value) {
             nbCon.indirectLeft = parse<bool>(value);
             break;
         case SUMO_ATTR_KEEP_CLEAR:
-            nbCon.keepClear = parse<bool>(value) ? KEEPCLEAR_TRUE : KEEPCLEAR_FALSE;
+            if (value == toString(KEEPCLEAR_UNSPECIFIED)) {
+                nbCon.keepClear = KEEPCLEAR_UNSPECIFIED;
+            } else {
+                nbCon.keepClear = parse<bool>(value) ? KEEPCLEAR_TRUE : KEEPCLEAR_FALSE;
+            }
             break;
         case SUMO_ATTR_UNCONTROLLED:
             nbCon.uncontrolled = parse<bool>(value);
@@ -926,56 +946,45 @@ GNEConnection::setAttribute(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_LENGTH:
             nbCon.customLength = parse<double>(value);
             break;
-        case SUMO_ATTR_ALLOW: {
+        case SUMO_ATTR_ALLOW:
             nbCon.permissions = parseVehicleClasses(value);
             break;
-        }
-        case SUMO_ATTR_DISALLOW: {
+        case SUMO_ATTR_DISALLOW:
             nbCon.permissions = invertPermissions(parseVehicleClasses(value));
             break;
-        }
-        case SUMO_ATTR_CHANGE_LEFT: {
+        case SUMO_ATTR_CHANGE_LEFT:
             nbCon.changeLeft = value == "" ? SVC_UNSPECIFIED : parseVehicleClasses(value);
             break;
-        }
-        case SUMO_ATTR_CHANGE_RIGHT: {
+        case SUMO_ATTR_CHANGE_RIGHT:
             nbCon.changeRight = value == "" ? SVC_UNSPECIFIED : parseVehicleClasses(value);
             break;
-        }
         case SUMO_ATTR_STATE:
             throw InvalidArgument("Attribute of '" + toString(key) + "' cannot be modified");
         case SUMO_ATTR_DIR:
             throw InvalidArgument("Attribute of '" + toString(key) + "' cannot be modified");
-        case SUMO_ATTR_CUSTOMSHAPE: {
+        case SUMO_ATTR_SHAPE:
+        case SUMO_ATTR_CUSTOMSHAPE:
             nbCon.customShape = parse<PositionVector>(value);
             // update centering boundary
             updateCenteringBoundary(false);
             break;
-        }
-        case SUMO_ATTR_TYPE: {
+        case SUMO_ATTR_TYPE:
             nbCon.edgeType = value;
-            break;
-        }
-        case GNE_ATTR_SELECTED:
-            if (parse<bool>(value)) {
-                selectAttributeCarrier();
-            } else {
-                unselectAttributeCarrier();
-            }
             break;
         case GNE_ATTR_PARAMETERS:
             nbCon.setParametersStr(value);
             break;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            setCommonAttribute(key, value);
+            break;
     }
     // Update Geometry after setting a new attribute (but avoided for certain attributes)
     if ((key != SUMO_ATTR_ID) && (key != GNE_ATTR_PARAMETERS) && (key != GNE_ATTR_SELECTED)) {
         markConnectionGeometryDeprecated();
         updateGeometry();
     }
-    // invalidate path calculator
-    myNet->getPathManager()->getPathCalculator()->invalidatePathCalculator();
+    // invalidate demand path calculator
+    myNet->getDemandPathManager()->getPathCalculator()->invalidatePathCalculator();
 }
 
 

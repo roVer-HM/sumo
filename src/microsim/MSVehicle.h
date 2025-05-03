@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -182,9 +182,6 @@ public:
         /// If the current (ongoing) waiting interval has begun at time t - dt (where t is the current time)
         /// then waitingIntervalList[0]->first = 0., waitingIntervalList[0]->second = dt
         std::deque<std::pair<SUMOTime, SUMOTime> > myWaitingIntervals;
-
-        /// append an amount of dt millisecs to the stored waiting times
-        void appendWaitingTime(SUMOTime dt);
     };
 
 
@@ -677,6 +674,10 @@ public:
         return myWaitingTimeCollector.cumulatedWaitingTime(MSGlobals::gWaitingTimeMemory);
     }
 
+    /// @brief getWaitingTime, but taking into account having stopped for a stop-link
+    SUMOTime getWaitingTimeFor(const MSLink* link) const;
+
+
     /** @brief Returns the SUMOTime spent driving since startup (speed was larger than 0.1m/s)
      *
      * The value is reset if the vehicle halts (moves slower than 0.1m/s)
@@ -771,19 +772,6 @@ public:
     bool congested() const;
 
 
-    /** @brief "Activates" all current move reminder
-     *
-     * For all move reminder stored in "myMoveReminders", their method
-     *  "MSMoveReminder::notifyEnter" is called.
-     *
-     * @param[in] reason The reason for changing the reminders' states
-     * @param[in] enteredLane The lane, which is entered (if applicable)
-     * @see MSMoveReminder
-     * @see MSMoveReminder::notifyEnter
-     * @see MSMoveReminder::Notification
-     */
-    void activateReminders(const MSMoveReminder::Notification reason, const MSLane* enteredLane = 0);
-
     /** @brief Update when the vehicle enters a new lane in the move step.
      *
      * @param[in] enteredLane The lane the vehicle enters
@@ -820,6 +808,10 @@ public:
 
     /** @brief Update of members if vehicle leaves a new lane in the lane change step or at arrival. */
     void leaveLane(const MSMoveReminder::Notification reason, const MSLane* approachedLane = 0);
+
+    /** @brief Update of reminders if vehicle back leaves a lane during (during
+     * forward movement */
+    void leaveLaneBack(const MSMoveReminder::Notification reason, const MSLane* leftLane);
 
     /** @brief Check whether the drive items (myLFLinkLanes) are up to date,
      *         and update them if required.
@@ -1024,6 +1016,10 @@ public:
      * collision. A negative value indicates that the vehicle is not stopping due to a collision (or at all)
      */
     SUMOTime collisionStopTime() const;
+
+    /** @brief Returns how long the vehicle has been stopped already due to lack of energy.
+     */
+    bool brokeDown() const;
 
     /** @brief Returns the information whether the vehicle is fully controlled via TraCI
      * @return Whether the vehicle is remote-controlled
@@ -1411,7 +1407,7 @@ public:
             static std::map<const MSVehicle*, GapControlState*> refVehMap;
 
         private:
-            static GapControlVehStateListener vehStateListener;
+            static GapControlVehStateListener* myVehStateListener;
         };
 
 
@@ -1422,8 +1418,6 @@ public:
         /// @brief Destructor
         ~Influencer();
 
-        /// @brief Static initalization
-        static void init();
         /// @brief Static cleanup
         static void cleanup();
 
@@ -1598,6 +1592,11 @@ public:
         bool ignoreOverlap() const {
             return myTraciLaneChangePriority == LCP_ALWAYS;
         }
+
+    private:
+
+        /// @brief Static initalization
+        void init();
 
     private:
         /// @brief The velocity time line to apply
@@ -1940,6 +1939,7 @@ protected:
 
     /// @brief duration of driving (speed > SUMO_const_haltingSpeed) after the last halting episode
     SUMOTime myTimeSinceStartup;
+    const MSLink* myHaveStoppedFor;
 
 protected:
 
@@ -1992,6 +1992,11 @@ protected:
                 accelV = MIN2(accelV, v);
             }
         }
+
+        inline void adaptStopSpeed(const double v) {
+            myVLinkWait = MIN2(myVLinkWait, v);
+        }
+
         inline double getLeaveSpeed() const {
             return accelV < 0 ? myVLinkPass : accelV;
         }
@@ -2066,6 +2071,10 @@ public:
      */
     const MSLane* getPreviousLane(const MSLane* current, int& furtherIndex) const;
 
+    /// @brief checks for link leaders on the given link
+    void checkLinkLeader(const MSLink* link, const MSLane* lane, double seen,
+                         DriveProcessItem* const lastLink, double& v, double& vLinkPass, double& vLinkWait, bool& setRequest,
+                         bool isShadowLink = false) const;
 protected:
 
     /* @brief adapt safe velocity in accordance to multiple vehicles ahead:
@@ -2087,10 +2096,6 @@ protected:
                                DriveProcessItem* const lastLink,
                                double& v, double& vLinkPass) const;
 
-    /// @brief checks for link leaders on the given link
-    void checkLinkLeader(const MSLink* link, const MSLane* lane, double seen,
-                         DriveProcessItem* const lastLink, double& v, double& vLinkPass, double& vLinkWait, bool& setRequest,
-                         bool isShadowLink = false) const;
 
     /// @brief checks for link leaders of the current link as well as the parallel link (if there is one)
     void checkLinkLeaderCurrentAndParallel(const MSLink* link, const MSLane* lane, double seen,
@@ -2104,7 +2109,7 @@ protected:
      *         acceleration a within the next time step is then a = (vNext - vCurrent)/TS )
      *  @param[in] vNext speed in the next time step
      */
-    void updateState(double vNext);
+    void updateState(double vNext, bool parking = false);
 
 
     /// @brief decide whether the given link must be kept clear
@@ -2135,7 +2140,7 @@ protected:
     void cleanupFurtherLanes();
 
     /// @brief comparison between different continuations from the same lane
-    static bool betterContinuation(const LaneQ* bestConnectedNext, const LaneQ& m);
+    bool betterContinuation(const LaneQ* bestConnectedNext, const LaneQ& m) const;
 
 private:
     /// @brief The per vehicle variables of the car following model

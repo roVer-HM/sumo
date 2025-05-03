@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,16 +18,9 @@
 // Abstract Base class for tag properties used in GNEAttributeCarrier
 /****************************************************************************/
 
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-
-#include "GNEAttributeProperties.h"
-#include "GNETagProperties.h"
-
 #include "GNEAttributeCarrier.h"
-
+#include "GNETagProperties.h"
+#include "GNEAttributeProperties.h"
 
 // ===========================================================================
 // method definitions
@@ -56,7 +49,7 @@ GNEAttributeProperties::GNEAttributeProperties(const SumoXMLAttr attribute, cons
         throw FormatException("AttributeProperty for '" + toString(attribute) + "' doesn't support default values");
     }
     // Attributes cannot be flowdefinition and enabilitablet at the same time
-    if ((attributeProperty & FLOWDEFINITION) && (attributeProperty & ACTIVATABLE)) {
+    if ((attributeProperty & FLOW) && (attributeProperty & ACTIVATABLE)) {
         throw FormatException("Attribute '" + toString(attribute) + "' cannot be flowdefinition and activatable at the same time");
     }
 }
@@ -111,6 +104,10 @@ GNEAttributeProperties::checkAttributeIntegrity() const {
         } else if ((myMaximumRange - myMinimumRange) <= 0) {
             throw FormatException("invalid range");
         }
+    }
+    // check that unique attributes aren't copyables
+    if (isUnique() && isCopyable()) {
+        throw FormatException("Unique attributes aren't copyables");
     }
 #endif // DEBUG
 }
@@ -462,14 +459,37 @@ GNEAttributeProperties::isActivatable() const {
 
 
 bool
-GNEAttributeProperties::isFlowDefinition() const {
-    return (myAttributeProperty & FLOWDEFINITION) != 0;
+GNEAttributeProperties::isFlow() const {
+    return (myAttributeProperty & FLOW) != 0;
 }
 
 
 bool
 GNEAttributeProperties::hasAutomaticID() const {
     return (myAttributeProperty & AUTOMATICID) != 0;
+}
+
+
+bool
+GNEAttributeProperties::isCopyable() const {
+    return (myAttributeProperty & COPYABLE) != 0;
+}
+
+
+bool
+GNEAttributeProperties::isAlwaysEnabled() const {
+    return (myAttributeProperty & ALWAYSENABLED) != 0;
+}
+
+
+bool
+GNEAttributeProperties::isGEO() const {
+    return (myAttributeProperty & GEO) != 0;
+}
+
+bool
+GNEAttributeProperties::isNetedit() const {
+    return (myAttributeProperty & NETEDIT) != 0;
 }
 
 /****************************************************************************/

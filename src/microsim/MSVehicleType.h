@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -204,7 +204,7 @@ public:
      * @return The mass of this vehicle type
      */
     inline double getMass() const {
-        return myParameter.mass;
+        return myEnergyParams.getDouble(SUMO_ATTR_MASS);
     }
 
 
@@ -333,6 +333,13 @@ public:
      */
     SUMOTime getBoardingDuration(const bool isPerson) const {
         return isPerson ? myParameter.boardingDuration : myParameter.loadingDuration;
+    }
+
+    /** @brief Get this person type's factor for loading/boarding duration
+     * @return The multiplier for the time a container / person needs to get loaded
+     */
+    double getBoardingFactor() const {
+        return myParameter.boardingFactor;
     }
 
 

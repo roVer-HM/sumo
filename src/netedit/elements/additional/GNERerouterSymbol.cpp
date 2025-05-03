@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -86,7 +86,8 @@ GNERerouterSymbol::checkDrawMoveContour() const {
     // get edit modes
     const auto& editModes = myNet->getViewNet()->getEditModes();
     // check if we're in move mode
-    if (!myNet->getViewNet()->isMovingElement() && editModes.isCurrentSupermodeNetwork() &&
+    if (!myNet->getViewNet()->isCurrentlyMovingElements() && editModes.isCurrentSupermodeNetwork() &&
+            !myNet->getViewNet()->getEditNetworkElementShapes().getEditedNetworkElement() &&
             (editModes.networkEditMode == NetworkEditMode::NETWORK_MOVE) && myNet->getViewNet()->checkOverLockedElement(this, mySelected)) {
         // only move the first element
         return myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this;
@@ -154,7 +155,7 @@ GNERerouterSymbol::drawGL(const GUIVisualizationSettings& s) const {
         // get detail level
         const auto d = s.getDetailLevel(rerouteExaggeration);
         // draw geometry only if we'rent in drawForObjectUnderCursor mode
-        if (!s.drawForViewObjectsHandler) {
+        if (s.checkDrawAdditional(d, isAttributeCarrierSelected())) {
             // draw rerouter symbol
             drawRerouterSymbol(s, d, rerouteExaggeration);
             // draw parent and child lines
@@ -164,8 +165,8 @@ GNERerouterSymbol::drawGL(const GUIVisualizationSettings& s) const {
         }
         // calculate contour rectangle shape
         for (const auto& symbolGeometry : mySymbolGeometries) {
-            myAdditionalContour.calculateContourRectangleShape(s, d, this, symbolGeometry.getShape().front(), 1, 3, 0, 3,
-                    symbolGeometry.getShapeRotations().front() + 90, rerouteExaggeration);
+            myAdditionalContour.calculateContourRectangleShape(s, d, this, symbolGeometry.getShape().front(), 1, 3, getType(), 0, 3,
+                    symbolGeometry.getShapeRotations().front() + 90, rerouteExaggeration, getParentEdges().front());
         }
     }
 }
@@ -178,7 +179,7 @@ GNERerouterSymbol::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_EDGE:
             return getParentEdges().front()->getID();
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttribute(key);
     }
 }
 
@@ -228,7 +229,7 @@ GNERerouterSymbol::drawRerouterSymbol(const GUIVisualizationSettings& s, const G
     // push layer matrix
     GLHelper::pushMatrix();
     // translate to front
-    myNet->getViewNet()->drawTranslateFrontAttributeCarrier(getParentAdditionals().front(), GLO_REROUTER);
+    getParentAdditionals().front()->drawInLayer(GLO_REROUTER);
     // set color
     RGBColor color;
     if (getParentAdditionals().front()->isAttributeCarrierSelected()) {

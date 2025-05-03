@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2024 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -24,6 +24,9 @@
 #include <config.h>
 
 #include <netedit/GNENet.h>
+#include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <netedit/elements/data/GNEDataInterval.h>
 
 #include "GNEChange_GenericData.h"
@@ -47,17 +50,17 @@ GNEChange_GenericData::GNEChange_GenericData(GNEGenericData* genericData, bool f
 
 
 GNEChange_GenericData::~GNEChange_GenericData() {
-    assert(myGenericData);
-    myGenericData->decRef("GNEChange_GenericData");
-    if (myGenericData->unreferenced() &&
-            myGenericData->getNet()->getAttributeCarriers()->retrieveDataInterval(myDataIntervalParent, false) &&
-            myGenericData->getNet()->getAttributeCarriers()->retrieveGenericData(myGenericData, false)) {
-        // show extra information for tests
-        WRITE_DEBUG("Deleting unreferenced " + myGenericData->getTagStr());
-        // delete generic data from interval parent
-        myDataIntervalParent->removeGenericDataChild(myGenericData);
-        // delete generic data
-        delete myGenericData;
+    // only continue we have undo-redo mode enabled
+    if (myGenericData->getNet()->getViewNet()->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed()) {
+        myGenericData->decRef("GNEChange_GenericData");
+        if (myGenericData->unreferenced() &&
+                myGenericData->getNet()->getAttributeCarriers()->retrieveDataInterval(myDataIntervalParent, false) &&
+                myGenericData->getNet()->getAttributeCarriers()->retrieveGenericData(myGenericData, false)) {
+            // delete generic data from interval parent
+            myDataIntervalParent->removeGenericDataChild(myGenericData);
+            // delete generic data
+            delete myGenericData;
+        }
     }
 }
 
@@ -65,8 +68,6 @@ GNEChange_GenericData::~GNEChange_GenericData() {
 void
 GNEChange_GenericData::undo() {
     if (myForward) {
-        // show extra information for tests
-        WRITE_DEBUG("Removing " + myGenericData->getTagStr() + " '" + myGenericData->getID() + "' in GNEChange_GenericData");
         // unselect if mySelectedElement is enabled
         if (mySelectedElement) {
             myGenericData->unselectAttributeCarrier();
@@ -76,8 +77,6 @@ GNEChange_GenericData::undo() {
         // restore container
         restoreHierarchicalContainers();
     } else {
-        // show extra information for tests
-        WRITE_DEBUG("Adding " + myGenericData->getTagStr() + " '" + myGenericData->getID() + "' in GNEChange_GenericData");
         // select if mySelectedElement is enabled
         if (mySelectedElement) {
             myGenericData->selectAttributeCarrier();
@@ -95,8 +94,6 @@ GNEChange_GenericData::undo() {
 void
 GNEChange_GenericData::redo() {
     if (myForward) {
-        // show extra information for tests
-        WRITE_DEBUG("Adding " + myGenericData->getTagStr() + " '" + myGenericData->getID() + "' in GNEChange_GenericData");
         // select if mySelectedElement is enabled
         if (mySelectedElement) {
             myGenericData->selectAttributeCarrier();
@@ -106,8 +103,6 @@ GNEChange_GenericData::redo() {
         // add genericData in parents and children
         addElementInParentsAndChildren(myGenericData);
     } else {
-        // show extra information for tests
-        WRITE_DEBUG("Removing " + myGenericData->getTagStr() + " '" + myGenericData->getID() + "' in GNEChange_GenericData");
         // unselect if mySelectedElement is enabled
         if (mySelectedElement) {
             myGenericData->unselectAttributeCarrier();
