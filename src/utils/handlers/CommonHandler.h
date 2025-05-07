@@ -37,8 +37,10 @@
 class CommonHandler {
 
 public:
-    /// @brief Constructor
-    CommonHandler();
+    /**@brief Constructor
+     * @param[in] filename Name of the parsed file
+     */
+    CommonHandler(const std::string& filename);
 
     /// @brief Destructor
     virtual ~CommonHandler();
@@ -47,6 +49,9 @@ public:
     bool isErrorCreatingElement() const;
 
 protected:
+    /// @brief filename
+    const std::string myFilename;
+
     /// @brief common XML Structure
     CommonXMLStructure myCommonXMLStructure;
 
@@ -69,7 +74,7 @@ protected:
     bool checkListOfVehicleTypes(const SumoXMLTag tag, const std::string& id, const std::vector<std::string>& vTypeIDs);
 
     /// @brief check if the given object is within a distribution (VType or routes)
-    bool checkDistribution(CommonXMLStructure::SumoBaseObject* obj);
+    bool checkWithinDistribution(CommonXMLStructure::SumoBaseObject* obj);
 
     /// @brief check vehicle parents
     bool checkVehicleParents(CommonXMLStructure::SumoBaseObject* obj);
@@ -124,9 +129,6 @@ protected:
     /// @brief write error "invalid list of lanes"
     bool writeErrorInvalidLanes(const SumoXMLTag tag, const std::string& id);
 
-    /// @brief write error "invalid distribution"
-    bool writeErrorInvalidDistribution(const SumoXMLTag tag, const std::string& id);
-
     /// @brief write error "invalid parent element" giving ids of current and parent element
     bool writeErrorInvalidParent(const SumoXMLTag tag, const std::string& id, const SumoXMLTag parentTag, const std::string& parentID);
 
@@ -137,6 +139,9 @@ protected:
     bool writeErrorInvalidParent(const SumoXMLTag tag, const SumoXMLTag parentTag);
 
 private:
+    /// @brief invalidate default onstructor
+    CommonHandler() = delete;
+
     /// @brief invalidate copy constructor
     CommonHandler(const CommonHandler& s) = delete;
 

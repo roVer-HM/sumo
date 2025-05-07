@@ -6,6 +6,10 @@ if (${CMAKE_VERSION} VERSION_GREATER 3.14.0)
     # pass module name to swig compiler
     cmake_policy(SET CMP0086 NEW)
 endif()
+if (${CMAKE_VERSION} VERSION_GREATER 3.21.0)
+    # use library name conventions for C#
+    cmake_policy(SET CMP0122 OLD)
+endif ()
 set(libsumostatic_STAT_SRCS
     Edge.cpp
     Edge.h
@@ -106,11 +110,11 @@ else ()
 endif()
 target_link_libraries(libsumocpp PRIVATE ${sumo_link_libraries})
 
-if(SWIG_FOUND)
+if (SWIG_FOUND)
     include(${SWIG_USE_FILE})
     set_source_files_properties(libsumo.i PROPERTIES CPLUSPLUS ON)
     file(GLOB LIBSUMO_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-    if(ENABLE_JAVA_BINDINGS)
+    if (ENABLE_JAVA_BINDINGS)
         find_package(Java)
         find_package(JNI)
         if(JAVA_FOUND AND JNI_FOUND)
@@ -152,8 +156,8 @@ if(SWIG_FOUND)
         endif()
     endif()
 
-    if(ENABLE_CS_BINDINGS)
-        set(CMAKE_SWIG_FLAGS "") # reset from Java
+    if (ENABLE_CS_BINDINGS)
+        set(CMAKE_SWIG_FLAGS -namespace Eclipse.Sumo.Libsumo)
         if (FOX_FOUND)
             set(CMAKE_SWIG_FLAGS ${CMAKE_SWIG_FLAGS} -DHAVE_LIBSUMOGUI)
         endif()
@@ -171,6 +175,9 @@ if(SWIG_FOUND)
             swig_link_libraries(libsumocs ${libsumo_link_library} ${sumolibs})
         endif()
         swig_link_libraries(libsumocs ${sumo_link_libraries})
+        ADD_CUSTOM_COMMAND(TARGET libsumocs POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E tar "cf" "${CMAKE_SOURCE_DIR}/bin/libsumocs-sources.zip" --format=zip "cs"
+        )
         set_property(TARGET libsumocs PROPERTY FOLDER "libsumo")
         install(TARGETS libsumocs DESTINATION bin LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()

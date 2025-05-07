@@ -20,13 +20,8 @@
 #pragma once
 #include <config.h>
 
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-#include <config.h>
-
 #include <netedit/elements/GNEAttributeCarrier.h>
+#include <netedit/elements/GNEHierarchicalElement.h>
 #include <utils/common/Parameterised.h>
 
 // ===========================================================================
@@ -40,7 +35,7 @@ class GNEDataInterval;
 // class definitions
 // ===========================================================================
 
-class GNEDataSet : public GNEAttributeCarrier, public Parameterised {
+class GNEDataSet : public GNEAttributeCarrier, public GNEHierarchicalElement, public Parameterised {
 
 public:
     /// @brief attribute colors
@@ -78,8 +73,10 @@ public:
 
     /**@brief Constructor
      * @param[in] net pointer to GNEViewNet of this data element element belongs
+     * @param[in] dataSetID data set ID
+     * @param[in] filename file in which this dataSet is stored
      */
-    GNEDataSet(GNENet* net, const std::string dataSetID);
+    GNEDataSet(const std::string& dataSetID, GNENet* net, const std::string& filename);
 
     /// @brief Destructor
     ~GNEDataSet();
@@ -128,6 +125,9 @@ public:
 
     /// @brief check if draw delete contour (pink/white)
     bool checkDrawDeleteContour() const;
+
+    /// @brief check if draw delete contour small (pink/white)
+    bool checkDrawDeleteContourSmall() const;
 
     /// @brief check if draw select contour (blue)
     bool checkDrawSelectContour() const;

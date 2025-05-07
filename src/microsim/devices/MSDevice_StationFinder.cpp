@@ -42,6 +42,7 @@
 
 //#define DEBUG_STATIONFINDER_RESCUE
 //#define DEBUG_STATIONFINDER_REROUTE
+#define DEBUG_COND (myHolder.isSelected())
 
 
 // ===========================================================================
@@ -169,7 +170,7 @@ myLastOpportunisticSearch(-1) {
     }
     myReplacePlannedStop = MAX2(0., holder.getFloatParam("device.stationfinder.replacePlannedStop"));
     myDistanceToOriginalStop = holder.getFloatParam("device.stationfinder.maxDistanceToReplacedStop");
-    myUpdateSoC = -1.; // MAX2(0., mySearchSoC - DEFAULT_SOC_INTERVAL);
+    myUpdateSoC = 2; // check once at the beginning
     myCheckEnergyForRoute = holder.getBoolParam("device.stationfinder.checkEnergyForRoute");
 }
 
@@ -193,7 +194,7 @@ MSDevice_StationFinder::notifyMove(SUMOTrafficObject& veh, double /*oldPos*/, do
         mySearchState = SEARCHSTATE_CHARGING;
         return true;
     } else if (mySearchState == SEARCHSTATE_CHARGING) {
-        if (myBattery->getChargingStationID() == "") {
+        if (myBattery->getChargingStation() == nullptr) {
             mySearchState = SEARCHSTATE_NONE;
         } else {
             return true;
@@ -282,13 +283,16 @@ MSDevice_StationFinder::notifyMove(SUMOTrafficObject& veh, double /*oldPos*/, do
             }
         }
     } else if (myChargingStation == nullptr &&
-               (myUpdateSoC < 0. || myUpdateSoC - currentSoC > DEFAULT_SOC_INTERVAL || (mySearchState == SEARCHSTATE_UNSUCCESSFUL &&
+               (currentSoC < myUpdateSoC || (mySearchState == SEARCHSTATE_UNSUCCESSFUL &&
                        now - myLastSearch >= myRepeatInterval && !myHolder.isStopped()))) {
         // check if a charging stop is already planned without the device, otherwise reroute inside this device
         if (!alreadyPlannedCharging() && now > myHolder.getDeparture()) {
             rerouteToChargingStation();
         }
-        myUpdateSoC = currentSoC;
+        myUpdateSoC = currentSoC - MAX2(0.1 * currentSoC, 0.01);
+#ifdef DEBUG_STATIONFINDER_REROUTE
+        std::cout << SIMTIME << " " << myHolder.getID() << " currentSoC=" << currentSoC << " nextUpdateSoC=" << myUpdateSoC << "\n";
+#endif
     }
     myLastChargeCheck = SIMSTEP;
     return true;
@@ -423,7 +427,7 @@ MSDevice_StationFinder::findChargingStation(SUMOAbstractRouter<MSEdge, SUMOVehic
     std::vector<double> probs(candidates.size(), 1.);
     bool newDestination;
     myCheckValidity = constrainTT;
-    MSStoppingPlace* bestCandidate = reroute(candidates, probs, myHolder, newDestination, newRoute, scores);
+    MSStoppingPlace* bestCandidate = rerouteStoppingPlace(candidates, probs, myHolder, newDestination, newRoute, scores);
     myCheckValidity = true;
     minStation = dynamic_cast<MSChargingStation*>(bestCandidate);
     return minStation;
@@ -432,7 +436,11 @@ MSDevice_StationFinder::findChargingStation(SUMOAbstractRouter<MSEdge, SUMOVehic
 
 bool
 MSDevice_StationFinder::rerouteToChargingStation(bool replace) {
-    double expectedConsumption = MIN2(estimateConsumption() * myReserveFactor, myBattery->getMaximumBatteryCapacity() * myTargetSoC);
+    double expectedConsumption = (myCheckEnergyForRoute) ? MIN2(estimateConsumption() * myReserveFactor, myBattery->getMaximumBatteryCapacity() * myTargetSoC) :
+                                 myBattery->getMaximumBatteryCapacity() * MAX2(myTargetSoC - myBattery->getActualBatteryCapacity() / myBattery->getMaximumBatteryCapacity(), 0.);
+#ifdef DEBUG_STATIONFINDER_REROUTE
+    std::cout << SIMTIME << " " << myHolder.getID() << " expectedConsumption=" << expectedConsumption << " reserve=" << (myEmptySoC * myBattery->getMaximumBatteryCapacity()) << " chargeLevel=" << myBattery->getActualBatteryCapacity() << "\n";
+#endif
     if (!myCheckEnergyForRoute || myBattery->getActualBatteryCapacity() < expectedConsumption + myEmptySoC * myBattery->getMaximumBatteryCapacity()) {
         myLastSearch = SIMSTEP;
         MSVehicleRouter& router = MSRoutingEngine::getRouterTT(myHolder.getRNGIndex(), myHolder.getVClass());

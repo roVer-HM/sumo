@@ -18,14 +18,14 @@
 // Dialog used to fix demand elements during saving
 /****************************************************************************/
 
-#include <utils/gui/windows/GUIAppEnum.h>
-#include <utils/gui/div/GUIDesigns.h>
 #include <netedit/GNENet.h>
-#include <netedit/GNEViewNet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
+#include <netedit/GNEViewNet.h>
+#include <utils/gui/div/GUIDesigns.h>
+#include <utils/gui/windows/GUIAppEnum.h>
 
 #include "GNEFixDemandElements.h"
-
 
 // ===========================================================================
 // FOX callback mapping
@@ -73,11 +73,11 @@ GNEFixDemandElements::GNEFixDemandElements(GNEViewNet* viewNet, const std::vecto
     std::vector<GNEDemandElement*> invalidRoutes, invalidVehicles, invalidStops, invalidPlans;
     // fill groups
     for (const auto& invalidDemandElement : invalidDemandElements) {
-        if (invalidDemandElement->getTagProperty().isRoute()) {
+        if (invalidDemandElement->getTagProperty()->isRoute()) {
             invalidRoutes.push_back(invalidDemandElement);
-        } else if (invalidDemandElement->getTagProperty().isVehicle()) {
+        } else if (invalidDemandElement->getTagProperty()->isVehicle()) {
             invalidVehicles.push_back(invalidDemandElement);
-        } else if (invalidDemandElement->getTagProperty().isVehicleStop()) {
+        } else if (invalidDemandElement->getTagProperty()->isVehicleStop()) {
             invalidStops.push_back(invalidDemandElement);
         } else {
             invalidPlans.push_back(invalidDemandElement);
@@ -198,8 +198,8 @@ GNEFixDemandElements::FixOptions::setInvalidElements(const std::vector<GNEDemand
 
 bool
 GNEFixDemandElements::FixOptions::saveContents() const {
-    const FXString file = MFXUtils::getFilename2Write(myTable,
-                          TL("Save list of conflicted items"), ".txt",
+    const FXString file = MFXUtils::getFilename2Write(myTable, TL("Save list of conflicted items"),
+                          SUMOXMLDefinitions::TXTFileExtensions.getMultilineString().c_str(),
                           GUIIconSubSys::getIcon(GUIIcon::SAVE), gCurrentFolder);
     if (file == "") {
         return false;
@@ -274,7 +274,7 @@ GNEFixDemandElements::FixRouteOptions::fixElements(bool& abortSaving) {
             // iterate over invalid routes to delete it
             for (const auto& invalidRoute : myInvalidElements) {
                 // special case for embedded routes
-                if (invalidRoute->getTagProperty().getTag() == GNE_TAG_ROUTE_EMBEDDED) {
+                if (invalidRoute->getTagProperty()->getTag() == GNE_TAG_ROUTE_EMBEDDED) {
                     myViewNet->getNet()->deleteDemandElement(invalidRoute->getParentDemandElements().front(), myViewNet->getUndoList());
                 } else {
                     myViewNet->getNet()->deleteDemandElement(invalidRoute, myViewNet->getUndoList());

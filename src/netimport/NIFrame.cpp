@@ -204,7 +204,7 @@ NIFrame::fillOptions(OptionsCont& oc, bool forNetedit) {
     oc.addDescription("osm.sidewalks", "Formats", TL("Import sidewalks"));
 
     oc.doRegister("osm.oneway-reverse-sidewalk", new Option_Bool(false));
-    oc.addDescription("osm.oneway-reverse-sidewalk", "Formats", TL("Default to building two sidewals on oneway streets (may affect divided roads)"));
+    oc.addDescription("osm.oneway-reverse-sidewalk", "Formats", TL("Default to building two sidewalks on oneway streets (may affect divided roads)"));
 
     oc.doRegister("osm.crossings", new Option_Bool(false));
     oc.addDescription("osm.crossings", "Formats", TL("Import crossings"));
@@ -234,6 +234,9 @@ NIFrame::fillOptions(OptionsCont& oc, bool forNetedit) {
 
     oc.doRegister("osm.speedlimit-none", new Option_Float(39.4444));
     oc.addDescription("osm.speedlimit-none", "Formats", TL("The speed limit to be set when there is no actual speed limit in reality"));
+
+    oc.doRegister("osm.annotate-defaults", new Option_Bool(false));
+    oc.addDescription("osm.annotate-defaults", "Formats", TL("Whether edges shoulds carry information on the usage of typemap defaults"));
 
     // register matsim options
     oc.doRegister("matsim.keep-length", new Option_Bool(false));
@@ -427,6 +430,10 @@ NIFrame::checkOptions(OptionsCont& oc) {
         if (oc.isWriteable("geometry.min-radius.fix.railways")) {
             // changed default since we wish to preserve the network as far as possible
             oc.set("geometry.min-radius.fix.railways", "false");
+        }
+        if (oc.isWriteable("geometry.avoid-overlap")) {
+            // changed default since we wish to preserve the network as far as possible
+            oc.set("geometry.avoid-overlap", "false");
         }
     }
     if (!oc.isSet("type-files")) {

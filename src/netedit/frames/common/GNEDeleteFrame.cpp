@@ -17,20 +17,16 @@
 ///
 // The Widget for remove network-elements
 /****************************************************************************/
-#include <config.h>
 
-#include <netedit/GNENet.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/GNEViewParent.h>
 #include <netedit/GNEApplicationWindow.h>
+#include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
+#include <netedit/GNEUndoList.h>
 #include <netedit/elements/additional/GNEPoly.h>
 #include <netedit/elements/additional/GNETAZ.h>
 #include <netedit/elements/network/GNEConnection.h>
 #include <netedit/elements/network/GNECrossing.h>
 #include <utils/gui/div/GUIDesigns.h>
-#include <utils/gui/windows/GUIAppEnum.h>
-#include <utils/foxtools/MFXMenuHeader.h>
 
 #include "GNEDeleteFrame.h"
 
@@ -97,7 +93,7 @@ GNEDeleteFrame::SubordinatedElements::SubordinatedElements(const GNEJunction* ju
 GNEDeleteFrame::SubordinatedElements::SubordinatedElements(const GNEEdge* edge) :
     SubordinatedElements(edge, edge->getNet()->getViewNet(), edge) {
     // add the number of subodinated elements of child lanes
-    for (const auto& lane : edge->getLanes()) {
+    for (const auto& lane : edge->getChildLanes()) {
         addValuesFromSubordinatedElements(this, lane);
     }
 }
@@ -209,16 +205,16 @@ GNEDeleteFrame::SubordinatedElements::openWarningDialog(const std::string& type,
     // declare plural depending of "number"
     const std::string plural = (number > 1) ? "s" : "";
     // declare header
-    const std::string header = "Problem deleting " + myAttributeCarrier->getTagProperty().getTagStr() + " '" + myAttributeCarrier->getID() + "'";
+    const std::string header = "Problem deleting " + myAttributeCarrier->getTagProperty()->getTagStr() + " '" + myAttributeCarrier->getID() + "'";
     // declare message
     std::string msg;
     // set message depending of isChild
     if (isChild) {
-        msg = myAttributeCarrier->getTagProperty().getTagStr() + " '" + myAttributeCarrier->getID() +
+        msg = myAttributeCarrier->getTagProperty()->getTagStr() + " '" + myAttributeCarrier->getID() +
               "' cannot be deleted because it has " + toString(number) + " " + type + " element" + plural + ".\n" +
               "To delete it, uncheck 'protect " + type + " elements'.";
     } else {
-        msg = myAttributeCarrier->getTagProperty().getTagStr() + " '" + myAttributeCarrier->getID() +
+        msg = myAttributeCarrier->getTagProperty()->getTagStr() + " '" + myAttributeCarrier->getID() +
               "' cannot be deleted because it is part of " + toString(number) + " " + type + " element" + plural + ".\n" +
               "To delete it, uncheck 'protect " + type + " elements'.";
     }
@@ -447,13 +443,13 @@ GNEDeleteFrame::removeGeometryPoint(const GNEViewNetHelper::ViewObjectsSelector&
     const Position clickedPosition = myViewNet->getPositionInformation();
     // filter elements with geometry points
     for (const auto& AC : viewObjects.getAttributeCarriers()) {
-        if (AC->getTagProperty().getTag() == SUMO_TAG_EDGE) {
+        if (AC->getTagProperty()->getTag() == SUMO_TAG_EDGE) {
             viewObjects.getEdgeFront()->removeGeometryPoint(clickedPosition, myViewNet->getUndoList());
             return true;
-        } else if (AC->getTagProperty().getTag() == SUMO_TAG_POLY) {
+        } else if (AC->getTagProperty()->getTag() == SUMO_TAG_POLY) {
             viewObjects.getPolyFront()->removeGeometryPoint(clickedPosition, myViewNet->getUndoList());
             return true;
-        } else if (AC->getTagProperty().getTag() == SUMO_TAG_TAZ) {
+        } else if (AC->getTagProperty()->getTag() == SUMO_TAG_TAZ) {
             viewObjects.getTAZFront()->removeGeometryPoint(clickedPosition, myViewNet->getUndoList());
             return true;
         }
@@ -492,7 +488,7 @@ GNEDeleteFrame::selectedACsToDelete() const {
                     return true;
                 }
                 // check lanes
-                for (const auto& lane : edge->getLanes()) {
+                for (const auto& lane : edge->getChildLanes()) {
                     if (lane->isAttributeCarrierSelected()) {
                         return true;
                     }

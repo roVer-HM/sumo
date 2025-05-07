@@ -71,25 +71,27 @@
 
 #define SPEEDMODE_DEFAULT 31
 #define LANECHANGEMODE_DEFAULT 1621
-
 //#define DEBUG_FOES
 
+
 // ===========================================================================
-// FOX callback mapping
+// member method definitions
 // ===========================================================================
-
-// Object implementation
-
-
 /* -------------------------------------------------------------------------
  * GUIVehicle - methods
  * ----------------------------------------------------------------------- */
-
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4355) // mask warning about "this" in initializers
+#endif
 GUIVehicle::GUIVehicle(SUMOVehicleParameter* pars, ConstMSRoutePtr route,
                        MSVehicleType* type, const double speedFactor) :
     MSVehicle(pars, route, type, speedFactor),
     GUIBaseVehicle((MSBaseVehicle&) * this) {
 }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 
 GUIVehicle::~GUIVehicle() {
@@ -248,6 +250,7 @@ GUIVehicle::getTypeParameterWindow(GUIMainWindow& app, GUISUMOAbstractView&) {
     ret->mkItem(TL("imperfection (sigma)"), false, getCarFollowModel().getImperfection());
     ret->mkItem(TL("desired headway (tau) [s]"), false, getCarFollowModel().getHeadwayTime());
     ret->mkItem(TL("speedfactor"), false, myType->getParameter().speedFactor.toStr(gPrecision));
+    ret->mkItem(TL("startupDelay [s]"), false, STEPS2TIME(getCarFollowModel().getStartupDelay()));
     if (myType->getParameter().wasSet(VTYPEPARS_ACTIONSTEPLENGTH_SET)) {
         ret->mkItem(TL("action step length [s]"), false, myType->getActionStepLengthSecs());
     }
@@ -319,7 +322,7 @@ GUIVehicle::drawAction_drawLinkItems(const GUIVisualizationSettings& s) const {
 
 
 void
-GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool asImage) const {
+GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, double scaledLength, bool asImage) const {
     RGBColor current = GLHelper::getColor();
     RGBColor darker = current.changedBrightness(-51);
     const double exaggeration = (s.vehicleSize.getExaggeration(s, this)
@@ -327,8 +330,7 @@ GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool
     if (exaggeration == 0) {
         return;
     }
-    // bool reversed =
-    MSTrainHelper trainHelper(this, isReversed() && s.drawReversed, s.secondaryShape, exaggeration, s.vehicleQuality);
+    MSTrainHelper trainHelper(this, scaledLength, isReversed() && s.drawReversed, s.secondaryShape, exaggeration, s.vehicleQuality);
     const int numCarriages = trainHelper.getNumCarriages();
     const int firstPassengerCarriage = trainHelper.getFirstPassengerCarriage();
     const int noPersonsBackCarriages = (getVehicleType().getGuiShape() == SUMOVehicleShape::TRUCK_SEMITRAILER || getVehicleType().getGuiShape() == SUMOVehicleShape::TRUCK_1TRAILER) && numCarriages > 1 ? 1 : 0;
@@ -346,7 +348,7 @@ GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool
     }
     GLHelper::popMatrix(); // undo initial translation and rotation
     const double xCornerCut = 0.3 * exaggeration;
-    const double yCornerCut = 0.4 * trainHelper.getUpscaleLength();
+    const double yCornerCut = MIN2(0.4 * trainHelper.getUpscaleLength(),  trainHelper.getUpscaleLength() * scaledLength / 4);
     Position front, back;
     double angle = 0.0;
     double curCLength = trainHelper.getFirstCarriageLength();
@@ -974,7 +976,7 @@ GUIVehicle::getManeuverDist() const {
 
 std::string
 GUIVehicle::getSpeedMode() const {
-    return std::bitset<6>(getInfluencer()->getSpeedMode()).to_string();
+    return std::bitset<7>(getInfluencer()->getSpeedMode()).to_string();
 }
 
 std::string

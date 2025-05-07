@@ -60,6 +60,27 @@ public:
         /// @brief get number of defined plans
         int getNumberOfDefinedParameters() const;
 
+        /// @brief get the walk tag for the current combination of parameters
+        SumoXMLTag getWalkTag() const;
+
+        /// @brief get the personTrip tag for the current combination of parameters
+        SumoXMLTag getPersonTripTag() const;
+
+        /// @brief get the ride tag for the current combination of parameters
+        SumoXMLTag getRideTag() const;
+
+        /// @brief get the transport tag for the current combination of parameters
+        SumoXMLTag getTransportTag() const;
+
+        /// @brief get the tranship tag for the current combination of parameters
+        SumoXMLTag getTranshipTag() const;
+
+        /// @brief get the person stop tag for the current combination of parameters
+        SumoXMLTag getPersonStopTag() const;
+
+        /// @brief get the container stop tag for the current combination of parameters
+        SumoXMLTag getContainerStopTag() const;
+
         /// @brief from edge
         std::string fromEdge;
 
@@ -199,6 +220,9 @@ public:
         /// @brief get PositionVector attribute
         const PositionVector& getPositionVectorAttribute(const SumoXMLAttr attr) const;
 
+        /// @brief get parent ID
+        const std::string& getParentID(const SumoXMLTag tag) const;
+
         /// @brief vehicle class
         SUMOVehicleClass getVClass() const;
 
@@ -255,6 +279,9 @@ public:
         /// @brief check if current SumoBaseObject has the given positionVector attribute
         bool hasPositionVectorAttribute(const SumoXMLAttr attr) const;
 
+        /// @brief check if current SumoBaseObject has the given parent ID
+        bool hasParentID(const SumoXMLTag tag) const;
+
         /// @}
 
         /// @name add functions
@@ -290,8 +317,14 @@ public:
         /// @brief add PositionVector attribute into current SumoBaseObject node
         void addPositionVectorAttribute(const SumoXMLAttr attr, const PositionVector& value);
 
+        /// @brief add parameters into current SumoBaseObject node (format: key=value1|key2=value2|....)
+        void addParameters(const std::string& value);
+
         /// @brief add parameter into current SumoBaseObject node
         void addParameter(const std::string& key, const std::string& value);
+
+        /// @brief add parent (string) attribute into current SumoBaseObject node
+        void addParentID(const SumoXMLTag tag, const std::string& ID);
 
         /// @brief set vehicle class
         void setVClass(SUMOVehicleClass vClass);
@@ -352,6 +385,9 @@ public:
 
         /// @brief myParameters
         std::map<std::string, std::string> myParameters;
+
+        /// @brief parent IDs
+        std::map<const SumoXMLTag, std::string> myParentIDs;
 
         /// @brief SumoBaseObject children
         std::vector<SumoBaseObject*> mySumoBaseObjectChildren;

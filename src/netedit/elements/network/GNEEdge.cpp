@@ -18,9 +18,9 @@
 // A road/street connecting two junctions (netedit-version, adapted from GUIEdge)
 // Basically a container for an NBEdge with drawing and editing capabilities
 /****************************************************************************/
-#include <config.h>
 
 #include <netedit/GNENet.h>
+#include <netedit/GNETagPropertiesDatabase.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
@@ -40,6 +40,8 @@
 #include <netedit/frames/demand/GNEContainerFrame.h>
 #include <netedit/frames/demand/GNEContainerPlanFrame.h>
 #include <netedit/frames/network/GNEAdditionalFrame.h>
+#include <netedit/frames/GNEElementTree.h>
+#include <netedit/frames/GNEViewObjectSelector.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/globjects/GLIncludes.h>
 #include <utils/options/OptionsCont.h>
@@ -53,6 +55,9 @@
 #include "GNEEdgeTemplate.h"
 #include "GNELaneTemplate.h"
 
+// ===========================================================================
+// defines
+// ===========================================================================
 
 //#define DEBUG_SMOOTH_GEOM
 //#define DEBUGCOND(obj) (true)
@@ -62,6 +67,7 @@
 // ===========================================================================
 // static
 // ===========================================================================
+
 const double GNEEdge::SNAP_RADIUS = SUMO_const_halfLaneWidth;
 const double GNEEdge::SNAP_RADIUS_SQUARED = (SUMO_const_halfLaneWidth* SUMO_const_halfLaneWidth);
 
@@ -70,26 +76,25 @@ const double GNEEdge::SNAP_RADIUS_SQUARED = (SUMO_const_halfLaneWidth* SUMO_cons
 // ===========================================================================
 
 GNEEdge::GNEEdge(GNENet* net, NBEdge* nbe, bool wasSplit, bool loaded):
-    GNENetworkElement(net, nbe->getID(), GLO_EDGE, SUMO_TAG_EDGE, GUIIconSubSys::getIcon(GUIIcon::EDGE), {
-    net->getAttributeCarriers()->retrieveJunction(nbe->getFromNode()->getID()),
+    GNENetworkElement(net, nbe->getID(), SUMO_TAG_EDGE),
+    myNBEdge(nbe),
+    myAmResponsible(false),
+    myWasSplit(wasSplit),
+    myConnectionStatus(loaded ? FEATURE_LOADED : FEATURE_GUESSED),
+    myUpdateGeometry(true) {
+    // set parents
+    setParents<GNEJunction*>({
+        net->getAttributeCarriers()->retrieveJunction(nbe->getFromNode()->getID()),
         net->getAttributeCarriers()->retrieveJunction(nbe->getToNode()->getID())
-},
-{}, {}, {}, {}, {}),
-myNBEdge(nbe),
-myLanes(0),
-myAmResponsible(false),
-myWasSplit(wasSplit),
-myConnectionStatus(loaded ? FEATURE_LOADED : FEATURE_GUESSED),
-myUpdateGeometry(true) {
+    });
     // Create lanes
-    int numLanes = myNBEdge->getNumLanes();
-    myLanes.reserve(numLanes);
-    for (int i = 0; i < numLanes; i++) {
-        myLanes.push_back(new GNELane(this, i));
-        myLanes.back()->incRef("GNEEdge::GNEEdge");
+    for (int i = 0; i < myNBEdge->getNumLanes(); i++) {
+        auto lane = new GNELane(this, i);
+        lane->incRef("GNEEdge::GNEEdge");
+        addChildElement(lane);
     }
     // update Lane geometries
-    for (const auto& lane : myLanes) {
+    for (const auto& lane : getChildLanes()) {
         lane->updateGeometry();
     }
     // update centering boundary without updating grid
@@ -99,7 +104,7 @@ myUpdateGeometry(true) {
 
 GNEEdge::~GNEEdge() {
     // Delete references to this edge in lanes
-    for (const auto& lane : myLanes) {
+    for (const auto& lane : getChildLanes()) {
         lane->decRef("GNEEdge::~GNEEdge");
         if (lane->unreferenced()) {
             // check if remove it from Attribute Carriers
@@ -149,7 +154,7 @@ GNEEdge::updateGeometry() {
     // first check if myUpdateGeometry flag is enabled
     if (myUpdateGeometry) {
         // Update geometry of lanes
-        for (const auto& lane : myLanes) {
+        for (const auto& lane : getChildLanes()) {
             lane->updateGeometry();
         }
         // Update geometry of connections
@@ -192,7 +197,7 @@ GNEEdge::updateGeometry() {
 
 Position
 GNEEdge::getPositionInView() const {
-    return myLanes.front()->getPositionInView();
+    return getChildLanes().front()->getPositionInView();
 }
 
 
@@ -205,7 +210,7 @@ GNEEdge::checkDrawFromContour() const {
     // continue depending of current status
     if (inspectedElements.isInspectingSingleElement()) {
         // check if starts in this edge
-        if (inspectedElements.getFirstAC()->getTagProperty().vehicleEdges() &&
+        if (inspectedElements.getFirstAC()->getTagProperty()->vehicleEdges() &&
                 inspectedElements.getFirstAC()->hasAttribute(SUMO_ATTR_FROM) &&
                 (inspectedElements.getFirstAC()->getAttribute(SUMO_ATTR_FROM) == getID())) {
             return true;
@@ -225,6 +230,9 @@ GNEEdge::checkDrawFromContour() const {
         // continue depending of planCreator
         if (planCreator) {
             if (planCreator->getPlanParameteres().fromEdge == getID()) {
+                return true;
+            } else if ((planCreator->getPlanParameteres().consecutiveEdges.size() > 0) &&
+                       (planCreator->getPlanParameteres().consecutiveEdges.front() == getID())) {
                 return true;
             }
         } else if (modes.demandEditMode == DemandEditMode::DEMAND_VEHICLE) {
@@ -260,7 +268,7 @@ GNEEdge::checkDrawToContour() const {
     // continue depending of current status
     if (inspectedElements.isInspectingSingleElement()) {
         // check if starts in this edge
-        if (inspectedElements.getFirstAC()->getTagProperty().vehicleEdges() &&
+        if (inspectedElements.getFirstAC()->getTagProperty()->vehicleEdges() &&
                 inspectedElements.getFirstAC()->hasAttribute(SUMO_ATTR_TO) &&
                 (inspectedElements.getFirstAC()->getAttribute(SUMO_ATTR_TO) == getID())) {
             return true;
@@ -280,6 +288,9 @@ GNEEdge::checkDrawToContour() const {
         // continue depending of planCreator
         if (planCreator) {
             if (planCreator->getPlanParameteres().toEdge == getID()) {
+                return true;
+            } else if ((planCreator->getPlanParameteres().consecutiveEdges.size() > 1) &&
+                       (planCreator->getPlanParameteres().consecutiveEdges.back() == getID())) {
                 return true;
             }
         } else if (modes.demandEditMode == DemandEditMode::DEMAND_VEHICLE) {
@@ -308,20 +319,45 @@ GNEEdge::checkDrawToContour() const {
 
 bool
 GNEEdge::checkDrawRelatedContour() const {
+    const auto& inspectedElements = myNet->getViewNet()->getInspectedElements();
+    // continue depending of inspected elements
+    if (inspectedElements.isInspectingSingleElement() &&
+            inspectedElements.getFirstAC()->getTagProperty()->getTag() == SUMO_TAG_TAZ) {
+        // check if one of the sourceSink child is placed in this edge
+        for (const auto& sourceSink : getChildTAZSourceSinks()) {
+            if (sourceSink->getParentAdditionals().front() == inspectedElements.getFirstAC()) {
+                return true;
+            }
+        }
+    }
+    if (myNet->getViewNet()->getPopup()) {
+        return myNet->getViewNet()->getPopup()->getGLObject() == this;
+    }
     return false;
 }
 
 
 bool
 GNEEdge::checkDrawOverContour() const {
+    // get modes and viewParent (for code legibility)
+    const auto& modes = myNet->getViewNet()->getEditModes();
+    const auto& viewParent = myNet->getViewNet()->getViewParent();
     const auto& viewObjectsSelector = myNet->getViewNet()->getViewObjectsSelector();
-    // first check if this is the edge under cursor
+    // check if we're selecting edges in additional mode
+    if (modes.isCurrentSupermodeNetwork() && (modes.networkEditMode == NetworkEditMode::NETWORK_ADDITIONAL)) {
+        if (viewParent->getAdditionalFrame()->getViewObjetsSelector()->isNetworkElementSelected(this)) {
+            return true;
+        } else if (viewParent->getAdditionalFrame()->getViewObjetsSelector()->getTag() == myTagProperty->getTag()) {
+            return viewObjectsSelector.getEdgeFront() == this;
+        } else {
+            return false;
+        }
+    }
+    // check if this is the edge under cursor
     if (viewObjectsSelector.getEdgeFront() != this) {
         return false;
     } else {
-        // get modes and viewParent (for code legibility)
-        const auto& modes = myNet->getViewNet()->getEditModes();
-        const auto& viewParent = myNet->getViewNet()->getViewParent();
+        // continue depending of modes
         if (modes.isCurrentSupermodeDemand()) {
             // get current plan selector
             GNEPlanSelector* planSelector = nullptr;
@@ -336,13 +372,13 @@ GNEEdge::checkDrawOverContour() const {
             }
             // continue depending of plan selector
             if (planSelector && planSelector->markEdges()) {
-                return (viewObjectsSelector.getAttributeCarrierFront()->getTagProperty().getTag() == SUMO_TAG_LANE);
+                return (viewObjectsSelector.getAttributeCarrierFront()->getTagProperty()->getTag() == SUMO_TAG_LANE);
             } else if (modes.demandEditMode == DemandEditMode::DEMAND_VEHICLE) {
                 // get current vehicle template
                 const auto& vehicleTemplate = viewParent->getVehicleFrame()->getVehicleTagSelector()->getCurrentTemplateAC();
                 // check if vehicle can be placed over from-to TAZs
-                if (vehicleTemplate && vehicleTemplate->getTagProperty().vehicleEdges()) {
-                    return (viewObjectsSelector.getAttributeCarrierFront()->getTagProperty().getTag() == SUMO_TAG_LANE);
+                if (vehicleTemplate && vehicleTemplate->getTagProperty()->vehicleEdges()) {
+                    return (viewObjectsSelector.getAttributeCarrierFront()->getTagProperty()->getTag() == SUMO_TAG_LANE);
                 }
             }
         } else if (modes.isCurrentSupermodeData()) {
@@ -365,6 +401,7 @@ GNEEdge::checkDrawOverContour() const {
                     return true;
                 }
             }
+
         }
         // nothing to draw
         return false;
@@ -381,7 +418,7 @@ GNEEdge::checkDrawDeleteContour() const {
         // check if we're in delete mode
         if (editModes.isCurrentSupermodeNetwork() && (editModes.networkEditMode == NetworkEditMode::NETWORK_DELETE)) {
             // check lanes
-            for (const auto& lane : myLanes) {
+            for (const auto& lane : getChildLanes()) {
                 if (myNet->getViewNet()->checkOverLockedElement(lane, mySelected) &&
                         (myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == lane)) {
                     return true;
@@ -404,6 +441,21 @@ GNEEdge::checkDrawDeleteContour() const {
 
 
 bool
+GNEEdge::checkDrawDeleteContourSmall() const {
+    // get edit modes
+    const auto& editModes = myNet->getViewNet()->getEditModes();
+    // check if we're in delete mode
+    if (editModes.isCurrentSupermodeNetwork() && (editModes.networkEditMode == NetworkEditMode::NETWORK_DELETE)) {
+        const auto junction = myNet->getViewNet()->getViewObjectsSelector().getJunctionFront();
+        if (junction == myNet->getViewNet()->getViewObjectsSelector().getAttributeCarrierFront()) {
+            return ((getFromJunction() == junction) || (getToJunction() == junction));
+        }
+    }
+    return false;
+}
+
+
+bool
 GNEEdge::checkDrawSelectContour() const {
     // first check if we're selecting edges or lanes
     if (myNet->getViewNet()->checkSelectEdges()) {
@@ -412,7 +464,7 @@ GNEEdge::checkDrawSelectContour() const {
         // check if we're in select mode
         if (editModes.isCurrentSupermodeNetwork() && (editModes.networkEditMode == NetworkEditMode::NETWORK_SELECT)) {
             // check lanes
-            for (const auto& lane : myLanes) {
+            for (const auto& lane : getChildLanes()) {
                 if (myNet->getViewNet()->checkOverLockedElement(lane, mySelected) &&
                         (myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == lane)) {
                     return true;
@@ -448,7 +500,7 @@ GNEEdge::checkDrawMoveContour() const {
                 return true;
             } else {
                 // check lanes
-                for (const auto& lane : myLanes) {
+                for (const auto& lane : getChildLanes()) {
                     if (editedNetworkElement == lane) {
                         return true;
                     }
@@ -456,7 +508,7 @@ GNEEdge::checkDrawMoveContour() const {
             }
         } else {
             // check lanes
-            for (const auto& lane : myLanes) {
+            for (const auto& lane : getChildLanes()) {
                 if (myNet->getViewNet()->checkOverLockedElement(lane, mySelected) &&
                         (myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == lane)) {
                     return true;
@@ -661,7 +713,7 @@ GNEEdge::updateCenteringBoundary(const bool updateGrid) {
     // first add edge boundary
     myEdgeBoundary = myNBEdge->getGeometry().getBoxBoundary();
     // add lane boundaries
-    for (const auto& lane : myLanes) {
+    for (const auto& lane : getChildLanes()) {
         const auto laneBoundary = lane->getCenteringBoundary();
         if (laneBoundary.isInitialised()) {
             myEdgeBoundary.add(laneBoundary);
@@ -703,7 +755,7 @@ GUIGLObjectPopupMenu*
 GNEEdge::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
     // if we call this function, that's mean that we're clicked over a edge geometry point, then
     // open the popup dialog of the lane[0] (back)
-    return myLanes.back()->getPopUpMenu(app, parent);
+    return getChildLanes().back()->getPopUpMenu(app, parent);
 }
 
 
@@ -720,12 +772,12 @@ GNEEdge::drawGL(const GUIVisualizationSettings& s) const {
         // draw boundary
         GLHelper::drawBoundary(s, getCenteringBoundary());
         // get detail level from the first lane
-        const auto d = myLanes.front()->getDrawingConstants()->getDetail();
+        const auto d = getChildLanes().front()->getDrawingConstants()->getDetail();
         // calculate layer
         double layer = GLO_EDGE;
         if (myDrawInFront) {
             layer = GLO_FRONTELEMENT;
-        } else if (myLanes.front()->getLaneShape().length2D() <= (s.neteditSizeSettings.junctionBubbleRadius * 2)) {
+        } else if (getChildLanes().front()->getLaneShape().length2D() <= (s.neteditSizeSettings.junctionBubbleRadius * 2)) {
             layer = GLO_JUNCTION + 1.8;
         }
         // check if draw details
@@ -746,7 +798,7 @@ GNEEdge::drawGL(const GUIVisualizationSettings& s) const {
         // calculate edge contour (always before children)
         calculateEdgeContour(s, d, layer);
         // draw lanes
-        for (const auto& lane : myLanes) {
+        for (const auto& lane : getChildLanes()) {
             lane->drawGL(s);
         }
         // draw junctions
@@ -908,32 +960,32 @@ GNEEdge::setGeometry(PositionVector geom, bool inner) {
 
 const Position
 GNEEdge::getFrontUpShapePosition() const {
-    PositionVector laneShape = myLanes.front()->getLaneShape();
-    laneShape.move2side(myLanes.front()->getParentEdge()->getNBEdge()->getLaneWidth(myLanes.front()->getIndex()) / 2);
+    PositionVector laneShape = getChildLanes().front()->getLaneShape();
+    laneShape.move2side(getChildLanes().front()->getParentEdge()->getNBEdge()->getLaneWidth(getChildLanes().front()->getIndex()) / 2);
     return laneShape.front();
 }
 
 
 const Position
 GNEEdge::getFrontDownShapePosition() const {
-    PositionVector laneShape = myLanes.back()->getLaneShape();
-    laneShape.move2side(-1 * myLanes.back()->getParentEdge()->getNBEdge()->getLaneWidth(myLanes.back()->getIndex()) / 2);
+    PositionVector laneShape = getChildLanes().back()->getLaneShape();
+    laneShape.move2side(-1 * getChildLanes().back()->getParentEdge()->getNBEdge()->getLaneWidth(getChildLanes().back()->getIndex()) / 2);
     return laneShape.front();
 }
 
 
 const Position
 GNEEdge::getBackUpShapePosition() const {
-    PositionVector laneShape = myLanes.front()->getLaneShape();
-    laneShape.move2side(myLanes.front()->getParentEdge()->getNBEdge()->getLaneWidth(myLanes.front()->getIndex()) / 2);
+    PositionVector laneShape = getChildLanes().front()->getLaneShape();
+    laneShape.move2side(getChildLanes().front()->getParentEdge()->getNBEdge()->getLaneWidth(getChildLanes().front()->getIndex()) / 2);
     return laneShape.back();
 }
 
 
 const Position
 GNEEdge::getBackDownShapePosition() const {
-    PositionVector laneShape = myLanes.back()->getLaneShape();
-    laneShape.move2side(-1 * myLanes.back()->getParentEdge()->getNBEdge()->getLaneWidth(myLanes.back()->getIndex()) / 2);
+    PositionVector laneShape = getChildLanes().back()->getLaneShape();
+    laneShape.move2side(-1 * getChildLanes().back()->getParentEdge()->getNBEdge()->getLaneWidth(getChildLanes().back()->getIndex()) / 2);
     return laneShape.back();
 }
 
@@ -1011,7 +1063,7 @@ int
 GNEEdge::getRouteProbeRelativePosition(GNERouteProbe* routeProbe) const {
     std::vector<GNEAdditional*> routeProbes;
     for (const auto& additional : getChildAdditionals()) {
-        if (additional->getTagProperty().getTag() == routeProbe->getTagProperty().getTag()) {
+        if (additional->getTagProperty()->getTag() == routeProbe->getTagProperty()->getTag()) {
             routeProbes.push_back(additional);
         }
     }
@@ -1045,51 +1097,53 @@ GNEEdge::getGNECrossings() {
 void
 GNEEdge::copyTemplate(const GNEEdgeTemplate* edgeTemplate, GNEUndoList* undoList) {
     // copy edge-specific attributes
-    for (const auto& attProperty : myTagProperty) {
-        if (attProperty.isCopyable() && isValid(attProperty.getAttr(), edgeTemplate->getAttribute(attProperty.getAttr()))) {
-            setAttribute(attProperty.getAttr(), edgeTemplate->getAttribute(attProperty.getAttr()), undoList);
+    for (const auto& attProperty : myTagProperty->getAttributeProperties()) {
+        if (attProperty->isCopyable() && isValid(attProperty->getAttr(), edgeTemplate->getAttribute(attProperty->getAttr()))) {
+            setAttribute(attProperty->getAttr(), edgeTemplate->getAttribute(attProperty->getAttr()), undoList);
         }
     }
     // also copy parameters
     setAttribute(GNE_ATTR_PARAMETERS, edgeTemplate->getAttribute(GNE_ATTR_PARAMETERS), undoList);
     // copy lane attributes as well
-    for (int i = 0; i < (int)myLanes.size(); i++) {
-        for (const auto& attProperty : edgeTemplate->getLaneTemplates().at(i)->getTagProperty()) {
-            if (attProperty.isCopyable() && myLanes[i]->isValid(attProperty.getAttr(), edgeTemplate->getLaneTemplates().at(i)->getAttribute(attProperty.getAttr()))) {
-                myLanes[i]->setAttribute(attProperty.getAttr(), edgeTemplate->getLaneTemplates().at(i)->getAttribute(attProperty.getAttr()),  undoList);
+    for (int i = 0; i < (int)getChildLanes().size(); i++) {
+        for (const auto& attProperty : edgeTemplate->getLaneTemplates().at(i)->getTagProperty()->getAttributeProperties()) {
+            if (attProperty->isCopyable() && getChildLanes()[i]->isValid(attProperty->getAttr(), edgeTemplate->getLaneTemplates().at(i)->getAttribute(attProperty->getAttr()))) {
+                getChildLanes()[i]->setAttribute(attProperty->getAttr(), edgeTemplate->getLaneTemplates().at(i)->getAttribute(attProperty->getAttr()),  undoList);
             }
         }
         // also copy parameters
-        myLanes[i]->setAttribute(GNE_ATTR_PARAMETERS, edgeTemplate->getLaneTemplates().at(i)->getAttribute(GNE_ATTR_PARAMETERS), undoList);
+        getChildLanes()[i]->setAttribute(GNE_ATTR_PARAMETERS, edgeTemplate->getLaneTemplates().at(i)->getAttribute(GNE_ATTR_PARAMETERS), undoList);
     }
 }
 
 
 void
 GNEEdge::copyEdgeType(const GNEEdgeType* edgeType, GNEUndoList* undoList) {
+    const auto tagPropertiesDatabase = myNet->getTagPropertiesDatabase();
     // get tag properties
-    const auto& edgeProperties = getTagProperty(SUMO_TAG_EDGE);
-    const auto& laneProperties = getTagProperty(SUMO_TAG_LANE);
-    const auto& edgeTypeProperties = getTagProperty(SUMO_TAG_TYPE);
-    const auto& laneTypeProperties = getTagProperty(SUMO_TAG_LANETYPE);
+    const auto edgeProperties = tagPropertiesDatabase->getTagProperty(SUMO_TAG_EDGE, true);
+    const auto laneProperties = tagPropertiesDatabase->getTagProperty(SUMO_TAG_LANE, true);
+    const auto edgeTypeProperties = tagPropertiesDatabase->getTagProperty(SUMO_TAG_TYPE, true);
+    const auto laneTypeProperties = tagPropertiesDatabase->getTagProperty(SUMO_TAG_LANETYPE, true);
     // set type (only for info)
     setAttribute(SUMO_ATTR_TYPE, edgeType->getAttribute(SUMO_ATTR_ID), undoList);
     // copy attributes
-    for (const auto& attrProperty : edgeTypeProperties) {
-        if (attrProperty.isCopyable() && edgeProperties.hasAttribute(attrProperty.getAttr())) {
-            setAttribute(attrProperty.getAttr(), edgeType->getAttribute(attrProperty.getAttr()), undoList);
+    for (const auto& attrProperty : edgeTypeProperties->getAttributeProperties()) {
+        if (attrProperty->isCopyable() && edgeProperties->hasAttribute(attrProperty->getAttr())) {
+            setAttribute(attrProperty->getAttr(), edgeType->getAttribute(attrProperty->getAttr()), undoList);
         }
     }
     setAttribute(GNE_ATTR_PARAMETERS, edgeType->getAttribute(GNE_ATTR_PARAMETERS), undoList);
     // copy lane attributes as well
-    for (int i = 0; i < (int)myLanes.size(); i++) {
-        for (const auto& attrProperty : laneTypeProperties) {
-            if (attrProperty.isCopyable() && laneProperties.hasAttribute(attrProperty.getAttr()) && (edgeType->getLaneTypes().at(i)->getAttribute(attrProperty.getAttr()) != laneTypeProperties.getAttributeProperties(attrProperty.getAttr()).getDefaultValue())) {
-                myLanes[i]->setAttribute(attrProperty.getAttr(), edgeType->getLaneTypes().at(i)->getAttribute(attrProperty.getAttr()), undoList);
+    for (int i = 0; i < (int)getChildLanes().size(); i++) {
+        for (const auto& attrProperty : laneTypeProperties->getAttributeProperties()) {
+            if (attrProperty->isCopyable() && laneProperties->hasAttribute(attrProperty->getAttr()) &&
+                    (edgeType->getLaneTypes().at(i)->getAttribute(attrProperty->getAttr()) != laneTypeProperties->getAttributeProperties(attrProperty->getAttr())->getDefaultStringValue())) {
+                getChildLanes()[i]->setAttribute(attrProperty->getAttr(), edgeType->getLaneTypes().at(i)->getAttribute(attrProperty->getAttr()), undoList);
             }
         }
         if (edgeType->getLaneTypes().at(i)->getAttribute(GNE_ATTR_PARAMETERS).size() > 0) {
-            myLanes[i]->setAttribute(GNE_ATTR_PARAMETERS, edgeType->getLaneTypes().at(i)->getAttribute(GNE_ATTR_PARAMETERS), undoList);
+            getChildLanes()[i]->setAttribute(GNE_ATTR_PARAMETERS, edgeType->getLaneTypes().at(i)->getAttribute(GNE_ATTR_PARAMETERS), undoList);
         }
     }
 }
@@ -1098,16 +1152,10 @@ GNEEdge::copyEdgeType(const GNEEdgeType* edgeType, GNEUndoList* undoList) {
 std::set<GUIGlID>
 GNEEdge::getLaneGlIDs() const {
     std::set<GUIGlID> result;
-    for (auto i : myLanes) {
-        result.insert(i->getGlID());
+    for (const auto glID : getChildLanes()) {
+        result.insert(glID->getGlID());
     }
     return result;
-}
-
-
-const std::vector<GNELane*>&
-GNEEdge::getLanes() const {
-    return myLanes;
 }
 
 
@@ -1184,13 +1232,17 @@ GNEEdge::getAttribute(SumoXMLAttr key) const {
         case GNE_ATTR_MODIFICATION_STATUS:
             return myConnectionStatus;
         case GNE_ATTR_SHAPE_START:
-            if (myNBEdge->getGeometry().front().distanceSquaredTo2D(getFromJunction()->getNBNode()->getPosition()) <= ENDPOINT_TOLERANCE) {
+            if (getParentJunctions().empty()) {
+                return "";
+            } else if (myNBEdge->getGeometry().front().distanceSquaredTo2D(getFromJunction()->getNBNode()->getPosition()) <= ENDPOINT_TOLERANCE) {
                 return "";
             } else {
                 return toString(myNBEdge->getGeometry().front());
             }
         case GNE_ATTR_SHAPE_END:
-            if (myNBEdge->getGeometry().back().distanceSquaredTo2D(getToJunction()->getNBNode()->getPosition()) <= ENDPOINT_TOLERANCE) {
+            if (getParentJunctions().empty()) {
+                return "";
+            } else if (myNBEdge->getGeometry().back().distanceSquaredTo2D(getToJunction()->getNBNode()->getPosition()) <= ENDPOINT_TOLERANCE) {
                 return "";
             } else {
                 return toString(myNBEdge->getGeometry().back());
@@ -1207,10 +1259,8 @@ GNEEdge::getAttribute(SumoXMLAttr key) const {
             }
         case GNE_ATTR_IS_ROUNDABOUT:
             return myNBEdge->getFromNode()->isRoundabout() && myNBEdge->getToNode()->isRoundabout() ? True : False;
-        case GNE_ATTR_PARAMETERS:
-            return myNBEdge->getParametersStr();
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(myNBEdge, key);
     }
 }
 
@@ -1250,9 +1300,9 @@ GNEEdge::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* un
         case SUMO_ATTR_ALLOW:
         case SUMO_ATTR_DISALLOW: {
             undoList->begin(this, "change " + getTagStr() + " attribute");
-            const std::string origValue = myLanes.at(0)->getAttribute(key); // will have intermediate value of "lane specific"
+            const std::string origValue = getChildLanes().at(0)->getAttribute(key); // will have intermediate value of "lane specific"
             // lane specific attributes need to be changed via lanes to allow undo
-            for (auto it : myLanes) {
+            for (auto it : getChildLanes()) {
                 it->setAttribute(key, value, undoList);
             }
             // ensure that the edge value is also changed. Actually this sets the lane attributes again but it does not matter
@@ -1310,7 +1360,6 @@ GNEEdge::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* un
         case SUMO_ATTR_DISTANCE:
         case GNE_ATTR_MODIFICATION_STATUS:
         case GNE_ATTR_STOPOEXCEPTION:
-        case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         case GNE_ATTR_STOPOFFSET:
@@ -1469,8 +1518,6 @@ GNEEdge::isValid(SumoXMLAttr key, const std::string& value) {
             }
         case GNE_ATTR_STOPOEXCEPTION:
             return canParseVehicleClasses(value);
-        case GNE_ATTR_PARAMETERS:
-            return Parameterised::areParametersValid(value);
         default:
             return isCommonValid(key, value);
     }
@@ -1528,11 +1575,11 @@ GNEEdge::getLaneByAllowedVClass(const SUMOVehicleClass vClass) const {
         // if given VClass is in permissions, return lane
         if (myNBEdge->getLanes().at(i).permissions & vClass) {
             // return GNELane
-            return myLanes.at(i);
+            return getChildLanes().at(i);
         }
     }
     // return first lane
-    return myLanes.front();
+    return getChildLanes().front();
 }
 
 
@@ -1543,11 +1590,11 @@ GNEEdge::getLaneByDisallowedVClass(const SUMOVehicleClass vClass) const {
         // if given VClass isn't in permissions, return lane
         if (~(myNBEdge->getLanes().at(i).permissions) & vClass) {
             // return GNELane
-            return myLanes.at(i);
+            return getChildLanes().at(i);
         }
     }
     // return first lane
-    return myLanes.front();
+    return getChildLanes().front();
 }
 
 
@@ -1844,14 +1891,14 @@ GNEEdge::setAttribute(SumoXMLAttr key, const std::string& value) {
             myNet->getAttributeCarriers()->updateEdgeID(this, value);
             // enable save demand elements if there are stops
             for (const auto& stop : getChildDemandElements()) {
-                if (stop->getTagProperty().isVehicleStop()) {
+                if (stop->getTagProperty()->isVehicleStop()) {
                     myNet->getSavingStatus()->requireSaveDemandElements();
                 }
             }
             // also for lanes
-            for (const auto& lane : myLanes) {
+            for (const auto& lane : getChildLanes()) {
                 for (const auto& stop : lane->getChildDemandElements()) {
-                    if (stop->getTagProperty().isVehicleStop()) {
+                    if (stop->getTagProperty()->isVehicleStop()) {
                         myNet->getSavingStatus()->requireSaveDemandElements();
                     }
                 }
@@ -1983,11 +2030,8 @@ GNEEdge::setAttribute(SumoXMLAttr key, const std::string& value) {
         case GNE_ATTR_STOPOEXCEPTION:
             myNBEdge->myEdgeStopOffset.setExceptions(value);
             break;
-        case GNE_ATTR_PARAMETERS:
-            myNBEdge->setParametersStr(value);
-            break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(myNBEdge, key, value);
             break;
     }
     // get template editor
@@ -2063,12 +2107,12 @@ GNEEdge::setNumLanes(int numLanes, GNEUndoList* undoList) {
     // remove edge from grid
     myNet->removeGLObjectFromGrid(this);
     // save old number of lanes
-    const int oldNumLanes = (int)myLanes.size();
+    const int oldNumLanes = (int)getChildLanes().size();
     // get opposite ID
-    const auto oppositeID = myLanes.back()->getAttribute(GNE_ATTR_OPPOSITE);
+    const auto oppositeID = getChildLanes().back()->getAttribute(GNE_ATTR_OPPOSITE);
     if (oppositeID != "") {
         // we'll have a different leftmost lane after adding/removing lanes
-        GNEChange_Attribute::changeAttribute(myLanes.back(), GNE_ATTR_OPPOSITE, "", undoList);
+        GNEChange_Attribute::changeAttribute(getChildLanes().back(), GNE_ATTR_OPPOSITE, "", undoList);
     }
     for (int i = oldNumLanes; i < numLanes; i++) {
         // since the GNELane does not exist yet, it cannot have yet been referenced so we only pass a zero-pointer
@@ -2076,10 +2120,10 @@ GNEEdge::setNumLanes(int numLanes, GNEUndoList* undoList) {
     }
     for (int i = (oldNumLanes - 1); i > (numLanes - 1); i--) {
         // delete leftmost lane
-        undoList->add(new GNEChange_Lane(this, myLanes[i], myNBEdge->getLaneStruct(i), false), true);
+        undoList->add(new GNEChange_Lane(this, getChildLanes()[i], myNBEdge->getLaneStruct(i), false), true);
     }
     if (oppositeID != "") {
-        GNEChange_Attribute::changeAttribute(myLanes.back(), GNE_ATTR_OPPOSITE, oppositeID, undoList);
+        GNEChange_Attribute::changeAttribute(getChildLanes().back(), GNE_ATTR_OPPOSITE, oppositeID, undoList);
     }
     // enable updateGeometry again
     myUpdateGeometry = true;
@@ -2096,19 +2140,15 @@ GNEEdge::setNumLanes(int numLanes, GNEUndoList* undoList) {
 
 void
 GNEEdge::updateFirstParentJunction(const std::string& value) {
-    std::vector<GNEJunction*> parentJunctions = getParentJunctions();
-    parentJunctions[0] = myNet->getAttributeCarriers()->retrieveJunction(value);
-    // replace parent junctions
-    replaceParentElements(this, parentJunctions);
+    auto newJunction = myNet->getAttributeCarriers()->retrieveJunction(value);
+    GNEHierarchicalElement::updateParent(this, 0, newJunction);
 }
 
 
 void
 GNEEdge::updateSecondParentJunction(const std::string& value) {
-    std::vector<GNEJunction*> parentJunctions = getParentJunctions();
-    parentJunctions[1] = myNet->getAttributeCarriers()->retrieveJunction(value);
-    // replace parent junctions
-    replaceParentElements(this, parentJunctions);
+    auto newJunction = myNet->getAttributeCarriers()->retrieveJunction(value);
+    GNEHierarchicalElement::updateParent(this, 1, newJunction);
 }
 
 
@@ -2120,11 +2160,18 @@ GNEEdge::addLane(GNELane* lane, const NBEdge::Lane& laneAttrs, bool recomputeCon
     myNBEdge->addLane(index, true, recomputeConnections, !recomputeConnections);
     if (lane) {
         // restore a previously deleted lane
-        myLanes.insert(myLanes.begin() + index, lane);
+        GNEHierarchicalContainerChildren<GNELane*> newParentLanes = getChildLanes();
+        newParentLanes.insert(newParentLanes.begin() + index, lane);
+        while (getChildLanes().size() > 0) {
+            removeChild(this, getChildLanes().front());
+        }
+        for (const auto newParentLane : newParentLanes) {
+            insertChild(this, newParentLane);
+        }
     } else {
         // create a new lane by copying leftmost lane
         lane = new GNELane(this, index);
-        myLanes.push_back(lane);
+        getHierarchicalElement()->addChildElement(lane);
     }
     lane->incRef("GNEEdge::addLane");
     // add in attributeCarriers
@@ -2141,8 +2188,8 @@ GNEEdge::addLane(GNELane* lane, const NBEdge::Lane& laneAttrs, bool recomputeCon
     myNBEdge->setEndOffset(lane->getIndex(), laneAttrs.endOffset);
     myNBEdge->setLaneWidth(lane->getIndex(), laneAttrs.width);
     // update indices
-    for (int i = 0; i < (int)myLanes.size(); ++i) {
-        myLanes[i]->setIndex(i);
+    for (int i = 0; i < (int)getChildLanes().size(); ++i) {
+        getChildLanes()[i]->setIndex(i);
     }
     /* while technically correct, this looks ugly
     getFromJunction()->invalidateShape();
@@ -2167,11 +2214,11 @@ GNEEdge::addLane(GNELane* lane, const NBEdge::Lane& laneAttrs, bool recomputeCon
 
 void
 GNEEdge::removeLane(GNELane* lane, bool recomputeConnections) {
-    if (myLanes.size() == 0) {
+    if (getChildLanes().size() == 0) {
         throw ProcessError("Should not remove the last " + toString(SUMO_TAG_LANE) + " from an " + getTagStr());
     }
     if (lane == nullptr) {
-        lane = myLanes.back();
+        lane = getChildLanes().back();
     }
     // check if lane is selected
     if (lane->isAttributeCarrierSelected()) {
@@ -2184,7 +2231,8 @@ GNEEdge::removeLane(GNELane* lane, bool recomputeConnections) {
     // unless the connections are fully recomputed, existing indices must be shifted
     myNBEdge->deleteLane(lane->getIndex(), recomputeConnections, !recomputeConnections);
     lane->decRef("GNEEdge::removeLane");
-    myLanes.erase(myLanes.begin() + lane->getIndex());
+    // delete lane from edge
+    GNEHierarchicalElement::removeChild(this, lane);
     // remove from attributeCarriers
     myNet->getAttributeCarriers()->deleteLane(lane);
     // Delete lane if is unreferenced
@@ -2192,8 +2240,8 @@ GNEEdge::removeLane(GNELane* lane, bool recomputeConnections) {
         delete lane;
     }
     // update indices
-    for (int i = 0; i < (int)myLanes.size(); ++i) {
-        myLanes[i]->setIndex(i);
+    for (int i = 0; i < (int)getChildLanes().size(); ++i) {
+        getChildLanes()[i]->setIndex(i);
     }
     /* while technically correct, this looks ugly
     getFromJunction()->invalidateShape();
@@ -2283,7 +2331,7 @@ GNEEdge::retrieveGNEConnection(int fromLane, NBEdge* to, int toLane, bool create
     }
     if (createIfNoExist) {
         // create new connection. Will be added to the rTree on first geometry computation
-        GNEConnection* connection = new GNEConnection(myLanes[fromLane], myNet->getAttributeCarriers()->retrieveEdge(to->getID())->getLanes()[toLane]);
+        GNEConnection* connection = new GNEConnection(getChildLanes()[fromLane], myNet->getAttributeCarriers()->retrieveEdge(to->getID())->getChildLanes()[toLane]);
         // add it into network
         myNet->addGLObjectIntoGrid(connection);
         // add it in attributeCarriers
@@ -2298,7 +2346,7 @@ GNEEdge::retrieveGNEConnection(int fromLane, NBEdge* to, int toLane, bool create
 void
 GNEEdge::setEdgeID(const std::string& newID) {
     setNetworkElementID(newID);
-    for (const auto& lane : myLanes) {
+    for (const auto& lane : getChildLanes()) {
         lane->setNetworkElementID(getNBEdge()->getLaneID(lane->getIndex()));
     }
 }
@@ -2306,7 +2354,7 @@ GNEEdge::setEdgeID(const std::string& newID) {
 
 bool
 GNEEdge::hasRestrictedLane(SUMOVehicleClass vclass) const {
-    for (const auto& lane : myLanes) {
+    for (const auto& lane : getChildLanes()) {
         if (lane->isRestricted(vclass)) {
             return true;
         }
@@ -2483,17 +2531,17 @@ GNEEdge::getVehiclesOverEdgeMap() const {
     std::set<std::pair<double, GNEDemandElement*> > vehicles;
     // first obtain all vehicles of this edge
     for (const auto& edgeChild : getChildDemandElements()) {
-        if (((edgeChild->getTagProperty().getTag() == SUMO_TAG_TRIP) || (edgeChild->getTagProperty().getTag() == SUMO_TAG_FLOW)) &&
+        if (((edgeChild->getTagProperty()->getTag() == SUMO_TAG_TRIP) || (edgeChild->getTagProperty()->getTag() == SUMO_TAG_FLOW)) &&
                 (edgeChild->getParentEdges().front() == this)) {
             vehicles.insert(std::make_pair(edgeChild->getAttributeDouble(SUMO_ATTR_DEPART), edgeChild));
             vehicles.insert(std::make_pair(edgeChild->getAttributeDouble(SUMO_ATTR_DEPART), edgeChild));
-        } else if ((edgeChild->getTagProperty().getTag() == SUMO_TAG_ROUTE) && (edgeChild->getParentEdges().front() == this)) {
+        } else if ((edgeChild->getTagProperty()->getTag() == SUMO_TAG_ROUTE) && (edgeChild->getParentEdges().front() == this)) {
             for (const auto& routeChild : edgeChild->getChildDemandElements()) {
-                if (routeChild->getTagProperty().vehicleRoute()) {
+                if (routeChild->getTagProperty()->vehicleRoute()) {
                     vehicles.insert(std::make_pair(routeChild->getAttributeDouble(SUMO_ATTR_DEPART), routeChild));
                 }
             }
-        } else if ((edgeChild->getTagProperty().getTag() == GNE_TAG_ROUTE_EMBEDDED) && (edgeChild->getParentEdges().front() == this) && (edgeChild->getParentDemandElements().size() > 0)) {
+        } else if ((edgeChild->getTagProperty()->getTag() == GNE_TAG_ROUTE_EMBEDDED) && (edgeChild->getParentEdges().front() == this) && (edgeChild->getParentDemandElements().size() > 0)) {
             vehicles.insert(std::make_pair(edgeChild->getParentDemandElements().front()->getAttributeDouble(SUMO_ATTR_DEPART), edgeChild->getParentDemandElements().front()));
         }
     }
@@ -2525,7 +2573,7 @@ GNEEdge::getPersonsOverEdgeMap() const {
     std::set<std::pair<double, GNEDemandElement*> > persons;
     // first obtain all persons of this edge
     for (const auto& edgeChild : getChildDemandElements()) {
-        if (edgeChild->getTagProperty().isPlanPerson() && (edgeChild->getParentDemandElements().size() > 0)) {
+        if (edgeChild->getTagProperty()->isPlanPerson() && (edgeChild->getParentDemandElements().size() > 0)) {
             persons.insert(std::make_pair(edgeChild->getParentDemandElements().front()->getAttributeDouble(SUMO_ATTR_DEPARTPOS), edgeChild->getParentDemandElements().front()));
         }
     }
@@ -2558,7 +2606,7 @@ GNEEdge::getContainersOverEdgeMap() const {
     std::set<std::pair<double, GNEDemandElement*> > containers;
     // first obtain all containers of this edge
     for (const auto& edgeChild : getChildDemandElements()) {
-        if (edgeChild->getTagProperty().isPlanContainer() && (edgeChild->getParentDemandElements().size() > 0)) {
+        if (edgeChild->getTagProperty()->isPlanContainer() && (edgeChild->getParentDemandElements().size() > 0)) {
             containers.insert(std::make_pair(edgeChild->getParentDemandElements().front()->getAttributeDouble(SUMO_ATTR_DEPARTPOS), edgeChild->getParentDemandElements().front()));
         }
     }
@@ -2639,7 +2687,7 @@ GNEEdge::drawStartGeometryPoint(const GUIVisualizationSettings& s, const GUIVisu
         const auto& startGeometryPointPos = myNBEdge->getGeometry().front();
         // get flags
         const bool startPosEdited = (startGeometryPointPos != getParentJunctions().front()->getPositionInView());
-        const bool forceDraw = myNet->getViewNet()->getViewParent()->getMoveFrame()->getNetworkModeOptions()->getForceDrawGeometryPoints();
+        const bool forceDraw = myNet->getViewNet()->getViewParent()->getMoveFrame()->getNetworkMoveOptions()->getForceDrawGeometryPoints();
         // check drawing conditions
         if (startPosEdited || forceDraw) {
             // calculate angle betwen first and second geometry point
@@ -2696,14 +2744,14 @@ GNEEdge::drawStartGeometryPoint(const GUIVisualizationSettings& s, const GUIVisu
 
 void
 GNEEdge::drawEndGeometryPoint(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
-                              const double layer, const double geometryPointRadius, const double exaggeration) const {
+                              const double geometryPointRadius, const double layer, const double exaggeration) const {
     // check detail level
     if (d <= GUIVisualizationSettings::Detail::GeometryPoint) {
         // get first geometry point
         const auto& geometryPointPos = myNBEdge->getGeometry().back();
         // get flags
         const bool endPosEdited = (geometryPointPos != getParentJunctions().back()->getPositionInView());
-        const bool forceDraw = myNet->getViewNet()->getViewParent()->getMoveFrame()->getNetworkModeOptions()->getForceDrawGeometryPoints();
+        const bool forceDraw = myNet->getViewNet()->getViewParent()->getMoveFrame()->getNetworkMoveOptions()->getForceDrawGeometryPoints();
         // check drawing conditions
         if (endPosEdited || forceDraw) {
             // calculate angle last and previous geometry point
@@ -2766,8 +2814,8 @@ GNEEdge::drawEdgeName(const GUIVisualizationSettings& s) const {
     // check conditions
     if (s.edgeName.show(this) || drawStreetName || s.edgeValue.show(this)) {
         // get first and last lanes
-        const GNELane* firstLane = myLanes[0];
-        const GNELane* lastLane = myLanes[myLanes.size() - 1];
+        const GNELane* firstLane = getChildLanes()[0];
+        const GNELane* lastLane = getChildLanes()[getChildLanes().size() - 1];
         // calculate draw position
         Position drawPosition = firstLane->getLaneShape().positionAtOffset(firstLane->getLaneShape().length() / (double) 2.);
         drawPosition.add(lastLane->getLaneShape().positionAtOffset(lastLane->getLaneShape().length() / (double) 2.));
@@ -2830,7 +2878,7 @@ GNEEdge::drawLaneStopOffset(const GUIVisualizationSettings& s, const GUIVisualiz
         // translate to front (note: Special case)
         drawInLayer(layer + 1);
         if (myNBEdge->myEdgeStopOffset.isDefined() && (myNBEdge->myEdgeStopOffset.getPermissions() & SVC_PASSENGER) != 0) {
-            for (const auto& lane : getLanes()) {
+            for (const auto& lane : getChildLanes()) {
                 lane->drawLaneStopOffset(s);
             }
         }
@@ -2849,7 +2897,7 @@ GNEEdge::drawChildrens(const GUIVisualizationSettings& s) const {
     // draw person stops
     if (myNet->getViewNet()->getNetworkViewOptions().showDemandElements() && myNet->getViewNet()->getDataViewOptions().showDemandElements()) {
         for (const auto& stopEdge : getChildDemandElements()) {
-            if ((stopEdge->getTagProperty().getTag() == GNE_TAG_STOPPERSON_EDGE) || (stopEdge->getTagProperty().getTag() == GNE_TAG_STOPCONTAINER_EDGE)) {
+            if ((stopEdge->getTagProperty()->getTag() == GNE_TAG_STOPPERSON_EDGE) || (stopEdge->getTagProperty()->getTag() == GNE_TAG_STOPCONTAINER_EDGE)) {
                 stopEdge->drawGL(s);
             }
         }
@@ -2876,7 +2924,7 @@ GNEEdge::calculateEdgeContour(const GUIVisualizationSettings& s, const GUIVisual
         // get geometry point radius
         const auto geometryPointRadius = getGeometryPointRadius();
         // check if edit extrems
-        const bool forceDrawExtrems = myNet->getViewNet()->getViewParent()->getMoveFrame()->getNetworkModeOptions()->getForceDrawGeometryPoints();
+        const bool forceDrawExtrems = myNet->getViewNet()->getViewParent()->getMoveFrame()->getNetworkMoveOptions()->getForceDrawGeometryPoints();
         const bool firstExtrem = forceDrawExtrems || (myNBEdge->getGeometry().front() != getParentJunctions().front()->getPositionInView());
         const bool lastExtrem = forceDrawExtrems || (myNBEdge->getGeometry().back() != getParentJunctions().back()->getPositionInView());
         // check if we're in move mode
@@ -2902,7 +2950,7 @@ GNEEdge::drawTAZElements(const GUIVisualizationSettings& s) const {
                 }
             }
             // iterate over lanes
-            for (const auto& lane : myLanes) {
+            for (const auto& lane : getChildLanes()) {
                 // Push layer matrix
                 GLHelper::pushMatrix();
                 // translate to front (note: Special case)
@@ -2945,7 +2993,7 @@ GNEEdge::drawTAZElements(const GUIVisualizationSettings& s) const {
 void
 GNEEdge::drawEdgeShape(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d, const double layer) const {
     // avoid draw for railways
-    if ((d <= GUIVisualizationSettings::Detail::LaneDetails) && !myLanes.front()->getDrawingConstants()->drawAsRailway() &&
+    if ((d <= GUIVisualizationSettings::Detail::LaneDetails) && !getChildLanes().front()->getDrawingConstants()->drawAsRailway() &&
             (gViewObjectsHandler.markedFirstGeometryPoint == this)) {
         // push draw matrix
         GLHelper::pushMatrix();

@@ -48,10 +48,10 @@ public:
     GNECrossing(GNENet* net);
 
     /**@brief Constructor
-     * @param[in] parentJunction GNEJunction in which this crossing is placed
+     * @param[in] junction GNEJunction in which this crossing is placed
      * @param[in] crossing Node::Crossing
      */
-    GNECrossing(GNEJunction* parentJunction, std::vector<NBEdge*> edges);
+    GNECrossing(GNEJunction* junction, std::vector<NBEdge*> edges);
 
     /// @brief Destructor
     ~GNECrossing();
@@ -94,6 +94,9 @@ public:
     /// @brief check if draw delete contour (pink/white)
     bool checkDrawDeleteContour() const;
 
+    /// @brief check if draw delete contour small (pink/white)
+    bool checkDrawDeleteContourSmall() const;
+
     /// @brief check if draw select contour (blue)
     bool checkDrawSelectContour() const;
 
@@ -110,9 +113,6 @@ public:
     /// @brief remove geometry point in the clicked position
     void removeGeometryPoint(const Position clickedPosition, GNEUndoList* undoList);
     /// @}
-
-    /// @brief get parent Junction
-    GNEJunction* getParentJunction() const;
 
     /// @brief get crossingEdges
     const std::vector<NBEdge*>& getCrossingEdges() const;
@@ -196,9 +196,6 @@ public:
     bool checkEdgeBelong(const std::vector<GNEEdge*>& edges) const;
 
 protected:
-    /// @brief the parent junction of this crossing
-    GNEJunction* myParentJunction;
-
     /// @brief Crossing Edges (It works as ID because a junction can only ONE Crossing with the same edges)
     std::vector<NBEdge*> myCrossingEdges;
 

@@ -34,9 +34,6 @@ netedit.additionalMode()
 # select containerStop
 netedit.changeElement("containerStop")
 
-# change reference to center
-netedit.changeDefaultValue(netedit.attrs.containerStop.create.references, "Center")
-
 # create containerStop in mode "Center"
 netedit.leftClick(referencePosition, netedit.positions.elements.edgeCenter1)
 
@@ -44,8 +41,8 @@ netedit.leftClick(referencePosition, netedit.positions.elements.edgeCenter1)
 netedit.moveMode()
 
 # move
-netedit.moveElementHorizontal(
-    referencePosition, netedit.positions.elements.additionals.containerStop, netedit.positions.elements.movementRadius)
+netedit.moveElementHorizontal(referencePosition, netedit.positions.elements.additionals.containerStop,
+                              netedit.positions.elements.movementRadius)
 
 # Check undos and redos
 netedit.checkUndoRedo(referencePosition)

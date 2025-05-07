@@ -17,6 +17,7 @@
 ///
 // Representation of Stops in netedit
 /****************************************************************************/
+
 #include <netedit/GNENet.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
@@ -29,32 +30,41 @@
 
 #include "GNEStopPlan.h"
 
+
 // ===========================================================================
 // member method definitions
 // ===========================================================================
-
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4355) // mask warning about "this" in initializers
+#endif
 GNEStopPlan::GNEStopPlan(SumoXMLTag tag, GNENet* net) :
-    GNEDemandElement("", net, GLO_STOP_PLAN, tag, GUIIconSubSys::getIcon(GUIIcon::STOP),
-                     GNEPathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {}, {}),
-GNEDemandElementPlan(this, -1, -1) {
-    // reset default values
-    resetDefaultValues();
+    GNEDemandElement("", net, "", tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElementPlan(this, -1, -1) {
 }
 
 
-GNEStopPlan::GNEStopPlan(GNENet* net, SumoXMLTag tag, GUIIcon icon, GNEDemandElement* personParent, const GNEPlanParents& planParameters,
-                         const double endPos, const SUMOTime duration, const SUMOTime until, const std::string& actType, bool friendlyPos, const int parameterSet) :
-    GNEDemandElement(personParent, net, GLO_STOP_PLAN, tag, GUIIconSubSys::getIcon(icon),
-                     GNEPathElement::Options::DEMAND_ELEMENT,
-                     planParameters.getJunctions(), planParameters.getEdges(), {},
-planParameters.getAdditionalElements(), planParameters.getDemandElements(personParent), {}),
-GNEDemandElementPlan(this, -1, endPos),
-myDuration(duration),
-myUntil(until),
-myActType(actType),
-myFriendlyPos(friendlyPos),
-myParametersSet(parameterSet) {
+GNEStopPlan::GNEStopPlan(SumoXMLTag tag, GNEDemandElement* personParent, const GNEPlanParents& planParameters,
+                         const double endPos, const SUMOTime duration, const SUMOTime until, const std::string& actType,
+                         bool friendlyPos, const int parameterSet) :
+    GNEDemandElement(personParent, tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElementPlan(this, -1, endPos),
+    myDuration(duration),
+    myUntil(until),
+    myActType(actType),
+    myFriendlyPos(friendlyPos),
+    myParametersSet(parameterSet) {
+    // set parents
+    setParents<GNEJunction*>(planParameters.getJunctions());
+    setParents<GNEEdge*>(planParameters.getEdges());
+    setParents<GNEAdditional*>(planParameters.getAdditionalElements());
+    setParents<GNEDemandElement*>(planParameters.getDemandElements(personParent));
+    // update centering boundary without updating grid
+    updatePlanCenteringBoundary(false);
 }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 
 GNEStopPlan::~GNEStopPlan() {}
@@ -77,10 +87,10 @@ GNEStopPlan::writeDemandElement(OutputDevice& device) const {
     if (isAttributeEnabled(SUMO_ATTR_UNTIL)) {
         device.writeAttr(SUMO_ATTR_UNTIL, getAttribute(SUMO_ATTR_UNTIL));
     }
-    if (isAttributeEnabled(SUMO_ATTR_ACTTYPE) && (myActType.size() > 0)) {
+    if (myActType.size() > 0) {
         device.writeAttr(SUMO_ATTR_ACTTYPE, myActType);
     }
-    if (myTagProperty.hasAttribute(SUMO_ATTR_FRIENDLY_POS) && myFriendlyPos) {
+    if (myFriendlyPos) {
         device.writeAttr(SUMO_ATTR_FRIENDLY_POS, myFriendlyPos);
     }
     device.closeTag();
@@ -123,7 +133,7 @@ GNEStopPlan::updateGeometry() {
     PositionVector shape;
     // update geometry depending of parent
     if (getParentAdditionals().size() > 0) {
-        const double stopWidth = (getParentAdditionals().front()->getTagProperty().getTag() == SUMO_TAG_BUS_STOP) ?
+        const double stopWidth = (getParentAdditionals().front()->getTagProperty()->getTag() == SUMO_TAG_BUS_STOP) ?
                                  viewSettings.stoppingPlaceSettings.busStopWidth : viewSettings.stoppingPlaceSettings.trainStopWidth;
         // get busStop shape
         const PositionVector& busStopShape = getParentAdditionals().front()->getAdditionalGeometry().getShape();
@@ -134,8 +144,8 @@ GNEStopPlan::updateGeometry() {
         shape = {shapeA.positionAtOffset2D(stopWidth), shapeB.positionAtOffset2D(stopWidth)};
     } else if (getParentEdges().size() > 0) {
         // get front and back lane
-        const GNELane* frontLane = getParentEdges().front()->getLanes().front();
-        const GNELane* backLane = getParentEdges().front()->getLanes().back();
+        const GNELane* frontLane = getParentEdges().front()->getChildLanes().front();
+        const GNELane* backLane = getParentEdges().front()->getChildLanes().back();
         // calculate front position
         const Position frontPosition = frontLane->getLaneShape().positionAtOffset2D(getAttributeDouble(GNE_ATTR_PLAN_GEOMETRY_ENDPOS),
                                        frontLane->getDrawingConstants()->getDrawingWidth());
@@ -188,8 +198,8 @@ GNEStopPlan::splitEdgeGeometry(const double /*splitPosition*/, const GNENetworkE
 void
 GNEStopPlan::drawGL(const GUIVisualizationSettings& s) const {
     // check if stop can be draw
-    if ((getTagProperty().isPlanStopPerson() && checkDrawPersonPlan()) ||
-            (getTagProperty().isPlanStopContainer() && checkDrawContainerPlan())) {
+    if ((getTagProperty()->isPlanStopPerson() && checkDrawPersonPlan()) ||
+            (getTagProperty()->isPlanStopContainer() && checkDrawContainerPlan())) {
         // Obtain exaggeration of the draw
         const double exaggeration = getExaggeration(s);
         // get detail level

@@ -198,6 +198,7 @@ MSStageTrip::reroute(const SUMOTime time, MSTransportableRouter& router, MSTrans
         }
         if (vehicle != nullptr) {
             vehControl.deleteVehicle(vehicle, true);
+            vehControl.discountRoutingVehicle();
         }
     }
     if (minCost != std::numeric_limits<double>::max()) {
@@ -280,7 +281,8 @@ MSStageTrip::reroute(const SUMOTime time, MSTransportableRouter& router, MSTrans
                     vehControl.addVehicle(minVehicle->getID(), minVehicle);
                     carUsed = true;
                 } else {
-                    previous = new MSStageDriving(rideOrigin, it->edges.back(), bs, localArrivalPos, 0.0, std::vector<std::string>({ it->line }), myGroup, it->intended, TIME2STEPS(it->depart));
+                    const std::string line = OptionsCont::getOptions().getBool("persontrip.ride-public-line") ? it->line : LINE_ANY;
+                    previous = new MSStageDriving(rideOrigin, it->edges.back(), bs, localArrivalPos, 0.0, std::vector<std::string>({ line }), myGroup, it->intended, TIME2STEPS(it->depart));
                     previous->setParameters(*this);
                     previous->setCosts(it->cost);
                     previous->setTrip(this);
@@ -295,6 +297,7 @@ MSStageTrip::reroute(const SUMOTime time, MSTransportableRouter& router, MSTrans
         setCosts(minCost);
         if (minVehicle != nullptr && (isTaxi || !carUsed)) {
             vehControl.deleteVehicle(minVehicle, true);
+            vehControl.discountRoutingVehicle();
         }
     } else {
         // append stage so the GUI won't crash due to inconsistent state

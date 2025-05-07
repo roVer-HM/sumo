@@ -41,11 +41,12 @@
 class GNEApplicationWindow;
 class GNELoadThread;
 class GNENet;
+class GNENetgenerateDialog;
 class GNEPythonTool;
 class GNEPythonToolDialog;
-class GNENetgenerateDialog;
-class GNERunPythonToolDialog;
 class GNERunNetgenerateDialog;
+class GNERunPythonToolDialog;
+class GNETagPropertiesDatabase;
 class GNEUndoList;
 class GNEUndoListDialog;
 class GNEViewNet;
@@ -180,7 +181,7 @@ struct GNEApplicationWindowHelper {
         void setJuPedSimView();
 
         /// @brief checkBox for allow undo-redo loading
-        MFXMenuCheckIcon* menuCheckAllowUndoRedoLoading = nullptr;
+        FXMenuCheck* menuCheckAllowUndoRedoLoading = nullptr;
 
     private:
         /// @brief build netedit config section
@@ -531,7 +532,7 @@ struct GNEApplicationWindowHelper {
             MFXMenuCheckIcon* menuCheckAutoOppositeEdge = nullptr;
 
             /// @brief separator
-            FXMenuSeparator* separator;
+            FXMenuSeparator* separator = nullptr;
 
         private:
             /// @brief pointer to current GNEApplicationWindow
@@ -593,7 +594,7 @@ struct GNEApplicationWindowHelper {
             MFXMenuCheckIcon* menuCheckLockContainer = nullptr;
 
             /// @brief separator
-            FXMenuSeparator* separator;
+            FXMenuSeparator* separator = nullptr;
 
         private:
             /// @brief pointer to current GNEApplicationWindow
@@ -684,7 +685,7 @@ struct GNEApplicationWindowHelper {
         FXMenuCommand* openUndolistDialog = nullptr;
 
         /// @brief checkBox for allow undo-redo
-        MFXMenuCheckIcon* menuCheckAllowUndoRedo = nullptr;
+        FXMenuCheck* menuCheckAllowUndoRedo = nullptr;
 
         /// @brief network view options
         NetworkViewOptions networkViewOptions;
@@ -1180,8 +1181,8 @@ struct GNEApplicationWindowHelper {
     /// @brief check if a string ends with another string
     static bool stringEndsWith(const std::string& str, const std::string& suffix);
 
-    /// @brief open general file dialog
-    static std::string openFileDialog(FXWindow* window, bool save, bool multi);
+    /// @brief open xml file dialog
+    static std::string openXMLFileDialog(FXWindow* window, bool save, bool multi);
 
     /// @brief open netconvert file dialog
     static std::string openNetworkFileDialog(FXWindow* window, bool save, bool multi = false);
@@ -1228,10 +1229,10 @@ struct GNEApplicationWindowHelper {
     /// @brief open option dialog
     static std::string openOptionFileDialog(FXWindow* window, bool save);
 
+    /// @brief open filename dialog (general)
+    static std::string openFileDialog(FXWindow* window, const std::string title, GUIIcon icon,
+                                      const std::string& extensions, bool save, bool multi = false);
 private:
-    /// @brief open filename dialog
-    static std::string openFileDialog(FXWindow* window, const std::string title, GUIIcon icon, const std::string patternList, bool save, bool multi = false);
-
     /// @brief Invalidated copy constructor.
     GNEApplicationWindowHelper(const GNEApplicationWindowHelper&) = delete;
 

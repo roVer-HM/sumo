@@ -30,7 +30,6 @@
 #include "GNEContour.h"
 #include "GNEAttributeCarrier.h"
 
-
 // ===========================================================================
 // static members
 // ===========================================================================
@@ -127,7 +126,7 @@ GNEContour::calculateContourCircleShape(const GUIVisualizationSettings& s, const
         // calculate circle shape
         buildContourCircle(s, d, pos, radius, scale);
         // check if position or bondary is within circle shape
-        gViewObjectsHandler.checkCircleObject(d, glObject, pos, (radius * scale), *myContourBoundary, layer);
+        gViewObjectsHandler.checkCircleObject(d, glObject, pos, (radius * scale), layer);
     }
 }
 
@@ -293,6 +292,10 @@ GNEContour::checkDrawPathContour(const GUIVisualizationSettings& s, const GUIVis
         if (AC->checkDrawDeleteContour()) {
             return true;
         }
+        // delete contour (small)
+        if (AC->checkDrawDeleteContourSmall()) {
+            return true;
+        }
         // select contour
         if (AC->checkDrawSelectContour()) {
             return true;
@@ -336,6 +339,8 @@ GNEContour::drawDottedContours(const GUIVisualizationSettings& s, const GUIVisua
         // delete contour
         if (AC->checkDrawDeleteContour()) {
             return drawDottedContour(s, GUIDottedGeometry::DottedContourType::REMOVE, lineWidth, addOffset);
+        } else if (AC->checkDrawDeleteContourSmall()) {
+            return drawDottedContour(s, GUIDottedGeometry::DottedContourType::REMOVE, s.dottedContourSettings.segmentWidthSmall, addOffset);
         }
         // select contour
         if (AC->checkDrawSelectContour()) {
@@ -577,8 +582,8 @@ GNEContour::buildContourEdge(const GUIVisualizationSettings& s, const GUIVisuali
     // set left hand flag
     const bool lefthand = OptionsCont::getOptions().getBool("lefthand");
     // obtain lanes
-    const GNELane* topLane = lefthand ? edge->getLanes().front() : edge->getLanes().back();
-    const GNELane* botLane = lefthand ? edge->getLanes().back() : edge->getLanes().front();
+    const GNELane* topLane = lefthand ? edge->getChildLanes().front() : edge->getChildLanes().back();
+    const GNELane* botLane = lefthand ? edge->getChildLanes().back() : edge->getChildLanes().front();
     // create top and bot geometries
     myDottedGeometries->at(0) = GUIDottedGeometry(s, d, topLane->getLaneGeometry().getShape(), false);
     myDottedGeometries->at(2) = GUIDottedGeometry(s, d, botLane->getLaneGeometry().getShape().reverse(), false);

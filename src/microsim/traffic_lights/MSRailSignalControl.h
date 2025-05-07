@@ -28,6 +28,7 @@
 class MSRailSignal;
 class MSRailSignalConstraint;
 class MSEdge;
+class MSDriveWay;
 
 // ===========================================================================
 // class definitions
@@ -93,6 +94,14 @@ public:
     void updateSignals(SUMOTime t);
 
 
+    static bool isSignalized(SUMOVehicleClass svc) {
+        return (mySignalizedClasses & svc) == svc;
+    }
+
+    static void initSignalized(SVCPermissions svc) {
+        mySignalizedClasses = svc;
+    }
+
 protected:
 
     void findDeadlockFoes(const MSDriveWay* dw, const std::vector<const MSRailSignal*>& others, std::vector<const MSDriveWay*> deadlockFoes);
@@ -131,6 +140,9 @@ private:
     std::vector<std::pair<MSLink*, int> > mySwitchedGreenFlanks;
     std::map<std::pair<int, int>, bool> myDriveWayCompatibility;
     std::set<MSRailSignal*, ComparatorNumericalIdLess> myActiveSignals;
+
+    /// @brief signalized classes
+    static SVCPermissions mySignalizedClasses;
 
     static MSRailSignalControl* myInstance;
 

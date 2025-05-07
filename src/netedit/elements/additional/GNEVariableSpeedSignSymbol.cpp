@@ -31,16 +31,15 @@
 // ===========================================================================
 
 GNEVariableSpeedSignSymbol::GNEVariableSpeedSignSymbol(GNENet* net) :
-    GNEAdditional("", net, GLO_VSS, GNE_TAG_VSS_SYMBOL, GUIIconSubSys::getIcon(GUIIcon::VARIABLESPEEDSIGN), "",
-{}, {}, {}, {}, {}, {}) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional("", net, "", GNE_TAG_VSS_SYMBOL, "") {
 }
 
 
 GNEVariableSpeedSignSymbol::GNEVariableSpeedSignSymbol(GNEAdditional* VSSParent, GNELane* lane) :
-    GNEAdditional(VSSParent->getNet(), GLO_VSS, GNE_TAG_VSS_SYMBOL, GUIIconSubSys::getIcon(GUIIcon::VARIABLESPEEDSIGN), "",
-{}, {}, {lane}, {VSSParent}, {}, {}) {
+    GNEAdditional(VSSParent, GNE_TAG_VSS_SYMBOL, "") {
+    // set parents
+    setParent<GNELane*>(lane);
+    setParent<GNEAdditional*>(VSSParent);
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -151,32 +150,32 @@ GNEVariableSpeedSignSymbol::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_LANE:
             return getParentLanes().front()->getID();
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(nullptr, key);
     }
 }
 
 
 double
 GNEVariableSpeedSignSymbol::getAttributeDouble(SumoXMLAttr /*key*/) const {
-    throw InvalidArgument("Symbols cannot be edited");
+    return 0;
 }
 
 
 const Parameterised::Map&
 GNEVariableSpeedSignSymbol::getACParametersMap() const {
-    return PARAMETERS_EMPTY;
+    return getParametersMap();
 }
 
 
 void
-GNEVariableSpeedSignSymbol::setAttribute(SumoXMLAttr /*key*/, const std::string& /*value*/, GNEUndoList* /*undoList*/) {
-    throw InvalidArgument("Symbols cannot be edited");
+GNEVariableSpeedSignSymbol::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList) {
+    setCommonAttribute(key, value, undoList);
 }
 
 
 bool
-GNEVariableSpeedSignSymbol::isValid(SumoXMLAttr /*key*/, const std::string& /*value*/) {
-    throw InvalidArgument("Symbols cannot be edited");
+GNEVariableSpeedSignSymbol::isValid(SumoXMLAttr key, const std::string& value) {
+    return isCommonValid(key, value);
 }
 
 
@@ -246,8 +245,8 @@ GNEVariableSpeedSignSymbol::drawVSSSymbol(const GUIVisualizationSettings& s, con
 
 
 void
-GNEVariableSpeedSignSymbol::setAttribute(SumoXMLAttr /*key*/, const std::string& /*value*/) {
-    throw InvalidArgument("Symbols cannot be edited");
+GNEVariableSpeedSignSymbol::setAttribute(SumoXMLAttr key, const std::string& value) {
+    setCommonAttribute(this, key, value);
 }
 
 

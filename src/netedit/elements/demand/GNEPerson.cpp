@@ -17,8 +17,10 @@
 ///
 // Representation of persons in netedit
 /****************************************************************************/
+
 #include <microsim/devices/MSDevice_BTreceiver.h>
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/changes/GNEChange_Attribute.h>
@@ -34,6 +36,7 @@
 // ===========================================================================
 // FOX callback mapping
 // ===========================================================================
+
 FXDEFMAP(GNEPerson::GNEPersonPopupMenu) personPopupMenuMap[] = {
     FXMAPFUNC(SEL_COMMAND,  MID_GNE_PERSON_TRANSFORM,   GNEPerson::GNEPersonPopupMenu::onCmdTransform),
 };
@@ -51,22 +54,12 @@ FXIMPLEMENT(GNEPerson::GNESelectedPersonsPopupMenu, GUIGLObjectPopupMenu, select
 // ===========================================================================
 
 GNEPerson::GNEPersonPopupMenu::GNEPersonPopupMenu(GNEPerson* person, GUIMainWindow& app, GUISUMOAbstractView& parent) :
-    GUIGLObjectPopupMenu(app, parent, *person),
+    GUIGLObjectPopupMenu(app, parent, person),
     myPerson(person),
     myTransformToPerson(nullptr),
     myTransformToPersonFlow(nullptr) {
-    // build header
-    myPerson->buildPopupHeader(this, app);
-    // build menu command for center button and copy cursor position to clipboard
-    myPerson->buildCenterPopupEntry(this);
-    myPerson->buildPositionCopyEntry(this, app);
-    // build menu commands for names
-    GUIDesigns::buildFXMenuCommand(this, ("Copy " + myPerson->getTagStr() + " name to clipboard").c_str(), nullptr, this, MID_COPY_NAME);
-    GUIDesigns::buildFXMenuCommand(this, ("Copy " + myPerson->getTagStr() + " typed name to clipboard").c_str(), nullptr, this, MID_COPY_TYPED_NAME);
-    new FXMenuSeparator(this);
-    // build selection and show parameters menu
-    myPerson->getNet()->getViewNet()->buildSelectionACPopupEntry(this, myPerson);
-    myPerson->buildShowParamsPopupEntry(this);
+    // build common options
+    person->buildPopUpMenuCommonOptions(this, app, person->myNet->getViewNet(), person->getTagProperty()->getTag(), person->isAttributeCarrierSelected());
     // add transform functions only in demand mode
     if (myPerson->getNet()->getViewNet()->getEditModes().isCurrentSupermodeDemand()) {
         // create menu pane for transform operations
@@ -77,9 +70,9 @@ GNEPerson::GNEPersonPopupMenu::GNEPersonPopupMenu(GNEPerson* person, GUIMainWind
         myTransformToPerson = GUIDesigns::buildFXMenuCommand(transformOperation, "Person", GUIIconSubSys::getIcon(GUIIcon::PERSON), this, MID_GNE_PERSON_TRANSFORM);
         myTransformToPersonFlow = GUIDesigns::buildFXMenuCommand(transformOperation, "PersonFlow", GUIIconSubSys::getIcon(GUIIcon::PERSONFLOW), this, MID_GNE_PERSON_TRANSFORM);
         // check what menu command has to be disabled
-        if (myPerson->getTagProperty().getTag() == SUMO_TAG_PERSON) {
+        if (myPerson->getTagProperty()->getTag() == SUMO_TAG_PERSON) {
             myTransformToPerson->disable();
-        } else if (myPerson->getTagProperty().getTag() == SUMO_TAG_PERSONFLOW) {
+        } else if (myPerson->getTagProperty()->getTag() == SUMO_TAG_PERSONFLOW) {
             myTransformToPersonFlow->disable();
         }
     }
@@ -105,23 +98,13 @@ GNEPerson::GNEPersonPopupMenu::onCmdTransform(FXObject* obj, FXSelector, void*) 
 // ===========================================================================
 
 GNEPerson::GNESelectedPersonsPopupMenu::GNESelectedPersonsPopupMenu(GNEPerson* person, const std::vector<GNEPerson*>& selectedPerson, GUIMainWindow& app, GUISUMOAbstractView& parent) :
-    GUIGLObjectPopupMenu(app, parent, *person),
-    myPersonTag(person->getTagProperty().getTag()),
+    GUIGLObjectPopupMenu(app, parent, person),
+    myPersonTag(person->getTagProperty()->getTag()),
     mySelectedPersons(selectedPerson),
     myTransformToPerson(nullptr),
     myTransformToPersonFlow(nullptr) {
-    // build header
-    person->buildPopupHeader(this, app);
-    // build menu command for center button and copy cursor position to clipboard
-    person->buildCenterPopupEntry(this);
-    person->buildPositionCopyEntry(this, app);
-    // build menu commands for names
-    GUIDesigns::buildFXMenuCommand(this, ("Copy " + person->getTagStr() + " name to clipboard").c_str(), nullptr, this, MID_COPY_NAME);
-    GUIDesigns::buildFXMenuCommand(this, ("Copy " + person->getTagStr() + " typed name to clipboard").c_str(), nullptr, this, MID_COPY_TYPED_NAME);
-    new FXMenuSeparator(this);
-    // build selection and show parameters menu
-    person->getNet()->getViewNet()->buildSelectionACPopupEntry(this, person);
-    person->buildShowParamsPopupEntry(this);
+    // build common options
+    person->buildPopUpMenuCommonOptions(this, app, person->myNet->getViewNet(), person->myTagProperty->getTag(), person->isAttributeCarrierSelected());
     // add transform functions only in demand mode
     if (person->getNet()->getViewNet()->getEditModes().isCurrentSupermodeDemand()) {
         // create menu pane for transform operations
@@ -143,10 +126,10 @@ GNEPerson::GNESelectedPersonsPopupMenu::onCmdTransform(FXObject* obj, FXSelector
     // iterate over all selected persons
     for (const auto& i : mySelectedPersons) {
         if ((obj == myTransformToPerson) &&
-                (i->getTagProperty().getTag() == myPersonTag)) {
+                (i->getTagProperty()->getTag() == myPersonTag)) {
             GNERouteHandler::transformToPerson(i);
         } else if ((obj == myTransformToPersonFlow) &&
-                   (i->getTagProperty().getTag() == myPersonTag)) {
+                   (i->getTagProperty()->getTag() == myPersonTag)) {
             GNERouteHandler::transformToPerson(i);
         }
     }
@@ -156,28 +139,30 @@ GNEPerson::GNESelectedPersonsPopupMenu::onCmdTransform(FXObject* obj, FXSelector
 // ===========================================================================
 // member method definitions
 // ===========================================================================
-
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4355) // mask warning about "this" in initializers
+#endif
 GNEPerson::GNEPerson(SumoXMLTag tag, GNENet* net) :
-    GNEDemandElement("", net, GLO_PERSON, tag, GUIIconSubSys::getIcon(GUIIcon::PERSON),
-                     GNEPathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {}, {}),
-GNEDemandElementFlow(this) {
-    // reset default values
-    resetDefaultValues();
+    GNEDemandElement("", net, "", tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElementFlow(this) {
     // enable set and persons per hour as default flow values
     toggleAttribute(SUMO_ATTR_END, true);
     toggleAttribute(SUMO_ATTR_PERSONSPERHOUR, true);
 }
 
 
-GNEPerson::GNEPerson(SumoXMLTag tag, GNENet* net, GNEDemandElement* pType, const SUMOVehicleParameter& personparameters) :
-    GNEDemandElement(personparameters.id, net, (tag == SUMO_TAG_PERSONFLOW) ? GLO_PERSONFLOW : GLO_PERSON, tag,
-                     (tag == SUMO_TAG_PERSONFLOW) ? GUIIconSubSys::getIcon(GUIIcon::PERSONFLOW) : GUIIconSubSys::getIcon(GUIIcon::PERSON),
-                     GNEPathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {pType}, {}),
-GNEDemandElementFlow(this, personparameters) {
+GNEPerson::GNEPerson(SumoXMLTag tag, GNENet* net, const std::string& filename, GNEDemandElement* pType, const SUMOVehicleParameter& personparameters) :
+    GNEDemandElement(personparameters.id, net, filename, tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElementFlow(this, personparameters) {
+    // set parents
+    setParent<GNEDemandElement*>(pType);
     // set manually vtypeID (needed for saving)
     vtypeid = pType->getID();
 }
-
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 GNEPerson::~GNEPerson() {}
 
@@ -186,7 +171,7 @@ GNEMoveOperation*
 GNEPerson::getMoveOperation() {
     const auto firstContainerPlan = getChildDemandElements().front();
     // check first person plan
-    if (firstContainerPlan->getTagProperty().isPlanStopPerson()) {
+    if (firstContainerPlan->getTagProperty()->isPlanStopPerson()) {
         return nullptr;
     } else if (firstContainerPlan->getParentEdges().size() > 0) {
         // get lane
@@ -211,12 +196,12 @@ GNEPerson::writeDemandElement(OutputDevice& device) const {
         // unset VType parameter
         parametersSet &= ~VEHPARS_VTYPE_SET;
         // write person attributes (VType will not be written)
-        write(device, OptionsCont::getOptions(), myTagProperty.getXMLTag());
+        write(device, OptionsCont::getOptions(), myTagProperty->getXMLTag());
         // set VType parameter again
         parametersSet |= VEHPARS_VTYPE_SET;
     } else {
         // write person attributes, including VType
-        write(device, OptionsCont::getOptions(), myTagProperty.getXMLTag(), getTypeParent()->getID());
+        write(device, OptionsCont::getOptions(), myTagProperty->getXMLTag(), getTypeParent()->getID());
     }
     // write flow attributes
     writeFlowAttributes(this, device);
@@ -307,7 +292,7 @@ Boundary
 GNEPerson::getCenteringBoundary() const {
     Boundary personBoundary;
     if (getChildDemandElements().size() > 0) {
-        if (getChildDemandElements().front()->getTagProperty().isPlanStopPerson()) {
+        if (getChildDemandElements().front()->getTagProperty()->isPlanStopPerson()) {
             // use boundary of stop center
             return getChildDemandElements().front()->getCenteringBoundary();
         } else {
@@ -382,16 +367,16 @@ GNEPerson::drawGL(const GUIVisualizationSettings& s) const {
             // draw stack label
             if (myStackedLabelNumber > 0) {
                 drawStackLabel(myStackedLabelNumber, "person", Position(personPosition.x() - 2.5, personPosition.y()), -90, 1.3, 5, getExaggeration(s));
-            } else if ((getChildDemandElements().front()->getTagProperty().getTag() == GNE_TAG_STOPPERSON_BUSSTOP) ||
-                       (getChildDemandElements().front()->getTagProperty().getTag() == GNE_TAG_STOPPERSON_TRAINSTOP)) {
+            } else if ((getChildDemandElements().front()->getTagProperty()->getTag() == GNE_TAG_STOPPERSON_BUSSTOP) ||
+                       (getChildDemandElements().front()->getTagProperty()->getTag() == GNE_TAG_STOPPERSON_TRAINSTOP)) {
                 // declare counter for stacked persons over stops
                 int stackedCounter = 0;
                 // get stoppingPlace
                 const auto stoppingPlace = getChildDemandElements().front()->getParentAdditionals().front();
                 // get stacked persons
                 for (const auto& stopPerson : stoppingPlace->getChildDemandElements()) {
-                    if ((stopPerson->getTagProperty().getTag() == GNE_TAG_STOPPERSON_BUSSTOP) ||
-                            (stopPerson->getTagProperty().getTag() == GNE_TAG_STOPPERSON_TRAINSTOP)) {
+                    if ((stopPerson->getTagProperty()->getTag() == GNE_TAG_STOPPERSON_BUSSTOP) ||
+                            (stopPerson->getTagProperty()->getTag() == GNE_TAG_STOPPERSON_TRAINSTOP)) {
                         // get person parent
                         const auto personParent = stopPerson->getParentDemandElements().front();
                         // check if the stop if the first person plan parent
@@ -406,7 +391,7 @@ GNEPerson::drawGL(const GUIVisualizationSettings& s) const {
                 }
             }
             // draw flow label
-            if (myTagProperty.isFlow()) {
+            if (myTagProperty->isFlow()) {
                 drawFlowLabel(Position(personPosition.x() - 1, personPosition.y() - 0.25), -90, 1.8, 2, getExaggeration(s));
             }
             // draw lock icon
@@ -475,17 +460,14 @@ GNEPerson::getAttribute(SumoXMLAttr key) const {
             if (wasSet(VEHPARS_COLOR_SET)) {
                 return toString(color);
             } else {
-                return myTagProperty.getDefaultValue(SUMO_ATTR_COLOR);
+                return myTagProperty->getDefaultStringValue(SUMO_ATTR_COLOR);
             }
         case SUMO_ATTR_DEPARTPOS:
             if (wasSet(VEHPARS_DEPARTPOS_SET)) {
                 return getDepartPos();
             } else {
-                return myTagProperty.getDefaultValue(SUMO_ATTR_DEPARTPOS);
+                return myTagProperty->getDefaultStringValue(SUMO_ATTR_DEPARTPOS);
             }
-        // Others
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
         default:
             return getFlowAttribute(this, key);
     }
@@ -518,17 +500,17 @@ GNEPerson::getAttributePosition(SumoXMLAttr key) const {
             // get person plan
             const GNEDemandElement* personPlan = getChildDemandElements().front();
             // first check if first person plan is a stop
-            if (personPlan->getTagProperty().isPlanStopPerson()) {
+            if (personPlan->getTagProperty()->isPlanStopPerson()) {
                 // stop center
                 return personPlan->getPositionInView();
-            } else if (personPlan->getTagProperty().planFromTAZ()) {
+            } else if (personPlan->getTagProperty()->planFromTAZ()) {
                 // TAZ
                 if (personPlan->getParentAdditionals().front()->getAttribute(SUMO_ATTR_CENTER).empty()) {
                     return personPlan->getParentAdditionals().front()->getAttributePosition(GNE_ATTR_TAZ_CENTROID);
                 } else {
                     return personPlan->getParentAdditionals().front()->getAttributePosition(SUMO_ATTR_CENTER);
                 }
-            } else if (personPlan->getTagProperty().planFromJunction()) {
+            } else if (personPlan->getTagProperty()->planFromJunction()) {
                 // juncrtion
                 return personPlan->getParentJunctions().front()->getPositionInView();
             } else {
@@ -548,8 +530,6 @@ GNEPerson::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* 
         case SUMO_ATTR_TYPE:
         case SUMO_ATTR_COLOR:
         case SUMO_ATTR_DEPARTPOS:
-        // Other
-        case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
@@ -577,9 +557,6 @@ GNEPerson::isValid(SumoXMLAttr key, const std::string& value) {
             // if error is empty, given value is valid
             return error.empty();
         }
-        // Other
-        case GNE_ATTR_PARAMETERS:
-            return Parameterised::areParametersValid(value);
         default:
             return isValidFlowAttribute(this, key, value);
     }
@@ -671,34 +648,30 @@ GNEPerson::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         case SUMO_ATTR_COLOR:
-            if (!value.empty() && (value != myTagProperty.getDefaultValue(key))) {
+            if (!value.empty() && (value != myTagProperty->getDefaultStringValue(key))) {
                 color = parse<RGBColor>(value);
                 // mark parameter as set
                 parametersSet |= VEHPARS_COLOR_SET;
             } else {
                 // set default value
-                color = parse<RGBColor>(myTagProperty.getDefaultValue(key));
+                color = parse<RGBColor>(myTagProperty->getDefaultStringValue(key));
                 // unset parameter
                 parametersSet &= ~VEHPARS_COLOR_SET;
             }
             break;
         case SUMO_ATTR_DEPARTPOS:
-            if (!value.empty() && (value != myTagProperty.getDefaultValue(key))) {
+            if (!value.empty() && (value != myTagProperty->getDefaultStringValue(key))) {
                 parseDepartPos(value, toString(SUMO_TAG_PERSON), id, departPos, departPosProcedure, error);
                 // mark parameter as set
                 parametersSet |= VEHPARS_DEPARTPOS_SET;
             } else {
                 // set default value
-                parseDepartPos(myTagProperty.getDefaultValue(key), toString(SUMO_TAG_PERSON), id, departPos, departPosProcedure, error);
+                parseDepartPos(myTagProperty->getDefaultStringValue(key), toString(SUMO_TAG_PERSON), id, departPos, departPosProcedure, error);
                 // unset parameter
                 parametersSet &= ~VEHPARS_DEPARTPOS_SET;
             }
             // compute person
             updateGeometry();
-            break;
-        // Other
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
             break;
         default:
             setFlowAttribute(this, key, value);

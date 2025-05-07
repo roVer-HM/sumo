@@ -17,20 +17,23 @@
 ///
 // Table used in GNETLSFrame for editing TLS programs
 /****************************************************************************/
-#include <config.h>
 
-#include "GNETLSTable.h"
-
+#include <netedit/GNEApplicationWindow.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
-#include <netedit/GNEApplicationWindow.h>
-#include <utils/foxtools/MFXTextFieldTooltip.h>
+#include <netedit/elements/GNEAttributeCarrier.h>
 #include <utils/foxtools/MFXLabelTooltip.h>
 #include <utils/foxtools/MFXMenuButtonTooltip.h>
+#include <utils/foxtools/MFXTextFieldTooltip.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/images/GUIIconSubSys.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 
+#include "GNETLSTable.h"
+
+// ===========================================================================
+// Defines
+// ===========================================================================
 
 #define EXTRAMARGIN 1
 #define DEFAULTWIDTH 190

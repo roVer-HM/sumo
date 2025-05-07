@@ -17,7 +17,6 @@
 ///
 // A network change in which a busStop is created or deleted
 /****************************************************************************/
-#include <config.h>
 
 #include <netedit/GNENet.h>
 #include <netedit/GNEViewNet.h>
@@ -29,6 +28,7 @@
 // ===========================================================================
 // FOX-declarations
 // ===========================================================================
+
 FXIMPLEMENT_ABSTRACT(GNEChange_TAZSourceSink, GNEChange, nullptr, 0)
 
 // ===========================================================================
@@ -48,9 +48,9 @@ GNEChange_TAZSourceSink::~GNEChange_TAZSourceSink() {
         mySourceSink->decRef("GNEChange_TAZSourceSink");
         if (mySourceSink->unreferenced()) {
             // make sure that sourceSink isn't in net before removing
-            if (mySourceSink->getNet()->getAttributeCarriers()->retrieveAdditional(mySourceSink, false)) {
+            if (mySourceSink->getNet()->getAttributeCarriers()->retrieveTAZSourceSink(mySourceSink, false)) {
                 // delete sourceSink from net
-                mySourceSink->getNet()->getAttributeCarriers()->deleteAdditional(mySourceSink);
+                mySourceSink->getNet()->getAttributeCarriers()->deleteTAZSourceSink(mySourceSink);
             }
             delete mySourceSink;
         }
@@ -61,23 +61,15 @@ GNEChange_TAZSourceSink::~GNEChange_TAZSourceSink() {
 void
 GNEChange_TAZSourceSink::undo() {
     if (myForward) {
-        // unselect if mySelectedElement is enabled
-        if (mySelectedElement) {
-            mySourceSink->unselectAttributeCarrier();
-        }
         // delete sourceSink from net
-        mySourceSink->getNet()->getAttributeCarriers()->deleteAdditional(mySourceSink);
-        // restore container
-        restoreHierarchicalContainers();
+        mySourceSink->getNet()->getAttributeCarriers()->deleteTAZSourceSink(mySourceSink);
+        // remove element from parent and children
+        removeElementFromParentsAndChildren(mySourceSink);
     } else {
-        // select if mySelectedElement is enabled
-        if (mySelectedElement) {
-            mySourceSink->selectAttributeCarrier();
-        }
+        // add element in parent and children
+        addElementInParentsAndChildren(mySourceSink);
         // insert sourceSink into net
-        mySourceSink->getNet()->getAttributeCarriers()->insertAdditional(mySourceSink);
-        // restore container
-        restoreHierarchicalContainers();
+        mySourceSink->getNet()->getAttributeCarriers()->insertTAZSourceSink(mySourceSink);
     }
     // require always save sourceSinks
     mySourceSink->getNet()->getSavingStatus()->requireSaveAdditionals();
@@ -91,18 +83,14 @@ GNEChange_TAZSourceSink::redo() {
         if (mySelectedElement) {
             mySourceSink->selectAttributeCarrier();
         }
-        // insert sourceSink into net
-        mySourceSink->getNet()->getAttributeCarriers()->insertAdditional(mySourceSink);
-        // add sourceSink in parent elements
+        // add element in parent and children
         addElementInParentsAndChildren(mySourceSink);
+        // insert sourceSink into net
+        mySourceSink->getNet()->getAttributeCarriers()->insertTAZSourceSink(mySourceSink);
     } else {
-        // unselect if mySelectedElement is enabled
-        if (mySelectedElement) {
-            mySourceSink->unselectAttributeCarrier();
-        }
         // delete sourceSink from net
-        mySourceSink->getNet()->getAttributeCarriers()->deleteAdditional(mySourceSink);
-        // remove sourceSink from parents and children
+        mySourceSink->getNet()->getAttributeCarriers()->deleteTAZSourceSink(mySourceSink);
+        // remove element from parent and children
         removeElementFromParentsAndChildren(mySourceSink);
     }
     // require always save sourceSinks

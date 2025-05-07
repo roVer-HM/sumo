@@ -200,11 +200,10 @@ to be inside the range of the stop.
 Stops define a delay until the next element of a plan is started. They
 can be used to model activities such as working or shopping. Stops for
 persons follow the specification at
-[Specification\#Stops](index.md#stops). However, only
-the attributes `lane`, `duration` and `until` are evaluated. Using these attributes it is
-possible to model activities with a fixed duration as well as those with
+[Specification\#Stops](index.md#stops). However, the attributes `index`, `triggered`, `containerTriggered` and `parking` are not evaluated. 
+With a `<stop>` it is possible to model activities with a fixed duration as well as those with
 a fixed end time. If a person needs to be transferred between two
-positions without delay, it is possible to use two stops in conjunction.
+positions without delay, it is possible to use two stops at different locations in sequence and set attribute `jump` for the first stop.
 
 ## Parameters
 
@@ -405,6 +404,11 @@ persons:
 - [fcd-output](../Simulation/Output/FCDOutput.md)
 - [netstate-dump](../Simulation/Output/RawDump.md)
 - [aggregated simulation statistics](../Simulation/Output/index.md#aggregated_traffic_measures)
+- [statistic output](../Simulation/Output/StatisticOutput.md)
+- [meanData](../Simulation/Output/Lane-_or_Edge-based_Traffic_Measures.md) (with attribute `detectPersons`)
+- [E1, E2 and E3 detectors](../Simulation/Pedestrians.md#detectors_for_pedestrians)
+- [collision-output](../Simulation/Output/Collisions.md) (collision types "crossing", "walkingarea" and "junctionPedestrian")
+- [stop-output](../Simulation/Output/StopOutput.md) (in attributes "initialPersons", "loadedPersons", "unloadedPersons")
 
 # Devices
 

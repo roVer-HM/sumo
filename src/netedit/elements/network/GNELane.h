@@ -175,6 +175,9 @@ public:
     /// @brief check if draw delete contour (pink/white)
     bool checkDrawDeleteContour() const;
 
+    /// @brief check if draw delete contour small (pink/white)
+    bool checkDrawDeleteContourSmall() const;
+
     /// @brief check if draw select contour (blue)
     bool checkDrawSelectContour() const;
 
@@ -331,9 +334,6 @@ protected:
     GNELane();
 
 private:
-    /// @brief parent edge (GNELanes cannot use hierarchical structures)
-    GNEEdge* myParentEdge;
-
     /// @brief The index of this lane
     int myIndex;
 

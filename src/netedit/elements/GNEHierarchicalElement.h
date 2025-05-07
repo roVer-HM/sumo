@@ -20,73 +20,34 @@
 #pragma once
 #include <config.h>
 
-#include <utils/gui/div/GUIGeometry.h>
-#include <netedit/elements/GNEAttributeCarrier.h>
-
-#include "GNEHierarchicalStructure.h"
-
+#include "GNEHierarchicalStructureParents.h"
+#include "GNEHierarchicalStructureChildren.h"
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
 
-/**
- * @class GNEHierarchicalElements
- * @brief An special type of Attribute carrier that owns hierarchical elements
- */
-class GNEHierarchicalElement : public GNEAttributeCarrier {
+class GNEHierarchicalElement {
 
 public:
     /// @brief declare GNEChange_Children as friend class
     friend class GNEChange_Children;
     friend class GNEDemandElement;
 
-    /**@brief Constructor
-     * @param[in] tag SUMO Tag assigned to this type of object
-     * @param[in] net GNENet in which this AttributeCarrier is stored
-     * @param[in] parentJunctions vector of parent junctions
-     * @param[in] parentEdges vector of parent edges
-     * @param[in] parentLanes vector of parent lanes
-     * @param[in] parentAdditionals vector of parent additionals
-     * @param[in] parentDemandElements vector of parent demand elements
-     * @param[in] parentGenericData vector of parent generic data elements
-     */
-    GNEHierarchicalElement(GNENet* net, SumoXMLTag tag,
-                           const std::vector<GNEJunction*>& parentJunctions,
-                           const std::vector<GNEEdge*>& parentEdges,
-                           const std::vector<GNELane*>& parentLanes,
-                           const std::vector<GNEAdditional*>& parentAdditionals,
-                           const std::vector<GNEDemandElement*>& parentDemandElements,
-                           const std::vector<GNEGenericData*>& parentGenericDatas);
+    /// @brief default Constructor
+    GNEHierarchicalElement();
 
     /// @brief Destructor
     ~GNEHierarchicalElement();
 
-    /// @brief get GNEHierarchicalElement associated with this AttributeCarrier
-    GNEHierarchicalElement* getHierarchicalElement() {
-        return this;
-    }
+    /// @brief get parents(used in GNE_Change)
+    const GNEHierarchicalStructureParents getParents() const;
 
-    /// @name Functions related with geometry of element
-    /// @{
-    /// @brief update pre-computed geometry information
-    virtual void updateGeometry() = 0;
-
-    /// @brief Returns position of hierarchical element in view
-    virtual Position getPositionInView() const = 0;
-    /// @}
-
-    /// @brief get hierarchicalcontainer with parents and children
-    const GNEHierarchicalStructure& getHierarchicalContainer() const;
-
-    /// @brief restore hierarchical container
-    void restoreHierarchicalContainer(const GNEHierarchicalStructure& container);
+    /// @brief clear hierarchical structure parents (used in GNE_Change)
+    void clearParents();
 
     /// @name common get functions
     /// @{
-
-    /// @brief get all parents and children
-    std::vector<GNEHierarchicalElement*> getAllHierarchicalElements() const;
 
     /// @brief get parent junctions
     const GNEHierarchicalContainerParents<GNEJunction*>& getParentJunctions() const;
@@ -124,42 +85,113 @@ public:
     /// @brief return child additionals
     const GNEHierarchicalContainerChildren<GNEAdditional*>& getChildAdditionals() const;
 
-    /// @brief return child TAZSourceSinks (Hash)
-    const GNEHierarchicalContainerChildrenSet<GNETAZSourceSink*>& getChildTAZSourceSinks() const;
-
     /// @brief return child demand elements
     const GNEHierarchicalContainerChildren<GNEDemandElement*>& getChildDemandElements() const;
 
     /// @brief return child generic data elements
     const GNEHierarchicalContainerChildren<GNEGenericData*>& getChildGenericDatas() const;
 
+    /// @brief return child TAZSourceSinks (Set)
+    const GNEHierarchicalContainerChildrenSet<GNETAZSourceSink*>& getChildTAZSourceSinks() const;
+
     /// @}
 
-    /// @name common generic add/remove functions
+    /// @brief edit parent and childrens without maintain integrity (use carefully)
     /// @{
 
-    /// @brief add parent element
-    template<typename T>
-    void addParentElement(T* element) {
-        myHierarchicalStructure.addParentElement(element);
+    /// @brief set single parent element (ONLY use in constructors)
+    template<typename ParentType>
+    void setParent(ParentType parent) {
+        GNEHierarchicalContainerParents<ParentType> parents;
+        parents.push_back(parent);
+        myHierarchicalStructureParents.replaceAll(parents);
+    }
+
+    /// @brief set multiple parent element (ONLY use in constructors)
+    template<typename ParentType>
+    void setParents(const GNEHierarchicalContainerParents<ParentType>& parents) {
+        myHierarchicalStructureParents.replaceAll(parents);
+    }
+
+    /// @brief add child without updating parent (ONLY used if we're creating elements without undo-redo)
+    template<typename ChildType>
+    void addChildElement(ChildType* element) {
+        myHierarchicalStructureChildren.add(element);
+    }
+
+    /// @}
+
+    /// @name edit function maintain integrity
+    /// @{
+
+    /// @brief insert parent element
+    template<typename ElementType, typename ParentType>
+    static void insertParent(ElementType* element, ParentType* parent, const int index = -1) {
+        element->myHierarchicalStructureParents.add(parent, index);
+        parent->myHierarchicalStructureChildren.add(element);
     }
 
     /// @brief remove parent element
-    template<typename T>
-    void removeParentElement(T* element) {
-        myHierarchicalStructure.removeParentElement(element);
+    template<typename ElementType, typename ParentType>
+    static void removeParent(ElementType* element, ParentType* parent) {
+        element->myHierarchicalStructureParents.remove(parent);
+        parent->myHierarchicalStructureChildren.remove(element);
     }
 
-    /// @brief add child element
-    template<typename T>
-    void addChildElement(T* element) {
-        myHierarchicalStructure.addChildElement(element);
+    /// @brief update single parent element
+    template<typename ElementType, typename ParentType>
+    static void updateParent(ElementType element, const int index, ParentType newParent) {
+        // remove element from old parent
+        auto oldParent = element->myHierarchicalStructureParents.template at<ParentType>(index);
+        oldParent->myHierarchicalStructureChildren.remove(element);
+        // update parent
+        element->myHierarchicalStructureParents.replaceSingle(index, newParent);
+        // insert child in new parent
+        newParent->myHierarchicalStructureChildren.add(element);
+    }
+
+    /// @brief update all parent elements
+    template<typename ElementType, typename ParentType>
+    static void updateParents(ElementType element, GNEHierarchicalContainerParents<ParentType> newParents) {
+        // remove children
+        for (const auto parent : element->myHierarchicalStructureParents.template get<ParentType>()) {
+            parent->myHierarchicalStructureChildren.remove(element);
+        }
+        // update parents
+        element->myHierarchicalStructureParents.replaceAll(newParents);
+        // restore children
+        for (const auto parent : element->myHierarchicalStructureParents.template get<ParentType>()) {
+            parent->myHierarchicalStructureChildren.add(element);
+        }
+    }
+
+    /// @brief insert child element
+    template<typename ElementType, typename ChildType>
+    static void insertChild(ElementType element, ChildType child) {
+        element->myHierarchicalStructureChildren.add(child);
+        child->myHierarchicalStructureParents.add(element);
     }
 
     /// @brief remove child element
-    template<typename T>
-    void removeChildElement(T* element) {
-        myHierarchicalStructure.removeChildElement(element);
+    template<typename ElementType, typename ChildType>
+    static void removeChild(ElementType element, ChildType child) {
+        element->myHierarchicalStructureChildren.remove(child);
+        child->myHierarchicalStructureParents.remove(element);
+    }
+
+    /// @brief update all children elements
+    template<typename ElementType, typename ChildType>
+    static void updateChildren(ElementType element, GNEHierarchicalContainerChildren<ChildType> newChildren) {
+        // remove children
+        for (const auto children : element->myHierarchicalStructureChildren.template get<ChildType>()) {
+            children->myHierarchicalStructureParents.remove(element);
+        }
+        // update children
+        element->myHierarchicalStructureChildren.replaceAll(newChildren);
+        // restore children
+        for (const auto children : element->myHierarchicalStructureChildren.template get<ChildType>()) {
+            children->myHierarchicalStructureParents.add(element);
+        }
     }
 
     /// @}
@@ -178,44 +210,13 @@ public:
     /// @brief check if child demand elements are overlapped
     bool checkChildDemandElementsOverlapping() const;
 
-protected:
-    /// @brief replace parents in the given edited element
-    template<typename T, typename U>
-    void replaceParentElements(T* editedElement, const std::vector<U>& newParents) {
-        // remove edited elements from parents
-        for (const auto& parent : myHierarchicalStructure.getParents<U>()) {
-            parent->removeChildElement(editedElement);
-        }
-        // set new parents
-        myHierarchicalStructure.setParents(newParents);
-        // add edited elements in new parents
-        for (const auto& parent : myHierarchicalStructure.getParents<U>()) {
-            parent->addChildElement(editedElement);
-        }
-    }
-
-    /// @brief replace children in the given edited element
-    template<typename T, typename U>
-    void replaceChildElements(T* editedElement, const GNEHierarchicalContainerChildren<U>& newChildren) {
-        // remove edited elements from children
-        for (const auto& child : myHierarchicalStructure.getChildren<U>()) {
-            child->removeChildElement(editedElement);
-        }
-        // set new children
-        myHierarchicalStructure.setChildren(newChildren);
-        // add edited elements in new children
-        for (const auto& child : myHierarchicalStructure.getChildren<U>()) {
-            child->addChildElement(editedElement);
-        }
-    }
-
 private:
-    /// @brief hierarchical structure with parents and children
-    GNEHierarchicalStructure myHierarchicalStructure;
+    /// @brief hierarchical structure with parents
+    GNEHierarchicalStructureParents myHierarchicalStructureParents;
+
+    /// @brief hierarchical structure with  children
+    GNEHierarchicalStructureChildren myHierarchicalStructureChildren;
 
     /// @brief Invalidated copy constructor.
     GNEHierarchicalElement(const GNEHierarchicalElement&) = delete;
-
-    /// @brief Invalidated assignment operator.
-    GNEHierarchicalElement& operator=(const GNEHierarchicalElement&) = delete;
 };

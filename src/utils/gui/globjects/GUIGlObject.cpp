@@ -81,6 +81,7 @@ StringBijection<GUIGlObjectType>::Entry GUIGlObject::GUIGlObjectTypeNamesInitial
     {"e1DetectorInstant",       GLO_E1DETECTOR_INSTANT},
     {"e2Detector",              GLO_E2DETECTOR},
     {"e3Detector",              GLO_E3DETECTOR},
+    {"entryExitDetector",       GLO_DET_ENTRYEXIT},
     {"entryDetector",           GLO_DET_ENTRY},
     {"exitDetector",            GLO_DET_EXIT},
     {"rerouter",                GLO_REROUTER},
@@ -94,6 +95,7 @@ StringBijection<GUIGlObjectType>::Entry GUIGlObject::GUIGlObjectTypeNamesInitial
     {"variableSpeedSign",       GLO_VSS},
     {"variableSpeedSignStep",   GLO_VSS_STEP},
     {"calibrator",              GLO_CALIBRATOR},
+    {"calibratorFlow",          GLO_CALIBRATOR_FLOW},
     {"routeProbe",              GLO_ROUTEPROBE},
     {"vaporizer",               GLO_VAPORIZER},
     {"wire",                    GLO_WIRE},
@@ -112,9 +114,13 @@ StringBijection<GUIGlObjectType>::Entry GUIGlObject::GUIGlObjectTypeNamesInitial
     //
     {"routeElement",            GLO_ROUTEELEMENT},
     {"vType",                   GLO_VTYPE},
+    {"vTypeRef",                GLO_VTYPE_REF},
+    {"vTypeDistribution",       GLO_VTYPE_DISTRIBUTION},
     //
     {"route",                   GLO_ROUTE},
     {"routeEmbedded",           GLO_ROUTE_EMBEDDED},
+    {"routeRef",                GLO_ROUTE_REF},
+    {"routeDistribution",       GLO_ROUTE_DISTRIBUTION},
     //
     {"ride",                    GLO_RIDE},
     {"walk",                    GLO_WALK},
@@ -139,6 +145,9 @@ StringBijection<GUIGlObjectType>::Entry GUIGlObject::GUIGlObjectTypeNamesInitial
     {"edgeData",                GLO_EDGEDATA},
     {"edgeRelData",             GLO_EDGERELDATA},
     {"TAZRelData",              GLO_TAZRELDATA},
+    {"meanData",                GLO_MEANDATA},
+    {"dataSet",                 GLO_DATASET},
+    {"dataInterval",            GLO_DATAINTERVAL},
     //
     {"lockIcon",                GLO_LOCKICON},
     {"textName",                GLO_TEXTNAME},
@@ -158,10 +167,14 @@ StringBijection<GUIGlObjectType> GUIGlObject::TypeNames(GUIGlObjectTypeNamesInit
 const GUIGlID GUIGlObject::INVALID_ID = 0;
 const double GUIGlObject::INVALID_PRIORITY(-std::numeric_limits<double>::max());
 
+
 // ===========================================================================
 // method definitions
 // ===========================================================================
-
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4355) // mask warning about "this" in initializers
+#endif
 GUIGlObject::GUIGlObject(GUIGlObjectType type, const std::string& microsimID, FXIcon* icon) :
     myGlID(GUIGlObjectStorage::gIDStorage.registerObject(this)),
     myGLObjectType(type),
@@ -172,6 +185,9 @@ GUIGlObject::GUIGlObject(GUIGlObjectType type, const std::string& microsimID, FX
     myFullName = createFullName();
     GUIGlObjectStorage::gIDStorage.changeName(this, myFullName);
 }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 
 GUIGlObject::~GUIGlObject() {
@@ -272,6 +288,28 @@ GUIGlObject::setNode(osg::Node* node) {
 #endif
 
 void
+GUIGlObject::buildPopUpMenuCommonOptions(GUIGLObjectPopupMenu* ret, GUIMainWindow& app, GUISUMOAbstractView* parent,
+        const SumoXMLTag tag, const bool selected, bool addSeparator) {
+    // build header
+    buildPopupHeader(ret, app);
+    // build menu command for center button and copy cursor position to clipboard
+    buildCenterPopupEntry(ret);
+    // build menu commands for names
+    GUIDesigns::buildFXMenuCommand(ret, TLF("Copy % name to clipboard", toString(tag)), nullptr, ret, MID_COPY_NAME);
+    GUIDesigns::buildFXMenuCommand(ret, TLF("Copy % typed name to clipboard", toString(tag)), nullptr, ret, MID_COPY_TYPED_NAME);
+    new FXMenuSeparator(ret);
+    if (selected) {
+        GUIDesigns::buildFXMenuCommand(ret, TL("Remove from Selected"), GUIIconSubSys::getIcon(GUIIcon::FLAG_MINUS), parent, MID_REMOVESELECT);
+    } else {
+        GUIDesigns::buildFXMenuCommand(ret, TL("Add to Selected"), GUIIconSubSys::getIcon(GUIIcon::FLAG_PLUS), parent, MID_ADDSELECT);
+    }
+    new FXMenuSeparator(ret);
+    buildShowParamsPopupEntry(ret, true);
+    buildPositionCopyEntry(ret, app, addSeparator);
+}
+
+
+void
 GUIGlObject::buildPopupHeader(GUIGLObjectPopupMenu* ret, GUIMainWindow& app, bool addSeparator) {
     new MFXMenuHeader(ret, app.getBoldFont(), getFullName().c_str(), myIcon, nullptr, 0);
     if (OptionsCont::getOptions().getBool("gui-testing")) {
@@ -334,7 +372,7 @@ GUIGlObject::buildShowTypeParamsPopupEntry(GUIGLObjectPopupMenu* ret, bool addSe
 
 
 void
-GUIGlObject::buildPositionCopyEntry(GUIGLObjectPopupMenu* ret, const GUIMainWindow& app) const {
+GUIGlObject::buildPositionCopyEntry(GUIGLObjectPopupMenu* ret, const GUIMainWindow& app, bool addSeparator) const {
     GUIDesigns::buildFXMenuCommand(ret, TL("Copy cursor position to clipboard"), nullptr, ret, MID_COPY_CURSOR_POSITION);
     if (GeoConvHelper::getFinal().usingGeoProjection()) {
         GUIDesigns::buildFXMenuCommand(ret, TL("Copy cursor geo-position to clipboard"), nullptr, ret, MID_COPY_CURSOR_GEOPOSITION);
@@ -353,6 +391,9 @@ GUIGlObject::buildPositionCopyEntry(GUIGLObjectPopupMenu* ret, const GUIMainWind
                 GUIDesigns::buildFXMenuCommand(showCursorGeoPositionPane, mapper.first, nullptr, ret, MID_SHOW_GEOPOSITION_ONLINE);
             }
         }
+    }
+    if (addSeparator) {
+        new FXMenuSeparator(ret);
     }
 }
 

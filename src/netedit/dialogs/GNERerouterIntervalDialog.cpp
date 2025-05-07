@@ -18,15 +18,15 @@
 // Dialog for edit rerouter intervals
 /****************************************************************************/
 
-#include <utils/gui/windows/GUIAppEnum.h>
-#include <utils/gui/div/GUIDesigns.h>
-#include <netedit/changes/GNEChange_Additional.h>
-#include <netedit/GNEViewNet.h>
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
+#include <netedit/GNEViewNet.h>
+#include <netedit/changes/GNEChange_Additional.h>
+#include <utils/gui/div/GUIDesigns.h>
+#include <utils/gui/windows/GUIAppEnum.h>
 
 #include "GNERerouterIntervalDialog.h"
-
 
 // ===========================================================================
 // FOX callback mapping
@@ -83,31 +83,31 @@ GNERerouterIntervalDialog::GNERerouterIntervalDialog(GNEAdditional* rerouterInte
     myRouteProbReroutesValid(true) {
     // fill closing Reroutes
     for (auto i : myEditedAdditional->getChildAdditionals()) {
-        if (i->getTagProperty().getTag() == SUMO_TAG_CLOSING_REROUTE) {
+        if (i->getTagProperty()->getTag() == SUMO_TAG_CLOSING_REROUTE) {
             myClosingReroutesEdited.push_back(i);
         }
     }
     // fill closing Lane Reroutes
     for (auto i : myEditedAdditional->getChildAdditionals()) {
-        if (i->getTagProperty().getTag() == SUMO_TAG_CLOSING_LANE_REROUTE) {
+        if (i->getTagProperty()->getTag() == SUMO_TAG_CLOSING_LANE_REROUTE) {
             myClosingLaneReroutesEdited.push_back(i);
         }
     }
     // fill Dest Prob Reroutes
     for (auto i : myEditedAdditional->getChildAdditionals()) {
-        if (i->getTagProperty().getTag() == SUMO_TAG_DEST_PROB_REROUTE) {
+        if (i->getTagProperty()->getTag() == SUMO_TAG_DEST_PROB_REROUTE) {
             myDestProbReroutesEdited.push_back(i);
         }
     }
     // fill Route Prob Reroutes
     for (auto i : myEditedAdditional->getChildAdditionals()) {
-        if (i->getTagProperty().getTag() == SUMO_TAG_ROUTE_PROB_REROUTE) {
+        if (i->getTagProperty()->getTag() == SUMO_TAG_ROUTE_PROB_REROUTE) {
             myRouteProbReroutesEdited.push_back(i);
         }
     }
     // fill Parking Area reroutes
     for (auto i : myEditedAdditional->getChildAdditionals()) {
-        if (i->getTagProperty().getTag() == SUMO_TAG_PARKING_AREA_REROUTE) {
+        if (i->getTagProperty()->getTag() == SUMO_TAG_PARKING_AREA_REROUTE) {
             myParkingAreaRerouteEdited.push_back(i);
         }
     }
@@ -281,7 +281,7 @@ GNERerouterIntervalDialog::onCmdAddClosingLaneReroute(FXObject*, FXSelector, voi
     // first check if there is lanes in the network
     if (myEditedAdditional->getNet()->getAttributeCarriers()->getEdges().size() > 0) {
         // get lane
-        GNELane* lane = myEditedAdditional->getNet()->getAttributeCarriers()->getEdges().begin()->second->getLanes().front();
+        GNELane* lane = myEditedAdditional->getNet()->getAttributeCarriers()->getEdges().begin()->second->getChildLanes().front();
         // create closing lane reroute
         GNEClosingLaneReroute* closingLaneReroute = new GNEClosingLaneReroute(myEditedAdditional, lane, SVCAll);
         // add it using undoList

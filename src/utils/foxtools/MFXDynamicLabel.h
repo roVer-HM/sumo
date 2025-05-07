@@ -17,6 +17,8 @@
 ///
 // Text label with dynamic multi-line text (inserts line breaks on the fly)
 /****************************************************************************/
+#pragma once
+#include <config.h>
 
 #include <string>
 
@@ -55,11 +57,27 @@ protected:
     MFXDynamicLabel();
 
 private:
+    /// @brief compute indentation
     void computeIndentation();
+
+    /// @brief reformat line breaks
     void reformatLineBreaks(const int curWidth);
 
+    /// @brief original string
     std::string myOriginalString;
+
+    /// @brief indent string
     std::string myIndentString;
+
+    /// @brief indent
     int myIndent;
+
+    /// @brief previous width
     int myPreviousWidth;
+
+    /// @brief Invalidated copy constructor.
+    MFXDynamicLabel(const MFXDynamicLabel&) = delete;
+
+    /// @brief Invalidated assignment operator.
+    MFXDynamicLabel& operator=(const MFXDynamicLabel&) = delete;
 };

@@ -39,6 +39,7 @@
 // static value definitions
 // ===========================================================================
 MSRailSignalControl* MSRailSignalControl::myInstance(nullptr);
+SVCPermissions MSRailSignalControl::mySignalizedClasses(SVC_UNSPECIFIED);
 
 // ===========================================================================
 // method definitions
@@ -82,7 +83,7 @@ MSRailSignalControl::vehicleStateChanged(const SUMOVehicle* const vehicle, MSNet
     if (vehicle->isRail()) {
         std::string dummyMsg;
         if ((to == MSNet::VehicleState::BUILT && (!vehicle->getParameter().wasSet(VEHPARS_FORCE_REROUTE) || vehicle->hasValidRoute(dummyMsg)))
-                || (!vehicle->hasDeparted() && to == MSNet::VehicleState::NEWROUTE)) {
+                || to == MSNet::VehicleState::NEWROUTE) {
             // @note we could delay initialization until the departure time
             if (vehicle->getEdge()->getFunction() != SumoXMLEdgeFunc::CONNECTOR) {
                 MSRailSignal::initDriveWays(vehicle, to == MSNet::VehicleState::NEWROUTE);
@@ -95,6 +96,11 @@ MSRailSignalControl::vehicleStateChanged(const SUMOVehicle* const vehicle, MSNet
 void
 MSRailSignalControl::addSignal(MSRailSignal* signal) {
     mySignals.push_back(signal);
+    for (const auto& links : signal->getLinks()) {
+        for (const MSLink* link : links) {
+            mySignalizedClasses |= link->getPermissions();
+        }
+    }
 }
 
 

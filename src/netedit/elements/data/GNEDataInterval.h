@@ -20,32 +20,19 @@
 #pragma once
 #include <config.h>
 
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-#include <config.h>
-
-#include <netedit/elements/GNEHierarchicalElement.h>
-
 #include "GNEDataSet.h"
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
 
-class GNEDataSet;
 class GNEGenericData;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
 
-/**
- * @class GNEDataInterval
- * @brief An Element which don't belong to GNENet but has influence in the simulation
- */
-class GNEDataInterval : public GNEHierarchicalElement, public Parameterised {
+class GNEDataInterval : public GNEAttributeCarrier, public GNEHierarchicalElement, public Parameterised {
 
 public:
     /**@brief Constructor
@@ -57,6 +44,9 @@ public:
 
     /// @brief Destructor
     ~GNEDataInterval();
+
+    /// @brief get GNEHierarchicalElement associated with this AttributeCarrier
+    GNEHierarchicalElement* getHierarchicalElement();
 
     /// @brief update generic data child IDs
     void updateGenericDataIDs();
@@ -99,6 +89,9 @@ public:
 
     /// @brief check if draw delete contour (pink/white)
     bool checkDrawDeleteContour() const;
+
+    /// @brief check if draw delete contour small (pink/white)
+    bool checkDrawDeleteContourSmall() const;
 
     /// @brief check if draw select contour (blue)
     bool checkDrawSelectContour() const;

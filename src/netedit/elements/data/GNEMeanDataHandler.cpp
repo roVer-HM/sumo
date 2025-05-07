@@ -18,12 +18,6 @@
 // Builds meanData objects for netedit
 /****************************************************************************/
 
-// ===========================================================================
-// included modules
-// ===========================================================================
-#include <config.h>
-
-
 #include <netedit/changes/GNEChange_MeanData.h>
 #include <netedit/elements/data/GNEMeanData.h>
 #include <netedit/GNEViewNet.h>
@@ -33,12 +27,12 @@
 
 #include "GNEMeanDataHandler.h"
 
-
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
-GNEMeanDataHandler::GNEMeanDataHandler(GNENet* net, const bool allowUndoRedo, const bool overwrite) :
+GNEMeanDataHandler::GNEMeanDataHandler(GNENet* net, const std::string& filename, const bool allowUndoRedo, const bool overwrite) :
+    MeanDataHandler(filename),
     myNet(net),
     myAllowUndoRedo(allowUndoRedo),
     myOverwrite(overwrite) {
@@ -71,11 +65,11 @@ GNEMeanDataHandler::buildEdgeMeanData(const CommonXMLStructure::SumoBaseObject* 
         return false;
     } else if (!checkDuplicatedMeanDataElement(SUMO_TAG_MEANDATA_EDGE, id)) {
         return false;
-    } else if ((period != -1) && !checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_PERIOD, period, true)) {
+    } else if ((period != TIME2STEPS(-1)) && !checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_PERIOD, period, true)) {
         return false;
-    } else if ((begin != -1) && !checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_BEGIN, begin, true)) {
+    } else if ((begin != TIME2STEPS(-1)) && !checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_BEGIN, begin, true)) {
         return false;
-    } else if ((end != -1) && !checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_END, end, true)) {
+    } else if ((end != TIME2STEPS(-1)) && !checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_END, end, true)) {
         return false;
     } else if (!checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_MAX_TRAVELTIME, maxTravelTime, true)) {
         return false;
@@ -86,7 +80,7 @@ GNEMeanDataHandler::buildEdgeMeanData(const CommonXMLStructure::SumoBaseObject* 
     } else if (!checkExcludeEmpty(SUMO_TAG_MEANDATA_EDGE, id, excludeEmpty)) {
         return false;
     } else if ((edges.size() == edgeIDs.size()) && (attributes.size() == writtenAttributes.size())) {
-        GNEMeanData* edgeMeanData = new GNEMeanData(myNet, SUMO_TAG_MEANDATA_EDGE, id, file, period, begin, end,
+        GNEMeanData* edgeMeanData = new GNEMeanData(SUMO_TAG_MEANDATA_EDGE, id, myNet, myFilename, file, period, begin, end,
                 trackVehicles, attributes,  aggregate, edgeIDs, edgeFile, excludeEmpty,  withInternal,
                 detectPersons, minSamples, maxTravelTime, vTypes, speedThreshold);
         if (myAllowUndoRedo) {
@@ -120,11 +114,11 @@ GNEMeanDataHandler::buildLaneMeanData(const CommonXMLStructure::SumoBaseObject* 
         return false;
     } else if (!checkDuplicatedMeanDataElement(SUMO_TAG_MEANDATA_LANE, id)) {
         return false;
-    } else if ((period != -1) && !checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_PERIOD, period, true)) {
+    } else if ((period != TIME2STEPS(-1)) && !checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_PERIOD, period, true)) {
         return false;
-    } else if ((begin != -1) && !checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_BEGIN, begin, true)) {
+    } else if ((begin != TIME2STEPS(-1)) && !checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_BEGIN, begin, true)) {
         return false;
-    } else if ((end != -1) && !checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_END, end, true)) {
+    } else if ((end != TIME2STEPS(-1)) && !checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_END, end, true)) {
         return false;
     } else if (!checkNegative(SUMO_TAG_MEANDATA_EDGE, id, SUMO_ATTR_MAX_TRAVELTIME, maxTravelTime, true)) {
         return false;
@@ -135,7 +129,7 @@ GNEMeanDataHandler::buildLaneMeanData(const CommonXMLStructure::SumoBaseObject* 
     } else if (!checkExcludeEmpty(SUMO_TAG_MEANDATA_EDGE, id, excludeEmpty)) {
         return false;
     } else if ((edges.size() == edgeIDs.size()) && (attributes.size() == writtenAttributes.size())) {
-        GNEMeanData* edgeMeanData = new GNEMeanData(myNet, SUMO_TAG_MEANDATA_LANE, id, file, period, begin, end,
+        GNEMeanData* edgeMeanData = new GNEMeanData(SUMO_TAG_MEANDATA_LANE, id, myNet, myFilename, file, period, begin, end,
                 trackVehicles, attributes,  aggregate, edgeIDs, edgeFile, excludeEmpty,  withInternal,
                 detectPersons, minSamples, maxTravelTime, vTypes, speedThreshold);
         if (myAllowUndoRedo) {

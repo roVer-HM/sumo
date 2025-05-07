@@ -54,6 +54,10 @@ FXIMPLEMENT(GUIDialog_EditViewport, FXDialogBox, GUIDialog_EditViewportMap, ARRA
 // method definitions
 // ===========================================================================
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4355) // mask warning about "this" in initializers
+#endif
 GUIDialog_EditViewport::GUIDialog_EditViewport(GUISUMOAbstractView* parent, const char* name) :
     FXDialogBox(parent, name, GUIDesignDialogBox, 0, 0, 0, 0, 0, 0, 0, 0),
     GUIPersistentWindowPos(this, "VIEWPORT_DIALOG_SETTINGS", false, 20, 40, 150, 150, 100, 20),
@@ -137,6 +141,9 @@ GUIDialog_EditViewport::GUIDialog_EditViewport(GUISUMOAbstractView* parent, cons
     setIcon(GUIIconSubSys::getIcon(GUIIcon::EDITVIEWPORT));
     loadWindowPos();
 }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 
 GUIDialog_EditViewport::~GUIDialog_EditViewport() {}
@@ -207,7 +214,7 @@ GUIDialog_EditViewport::onCmdLoad(FXObject*, FXSelector, void*) {
     FXFileDialog opendialog(this, TL("Load Viewport"));
     opendialog.setIcon(GUIIconSubSys::getIcon(GUIIcon::OPEN));
     opendialog.setSelectMode(SELECTFILE_ANY);
-    opendialog.setPatternList("*.xml,*.xml.gz");
+    opendialog.setPatternList(SUMOXMLDefinitions::ViewSettingsFileExtensions.getMultilineString().c_str());
     if (gCurrentFolder.length() != 0) {
         opendialog.setDirectory(gCurrentFolder);
     }
@@ -223,7 +230,9 @@ GUIDialog_EditViewport::onCmdLoad(FXObject*, FXSelector, void*) {
 
 long
 GUIDialog_EditViewport::onCmdSave(FXObject*, FXSelector, void*) {
-    FXString file = MFXUtils::getFilename2Write(this, TL("Save Viewport"), ".xml", GUIIconSubSys::getIcon(GUIIcon::SAVE), gCurrentFolder);
+    FXString file = MFXUtils::getFilename2Write(this, TL("Save Viewport"),
+                    SUMOXMLDefinitions::XMLFileExtensions.getMultilineString().c_str(),
+                    GUIIconSubSys::getIcon(GUIIcon::SAVE), gCurrentFolder);
     if (file == "") {
         return 1;
     }

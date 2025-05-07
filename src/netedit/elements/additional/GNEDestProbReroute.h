@@ -19,6 +19,7 @@
 /****************************************************************************/
 #pragma once
 #include <config.h>
+
 #include "GNEAdditional.h"
 
 // ===========================================================================
@@ -32,11 +33,8 @@ class GNERerouterIntervalDialog;
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNEDestProbReroute
- * forces the rerouter to assign a new route
- */
-class GNEDestProbReroute : public GNEAdditional {
+
+class GNEDestProbReroute : public GNEAdditional, public Parameterised {
 
 public:
     /// @brief constructor

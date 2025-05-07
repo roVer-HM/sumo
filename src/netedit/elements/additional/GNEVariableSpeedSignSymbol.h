@@ -19,21 +19,20 @@
 /****************************************************************************/
 #pragma once
 #include <config.h>
+
 #include "GNEAdditional.h"
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
+
 class GNEBusStop;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNEVariableSpeedSignSymbol
- * class for busStop acces
- */
-class GNEVariableSpeedSignSymbol : public GNEAdditional {
+
+class GNEVariableSpeedSignSymbol : public GNEAdditional, public Parameterised {
 
 public:
     /// @brief default Constructor

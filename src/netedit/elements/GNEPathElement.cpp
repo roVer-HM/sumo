@@ -20,47 +20,51 @@
 
 #include "GNEPathElement.h"
 
-
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
-GNEPathElement::GNEPathElement(GUIGlObjectType type, const std::string& microsimID, FXIcon* icon, const int options) :
-    GUIGlObject(type, microsimID, icon),
-    myOption(options) {
+GNEPathElement::GNEPathElement(const GNEPathElement::Options options) :
+    myOptions(options) {
 }
 
 
 GNEPathElement::~GNEPathElement() {}
 
 
+GNEPathElement::Options
+GNEPathElement::getPathElementOptions() const {
+    return myOptions;
+}
+
+
 bool
 GNEPathElement::isNetworkElement() const {
-    return (myOption & GNEPathElement::Options::NETWORK_ELEMENT) != 0;
+    return (myOptions & GNEPathElement::Options::NETWORK_ELEMENT) != 0;
 }
 
 
 bool
 GNEPathElement::isAdditionalElement() const {
-    return (myOption & GNEPathElement::Options::ADDITIONAL_ELEMENT) != 0;
+    return (myOptions & GNEPathElement::Options::ADDITIONAL_ELEMENT) != 0;
 }
 
 
 bool
 GNEPathElement::isDemandElement() const {
-    return (myOption & GNEPathElement::Options::DEMAND_ELEMENT) != 0;
+    return (myOptions & GNEPathElement::Options::DEMAND_ELEMENT) != 0;
 }
 
 
 bool
 GNEPathElement::isDataElement() const {
-    return (myOption & GNEPathElement::Options::DATA_ELEMENT) != 0;
+    return (myOptions & GNEPathElement::Options::DATA_ELEMENT) != 0;
 }
 
 
 bool
 GNEPathElement::isRoute() const {
-    return (myOption & GNEPathElement::Options::ROUTE) != 0;
+    return (myOptions & GNEPathElement::Options::ROUTE) != 0;
 }
 
 /****************************************************************************/

@@ -26,7 +26,6 @@
 
 #include "GNEVTypeDistributionsDialog.h"
 
-
 // ===========================================================================
 // FOX callback mapping
 // ===========================================================================
@@ -292,7 +291,7 @@ GNEVTypeDistributionsDialog::ParametersOperations::onCmdLoadParameters(FXObject*
     FXFileDialog opendialog(this, TL("Open Parameter Template"));
     opendialog.setIcon(GUIIconSubSys::getIcon(GUIIcon::GREENVEHICLE));
     opendialog.setSelectMode(SELECTFILE_EXISTING);
-    opendialog.setPatternList(" Parameter Template files (*.xml,*.xml.gz)\nAll files (*)");
+    opendialog.setPatternList(SUMOXMLDefinitions::XMLFileExtensions.getMultilineString().c_str());
     if (gCurrentFolder.length() != 0) {
         opendialog.setDirectory(gCurrentFolder);
     }
@@ -316,10 +315,9 @@ GNEVTypeDistributionsDialog::ParametersOperations::onCmdLoadParameters(FXObject*
 long
 GNEVTypeDistributionsDialog::ParametersOperations::onCmdSaveParameters(FXObject*, FXSelector, void*) {
     // obtain file to save parameters
-    FXString file = MFXUtils::getFilename2Write(this,
-                    TL("Save Parameter Template file"), ".xml",
-                    GUIIconSubSys::getIcon(GUIIcon::GREENVEHICLE),
-                    gCurrentFolder);
+    FXString file = MFXUtils::getFilename2Write(this, TL("Save Parameter Template file"),
+                    SUMOXMLDefinitions::XMLFileExtensions.getMultilineString().c_str(),
+                    GUIIconSubSys::getIcon(GUIIcon::GREENVEHICLE), gCurrentFolder);
     if (file == "") {
         // None parameter file was selected, then stop function
         return 1;

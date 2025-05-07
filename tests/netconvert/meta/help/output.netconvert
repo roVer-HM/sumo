@@ -1,4 +1,4 @@
-Eclipse SUMO netconvert Version v1_21_0+1983-aac325cbcaf
+Eclipse SUMO netconvert Version v1_22_0+0440-9af1eda2b59
  Copyright (C) 2001-2025 German Aerospace Center (DLR) and others; https://sumo.dlr.de
 Network importer / builder for the microscopic, multi-modal traffic simulation
  SUMO.
@@ -436,6 +436,9 @@ Junctions Options:
                                         other (recommended for OSM import)
   --junctions.join-dist FLOAT          Determines the maximal distance for
                                         joining junctions (defaults to 10)
+  --junctions.join.parallel-threshold FLOAT  The angular threshold in degress
+                                        for rejection of parallel edges when
+                                        joining junctions
   --junctions.join-exclude STR[]       Interprets STR[] as list of junctions to
                                         exclude from joining
   --junctions.join-same                Joins junctions that have the same
@@ -558,6 +561,8 @@ Railway Options:
                                         of rail edges
   --railway.signal.guess.by-stops      Guess signals that guard public
                                         transport stops
+  --railway.signal.permit-unsignalized STR[]  List rail classes that may run
+                                        without rail signals
   --railway.access-distance FLOAT      The search radius for finding suitable
                                         road accesses for rail stops
   --railway.max-accesses INT           The maximum road accesses registered per
@@ -588,7 +593,7 @@ Formats Options:
   --osm.bike-access                    Import bike lanes and fix directions and
                                         permissions on bike paths
   --osm.sidewalks                      Import sidewalks
-  --osm.oneway-reverse-sidewalk        Default to building two sidewals on
+  --osm.oneway-reverse-sidewalk        Default to building two sidewalks on
                                         oneway streets (may affect divided
                                         roads)
   --osm.crossings                      Import crossings
@@ -612,6 +617,8 @@ Formats Options:
                                         all)
   --osm.speedlimit-none FLOAT          The speed limit to be set when there is
                                         no actual speed limit in reality
+  --osm.annotate-defaults              Whether edges shoulds carry information
+                                        on the usage of typemap defaults
   --matsim.keep-length                 The edge lengths given in the
                                         MATSim-file will be kept
   --matsim.lanes-from-capacity         The lane number will be computed from

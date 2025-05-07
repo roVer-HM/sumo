@@ -333,7 +333,7 @@ public:
 
     /** @brief Register junction approaches for all link items in the current
      * plan */
-    void setApproachingForAllLinks(const SUMOTime t);
+    void setApproachingForAllLinks();
 
     /// @brief register approach on insertion
     void registerInsertionApproach(MSLink* link, double dist);
@@ -1066,9 +1066,10 @@ public:
      * If the distance is not given it is calculated from the brake gap.
      * The gap returned does not include the minGap.
      * @param dist    up to which distance to look at least for a leader
+     * @param considerFoes Whether vehicles on foe links should be checked
      * @return The leading vehicle together with the gap; (0, -1) if no leader was found.
      */
-    std::pair<const MSVehicle* const, double> getLeader(double dist = 0) const;
+    std::pair<const MSVehicle* const, double> getLeader(double dist = 0, bool considerFoes = true) const;
 
     /** @brief Returns the follower of the vehicle looking for a fixed distance.
      *
@@ -1190,7 +1191,7 @@ public:
 
 
     /// @brief whether the vehicle may safely move to the given lane with regard to upcoming links
-    bool unsafeLinkAhead(const MSLane* lane) const;
+    bool unsafeLinkAhead(const MSLane* lane, double zipperDist) const;
 
     /// @brief decide whether the vehicle is passing a minor link or has comitted to do so
     bool passingMinor() const;
@@ -1533,6 +1534,12 @@ public:
             return myConsiderSafeVelocity;
         }
 
+        /// @brief Returns whether speed limits shall be considered
+        bool considerSpeedLimit() const {
+            // backward compatibility (when we ignore safe velocity we implicitly ignore speed limits as well)
+            return myConsiderSpeedLimit && myConsiderSafeVelocity;
+        }
+
         /** @brief Sets speed-constraining behaviors
          * @param[in] value a bitset controlling the different modes
          */
@@ -1619,6 +1626,9 @@ public:
 
         /// @brief Whether the safe velocity shall be regarded
         bool myConsiderSafeVelocity;
+
+        /// @brief Whether the speed limit shall be regarded
+        bool myConsiderSpeedLimit;
 
         /// @brief Whether the maximum acceleration shall be regarded
         bool myConsiderMaxAcceleration;
@@ -2141,6 +2151,9 @@ protected:
 
     /// @brief comparison between different continuations from the same lane
     bool betterContinuation(const LaneQ* bestConnectedNext, const LaneQ& m) const;
+
+    /// @brief reset rail signal approach information
+    void resetApproachOnReroute();
 
 private:
     /// @brief The per vehicle variables of the car following model

@@ -23,17 +23,17 @@
 
 #include <netbuild/NBEdge.h>
 #include <netbuild/NBNode.h>
-#include <netedit/elements/GNEHierarchicalStructure.h>
-#include <netedit/elements/network/GNEJunction.h>
-#include <netedit/elements/network/GNEEdge.h>
-#include <netedit/elements/network/GNELane.h>
+#include <netedit/GNEViewNet.h>
+#include <netedit/elements/GNEHierarchicalStructureParents.h>
 #include <netedit/elements/additional/GNETAZSourceSink.h>
-#include <netedit/elements/demand/GNEDemandElement.h>
 #include <netedit/elements/data/GNEGenericData.h>
+#include <netedit/elements/demand/GNEDemandElement.h>
+#include <netedit/elements/network/GNEEdge.h>
+#include <netedit/elements/network/GNEJunction.h>
+#include <netedit/elements/network/GNELane.h>
 #include <utils/foxtools/fxheader.h>
 #include <utils/geom/PositionVector.h>
 #include <utils/xml/SUMOXMLDefinitions.h>
-
 
 // ===========================================================================
 // class declarations
@@ -116,121 +116,71 @@ protected:
     /// @brief FOX need this
     GNEChange();
 
-    /// @brief restore container (only use in undo() function)
-    void restoreHierarchicalContainers();
-
-    /// @brief add given element into parents and children (only use in redo() function)
+    /// @brief add given element in parents and children
     template<typename T>
     void addElementInParentsAndChildren(T* element) {
-        // add element in parents
-        for (const auto& junction : myOriginalHierarchicalContainer.getParents<GNEJunction*>()) {
-            junction->addChildElement(element);
-        }
-        for (const auto& edge : myOriginalHierarchicalContainer.getParents<GNEEdge*>()) {
-            edge->addChildElement(element);
-        }
-        for (const auto& lane : myOriginalHierarchicalContainer.getParents<GNELane*>()) {
-            lane->addChildElement(element);
-        }
-        for (const auto& additional : myOriginalHierarchicalContainer.getParents<GNEAdditional*>()) {
-            additional->addChildElement(element);
-        }
-        for (const auto& sourceSink : myOriginalHierarchicalContainer.getParents<GNETAZSourceSink*>()) {
-            sourceSink->addChildElement(element);
-        }
-        for (const auto& demandElement : myOriginalHierarchicalContainer.getParents<GNEDemandElement*>()) {
-            demandElement->addChildElement(element);
-        }
-        for (const auto& genericData : myOriginalHierarchicalContainer.getParents<GNEGenericData*>()) {
-            genericData->addChildElement(element);
-        }
         // add element in children
-        for (const auto& junction : myOriginalHierarchicalContainer.getChildren<GNEJunction*>()) {
-            junction->addParentElement(element);
+        for (const auto& junction : myParents.get<GNEJunction*>()) {
+            GNEHierarchicalElement::insertChild(junction, element);
         }
-        for (const auto& edge : myOriginalHierarchicalContainer.getChildren<GNEEdge*>()) {
-            edge->addParentElement(element);
+        for (const auto& edge : myParents.get<GNEEdge*>()) {
+            GNEHierarchicalElement::insertChild(edge, element);
         }
-        for (const auto& lane : myOriginalHierarchicalContainer.getChildren<GNELane*>()) {
-            lane->addParentElement(element);
+        for (const auto& lane : myParents.get<GNELane*>()) {
+            GNEHierarchicalElement::insertChild(lane, element);
         }
-        for (const auto& additional : myOriginalHierarchicalContainer.getChildren<GNEAdditional*>()) {
-            additional->addParentElement(element);
+        for (const auto& additional : myParents.get<GNEAdditional*>()) {
+            GNEHierarchicalElement::insertChild(additional, element);
         }
-        for (const auto& TAZSourceSink : myOriginalHierarchicalContainer.getChildrenSet<GNETAZSourceSink*>()) {
-            TAZSourceSink->addParentElement(element);
+        for (const auto& sourceSink : myParents.get<GNETAZSourceSink*>()) {
+            GNEHierarchicalElement::insertChild(sourceSink, element);
         }
-        for (const auto& demandElement : myOriginalHierarchicalContainer.getChildren<GNEDemandElement*>()) {
-            demandElement->addParentElement(element);
+        for (const auto& demandElement : myParents.get<GNEDemandElement*>()) {
+            GNEHierarchicalElement::insertChild(demandElement, element);
         }
-        for (const auto& genericData : myOriginalHierarchicalContainer.getChildren<GNEGenericData*>()) {
-            genericData->addParentElement(element);
+        for (const auto& genericData : myParents.get<GNEGenericData*>()) {
+            GNEHierarchicalElement::insertChild(genericData, element);
         }
     }
 
-    /// @brief remove given element from parents and children (only use in redo() function)
+    /// @brief remove given element from parents and children
     template<typename T>
     void removeElementFromParentsAndChildren(T* element) {
         // Remove element from parents
-        for (const auto& junction : myOriginalHierarchicalContainer.getParents<GNEJunction*>()) {
-            junction->removeChildElement(element);
+        for (const auto& junction : myParents.get<GNEJunction*>()) {
+            GNEHierarchicalElement::removeChild(junction, element);
         }
-        for (const auto& edge : myOriginalHierarchicalContainer.getParents<GNEEdge*>()) {
-            edge->removeChildElement(element);
+        for (const auto& edge : myParents.get<GNEEdge*>()) {
+            GNEHierarchicalElement::removeChild(edge, element);
         }
-        for (const auto& lane : myOriginalHierarchicalContainer.getParents<GNELane*>()) {
-            lane->removeChildElement(element);
+        for (const auto& lane : myParents.get<GNELane*>()) {
+            GNEHierarchicalElement::removeChild(lane, element);
         }
-        for (const auto& additional : myOriginalHierarchicalContainer.getParents<GNEAdditional*>()) {
-            additional->removeChildElement(element);
+        for (const auto& additional : myParents.get<GNEAdditional*>()) {
+            GNEHierarchicalElement::removeChild(additional, element);
         }
-        for (const auto& sourceSink : myOriginalHierarchicalContainer.getParents<GNETAZSourceSink*>()) {
-            sourceSink->removeChildElement(element);
+        for (const auto& sourceSink : myParents.get<GNETAZSourceSink*>()) {
+            GNEHierarchicalElement::removeChild(sourceSink, element);
         }
-        for (const auto& demandElement : myOriginalHierarchicalContainer.getParents<GNEDemandElement*>()) {
-            demandElement->removeChildElement(element);
+        for (const auto& demandElement : myParents.get<GNEDemandElement*>()) {
+            GNEHierarchicalElement::removeChild(demandElement, element);
         }
-        for (const auto& genericData : myOriginalHierarchicalContainer.getParents<GNEGenericData*>()) {
-            genericData->removeChildElement(element);
-        }
-        // Remove element from children
-        for (const auto& junction : myOriginalHierarchicalContainer.getChildren<GNEJunction*>()) {
-            junction->removeParentElement(element);
-        }
-        for (const auto& edge : myOriginalHierarchicalContainer.getChildren<GNEEdge*>()) {
-            edge->removeParentElement(element);
-        }
-        for (const auto& lane : myOriginalHierarchicalContainer.getChildren<GNELane*>()) {
-            lane->removeParentElement(element);
-        }
-        for (const auto& additional : myOriginalHierarchicalContainer.getChildren<GNEAdditional*>()) {
-            additional->removeParentElement(element);
-        }
-        for (const auto& TAZSourceSink : myOriginalHierarchicalContainer.getChildrenSet<GNETAZSourceSink*>()) {
-            TAZSourceSink->removeParentElement(element);
-        }
-        for (const auto& demandElement : myOriginalHierarchicalContainer.getChildren<GNEDemandElement*>()) {
-            demandElement->removeParentElement(element);
-        }
-        for (const auto& genericData : myOriginalHierarchicalContainer.getChildren<GNEGenericData*>()) {
-            genericData->removeParentElement(element);
+        for (const auto& genericData : myParents.get<GNEGenericData*>()) {
+            GNEHierarchicalElement::removeChild(genericData, element);
         }
     }
 
     /// @brief supermode related with this change
     const Supermode mySupermode;
 
+    /// @brief Hierarchical container with parents
+    const GNEHierarchicalStructureParents myParents;
+
     /// @brief we group antagonistic commands (create junction/delete junction) and keep them apart by this flag
     bool myForward;
 
     /// @brief flag for check if element is selected
     const bool mySelectedElement;
-
-    /// @brief Hierarchical container with parent and children
-    const GNEHierarchicalStructure myOriginalHierarchicalContainer;
-
-    /// @brief map with hierarchical container of all parent and children elements
-    std::map<GNEHierarchicalElement*, GNEHierarchicalStructure> myHierarchicalContainers;
 
 private:
     // @brief next GNEChange (can be access by GNEChangeGroup and GNEUndoList)

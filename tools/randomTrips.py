@@ -31,7 +31,7 @@ import math
 if 'SUMO_HOME' in os.environ:
     sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
 import sumolib  # noqa
-from sumolib.miscutils import euclidean, parseTime, intIfPossible  # noqa
+from sumolib.miscutils import euclidean, parseTime, intIfPossible, openz  # noqa
 from sumolib.geomhelper import naviDegree, minAngleDegreeDiff  # noqa
 from sumolib.net.lane import is_vehicle_class  # noqa
 
@@ -68,6 +68,8 @@ def get_options(args=None):
                     help="Store generated vehicle types in a separate file")
     op.add_argument("--weights-output-prefix", category="output", dest="weights_outprefix", type=op.file,
                     help="generates weights files for visualisation")
+    op.add_argument("--error-log", category="output", dest="errorlog", type=op.file,
+                    help="record routing errors")
     # persons
     op.add_argument("--pedestrians", category="persons", action="store_true", default=False,
                     help="create a person file with pedestrian trips instead of vehicle trips")
@@ -134,7 +136,7 @@ def get_options(args=None):
                     "that enter the network, if they have at least the given length")
     op.add_argument("--fringe-junctions", category="weights", action="store_true", dest="fringeJunctions",
                     default=False, help="Determine fringe edges based on junction attribute 'fringe'")
-    op.add_argument("--vclass", "--edge-permission", category="weights", default="passenger",
+    op.add_argument("--edge-permission", "--vclass", category="weights",
                     help="only from and to edges which permit the given vehicle class")
     op.add_argument("--via-edge-types", category="weights", dest="viaEdgeTypes",
                     help="Set list of edge types that cannot be used for departure or arrival " +
@@ -168,6 +170,8 @@ def get_options(args=None):
                     help="Compute routes with marouter instead of duarouter")
     op.add_argument("--validate", default=False, action="store_true",
                     help="Whether to produce trip output that is already checked for connectivity")
+    op.add_argument("--min-success-rate", dest="minSuccessRate", default=0.1, type=float,
+                    help="Minimum ratio of valid trips to retry sampling if some trips are invalid")
     op.add_argument("-v", "--verbose", action="store_true", default=False,
                     help="tell me what you are doing")
     op.add_argument("--bound-box", default=None, required=False, dest="bbox", type=str,
@@ -202,14 +206,17 @@ def get_options(args=None):
                     "distribution with n=N and p=PERIOD/N where PERIOD is the argument given to --period")
 
     options = op.parse_args(args=args)
-    if options.vclass and not is_vehicle_class(options.vclass):
-        raise ValueError("The string '%s' doesn't correspond to a legit vehicle class." % options.vclass)
+    if options.edge_permission and not is_vehicle_class(options.edge_permission):
+        raise ValueError("The string '%s' doesn't correspond to a legit vehicle class." % options.edge_permission)
 
     if options.persontrips or options.personrides:
         options.pedestrians = True
 
-    if options.pedestrians:
-        options.vclass = 'pedestrian'
+    if options.edge_permission is None:
+        if options.vehicle_class:
+            options.edge_permission = options.vehicle_class
+        else:
+            options.edge_permission = 'pedestrian' if options.pedestrians else 'passenger'
     if options.validate and options.routefile is None:
         options.routefile = "routes.rou.xml"
 
@@ -221,7 +228,7 @@ def get_options(args=None):
         # Compute length of the network
         length = 0.  # In meters
         for edge in options.net.getEdges():
-            if edge.allows(options.vclass):
+            if edge.allows(options.edge_permission):
                 length += edge.getLaneNumber() * edge.getLength()
         if length == 0:
             raise ValueError("No valid edges for computing insertion-density")
@@ -302,7 +309,7 @@ def get_options(args=None):
             
     options.typeFactors = defaultdict(lambda: 1.0)
     if options.typeFactorFile:
-        with open(options.typeFactorFile) as tff:
+        with openz(options.typeFactorFile) as tff:
             for line in tff:
                 typeID, factor = line.split()
                 options.typeFactors[typeID] = float(factor)
@@ -389,7 +396,7 @@ class RandomEdgeGenerator:
         weights = [(self.weight_fun(e) * normalizer, e.getID()) for e in self.net.getEdges()]
         weights.sort(reverse=True)
         total = sum([w for w, e in weights])
-        with open(fname, 'w+') as f:
+        with openz(fname, 'w+') as f:
             f.write('<edgedata>\n')
             f.write('    <interval id="%s" begin="%s" end="%s" totalWeight="%0.2f">\n' % (
                 interval_id, begin, end, total))
@@ -436,6 +443,18 @@ class RandomTripGenerator:
         raise Exception("Warning: no trip found after %s tries" % maxtries)
 
 
+class CachedTripGenerator:
+
+    def __init__(self, cache):
+        self._cache = cache
+        self._nCalled = 0
+
+    def get_trip(self, min_distance, max_distance, maxtries=100, junctionTaz=False, min_dist_fringe=None):
+        result = self._cache[self._nCalled % len(self._cache)]
+        self._nCalled += 1
+        return result
+
+
 def get_prob_fun(options, fringe_bonus, fringe_forbidden, max_length):
     # fringe_bonus None generates intermediate way points
     randomProbs = defaultdict(lambda: 1)
@@ -462,7 +481,7 @@ def get_prob_fun(options, fringe_bonus, fringe_forbidden, max_length):
             e_xmin, e_ymin, e_xmax, e_ymax = edge.getBoundingBox()
             if e_xmin < xmin or e_ymin < ymin or e_ymax > ymax or e_xmax > xmax:
                 return 0  # edge outside of given bound not allowed.
-        if options.vclass and not edge.allows(options.vclass) and not stopDict:
+        if options.edge_permission and not edge.allows(options.edge_permission) and not stopDict:
             return 0  # not allowed
         if fringe_bonus is None and edge.is_fringe() and not options.pedestrians:
             return 0  # not suitable as intermediate way point
@@ -528,7 +547,7 @@ class LoadedProps:
 
     def __init__(self, fname):
         self.weights = defaultdict(lambda: 0)
-        for edge in sumolib.output.parse_fast(fname, 'edge', ['id', 'value']):
+        for edge in sumolib.xml.parse_fast(fname, 'edge', ['id', 'value']):
             self.weights[edge.id] = float(edge.value)
 
     def __call__(self, edge):
@@ -663,6 +682,19 @@ def samplePosition(edge):
     return random.uniform(0.0, edge.getLength())
 
 
+def getElement(options):
+    if options.pedestrians:
+        if options.flows > 0:
+            return "personFlow"
+        else:
+            return "person"
+    else:
+        if options.flows > 0:
+            return "flow"
+        else:
+            return "trip"
+
+
 def main(options):
     if all([period == 0 for period in options.period]):
         print("Warning: All intervals are empty.", file=sys.stderr)
@@ -682,12 +714,37 @@ def main(options):
         options.angle_center = (xmin + xmax) / 2, (ymin + ymax) / 2
 
     trip_generator = buildTripGenerator(options.net, options)
+
+    if trip_generator and options.weights_outprefix:
+        idPrefix = ""
+        if options.tripprefix:
+            idPrefix = options.tripprefix + "."
+        trip_generator.source_generator.write_weights(
+            options.weights_outprefix + SOURCE_SUFFIX,
+            idPrefix + "src", options.begin, options.end)
+        trip_generator.sink_generator.write_weights(
+            options.weights_outprefix + DEST_SUFFIX,
+            idPrefix + "dst", options.begin, options.end)
+        if trip_generator.via_generator:
+            trip_generator.via_generator.write_weights(
+                options.weights_outprefix + VIA_SUFFIX,
+                idPrefix + "via", options.begin, options.end)
+
+    createTrips(options, trip_generator)
+
+    # return wether trips could be generated as requested
+    return trip_generator is not None
+
+
+def createTrips(options, trip_generator, rerunFactor=None, skipValidation=False):
     idx = 0
 
-    vtypeattrs, options.tripattrs, personattrs, otherattrs = split_trip_attributes(
+    vtypeattrs, tripattrs, personattrs, otherattrs = split_trip_attributes(
         options.tripattrs, options.pedestrians, options.vehicle_class, options.verbose)
 
     vias = {}
+    generatedTrips = []  # (label, origin, destination, intermediate)
+    validatedTrips = []  # (origin, destination, intermediate)
 
     time_delta = (parseTime(options.end) - parseTime(options.begin)) / len(options.period)
     times = [parseTime(options.begin) + i * time_delta for i in range(len(options.period) + 1)]
@@ -704,7 +761,7 @@ def main(options):
         if options.pedestrians:
             combined_attrs = ""
         else:
-            combined_attrs = options.tripattrs
+            combined_attrs = tripattrs
         arrivalPos = ""
         if options.randomDepartPos:
             randomPosition = samplePosition(origin)
@@ -804,6 +861,7 @@ def main(options):
         try:
             label, combined_attrs, attrFrom, attrTo, via, arrivalPos = generate_attributes(
                 idx, departureTime, arrivalTime, origin, destination, intermediate, options)
+            generatedTrips.append((label, origin, destination, intermediate))
 
             if options.pedestrians:
                 if options.flows > 0:
@@ -824,12 +882,11 @@ def main(options):
                     generate_one_trip(label, combined_attrs, departureTime)
 
         except Exception as exc:
-            if options.verbose:
-                print(exc, file=sys.stderr)
+            print(exc, file=sys.stderr)
 
         return idx + 1
 
-    with open(options.tripfile, 'w') as fouttrips:
+    with openz(options.tripfile, 'w') as fouttrips:
         sumolib.writeXMLHeader(fouttrips, "$Id$", "routes", options=options)
         if options.vehicle_class:
             vTypeDef = '    <vType id="%s" vClass="%s"%s/>\n' % (
@@ -839,15 +896,15 @@ def main(options):
                 # overwritten by later call to duarouter
                 if options.additional is None:
                     options.additional = options.vtypeout
-                else:
+                elif options.vtypeout not in options.additional:
                     options.additional = options.additional + "," + options.vtypeout
-                with open(options.vtypeout, 'w') as fouttype:
+                with openz(options.vtypeout, 'w') as fouttype:
                     sumolib.writeXMLHeader(fouttype, "$Id$", "additional", options=options)
                     fouttype.write(vTypeDef)
                     fouttype.write("</additional>\n")
             else:
                 fouttrips.write(vTypeDef)
-            options.tripattrs += ' type="%s"' % options.vtypeID
+            tripattrs += ' type="%s"' % options.vtypeID
             personattrs += ' type="%s"' % options.vtypeID
 
         if trip_generator:
@@ -856,6 +913,8 @@ def main(options):
                     time = departureTime = parseTime(times[i])
                     arrivalTime = parseTime(times[i+1])
                     period = options.period[i]
+                    if rerunFactor is not None:
+                        period /= rerunFactor
                     if period == 0.0:
                         continue
                     if options.binomial is None:
@@ -873,12 +932,12 @@ def main(options):
                                 departures.append(rTime)
                             departures.sort()
                         else:
+                            # generate with constant spacing
                             while departureTime < arrivalTime:
                                 departures.append(departureTime)
                                 departureTime += period
 
                         for time in departures:
-                            # generate with constant spacing
                             try:
                                 origin, destination, intermediate = generate_origin_destination(trip_generator, options)
                                 idx = generate_one(idx, time, arrivalTime, period, origin, destination, intermediate)
@@ -898,8 +957,7 @@ def main(options):
                                         idx = generate_one(idx, time, arrivalTime, period,
                                                            origin, destination, intermediate)
                                     except Exception as exc:
-                                        if options.verbose:
-                                            print(exc, file=sys.stderr)
+                                        print(exc, file=sys.stderr)
                             time += 1.0
             else:
                 try:
@@ -910,19 +968,21 @@ def main(options):
                             departureTime = times[i]
                             arrivalTime = times[i+1]
                             period = options.period[i]
+                            if rerunFactor is not None:
+                                period /= rerunFactor
                             if period == 0.0:
                                 continue
                             origin, destination, intermediate = origins_destinations[j]
                             generate_one(j, departureTime, arrivalTime, period, origin, destination, intermediate, i)
                 except Exception as exc:
-                    if options.verbose:
-                        print(exc, file=sys.stderr)
+                    print(exc, file=sys.stderr)
 
         fouttrips.write("</routes>\n")
 
     # call duarouter for routes or validated trips
     args = ['-n', options.netfile, '-r', options.tripfile, '--ignore-errors',
             '--begin', str(options.begin), '--end', str(options.end),
+            '--no-warnings',
             '--no-step-log']
     if options.additional is not None:
         args += ['--additional-files', options.additional]
@@ -932,10 +992,10 @@ def main(options):
         args += ['--vtype-output', options.vtypeout]
     if options.junctionTaz:
         args += ['--junction-taz']
-    if not options.verbose:
-        args += ['--no-warnings']
-    else:
+    if options.verbose:
         args += ['-v']
+    if options.errorlog:
+        args += ['--error-log', options.errorlog]
 
     duargs = [DUAROUTER, '--alternatives-output', 'NUL'] + args
     maargs = [MAROUTER] + args
@@ -953,14 +1013,15 @@ def main(options):
     for router, routerargs in [('duarouter', duargs), ('marouter', maargs)]:
         if router in options_to_forward:
             for option in options_to_forward[router]:
-                option[0] = '--' + option[0]
+                if not option[0].startswith('--'):
+                    option[0] = '--' + option[0]
                 if option[0] not in routerargs:
                     routerargs += option
                 else:
                     raise ValueError("The argument '%s' has already been passed without the %s prefix." % (
                                      option[0], router))
 
-    if options.routefile:
+    if options.routefile and rerunFactor is None:
         args2 = (maargs if options.marouter else duargs)[:]
         args2 += ['-o', options.routefile]
         if options.verbose:
@@ -970,7 +1031,7 @@ def main(options):
         sys.stdout.flush()
         sumolib.xml.insertOptionsHeader(options.routefile, options)
 
-    if options.validate:
+    if options.validate and not skipValidation:
         # write to temporary file because the input is read incrementally
         tmpTrips = options.tripfile + ".tmp"
         args2 = duargs + ['-o', tmpTrips, '--write-trips']
@@ -985,30 +1046,38 @@ def main(options):
         os.rename(tmpTrips, options.tripfile)
         sumolib.xml.insertOptionsHeader(options.tripfile, options)
 
-    if trip_generator and options.weights_outprefix:
-        idPrefix = ""
-        if options.tripprefix:
-            idPrefix = options.tripprefix + "."
-        trip_generator.source_generator.write_weights(
-            options.weights_outprefix + SOURCE_SUFFIX,
-            idPrefix + "src", options.begin, options.end)
-        trip_generator.sink_generator.write_weights(
-            options.weights_outprefix + DEST_SUFFIX,
-            idPrefix + "dst", options.begin, options.end)
-        if trip_generator.via_generator:
-            trip_generator.via_generator.write_weights(
-                options.weights_outprefix + VIA_SUFFIX,
-                idPrefix + "via", options.begin, options.end)
+        validLabels = set([t.id for t in sumolib.xml.parse_fast(options.tripfile, getElement(options), ['id'])])
+        validatedTrips = [(o, d, i) for (label, o, d, i) in generatedTrips if label in validLabels]
 
-    # return wether trips could be generated as requested
-    return trip_generator is not None
+        if rerunFactor is None:
+            nRequested = idx - 1
+            nValid = len(validLabels)
+            if nRequested > 0 and nValid < nRequested:
+                successRate = nValid / nRequested
+                if successRate < options.minSuccessRate:
+                    print("Warning: Only %s out of %s requested %ss passed validation. "
+                          "Set option --error-log for more details on the failure. "
+                          "Set option --min-success-rate to find more valid trips." %
+                          (nValid, nRequested, getElement(options)), file=sys.stderr)
+                else:
+                    if options.verbose:
+                        print("Only %s out of %s requested %ss passed validation. Sampling again to find more." % (
+                            nValid, nRequested, getElement(options)))
+
+                    # 1. call the current trip_generator again to generate more valid origin-destination pairs
+                    validatedTrips2 = createTrips(options, trip_generator, 1.2 / successRate - 1)
+                    # 2. reconfigure trip_generator to only output valid pairs
+                    trip_generator2 = CachedTripGenerator(validatedTrips + validatedTrips2)
+                    # 3. call trip_generator again to output the desired number of trips
+                    return createTrips(options, trip_generator2, skipValidation=True)
+
+    return validatedTrips
 
 
 if __name__ == "__main__":
     try:
         if not main(get_options()):
-            print("Error: Trips couldn't be generated as requested. "
-                  "Try the --verbose option to output more details on the failure.", file=sys.stderr)
+            print("Error: Trips couldn't be generated as requested. ", file=sys.stderr)
             sys.exit(1)
     except ValueError as e:
         print("Error:", e, file=sys.stderr)

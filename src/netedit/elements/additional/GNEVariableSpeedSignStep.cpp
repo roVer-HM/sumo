@@ -19,30 +19,27 @@
 /****************************************************************************/
 #include <config.h>
 
-#include <netedit/changes/GNEChange_Attribute.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
+#include <netedit/changes/GNEChange_Attribute.h>
 
 #include "GNEVariableSpeedSignStep.h"
-
 
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
 GNEVariableSpeedSignStep::GNEVariableSpeedSignStep(GNENet* net) :
-    GNEAdditional("", net, GLO_VSS_STEP, SUMO_TAG_STEP, GUIIconSubSys::getIcon(GUIIcon::VSSSTEP),
-                  "", {}, {}, {}, {}, {}, {}),
-myTime(0) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional("", net, "", SUMO_TAG_STEP, "") {
 }
 
 
 GNEVariableSpeedSignStep::GNEVariableSpeedSignStep(GNEAdditional* variableSpeedSignParent, SUMOTime time, const std::string& speed) :
-    GNEAdditional(variableSpeedSignParent->getNet(), GLO_VSS_STEP, SUMO_TAG_STEP, GUIIconSubSys::getIcon(GUIIcon::VSSSTEP),
-                  "", {}, {}, {}, {variableSpeedSignParent}, {}, {}),
-myTime(time),
-mySpeed(speed) {
+    GNEAdditional(variableSpeedSignParent, SUMO_TAG_STEP, ""),
+    myTime(time),
+    mySpeed(speed) {
+    // set parents
+    setParent<GNEAdditional*>(variableSpeedSignParent);
     // update boundary of rerouter parent
     variableSpeedSignParent->updateCenteringBoundary(true);
 }
@@ -154,7 +151,7 @@ GNEVariableSpeedSignStep::getAttribute(SumoXMLAttr key) const {
         case GNE_ATTR_PARENT:
             return getParentAdditionals().at(0)->getID();
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -172,7 +169,7 @@ GNEVariableSpeedSignStep::getAttributeDouble(SumoXMLAttr key) const {
 
 const Parameterised::Map&
 GNEVariableSpeedSignStep::getACParametersMap() const {
-    return PARAMETERS_EMPTY;
+    return getParametersMap();
 }
 
 
@@ -207,7 +204,7 @@ GNEVariableSpeedSignStep::isValid(SumoXMLAttr key, const std::string& value) {
                 // check that there isn't duplicate times
                 int counter = 0;
                 for (const auto& VSSChild : getParentAdditionals().at(0)->getChildAdditionals()) {
-                    if (!VSSChild->getTagProperty().isSymbol() && VSSChild->getAttributeDouble(SUMO_ATTR_TIME) == newTime) {
+                    if (!VSSChild->getTagProperty()->isSymbol() && VSSChild->getAttributeDouble(SUMO_ATTR_TIME) == newTime) {
                         counter++;
                     }
                 }
@@ -252,7 +249,7 @@ GNEVariableSpeedSignStep::setAttribute(SumoXMLAttr key, const std::string& value
             mySpeed = value;
             break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
 }

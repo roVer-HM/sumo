@@ -26,15 +26,14 @@
 // class declarations
 // ===========================================================================
 
-class GNEVehicle;
-class GNEVTypeDistributionsDialog;
+class GNEAttributesEditor;
+class GNEDemandElement;
+class MFXComboBoxIcon;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNETypeFrame
- */
+
 class GNETypeFrame : public GNEFrame {
 
 public:
@@ -171,10 +170,4 @@ private:
 
     /// @brief editorinternal vehicle type attributes
     GNEAttributesEditor* myTypeAttributesEditor = nullptr;
-
-    /// @brief attributes editor extended
-    GNEAttributesEditor* myAttributesEditorExtended = nullptr;
-
-    /// @brief Parameters editor inspector
-    GNEFrameAttributeModules::ParametersEditor* myParametersEditor;
 };

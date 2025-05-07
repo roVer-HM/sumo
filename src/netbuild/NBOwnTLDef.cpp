@@ -279,7 +279,7 @@ NBOwnTLDef::computeLogicAndConts(int brakingTimeSeconds, bool onlyConts) {
         // otherwise, use values from previous call to initNeedsContRelation
         myNeedsContRelation.clear();
     }
-    myRightOnRedConflicts.clear();
+    myExtraConflicts.clear();
     const bool isNEMA = myType == TrafficLightType::NEMA;
     const SUMOTime brakingTime = TIME2STEPS(brakingTimeSeconds);
     const SUMOTime leftTurnTime = TIME2STEPS(OptionsCont::getOptions().getInt("tls.left-green.time"));
@@ -789,7 +789,7 @@ NBOwnTLDef::computeLogicAndConts(int brakingTimeSeconds, bool onlyConts) {
     if (isNEMA) {
         NBTrafficLightLogic* nemaLogic = buildNemaPhases(fromEdges, toEdges, crossings, chosenList, straightStates, leftStates);
         if (nemaLogic == nullptr) {
-            WRITE_WARNINGF(TL("Generating NEMA phases is not support for traffic light '%' with % incoming edges. Using tlType 'actuated' as fallback"), getID(), incoming.size());
+            WRITE_WARNINGF(TL("Generating NEMA phases is not supported for traffic light '%' with % incoming edges. Using tlType 'actuated' as fallback"), getID(), incoming.size());
             logic->setType(TrafficLightType::ACTUATED);
             setType(TrafficLightType::ACTUATED);
         } else {
@@ -840,9 +840,8 @@ NBOwnTLDef::computeLogicAndConts(int brakingTimeSeconds, bool onlyConts) {
         const std::string nextState = allPhases[(i + 1) % phaseCount].state;
         bool updatedState = false;
         for (int i1 = 0; i1 < stateSize; ++i1) {
-            if (currState[i1] == 'y' && (nextState[i1] == 'g' || nextState[i1] == 'G') && (prevState[i1] == 'g' || prevState[i1] == 'G')) {
-                LinkState ls = (nextState[i1] == prevState[i1]) ? (LinkState)prevState[i1] : (LinkState)'g';
-                logic->setPhaseState(i, i1, ls);
+            if (currState[i1] == 'y' && (nextState[i1] == prevState[i1] || nextState[i1] == 'G') && (prevState[i1] == 'g' || prevState[i1] == 'G')) {
+                logic->setPhaseState(i, i1, (LinkState)prevState[i1]);
                 updatedState = true;
             }
         }
@@ -858,7 +857,7 @@ NBOwnTLDef::computeLogicAndConts(int brakingTimeSeconds, bool onlyConts) {
     }
 
 
-    myRightOnRedConflictsReady = true;
+    myExtraConflictsReady = true;
     // this computation only makes sense for single nodes
     myNeedsContRelationReady = (myControlledNodes.size() == 1);
     if (totalDuration > 0) {
@@ -912,7 +911,7 @@ NBOwnTLDef::addPedestrianPhases(NBTrafficLightLogic* logic, const SUMOTime green
             // ensure clearing time for pedestrians
             const int pedStates = (int)crossings.size();
             const bool isSimpleActuatedCrossing = logic->getType() == TrafficLightType::ACTUATED
-                && minDur == UNSPECIFIED_DURATION && logic->getPhases().size() == 2;
+                                                  && minDur == UNSPECIFIED_DURATION && logic->getPhases().size() == 2;
             if (isSimpleActuatedCrossing) {
                 // permit green phase to extend when there are no pedestrians
                 logic->setPhaseNext(0, {0, 1});
@@ -1378,7 +1377,7 @@ NBOwnTLDef::correctConflicting(std::string state, const EdgeVector& fromEdges, c
                         if (state[i2] == 'G' && !isTurnaround[i2] &&
                                 (forbids(fromEdges[i2], toEdges[i2], fromEdges[i1], toEdges[i1], true) ||
                                  forbids(fromEdges[i1], toEdges[i1], fromEdges[i2], toEdges[i2], true))) {
-                            myRightOnRedConflicts.insert(std::make_pair(i1, i2));
+                            myExtraConflicts.insert(std::make_pair(i1, i2));
                         }
                     }
                 }

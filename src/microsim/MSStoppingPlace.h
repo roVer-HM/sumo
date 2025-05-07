@@ -242,8 +242,15 @@ public:
         return myTransportableCapacity;
     }
 
+    inline double getParkingLength() const {
+        return (myEndPos - myBegPos) / myParkingFactor;
+    }
+
     /// @brief get IDs of persons waiting at this stop
     void getWaitingPersonIDs(std::vector<std::string>& into) const;
+
+    /// @brief perform extra processing after element has been loaded
+    virtual void finishedLoading() {};
 
     /** @brief Remove all vehicles before quick-loading state */
     void clearState();

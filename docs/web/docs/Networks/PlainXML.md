@@ -104,7 +104,7 @@ certain meaning and value range:
 | tlType          | enum ( **"static"**, "actuated", "delay_based")                                                                                                                                                                                              | An optional type for the [traffic light algorithm](../Simulation/Traffic_Lights.md#type_actuated)
 | tlLayout        | enum (  **"opposites"**, "incoming", "alternateOneWay")                                                                                                                                                                                              | An optional layout for the traffic light plan (see below)
 | tl              | id (string)                                                                                                                                                                                                               | An optional id for the traffic light program. Nodes with the same tl-value will be joined into a single program                                    |
-| radius          | positive float;                                                                                                                                                                                                           | optional turning radius (for all corners) for that node in meters *(default 1.5)*                                                                  |
+| radius          | positive float                                                                                                                                                                                                           | optional turning radius (for all corners) for that node in meters *(default 1.5)*                                                                  |
 | shape           | List of positions; each position is encoded in x,y or x,y,z in meters (do not separate the numbers with a space\!).                                                                                                       | A custom shape for that node. If less than two positions are given, netconvert will reset that node to use a computed shape.                       |
 | keepClear       | bool                                                                                                                                                                                                                      | Whether the [junction-blocking-heuristic](../Simulation/Intersections.md#junction_blocking) should be activated at this node *(default true)* |
 | rightOfWay      | string                                                                                                                                                                                                                    | Set algorithm for computing [\#Right-of-way](#right-of-way). Allowed values are *default*, *edgePriority*, *mixedPriority*, and *allwayStop*   |
@@ -336,9 +336,10 @@ joinable node clusters works like this:
     candidate cluster
 4.  nodes with only a single connection to the cluster (nodes at the
     outside) are removed
-5.  clusters which are to complex are filtered out (a warning with an
+5.  clusters which are to complex are simplified or filtered out (a warning with an
     explanation is issued for each case)
-6.  each cluster is turned into a joined node
+   - if a cluster has parallel incoming edges (in the same direction of travel) it is filtered out. The threshold for being considered parallel can be controlled with option **--junctions.join.parallel-threshold** (default 30 degrees).    
+7.  each cluster is turned into a joined node
 
 ### Specifying and excluding explicit joins
 
@@ -1176,3 +1177,4 @@ The attributes are described in the following.
 | **node**       | id (string)                                                       | The name of the node at which this walking area is located      |
 | **edges**      | ids (list of strings)                                                                                               | The (road) edges which uniquely define the walking area. Usually a single edge with a side walk that connects to the walking area is sufficient. In case the walking area does not connect to any side walks but rather connects two pedestrian crossings, the edges that are being crossed by both crossings must be used. |
 | **shape**      | List of positions; each position is encoded in x,y or x,y,z in meters (do not separate the numbers with a space\!). | specifies a custom shape for this walking area.
+| width          | double | custom width for waiting/walking on this walking area |

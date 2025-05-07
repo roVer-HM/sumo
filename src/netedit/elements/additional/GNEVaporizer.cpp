@@ -17,38 +17,36 @@
 ///
 //
 /****************************************************************************/
+#include <config.h>
+
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/gui/globjects/GLIncludes.h>
 #include <utils/gui/div/GUIGlobalViewObjectsHandler.h>
+#include <utils/gui/globjects/GLIncludes.h>
 
 #include "GNEVaporizer.h"
-
 
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
 GNEVaporizer::GNEVaporizer(GNENet* net) :
-    GNEAdditional("", net, GLO_VAPORIZER, SUMO_TAG_VAPORIZER, GUIIconSubSys::getIcon(GUIIcon::VAPORIZER), "",
-{}, {}, {}, {}, {}, {}),
-myBegin(0),
-myEnd(0) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional("", net, "", SUMO_TAG_VAPORIZER, "") {
 }
 
 
-GNEVaporizer::GNEVaporizer(GNENet* net, GNEEdge* edge, SUMOTime from, SUMOTime end, const std::string& name,
-                           const Parameterised::Map& parameters) :
-    GNEAdditional(edge->getID(), net, GLO_VAPORIZER, SUMO_TAG_VAPORIZER,  GUIIconSubSys::getIcon(GUIIcon::VAPORIZER), name,
-{}, {edge}, {}, {}, {}, {}),
-Parameterised(parameters),
-myBegin(from),
-myEnd(end) {
+GNEVaporizer::GNEVaporizer(GNENet* net, const std::string& filename, GNEEdge* edge, SUMOTime from, SUMOTime end,
+                           const std::string& name, const Parameterised::Map& parameters) :
+    GNEAdditional(edge->getID(), net, filename, SUMO_TAG_VAPORIZER, name),
+    Parameterised(parameters),
+    myBegin(from),
+    myEnd(end) {
+    // set parents
+    setParent<GNEEdge*>(edge);
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -67,7 +65,7 @@ GNEVaporizer::getMoveOperation() {
 
 void
 GNEVaporizer::writeAdditional(OutputDevice& device) const {
-    device.openTag(getTagProperty().getTag());
+    device.openTag(getTagProperty()->getTag());
     device.writeAttr(SUMO_ATTR_ID, getID());
     if (!myAdditionalName.empty()) {
         device.writeAttr(SUMO_ATTR_NAME, StringUtils::escapeXML(myAdditionalName));
@@ -222,10 +220,8 @@ GNEVaporizer::getAttribute(SumoXMLAttr key) const {
             return time2string(myEnd);
         case SUMO_ATTR_NAME:
             return myAdditionalName;
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -260,7 +256,6 @@ GNEVaporizer::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoLis
         case SUMO_ATTR_BEGIN:
         case SUMO_ATTR_END:
         case SUMO_ATTR_NAME:
-        case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
@@ -294,8 +289,6 @@ GNEVaporizer::isValid(SumoXMLAttr key, const std::string& value) {
             }
         case SUMO_ATTR_NAME:
             return SUMOXMLDefinitions::isValidAttribute(value);
-        case GNE_ATTR_PARAMETERS:
-            return areParametersValid(value);
         default:
             return isCommonValid(key, value);
     }
@@ -335,11 +328,8 @@ GNEVaporizer::setAttribute(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_NAME:
             myAdditionalName = value;
             break;
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
-            break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
 }

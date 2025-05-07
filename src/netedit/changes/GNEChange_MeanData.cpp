@@ -18,12 +18,8 @@
 // A network change in which a mean data set is created or deleted
 /****************************************************************************/
 
-// ===========================================================================
-// included modules
-// ===========================================================================
-#include <config.h>
-
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
 #include <netedit/GNEApplicationWindow.h>
@@ -41,7 +37,7 @@ FXIMPLEMENT_ABSTRACT(GNEChange_MeanData, GNEChange, nullptr, 0)
 // ===========================================================================
 
 GNEChange_MeanData::GNEChange_MeanData(GNEMeanData* meanData, bool forward) :
-    GNEChange(Supermode::DATA, meanData, forward, meanData->isAttributeCarrierSelected()),
+    GNEChange(Supermode::DATA, forward, meanData->isAttributeCarrierSelected()),
     myMeanData(meanData) {
     myMeanData->incRef("GNEChange_MeanData");
 }
@@ -53,7 +49,7 @@ GNEChange_MeanData::~GNEChange_MeanData() {
         myMeanData->decRef("GNEChange_MeanData");
         if (myMeanData->unreferenced()) {
             // make sure that MeanData isn't in net before removing
-            if (myMeanData->getNet()->getAttributeCarriers()->retrieveMeanData(myMeanData->getTagProperty().getTag(), myMeanData->getID(), false)) {
+            if (myMeanData->getNet()->getAttributeCarriers()->retrieveMeanData(myMeanData->getTagProperty()->getTag(), myMeanData->getID(), false)) {
                 // delete MeanData from net
                 myMeanData->getNet()->getAttributeCarriers()->deleteMeanData(myMeanData);
             }

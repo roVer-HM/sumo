@@ -30,7 +30,8 @@
 // method definitions
 // ===========================================================================
 
-CommonHandler::CommonHandler() {
+CommonHandler::CommonHandler(const std::string& filename) :
+    myFilename(filename) {
 }
 
 
@@ -56,7 +57,7 @@ CommonHandler::parseParameters(const SUMOSAXAttributes& attrs) {
         writeError(TL("Parameters must be defined within an object"));
     } else if (SumoBaseObjectParent->getTag() == SUMO_TAG_PARAM) {
         writeError(TL("Parameters cannot be defined within another parameter."));
-    } else if ((SumoBaseObjectParent->getTag() != SUMO_TAG_NOTHING) && parsedOk) {
+    } else if ((SumoBaseObjectParent->getTag() != SUMO_TAG_ERROR) && parsedOk) {
         // get tag str
         const std::string parentTagStr = toString(SumoBaseObjectParent->getTag());
         // circumventing empty string value
@@ -104,7 +105,7 @@ CommonHandler::checkParsedParent(const SumoXMLTag currentTag, const std::vector<
         CommonXMLStructure::SumoBaseObject* const parent = myCommonXMLStructure.getCurrentSumoBaseObject()->getParentSumoBaseObject();
         if (parent == nullptr) {
             ok = writeError(TLF("'%' must be defined within the definition of a %.", toString(currentTag), tagsStr));
-        } else if ((parent->getTag() != SUMO_TAG_NOTHING) && std::find(parentTags.begin(), parentTags.end(), parent->getTag()) == parentTags.end()) {
+        } else if ((parent->getTag() != SUMO_TAG_ERROR) && std::find(parentTags.begin(), parentTags.end(), parent->getTag()) == parentTags.end()) {
             if (parent->hasStringAttribute(SUMO_ATTR_ID)) {
                 ok = writeError(TLF("'%' must be defined within the definition of a '%' (found % '%').", toString(currentTag), tagsStr,
                                     toString(parent->getTag()), parent->getStringAttribute(SUMO_ATTR_ID)));
@@ -129,7 +130,7 @@ CommonHandler::checkListOfVehicleTypes(const SumoXMLTag tag, const std::string& 
 
 
 bool
-CommonHandler::checkDistribution(CommonXMLStructure::SumoBaseObject* obj) {
+CommonHandler::checkWithinDistribution(CommonXMLStructure::SumoBaseObject* obj) {
     if (obj->getParentSumoBaseObject() == nullptr) {
         return false;
     } else if (obj->getParentSumoBaseObject()->getTag() == SUMO_TAG_ROUTE_DISTRIBUTION) {
@@ -166,7 +167,7 @@ CommonHandler::checkVehicleParents(CommonXMLStructure::SumoBaseObject* obj) {
             return writeError(TLF("Could not build % with ID '%' in netedit; Cannot have from-to attributes and route attributes in the same definition.", toString(tag), id));
         }
         if ((hasRoute + hasEmbeddedRoute + overEdges + overJunctions + overTAZs) == 0) {
-            return writeError(TLF("Could not build % with ID '%' in netedit; Requiere either a route or an embedded route or a from-to attribute (Edges, junctions or TAZs).", toString(tag), id));
+            return writeError(TLF("Could not build % with ID '%' in netedit; Requires either a route or an embedded route or a from-to attribute (Edges, junctions or TAZs).", toString(tag), id));
         }
         return true;
     }
@@ -356,12 +357,6 @@ CommonHandler::writeErrorEmptyEdges(const SumoXMLTag tag, const std::string& id)
 bool
 CommonHandler::writeErrorInvalidLanes(const SumoXMLTag tag, const std::string& id) {
     return writeError(TLF("Could not build % with ID '%' in netedit; List of lanes isn't valid.", toString(tag), id));
-}
-
-
-bool
-CommonHandler::writeErrorInvalidDistribution(const SumoXMLTag tag, const std::string& id) {
-    return writeError(TLF("Could not build % with ID '%' in netedit; Distinct number of distribution values and probabilities.", toString(tag), id));
 }
 
 

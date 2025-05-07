@@ -109,7 +109,7 @@ EnergyParams::~EnergyParams() {}
 
 void
 EnergyParams::setDynamicValues(const SUMOTime stopDuration, const bool parking, const SUMOTime waitingTime, const double angle) {
-    if ((stopDuration >= 0. && myStopDurationSeconds < 0) || (stopDuration < 0 && myStopDurationSeconds >= 0.)) {
+    if ((stopDuration >= 0 && myStopDurationSeconds < 0.) || (stopDuration < 0 && myStopDurationSeconds >= 0.)) {
         myStopDurationSeconds = STEPS2TIME(stopDuration);
         myAmParking = parking;
     }
@@ -202,7 +202,7 @@ EnergyParams::isEngineOff() const {
 
 bool
 EnergyParams::isOff() const {
-    return myStopDurationSeconds > getDoubleOptional(SUMO_ATTR_SHUT_OFF_STOP, DEFAULT_VEH_SHUT_OFF_STOP) && myAmParking;
+    return myStopDurationSeconds > getDoubleOptional(SUMO_ATTR_SHUT_OFF_STOP, DEFAULT_VEH_SHUT_OFF_STOP);
 }
 
 

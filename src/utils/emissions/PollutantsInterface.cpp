@@ -22,6 +22,7 @@
 
 #include <limits>
 #include <cmath>
+#include <utils/common/MsgHandler.h>
 #include <utils/common/SUMOVehicleClass.h>
 #include <utils/common/StringUtils.h>
 #include <utils/common/ToString.h>
@@ -204,7 +205,7 @@ PollutantsInterface::Helper::getCoastingDecel(const SUMOEmissionClass c, const d
     // the magic numbers below come from a linear interpolation with http://ts-sim-service-ba/svn/simo/trunk/projects/sumo/data/emissions/linear.py
     const double mass = param->getDouble(SUMO_ATTR_MASS);
     const double incl = param->getDouble(SUMO_ATTR_FRONTSURFACEAREA) / mass * -9.05337017 + -0.00017774;
-    const double grad = PHEMlightdllV5::Constants::GRAVITY_CONST * slope / 100.;
+    const double grad = slope == 0. ? 0. : PHEMlightdllV5::Constants::GRAVITY_CONST * sin(DEG2RAD(slope));
     return MIN2(0., incl * v + 0.00001066 * mass + -0.38347107 - 20.0 * incl - grad);
 }
 
@@ -244,6 +245,7 @@ PollutantsInterface::getClassByName(const std::string& eClass, const SUMOVehicle
         if (eClass == "zero") {
             return myZeroHelper.getClassByName("default", vc);
         }
+        WRITE_WARNINGF("Emission classes should always use the model as a prefix, please recheck '%'. Starting with SUMO 1.24 this will be an error.", eClass)
         // default HBEFA2
         return myHBEFA2Helper.getClassByName(eClass, vc);
     }

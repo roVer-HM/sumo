@@ -19,6 +19,7 @@
 /****************************************************************************/
 #pragma once
 #include <config.h>
+
 #include "GNEAdditional.h"
 
 // ===========================================================================
@@ -31,11 +32,8 @@ class GNEVariableSpeedSignDialog;
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNEVariableSpeedSignStep
- * class used to represent a interval used in variable speed sign
- */
-class GNEVariableSpeedSignStep : public GNEAdditional {
+
+class GNEVariableSpeedSignStep : public GNEAdditional, public Parameterised {
 
 public:
     /// @brief default constructor
@@ -158,7 +156,7 @@ public:
 
 protected:
     /// @brief timeStep
-    SUMOTime myTime;
+    SUMOTime myTime = 0;
 
     /// @brief speed in this timeStep
     std::string mySpeed;

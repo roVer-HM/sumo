@@ -52,9 +52,9 @@ class LaneAreaDomain(Domain):
         return self._getUniversal(tc.LAST_STEP_MEAN_SPEED, detID)
 
     def getLastStepVehicleIDs(self, detID):
-        """getLastStepVehicleIDs(string) -> list(string)
+        """getLastStepVehicleIDs(string) -> tuple(string)
 
-        Returns the list of ids of vehicles that were on the named detector in the last simulation step.
+        Returns the tuple of ids of vehicles that were on the named detector in the last simulation step.
         """
         return self._getUniversal(tc.LAST_STEP_VEHICLE_ID_LIST, detID)
 
@@ -114,6 +114,13 @@ class LaneAreaDomain(Domain):
         """
         return self._getUniversal(tc.VAR_INTERVAL_SPEED, detID)
 
+    def getIntervalMeanTimeLoss(self, detID):
+        """getIntervalMeanTimeLoss(string) -> double
+
+        Returns the mean timeLoss per vehicle during the current interval
+        """
+        return self._getUniversal(tc.VAR_INTERVAL_TIMELOSS, detID)
+
     def getIntervalMaxJamLengthInMeters(self, detID):
         """getIntervalMaxJamLengthInMeters(string) -> double
 
@@ -141,6 +148,13 @@ class LaneAreaDomain(Domain):
         Returns the mean speed during the previous interval
         """
         return self._getUniversal(tc.VAR_LAST_INTERVAL_SPEED, detID)
+
+    def getLastIntervalMeanTimeLoss(self, detID):
+        """getLastIntervalMeanTimeLoss(string) -> double
+
+        Returns the mean timeLoss per vehicle during the previous interval
+        """
+        return self._getUniversal(tc.VAR_LAST_INTERVAL_TIMELOSS, detID)
 
     def getLastIntervalMaxJamLengthInMeters(self, detID):
         """getLastIntervalMaxJamLengthInMeters(string) -> double

@@ -21,19 +21,19 @@
 #include <config.h>
 
 #include <netedit/frames/GNEFrame.h>
-#include <netedit/frames/GNEAttributesCreator.h>
-#include <netedit/frames/GNETagSelector.h>
-#include <netedit/frames/GNEDrawingShape.h>
-#include <netedit/frames/GNENeteditAttributes.h>
 
+// ===========================================================================
+// class declaration
+// ===========================================================================
+
+class GNEAttributesEditor;
+class GNETagSelector;
+class GNEDrawingShape;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
-* @class GNEShapeFrame
-* The Widget for setting internal attributes of shape elements
-*/
+
 class GNEShapeFrame : public GNEFrame {
 
 public:
@@ -138,17 +138,14 @@ protected:
     /// @brief Tag selected in GNETagSelector
     void tagSelected();
 
-    /// @brief add shape (using base shape)
-    void addShape();
-
     /// @brief process click for Polygons
     bool processClickPolygons(const Position& clickedPosition, bool& updateTemporalShape);
 
     /// @brief process click for POIs over view
-    bool processClickPOI(SumoXMLTag POITag, const Position& clickedPosition, const GNEViewNetHelper::ViewObjectsSelector& viewObjects);
+    bool processClickPOI(SumoXMLTag POITag, const Position& clickedPosition);
 
     /// @brief process click for POIGeo
-    bool processClickPOIGeo(const Position& clickedPosition, const GNEViewNetHelper::ViewObjectsSelector& viewObjects);
+    bool processClickPOIGeo(const Position& clickedPosition);
 
     /// @brief process click for POILanes
     bool processClickPOILanes(const GNEViewNetHelper::ViewObjectsSelector& viewObjects);
@@ -157,15 +154,12 @@ private:
     /// @brief shape tag selector
     GNETagSelector* myShapeTagSelector;
 
-    /// @brief shape internal attributes
-    GNEAttributesCreator* myShapeAttributes;
-
-    /// @brief Netedit parameter
-    GNENeteditAttributes* myNeteditAttributes;
+    /// @brief shape attributes editor
+    GNEAttributesEditor* myShapeAttributesEditor = nullptr;
 
     /// @brief Drawing shape
-    GNEDrawingShape* myDrawingShape;
+    GNEDrawingShape* myDrawingShape = nullptr;
 
     /// @brief GEOPOICreator
-    GEOPOICreator* myGEOPOICreator;
+    GEOPOICreator* myGEOPOICreator = nullptr;
 };

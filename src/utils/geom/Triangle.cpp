@@ -19,19 +19,19 @@
 /****************************************************************************/
 #include <config.h>
 
+#include <algorithm>
 #include "Triangle.h"
 
 
 // ===========================================================================
 // static member definitions
 // ===========================================================================
-
 const Triangle Triangle::INVALID = Triangle();
+
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
-
 Triangle::Triangle() {}
 
 
@@ -57,14 +57,10 @@ Triangle::isPositionWithin(const Position& pos) const {
 
 bool
 Triangle::isBoundaryFullWithin(const Boundary& boundary) const {
-    if (!isPositionWithin(Position(boundary.xmax(), boundary.ymax())) ||
-        !isPositionWithin(Position(boundary.xmin(), boundary.ymin())) ||
-        !isPositionWithin(Position(boundary.xmax(), boundary.ymin())) ||
-        !isPositionWithin(Position(boundary.xmin(), boundary.ymax()))) {
-        return false;
-    } else {
-        return true;
-    }
+    return isPositionWithin(Position(boundary.xmax(), boundary.ymax())) &&
+           isPositionWithin(Position(boundary.xmin(), boundary.ymin())) &&
+           isPositionWithin(Position(boundary.xmax(), boundary.ymin())) &&
+           isPositionWithin(Position(boundary.xmin(), boundary.ymax()));
 }
 
 
@@ -76,6 +72,10 @@ Triangle::intersectWithShape(const PositionVector& shape) const {
 
 bool
 Triangle::intersectWithShape(const PositionVector& shape, const Boundary& shapeBoundary) const {
+    // check if triangle is within shape
+    if (shape.around(myA) || shape.around(myB) || shape.around(myC)) {
+        return true;
+    }
     // check if at leas two corners of the shape boundary are within triangle
     const int cornerA = isPositionWithin(Position(shapeBoundary.xmax(), shapeBoundary.ymax()));
     const int cornerB = isPositionWithin(Position(shapeBoundary.xmin(), shapeBoundary.ymin()));
@@ -92,7 +92,7 @@ Triangle::intersectWithShape(const PositionVector& shape, const Boundary& shapeB
     }
     // on this point, whe need to check if every shape line intersect with triangle
     for (int i = 0; i < ((int)shape.size() - 1); i++) {
-        if (lineIntersectsTriangle(shape[i], shape[i+1])) {
+        if (lineIntersectsTriangle(shape[i], shape[i + 1])) {
             return true;
         }
     }
@@ -101,18 +101,15 @@ Triangle::intersectWithShape(const PositionVector& shape, const Boundary& shapeB
 
 
 bool
-Triangle::intersectWithCircle(const Position& center, const double radius, const Boundary& circleBoundary) const {
-    if (isBoundaryFullWithin(circleBoundary)) {
-        return true;
-    } else if (lineIntersectCircle(myA, myB, center, radius)) {
-        return true;
-    } else if (lineIntersectCircle(myA, myB, center, radius)) {
-        return true;
-    } else if (lineIntersectCircle(myA, myB, center, radius)) {
-        return true;
-    } else {
-        return isPositionWithin(center);
-    }
+Triangle::intersectWithCircle(const Position& center, const double radius) const {
+    const auto squaredRadius = radius * radius;
+    return ((center.distanceSquaredTo2D(myA) <= squaredRadius) ||
+            (center.distanceSquaredTo2D(myB) <= squaredRadius) ||
+            (center.distanceSquaredTo2D(myC) <= squaredRadius) ||
+            isPositionWithin(center) ||
+            lineIntersectCircle(myA, myB, center, radius) ||
+            lineIntersectCircle(myB, myC, center, radius) ||
+            lineIntersectCircle(myC, myA, center, radius));
 }
 
 
@@ -233,8 +230,9 @@ Triangle::orientation(const Position& p, const Position& q, const Position& r) c
 bool
 Triangle::onSegment(const Position& p, const Position& q, const Position& r) const {
     return (q.x() >= std::min(p.x(), r.x()) && q.x() <= std::max(p.x(), r.x()) &&
-        q.y() >= std::min(p.y(), r.y()) && q.y() <= std::max(p.y(), r.y()));
+            q.y() >= std::min(p.y(), r.y()) && q.y() <= std::max(p.y(), r.y()));
 }
+
 
 bool
 Triangle::segmentsIntersect(const Position& p1, const Position& q1, const Position& p2, const Position& q2) const {
@@ -263,8 +261,8 @@ Triangle::segmentsIntersect(const Position& p1, const Position& q1, const Positi
 bool
 Triangle::lineIntersectsTriangle(const Position& p1, const Position& p2) const {
     return segmentsIntersect(p1, p2, myA, myB) ||
-        segmentsIntersect(p1, p2, myB, myC) ||
-        segmentsIntersect(p1, p2, myC, myA);
+           segmentsIntersect(p1, p2, myB, myC) ||
+           segmentsIntersect(p1, p2, myC, myA);
 }
 
 

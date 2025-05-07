@@ -19,32 +19,29 @@
 /****************************************************************************/
 #include <config.h>
 
-#include "GNEClosingLaneReroute.h"
 #include <netedit/changes/GNEChange_Attribute.h>
-
-#include <netedit/GNEUndoList.h>
 #include <netedit/GNENet.h>
+#include <netedit/GNEUndoList.h>
 
+#include "GNEClosingLaneReroute.h"
 
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
 GNEClosingLaneReroute::GNEClosingLaneReroute(GNENet* net) :
-    GNEAdditional("", net, GLO_REROUTER_CLOSINGLANEREROUTE, SUMO_TAG_CLOSING_LANE_REROUTE,
-                  GUIIconSubSys::getIcon(GUIIcon::CLOSINGLANEREROUTE), "", {}, {}, {}, {}, {}, {}),
-                            myClosedLane(nullptr),
-myPermissions(0) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional("", net, "", SUMO_TAG_CLOSING_LANE_REROUTE, ""),
+    myClosedLane(nullptr),
+    myPermissions(0) {
 }
 
 
 GNEClosingLaneReroute::GNEClosingLaneReroute(GNEAdditional* rerouterIntervalParent, GNELane* closedLane, SVCPermissions permissions) :
-    GNEAdditional(rerouterIntervalParent->getNet(), GLO_REROUTER_CLOSINGLANEREROUTE, SUMO_TAG_CLOSING_LANE_REROUTE,
-                  GUIIconSubSys::getIcon(GUIIcon::CLOSINGLANEREROUTE), "", {}, {}, {}, {rerouterIntervalParent}, {}, {}),
-myClosedLane(closedLane),
-myPermissions(permissions) {
+    GNEAdditional(rerouterIntervalParent, SUMO_TAG_CLOSING_LANE_REROUTE, ""),
+    myClosedLane(closedLane),
+    myPermissions(permissions) {
+    // set parents
+    setParent<GNEAdditional*>(rerouterIntervalParent);
     // update boundary of rerouter parent
     rerouterIntervalParent->getParentAdditionals().front()->updateCenteringBoundary(true);
 }
@@ -161,7 +158,7 @@ GNEClosingLaneReroute::getAttribute(SumoXMLAttr key) const {
         case GNE_ATTR_SHIFTLANEINDEX:
             return "";
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -174,7 +171,7 @@ GNEClosingLaneReroute::getAttributeDouble(SumoXMLAttr key) const {
 
 const Parameterised::Map&
 GNEClosingLaneReroute::getACParametersMap() const {
-    return PARAMETERS_EMPTY;
+    return getParametersMap();
 }
 
 
@@ -246,7 +243,7 @@ GNEClosingLaneReroute::setAttribute(SumoXMLAttr key, const std::string& value) {
             shiftLaneIndex();
             break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
 }

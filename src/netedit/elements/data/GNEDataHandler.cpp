@@ -18,11 +18,6 @@
 // Builds data objects for netedit
 /****************************************************************************/
 
-// ===========================================================================
-// included modules
-// ===========================================================================
-#include <config.h>
-
 #include <netedit/changes/GNEChange_DataSet.h>
 #include <netedit/changes/GNEChange_DataInterval.h>
 #include <netedit/changes/GNEChange_GenericData.h>
@@ -36,7 +31,6 @@
 #include <utils/gui/div/GUIDesigns.h>
 
 #include "GNEDataHandler.h"
-
 
 // ===========================================================================
 // member method definitions
@@ -68,7 +62,7 @@ GNEDataHandler::buildDataSet(const std::string& id) {
     } else if (!checkDuplicatedDataSet(id)) {
         return false;
     } else {
-        GNEDataSet* dataSet = new GNEDataSet(myNet, id);
+        GNEDataSet* dataSet = new GNEDataSet(id, myNet, myFilename);
         if (myAllowUndoRedo) {
             myNet->getViewNet()->getUndoList()->begin(dataSet, TL("add data set"));
             myNet->getViewNet()->getUndoList()->add(new GNEChange_DataSet(dataSet, true), true);
@@ -91,7 +85,7 @@ GNEDataHandler::buildDataInterval(const CommonXMLStructure::SumoBaseObject* /* s
     // first check if dataSet exist
     if (dataSet == nullptr) {
         // create dataset AND data interval
-        dataSet = new GNEDataSet(myNet, dataSetID);
+        dataSet = new GNEDataSet(dataSetID, myNet, myFilename);
         GNEDataInterval* dataInterval = new GNEDataInterval(dataSet, begin, end);
         if (myAllowUndoRedo) {
             myNet->getViewNet()->getUndoList()->begin(dataInterval, TL("add data set and data interval"));

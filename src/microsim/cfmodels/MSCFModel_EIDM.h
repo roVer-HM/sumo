@@ -302,9 +302,6 @@ private:
     // @brief The IDM delta exponent
     const double myDelta;
 
-    // @brief A computational shortcut
-    const double myTwoSqrtAccelDecel;
-
     // @brief The number of iterations in speed calculations
     const int myIterations;
 

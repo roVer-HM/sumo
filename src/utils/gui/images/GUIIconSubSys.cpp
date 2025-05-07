@@ -372,6 +372,7 @@
 #include "icons/ridetaz.xpm"
 #include "icons/ridetrainstop.xpm"
 #include "icons/route.xpm"
+#include "icons/routeref.xpm"
 #include "icons/routedistribution.xpm"
 #include "icons/routeflow.xpm"
 #include "icons/stopelement.xpm"
@@ -397,6 +398,7 @@
 #include "icons/triptazs.xpm"
 #include "icons/vehicle.xpm"
 #include "icons/vtype.xpm"
+#include "icons/vtyperef.xpm"
 #include "icons/vtype_bike.xpm"
 #include "icons/vtype_container.xpm"
 #include "icons/vtype_default.xpm"
@@ -552,6 +554,7 @@
 #include "icons/languages/tr.xpm"
 #include "icons/languages/zh.xpm"
 #include "icons/languages/zht.xpm"
+#include "icons/languages/ja.xpm"
 
 // ===========================================================================
 // static member variable definitions
@@ -886,8 +889,10 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::TAZEDGE] = new FXXPMIcon(a, tazedge_xpm);
 
     myIcons[GUIIcon::ROUTE] = new FXXPMIcon(a, route_xpm);
+    myIcons[GUIIcon::ROUTEREF] = new FXXPMIcon(a, routeref_xpm);
     myIcons[GUIIcon::ROUTEDISTRIBUTION] = new FXXPMIcon(a, routedistribution_xpm);
     myIcons[GUIIcon::VTYPE] = new FXXPMIcon(a, vtype_xpm);
+    myIcons[GUIIcon::VTYPEREF] = new FXXPMIcon(a, vtyperef_xpm);
     myIcons[GUIIcon::VTYPE_DEFAULT] = new FXXPMIcon(a, vtype_default_xpm);
     myIcons[GUIIcon::VTYPE_BIKE] = new FXXPMIcon(a, vtype_bike_xpm);
     myIcons[GUIIcon::VTYPE_TAXI] = new FXXPMIcon(a, vtype_taxi_xpm);
@@ -1098,6 +1103,7 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::LANGUAGE_TR] = new FXXPMIcon(a, language_tr_xpm);
     myIcons[GUIIcon::LANGUAGE_ZH] = new FXXPMIcon(a, language_zh_xpm);
     myIcons[GUIIcon::LANGUAGE_ZHT] = new FXXPMIcon(a, language_zht_xpm);
+    myIcons[GUIIcon::LANGUAGE_JA] = new FXXPMIcon(a, language_ja_xpm);
 
     // ... and create them
     for (const auto& icon : myIcons) {

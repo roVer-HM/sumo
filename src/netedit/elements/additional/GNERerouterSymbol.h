@@ -19,21 +19,20 @@
 /****************************************************************************/
 #pragma once
 #include <config.h>
+
 #include "GNEAdditional.h"
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
+
 class GNEBusStop;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNERerouterSymbol
- * class for busStop acces
- */
-class GNERerouterSymbol : public GNEAdditional {
+
+class GNERerouterSymbol : public GNEAdditional, public Parameterised {
 
 public:
     /// @brief default Constructor

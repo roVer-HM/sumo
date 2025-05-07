@@ -19,7 +19,7 @@
 /****************************************************************************/
 
 #include <netedit/GNENet.h>
-#include <netedit/GNEViewNet.h>
+#include <netedit/GNETagPropertiesDatabase.h>
 #include <netedit/GNEViewParent.h>
 #include <netedit/frames/common/GNESelectorFrame.h>
 #include <utils/foxtools/MFXMenuHeader.h>
@@ -31,25 +31,25 @@
 
 #include "GNENetworkElement.h"
 
-
 // ===========================================================================
 // method definitions
 // ===========================================================================
 
-GNENetworkElement::GNENetworkElement(GNENet* net, const std::string& id, GUIGlObjectType type, SumoXMLTag tag, FXIcon* icon,
-                                     const std::vector<GNEJunction*>& junctionParents,
-                                     const std::vector<GNEEdge*>& edgeParents,
-                                     const std::vector<GNELane*>& laneParents,
-                                     const std::vector<GNEAdditional*>& additionalParents,
-                                     const std::vector<GNEDemandElement*>& demandElementParents,
-                                     const std::vector<GNEGenericData*>& genericDataParents) :
-    GUIGlObject(type, id, icon),
-    GNEHierarchicalElement(net, tag, junctionParents, edgeParents, laneParents, additionalParents, demandElementParents, genericDataParents),
+GNENetworkElement::GNENetworkElement(GNENet* net, const std::string& id, SumoXMLTag tag) :
+    GNEAttributeCarrier(tag, net, "", false),
+    GUIGlObject(net->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGLType(), id,
+                GUIIconSubSys::getIcon(net->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGUIIcon())),
     myShapeEdited(false) {
 }
 
 
 GNENetworkElement::~GNENetworkElement() {}
+
+
+GNEHierarchicalElement*
+GNENetworkElement::getHierarchicalElement() {
+    return this;
+}
 
 
 GUIGlObject*
@@ -83,12 +83,12 @@ GNENetworkElement::getParameterWindow(GUIMainWindow& app, GUISUMOAbstractView&) 
     // Create table
     GUIParameterTableWindow* ret = new GUIParameterTableWindow(app, *this);
     // Iterate over attributes
-    for (const auto& i : myTagProperty) {
+    for (const auto& attributeProperty : myTagProperty->getAttributeProperties()) {
         // Add attribute and set it dynamic if aren't unique
-        if (i.isUnique()) {
-            ret->mkItem(i.getAttrStr().c_str(), false, getAttribute(i.getAttr()));
+        if (attributeProperty->isUnique()) {
+            ret->mkItem(attributeProperty->getAttrStr().c_str(), false, getAttribute(attributeProperty->getAttr()));
         } else {
-            ret->mkItem(i.getAttrStr().c_str(), true, getAttribute(i.getAttr()));
+            ret->mkItem(attributeProperty->getAttrStr().c_str(), true, getAttribute(attributeProperty->getAttr()));
         }
     }
     // close building
@@ -137,7 +137,7 @@ GNENetworkElement::getOptionalName() const {
 
 std::string
 GNENetworkElement::getPopUpID() const {
-    if (myTagProperty.getTag() == SUMO_TAG_CONNECTION) {
+    if (myTagProperty->getTag() == SUMO_TAG_CONNECTION) {
         return getAttribute(SUMO_ATTR_FROM) + "_" + getAttribute(SUMO_ATTR_FROM_LANE) + " -> " + getAttribute(SUMO_ATTR_TO) + "_" + getAttribute(SUMO_ATTR_TO_LANE);
     } else {
         return getTagStr() + ": " + getID();
@@ -147,11 +147,11 @@ GNENetworkElement::getPopUpID() const {
 
 std::string
 GNENetworkElement::getHierarchyName() const {
-    if (myTagProperty.getTag() == SUMO_TAG_LANE) {
+    if (myTagProperty->getTag() == SUMO_TAG_LANE) {
         return toString(SUMO_TAG_LANE) + " " + getAttribute(SUMO_ATTR_INDEX);
-    } else if (myTagProperty.getTag() == SUMO_TAG_CONNECTION) {
+    } else if (myTagProperty->getTag() == SUMO_TAG_CONNECTION) {
         return getAttribute(SUMO_ATTR_FROM_LANE) + " -> " + getAttribute(SUMO_ATTR_TO_LANE);
-    } else if ((myTagProperty.getTag() == SUMO_TAG_EDGE) || (myTagProperty.getTag() == SUMO_TAG_CROSSING)) {
+    } else if ((myTagProperty->getTag() == SUMO_TAG_EDGE) || (myTagProperty->getTag() == SUMO_TAG_CROSSING)) {
         return getPopUpID();
     } else {
         return getTagStr();
@@ -176,15 +176,15 @@ GNENetworkElement::getGeometryPointUnderCursorShapeEdited() const {
     const auto& s = myNet->getViewNet()->getVisualisationSettings();
     // calculate squared geometry point radius depending of edited item
     double geometryPointRadius = s.neteditSizeSettings.polygonGeometryPointRadius;
-    if (myTagProperty.getTag() == SUMO_TAG_JUNCTION) {
+    if (myTagProperty->getTag() == SUMO_TAG_JUNCTION) {
         geometryPointRadius = s.neteditSizeSettings.junctionGeometryPointRadius;
-    } else if (myTagProperty.getTag() == SUMO_TAG_EDGE) {
+    } else if (myTagProperty->getTag() == SUMO_TAG_EDGE) {
         geometryPointRadius = s.neteditSizeSettings.edgeGeometryPointRadius;
-    } else if (myTagProperty.getTag() == SUMO_TAG_LANE) {
+    } else if (myTagProperty->getTag() == SUMO_TAG_LANE) {
         geometryPointRadius = s.neteditSizeSettings.laneGeometryPointRadius;
-    } else if (myTagProperty.getTag() == SUMO_TAG_CONNECTION) {
+    } else if (myTagProperty->getTag() == SUMO_TAG_CONNECTION) {
         geometryPointRadius = s.neteditSizeSettings.connectionGeometryPointRadius;
-    } else if (myTagProperty.getTag() == SUMO_TAG_CROSSING) {
+    } else if (myTagProperty->getTag() == SUMO_TAG_CROSSING) {
         geometryPointRadius = s.neteditSizeSettings.crossingGeometryPointRadius;
     }
     const auto geometryPointRadiusSquared = (geometryPointRadius * geometryPointRadius);
@@ -308,7 +308,7 @@ GNENetworkElement::checkDrawingBoundarySelection() const {
 
 GUIGLObjectPopupMenu*
 GNENetworkElement::getShapeEditedPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent, const PositionVector& shape) {
-    GUIGLObjectPopupMenu* ret = new GUIGLObjectPopupMenu(app, parent, *this);
+    GUIGLObjectPopupMenu* ret = new GUIGLObjectPopupMenu(app, parent, this);
     const std::string headerName = TLF("% (Edited shape)", getFullName());
     new MFXMenuHeader(ret, app.getBoldFont(), headerName.c_str(), getGLIcon(), nullptr, 0);
     if (OptionsCont::getOptions().getBool("gui-testing")) {
@@ -317,7 +317,7 @@ GNENetworkElement::getShapeEditedPopUpMenu(GUIMainWindow& app, GUISUMOAbstractVi
     // add separator
     new FXMenuSeparator(ret);
     // only allow open/close for junctions
-    if (myTagProperty.getTag() == SUMO_TAG_JUNCTION) {
+    if (myTagProperty->getTag() == SUMO_TAG_JUNCTION) {
         FXMenuCommand* simplifyShape = GUIDesigns::buildFXMenuCommand(ret, TL("Simplify shape"), TL("Replace current shape with a rectangle"), nullptr, &parent, MID_GNE_SHAPEEDITED_SIMPLIFY);
         // disable simplify shape if polygon is only a line
         if (shape.size() <= 2) {

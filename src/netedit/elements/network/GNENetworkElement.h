@@ -20,50 +20,31 @@
 #pragma once
 #include <config.h>
 
-#include <netedit/elements/GNEHierarchicalElement.h>
-#include <utils/gui/div/GUIGeometry.h>
-#include <utils/gui/globjects/GUIGlObject.h>
-#include <utils/geom/PositionVector.h>
+#include <netedit/elements/GNEAttributeCarrier.h>
 #include <netedit/elements/GNEContour.h>
-#include <netedit/GNEMoveElement.h>
-
-
-// ===========================================================================
-// class declarations
-// ===========================================================================
-class GNEAdditional;
-class GNEDemandElement;
-
+#include <netedit/elements/GNEHierarchicalElement.h>
+#include <netedit/elements/GNEMoveElement.h>
+#include <utils/gui/globjects/GUIGlObject.h>
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
 
-class GNENetworkElement : public GUIGlObject, public GNEHierarchicalElement, public GNEMoveElement {
+class GNENetworkElement : public GNEAttributeCarrier, public GUIGlObject, public GNEHierarchicalElement, public GNEMoveElement {
 
 public:
     /**@brief Constructor.
      * @param[in] net The net to inform about gui updates
      * @param[in] id of the element
-     * @param[in] type type of GL object
      * @param[in] tag sumo xml tag of the element
-     * @param[in] junctionParents vector of junction parents
-     * @param[in] edgeParents vector of edge parents
-     * @param[in] laneParents vector of lane parents
-     * @param[in] additionalParents vector of additional parents
-     * @param[in] demandElementParents vector of demand element parents
-     * @param[in] genericDataParents vector of generic data parents
      */
-    GNENetworkElement(GNENet* net, const std::string& id, GUIGlObjectType type, SumoXMLTag tag, FXIcon* icon,
-                      const std::vector<GNEJunction*>& junctionParents,
-                      const std::vector<GNEEdge*>& edgeParents,
-                      const std::vector<GNELane*>& laneParents,
-                      const std::vector<GNEAdditional*>& additionalParents,
-                      const std::vector<GNEDemandElement*>& demandElementParents,
-                      const std::vector<GNEGenericData*>& genericDataParents);
+    GNENetworkElement(GNENet* net, const std::string& id, SumoXMLTag tag);
 
     /// @brief Destructor
     virtual ~GNENetworkElement();
+
+    /// @brief get GNEHierarchicalElement associated with this AttributeCarrier
+    GNEHierarchicalElement* getHierarchicalElement();
 
     /**@brief get move operation
     * @note returned GNEMoveOperation can be nullptr
@@ -110,6 +91,9 @@ public:
 
     /// @brief check if draw delete contour (pink/white)
     virtual bool checkDrawDeleteContour() const = 0;
+
+    /// @brief check if draw delete contour small (pink/white)
+    virtual bool checkDrawDeleteContourSmall() const = 0;
 
     /// @brief check if draw select contour (blue)
     virtual bool checkDrawSelectContour() const = 0;

@@ -692,7 +692,9 @@ MSRouteHandler::closeVehicle() {
             myVehicleParameter = nullptr;
             if (!MSGlobals::gCheckRoutes) {
                 WRITE_WARNING(e.what());
-                vehControl.fixVehicleCounts();
+                vehControl.deleteVehicle(vehicle, true);
+                myVehicleParameter = nullptr;
+                vehicle = nullptr;
                 return;
             } else {
                 throw;
@@ -1108,7 +1110,7 @@ MSRouteHandler::addRideOrTransport(const SUMOSAXAttributes& attrs, const SumoXML
         const std::string aid = myVehicleParameter->id;
         bool ok = true;
         const MSEdge* from = nullptr;
-        const std::string desc = attrs.getOpt<std::string>(SUMO_ATTR_LINES, aid.c_str(), ok, "ANY");
+        const std::string desc = attrs.getOpt<std::string>(SUMO_ATTR_LINES, aid.c_str(), ok, LINE_ANY);
         StringTokenizer st(desc);
         MSStoppingPlace* s = retrieveStoppingPlace(attrs, " in " + agent + " '" + aid + "'");
         MSEdge* to = nullptr;
@@ -1410,7 +1412,7 @@ MSRouteHandler::addStop(const SUMOSAXAttributes& attrs) {
             } else if (myActiveTransportablePlan->back()->getDestination() != edge) {
                 if (myActiveTransportablePlan->back()->getDestination()->isTazConnector()) {
                     myActiveTransportablePlan->back()->setDestination(edge, toStop);
-                } else {
+                } else if (myActiveTransportablePlan->back()->getJumpDuration() < 0) {
                     throw ProcessError(TLF("Disconnected plan for % '%' (%!=%).", myActiveTypeName, myVehicleParameter->id,
                                            edge->getID(), myActiveTransportablePlan->back()->getDestination()->getID()));
                 }
@@ -1432,7 +1434,7 @@ MSRouteHandler::addStop(const SUMOSAXAttributes& attrs) {
                 pos = myActiveTransportablePlan->back()->unspecifiedArrivalPos() ?
                       MSStage::ARRIVALPOS_UNSPECIFIED : myActiveTransportablePlan->back()->getArrivalPos();
             }
-            myActiveTransportablePlan->push_back(new MSStageWaiting(edge, toStop, stop.duration, stop.until, pos, actType, false));
+            myActiveTransportablePlan->push_back(new MSStageWaiting(edge, toStop, stop.duration, stop.until, pos, actType, false, stop.jump));
             result = myActiveTransportablePlan->back();
 
         } else if (myVehicleParameter != nullptr) {

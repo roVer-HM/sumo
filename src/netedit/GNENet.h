@@ -42,17 +42,23 @@
 class GNENet : public GUIGlObject {
 
 public:
-    /**@brief Constructor
-     * @param[in] netbuilder the netbuilder which may already have been filled
-     * GNENet becomes responsible for cleaning this up
-     **/
-    GNENet(NBNetBuilder* netBuilder);
+    /// @brief constructor
+    GNENet(NBNetBuilder* netBuilder, const GNETagPropertiesDatabase* tagPropertiesDatabase);
 
     /// @brief Destructor
     ~GNENet();
 
+    /// @brief get tag properties database
+    const GNETagPropertiesDatabase* getTagPropertiesDatabase() const;
+
     /// @brief get all attribute carriers used in this net
     GNENetHelper::AttributeCarriers* getAttributeCarriers() const;
+
+    /// @brief get all attribute carriers templates used in this net
+    GNENetHelper::ACTemplate* getACTemplates() const;
+
+    /// @brief get saving files handler
+    GNENetHelper::SavingFilesHandler* getSavingFilesHandler() const;
 
     /// @brief get saving status
     GNENetHelper::SavingStatus* getSavingStatus() const;
@@ -435,7 +441,7 @@ public:
     bool saveAdditionals();
 
     /// @brief save JuPedSim elements
-    bool saveJuPedSimElements(const std::string& file);
+    bool saveJuPedSimElements(const std::unordered_set<const GNEAttributeCarrier*>& ACs, const std::string& file);
 
     /// @brief save demand element elements of the network
     bool saveDemandElements();
@@ -491,6 +497,12 @@ public:
 
     /// @}
 
+    /// @name get junction id counter
+    unsigned int& getJunctionIDCounter();
+
+    /// @name get edge id counter
+    unsigned int& getEdgeIDCounter();
+
     /// @brief variable used for write headers in additional, demand and data elements
     static const std::map<SumoXMLAttr, std::string> EMPTY_HEADER;
 
@@ -504,20 +516,29 @@ protected:
     /// @brief The net to be notified of about changes
     GNEViewNet* myViewNet = nullptr;
 
-    /// @brief AttributeCarriers of net
+    /// @brief pointer to tagProperties database
+    const GNETagPropertiesDatabase* myTagPropertiesDatabase = nullptr;
+
+    /// @brief attributeCarriers module
     GNENetHelper::AttributeCarriers* myAttributeCarriers = nullptr;
 
-    /// @brief AttributeCarriers of net
-    GNENetHelper::SavingStatus* mySavingStatus;
+    /// @brief attributeCarriers templates
+    GNENetHelper::ACTemplate* myACTemplates = nullptr;
+
+    /// @brief saving files handler module
+    GNENetHelper::SavingFilesHandler* mySavingFilesHandler = nullptr;
+
+    /// @brief saving status module
+    GNENetHelper::SavingStatus* mySavingStatus = nullptr;
 
     /// @brief Network path manager
-    GNEPathManager* myNetworkPathManager;
+    GNEPathManager* myNetworkPathManager = nullptr;
 
     /// @brief Demand path manager
-    GNEPathManager* myDemandPathManager;
+    GNEPathManager* myDemandPathManager = nullptr;
 
     /// @brief Data path manager
-    GNEPathManager* myDataPathManager;
+    GNEPathManager* myDataPathManager = nullptr;
 
     /// @name counters for junction/edge IDs
     // @{
@@ -557,58 +578,59 @@ private:
     void saveMeanDatasConfirmed();
 
     /// @brief write additional element by type and sorted by ID
-    void writeAdditionalByType(OutputDevice& device, const std::vector<SumoXMLTag> tags) const;
+    void writeAdditionalByType(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs,
+                               const std::vector<SumoXMLTag> tags) const;
 
     /// @brief write demand element by type and sorted by ID
-    void writeDemandByType(OutputDevice& device, SumoXMLTag tag) const;
+    void writeDemandByType(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs, SumoXMLTag tag) const;
 
     /// @brief write route distributions sorted by ID
-    void writeRouteDistributions(OutputDevice& device, const bool additionalFile) const;
+    void writeRouteDistributions(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
 
     /// @brief write route sorted by ID
-    void writeRoutes(OutputDevice& device, const bool additionalFile) const;
+    void writeRoutes(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs, const bool additionalFile) const;
 
     /// @brief write vTypeDistributions sorted by ID
-    void writeVTypeDistributions(OutputDevice& device, const bool additionalFile) const;
+    void writeVTypeDistributions(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
 
     /// @brief write vTypes sorted by ID
-    void writeVTypes(OutputDevice& device, const bool additionalFile) const;
+    void writeVTypes(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs, const bool additionalFile) const;
 
     /// @brief write meanData element by type and sorted by ID
-    void writeMeanDatas(OutputDevice& device, SumoXMLTag tag) const;
+    void writeMeanDatas(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs, SumoXMLTag tag) const;
 
     /// @brief write vType comment
-    bool writeVTypeComment(OutputDevice& device, const bool additionalFile) const;
+    bool writeVTypeComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs, const bool additionalFile) const;
 
     /// @brief write route comment
-    bool writeRouteComment(OutputDevice& device, const bool additionalFile) const;
+    bool writeRouteComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs, const bool additionalFile) const;
 
     /// @brief write routeProbe comment
-    bool writeRouteProbeComment(OutputDevice& device) const;
+    bool writeRouteProbeComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
 
     /// @brief write calibrator comment
-    bool writeCalibratorComment(OutputDevice& device) const;
+    bool writeCalibratorComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
 
     /// @brief write stoppingPlace comment
-    bool writeStoppingPlaceComment(OutputDevice& device) const;
+    bool writeStoppingPlaceComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
 
     /// @brief write detector comment
-    bool writeDetectorComment(OutputDevice& device) const;
+    bool writeDetectorComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
 
     /// @brief write other additional comment
-    bool writeOtherAdditionalsComment(OutputDevice& device) const;
+    bool writeOtherAdditionalsComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
 
     /// @brief write shape comment
-    bool writeShapesComment(OutputDevice& device) const;
+    bool writeShapesComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
 
     /// @brief write JuPedSim comment
-    bool writeJuPedSimComment(OutputDevice& device) const;
+    bool writeJuPedSimComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
 
     /// @brief write TAZ comment
-    bool writeTAZComment(OutputDevice& device) const;
+    bool writeTAZComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
 
     /// @brief write Wire comment
-    bool writeWireComment(OutputDevice& device) const;
+    bool writeWireComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
 
     /// @brief write meanDataEdge comment
     bool writeMeanDataEdgeComment(OutputDevice& device) const;
@@ -627,6 +649,9 @@ private:
 
     /// @brief marker for whether the z-boundary is initialized
     static const double Z_INITIALIZED;
+
+    /// @brief Invalidated default constructor.
+    GNENet() = delete;
 
     /// @brief Invalidated copy constructor.
     GNENet(const GNENet&) = delete;

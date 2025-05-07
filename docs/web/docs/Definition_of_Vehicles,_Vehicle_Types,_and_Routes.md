@@ -462,12 +462,14 @@ These values have the following meanings:
 
 | Attribute Name    | Value Type                        | Default                                                             | Description      |
 | ----------------- | --------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------- |
-| **id**            | id (string)                       | \-   | The name of the vehicle type      |
-| accel             | float                             | 2.6  | The acceleration ability of vehicles of this type (in m/s^2) |
+| **id**            | id (string)                       | \-                                                                  | The name of the vehicle type      |
+| accel             | float                             | 2.6                                                                 | The acceleration ability of vehicles of this type (in m/s^2) |
 | decel             | float                             | 4.5                                                                 | The deceleration ability of vehicles of this type (in m/s^2)                                                                                                                                                           |
 | apparentDecel     | float                             | `==decel`                                                           | The apparent deceleration of the vehicle as used by the standard model (in m/s^2). The follower uses this value as expected maximal deceleration of the leader.                                                        |
 | emergencyDecel    | float                             | 9.0                                                                 | The maximal physically possible deceleration for the vehicle (in m/s^2).                                                                                                                                               |
-startupDelay        | float >= 0        | 0                | The extra delay time before starting to drive after having had to stop. This is not applied after a scheduled `<stop>` except for `carFollowModel="Rail"`
+| maxAccelProfile   | list of speed-accel pairs         | "0.0 accel, 2778 accel"                                             | The maximal physically possible acceleration for the vehicle, depending on the speed (in m/s m/s^2).                                                                                                                                               |
+| desAccelProfile   | list of speed-accel pairs         | "0.0 accel, 2778 accel"                                             | The maximal desired acceleration for the vehicle, depending on the speed (in m/s m/s^2).                                                                                                                                               |
+| startupDelay      | float >= 0                        | 0                                                                   | The extra delay time before starting to drive after having had to stop. This is not applied after a scheduled `<stop>` except for `carFollowModel="Rail"`                                      |
 | sigma             | float                             | 0.5                                                                 | [Car-following model](#car-following_models) parameter, see below                                                                                          |
 | tau               | float                             | 1.0                                                                 | [Car-following model](#car-following_models) parameter, see below                                                                                          |
 | length            | float                             | 5.0                                                                 | The vehicle's **netto**-length (length) (in m)                                                                                                                                                                         |
@@ -804,6 +806,11 @@ lists which parameter are used by which model(s). [Details on car-following mode
 | accel                        | [vClass-specific](Vehicle_Type_Parameter_Defaults.md) | >= 0     | The acceleration ability of vehicles of this type (in m/s^2)                                    | all models |
 | decel                        | [vClass-specific](Vehicle_Type_Parameter_Defaults.md) | >= 0     | The deceleration ability of vehicles of this type (in m/s^2)                                    | all models |
 | emergencyDecel               | [vClass-specific](Vehicle_Type_Parameter_Defaults.md) | >= decel | The maximum deceleration ability of vehicles of this type in case of emergency (in m/s^2)       | all models except "Daniel1" |
+| speedTable                   | \- | list of float >= 0 | list of speed values to be used together with any of the following attributes: `resistanceTable`, `tractionTable`, `maxAccelProfile`, `desAccelProfile` |
+| maxAccelProfile              | \-  | list of float >= 0| The maximal physically possible acceleration for the vehicle corresponding to the same index in `speedTable` (in m/s m/s^2)       | all models |
+| desAccelProfile              | \-  | list of float >= 0| The maximal desired acceleration for the vehicle corresponding to the same index in `speedTable` (in m/s m/s^2)       | all models |
+| tractionTable                | `trainType`-specific  | list of float >= 0| The traction force in kN corresponding to the same index in `speedTable` (in m/s m/s^2)       | Rail |
+| resistanceTable              | `trainType`-specific  | list of float >= 0| The braking resistance force in kN corresponding to the same index in `speedTable` (in m/s m/s^2)       | Rail |
 | startupDelay                 | 0 | >=0  | The extra delay time before starting to drive after having had to stop. This is not applied after a scheduled `<stop>` except for `carFollowModel="Rail"`      | all models except "Daniel1" |
 | sigma                        | 0.5                                                   | [0,1]    | The driver imperfection (0 denotes perfect driving)                                             | Krauss, SKOrig, PW2009 |
 | sigmaStep                    | step-length                                           | > 0      | The frequency for updating the acceleration associated with driver imperfection. If set to a constant value (i.e *1*), this decouples the driving imperfection from the simulation step-length                                             | Krauss, SKOrig, PW2009 |
@@ -812,10 +819,10 @@ lists which parameter are used by which model(s). [Details on car-following mode
 | phi                          |                                                       |          |                                                                                                           | Kerner    |
 | delta                        | 4                                                     |          | acceleration exponent                                                                                     | IDM, EIDM |
 | stepping                     | 0.25                                                  | >= 0     | the internal step length (in s) when computing follow speed                                          | IDM, EIDM |
-| adaptFactor                  | 1.8                                                   | >= 0     | the factor for taking into account past level of service                                               | IDMM      |
-| adaptTime                    | 600                                                   | >= 0     | the time interval (in s) for relaxing past level of service                                               | IDMM      |
-| security                     |                                                       |          | desire for security                                                                                       | Wiedemann |
-| estimation                   |                                                       |          | accuracy of situation estimation                                                                          | Wiedemann |
+| adaptFactor                  | 1.8                                                   | >= 0     | the factor for taking into account past level of service             | IDMM      |
+| adaptTime                    | 600                                                   | >= 0     | the time interval (in s) for relaxing past level of service               | IDMM      |
+| security                     | 0.5                                                   |          | desire for security                   | Wiedemann |
+| estimation                   | 0.5                                                   |          | accuracy of situation estimation                                  | Wiedemann |
 | speedControlGain             | -0.4                                                  |          | The control gain determining the rate of speed deviation (Speed control mode)                             | ACC       |
 | gapClosingControlGainSpeed   | 0.8                                                   |          | The control gain determining the rate of speed deviation (Gap closing control mode)                       | ACC       |
 | gapClosingControlGainSpace   | 0.04                                                  |          | The control gain determining the rate of positioning deviation (Gap closing control mode)                 | ACC       |
@@ -913,7 +920,7 @@ following table.
 
 | Attribute Value | Description                                                                                              |
 | --------------- | -------------------------------------------------------------------------------------------------------- |
-| LC2013          | The default car following model, developed by Jakob Erdmann based on DK2008 (see [SUMO’s Lane-Changing Model](https://elib.dlr.de/102254/)). This is the default model.    |
+| LC2013          | The default lane changing model, developed by Jakob Erdmann based on DK2008 (see [SUMO’s Lane-Changing Model](https://elib.dlr.de/102254/)). This is the default model.    |
 | SL2015          | Lane-changing model for [sublane-simulation](Simulation/SublaneModel.md) (used by default when setting option **--lateral-resolution** {{DT_FLOAT}}). This model can only be used with the sublane-extension.<br><br>**Caution:** This model may technically be used without activating sublane-simulation but this usage has not been fully tested and may not work as expected.  |
 | DK2008          | The original lane-changing model of sumo until version 0.18.0, developed by Daniel Krajzewicz (see [Traffic Simulation with SUMO – Simulation of Urban Mobility](https://link.springer.com/chapter/10.1007/978-1-4419-6142-6_7)). |
 
@@ -1179,7 +1186,7 @@ Stops can be childs of vehicles, routes, persons or containers.
 | startPos           | float(m)          | \-lane.length < x < lane.length (negative values count backwards from the end of the lane) | endPos-0.2m        | there must be a difference of more than 0.1m between *startPos* and *endPos*                                           |
 | friendlyPos        | bool              | true,false                                                                                   | false              | whether invalid stop positions should be corrected automatically                                                       |
 | duration           | float(s) or HH:MM:SS | ≥0                                                                                           | \-                 | minimum duration for stopping                                                                                          |
-| until              | float(s) or HH:MM:SS | ≥0                                                                                           | \-                 | the time step at which the route continues                                                                             |
+| until              | float(s) or HH:MM:SS | ≥0                                                                                           | \-                 | the earliest time step at which the route continues                                                                             |
 | arrival            | float(s) or HH:MM:SS | ≥0                                                                                           | \-                 | the expected time of arrival for the stop. If this value is set, [stop-output]() will include the attribute ''arrivalDelay''. If the vehicles's vType defines attribute `speedFactorPremature`, a vehicle may slow down to prevent premature arrival.                                                                          |
 | ended              | float(s) or HH:MM:SS | ≥0                                                                                           | \-                 | the time step at which the stop ended (i.e. as recorded by a prior simulation). Can be used to overrule 'until' by setting option **--use-stop-ended** (i.e. when trying to reproduce known timings)                                                                            |
 | started            | float(s) or HH:MM:SS | ≥0                                                                                           | \-                 | the known time of arrival for the stop (i.e. as recorded by a prior simulation). Can be used to overrule 'arrival' by setting option **--use-stop-started** (i.e. when trying to reproduce known timings)                                                                          |
@@ -1197,6 +1204,7 @@ Stops can be childs of vehicles, routes, persons or containers.
 | posLat             | float            |  | - | lateral offset while stopped |
 | onDemand           | bool             |  | false | whether stopping may be skipped if no person wants to embark or disembark there |
 | jump           | float(s) or HH:MM:SS |  | -1 | when set to a non-negative value, jump to the next *mandatory* route edge (next stop or arrival edge) and spend the given time for the *jump* |
+| jumpUntil      | float(s) or HH:MM:SS |  | -1 | when set to a non-negative value, the jump to the next route edge will last at least until the given time (and possibly longer depending on the value of `jump`) |
 | split          | string |  | vehicle id | must be set to the id of a vehicle with `depart="split"`. [Splits the train](Simulation/Railways.md#splitting_a_train) upon reaching the stop. |
 | join           | string |  | vehicle id | must be set to the id of a vehicle that stops with `triggered="join"`. [Joins this train to another](Simulation/Railways.md#joining_two_trains) upn reaching the stop |
 
@@ -1309,10 +1317,12 @@ placeholder `<DEVICENAME>` below
 - [toc](ToC_Device.md)
 - [driverstate](Driver_State.md)
 - [fcd](Simulation/Output/FCDOutput.md)
+- [fcdreplay](Simulation/FCDReplay.md)
 - [tripinfo](Simulation/Output/TripInfo.md)
 - [vehroute](Simulation/Output/VehRoutes.md)
 - [taxi](Simulation/Taxi.md)
 - [glosa](Simulation/GLOSA.md)
+- [friction](Simulation/Friction.md)  
 - [example](Developer/How_To/Device.md)
 
 ## Automatic assignment

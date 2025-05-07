@@ -12,3 +12,15 @@ ticket15718
 
 # invalid network created
 ticket15798
+
+# crash with --edges.join-tram-dist
+ticket16393
+
+# nan values in net
+ticket16441
+
+# network keeps changing
+ticket16609
+
+# network keeps changing
+ticket16609b

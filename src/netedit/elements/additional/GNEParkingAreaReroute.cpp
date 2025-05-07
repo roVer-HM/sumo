@@ -19,31 +19,28 @@
 /****************************************************************************/
 #include <config.h>
 
+#include <netedit/GNENet.h>
+#include <netedit/GNEUndoList.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 
 #include "GNEParkingAreaReroute.h"
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNENet.h>
 
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
 GNEParkingAreaReroute::GNEParkingAreaReroute(GNENet* net):
-    GNEAdditional("", net, GLO_REROUTER, SUMO_TAG_PARKING_AREA_REROUTE,
-                  GUIIconSubSys::getIcon(GUIIcon::PARKINGZONEREROUTE), "", {}, {}, {}, {}, {}, {}),
-                            myProbability(0),
-myVisible(0) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional("", net, "", SUMO_TAG_PARKING_AREA_REROUTE, "") {
 }
 
 
-GNEParkingAreaReroute::GNEParkingAreaReroute(GNEAdditional* rerouterIntervalParent, GNEAdditional* newParkingArea, double probability, bool visible):
-    GNEAdditional(rerouterIntervalParent->getNet(), GLO_REROUTER, SUMO_TAG_PARKING_AREA_REROUTE,
-                  GUIIconSubSys::getIcon(GUIIcon::PARKINGZONEREROUTE), "", {}, {}, {}, {rerouterIntervalParent, newParkingArea}, {}, {}),
-myProbability(probability),
-myVisible(visible) {
+GNEParkingAreaReroute::GNEParkingAreaReroute(GNEAdditional* rerouterIntervalParent, GNEAdditional* newParkingArea,
+        const double probability, const bool visible):
+    GNEAdditional(rerouterIntervalParent, SUMO_TAG_PARKING_AREA_REROUTE, ""),
+    myProbability(probability),
+    myVisible(visible) {
+    // set parents
+    setParents<GNEAdditional*>({rerouterIntervalParent, newParkingArea});
     // update boundary of rerouter parent
     rerouterIntervalParent->getParentAdditionals().front()->updateCenteringBoundary(true);
 }
@@ -157,7 +154,7 @@ GNEParkingAreaReroute::getAttribute(SumoXMLAttr key) const {
         case GNE_ATTR_PARENT:
             return toString(getParentAdditionals().at(0)->getID());
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -170,7 +167,7 @@ GNEParkingAreaReroute::getAttributeDouble(SumoXMLAttr key) const {
 
 const Parameterised::Map&
 GNEParkingAreaReroute::getACParametersMap() const {
-    return PARAMETERS_EMPTY;
+    return getParametersMap();
 }
 
 
@@ -242,7 +239,7 @@ GNEParkingAreaReroute::setAttribute(SumoXMLAttr key, const std::string& value) {
             myVisible = parse<bool>(value);
             break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
 }

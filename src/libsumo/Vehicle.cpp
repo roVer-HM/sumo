@@ -46,6 +46,7 @@
 #include <microsim/devices/MSDevice_Taxi.h>
 #include <microsim/devices/MSDispatch_TraCI.h>
 #include <mesosim/MEVehicle.h>
+#include <libsumo/StorageHelper.h>
 #include <libsumo/TraCIDefs.h>
 #include <libsumo/TraCIConstants.h>
 #include "Helper.h"
@@ -330,7 +331,7 @@ std::pair<std::string, double>
 Vehicle::getLeader(const std::string& vehID, double dist) {
     MSBaseVehicle* veh = Helper::getVehicle(vehID);
     if (veh->isOnRoad()) {
-        std::pair<const MSVehicle* const, double> leaderInfo = veh->getLeader(dist);
+        std::pair<const MSVehicle* const, double> leaderInfo = veh->getLeader(dist, false);
         const std::string leaderID = leaderInfo.first != nullptr ? leaderInfo.first->getID() : "";
         double gap = leaderInfo.second;
         if (leaderInfo.first != nullptr
@@ -1279,6 +1280,10 @@ Vehicle::getStopParameter(const std::string& vehID, int nextStopIndex, const std
             return pars.ended < 0 ? "-1" : time2string(pars.ended);
         } else if (param == toString(SUMO_ATTR_ONDEMAND)) {
             return toString(pars.onDemand);
+        } else if (param == toString(SUMO_ATTR_JUMP)) {
+            return pars.jump < 0 ? "-1" : time2string(pars.jump);
+        } else if (param == toString(SUMO_ATTR_JUMP_UNTIL)) {
+            return pars.jumpUntil < 0 ? "-1" : time2string(pars.jumpUntil);
         } else {
             throw ProcessError(TLF("Unsupported parameter '%'", param));
         }
@@ -1414,6 +1419,9 @@ Vehicle::setStopParameter(const std::string& vehID, int nextStopIndex,
         } else if (param == toString(SUMO_ATTR_JUMP)) {
             pars.jump = string2time(value);
             pars.parametersSet |= STOP_JUMP_SET;
+        } else if (param == toString(SUMO_ATTR_JUMP_UNTIL)) {
+            pars.jumpUntil = string2time(value);
+            pars.parametersSet |= STOP_JUMP_UNTIL_SET;
         } else {
             throw ProcessError(TLF("Unsupported parameter '%'", param));
         }
@@ -1769,7 +1777,7 @@ Vehicle::moveToXY(const std::string& vehID, const std::string& edgeID, const int
         const double speed = pos.distanceTo2D(veh->getPosition()); // !!!veh->getSpeed();
         found = Helper::moveToXYMap(pos, maxRouteDistance, mayLeaveNetwork, origID, angle,
                                     speed, veh->getRoute().getEdges(), veh->getRoutePosition(), veh->getLane(), veh->getPositionOnLane(), veh->isOnRoad(),
-                                    vClass, setLateralPos,
+                                    vClass, GeomHelper::naviDegree(veh->getAngle()), setLateralPos,
                                     bestDistance, &lane, lanePos, routeOffset, edges);
     }
     if ((found && bestDistance <= maxRouteDistance) || mayLeaveNetwork) {
@@ -2516,10 +2524,15 @@ Vehicle::setParameter(const std::string& vehID, const std::string& key, const st
             throw TraCIException("Meso Vehicle '" + vehID + "' does not support laneChangeModel parameters.");
         }
         const std::string attrName = key.substr(16);
-        try {
-            microVeh->getLaneChangeModel().setParameter(attrName, value);
-        } catch (InvalidArgument& e) {
-            throw TraCIException("Vehicle '" + vehID + "' does not support laneChangeModel parameter '" + key + "' (" + e.what() + ").");
+        if (attrName == toString(SUMO_ATTR_LCA_CONTRIGHT)) {
+            // special case: not used within lcModel
+            veh->getSingularType().setLcContRight(value);
+        } else {
+            try {
+                microVeh->getLaneChangeModel().setParameter(attrName, value);
+            } catch (InvalidArgument& e) {
+                throw TraCIException("Vehicle '" + vehID + "' does not support laneChangeModel parameter '" + key + "' (" + e.what() + ").");
+            }
         }
     } else if (StringUtils::startsWith(key, "carFollowModel.")) {
         if (microVeh == nullptr) {
@@ -2885,12 +2898,24 @@ Vehicle::handleVariable(const std::string& objID, const int variable, VariableWr
             return wrapper->wrapDouble(objID, variable, getWaitingTime(objID));
         case VAR_ACCUMULATED_WAITING_TIME:
             return wrapper->wrapDouble(objID, variable, getAccumulatedWaitingTime(objID));
+        case VAR_EDGE_TRAVELTIME: {
+            StoHelp::readCompound(*paramData);
+            const double time = StoHelp::readTypedDouble(*paramData);
+            return wrapper->wrapDouble(objID, variable, getAdaptedTraveltime(objID, time, StoHelp::readTypedString(*paramData)));
+        }
+        case VAR_EDGE_EFFORT: {
+            StoHelp::readCompound(*paramData);
+            const double time = StoHelp::readTypedDouble(*paramData);
+            return wrapper->wrapDouble(objID, variable, getEffort(objID, time, StoHelp::readTypedString(*paramData)));
+        }
         case VAR_ROUTE_VALID:
             return wrapper->wrapInt(objID, variable, isRouteValid(objID));
         case VAR_EDGES:
             return wrapper->wrapStringList(objID, variable, getRoute(objID));
         case VAR_SIGNALS:
             return wrapper->wrapInt(objID, variable, getSignals(objID));
+        case VAR_BEST_LANES:
+            return wrapper->wrapBestLanesDataVector(objID, variable, getBestLanes(objID));
         case VAR_NEXT_LINKS:
             return wrapper->wrapConnectionVector(objID, variable, getNextLinks(objID));
         case VAR_STOPSTATE:
@@ -2925,29 +2950,67 @@ Vehicle::handleVariable(const std::string& objID, const int variable, VariableWr
             return wrapper->wrapDouble(objID, variable, getTimeLoss(objID));
         case VAR_MINGAP_LAT:
             return wrapper->wrapDouble(objID, variable, getMinGapLat(objID));
-        case VAR_LEADER: {
-            paramData->readUnsignedByte();
-            const double dist = paramData->readDouble();
-            return wrapper->wrapStringDoublePair(objID, variable, getLeader(objID, dist));
-        }
-        case VAR_FOLLOWER: {
-            paramData->readUnsignedByte();
-            const double dist = paramData->readDouble();
-            return wrapper->wrapStringDoublePair(objID, variable, getFollower(objID, dist));
-        }
+        case VAR_LEADER:
+            return wrapper->wrapStringDoublePair(objID, variable, getLeader(objID, StoHelp::readTypedDouble(*paramData)));
+        case VAR_FOLLOWER:
+            return wrapper->wrapStringDoublePair(objID, variable, getFollower(objID, StoHelp::readTypedDouble(*paramData)));
         case VAR_LOADED_LIST:
             return wrapper->wrapStringList(objID, variable, getLoadedIDList());
         case VAR_TELEPORTING_LIST:
             return wrapper->wrapStringList(objID, variable, getTeleportingIDList());
-        case libsumo::VAR_PARAMETER:
-            paramData->readUnsignedByte();
-            return wrapper->wrapString(objID, variable, getParameter(objID, paramData->readString()));
-        case libsumo::VAR_PARAMETER_WITH_KEY:
-            paramData->readUnsignedByte();
-            return wrapper->wrapStringPair(objID, variable, getParameterWithKey(objID, paramData->readString()));
+        case VAR_FOLLOW_SPEED: {
+            StoHelp::readCompound(*paramData);
+            const double speed = StoHelp::readTypedDouble(*paramData);
+            const double gap = StoHelp::readTypedDouble(*paramData);
+            const double leaderSpeed = StoHelp::readTypedDouble(*paramData);
+            const double leaderMaxDecel = StoHelp::readTypedDouble(*paramData);
+            return wrapper->wrapDouble(objID, variable, getFollowSpeed(objID, speed, gap, leaderSpeed, leaderMaxDecel, StoHelp::readTypedString(*paramData)));
+        }
+        case VAR_SECURE_GAP: {
+            StoHelp::readCompound(*paramData);
+            const double speed = StoHelp::readTypedDouble(*paramData);
+            const double leaderSpeed = StoHelp::readTypedDouble(*paramData);
+            const double leaderMaxDecel = StoHelp::readTypedDouble(*paramData);
+            return wrapper->wrapDouble(objID, variable, getSecureGap(objID, speed, leaderSpeed, leaderMaxDecel, StoHelp::readTypedString(*paramData)));
+        }
+        case VAR_STOP_SPEED: {
+            StoHelp::readCompound(*paramData);
+            const double speed = StoHelp::readTypedDouble(*paramData);
+            return wrapper->wrapDouble(objID, variable, getStopSpeed(objID, speed, StoHelp::readTypedDouble(*paramData)));
+        }
+        case VAR_FOES:
+            return wrapper->wrapJunctionFoeVector(objID, variable, getJunctionFoes(objID, StoHelp::readTypedDouble(*paramData)));
+        case VAR_NEIGHBORS:
+            return wrapper->wrapStringDoublePairList(objID, variable, getNeighbors(objID, StoHelp::readTypedByte(*paramData)));
+        case CMD_CHANGELANE:
+            return wrapper->wrapIntPair(objID, variable, getLaneChangeState(objID, StoHelp::readTypedInt(*paramData)));
+        case VAR_STOP_PARAMETER: {
+            const int count = StoHelp::readCompound(*paramData);
+            const int nextStopIndex = StoHelp::readTypedInt(*paramData);
+            const std::string param = StoHelp::readTypedString(*paramData);
+            const bool customParam = count == 3 && StoHelp::readTypedByte(*paramData) != 0;
+            return wrapper->wrapString(objID, variable, getStopParameter(objID, nextStopIndex, param, customParam));
+        }
+        case VAR_NEXT_TLS:
+            return wrapper->wrapNextTLSDataVector(objID, variable, getNextTLS(objID));
+        case VAR_NEXT_STOPS:
+            return wrapper->wrapNextStopDataVector(objID, variable, getNextStops(objID));
+        case VAR_NEXT_STOPS2:
+            return wrapper->wrapNextStopDataVector(objID, variable, getStops(objID, StoHelp::readTypedInt(*paramData)));
+        case DISTANCE_REQUEST: {
+            TraCIRoadPosition roadPos;
+            Position pos;
+            if (Helper::readDistanceRequest(*paramData, roadPos, pos) == libsumo::POSITION_ROADMAP) {
+                return wrapper->wrapDouble(objID, variable, getDrivingDistance(objID, roadPos.edgeID, roadPos.pos, roadPos.laneIndex));
+            }
+            return wrapper->wrapDouble(objID, variable, getDrivingDistance2D(objID, pos.x(), pos.y()));
+        }
         case VAR_TAXI_FLEET:
-            // we cannot use the general fall through here because we do not have an object id
-            return false;
+            return wrapper->wrapStringList(objID, variable, getTaxiFleet(StoHelp::readTypedInt(*paramData)));
+        case VAR_PARAMETER:
+            return wrapper->wrapString(objID, variable, getParameter(objID, StoHelp::readTypedString(*paramData)));
+        case VAR_PARAMETER_WITH_KEY:
+            return wrapper->wrapStringPair(objID, variable, getParameterWithKey(objID, StoHelp::readTypedString(*paramData)));
         default:
             return VehicleType::handleVariableWithID(objID, getTypeID(objID), variable, wrapper, paramData);
     }

@@ -19,34 +19,33 @@
 /****************************************************************************/
 #include <config.h>
 
+#include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
+#include <netedit/GNEUndoList.h>
+#include <netedit/GNEViewNet.h>
 #include <netedit/changes/GNEChange_Additional.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 #include <netedit/dialogs/GNEVariableSpeedSignDialog.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNENet.h>
 
 #include "GNEVariableSpeedSign.h"
 #include "GNEVariableSpeedSignSymbol.h"
-
 
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
 GNEVariableSpeedSign::GNEVariableSpeedSign(GNENet* net) :
-    GNEAdditional("", net, GLO_VSS, SUMO_TAG_VSS, GUIIconSubSys::getIcon(GUIIcon::VARIABLESPEEDSIGN), "", {}, {}, {}, {}, {}, {}) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional("", net, "", SUMO_TAG_VSS, "") {
 }
 
 
-GNEVariableSpeedSign::GNEVariableSpeedSign(const std::string& id, GNENet* net, const Position& pos, const std::string& name,
-        const std::vector<std::string>& vTypes, const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, GLO_VSS, SUMO_TAG_VSS, GUIIconSubSys::getIcon(GUIIcon::VARIABLESPEEDSIGN), name, {}, {}, {}, {}, {}, {}),
-              Parameterised(parameters),
-              myPosition(pos),
-myVehicleTypes(vTypes) {
+GNEVariableSpeedSign::GNEVariableSpeedSign(const std::string& id, GNENet* net, const std::string& filename,
+        const Position& pos, const std::string& name, const std::vector<std::string>& vTypes,
+        const Parameterised::Map& parameters) :
+    GNEAdditional(id, net, filename, SUMO_TAG_VSS, name),
+    Parameterised(parameters),
+    myPosition(pos),
+    myVehicleTypes(vTypes) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -72,7 +71,7 @@ GNEVariableSpeedSign::writeAdditional(OutputDevice& device) const {
         }
         // write all rerouter interval
         for (const auto& step : getChildAdditionals()) {
-            if (!step->getTagProperty().isSymbol()) {
+            if (!step->getTagProperty()->isSymbol()) {
                 step->writeAdditional(device);
             }
         }
@@ -213,7 +212,7 @@ GNEVariableSpeedSign::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_LANES: {
             std::vector<std::string> lanes;
             for (const auto& VSSSymbol : getChildAdditionals()) {
-                if (VSSSymbol->getTagProperty().isSymbol()) {
+                if (VSSSymbol->getTagProperty()->isSymbol()) {
                     lanes.push_back(VSSSymbol->getAttribute(SUMO_ATTR_LANE));
                 }
             }
@@ -225,10 +224,8 @@ GNEVariableSpeedSign::getAttribute(SumoXMLAttr key) const {
             return myAdditionalName;
         case SUMO_ATTR_VTYPES:
             return toString(myVehicleTypes);
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -260,7 +257,6 @@ GNEVariableSpeedSign::setAttribute(SumoXMLAttr key, const std::string& value, GN
         case SUMO_ATTR_POSITION:
         case SUMO_ATTR_NAME:
         case SUMO_ATTR_VTYPES:
-        case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
@@ -287,8 +283,6 @@ GNEVariableSpeedSign::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return SUMOXMLDefinitions::isValidListOfTypeID(value);
             }
-        case GNE_ATTR_PARAMETERS:
-            return areParametersValid(value);
         default:
             return isCommonValid(key, value);
     }
@@ -332,11 +326,8 @@ GNEVariableSpeedSign::setAttribute(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_VTYPES:
             myVehicleTypes = parse<std::vector<std::string> >(value);
             break;
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
-            break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
 }

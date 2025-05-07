@@ -17,7 +17,10 @@
 ///
 //
 /****************************************************************************/
+#include <config.h>
+
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/changes/GNEChange_Additional.h>
@@ -27,35 +30,30 @@
 #include "GNERerouter.h"
 #include "GNERerouterSymbol.h"
 
-
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
 GNERerouter::GNERerouter(GNENet* net) :
-    GNEAdditional("", net, GLO_REROUTER, SUMO_TAG_REROUTER, GUIIconSubSys::getIcon(GUIIcon::REROUTER), "",
-{}, {}, {}, {}, {}, {}),
-myProbability(0),
-myOff(false),
-myOptional(false),
-myTimeThreshold(0) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional("", net, "", SUMO_TAG_REROUTER, ""),
+    myProbability(0),
+    myOff(false),
+    myOptional(false),
+    myTimeThreshold(0) {
 }
 
 
-GNERerouter::GNERerouter(const std::string& id, GNENet* net, const Position& pos, const std::string& name,
+GNERerouter::GNERerouter(const std::string& id, GNENet* net, const std::string& filename, const Position& pos, const std::string& name,
                          double probability, bool off, bool optional, SUMOTime timeThreshold, const std::vector<std::string>& vTypes,
                          const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, GLO_REROUTER, SUMO_TAG_REROUTER, GUIIconSubSys::getIcon(GUIIcon::REROUTER), name,
-{}, {}, {}, {}, {}, {}),
-Parameterised(parameters),
-myPosition(pos),
-myProbability(probability),
-myOff(off),
-myOptional(optional),
-myTimeThreshold(timeThreshold),
-myVTypes(vTypes) {
+    GNEAdditional(id, net, filename, SUMO_TAG_REROUTER, name),
+    Parameterised(parameters),
+    myPosition(pos),
+    myProbability(probability),
+    myOff(off),
+    myOptional(optional),
+    myTimeThreshold(timeThreshold),
+    myVTypes(vTypes) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -93,7 +91,7 @@ GNERerouter::writeAdditional(OutputDevice& device) const {
         }
         // write all rerouter interval
         for (const auto& rerouterInterval : getChildAdditionals()) {
-            if (!rerouterInterval->getTagProperty().isSymbol()) {
+            if (!rerouterInterval->getTagProperty()->isSymbol()) {
                 rerouterInterval->writeAdditional(device);
             }
         }
@@ -183,7 +181,7 @@ GNERerouter::updateCenteringBoundary(const bool updateGrid) {
             for (const auto& rerouterElement : additionalChildren->getChildAdditionals()) {
                 myAdditionalBoundary.add(rerouterElement->getPositionInView());
                 // special case for parking area rerouter
-                if (rerouterElement->getTagProperty().getTag() == SUMO_TAG_PARKING_AREA_REROUTE) {
+                if (rerouterElement->getTagProperty()->getTag() == SUMO_TAG_PARKING_AREA_REROUTE) {
                     myAdditionalBoundary.add(rerouterElement->getParentAdditionals().at(1)->getCenteringBoundary());
                 }
             }
@@ -256,7 +254,7 @@ GNERerouter::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_EDGES: {
             std::vector<std::string> edges;
             for (const auto& rerouterSymbol : getChildAdditionals()) {
-                if (rerouterSymbol->getTagProperty().isSymbol()) {
+                if (rerouterSymbol->getTagProperty()->isSymbol()) {
                     edges.push_back(rerouterSymbol->getAttribute(SUMO_ATTR_EDGE));
                 }
             }
@@ -276,10 +274,8 @@ GNERerouter::getAttribute(SumoXMLAttr key) const {
             return toString(myOff);
         case SUMO_ATTR_OPTIONAL:
             return toString(myOptional);
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -320,7 +316,6 @@ GNERerouter::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList
         case SUMO_ATTR_VTYPES:
         case SUMO_ATTR_OFF:
         case SUMO_ATTR_OPTIONAL:
-        case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
@@ -355,8 +350,6 @@ GNERerouter::isValid(SumoXMLAttr key, const std::string& value) {
             return canParse<bool>(value);
         case SUMO_ATTR_OPTIONAL:
             return canParse<bool>(value);
-        case GNE_ATTR_PARAMETERS:
-            return areParametersValid(value);
         default:
             return isCommonValid(key, value);
     }
@@ -412,11 +405,8 @@ GNERerouter::setAttribute(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_OPTIONAL:
             myOptional = parse<bool>(value);
             break;
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
-            break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
 }

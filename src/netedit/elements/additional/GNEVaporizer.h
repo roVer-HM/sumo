@@ -22,14 +22,10 @@
 
 #include "GNEAdditional.h"
 
-
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNEVaporizer
- * @brief Representation of a vaporizer in netedit
- */
+
 class GNEVaporizer : public GNEAdditional, public Parameterised {
 
 public:
@@ -38,14 +34,15 @@ public:
 
     /**@brief Constructor
      * @param[in] net pointer to GNENet of this additional element belongs
+     * @param[in] filename file in which this element is stored
      * @param[in] edge edge in which this vaporizer is placed
      * @param[in] from start time of vaporizer
      * @param[in] end end time of vaporizer
      * @param[in] name Vaporizer name
      * @param[in] parameters generic parameters
      */
-    GNEVaporizer(GNENet* net, GNEEdge* edge, SUMOTime from, SUMOTime end, const std::string& name,
-                 const Parameterised::Map& parameters);
+    GNEVaporizer(GNENet* net, const std::string& filename, GNEEdge* edge, SUMOTime from, SUMOTime end,
+                 const std::string& name, const Parameterised::Map& parameters);
 
     /// @brief Destructor
     ~GNEVaporizer();
@@ -156,10 +153,10 @@ public:
 
 protected:
     /// @brief begin time of vaporizer
-    SUMOTime myBegin;
+    SUMOTime myBegin = 0;
 
     /// @brief end time in which this vaporizer is placed
-    SUMOTime myEnd;
+    SUMOTime myEnd = 0;
 
     /// @brief symbol base contour
     GNEContour mySymbolBaseContour;

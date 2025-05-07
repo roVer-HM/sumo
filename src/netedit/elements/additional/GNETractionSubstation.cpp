@@ -17,36 +17,32 @@
 ///
 //
 /****************************************************************************/
+#include <config.h>
+
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 
 #include "GNETractionSubstation.h"
 
-
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
 GNETractionSubstation::GNETractionSubstation(GNENet* net) :
-    GNEAdditional("", net, GLO_TRACTIONSUBSTATION, SUMO_TAG_TRACTION_SUBSTATION,
-                  GUIIconSubSys::getIcon(GUIIcon::TRACTION_SUBSTATION), "", {}, {}, {}, {}, {}, {}),
-                            myVoltage(0),
-myCurrentLimit(0) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional("", net, "", SUMO_TAG_TRACTION_SUBSTATION, "") {
 }
 
 
-GNETractionSubstation::GNETractionSubstation(const std::string& id, GNENet* net, const Position& pos, const double voltage,
-        const double currentLimit, const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, GLO_TRACTIONSUBSTATION, SUMO_TAG_TRACTION_SUBSTATION,
-                  GUIIconSubSys::getIcon(GUIIcon::TRACTION_SUBSTATION), "", {}, {}, {}, {}, {}, {}),
-Parameterised(parameters),
-myPosition(pos),
-myVoltage(voltage),
-myCurrentLimit(currentLimit) {
+GNETractionSubstation::GNETractionSubstation(const std::string& id, GNENet* net, const std::string& filename, const Position& pos,
+        const double voltage, const double currentLimit, const Parameterised::Map& parameters) :
+    GNEAdditional(id, net, filename, SUMO_TAG_TRACTION_SUBSTATION, ""),
+    Parameterised(parameters),
+    myPosition(pos),
+    myVoltage(voltage),
+    myCurrentLimit(currentLimit) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -61,10 +57,10 @@ GNETractionSubstation::writeAdditional(OutputDevice& device) const {
     device.openTag(SUMO_TAG_TRACTION_SUBSTATION);
     device.writeAttr(SUMO_ATTR_ID, getID());
     device.writeAttr(SUMO_ATTR_POSITION, myPosition);
-    if (getAttribute(SUMO_ATTR_VOLTAGE) != myTagProperty.getDefaultValue(SUMO_ATTR_VOLTAGE)) {
+    if (myVoltage != myTagProperty->getDefaultDoubleValue(SUMO_ATTR_VOLTAGE)) {
         device.writeAttr(SUMO_ATTR_VOLTAGE, myVoltage);
     }
-    if (getAttribute(SUMO_ATTR_CURRENTLIMIT) != myTagProperty.getDefaultValue(SUMO_ATTR_CURRENTLIMIT)) {
+    if (myCurrentLimit != myTagProperty->getDefaultDoubleValue(SUMO_ATTR_CURRENTLIMIT)) {
         device.writeAttr(SUMO_ATTR_CURRENTLIMIT, myCurrentLimit);
     }
     // write parameters
@@ -175,7 +171,7 @@ GNETractionSubstation::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_EDGES: {
             std::vector<std::string> edges;
             for (const auto& tractionSubstationSymbol : getChildAdditionals()) {
-                if (tractionSubstationSymbol->getTagProperty().isSymbol()) {
+                if (tractionSubstationSymbol->getTagProperty()->isSymbol()) {
                     edges.push_back(tractionSubstationSymbol->getAttribute(SUMO_ATTR_EDGE));
                 }
             }
@@ -187,10 +183,8 @@ GNETractionSubstation::getAttribute(SumoXMLAttr key) const {
             return toString(myVoltage);
         case SUMO_ATTR_CURRENTLIMIT:
             return toString(myCurrentLimit);
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -203,7 +197,7 @@ GNETractionSubstation::getAttributeDouble(SumoXMLAttr key) const {
 
 const
 Parameterised::Map& GNETractionSubstation::getACParametersMap() const {
-    return PARAMETERS_EMPTY;
+    return getParametersMap();
 }
 
 
@@ -219,7 +213,6 @@ GNETractionSubstation::setAttribute(SumoXMLAttr key, const std::string& value, G
         case SUMO_ATTR_POSITION:
         case SUMO_ATTR_VOLTAGE:
         case SUMO_ATTR_CURRENTLIMIT:
-        case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
@@ -245,8 +238,6 @@ GNETractionSubstation::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return false;
             }
-        case GNE_ATTR_PARAMETERS:
-            return areParametersValid(value);
         default:
             return isCommonValid(key, value);
     }
@@ -290,11 +281,8 @@ GNETractionSubstation::setAttribute(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_CURRENTLIMIT:
             myCurrentLimit = parse<double>(value);
             break;
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
-            break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
 }

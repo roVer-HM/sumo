@@ -32,27 +32,33 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4355) // mask warning about "this" in initializers
+#endif
 GNEWalk::GNEWalk(SumoXMLTag tag, GNENet* net) :
-    GNEDemandElement("", net, GLO_WALK, tag, GUIIconSubSys::getIcon(GUIIcon::WALK_EDGE),
-                     GNEPathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {}, {}),
-GNEDemandElementPlan(this, -1, -1) {
-    // reset default values
-    resetDefaultValues();
+    GNEDemandElement("", net, "", tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElementPlan(this, -1, -1) {
 }
 
 
-GNEWalk::GNEWalk(GNENet* net, SumoXMLTag tag, GUIIcon icon, GNEDemandElement* personParent, const GNEPlanParents& planParameters,
+GNEWalk::GNEWalk(SumoXMLTag tag, GNEDemandElement* personParent, const GNEPlanParents& planParameters,
                  const double arrivalPosition, const double speed, const SUMOTime duration) :
-    GNEDemandElement(personParent, net, GLO_WALK, tag, GUIIconSubSys::getIcon(icon),
-                     GNEPathElement::Options::DEMAND_ELEMENT,
-                     planParameters.getJunctions(), planParameters.getEdges(), {},
-planParameters.getAdditionalElements(), planParameters.getDemandElements(personParent), {}),
-GNEDemandElementPlan(this, -1, arrivalPosition),
-mySpeed(speed),
-myDuration(duration) {
+    GNEDemandElement(personParent, tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElementPlan(this, -1, arrivalPosition),
+    mySpeed(speed),
+    myDuration(duration) {
+    // set parents
+    setParents<GNEJunction*>(planParameters.getJunctions());
+    setParents<GNEEdge*>(planParameters.getEdges());
+    setParents<GNEAdditional*>(planParameters.getAdditionalElements());
+    setParents<GNEDemandElement*>(planParameters.getDemandElements(personParent));
+    // update centering boundary without updating grid
+    updatePlanCenteringBoundary(false);
 }
-
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 GNEWalk::~GNEWalk() {}
 
@@ -77,11 +83,11 @@ GNEWalk::writeDemandElement(OutputDevice& device) const {
     device.openTag(SUMO_TAG_WALK);
     writeLocationAttributes(device);
     // speed
-    if ((mySpeed > 0) && (toString(mySpeed) != myTagProperty.getDefaultValue(SUMO_ATTR_SPEED))) {
+    if (mySpeed != myTagProperty->getDefaultDoubleValue(SUMO_ATTR_SPEED)) {
         device.writeAttr(SUMO_ATTR_SPEED, mySpeed);
     }
     // duration
-    if (toString(myDuration) != myTagProperty.getDefaultValue(SUMO_ATTR_DURATION)) {
+    if (myDuration != myTagProperty->getDefaultTimeValue(SUMO_ATTR_DURATION)) {
         device.writeAttr(SUMO_ATTR_DURATION, time2string(myDuration));
     }
     device.closeTag();
@@ -145,7 +151,7 @@ GNEWalk::getCenteringBoundary() const {
 void
 GNEWalk::splitEdgeGeometry(const double /*splitPosition*/, const GNENetworkElement* originalElement, const GNENetworkElement* newElement, GNEUndoList* undoList) {
     // only split geometry of WalkEdges
-    if (myTagProperty.getTag() == GNE_TAG_WALK_EDGES) {
+    if (myTagProperty->getTag() == GNE_TAG_WALK_EDGES) {
         // obtain new list of walk edges
         std::string newWalkEdges = getNewListOfParents(originalElement, newElement);
         // update walk edges
@@ -196,13 +202,13 @@ std::string
 GNEWalk::getAttribute(SumoXMLAttr key) const {
     switch (key) {
         case SUMO_ATTR_SPEED:
-            if (mySpeed == 0) {
+            if (mySpeed == myTagProperty->getDefaultDoubleValue(key)) {
                 return "";
             } else {
                 return toString(mySpeed);
             }
         case SUMO_ATTR_DURATION:
-            if (myDuration == 0) {
+            if (myDuration == myTagProperty->getDefaultTimeValue(key)) {
                 return "";
             } else {
                 return time2string(myDuration);
@@ -289,14 +295,14 @@ GNEWalk::setAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_SPEED:
             if (value.empty()) {
-                mySpeed = 0;
+                mySpeed = myTagProperty->getDefaultDoubleValue(key);
             } else {
                 mySpeed = GNEAttributeCarrier::parse<double>(value);
             }
             break;
         case SUMO_ATTR_DURATION:
             if (value.empty()) {
-                mySpeed = 0;
+                myDuration = myTagProperty->getDefaultTimeValue(key);
             } else {
                 myDuration = GNEAttributeCarrier::parse<SUMOTime>(value);
             }

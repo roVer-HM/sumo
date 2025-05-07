@@ -41,6 +41,7 @@
 #include <utils/router/PedestrianRouter.h>
 #include <utils/vehicle/SUMOVehicleParserHelper.h>
 #include "Helper.h"
+#include "StorageHelper.h"
 #include "VehicleType.h"
 #include "Person.h"
 
@@ -133,15 +134,50 @@ Person::getLanePosition(const std::string& personID) {
     return getPerson(personID)->getEdgePos();
 }
 
+
+double
+Person::getWalkingDistance(const std::string& personID, const std::string& edgeID, double pos, int laneIndex) {
+    MSPerson* p = getPerson(personID);
+    if (p->getCurrentStageType() == MSStageType::WALKING) {
+        const MSStageWalking* walk = dynamic_cast<const MSStageWalking*>(p->getCurrentStage());
+        ConstMSEdgeVector edges = walk->getEdges();
+        edges.erase(edges.begin(), edges.begin() + walk->getRoutePosition());
+        const MSLane* lane = Helper::getLaneChecking(edgeID, laneIndex, pos);
+        auto it = std::find(edges.begin(), edges.end(), &lane->getEdge());
+        if (it == edges.end()) {
+            // Vehicle would return INVALID_DOUBLE_VALUE;
+            throw TraCIException(TLF("Edge '%' does not occur within the remaining walk of person '%'.", edgeID, personID));
+
+        }
+        edges.erase(it + 1, edges.end());
+        double distance = 0;
+        MSPedestrianRouter& router = MSNet::getInstance()->getPedestrianRouter(0);
+        router.recomputeWalkCosts(edges, p->getMaxSpeed(), p->getEdgePos(), pos, SIMSTEP, distance);
+        if (distance == std::numeric_limits<double>::max()) {
+            return INVALID_DOUBLE_VALUE;
+        }
+        return distance;
+    } else {
+        // Vehicle would return INVALID_DOUBLE_VALUE;
+        throw TraCIException(TLF("Person '%' is not walking", personID));
+    }
+}
+
+
+double
+Person::getWalkingDistance2D(const std::string& personID, double x, double y) {
+    MSPerson* p = getPerson(personID);
+    std::pair<MSLane*, double> roadPos = Helper::convertCartesianToRoadMap(Position(x, y), p->getVehicleType().getVehicleClass());
+    return getWalkingDistance(personID, roadPos.first->getEdge().getID(), roadPos.second, roadPos.first->getIndex());
+}
+
+
+
 std::vector<TraCIReservation>
 Person::getTaxiReservations(int onlyNew) {
     std::vector<TraCIReservation> result;
     MSDispatch* dispatcher = MSDevice_Taxi::getDispatchAlgorithm();
     if (dispatcher != nullptr) {
-        MSDispatch_TraCI* traciDispatcher = dynamic_cast<MSDispatch_TraCI*>(dispatcher);
-        if (traciDispatcher == nullptr) {
-            throw TraCIException("device.taxi.dispatch-algorithm 'traci' has not been loaded");
-        }
         for (Reservation* res : dispatcher->getReservations()) {
             if (filterReservation(onlyNew, res, result)) {
                 if (res->state == Reservation::NEW) {
@@ -904,7 +940,6 @@ Person::moveToXY(const std::string& personID, const std::string& edgeID, const d
             angle += 360.;
         }
     }
-    Position currentPos = p->getPosition();
 #ifdef DEBUG_MOVEXY
     std::cout << std::endl << "begin person " << p->getID() << " lanePos:" << p->getEdgePos() << " edge:" << Named::getIDSecure(p->getEdge()) << "\n";
     std::cout << " want pos:" << pos << " edgeID:" << edgeID <<  " origAngle:" << origAngle << " angle:" << angle << " keepRoute:" << keepRoute << std::endl;
@@ -941,11 +976,15 @@ Person::moveToXY(const std::string& personID, const std::string& edgeID, const d
         found = Helper::moveToXYMap_matchingRoutePosition(pos, edgeID,
                 ev, routeIndex, vClass, true,
                 bestDistance, &lane, lanePos, routeOffset);
+        if (bestDistance > maxRouteDistance) {
+            found = false;
+            lane = nullptr;
+        }
     } else {
         double speed = pos.distanceTo2D(p->getPosition()); // !!!veh->getSpeed();
         found = Helper::moveToXYMap(pos, maxRouteDistance, mayLeaveNetwork, edgeID, angle,
                                     speed, ev, routeIndex, currentLane, p->getEdgePos(), currentLane != nullptr,
-                                    vClass, true,
+                                    vClass, GeomHelper::naviDegree(p->getAngle()), true,
                                     bestDistance, &lane, lanePos, routeOffset, edges);
         if (edges.size() != 0 && ev.size() > 1) {
             // try to rebuild the route
@@ -977,7 +1016,7 @@ Person::moveToXY(const std::string& personID, const std::string& edgeID, const d
             }
         }
     }
-    if ((found && bestDistance <= maxRouteDistance) || mayLeaveNetwork) {
+    if (found || mayLeaveNetwork) {
         // compute lateral offset
         if (found) {
             const double perpDist = lane->getShape().distance2D(pos, false);
@@ -1003,7 +1042,7 @@ Person::moveToXY(const std::string& personID, const std::string& edgeID, const d
             // mapped position may differ from pos
             pos = lane->geometryPositionAtOffset(lanePos, -lanePosLat);
         }
-        assert((found && lane != 0) || (!found && lane == 0));
+        assert((found && lane != nullptr) || (!found && lane == nullptr));
         switch (p->getStageType(0)) {
             case MSStageType::WALKING: {
                 if (angle == INVALID_DOUBLE_VALUE) {
@@ -1287,6 +1326,10 @@ Person::handleVariable(const std::string& objID, const int variable, VariableWra
             return wrapper->wrapDouble(objID, variable, getSpeedFactor(objID));
         case VAR_NEXT_EDGE:
             return wrapper->wrapString(objID, variable, getNextEdge(objID));
+        case VAR_EDGES:
+            return wrapper->wrapStringList(objID, variable, getEdges(objID, StoHelp::readTypedInt(*paramData)));
+        case VAR_STAGE:
+            return wrapper->wrapStage(objID, variable, getStage(objID, StoHelp::readTypedInt(*paramData)));
         case VAR_STAGES_REMAINING:
             return wrapper->wrapInt(objID, variable, getRemainingStages(objID));
         case VAR_VEHICLE:
@@ -1294,15 +1337,22 @@ Person::handleVariable(const std::string& objID, const int variable, VariableWra
         case VAR_MAXSPEED:
             // integrate desiredMaxSpeed and individual speedFactor
             return wrapper->wrapDouble(objID, variable, getMaxSpeed(objID));
-        case libsumo::VAR_PARAMETER:
-            paramData->readUnsignedByte();
-            return wrapper->wrapString(objID, variable, getParameter(objID, paramData->readString()));
-        case libsumo::VAR_PARAMETER_WITH_KEY:
-            paramData->readUnsignedByte();
-            return wrapper->wrapStringPair(objID, variable, getParameterWithKey(objID, paramData->readString()));
+        case DISTANCE_REQUEST: {
+            TraCIRoadPosition roadPos;
+            Position pos;
+            if (Helper::readDistanceRequest(*paramData, roadPos, pos) == libsumo::POSITION_ROADMAP) {
+                return wrapper->wrapDouble(objID, variable, getWalkingDistance(objID, roadPos.edgeID, roadPos.pos, roadPos.laneIndex));
+            }
+            return wrapper->wrapDouble(objID, variable, getWalkingDistance2D(objID, pos.x(), pos.y()));
+        }
+        case VAR_PARAMETER:
+            return wrapper->wrapString(objID, variable, getParameter(objID, StoHelp::readTypedString(*paramData)));
+        case VAR_PARAMETER_WITH_KEY:
+            return wrapper->wrapStringPair(objID, variable, getParameterWithKey(objID, StoHelp::readTypedString(*paramData)));
         case VAR_TAXI_RESERVATIONS:
-            // we cannot use the general fall through here because we do not have an object id
-            return false;
+            return wrapper->wrapReservationVector(objID, variable, getTaxiReservations(StoHelp::readTypedInt(*paramData)));
+        case SPLIT_TAXI_RESERVATIONS:
+            return wrapper->wrapString(objID, variable, splitTaxiReservation(objID, StoHelp::readTypedStringList(*paramData)));
         default:
             return libsumo::VehicleType::handleVariable(getTypeID(objID), variable, wrapper, paramData);
     }

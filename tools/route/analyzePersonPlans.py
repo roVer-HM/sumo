@@ -50,7 +50,10 @@ def get_options(args=None):
 
 def stageName(options, person, stage):
     if stage.name == 'ride':
-        if stage.lines.startswith(person.id):
+        #  see MSStageTrip::getVehicles for customary prefix of automatically spawned vehicles
+        if stage.lines is None:
+            return 'public'
+        elif stage.lines.startswith(person.id + "_"):
             return 'car'
         elif stage.lines == 'taxi':
             return 'taxi'

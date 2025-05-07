@@ -17,16 +17,15 @@
 ///
 // Frame for overlapped elements
 /****************************************************************************/
-#include <config.h>
 
 #include <netedit/GNEViewNet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/elements/network/GNELane.h>
 #include <netedit/frames/common/GNEInspectorFrame.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 
 #include "GNEOverlappedInspection.h"
-
 
 // ===========================================================================
 // FOX callback mapping
@@ -40,10 +39,8 @@ FXDEFMAP(GNEOverlappedInspection) OverlappedInspectionMap[] = {
     FXMAPFUNC(SEL_COMMAND,  MID_HELP,                           GNEOverlappedInspection::onCmdOverlappingHelp)
 };
 
-
 // Object implementation
 FXIMPLEMENT(GNEOverlappedInspection,       MFXGroupBoxModule,     OverlappedInspectionMap,        ARRAYNUMBER(OverlappedInspectionMap))
-
 
 // ===========================================================================
 // method definitions
@@ -87,13 +84,14 @@ GNEOverlappedInspection::showOverlappedInspection(GNEViewNetHelper::ViewObjectsS
             viewObjects.filterEdges();
         }
     }
+    // check if previously we clicked an edge and now we want to inspect their lane
+    bool toogleInspectEdgeLane = false;
+    if (!myOnlyJunctions && (myOverlappedACs.size() > 0) && (myOverlappedACs.front()->getTagProperty()->getTag() == SUMO_TAG_EDGE) && shiftKeyPressed) {
+        toogleInspectEdgeLane = true;
+    }
     // in this point, check if we want to iterate over existent overlapped inspection, or we want to inspet a new set of elements
-    if ((myClickedPosition != Position::INVALID) && (myClickedPosition.distanceSquaredTo(clickedPosition) < 1)) {
-        if (shiftKeyPressed) {
-            onCmdInspectPreviousElement(nullptr, 0, nullptr);
-        } else {
-            onCmdInspectNextElement(nullptr, 0, nullptr);
-        }
+    if (!toogleInspectEdgeLane && (myOverlappedACs.size() > 0) && (myClickedPosition != Position::INVALID) && (myClickedPosition.distanceSquaredTo(clickedPosition) < 0.05) && (myShiftKeyPressed == shiftKeyPressed)) {
+        onCmdInspectNextElement(nullptr, 0, nullptr);
     } else {
         myOverlappedACs = viewObjects.getAttributeCarriers();
         myItemIndex = 0;
@@ -101,6 +99,7 @@ GNEOverlappedInspection::showOverlappedInspection(GNEViewNetHelper::ViewObjectsS
     }
     // update clicked position and refresh overlapped inspection
     myClickedPosition = clickedPosition;
+    myShiftKeyPressed = shiftKeyPressed;
     refreshOverlappedInspection();
 }
 
@@ -159,6 +158,15 @@ GNEOverlappedInspection::getNumberOfOverlappedACs() const {
     return (int)myOverlappedACs.size();
 }
 
+
+GNEAttributeCarrier*
+GNEOverlappedInspection::getCurrentAC() const {
+    if (myOverlappedACs.size() > 0) {
+        return myOverlappedACs.at(myItemIndex);
+    } else {
+        return nullptr;
+    }
+}
 
 long
 GNEOverlappedInspection::onCmdInspectPreviousElement(FXObject*, FXSelector, void*) {
@@ -226,9 +234,9 @@ GNEOverlappedInspection::onCmdOverlappingHelp(FXObject*, FXSelector, void*) {
     std::ostringstream help;
     help
             << TL(" - Click in the same position") << "\n"
-            << TL("   for inspect next element") << "\n"
+            << TL("   to inspect next element") << "\n"
             << TL(" - Shift + Click in the same") << "\n"
-            << TL("   position for inspect") << "\n"
+            << TL("   position to inspect") << "\n"
             << TL("   previous element");
     new FXLabel(helpDialog, help.str().c_str(), nullptr, GUIDesignLabelFrameInformation);
     // "OK"

@@ -129,6 +129,11 @@ public:
         return nullptr;
     }
 
+    /// Returns the current lane (if applicable)
+    virtual SUMOTime getJumpDuration() const {
+        return -1;
+    }
+
     ///
     MSStageType getStageType() const {
         return myType;
@@ -189,9 +194,6 @@ public:
         return nullptr;
     }
 
-    /// @brief the time this transportable spent waiting
-    virtual SUMOTime getWaitingTime(SUMOTime now) const;
-
     /// @brief the speed of the transportable
     virtual double getSpeed() const;
 
@@ -213,6 +215,12 @@ public:
     double getEdgeAngle(const MSEdge* e, double at) const;
 
     void setDestination(const MSEdge* newDestination, MSStoppingPlace* newDestStop);
+
+    virtual void setOrigin(const MSEdge* origin, MSStoppingPlace* originStop, double departPos) {
+        UNUSED_PARAMETER(origin);
+        UNUSED_PARAMETER(originStop);
+        UNUSED_PARAMETER(departPos);
+    }
 
     /// @brief get travel distance in this stage
     virtual double getDistance() const = 0;

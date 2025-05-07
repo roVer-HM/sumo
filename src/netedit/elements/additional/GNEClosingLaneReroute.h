@@ -19,6 +19,7 @@
 /****************************************************************************/
 #pragma once
 #include <config.h>
+
 #include "GNEAdditional.h"
 
 // ===========================================================================
@@ -32,11 +33,9 @@ class GNERerouterIntervalDialog;
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNEClosingLaneReroute
- * forces the rerouter to close the lane
- */
-class GNEClosingLaneReroute : public GNEAdditional {
+
+
+class GNEClosingLaneReroute : public GNEAdditional, public Parameterised {
 
 public:
     /// @brief parameter constructor

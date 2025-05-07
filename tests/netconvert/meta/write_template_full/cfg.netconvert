@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-01-23 14:36:52 by Eclipse SUMO netconvert Version v1_21_0+1983-aac325cbcaf
+<!-- generated on 2025-02-21 14:16:49 by Eclipse SUMO netconvert Version v1_22_0+0440-9af1eda2b59
 -->
 
 <netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
@@ -249,6 +249,7 @@
         <no-left-connections value="false" type="BOOL" help="Disables building connections to left"/>
         <junctions.join value="false" type="BOOL" help="Joins junctions that are close to each other (recommended for OSM import)"/>
         <junctions.join-dist value="10" type="FLOAT" help="Determines the maximal distance for joining junctions (defaults to 10)"/>
+        <junctions.join.parallel-threshold value="30" type="FLOAT" help="The angular threshold in degress for rejection of parallel edges when joining junctions"/>
         <junctions.join-exclude value="" type="STR[]" help="Interprets STR[] as list of junctions to exclude from joining"/>
         <junctions.join-same value="false" type="BOOL" help="Joins junctions that have the same coordinates even if not connected"/>
         <max-join-ids value="4" type="INT" help="Abbreviate junction or TLS id if it joins more than INT junctions"/>
@@ -305,6 +306,7 @@
         <railway.topology.extend-priority value="false" type="BOOL" help="Extend loaded edge priority values based on estimated main direction"/>
         <railway.geometry.straighten value="false" type="BOOL" help="Move junctions to straighten a sequence of rail edges"/>
         <railway.signal.guess.by-stops value="false" type="BOOL" help="Guess signals that guard public transport stops"/>
+        <railway.signal.permit-unsignalized value="tram,cable_car" type="STR[]" help="List rail classes that may run without rail signals"/>
         <railway.access-distance value="150" synonymes="osm.stop-output.footway-access-distance" type="FLOAT" help="The search radius for finding suitable road accesses for rail stops"/>
         <railway.max-accesses value="5" synonymes="osm.stop-output.footway-max-accesses" type="INT" help="The maximum road accesses registered per rail stops"/>
         <railway.access-factor value="1.5" synonymes="osm.stop-output.footway-access-factor" type="FLOAT" help="The walking length of the access is computed as air-line distance multiplied by FLOAT"/>
@@ -322,7 +324,7 @@
         <osm.lane-access value="false" type="BOOL" help="Import lane-specific access restrictions"/>
         <osm.bike-access value="false" synonymes="osm.bike-lanes" type="BOOL" help="Import bike lanes and fix directions and permissions on bike paths"/>
         <osm.sidewalks value="false" type="BOOL" help="Import sidewalks"/>
-        <osm.oneway-reverse-sidewalk value="false" type="BOOL" help="Default to building two sidewals on oneway streets (may affect divided roads)"/>
+        <osm.oneway-reverse-sidewalk value="false" type="BOOL" help="Default to building two sidewalks on oneway streets (may affect divided roads)"/>
         <osm.crossings value="false" type="BOOL" help="Import crossings"/>
         <osm.turn-lanes value="false" type="BOOL" help="Import turning arrows from OSM to help with connection building"/>
         <osm.stop-output.length value="25" type="FLOAT" help="The default length of a public transport stop in FLOAT m"/>
@@ -333,6 +335,7 @@
         <osm.all-attributes value="false" synonymes="osm.all-tags" type="BOOL" help="Whether additional attributes shall be imported"/>
         <osm.extra-attributes value="all" synonymes="osm.extra-tags" type="STR[]" help="List of additional attributes that shall be imported from OSM via osm.all-attributes (set &apos;all&apos; to import all)"/>
         <osm.speedlimit-none value="39.4444" type="FLOAT" help="The speed limit to be set when there is no actual speed limit in reality"/>
+        <osm.annotate-defaults value="false" type="BOOL" help="Whether edges shoulds carry information on the usage of typemap defaults"/>
         <matsim.keep-length value="false" type="BOOL" help="The edge lengths given in the MATSim-file will be kept"/>
         <matsim.lanes-from-capacity value="false" type="BOOL" help="The lane number will be computed from the capacity"/>
         <shapefile.street-id value="" synonymes="arcview.street-id" type="STR" help="Read edge ids from column STR"/>

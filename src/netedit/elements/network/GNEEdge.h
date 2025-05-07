@@ -57,9 +57,6 @@ class GNEEdge : public GNENetworkElement, public GNECandidateElement {
     friend class GNEChange_Connection;
 
 public:
-    /// @brief Definition of the lane's vector
-    typedef std::vector<GNELane*> LaneVector;
-
     /// @brief Definition of the connection's vector
     typedef std::vector<GNEConnection*> ConnectionVector;
 
@@ -117,6 +114,9 @@ public:
 
     /// @brief check if draw delete contour (pink/white)
     bool checkDrawDeleteContour() const;
+
+    /// @brief check if draw delete contour small (pink/white)
+    bool checkDrawDeleteContourSmall() const;
 
     /// @brief check if draw select contour (blue)
     bool checkDrawSelectContour() const;
@@ -282,9 +282,6 @@ public:
     /// @brief returns GLIDs of all lanes
     std::set<GUIGlID> getLaneGlIDs() const;
 
-    /// @brief returns a reference to the lane vector
-    const std::vector<GNELane*>& getLanes() const;
-
     /// @brief returns a reference to the GNEConnection vector
     const std::vector<GNEConnection*>& getGNEConnections() const;
 
@@ -364,9 +361,6 @@ public:
 protected:
     /// @brief the underlying NBEdge
     NBEdge* myNBEdge;
-
-    /// @brief vector with the lanes of this edge
-    LaneVector myLanes;
 
     /// @brief vector with the connections of this edge
     ConnectionVector myGNEConnections;

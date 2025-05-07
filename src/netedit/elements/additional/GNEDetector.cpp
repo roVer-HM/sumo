@@ -20,6 +20,7 @@
 #include <config.h>
 
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNESegment.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
@@ -31,37 +32,69 @@
 
 #include "GNEDetector.h"
 
-
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
-GNEDetector::GNEDetector(const std::string& id, GNENet* net, GUIGlObjectType type, SumoXMLTag tag, FXIcon* icon, const double pos,
-                         const SUMOTime period, const std::vector<GNELane*>& parentLanes, const std::string& filename,
-                         const std::vector<std::string>& vehicleTypes, const std::vector<std::string>& nextEdges,
-                         const std::string& detectPersons, const std::string& name, const bool friendlyPos,
-                         const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, type, tag, icon, name, {}, {}, parentLanes, {}, {}, {}),
-              Parameterised(parameters),
-              myPositionOverLane(pos),
-              myPeriod(period),
-              myFilename(filename),
-              myVehicleTypes(vehicleTypes),
-              myNextEdges(nextEdges),
-              myDetectPersons(detectPersons),
-myFriendlyPosition(friendlyPos) {
+GNEDetector::GNEDetector(GNENet* net, SumoXMLTag tag) :
+    GNEAdditional("", net, "", tag, "") {
 }
 
 
-GNEDetector::GNEDetector(GNEAdditional* additionalParent, GNENet* net, GUIGlObjectType type, SumoXMLTag tag, FXIcon* icon,
-                         const double pos, const SUMOTime period, const std::vector<GNELane*>& parentLanes, const std::string& filename,
-                         const std::string& name, const bool friendlyPos, const Parameterised::Map& parameters) :
-    GNEAdditional(net, type, tag, icon, name, {}, {}, parentLanes, {additionalParent}, {}, {}),
-Parameterised(parameters),
-myPositionOverLane(pos),
-myPeriod(period),
-myFilename(filename),
-myFriendlyPosition(friendlyPos) {
+GNEDetector::GNEDetector(const std::string& id, GNENet* net, const std::string& filename, SumoXMLTag tag, const double pos, const SUMOTime period,
+                         GNELane* lane, const std::string& outputFilename, const std::vector<std::string>& vehicleTypes, const std::vector<std::string>& nextEdges,
+                         const std::string& detectPersons, const std::string& name, const bool friendlyPos, const Parameterised::Map& parameters) :
+    GNEAdditional(id, net, filename, tag, name),
+    Parameterised(parameters),
+    myPositionOverLane(pos),
+    myPeriod(period),
+    myOutputFilename(outputFilename),
+    myVehicleTypes(vehicleTypes),
+    myNextEdges(nextEdges),
+    myDetectPersons(detectPersons),
+    myFriendlyPosition(friendlyPos) {
+    // update output filename
+    if (outputFilename.empty()) {
+        myOutputFilename = id + ".xml";
+    }
+    // set parents
+    setParent<GNELane*>(lane);
+}
+
+
+GNEDetector::GNEDetector(const std::string& id, GNENet* net, const std::string& filename, SumoXMLTag tag, const double pos, const SUMOTime period,
+                         const std::vector<GNELane*>& lanes, const std::string& outputFilename, const std::vector<std::string>& vehicleTypes,
+                         const std::vector<std::string>& nextEdges, const std::string& detectPersons, const std::string& name, const bool friendlyPos,
+                         const Parameterised::Map& parameters) :
+    GNEAdditional(id, net, filename, tag, name),
+    Parameterised(parameters),
+    myPositionOverLane(pos),
+    myPeriod(period),
+    myOutputFilename(outputFilename),
+    myVehicleTypes(vehicleTypes),
+    myNextEdges(nextEdges),
+    myDetectPersons(detectPersons),
+    myFriendlyPosition(friendlyPos) {
+    // update output filename
+    if (outputFilename.empty()) {
+        myOutputFilename = id + ".xml";
+    }
+    // set parents
+    setParents<GNELane*>(lanes);
+}
+
+
+GNEDetector::GNEDetector(GNEAdditional* additionalParent, SumoXMLTag tag, const double pos, const SUMOTime period, GNELane* lane,
+                         const std::string& outputFilename, const std::string& name, const bool friendlyPos, const Parameterised::Map& parameters) :
+    GNEAdditional(additionalParent, tag, name),
+    Parameterised(parameters),
+    myPositionOverLane(pos),
+    myPeriod(period),
+    myOutputFilename(outputFilename),
+    myFriendlyPosition(friendlyPos) {
+    // set parents
+    setParent<GNELane*>(lane);
+    setParent<GNEAdditional*>(additionalParent);
 }
 
 
@@ -73,14 +106,14 @@ GNEDetector::getMoveOperation() {
     // check modes and detector type
     if (!myNet->getViewNet()->getEditModes().isCurrentSupermodeNetwork() || (myNet->getViewNet()->getEditModes().networkEditMode != NetworkEditMode::NETWORK_MOVE)) {
         return nullptr;
-    } else if (myTagProperty.getTag() == SUMO_TAG_LANE_AREA_DETECTOR) {
+    } else if (myTagProperty->getTag() == SUMO_TAG_LANE_AREA_DETECTOR) {
         return getMoveOperationSingleLane(myPositionOverLane, getAttributeDouble(SUMO_ATTR_ENDPOS));
-    } else if (myTagProperty.getTag() == GNE_TAG_MULTI_LANE_AREA_DETECTOR) {
+    } else if (myTagProperty->getTag() == GNE_TAG_MULTI_LANE_AREA_DETECTOR) {
         return getMoveOperationMultiLane(myPositionOverLane, getAttributeDouble(SUMO_ATTR_ENDPOS));
     } else {
         // return move operation for detectors with single position placed over shape (E1, EntryExits..)
         return new GNEMoveOperation(this, getParentLanes().front(), myPositionOverLane,
-                                    myNet->getViewNet()->getViewParent()->getMoveFrame()->getCommonModeOptions()->getAllowChangeLane());
+                                    myNet->getViewNet()->getViewParent()->getMoveFrame()->getCommonMoveOptions()->getAllowChangeLane());
     }
 }
 
@@ -102,7 +135,7 @@ GNEDetector::checkDrawMoveContour() const {
         // only move the first element
         if (myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() == this) {
             // special case for multiple lane area detectors
-            if (myTagProperty.getTag() == GNE_TAG_MULTI_LANE_AREA_DETECTOR) {
+            if (myTagProperty->getTag() == GNE_TAG_MULTI_LANE_AREA_DETECTOR) {
                 auto segment = gViewObjectsHandler.getSelectedSegment(this);
                 if (segment && segment->getJunction()) {
                     return false;
@@ -147,7 +180,7 @@ void
 GNEDetector::splitEdgeGeometry(const double splitPosition, const GNENetworkElement* originalElement,
                                const GNENetworkElement* newElement, GNEUndoList* undoList) {
     // only split geometry of E2 multilane detectors
-    if (myTagProperty.getTag() == GNE_TAG_MULTI_LANE_AREA_DETECTOR) {
+    if (myTagProperty->getTag() == GNE_TAG_MULTI_LANE_AREA_DETECTOR) {
         // obtain new list of E2 lanes
         std::string newE2Lanes = getNewListOfParents(originalElement, newElement);
         // update E2 Lanes
@@ -216,7 +249,7 @@ GNEDetector::getDetectorAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_NAME:
             return myAdditionalName;
         case SUMO_ATTR_FILE:
-            return myFilename;
+            return myOutputFilename;
         case SUMO_ATTR_VTYPES:
             return toString(myVehicleTypes);
         case SUMO_ATTR_NEXT_EDGES:
@@ -225,12 +258,10 @@ GNEDetector::getDetectorAttribute(SumoXMLAttr key) const {
             return toString(myDetectPersons);
         case SUMO_ATTR_FRIENDLY_POS:
             return toString(myFriendlyPosition);
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
         case GNE_ATTR_SHIFTLANEINDEX:
             return "";
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -259,7 +290,6 @@ GNEDetector::setDetectorAttribute(SumoXMLAttr key, const std::string& value, GNE
         case SUMO_ATTR_NEXT_EDGES:
         case SUMO_ATTR_DETECT_PERSONS:
         case SUMO_ATTR_FRIENDLY_POS:
-        case GNE_ATTR_PARAMETERS:
         case GNE_ATTR_SHIFTLANEINDEX:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
@@ -314,8 +344,6 @@ GNEDetector::isDetectorValid(SumoXMLAttr key, const std::string& value) {
             }
         case SUMO_ATTR_FRIENDLY_POS:
             return canParse<bool>(value);
-        case GNE_ATTR_PARAMETERS:
-            return areParametersValid(value);
         default:
             return isCommonValid(key, value);
     }
@@ -330,8 +358,8 @@ GNEDetector::writeDetectorValues(OutputDevice& device) const {
     if (myAdditionalName.size() > 0) {
         device.writeAttr(SUMO_ATTR_NAME, StringUtils::escapeXML(myAdditionalName));
     }
-    if (myFilename.size() > 0) {
-        device.writeAttr(SUMO_ATTR_FILE, myFilename);
+    if (myOutputFilename.size() > 0) {
+        device.writeAttr(SUMO_ATTR_FILE, myOutputFilename);
     }
     if (myVehicleTypes.size() > 0) {
         device.writeAttr(SUMO_ATTR_VTYPES, myVehicleTypes);
@@ -343,7 +371,7 @@ GNEDetector::writeDetectorValues(OutputDevice& device) const {
         device.writeAttr(SUMO_ATTR_DETECT_PERSONS, myDetectPersons);
     }
     if (myFriendlyPosition) {
-        device.writeAttr(SUMO_ATTR_FRIENDLY_POS, true);
+        device.writeAttr(SUMO_ATTR_FRIENDLY_POS, myFriendlyPosition);
     }
 }
 
@@ -369,7 +397,7 @@ GNEDetector::setDetectorAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         case SUMO_ATTR_FILE:
-            myFilename = value;
+            myOutputFilename = value;
             break;
         case SUMO_ATTR_NAME:
             myAdditionalName = value;
@@ -386,14 +414,11 @@ GNEDetector::setDetectorAttribute(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_FRIENDLY_POS:
             myFriendlyPosition = parse<bool>(value);
             break;
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
-            break;
         case GNE_ATTR_SHIFTLANEINDEX:
             shiftLaneIndex();
             break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
 }

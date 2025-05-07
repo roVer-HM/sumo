@@ -47,6 +47,7 @@
 #include <microsim/MSStoppingPlace.h>
 #include <microsim/MSParkingArea.h>
 #include <microsim/devices/MSRoutingEngine.h>
+#include <microsim/devices/MSDevice_Taxi.h>
 #include <microsim/trigger/MSChargingStation.h>
 #include <microsim/trigger/MSOverheadWire.h>
 #include <microsim/devices/MSDevice_Tripinfo.h>
@@ -54,6 +55,7 @@
 #include <mesosim/MESegment.h>
 #include <netload/NLBuilder.h>
 #include <libsumo/Helper.h>
+#include <libsumo/StorageHelper.h>
 #include <libsumo/TraCIConstants.h>
 #ifdef HAVE_LIBSUMOGUI
 #include "GUI.h"
@@ -172,14 +174,14 @@ Simulation::step(const double time) {
         if (t == 0) {
             MSNet::getInstance()->simulationStep();
         } else {
-            while (MSNet::getInstance()->getCurrentTimeStep() < t) {
+            while (SIMSTEP < t) {
                 MSNet::getInstance()->simulationStep();
             }
         }
 #ifdef HAVE_LIBSUMOGUI
     }
 #endif
-    Helper::handleSubscriptions(t);
+    Helper::handleSubscriptions(SIMSTEP);
 }
 
 
@@ -205,8 +207,8 @@ Simulation::close(const std::string& reason) {
 
 
 void
-Simulation::subscribe(const std::vector<int>& varIDs, double begin, double end, const libsumo::TraCIResults& params) {
-    libsumo::Helper::subscribe(CMD_SUBSCRIBE_SIM_VARIABLE, "", varIDs, begin, end, params);
+Simulation::subscribe(const std::vector<int>& varIDs, double begin, double end, const libsumo::TraCIResults& parameters) {
+    libsumo::Helper::subscribe(CMD_SUBSCRIBE_SIM_VARIABLE, "", varIDs, begin, end, parameters);
 }
 
 
@@ -504,7 +506,8 @@ Simulation::getMinExpectedNumber() {
     return (net->getVehicleControl().getActiveVehicleCount()
             + net->getInsertionControl().getPendingFlowCount()
             + (net->hasPersons() ? net->getPersonControl().getActiveCount() : 0)
-            + (net->hasContainers() ? net->getContainerControl().getActiveCount() : 0));
+            + (net->hasContainers() ? net->getContainerControl().getActiveCount() : 0)
+            + (MSDevice_Taxi::hasServableReservations() ? 1 : 0));
 }
 
 
@@ -619,6 +622,7 @@ Simulation::findRoute(const std::string& from, const std::string& to, const std:
         std::string msg;
         if (!vehicle->hasValidRouteStart(msg)) {
             MSNet::getInstance()->getVehicleControl().deleteVehicle(vehicle, true);
+            MSNet::getInstance()->getVehicleControl().discountRoutingVehicle();
             throw TraCIException("Invalid departure edge for vehicle type '" + type->getID() + "' (" + msg + ")");
         }
         // we need to fix the speed factor here for deterministic results
@@ -637,6 +641,7 @@ Simulation::findRoute(const std::string& from, const std::string& to, const std:
     result.travelTime = result.cost = router.recomputeCosts(edges, vehicle, dep, &result.length);
     if (vehicle != nullptr) {
         MSNet::getInstance()->getVehicleControl().deleteVehicle(vehicle, true);
+        MSNet::getInstance()->getVehicleControl().discountRoutingVehicle();
     }
     return result;
 }
@@ -771,6 +776,7 @@ Simulation::findIntermodalRoute(const std::string& from, const std::string& to,
         }
         if (vehicle != nullptr) {
             vehControl.deleteVehicle(vehicle, true);
+            vehControl.discountRoutingVehicle();
         }
     }
     return result;
@@ -811,7 +817,6 @@ Simulation::getParameter(const std::string& objectID, const std::string& key) {
         }
     } else if (StringUtils::startsWith(key, "net.")) {
         const std::string attrName = key.substr(4);
-        Position b = GeoConvHelper::getFinal().getOffsetBase();
         if (attrName == toString(SUMO_ATTR_NET_OFFSET)) {
             return toString(GeoConvHelper::getFinal().getOffsetBase());
         } else {
@@ -1047,12 +1052,10 @@ Simulation::handleVariable(const std::string& objID, const int variable, Variabl
             return wrapper->wrapStringList(objID, variable, getBusStopWaitingIDList(objID));
         case VAR_PENDING_VEHICLES:
             return wrapper->wrapStringList(objID, variable, getPendingVehicles());
-        case libsumo::VAR_PARAMETER:
-            paramData->readUnsignedByte();
-            return wrapper->wrapString(objID, variable, getParameter(objID, paramData->readString()));
-        case libsumo::VAR_PARAMETER_WITH_KEY:
-            paramData->readUnsignedByte();
-            return wrapper->wrapStringPair(objID, variable, getParameterWithKey(objID, paramData->readString()));
+        case VAR_PARAMETER:
+            return wrapper->wrapString(objID, variable, getParameter(objID, StoHelp::readTypedString(*paramData)));
+        case VAR_PARAMETER_WITH_KEY:
+            return wrapper->wrapStringPair(objID, variable, getParameterWithKey(objID, StoHelp::readTypedString(*paramData)));
         default:
             return false;
     }

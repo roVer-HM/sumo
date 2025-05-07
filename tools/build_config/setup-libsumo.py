@@ -57,7 +57,6 @@ setup(
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)',
         'Programming Language :: Python :: 3',
     ],
     keywords='traffic simulation traci sumo',
@@ -65,7 +64,7 @@ setup(
     packages=['libsumo'],
     package_dir={'': package_dir},
     package_data={'libsumo': ['*.pyd', '*.so', '*.dylib']},
-    install_requires=['traci>='+SUMO_VERSION, 'eclipse-sumo>='+SUMO_VERSION],
+    install_requires=['traci>='+SUMO_VERSION, 'eclipse-sumo'],
     cmdclass={'install': InstallPlatlib},
     distclass=BinaryDistribution
 )

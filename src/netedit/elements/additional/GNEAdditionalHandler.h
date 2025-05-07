@@ -23,10 +23,10 @@
 #include <utils/common/SUMOVehicleClass.h>
 #include <utils/handlers/AdditionalHandler.h>
 
-
 // ===========================================================================
 // class declarations
 // ===========================================================================
+
 class GNENet;
 class GNEEdge;
 class GNELane;
@@ -36,13 +36,11 @@ class GNEAdditional;
 // class definitions
 // ===========================================================================
 
-/// @class GNEAdditionalHandler
-/// @brief Builds additional objects for GNENet (busStops, chargingStations, detectors, etc..)
 class GNEAdditionalHandler : public AdditionalHandler {
 
 public:
     /// @brief Constructor
-    GNEAdditionalHandler(GNENet* net, const bool allowUndoRedo, const bool overwrite);
+    GNEAdditionalHandler(GNENet* net, const std::string& filename, const bool allowUndoRedo, const bool overwrite);
 
     /// @brief Destructor
     ~GNEAdditionalHandler();
@@ -522,7 +520,6 @@ public:
      * @param[in] layer The layer of the polygon
      * @param[in] angle The rotation of the polygon
      * @param[in] imgFile The raster image of the polygon
-     * @param[in] relativePath set image file as relative path
      * @param[in] shape The shape of the polygon
      * @param[in] geo specify if shape was loaded as GEO coordinate
      * @param[in] fill Whether the polygon shall be filled
@@ -531,9 +528,8 @@ public:
      * @param[in] parameters generic parameters
      */
     bool buildPolygon(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& type,
-                      const RGBColor& color, const double layer, const double angle, const std::string& imgFile, const bool relativePath,
-                      const PositionVector& shape, const bool geo, const bool fill, const double lineWidth, const std::string& name,
-                      const Parameterised::Map& parameters);
+                      const RGBColor& color, const double layer, const double angle, const std::string& imgFile, const PositionVector& shape,
+                      const bool geo, const bool fill, const double lineWidth, const std::string& name, const Parameterised::Map& parameters);
 
     /**@brief Builds a POI using the given values
      * @param[in] sumoBaseObject sumo base object used for build
@@ -546,7 +542,6 @@ public:
      * @param[in] layer The layer of the POI
      * @param[in] angle The rotation of the POI
      * @param[in] imgFile The raster image of the POI
-     * @param[in] relativePath set image file as relative path
      * @param[in] width The width of the POI image
      * @param[in] height The height of the POI image
      * @param[in] name POI name
@@ -554,8 +549,8 @@ public:
      */
     bool buildPOI(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& type,
                   const RGBColor& color, const double x, const double y, const std::string& icon, const double layer,
-                  const double angle, const std::string& imgFile, bool relativePath, const double width, const double height,
-                  const std::string& name, const Parameterised::Map& parameters);
+                  const double angle, const std::string& imgFile, const double width, const double height, const std::string& name,
+                  const Parameterised::Map& parameters);
 
     /**@brief Builds a POI over lane using the given values
      * @param[in] sumoBaseObject sumo base object used for build
@@ -570,7 +565,6 @@ public:
      * @param[in] layer The layer of the POI
      * @param[in] angle The rotation of the POI
      * @param[in] imgFile The raster image of the POI
-     * @param[in] relativePath set image file as relative path
      * @param[in] width The width of the POI image
      * @param[in] height The height of the POI image
      * @param[in] name POI name
@@ -578,8 +572,8 @@ public:
      */
     bool buildPOILane(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& type, const RGBColor& color,
                       const std::string& laneID, const double posOverLane, const bool friendlyPos, const double posLat, const std::string& icon,
-                      const double layer, const double angle, const std::string& imgFile, const bool relativePath, const double width,
-                      const double height, const std::string& name, const Parameterised::Map& parameters);
+                      const double layer, const double angle, const std::string& imgFile, const double width, const double height, const std::string& name,
+                      const Parameterised::Map& parameters);
 
     /**@brief Builds a POI in GEO coordinaten using the given values
      * @param[in] sumoBaseObject sumo base object used for build
@@ -592,7 +586,6 @@ public:
      * @param[in] layer The layer of the POI
      * @param[in] angle The rotation of the POI
      * @param[in] imgFile The raster image of the POI
-     * @param[in] relativePath set image file as relative path
      * @param[in] width The width of the POI image
      * @param[in] height The height of the POI image
      * @param[in] name POI name
@@ -600,8 +593,8 @@ public:
      */
     bool buildPOIGeo(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& type,
                      const RGBColor& color, const double lon, const double lat, const std::string& icon, const double layer,
-                     const double angle, const std::string& imgFile, bool relativePath, const double width, const double height,
-                     const std::string& name, const Parameterised::Map& parameters);
+                     const double angle, const std::string& imgFile, const double width, const double height, const std::string& name,
+                     const Parameterised::Map& parameters);
 
     /**@brief Builds a JuPedSim walkable area using the given values
      * @param[in] sumoBaseObject sumo base object used for build
@@ -710,31 +703,6 @@ protected:
     /// @brief check if element exist, and if overwritte
     bool checkElement(const SumoXMLTag tag, GNEAdditional* additional);
 
-    /// @brief struct for Netedit parameters
-    struct NeteditParameters {
-        /// @brief parameter constructor
-        NeteditParameters(const CommonXMLStructure::SumoBaseObject* sumoBaseObject);
-
-        /// @brief destructor
-        ~NeteditParameters();
-
-        /// @brief select
-        const bool select;
-
-        /// @brief center view after creation
-        const bool centerAfterCreation;
-
-    private:
-        /// @brief default constructor
-        NeteditParameters();
-
-        /// @brief invalidate copy constructor
-        NeteditParameters(const NeteditParameters& s) = delete;
-
-        /// @brief invalidate assignment operator
-        NeteditParameters& operator=(const NeteditParameters& s) = delete;
-    };
-
 private:
     /// @brief pointer to GNENet
     GNENet* myNet;
@@ -746,7 +714,7 @@ private:
     const bool myOverwrite;
 
     /// @brief invalidate default constructo
-    GNEAdditionalHandler();
+    GNEAdditionalHandler() = delete;
 
     /// @brief invalidate copy constructor
     GNEAdditionalHandler(const GNEAdditionalHandler& s) = delete;

@@ -306,7 +306,7 @@ public:
      *
      * @param[in] rem The move reminder to add
      */
-    virtual void addMoveReminder(MSMoveReminder* rem);
+    virtual void addMoveReminder(MSMoveReminder* rem, bool addToVehicles = true);
 
 
     /** @brief Remove a move-reminder from move-reminder container
@@ -665,7 +665,7 @@ public:
      *
      * This method goes through all vehicles calling their * "setApproachingForAllLinks" method.
      */
-    virtual void setJunctionApproaches(const SUMOTime t) const;
+    virtual void setJunctionApproaches() const;
 
     /** @brief This updates the MSLeaderInfo argument with respect to the given MSVehicle.
      *         All leader-vehicles on the same edge, which are relevant for the vehicle
@@ -1017,10 +1017,11 @@ public:
      * @param[in] speed The speed of the vehicle used for determining whether a subsequent link will be opened at arrival time
      * @param[in] veh The vehicle for which the information shall be computed
      * @param[in] bestLaneConts The lanes the vehicle will use in future
+     * @param[in] considerCrossingFoes Whether vehicles on crossing foe links should be considered
      * @return
      */
     std::pair<MSVehicle* const, double> getLeaderOnConsecutive(double dist, double seen,
-            double speed, const MSVehicle& veh, const std::vector<MSLane*>& bestLaneConts) const;
+            double speed, const MSVehicle& veh, const std::vector<MSLane*>& bestLaneConts, bool considerCrossingFoes = true) const;
 
     /// @brief Returns the immediate leaders and the distance to them (as getLeaderOnConsecutive but for the sublane case)
     void getLeadersOnConsecutive(double dist, double seen, double speed, const MSVehicle* ego,
@@ -1430,6 +1431,9 @@ protected:
 
     /// @brief return length of fractional vehicles on this lane
     double getFractionalVehicleLength(bool brutto) const;
+
+    /// @brief detect frontal collisions
+    static bool isFrontalCollision(const MSVehicle* collider, const MSVehicle* victim);
 
     /// Unique numerical ID (set on reading by netload)
     int myNumericalID;

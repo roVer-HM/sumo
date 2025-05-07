@@ -20,6 +20,7 @@
 #include <config.h>
 
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
@@ -38,23 +39,24 @@
 // ===========================================================================
 
 GNEAccess::GNEAccess(GNENet* net) :
-    GNEAdditional("", net, GLO_ACCESS, SUMO_TAG_ACCESS, GUIIconSubSys::getIcon(GUIIcon::ACCESS), "", {}, {}, {}, {}, {}, {}),
-              myPositionOverLane(0),
-              myLength(0),
-myFriendlyPosition(false) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional("", net, "", SUMO_TAG_ACCESS, ""),
+    myPositionOverLane(0),
+    myLength(0),
+    myFriendlyPosition(false) {
 }
 
 
-GNEAccess::GNEAccess(GNEAdditional* busStop, GNELane* lane, GNENet* net, const double pos, const std::string& specialPos,
+GNEAccess::GNEAccess(GNEAdditional* busStop, GNELane* lane, const double pos, const std::string& specialPos,
                      const bool friendlyPos, const double length, const Parameterised::Map& parameters) :
-    GNEAdditional(net, GLO_ACCESS, SUMO_TAG_ACCESS, GUIIconSubSys::getIcon(GUIIcon::ACCESS), "", {}, {}, {lane}, {busStop}, {}, {}),
-Parameterised(parameters),
-myPositionOverLane(pos),
-mySpecialPosition(specialPos),
-myLength(length),
-myFriendlyPosition(friendlyPos) {
+    GNEAdditional(busStop, SUMO_TAG_ACCESS, ""),
+    Parameterised(parameters),
+    myPositionOverLane(pos),
+    mySpecialPosition(specialPos),
+    myLength(length),
+    myFriendlyPosition(friendlyPos) {
+    // set parents
+    setParent<GNELane*>(lane);
+    setParent<GNEAdditional*>(busStop);
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -68,7 +70,7 @@ GNEMoveOperation*
 GNEAccess::getMoveOperation() {
     // return move operation for additional placed over shape
     return new GNEMoveOperation(this, getParentLanes().front(), myPositionOverLane,
-                                myNet->getViewNet()->getViewParent()->getMoveFrame()->getCommonModeOptions()->getAllowChangeLane());
+                                myNet->getViewNet()->getViewParent()->getMoveFrame()->getCommonMoveOptions()->getAllowChangeLane());
 }
 
 
@@ -135,7 +137,7 @@ GNEAccess::writeAdditional(OutputDevice& device) const {
         device.writeAttr(SUMO_ATTR_LENGTH, myLength);
     }
     if (myFriendlyPosition) {
-        device.writeAttr(SUMO_ATTR_FRIENDLY_POS, true);
+        device.writeAttr(SUMO_ATTR_FRIENDLY_POS, myFriendlyPosition);
     }
     device.closeTag();
 }
@@ -280,7 +282,11 @@ GNEAccess::getAttribute(SumoXMLAttr key) const {
                 return toString(myPositionOverLane);
             }
         case SUMO_ATTR_LENGTH:
-            return toString(myLength);
+            if (myLength == -1) {
+                return "";
+            } else {
+                return toString(myLength);
+            }
         case SUMO_ATTR_FRIENDLY_POS:
             return toString(myFriendlyPosition);
         case GNE_ATTR_PARENT:
@@ -289,12 +295,10 @@ GNEAccess::getAttribute(SumoXMLAttr key) const {
             } else {
                 return getParentAdditionals().at(0)->getID();
             }
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
         case GNE_ATTR_SHIFTLANEINDEX:
             return "";
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -319,7 +323,6 @@ GNEAccess::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* 
         case SUMO_ATTR_LENGTH:
         case SUMO_ATTR_FRIENDLY_POS:
         case GNE_ATTR_PARENT:
-        case GNE_ATTR_PARAMETERS:
         case GNE_ATTR_SHIFTLANEINDEX:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
@@ -362,8 +365,6 @@ GNEAccess::isValid(SumoXMLAttr key, const std::string& value) {
             return canParse<bool>(value);
         case GNE_ATTR_PARENT:
             return (myNet->getAttributeCarriers()->retrieveAdditionals(NamespaceIDs::busStops, value, false) != nullptr);
-        case GNE_ATTR_PARAMETERS:
-            return areParametersValid(value);
         default:
             return isCommonValid(key, value);
     }
@@ -402,7 +403,11 @@ GNEAccess::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         case SUMO_ATTR_LENGTH:
-            myLength = parse<double>(value);
+            if (value.empty()) {
+                myLength = myTagProperty->getDefaultDoubleValue(key);
+            } else {
+                myLength = parse<double>(value);
+            }
             break;
         case SUMO_ATTR_FRIENDLY_POS:
             myFriendlyPosition = parse<bool>(value);
@@ -414,14 +419,11 @@ GNEAccess::setAttribute(SumoXMLAttr key, const std::string& value) {
                 replaceAdditionalParent(SUMO_TAG_TRAIN_STOP, value, 0);
             }
             break;
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
-            break;
         case GNE_ATTR_SHIFTLANEINDEX:
             shiftLaneIndex();
             break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
 }

@@ -15,6 +15,7 @@
 # @author  Jakob Stigloher
 # @author  Jakob Erdmann
 # @author  Michael Behrisch
+# @author  Mirko Barthauer
 # @date    2014-14-10
 
 from __future__ import absolute_import
@@ -235,6 +236,7 @@ class Builder(object):
         if self.data["publicTransport"]:
             self.filename("stops", "_stops.add.xml")
             netconvertOptions += ",--ptstop-output,%s" % self.files["stops"]
+            netconvertOptions += ",--ptline-clean-up"
             self.filename("ptlines", "_ptlines.xml")
             self.filename("ptroutes", "_pt.rou.xml")
             netconvertOptions += ",--ptline-output,%s" % self.files["ptlines"]
@@ -298,6 +300,7 @@ class Builder(object):
                 "-t", "100",
                 "-d", "background_images",
                 "-l", "-300",
+                "-a", "Mozilla/5.0 (X11; Linux x86_64) osmWebWizard.py/1.0 (+https://github.com/eclipse-sumo/sumo)",
             ]
             try:
                 os.chdir(self.tmp)
@@ -425,6 +428,20 @@ class Builder(object):
         if self.routenames:
             opts += ["-r", ",".join(self.getRelative(self.routenames))]
 
+            # extra output if the scenario contains traffic
+            opts += ["--tripinfo-output", "tripinfos.xml"]
+            opts += ["--statistic-output", "stats.xml"]
+
+            self.filename("outadd", "output.add.xml", False)
+            with open(self.files["outadd"], 'w') as fadd:
+                sumolib.writeXMLHeader(fadd, "$Id$", "additional")
+                fadd.write('   <edgeData id="wizard_example" period="3600" file="edgeData.xml"/>\n')
+                fadd.write("</additional>\n")
+            self.additionalFiles.append(self.files["outadd"])
+
+        if self.data["publicTransport"]:
+            opts += ["--stop-output", "stopinfos.xml"]
+
         if len(self.additionalFiles) > 0:
             opts += ["-a", ",".join(self.getRelative(self.additionalFiles))]
 
@@ -456,13 +473,16 @@ class Builder(object):
         self.filename("zip", ".zip")
 
         with ZipFile(self.files["zip"], "w") as zipfile:
-            files = ["net", "guisettings", "config", "run.bat", "build.bat"]
+            files = ["net", "guisettings", "config", "run.bat"]
+
+            if self.data["vehicles"] or self.data["publicTransport"]:
+                files += ["build.bat"]
 
             if self.data["poly"]:
                 files += ["poly"]
 
             # translate the pseudo file names to real file names
-            files = map(lambda name: self.files[name], files)
+            files = list(map(lambda name: self.files[name], files))
 
             if self.data["vehicles"]:
                 files += self.routenames
@@ -521,7 +541,7 @@ class OSMImporterWebSocket(WebSocket):
                 data = builder.createZip()
                 builder.finalize()
 
-                self.sendMessage(u"zip " + data)
+                self.sendMessage(b"zip " + data)
         except ssl.CertificateError:
             self.report("Error with SSL certificate, try 'pip install -U certifi'.")
         except Exception as e:
@@ -593,8 +613,16 @@ def main(options):
             subprocess.call([sumolib.checkBinary("sumo"), "-c", builder.files["config"]])
     else:
         if not options.remote:
-            webbrowser.open("file://" +
-                            os.path.join(os.path.dirname(os.path.abspath(__file__)), "webWizard", "index.html"))
+            path = os.path.dirname(os.path.realpath(__file__))
+            # on Linux Firefox refuses to open files in /usr/ #16086
+            if os.name != "nt" and not path.startswith(os.path.expanduser('~')):
+                new_path = os.path.expanduser('~/Sumo')
+                wizard_path = os.path.join(new_path, 'webWizard')
+                if not os.path.exists(wizard_path):
+                    os.makedirs(new_path, exist_ok=True)
+                    shutil.copytree(os.path.join(path, "webWizard"), wizard_path)
+                path = new_path
+            webbrowser.open("file://" + os.path.join(path, "webWizard", "index.html"))
 
         server = SimpleWebSocketServer(options.address, options.port, OSMImporterWebSocket)
         server.serveforever()

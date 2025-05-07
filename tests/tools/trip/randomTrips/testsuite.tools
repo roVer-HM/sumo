@@ -13,6 +13,9 @@ saveTemplate
 saveStdout
 loadConfig
 simple
+
+# write compressed routes
+compressed
 begin_end_human_readable
 
 # randomize departure times
@@ -59,6 +62,9 @@ binomial_low
 
 # generate validated trips
 validate
+
+# generate validated trips
+validate_vclass
 validate_intermediate
 
 # setting non-positive period should fail

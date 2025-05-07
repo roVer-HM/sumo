@@ -1,9 +1,11 @@
 import_config_file:../config_all
+interpreter:python
 binary:$TEXTTEST_HOME/toolrunner.py
 copy_test_path:runner.py
 copy_test_path:routes.rou.xml
 copy_test_path:routes2.rou.xml
 copy_test_path:net.net.xml
+copy_test_path:net.net.xml.gz
 copy_test_path:net2.net.xml
 copy_test_path:net3.net.xml
 copy_test_path:input.poly.xml
@@ -19,6 +21,7 @@ copy_test_path:input_trips.trips.xml
 copy_test_path:input_trips.trips_foo.xml
 copy_test_path:input_trips.trips_bar.xml
 copy_test_path:input_routes.rou.xml
+copy_test_path:input_routes.rou.xml.gz
 copy_test_path:input_routes2.rou.xml
 copy_test_path:input_flows.flows.xml
 copy_test_path:input_turns.xml
@@ -54,6 +57,7 @@ copy_test_path:e2.add.xml
 copy_test_path:e3.add.xml
 copy_test_path:connections.con.xml
 copy_test_path:selection.txt
+copy_test_path:input_selection.txt
 copy_test_path:source.net.xml
 copy_test_path:source.nod.xml
 copy_test_path:source.edg.xml
@@ -71,6 +75,7 @@ copy_test_path:fcd.xml
 copy_test_path:fcd.xml.gz
 copy_test_path:fcd2.xml
 copy_test_path:data.txt
+copy_test_path:data.csv
 copy_test_path:source.csv
 copy_test_path:osm.xml
 copy_test_path:osm_bbox.osm.xml
@@ -81,6 +86,7 @@ copy_test_path:ptlines.xml
 copy_test_path:input_edgedata.xml
 copy_test_path:summary.xml
 copy_test_path:config_file.txt
+copy_test_path:config.xml
 copy_test_path:input.toolcfg
 copy_test_path:input_sel.txt
 copy_test_path:matsim_plans.xml
@@ -101,6 +107,7 @@ scaled:scaled.rou.xml
 detectors:e1.add.xml
 detectors:e2.add.xml
 detectors:e3.add.xml
+detectors:det.add.xml
 meandata:edge-mean-data.add.xml
 meandata:lane-mean-data.add.xml
 connections:connections.con.xml
@@ -219,6 +226,7 @@ gtfs_additional:gtfs_pt_stops.add.xml
 aggregatebattery:aggregatebattery.xml
 landmarks:landmarks.txt
 outputdata:output_data.txt
+errorlog:errorlog.txt
 
 [collate_script]
 osmimport:$SUMO_HOME/tests/unzip.py
@@ -288,6 +296,7 @@ errors:No imaging
 errors:Scipy version [0-9]+\.[0-9]+\.[0-9]+{REPLACE Scipy}
 errors:OptimizeWarning
 errors:File ".*[\\/]tests[\\/]..[\\/]tools[\\/]{REPLACE File "sumo/tools/}
+errors:File ".*[\\/]sumo[\\/]tools[\\/]devel[\\/]{REPLACE File "sumo/tools/devel/}
 errors:.*statistics.py:[0-9]+{REPLACE statistics.py:}
 errors:unknown url type{REPLACE [Errno 2] No such file or directory}
 errors:Matplotlib is building the font cache; this may take a moment.
@@ -358,6 +367,7 @@ diff_nod:<!-- generated on{[->]}-->
 diff_tll:<!-- generated on{[->]}-->
 diff_xml:<!-- generated on{[->]}-->
 meandata:<!-- generated on{[->]}-->
+detectors:<!-- generated on{[->]}-->
 scaled:<!-- generated on{[->]}-->
 scaledObj:<!-- generated on{[->]}-->
 gtfs_additional:<!-- generated on{[->]}-->

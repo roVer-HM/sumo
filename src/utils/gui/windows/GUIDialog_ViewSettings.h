@@ -186,6 +186,7 @@ public:
 
     /// @brief show view settings dialog
     void show();
+    using FXDialogBox::show; // to silence the warning C4266 about a hidden function
 
     /// @brief get GUISUMOAbstractView parent
     GUISUMOAbstractView* getSUMOAbstractView();
@@ -333,7 +334,6 @@ protected:
     std::vector<FXRealSpinner*> myLaneThresholds;
     std::vector<FXButton*> myLaneButtons;
     FXCheckButton* myLaneColorInterpolation = nullptr;
-    RainbowPanel* myJunctionRainbowPanel = nullptr;
     FXComboBox* myParamKey = nullptr;
     FXComboBox* myScalingParamKey = nullptr;
     MFXComboBoxIcon* myMeanDataID = nullptr;
@@ -451,7 +451,6 @@ protected:
     FXComboBox* myDataParamKey = nullptr;
     FXRealSpinner* myEdgeRelationUpscaleDialer = nullptr;
     FXRealSpinner* myTazRelationUpscaleDialer = nullptr;
-    RainbowPanel* myDataRainbowPanel = nullptr;
 
     /// @brief buttons
     FXCheckButton* myShowLane2Lane = nullptr;
@@ -523,6 +522,9 @@ protected:
 
     /// @brief rainbow panels
     RainbowPanel* myEdgeRainbowPanel = nullptr;
+    RainbowPanel* myJunctionRainbowPanel = nullptr;
+    RainbowPanel* myDataRainbowPanel = nullptr;
+    RainbowPanel* myVehicleRainbowPanel = nullptr;
 
     /// @brief load/save-menu
     FXCheckButton* mySaveViewPort = nullptr;

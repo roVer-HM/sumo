@@ -17,19 +17,17 @@
 ///
 // The Widget for add TAZRelationData elements
 /****************************************************************************/
-#include <config.h>
 
-#include <netedit/elements/data/GNEDataHandler.h>
-#include <netedit/elements/data/GNEDataInterval.h>
-#include <netedit/elements/additional/GNETAZ.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
-#include <netedit/GNEApplicationWindow.h>
+#include <netedit/elements/additional/GNETAZ.h>
+#include <netedit/elements/data/GNEDataHandler.h>
+#include <netedit/elements/data/GNEDataInterval.h>
+#include <netedit/frames/GNEAttributesEditor.h>
 #include <utils/gui/div/GUIDesigns.h>
-#include <utils/gui/windows/GUIAppEnum.h>
 
 #include "GNETAZRelDataFrame.h"
-
 
 // ===========================================================================
 // FOX callback mapping
@@ -181,7 +179,7 @@ GNETAZRelDataFrame::buildTAZRelationData() {
             WRITE_WARNINGF(TL("There is already a % defined in TAZ'%'."), toString(SUMO_TAG_TAZREL), myFirstTAZ->getID());
         } else if ((myFirstTAZ != mySecondTAZ) && myIntervalSelector->getDataInterval()->TAZRelExists(myFirstTAZ, mySecondTAZ)) {
             WRITE_WARNINGF(TL("There is already a % defined between TAZ'%' and '%'."), toString(SUMO_TAG_TAZREL), myFirstTAZ->getID(), mySecondTAZ->getID());
-        } else if (myGenericDataAttributes->areAttributesValid()) {
+        } else if (myGenericDataAttributesEditor->checkAttributes(true)) {
             // declare data handler
             GNEDataHandler dataHandler(myViewNet->getNet(), "", myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
             // build data interval object and fill it
@@ -191,8 +189,11 @@ GNETAZRelDataFrame::buildTAZRelationData() {
             dataIntervalObject->addDoubleAttribute(SUMO_ATTR_END, myIntervalSelector->getDataInterval()->getAttributeDouble(SUMO_ATTR_END));
             // create TAZRelData
             CommonXMLStructure::SumoBaseObject* TAZRelData = new CommonXMLStructure::SumoBaseObject(dataIntervalObject);
-            // finally create TAZRelationData
-            dataHandler.buildTAZRelationData(TAZRelData, myFirstTAZ->getID(), mySecondTAZ->getID(), myGenericDataAttributes->getParametersMap());
+            // obtain parameters
+            myGenericDataAttributesEditor->fillSumoBaseObject(TAZRelData);
+            // create TAZRelationData
+            dataHandler.buildTAZRelationData(TAZRelData, myFirstTAZ->getID(), mySecondTAZ->getID(), TAZRelData->getParameters());
+            // delete data interval object (and child)
             delete dataIntervalObject;
             // reset both TAZs
             myFirstTAZ = nullptr;

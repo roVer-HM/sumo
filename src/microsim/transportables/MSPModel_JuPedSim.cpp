@@ -54,7 +54,6 @@ const int MSPModel_JuPedSim::GEOS_QUADRANT_SEGMENTS = 16;
 const double MSPModel_JuPedSim::GEOS_MITRE_LIMIT = 5.0;
 const double MSPModel_JuPedSim::GEOS_MIN_AREA = 1;
 const double MSPModel_JuPedSim::GEOS_BUFFERED_SEGMENT_WIDTH = 0.5 * SUMO_const_laneWidth;
-const double MSPModel_JuPedSim::CARRIAGE_RAMP_LENGTH = 2.0;
 const RGBColor MSPModel_JuPedSim::PEDESTRIAN_NETWORK_COLOR = RGBColor(179, 217, 255, 255);
 const RGBColor MSPModel_JuPedSim::PEDESTRIAN_NETWORK_CARRIAGES_AND_RAMPS_COLOR = RGBColor(255, 217, 179, 255);
 const std::string MSPModel_JuPedSim::PEDESTRIAN_NETWORK_ID = "jupedsim.pedestrian_network";
@@ -291,10 +290,15 @@ MSPModel_JuPedSim::add(MSTransportable* person, MSStageMoving* stage, SUMOTime n
             if (dir != UNDEFINED_DIRECTION) {
                 ConstMSEdgeVector crossingRoute;
                 MSNet::getInstance()->getPedestrianRouter(0).compute(prev, e, 0, 0, stage->getMaxSpeed(person), 0, dir == FORWARD ? prev->getToJunction() : prev->getFromJunction(), crossingRoute, true);
+                const MSEdge* wa = nullptr;
                 for (const MSEdge* const ce : crossingRoute) {
                     if (ce->isCrossing()) {
                         const MSLane* const crossing = getSidewalk<MSEdge, MSLane>(ce);
                         if (myCrossingWaits.count(crossing) > 0) {
+                            if (waitingStage != 0 && wa != nullptr) {
+                                // we already have a waiting stage we need an intermediate waypoint
+                                waypoints.push_back({waitingStage, wa->getLanes()[0]->getShape().getCentroid(), wa->getWidth() / 2.});
+                            }
                             const MSLane* const prevLane = getSidewalk<MSEdge, MSLane>(prev);
                             const Position& startPos = dir == FORWARD ? prevLane->getShape().back() : prevLane->getShape().front();
                             // choose the waiting set closer to the lane "end"
@@ -306,6 +310,9 @@ MSPModel_JuPedSim::add(MSTransportable* person, MSStageMoving* stage, SUMOTime n
                         } else {
                             throw ProcessError(TLF("No waiting set for crossing at %.", ce->getID()));
                         }
+                    }
+                    if (ce->isWalkingArea()) {
+                        wa = ce;
                     }
                 }
             }
@@ -519,8 +526,11 @@ MSPModel_JuPedSim::execute(SUMOTime time) {
                 const MSLane* const crossing = myCrossings[waitingStage];
                 const MSLink* link = crossing->getIncomingLanes().front().viaLink;
                 if (waitingStage == myCrossingWaits[crossing].second && link->getTLLogic() != nullptr) {
-                    // we are walking backwards on a traffic light, there is a different link to check
+                    // we are walking backwards on a traffic light, there are different links to check
                     link = crossing->getLinkCont().front();
+                    if (link->getTLLogic() == nullptr) {
+                        link = crossing->getLogicalPredecessorLane()->getLinkTo(crossing);
+                    }
                 }
                 // compare to and maybe adapt for MSPModel_Striping.cpp:1264
                 const double passingClearanceTime = person->getFloatParam("pedestrian.timegap-crossing");
@@ -641,6 +651,7 @@ MSPModel_JuPedSim::execute(SUMOTime time) {
             std::vector<GEOSGeometry*> rampPolygons;
             for (const MSVehicle* train : allStoppedTrains) {
                 if (train->getLeavingPersonNumber() > 0) {
+                    const SUMOVTypeParameter& vTypeParam = train->getVehicleType().getParameter();
                     MSTrainHelper trainHelper = MSTrainHelper(train);
                     trainHelper.computeDoorPositions();
                     const std::vector<MSTrainHelper::Carriage*>& carriages = trainHelper.getCarriages();
@@ -660,8 +671,8 @@ MSPModel_JuPedSim::execute(SUMOTime time) {
                         carriageShape.push_back(carriage->front - perp * p);
                         carriagePolygons.push_back(createGeometryFromShape(carriageShape));
                         // Create ramps geometry.
-                        p += CARRIAGE_RAMP_LENGTH;
-                        const double d = 0.5 * MSTrainHelper::CARRIAGE_DOOR_WIDTH;
+                        p += vTypeParam.maxPlatformDistance;
+                        const double d = 0.5 * vTypeParam.carriageDoorWidth;
                         for (const Position& door : carriage->doorPositions) {
                             PositionVector rampShape;
                             rampShape.push_back(door - perp * p + dir * d);
@@ -980,7 +991,7 @@ void
 MSPModel_JuPedSim::preparePolygonForDrawing(const GEOSGeometry* polygon, const std::string& polygonId, const RGBColor& color) {
     const GEOSGeometry* exterior = GEOSGetExteriorRing(polygon);
     bool added = myShapeContainer.addPolygon(polygonId, std::string("jupedsim.pedestrian_network"), color, 10.0, 0.0,
-                 std::string(), false, convertToSUMOPoints(exterior), false, true, 1.0);
+                 std::string(), convertToSUMOPoints(exterior), false, true, 1.0);
     if (added) {
         std::vector<PositionVector> holes;
         int nbrInteriorRings = GEOSGetNumInteriorRings(polygon);
@@ -1114,10 +1125,8 @@ MSPModel_JuPedSim::addWaitingSet(const MSLane* const crossing, const bool entry)
         moved.move2side(latOff);
         pv.push_back(moved.positionAtOffset(lonOffset));
         moved.move2side(-2. * latOff);
-        const Position wPosOff2 = moved.positionAtOffset(lonOffset);
         pv.push_back(moved.positionAtOffset(lonOffset));
     }
-    Position center = Position::INVALID;
     if (entry && crossing->getIncomingLanes().size() == 1 && crossing->getIncomingLanes().front().lane->isWalkingArea()) {
         pv.push_back(crossing->getIncomingLanes().front().lane->getShape().getCentroid());
     }

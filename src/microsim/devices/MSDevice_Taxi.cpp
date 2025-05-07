@@ -95,7 +95,7 @@ MSDevice_Taxi::insertOptions(OptionsCont& oc) {
     oc.addDescription("device.taxi.dispatch-period", "Taxi Device", TL("The period between successive calls to the dispatcher"));
 
     oc.doRegister("device.taxi.idle-algorithm", new Option_String("stop"));
-    oc.addDescription("device.taxi.idle-algorithm", "Taxi Device", TL("The behavior of idle taxis [stop|randomCircling]"));
+    oc.addDescription("device.taxi.idle-algorithm", "Taxi Device", TL("The behavior of idle taxis [stop|randomCircling|taxistand]"));
 
     oc.doRegister("device.taxi.idle-algorithm.output", new Option_FileName());
     oc.addDescription("device.taxi.idle-algorithm.output", "Taxi Device", TL("Write information from the idling algorithm to FILE"));
@@ -339,9 +339,10 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
                 stop.triggered = false;
                 stop.containerTriggered = false;
                 stop.joinTriggered = false;
-                const_cast<SUMOVehicleParameter::Stop&>(stop.pars).permitted.insert("");
                 myHolder.unregisterWaiting();
             }
+            // prevent unauthorized/premature entry
+            const_cast<SUMOVehicleParameter::Stop&>(stop.pars).permitted.insert("");
             while (myHolder.getStops().size() > 1) {
                 myHolder.abortNextStop(1);
             }
@@ -683,6 +684,14 @@ MSDevice_Taxi::prepareStop(ConstMSEdgeVector& edges,
     if (stopPlace != nullptr && &stopPlace->getLane().getEdge() == stopEdge) {
         stop.startPos = stopPlace->getBeginLanePosition();
         stop.endPos = stopPlace->getEndLanePosition();
+        const SumoXMLTag tag = stopPlace->getElement();
+        if (tag == SUMO_TAG_BUS_STOP || tag == SUMO_TAG_TRAIN_STOP) {
+            stop.busstop = stopPlace->getID();
+        } else if (tag == SUMO_TAG_PARKING_AREA) {
+            stop.parkingarea = stopPlace->getID();
+        } else if (tag == SUMO_TAG_CONTAINER_STOP) {
+            stop.containerstop = stopPlace->getID();
+        }
     } else {
         stop.startPos = stopPos;
         stop.endPos = MAX2(stopPos, MIN2(myHolder.getVehicleType().getLength(), stopEdge->getLength()));

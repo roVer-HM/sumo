@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-01-23 14:36:52 by Eclipse SUMO netconvert Version v1_21_0+1983-aac325cbcaf
+<!-- generated on 2025-02-21 14:16:49 by Eclipse SUMO netconvert Version v1_22_0+0440-9af1eda2b59
 -->
 
 <netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
@@ -675,6 +675,9 @@
         <!-- Determines the maximal distance for joining junctions (defaults to 10) -->
         <junctions.join-dist value="10" type="FLOAT"/>
 
+        <!-- The angular threshold in degress for rejection of parallel edges when joining junctions -->
+        <junctions.join.parallel-threshold value="30" type="FLOAT"/>
+
         <!-- Interprets STR[] as list of junctions to exclude from joining -->
         <junctions.join-exclude value="" type="STR[]"/>
 
@@ -825,6 +828,9 @@
         <!-- Guess signals that guard public transport stops -->
         <railway.signal.guess.by-stops value="false" type="BOOL"/>
 
+        <!-- List rail classes that may run without rail signals -->
+        <railway.signal.permit-unsignalized value="tram,cable_car" type="STR[]"/>
+
         <!-- The search radius for finding suitable road accesses for rail stops -->
         <railway.access-distance value="150" synonymes="osm.stop-output.footway-access-distance" type="FLOAT"/>
 
@@ -870,7 +876,7 @@
         <!-- Import sidewalks -->
         <osm.sidewalks value="false" type="BOOL"/>
 
-        <!-- Default to building two sidewals on oneway streets (may affect divided roads) -->
+        <!-- Default to building two sidewalks on oneway streets (may affect divided roads) -->
         <osm.oneway-reverse-sidewalk value="false" type="BOOL"/>
 
         <!-- Import crossings -->
@@ -902,6 +908,9 @@
 
         <!-- The speed limit to be set when there is no actual speed limit in reality -->
         <osm.speedlimit-none value="39.4444" type="FLOAT"/>
+
+        <!-- Whether edges shoulds carry information on the usage of typemap defaults -->
+        <osm.annotate-defaults value="false" type="BOOL"/>
 
         <!-- The edge lengths given in the MATSim-file will be kept -->
         <matsim.keep-length value="false" type="BOOL"/>

@@ -60,24 +60,29 @@ class Reservation(object):
         ] if v != ""])
 
 
-def _readReservation(result):
-    # compound size and type
-    assert result.read("!i")[0] == 10
-    id = result.readTypedString()
-    persons = result.readTypedStringList()
-    group = result.readTypedString()
-    fromEdge = result.readTypedString()
-    toEdge = result.readTypedString()
-    departPos = result.readTypedDouble()
-    arrivalPos = result.readTypedDouble()
-    depart = result.readTypedDouble()
-    reservationTime = result.readTypedDouble()
-    state = result.readTypedInt()
-    return Reservation(id, persons, group, fromEdge, toEdge, departPos,
-                       arrivalPos, depart, reservationTime, state)
+def _readReservations(result):
+    reservations = []
+    for _ in range(result.readInt()):
+        result.read("!B")                   # Type
+        # compound size and type
+        assert result.read("!i")[0] == 10
+        id = result.readTypedString()
+        persons = result.readTypedStringList()
+        group = result.readTypedString()
+        fromEdge = result.readTypedString()
+        toEdge = result.readTypedString()
+        departPos = result.readTypedDouble()
+        arrivalPos = result.readTypedDouble()
+        depart = result.readTypedDouble()
+        reservationTime = result.readTypedDouble()
+        state = result.readTypedInt()
+        reservations.append(Reservation(id, persons, group, fromEdge, toEdge, departPos,
+                            arrivalPos, depart, reservationTime, state))
+    return tuple(reservations)
 
 
 _RETURN_VALUE_FUNC = {tc.VAR_STAGE: simulation._readStage,
+                      tc.VAR_TAXI_RESERVATIONS: _readReservations
                       }
 
 
@@ -155,6 +160,24 @@ class PersonDomain(VTypeDomain):
         """
         return self._getUniversal(tc.VAR_LANEPOSITION, personID)
 
+    def getWalkingDistance(self, personID, edgeID, pos, laneIndex=0):
+        """getWalkingDistance(string, string, double, integer) -> double
+
+        For a person in walking stage and an edge along the remaining route of
+        personID, return the distance from the current position
+        to the given edge and position along the walk.
+        Otherwise, raise a TraCIException
+        """
+        return self._getUniversal(tc.DISTANCE_REQUEST, personID, "tru", 2,
+                                  (edgeID, pos, laneIndex), tc.REQUEST_DRIVINGDIST)
+
+    def getWalkingDistance2D(self, personID, x, y):
+        """getWalkingDistance2D(string, double, double) -> integer
+
+        Return the distance to the given network position along the walk (see getWalkingDistance)
+        """
+        return self._getUniversal(tc.DISTANCE_REQUEST, personID, "tou", 2, (x, y), tc.REQUEST_DRIVINGDIST)
+
     def getWaitingTime(self, personID):
         """getWaitingTime(string) -> double
         The waiting time of a person is defined as the time (in seconds) spent with a
@@ -172,9 +195,9 @@ class PersonDomain(VTypeDomain):
         return self._getUniversal(tc.VAR_NEXT_EDGE, personID)
 
     def getEdges(self, personID, nextStageIndex=0):
-        """getEdges(string, int) -> list(string)
+        """getEdges(string, int) -> tuple(string)
 
-        Returns a list of all edges in the nth next stage.
+        Returns a tuple of all edges in the nth next stage.
         For waiting stages this is a single edge
         For walking stages this is the complete route
         For driving stages this is [origin, destination]
@@ -214,23 +237,17 @@ class PersonDomain(VTypeDomain):
         return self._getUniversal(tc.VAR_VEHICLE, personID)
 
     def getTaxiReservations(self, onlyNew=0):
-        """getTaxiReservations(int) -> list(Stage)
+        """getTaxiReservations(int) -> tuple(Reservation)
         Returns all reservations. If onlyNew is 1, each reservation is returned
         only once
         """
-        answer = self._getCmd(tc.VAR_TAXI_RESERVATIONS, "", "i", onlyNew)
-        answer.read("!B")                   # Type
-        result = []
-        for _ in range(answer.readInt()):
-            answer.read("!B")                   # Type
-            result.append(_readReservation(answer))
-        return tuple(result)
+        return self._getUniversal(tc.VAR_TAXI_RESERVATIONS, "", "i", onlyNew)
 
     def splitTaxiReservation(self, reservationID, personIDs):
         """splitTaxiReservation(string, list(string)) -> string
         Splits given list of person ids from the reservation with the given id
         and creates a new reservation for these persons. Returns the new
-        reservation id
+        reservation id.
         """
         return self._getUniversal(tc.SPLIT_TAXI_RESERVATIONS, reservationID, "l", personIDs)
 

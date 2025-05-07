@@ -180,6 +180,9 @@ By default, normal edge geometries will be exported. This can be changed with op
 
 - **--lanes**: write lane geometries
 - **--internal**: write junction-internal edges or lanes
+- **--junctions**: export junction geometries
+- **--boundary**: write edge/lane boundaries instead of center-lines
+- **--traffic-lights** write coordinates for the [colored signals](../sumo-gui.md#right_of_way)
 
 # net2geojson.py
 
@@ -238,3 +241,41 @@ python tools/net/abstractRail.py -n input_net.net.xml --stop-file input_addition
 
 !!! caution
     If option **--skip** is used the original network may be split (under a new name) and the generated abstract network will have the same edges as the split net. The input stop-file will also be adapted for the split net (under a new name) but any traffic demand (route files) have to be adapted for the split network.
+
+
+# remap_additionals.py
+
+Remap infrastructure from one network to another if the networks have similar geometry. The following differences between networks are acceptable:
+
+- changed edge ids
+- changed lane number and permissions
+- changed splits and joins of edges
+- small variations in geometry
+
+In case of changed lanes, permissions are taken into account to select a suitable replacement lane.
+
+Example call:
+```
+python tools/net/remap_additionals.py --orig-net input_net.net.xml --target-net input_net2.net.xml -a input_additional.add.xml -o out.add.xml
+```
+
+# remap_renamed.py
+
+Remap infrastructure, vehicles, routes or a selection file from one network to another if the new network has an `origId` param on every lane that reflects the edge id of the original network. A supported use case is converting the origial network with option **--numerical-ids** and then transforming other scenario file so that it can be used with the new network.
+
+Example calls:
+```
+python tools/net/remap_additionals.py -n input_net2.net.xml -r input_routes.rou.xml -o out.rou.xml
+python tools/net/remap_additionals.py -n input_net2.net.xml -a input_additionals.add.xml -o out.add.xml
+python tools/net/remap_additionals.py -n input_net2.net.xml -s input_selection.txt -o selection.txt
+```
+
+# remap_network.py
+
+Compute correspondence between two networks with somewhat similar geometry (but different splits, joins, ids etc). The output is a csv-file with an 1-to-n mapping of original edge to zero or more target edges. 
+For each target edge, the common length in m as well as the fraction of the target edge being covered by the original edge are listed. Output on the quality of the mapping is written to **--success-output**.
+
+Example call:
+```
+python tools/net/remap_network.py --orig-net net.net.xml --target-net net2.net.xml -o out.csv --success-output success.txt
+```

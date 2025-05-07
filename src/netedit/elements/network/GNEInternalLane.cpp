@@ -17,7 +17,6 @@
 ///
 // A class for visualizing Inner Lanes (used when editing traffic lights)
 /****************************************************************************/
-#include <config.h>
 
 #include <netedit/GNENet.h>
 #include <netedit/GNEViewNet.h>
@@ -60,14 +59,13 @@ const StringBijection<FXuint> GNEInternalLane::LinkStateNames(
 
 GNEInternalLane::GNEInternalLane(GNETLSEditorFrame* editor, GNEJunction* junctionParent,
                                  const std::string& id, const PositionVector& shape, int tlIndex, LinkState state) :
-    GNENetworkElement(junctionParent->getNet(), id, GLO_TLLOGIC, GNE_TAG_INTERNAL_LANE,
-                      GUIIconSubSys::getIcon(GUIIcon::LANE), {}, {}, {}, {}, {}, {}),
-                                myJunctionParent(junctionParent),
-                                myState(state),
-                                myStateTarget(myState),
-                                myEditor(editor),
-                                myTlIndex(tlIndex),
-myPopup(nullptr) {
+    GNENetworkElement(junctionParent->getNet(), id, GNE_TAG_INTERNAL_LANE),
+    myJunctionParent(junctionParent),
+    myState(state),
+    myStateTarget(myState),
+    myEditor(editor),
+    myTlIndex(tlIndex),
+    myPopup(nullptr) {
     // calculate internal lane geometry
     myInternalLaneGeometry.updateGeometry(shape);
     // update centering boundary without updating grid
@@ -78,13 +76,12 @@ myPopup(nullptr) {
 
 
 GNEInternalLane::GNEInternalLane() :
-    GNENetworkElement(nullptr, "dummyInternalLane", GLO_TLLOGIC, GNE_TAG_INTERNAL_LANE,
-                      GUIIconSubSys::getIcon(GUIIcon::LANE), {}, {}, {}, {}, {}, {}),
-myJunctionParent(nullptr),
-myState(0),
-myEditor(0),
-myTlIndex(0),
-myPopup(nullptr) {
+    GNENetworkElement(nullptr, "dummyInternalLane", GNE_TAG_INTERNAL_LANE),
+    myJunctionParent(nullptr),
+    myState(0),
+    myEditor(0),
+    myTlIndex(0),
+    myPopup(nullptr) {
 }
 
 
@@ -120,6 +117,10 @@ GNEInternalLane::checkDrawToContour() const {
 
 bool
 GNEInternalLane::checkDrawRelatedContour() const {
+    // check opened popup
+    if (myNet->getViewNet()->getPopup()) {
+        return myNet->getViewNet()->getPopup()->getGLObject() == this;
+    }
     return false;
 }
 
@@ -132,6 +133,12 @@ GNEInternalLane::checkDrawOverContour() const {
 
 bool
 GNEInternalLane::checkDrawDeleteContour() const {
+    return false;
+}
+
+
+bool
+GNEInternalLane::checkDrawDeleteContourSmall() const {
     return false;
 }
 
@@ -252,7 +259,7 @@ GNEInternalLane::getTLIndex() const {
 
 GUIGLObjectPopupMenu*
 GNEInternalLane::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
-    myPopup = new GUIGLObjectPopupMenu(app, parent, *this);
+    myPopup = new GUIGLObjectPopupMenu(app, parent, this);
     buildPopupHeader(myPopup, app);
     if ((myEditor != nullptr) && (myEditor->getViewNet()->getEditModes().isCurrentSupermodeNetwork())) {
         const std::vector<std::string> names = LinkStateNames.getStrings();

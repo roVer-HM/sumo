@@ -169,23 +169,32 @@ class Domain:
         self._connection._sendCmd(self._cmdSetID, varID, objectID, format, *values)
 
     def getIDList(self):
-        """getIDList() -> list(string)
+        """getIDList() -> tuple(string)
 
-        Returns a list of all objects in the network.
+        Returns a tuple of all objects in the network.
         """
-        return self._getUniversal(tc.TRACI_ID_LIST, "")
+        return self._getUniversal(tc.TRACI_ID_LIST)
 
     def getIDCount(self):
         """getIDCount() -> integer
 
         Returns the number of currently loaded objects.
         """
-        return self._getUniversal(tc.ID_COUNT, "")
+        return self._getUniversal(tc.ID_COUNT)
+
+    def domainID(self):
+        return self._cmdGetID
 
     def subscribe(self, objectID, varIDs=None, begin=tc.INVALID_DOUBLE_VALUE, end=tc.INVALID_DOUBLE_VALUE,
                   parameters=None):
-        """subscribe(string, list(integer), double, double, map(string->tuple)) -> None
-
+        """subscribe(string, list(integer), double, double, map) -> None
+        The parameters map argument is needed when subscribing to functions that require additional parameters:
+        The map keys must be a subset of the varIDs
+        The map values may take any of the following forms:
+        - a single integer, float or string value (for methods that require only one additional argument of such type)
+        - a tuple where
+          - the first element is a string consisting of format specifiers (see method _pack in module connection)
+          - the remaining elements are the arguments (one per character in the format specifier string)
         Subscribe to one or more object values for the given interval.
         """
         if varIDs is None:

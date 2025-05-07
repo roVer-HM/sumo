@@ -21,23 +21,21 @@
 #include <config.h>
 
 #include <netedit/frames/GNEFrame.h>
-#include <netedit/frames/GNEPathCreator.h>
-
 
 // ===========================================================================
 // class declaration
 // ===========================================================================
+
+class GNEAttributesEditor;
+class GNEAttributesEditorType;
 class GNEDataInterval;
 class GNEDataSet;
-
+class GNEPathCreator;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNEGenericDataFrame
- * The Widget for setting internal attributes of additional elements
- */
+
 class GNEGenericDataFrame : public GNEFrame {
 
 public:
@@ -241,9 +239,6 @@ public:
     /// @brief get GNEPathCreator modul
     GNEPathCreator* getPathCreator() const;
 
-    /// @bried get element type of this data frame
-    SumoXMLTag getTag() const;
-
     /// @brief show Frame
     void show();
 
@@ -272,22 +267,22 @@ protected:
     virtual bool createPath(const bool useLastRoute);
 
     /// @brief dataSet selector modul
-    DataSetSelector* myDataSetSelector;
+    DataSetSelector* myDataSetSelector = nullptr;
 
     /// @brief interval selector modul
-    IntervalSelector* myIntervalSelector;
+    IntervalSelector* myIntervalSelector = nullptr;
 
     /// @brief attribute selector modul
-    AttributeSelector* myAttributeSelector;
+    AttributeSelector* myAttributeSelector = nullptr;
 
     /// @brief parameters editor creator
-    GNEFrameAttributeModules::GenericDataAttributes* myGenericDataAttributes;
+    GNEAttributesEditor* myGenericDataAttributesEditor = nullptr;
 
     /// @brief edge path creator (used for Walks, rides and trips)
-    GNEPathCreator* myPathCreator;
+    GNEPathCreator* myPathCreator = nullptr;
 
-    /// @brief generic data tag
-    SumoXMLTag myGenericDataTag;
+    /// @brief template generic data
+    GNEGenericData* myTemplateGenericData = nullptr;
 
 private:
     /// @brief Invalidated copy constructor.

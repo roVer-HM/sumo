@@ -6,6 +6,10 @@ if (${CMAKE_VERSION} VERSION_GREATER 3.14.0)
     # pass module name to swig compiler
     cmake_policy(SET CMP0086 NEW)
 endif()
+if (${CMAKE_VERSION} VERSION_GREATER 3.21.0)
+    # use library name conventions for C#
+    cmake_policy(SET CMP0122 OLD)
+endif ()
 set(libtracistatic_STAT_SRCS
     Connection.cpp
     Connection.h
@@ -69,11 +73,11 @@ else ()
     target_link_libraries(libtracicpp PRIVATE ${libtcpip})
 endif()
 
-if(SWIG_FOUND)
+if (SWIG_FOUND)
     include(${SWIG_USE_FILE})
     set_source_files_properties(libtraci.i PROPERTIES CPLUSPLUS ON)
     file(GLOB libtraci_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/../libsumo/*.h")
-    if(ENABLE_JAVA_BINDINGS)
+    if (ENABLE_JAVA_BINDINGS)
         find_package(Java)
         find_package(JNI)
         if(JAVA_FOUND AND JNI_FOUND)
@@ -111,8 +115,8 @@ if(SWIG_FOUND)
         endif()
     endif()
 
-    if(ENABLE_CS_BINDINGS)
-        set(CMAKE_SWIG_FLAGS "") # reset from Java
+    if (ENABLE_CS_BINDINGS)
+        set(CMAKE_SWIG_FLAGS -namespace Eclipse.Sumo.Libtraci)
         set(CMAKE_SWIG_OUTDIR ${CMAKE_CURRENT_BINARY_DIR}/cs)
         set(SWIG_MODULE_libtracics_EXTRA_DEPS ${libtraci_HEADERS} ../libsumo/libsumo_typemap.i)
         if (${CMAKE_VERSION} VERSION_GREATER 3.8.0)
@@ -126,6 +130,9 @@ if(SWIG_FOUND)
         else()
             swig_link_libraries(libtracics libtracistatic ${libtcpip})
         endif()
+        ADD_CUSTOM_COMMAND(TARGET libtracics POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E tar "cf" "${CMAKE_SOURCE_DIR}/bin/libtracics-sources.zip" --format=zip "cs"
+        )
         set_property(TARGET libtracics PROPERTY FOLDER "libtraci")
         install(TARGETS libtracics DESTINATION bin LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()

@@ -22,13 +22,10 @@
 
 #include "GNEDistributionFrame.h"
 
-
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNETypeDistributionFrame
- */
+
 class GNETypeDistributionFrame : public GNEFrame {
 
 public:

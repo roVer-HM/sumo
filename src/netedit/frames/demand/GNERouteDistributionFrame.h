@@ -22,13 +22,10 @@
 
 #include "GNEDistributionFrame.h"
 
-
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNERouteDistributionFrame
- */
+
 class GNERouteDistributionFrame : public GNEFrame {
 
 public:

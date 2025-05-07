@@ -13,57 +13,30 @@
 /****************************************************************************/
 /// @file    GNEAttributesEditor.h
 /// @author  Pablo Alvarez Lopez
-/// @date    Nov 2024
+/// @date    Feb 2025
 ///
-// Table used for pack GNEAttributeRows
+// pack of all GNEAttributesEditorTypes
 /****************************************************************************/
 #pragma once
 #include <config.h>
 
-#include <vector>
-#include <utils/foxtools/MFXGroupBoxModule.h>
-
-// ===========================================================================
-// class declaration
-// ===========================================================================
-
-class GNEFrame;
-class GNEAttributeCarrier;
-class GNEAttributesEditorRow;
+# include "GNEAttributesEditorType.h"
 
 // ===========================================================================
 // class GNEAttributesEditor
 // ===========================================================================
 
-class GNEAttributesEditor : public MFXGroupBoxModule {
-    /// @brief FOX-declaration
-    FXDECLARE(GNEAttributesEditor)
-
-    /// @brief declare friend class
-    friend class GNEAttributesEditorRow;
+class GNEAttributesEditor {
 
 public:
-
-    /// @brief Options for filter attributes
-    enum EditorOptions {
-        BASIC_ATTRIBUTES    = 1 << 0,
-        EXTENDED_ATTRIBUTES = 1 << 1,
-        FLOW_ATTRIBUTES     = 1 << 2,
-        GEO_ATTRIBUTES      = 1 << 3,
-        NETEDIT_ATTRIBUTES  = 1 << 4
-    };
-
     /// @brief constructor
-    GNEAttributesEditor(GNEFrame* frameParent, const std::string attributesEditorName, const int editorOptions);
-
-    /// @brief pointer to GNEFrame parent
-    GNEFrame* getFrameParent() const;
+    GNEAttributesEditor(GNEFrame* frameParent, GNEAttributesEditorType::EditorType editorType);
 
     /// @brief edit attributes of the given AC (usually the edited template AC)
-    void showAttributesEditor(GNEAttributeCarrier* AC);
+    void showAttributesEditor(GNEAttributeCarrier* AC, const bool primaryAttributeEditor);
 
     /// @brief edit attributes of the given hash of ACs (usually the inspected ACs)
-    void showAttributesEditor(const std::unordered_set<GNEAttributeCarrier*>& ACs);
+    void showAttributesEditor(const std::unordered_set<GNEAttributeCarrier*>& ACs, const bool primaryAttributeEditor);
 
     /// @brief hide attribute editor
     void hideAttributesEditor();
@@ -71,7 +44,16 @@ public:
     /// @brief refresh attribute editor
     void refreshAttributesEditor();
 
-    /// @name Functions related with selecting parents
+    /// @brief disable attribute editor
+    void disableAttributesEditor();
+
+    /// @brief check if current edited attributes are valid
+    bool checkAttributes(const bool showWarning);
+
+    /// @brief fill sumo Base object
+    SumoXMLAttr fillSumoBaseObject(CommonXMLStructure::SumoBaseObject* baseObject) const;
+
+    /// @name Functions related with selecting parents (only affect the Netedit Attributes editor)
     /// @{
     /// @brief check if we're selecting a parent clicking over view
     bool isReparenting() const;
@@ -87,77 +69,29 @@ public:
 
     /// @}
 
-    /// @name FOX-callbacks
-    /// @{
-    /// @brief called when user press the "Mark as front element" button
-    long onCmdMarkAsFront(FXObject*, FXSelector, void*);
-
-    /// @brief called when user press the "Open element dialog" button
-    long onCmdOpenElementDialog(FXObject*, FXSelector, void*);
-
-    /// @brief called when user press the "Open extended attributes" button
-    long onCmdOpenExtendedAttributesDialog(FXObject*, FXSelector, void*);
-
-    /// @brief called when user press the help button
-    long onCmdAttributesEditorHelp(FXObject*, FXSelector, void*);
-
-    /// @}
-
 protected:
-    /// @brief fox need this
-    FOX_CONSTRUCTOR(GNEAttributesEditor)
+    /// @brief basic attributes editor
+    GNEAttributesEditorType* myBasicAttributesEditor = nullptr;
 
-    /// @name functions called from GNEAttributesEditorRow
-    /// @{
+    /// @brief extended attributes editor
+    GNEAttributesEditorType* myExtendedAttributesEditor = nullptr;
 
-    /// @brief set attribute in the current ACs (Callend from row)
-    void setAttribute(SumoXMLAttr attr, const std::string& value);
+    /// @brief flow attributes editor
+    GNEAttributesEditorType* myFlowAttributesEditor = nullptr;
 
-    /// @brief set attribute in the current ACs (Callend from row)
-    void toggleEnableAttribute(SumoXMLAttr attr, const bool value);
+    /// @brief geo attributes editor
+    GNEAttributesEditorType* myGeoAttributesEditor = nullptr;
 
-    /// @brief void enable reparent
-    void enableReparent();
+    /// @brief parameteres attributes editor
+    GNEAttributesEditorType* myParametersAttributesEditor = nullptr;
 
-    /// @brief inspect parent (Callend from row)
-    void inspectParent();
-
-    /// @brief move lane up
-    void moveLaneUp();
-
-    /// @brief move lane down
-    void moveLaneDown();
-
-    /// @}
+    /// @brief netedit attributes editor
+    GNEAttributesEditorType* myNeteditAttributesEditor = nullptr;
 
 private:
-    /// @brief pointer to GNEFrame parent
-    GNEFrame* myFrameParent;
+    /// @brief Invalidated copy constructor.
+    GNEAttributesEditor(GNEAttributesEditor*) = delete;
 
-    /// @brief button for help
-    FXButton* myHelpButton;
-
-    /// @brief pointer to front button
-    FXButton* myFrontButton = nullptr;
-
-    /// @brief pointer to open dialog button (usually additionals)
-    FXButton* myOpenDialogButton = nullptr;
-
-    /// @brief pointer to open extended attributes button
-    FXButton* myOpenExtendedAttributesButton = nullptr;
-
-    /// @brief current edited ACs
-    std::vector<GNEAttributeCarrier*> myEditedACs;
-
-    /// @brief list of attributes editor rows
-    std::vector<GNEAttributesEditorRow*> myAttributesEditorRows;
-
-    /// @brief check if we're reparent
-    SumoXMLTag myReparentTag = SUMO_TAG_NOTHING;
-
-    /// @brief variable use for packing attribute editor options
-    int myEditorOptions = 0;
-
-    /// @brief maximum number of rows used in this attributes editor
-    int myMaxNumberOfRows = 0;
+    /// @brief Invalidated assignment operator.
+    GNEAttributesEditor& operator=(GNEAttributesEditor*) = delete;
 };

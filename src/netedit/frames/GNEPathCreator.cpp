@@ -17,10 +17,10 @@
 ///
 // Frame for create paths
 /****************************************************************************/
-#include <config.h>
 
 #include <netedit/GNEApplicationWindow.h>
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
 #include <netedit/elements/additional/GNETAZ.h>
@@ -30,7 +30,6 @@
 #include <utils/gui/windows/GUIAppEnum.h>
 
 #include "GNEPathCreator.h"
-
 
 // ===========================================================================
 // FOX callback mapping
@@ -166,7 +165,7 @@ GNEPathCreator::~GNEPathCreator() {}
 
 
 void
-GNEPathCreator::showPathCreatorModule(const GNETagProperties& tagProperty, const bool consecutives) {
+GNEPathCreator::showPathCreatorModule(const GNETagProperties* tagProperty, const bool consecutives) {
     // declare flag
     bool showPathCreator = true;
     // first abort creation
@@ -192,11 +191,11 @@ GNEPathCreator::showPathCreatorModule(const GNETagProperties& tagProperty, const
         myCreationMode |= NONCONSECUTIVE_EDGES;
     }
     // continue depending of tag
-    if (tagProperty.isRoute() || tagProperty.vehicleRouteEmbedded()) {
+    if (tagProperty->isRoute() || tagProperty->vehicleRouteEmbedded()) {
         myCreationMode |= SHOW_CANDIDATE_EDGES;
         myCreationMode |= START_EDGE;
         myCreationMode |= END_EDGE;
-    } else if (tagProperty.vehicleRoute()) {
+    } else if (tagProperty->vehicleRoute()) {
         myCreationMode |= ROUTE;
         // show use last inserted route
         myUseLastRoute->show();
@@ -209,16 +208,16 @@ GNEPathCreator::showPathCreatorModule(const GNETagProperties& tagProperty, const
         myShiftLabel->hide();
         myControlLabel->hide();
         myBackSpaceLabel->hide();
-    } else if (tagProperty.vehicleEdges() || (tagProperty.getTag() == SUMO_TAG_EDGEREL)) {
+    } else if (tagProperty->vehicleEdges() || (tagProperty->getTag() == SUMO_TAG_EDGEREL)) {
         myCreationMode |= SHOW_CANDIDATE_EDGES;
         myCreationMode |= START_EDGE;
         myCreationMode |= END_EDGE;
-    } else if (tagProperty.vehicleJunctions()) {
+    } else if (tagProperty->vehicleJunctions()) {
         myCreationMode |= SHOW_CANDIDATE_JUNCTIONS;
         myCreationMode |= START_JUNCTION;
         myCreationMode |= END_JUNCTION;
         myCreationMode |= ONLY_FROMTO;
-    } else if (tagProperty.vehicleTAZs()) {
+    } else if (tagProperty->vehicleTAZs()) {
         myCreationMode |= START_TAZ;
         myCreationMode |= END_TAZ;
         myCreationMode |= ONLY_FROMTO;
@@ -600,13 +599,13 @@ GNEPathCreator::drawTemporalRoute(const GUIVisualizationSettings& s) const {
             const GNEPathCreator::Path& path = myPath.at(i);
             // draw line over
             for (int j = 0; j < (int)path.getSubPath().size(); j++) {
-                const GNELane* lane = path.getSubPath().at(j)->getLanes().back();
+                const GNELane* lane = path.getSubPath().at(j)->getChildLanes().back();
                 if (((i == 0) && (j == 0)) || (j > 0)) {
                     GLHelper::drawBoxLines(lane->getLaneShape(), lineWidth);
                 }
                 // draw connection between lanes
                 if ((j + 1) < (int)path.getSubPath().size()) {
-                    const GNELane* nextLane = path.getSubPath().at(j + 1)->getLanes().back();
+                    const GNELane* nextLane = path.getSubPath().at(j + 1)->getChildLanes().back();
                     if (lane->getLane2laneConnections().exist(nextLane)) {
                         GLHelper::drawBoxLines(lane->getLane2laneConnections().getLane2laneGeometry(nextLane).getShape(), lineWidth);
                     } else {
@@ -632,13 +631,13 @@ GNEPathCreator::drawTemporalRoute(const GUIVisualizationSettings& s) const {
             }
             // draw line over
             for (int j = 0; j < (int)path.getSubPath().size(); j++) {
-                const GNELane* lane = path.getSubPath().at(j)->getLanes().back();
+                const GNELane* lane = path.getSubPath().at(j)->getChildLanes().back();
                 if (((i == 0) && (j == 0)) || (j > 0)) {
                     GLHelper::drawBoxLines(lane->getLaneShape(), lineWidthin);
                 }
                 // draw connection between lanes
                 if ((j + 1) < (int)path.getSubPath().size()) {
-                    const GNELane* nextLane = path.getSubPath().at(j + 1)->getLanes().back();
+                    const GNELane* nextLane = path.getSubPath().at(j + 1)->getChildLanes().back();
                     if (lane->getLane2laneConnections().exist(nextLane)) {
                         GLHelper::drawBoxLines(lane->getLane2laneConnections().getLane2laneGeometry(nextLane).getShape(), lineWidthin);
                     } else {
@@ -880,7 +879,7 @@ GNEPathCreator::setSpecialCandidates(GNEEdge* originEdge) {
     myPathManager->getPathCalculator()->calculateReachability(SVC_PEDESTRIAN, originEdge);
     // change flags
     for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
-        for (const auto& lane : edge.second->getLanes()) {
+        for (const auto& lane : edge.second->getChildLanes()) {
             if (lane->getReachability() > 0) {
                 lane->getParentEdge()->resetCandidateFlags();
                 lane->getParentEdge()->setSpecialCandidate(true);
@@ -895,7 +894,7 @@ GNEPathCreator::setPossibleCandidates(GNEEdge* originEdge, const SUMOVehicleClas
     myPathManager->getPathCalculator()->calculateReachability(vClass, originEdge);
     // change flags
     for (const auto& edge : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getEdges()) {
-        for (const auto& lane : edge.second->getLanes()) {
+        for (const auto& lane : edge.second->getChildLanes()) {
             if (lane->getReachability() > 0) {
                 lane->getParentEdge()->resetCandidateFlags();
                 lane->getParentEdge()->setPossibleCandidate(true);

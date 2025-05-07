@@ -19,6 +19,7 @@
 /****************************************************************************/
 #pragma once
 #include <config.h>
+
 #include "GNEAdditional.h"
 
 // ===========================================================================
@@ -31,11 +32,8 @@ class GNERerouterIntervalDialog;
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNEClosingReroute
- * the rerouter to close the street (edge)
- */
-class GNEClosingReroute : public GNEAdditional {
+
+class GNEClosingReroute : public GNEAdditional, public Parameterised {
 
 public:
     /// @brief default constructor
@@ -154,10 +152,10 @@ public:
 
 protected:
     /// @brief closed edge
-    GNEEdge* myClosedEdge;
+    GNEEdge* myClosedEdge = nullptr;
 
     // @brief permissions of this Closing Reroute
-    SVCPermissions myPermissions;
+    SVCPermissions myPermissions = SVCAll;
 
 private:
     /// @brief set attribute after validation

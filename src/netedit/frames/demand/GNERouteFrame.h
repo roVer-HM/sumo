@@ -20,24 +20,21 @@
 #pragma once
 #include <config.h>
 
-#include <netedit/elements/demand/GNERouteHandler.h>
 #include <netedit/frames/GNEFrame.h>
-#include <netedit/frames/GNEPathLegendModule.h>
-
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
 
+class GNEAttributesEditor;
+class GNEPathLegendModule;
 class GNERoute;
+class GNEPathCreator;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNERouteFrame
- * The Widget for create route elements
- */
+
 class GNERouteFrame : public GNEFrame {
 
 public:
@@ -101,9 +98,6 @@ public:
         /// @brief current selected route mode
         RouteMode myCurrentRouteMode = RouteMode::NONCONSECUTIVE_EDGES;
 
-        /// @brief route template
-        GNERoute* myRouteTemplate = nullptr;
-
         /// @brief flag to check if VClass is Valid
         bool myValidVClass = true;
 
@@ -141,21 +135,18 @@ protected:
     bool createPath(const bool useLastRoute);
 
 private:
-    /// @brief route handler
-    GNERouteHandler myRouteHandler;
-
     /// @brief route base object
-    CommonXMLStructure::SumoBaseObject* myRouteBaseObject;
+    CommonXMLStructure::SumoBaseObject* myRouteBaseObject = nullptr;
 
     /// @brief route mode selector
-    RouteModeSelector* myRouteModeSelector;
+    RouteModeSelector* myRouteModeSelector = nullptr;
 
-    /// @brief internal route attributes
-    GNEAttributesCreator* myRouteAttributes;
+    /// @brief internal route attributes editor
+    GNEAttributesEditor* myRouteAttributesEditor = nullptr;
 
     /// @brief path creator modul
-    GNEPathCreator* myPathCreator;
+    GNEPathCreator* myPathCreator = nullptr;
 
     /// @brief path legend modul
-    GNEPathLegendModule* myPathLegend;
+    GNEPathLegendModule* myPathLegend = nullptr;
 };

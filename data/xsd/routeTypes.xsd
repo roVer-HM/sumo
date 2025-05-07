@@ -47,6 +47,8 @@
         <xsd:attribute name="decel" type="positiveFloatType"/>
         <xsd:attribute name="emergencyDecel" type="positiveFloatType"/>
         <xsd:attribute name="apparentDecel" type="positiveFloatType"/>
+        <xsd:attribute name="maxAccelProfile" type="xsd:string"/>
+        <xsd:attribute name="desAccelProfile" type="xsd:string"/>
         <xsd:attribute name="parkingBadges" type="xsd:string"/>
         <xsd:attribute name="personCapacity" type="xsd:nonNegativeInteger"/>
         <xsd:attribute name="containerCapacity" type="xsd:nonNegativeInteger"/>
@@ -67,6 +69,7 @@
         <xsd:attribute name="lcSpeedGainRight" type="nonNegativeFloatType"/>
         <xsd:attribute name="lcSpeedGainLookahead" type="nonNegativeFloatType"/>
         <xsd:attribute name="lcSpeedGainRemainTime" type="nonNegativeFloatType"/>
+        <xsd:attribute name="lcSpeedGainUrgency" type="nonNegativeFloatType"/>
         <xsd:attribute name="lcCooperativeRoundabout" type="nonNegativeFloatType"/>
         <xsd:attribute name="lcCooperativeSpeed" type="nonNegativeFloatTypeWithErrorValue"/>
         <xsd:attribute name="lcTurnAlignmentDistance" type="nonNegativeFloatType"/>
@@ -105,8 +108,8 @@
         </xsd:attribute>
         <xsd:attribute name="jmStoplineGap" type="nonNegativeFloatType"/>
         <xsd:attribute name="jmStoplineGapMinor" type="nonNegativeFloatType"/>
-        <xsd:attribute name="jmTimegapMinor" type="nonNegativeFloatType"/>
-        <xsd:attribute name="jmExtraGap" type="nonNegativeFloatType"/>
+        <xsd:attribute name="jmTimegapMinor" type="xsd:float"/>
+        <xsd:attribute name="jmExtraGap" type="xsd:float"/>
         <xsd:attribute name="jmAdvance" type="nonNegativeFloatType"/>
         <xsd:attribute name="jmStopSignWait" type="xsd:float"/>
         <xsd:attribute name="jmAllwayStopWait" type="xsd:float"/>
@@ -282,6 +285,8 @@
     <xsd:complexType name="cfEIDMType">
         <xsd:attribute name="accel" type="positiveFloatType"/>
         <xsd:attribute name="decel" type="positiveFloatType"/>
+        <xsd:attribute name="maxAccelProfile" type="xsd:string"/>
+        <xsd:attribute name="desAccelProfile" type="xsd:string"/>
         <xsd:attribute name="stepping" type="positiveFloatType"/>
         <xsd:attribute name="delta" type="floatType"/>
         <xsd:attribute name="tau" type="positiveFloatType"/>
@@ -859,6 +864,7 @@
         <xsd:attribute name="ended" type="timeTypeWithErrorValue"/>
         <xsd:attribute name="onDemand" type="boolType"/>
         <xsd:attribute name="jump" type="timeTypeWithErrorValue"/>
+        <xsd:attribute name="jumpUntil" type="timeTypeWithErrorValue"/>
         <!-- save-state backward compatibility -->
         <xsd:attribute name="actualArrival" type="timeType"/>
         <xsd:attribute name="depart" type="timeType"/>

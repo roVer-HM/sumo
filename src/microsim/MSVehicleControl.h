@@ -470,7 +470,7 @@ public:
     }
 
     /// @brief registers one collision-related teleport
-    void registerCollision(bool teleport) {
+    void countCollision(bool teleport) {
         myCollisions++;
         if (teleport) {
             myTeleportsCollision++;
@@ -534,6 +534,11 @@ public:
         myEndedVehNo += n;
     }
 
+    void discountRoutingVehicle() {
+        myLoadedVehNo--;
+        myEndedVehNo--;
+        myDiscarded--;
+    }
 
     /** @brief informes about all waiting vehicles (deletion in destructor)
      */

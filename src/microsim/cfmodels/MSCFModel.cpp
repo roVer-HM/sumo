@@ -61,7 +61,9 @@ MSCFModel::MSCFModel(const MSVehicleType* vtype) :
     myApparentDecel(vtype->getParameter().getCFParam(SUMO_ATTR_APPARENTDECEL, myDecel)),
     myCollisionMinGapFactor(vtype->getParameter().getCFParam(SUMO_ATTR_COLLISION_MINGAP_FACTOR, 1)),
     myHeadwayTime(vtype->getParameter().getCFParam(SUMO_ATTR_TAU, 1.0)),
-    myStartupDelay(TIME2STEPS(vtype->getParameter().getCFParam(SUMO_ATTR_STARTUP_DELAY, 0.0)))
+    myStartupDelay(TIME2STEPS(vtype->getParameter().getCFParam(SUMO_ATTR_STARTUP_DELAY, 0.0))),
+    myMaxAccelProfile(vtype->getParameter().getCFProfile(SUMO_ATTR_MAXACCEL_PROFILE, SUMOVTypeParameter::getDefaultMaxAccelProfile(vtype->getParameter().vehicleClass, myAccel))),
+    myDesAccelProfile(vtype->getParameter().getCFProfile(SUMO_ATTR_DESACCEL_PROFILE, SUMOVTypeParameter::getDefaultDesAccelProfile(vtype->getParameter().vehicleClass, myAccel)))
 { }
 
 
@@ -274,6 +276,26 @@ MSCFModel::applyStartupDelay(const MSVehicle* veh, const double vMin, const doub
 
 
 double
+MSCFModel::interpolateProfile(const double speed, const std::vector<std::pair<double, double> > profile) const {
+    double val;
+    // extrapolate, means using the first/last value of the array
+    if (speed < profile[0].first) {
+        val = profile[0].second;
+    } else if (speed > profile.back().first) {
+        val = profile.back().second;
+    } else { // interpolate
+        int x = 0;
+        while (speed > profile[x + 1].first) {
+            x++;
+        }
+        double diff = (profile[x + 1].second - profile[x].second) / (profile[x + 1].first - profile[x].first);
+        val = profile[x].second + diff * (speed - profile[x].first);
+    }
+    return val;
+}
+
+
+double
 MSCFModel::interactionGap(const MSVehicle* const veh, double vL) const {
     // Resolve the vsafe equation to gap. Assume predecessor has
     // speed != 0 and that vsafe will be the current speed plus acceleration,
@@ -290,7 +312,7 @@ MSCFModel::interactionGap(const MSVehicle* const veh, double vL) const {
 
 double
 MSCFModel::maxNextSpeed(double speed, const MSVehicle* const /*veh*/) const {
-    return MIN2(speed + (double) ACCEL2SPEED(getMaxAccel()), myType->getMaxSpeed());
+    return MIN2(speed + (double) ACCEL2SPEED(getCurrentAccel(speed)), myType->getMaxSpeed());
 }
 
 
@@ -883,7 +905,8 @@ MSCFModel::maximumSafeStopSpeedBallistic(double gap, double decel, double curren
     const double tau = headway == 0 ? TS : headway;
     const double v0 = MAX2(0., currentSpeed);
     // We first consider the case that a stop has to take place within time tau
-    if (v0 * tau >= 2 * g) {
+    // (the distance driven when decelerating from v0 to 0 in tau is v0 * tau / 2)
+    if (g <= v0 * tau * 0.5) {
         if (g == 0.) {
             if (v0 > 0.) {
                 // indicate to brake as hard as possible
@@ -894,13 +917,15 @@ MSCFModel::maximumSafeStopSpeedBallistic(double gap, double decel, double curren
             }
         }
         // In general we solve g = v0^2/(-2a), where the rhs is the distance
-        // covered until stop when breaking with a<0
+        // covered until stop when braking with a<0
         const double a = -v0 * v0 / (2 * g);
         return v0 + a * TS;
     }
 
     // The last case corresponds to a situation, where the vehicle may go with a positive
-    // speed v1 = v0 + tau*a after time tau.
+    // speed v1 = v0 + tau*a after time tau. (v1 is the maximum possible speed
+    // for this and unconstrained by current speed or acceleration limits)
+    //
     // The distance covered until time tau is given as
     // G1 = tau*(v0+v1)/2
     // The distance covered between time tau and the stopping moment at time tau+v1/b is
@@ -1126,5 +1151,18 @@ MSCFModel::applyHeadwayPerceptionError(const MSVehicle* const veh, double speed,
     gap = perceivedGap;
 }
 
+
+double
+MSCFModel::getCurrentAccel(const double speed) const {
+    double result = myAccel;
+    if (!myDesAccelProfile.empty()) {
+        result = MIN2(result, LinearApproxHelpers::getInterpolatedValue(myDesAccelProfile, speed));
+    }
+    if (!myMaxAccelProfile.empty()) {
+        // @todo maxAccel should interact with slope
+        result = MIN2(result, LinearApproxHelpers::getInterpolatedValue(myMaxAccelProfile, speed));
+    }
+    return result;
+}
 
 /****************************************************************************/

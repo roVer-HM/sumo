@@ -75,4 +75,5 @@ while traci.simulation.getMinExpectedNumber() > 0 or traci.simulation.getTime() 
             traci.simulation.getTime(),
             traci.person.getTaxiReservations(0)))
         dispatch()
+print("ended at", traci.simulation.getTime())
 traci.close()

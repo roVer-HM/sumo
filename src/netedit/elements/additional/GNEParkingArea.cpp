@@ -17,43 +17,31 @@
 ///
 // A lane area vehicles can park at (GNE version)
 /****************************************************************************/
+
 #include <netedit/GNENet.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/options/OptionsCont.h>
-#include <utils/gui/globjects/GLIncludes.h>
 #include <utils/vehicle/SUMORouteHandler.h>
-#include <utils/gui/div/GUIGlobalViewObjectsHandler.h>
 
 #include "GNEParkingArea.h"
-
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
 
 GNEParkingArea::GNEParkingArea(GNENet* net) :
-    GNEStoppingPlace("", net, GLO_PARKING_AREA, SUMO_TAG_PARKING_AREA, GUIIconSubSys::getIcon(GUIIcon::PARKINGAREA),
-                     nullptr, 0, 0, "", false, Parameterised::Map()),
-    myRoadSideCapacity(0),
-    myOnRoad(false),
-    myWidth(0),
-    myLength(0),
-    myAngle(0),
-    myLefthand(false) {
-    // reset default values
-    resetDefaultValues();
+    GNEStoppingPlace(net, SUMO_TAG_PARKING_AREA) {
 }
 
 
-GNEParkingArea::GNEParkingArea(const std::string& id, GNELane* lane, GNENet* net, const double startPos, const double endPos,
+GNEParkingArea::GNEParkingArea(const std::string& id, GNENet* net, const std::string& filename, GNELane* lane, const double startPos, const double endPos,
                                const std::string& departPos, const std::string& name, const std::vector<std::string>& badges,
                                const bool friendlyPosition, const int roadSideCapacity, const bool onRoad, const double width,
                                const double length, const double angle, const bool lefthand, const Parameterised::Map& parameters) :
-    GNEStoppingPlace(id, net, GLO_PARKING_AREA, SUMO_TAG_PARKING_AREA, GUIIconSubSys::getIcon(GUIIcon::PARKINGAREA),
-                     lane, startPos, endPos, name, friendlyPosition, parameters),
+    GNEStoppingPlace(id, net, filename, SUMO_TAG_PARKING_AREA, lane, startPos,
+                     endPos, name, friendlyPosition, RGBColor::INVISIBLE, parameters),
     myDepartPos(departPos),
     myRoadSideCapacity(roadSideCapacity),
     myOnRoad(onRoad),
@@ -72,48 +60,37 @@ GNEParkingArea::~GNEParkingArea() {}
 
 void
 GNEParkingArea::writeAdditional(OutputDevice& device) const {
-    device.openTag(getTagProperty().getTag());
-    device.writeAttr(SUMO_ATTR_ID, getID());
-    if (!myAdditionalName.empty()) {
-        device.writeAttr(SUMO_ATTR_NAME, StringUtils::escapeXML(myAdditionalName));
+    device.openTag(getTagProperty()->getTag());
+    // write common attributes
+    writeStoppingPlaceAttributes(device);
+    // write specific attributes
+    if (myRoadSideCapacity != myTagProperty->getDefaultIntValue(SUMO_ATTR_ROADSIDE_CAPACITY)) {
+        device.writeAttr(SUMO_ATTR_ROADSIDE_CAPACITY, myRoadSideCapacity);
     }
-    device.writeAttr(SUMO_ATTR_LANE, getParentLanes().front()->getID());
-    if (myStartPosition != INVALID_DOUBLE) {
-        device.writeAttr(SUMO_ATTR_STARTPOS, myStartPosition);
-    }
-    if (myEndPosition != INVALID_DOUBLE) {
-        device.writeAttr(SUMO_ATTR_ENDPOS, myEndPosition);
-    }
-    if (myFriendlyPosition) {
-        device.writeAttr(SUMO_ATTR_FRIENDLY_POS, "true");
-    }
-    if (getAttribute(SUMO_ATTR_ROADSIDE_CAPACITY) != myTagProperty.getDefaultValue(SUMO_ATTR_ROADSIDE_CAPACITY)) {
-        device.writeAttr(SUMO_ATTR_ROADSIDE_CAPACITY, toString(myRoadSideCapacity));
-    }
-    if (getAttribute(SUMO_ATTR_ONROAD) != myTagProperty.getDefaultValue(SUMO_ATTR_ONROAD)) {
+    if (myOnRoad != myTagProperty->getDefaultBoolValue(SUMO_ATTR_ONROAD)) {
         device.writeAttr(SUMO_ATTR_ONROAD, myOnRoad);
     }
-    if (getAttribute(SUMO_ATTR_WIDTH) != myTagProperty.getDefaultValue(SUMO_ATTR_WIDTH)) {
+    if (myWidth != myTagProperty->getDefaultDoubleValue(SUMO_ATTR_WIDTH)) {
         device.writeAttr(SUMO_ATTR_WIDTH, myWidth);
     }
-    if (getAttribute(SUMO_ATTR_LENGTH) != myTagProperty.getDefaultValue(SUMO_ATTR_LENGTH)) {
+    if (myLength != myTagProperty->getDefaultDoubleValue(SUMO_ATTR_LENGTH)) {
         device.writeAttr(SUMO_ATTR_LENGTH, myLength);
     }
-    if (getAttribute(SUMO_ATTR_ANGLE) != myTagProperty.getDefaultValue(SUMO_ATTR_ANGLE)) {
+    if (myAngle != myTagProperty->getDefaultDoubleValue(SUMO_ATTR_ANGLE)) {
         device.writeAttr(SUMO_ATTR_ANGLE, myAngle);
     }
-    if (getAttribute(SUMO_ATTR_DEPARTPOS) != myTagProperty.getDefaultValue(SUMO_ATTR_DEPARTPOS)) {
+    if (myDepartPos != myTagProperty->getDefaultStringValue(SUMO_ATTR_DEPARTPOS)) {
         device.writeAttr(SUMO_ATTR_DEPARTPOS, myDepartPos);
     }
-    if (getAttribute(SUMO_ATTR_LEFTHAND) != myTagProperty.getDefaultValue(SUMO_ATTR_LEFTHAND)) {
+    if (myLefthand != myTagProperty->getDefaultBoolValue(SUMO_ATTR_LEFTHAND)) {
         device.writeAttr(SUMO_ATTR_LEFTHAND, myLefthand);
     }
-    if (getAttribute(SUMO_ATTR_ACCEPTED_BADGES) != myTagProperty.getDefaultValue(SUMO_ATTR_ACCEPTED_BADGES)) {
+    if (getAttribute(SUMO_ATTR_ACCEPTED_BADGES) != myTagProperty->getDefaultStringValue(SUMO_ATTR_ACCEPTED_BADGES)) {
         device.writeAttr(SUMO_ATTR_ACCEPTED_BADGES, toString(myAcceptedBadges));
     }
     // write all parking spaces
     for (const auto& space : getChildAdditionals()) {
-        if (space->getTagProperty().getTag() == SUMO_TAG_PARKING_SPACE) {
+        if (space->getTagProperty()->getTag() == SUMO_TAG_PARKING_SPACE) {
             space->writeAdditional(device);
         }
     }
@@ -233,30 +210,10 @@ GNEParkingArea::drawGL(const GUIVisualizationSettings& s) const {
 std::string
 GNEParkingArea::getAttribute(SumoXMLAttr key) const {
     switch (key) {
-        case SUMO_ATTR_ID:
-            return getMicrosimID();
-        case SUMO_ATTR_LANE:
-            return getParentLanes().front()->getID();
-        case SUMO_ATTR_STARTPOS:
-            if (myStartPosition != INVALID_DOUBLE) {
-                return toString(myStartPosition);
-            } else {
-                return "";
-            }
-        case SUMO_ATTR_ENDPOS:
-            if (myEndPosition != INVALID_DOUBLE) {
-                return toString(myEndPosition);
-            } else {
-                return "";
-            }
         case SUMO_ATTR_DEPARTPOS:
             return myDepartPos;
-        case SUMO_ATTR_NAME:
-            return myAdditionalName;
         case SUMO_ATTR_ACCEPTED_BADGES:
             return joinToString(myAcceptedBadges, " ");
-        case SUMO_ATTR_FRIENDLY_POS:
-            return toString(myFriendlyPosition);
         case SUMO_ATTR_ROADSIDE_CAPACITY:
             return toString(myRoadSideCapacity);
         case SUMO_ATTR_ONROAD:
@@ -269,12 +226,8 @@ GNEParkingArea::getAttribute(SumoXMLAttr key) const {
             return toString(myAngle);
         case SUMO_ATTR_LEFTHAND:
             return toString(myLefthand);
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
-        case GNE_ATTR_SHIFTLANEINDEX:
-            return "";
         default:
-            return getCommonAttribute(key);
+            return getStoppingPlaceAttribute(this, key);
     }
 }
 
@@ -282,20 +235,6 @@ GNEParkingArea::getAttribute(SumoXMLAttr key) const {
 double
 GNEParkingArea::getAttributeDouble(SumoXMLAttr key) const {
     switch (key) {
-        case SUMO_ATTR_STARTPOS:
-            if (myStartPosition != INVALID_DOUBLE) {
-                return myStartPosition;
-            } else {
-                return 0;
-            }
-        case SUMO_ATTR_ENDPOS:
-            if (myEndPosition != INVALID_DOUBLE) {
-                return myEndPosition;
-            } else {
-                return getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength();
-            }
-        case SUMO_ATTR_CENTER:
-            return ((getAttributeDouble(SUMO_ATTR_ENDPOS) - getAttributeDouble(SUMO_ATTR_STARTPOS)) * 0.5) + getAttributeDouble(SUMO_ATTR_STARTPOS);
         case SUMO_ATTR_WIDTH:
             return myWidth;
         case SUMO_ATTR_LENGTH: {
@@ -306,7 +245,7 @@ GNEParkingArea::getAttributeDouble(SumoXMLAttr key) const {
         case SUMO_ATTR_ANGLE:
             return myAngle;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
+            return getStoppingPlaceAttributeDouble(key);
     }
 }
 
@@ -314,26 +253,18 @@ GNEParkingArea::getAttributeDouble(SumoXMLAttr key) const {
 void
 GNEParkingArea::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList) {
     switch (key) {
-        case SUMO_ATTR_ID:
-        case SUMO_ATTR_LANE:
-        case SUMO_ATTR_STARTPOS:
-        case SUMO_ATTR_ENDPOS:
         case SUMO_ATTR_DEPARTPOS:
-        case SUMO_ATTR_NAME:
         case SUMO_ATTR_ACCEPTED_BADGES:
-        case SUMO_ATTR_FRIENDLY_POS:
         case SUMO_ATTR_ROADSIDE_CAPACITY:
         case SUMO_ATTR_ONROAD:
         case SUMO_ATTR_WIDTH:
         case SUMO_ATTR_LENGTH:
         case SUMO_ATTR_ANGLE:
         case SUMO_ATTR_LEFTHAND:
-        case GNE_ATTR_PARAMETERS:
-        case GNE_ATTR_SHIFTLANEINDEX:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            setCommonAttribute(key, value, undoList);
+            setStoppingPlaceAttribute(key, value, undoList);
             break;
     }
 }
@@ -342,30 +273,6 @@ GNEParkingArea::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoL
 bool
 GNEParkingArea::isValid(SumoXMLAttr key, const std::string& value) {
     switch (key) {
-        case SUMO_ATTR_ID:
-            return isValidAdditionalID(value);
-        case SUMO_ATTR_LANE:
-            if (myNet->getAttributeCarriers()->retrieveLane(value, false) != nullptr) {
-                return true;
-            } else {
-                return false;
-            }
-        case SUMO_ATTR_STARTPOS:
-            if (value.empty()) {
-                return true;
-            } else if (canParse<double>(value)) {
-                return SUMORouteHandler::isStopPosValid(parse<double>(value), getAttributeDouble(SUMO_ATTR_ENDPOS), getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength(), POSITION_EPS, myFriendlyPosition);
-            } else {
-                return false;
-            }
-        case SUMO_ATTR_ENDPOS:
-            if (value.empty()) {
-                return true;
-            } else if (canParse<double>(value)) {
-                return SUMORouteHandler::isStopPosValid(getAttributeDouble(SUMO_ATTR_STARTPOS), parse<double>(value), getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength(), POSITION_EPS, myFriendlyPosition);
-            } else {
-                return false;
-            }
         case SUMO_ATTR_DEPARTPOS:
             if (value.empty()) {
                 return true;
@@ -384,12 +291,8 @@ GNEParkingArea::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return false;
             }
-        case SUMO_ATTR_NAME:
-            return SUMOXMLDefinitions::isValidAttribute(value);
         case SUMO_ATTR_ACCEPTED_BADGES:
-            return canParse<std::vector<std::string> >(value);
-        case SUMO_ATTR_FRIENDLY_POS:
-            return canParse<bool>(value);
+            return true;
         case SUMO_ATTR_ROADSIDE_CAPACITY:
             return canParse<int>(value) && (parse<int>(value) >= 0);
         case SUMO_ATTR_ONROAD:
@@ -406,10 +309,8 @@ GNEParkingArea::isValid(SumoXMLAttr key, const std::string& value) {
             return canParse<double>(value);
         case SUMO_ATTR_LEFTHAND:
             return canParse<bool>(value);
-        case GNE_ATTR_PARAMETERS:
-            return areParametersValid(value);
         default:
-            return isCommonValid(key, value);
+            return isStoppingPlaceValid(key, value);
     }
 }
 
@@ -438,40 +339,11 @@ GNEParkingArea::GNELotSpaceDefinition::GNELotSpaceDefinition(double x, double y,
 void
 GNEParkingArea::setAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
-        case SUMO_ATTR_ID:
-            // update microsimID
-            setAdditionalID(value);
-            break;
-        case SUMO_ATTR_LANE:
-            replaceAdditionalParentLanes(value);
-            break;
-        case SUMO_ATTR_STARTPOS:
-            if (value == "") {
-                myStartPosition = INVALID_DOUBLE;
-            } else {
-                myStartPosition = parse<double>(value);
-            }
-            updateCenteringBoundary(false);
-            break;
-        case SUMO_ATTR_ENDPOS:
-            if (value == "") {
-                myEndPosition = INVALID_DOUBLE;
-            } else {
-                myEndPosition = parse<double>(value);
-            }
-            updateCenteringBoundary(false);
-            break;
         case SUMO_ATTR_DEPARTPOS:
             myDepartPos = value;
             break;
-        case SUMO_ATTR_NAME:
-            myAdditionalName = value;
-            break;
         case SUMO_ATTR_ACCEPTED_BADGES:
             myAcceptedBadges = GNEAttributeCarrier::parse<std::vector<std::string> >(value);
-            break;
-        case SUMO_ATTR_FRIENDLY_POS:
-            myFriendlyPosition = parse<bool>(value);
             break;
         case SUMO_ATTR_ROADSIDE_CAPACITY:
             myRoadSideCapacity = parse<int>(value);
@@ -511,14 +383,8 @@ GNEParkingArea::setAttribute(SumoXMLAttr key, const std::string& value) {
                 updateGeometry();
             }
             break;
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
-            break;
-        case GNE_ATTR_SHIFTLANEINDEX:
-            shiftLaneIndex();
-            break;
         default:
-            setCommonAttribute(key, value);
+            setStoppingPlaceAttribute(this, key, value);
             break;
     }
 }

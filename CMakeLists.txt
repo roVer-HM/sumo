@@ -15,7 +15,7 @@ option(FMI "Enable generation of an FMI library for SUMO" ON)
 option(NETEDIT "Enable build of netedit" ON)
 option(ENABLE_PYTHON_BINDINGS "Build Python Bindings" ON)
 option(ENABLE_JAVA_BINDINGS "Build Java Bindings" ON)
-option(ENABLE_CS_BINDINGS "Build C# Bindings")
+option(ENABLE_CS_BINDINGS "Build C# Bindings" ON)
 option(CCACHE_SUPPORT "Enable ccache support if installed" ON)
 option(TCMALLOC "Use tcmalloc if installed" ON)
 option(VERBOSE_SUB "Let sub-commands be more verbose")
@@ -39,7 +39,7 @@ endif ()
 
 cmake_minimum_required(VERSION 3.5)
 project("${PROJECT_NAME}" CXX C)
-set(PACKAGE_VERSION "1.22.0")
+set(PACKAGE_VERSION "1.23.0")
 
 # Check if libraries have to be found, depending on SUMO_LIBRARIES
 set(SUMO_LIBRARIES "$ENV{SUMO_LIBRARIES}" CACHE PATH "Location of SUMOLibraries dependencies")
@@ -120,55 +120,6 @@ if (GNU_COMPILER OR CLANG_COMPILER)
         set(ENABLED_FEATURES "${ENABLED_FEATURES} Coverage")
     endif ()
 elseif (MSVC)
-    # disable warnings (all versions)
-    option(DISABLEWARNING_C5264 "'const' variable is not used" ON)
-    option(DISABLEWARNING_C5267 "definition of implicit operator/constructor/destructor is deprecated" ON)
-    option(DISABLEWARNING_C4355 "'this' : used in base member initializer list" ON)
-    option(DISABLEWARNING_C4266 "'function' : no override available for virtual member function from base 'type'" ON)
-    option(DISABLEWARNING_C4127 "conditional expression is constant" ON)
-    option(DISABLEWARNING_C26495 "'variable' is uninitialized. Always initialize a member variable" ON)
-    # Specific warnings from MSVC15
-    if (MSVC_VERSION LESS 2000)
-        option(DISABLEWARNING_C4619 "there is no warning number xxxx" ON)
-        option(DISABLEWARNING_C4774 "format string expected not string literal" ON)
-        option(DISABLEWARNING_C4571 "structured exceptions (SEH) are no longer caught" ON)
-    endif()
-    # 5264
-    if (DISABLEWARNING_C5264)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd5264")
-    endif (DISABLEWARNING_C5264)
-    # 5267
-    if (DISABLEWARNING_C5267)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd5267")
-    endif (DISABLEWARNING_C5267)
-    # 4355
-    if (DISABLEWARNING_C4355)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4355")
-    endif (DISABLEWARNING_C4355)
-    # 4266
-    if (DISABLEWARNING_C4266)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4266")
-    endif (DISABLEWARNING_C4266)
-    # 4127
-    if (DISABLEWARNING_C4127)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4127")
-    endif (DISABLEWARNING_C4127)
-    # 26495
-    if (DISABLEWARNING_C26495)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd26495")
-    endif (DISABLEWARNING_C26495)
-    # 4619
-    if (DISABLEWARNING_C4619)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4619")
-    endif (DISABLEWARNING_C4619)
-    # 4774
-    if (DISABLEWARNING_C4774)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4774")
-    endif (DISABLEWARNING_C4774)
-    # 4571
-    if (DISABLEWARNING_C4571)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4571")
-    endif (DISABLEWARNING_C4571)
     # enabling /WX is not possible due to warnings in external headers
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")
         # this is a workaround to disable lots of warnings for replacing /W3 with /W4 in VS 2019
@@ -655,12 +606,10 @@ if (NOT ${PYTHON_SETUPTOOLS_MISSING})
         if (NOT VERBOSE_SUB)
             set(PYTHON_BUILD_OPTS "-C--quiet")
         endif ()
-        add_custom_target(pure_wheels ALL
-                          COMMAND ${PYTHON_EXECUTABLE} ./build_config/version.py ./build_config/setup-sumolib.py ./setup.py
-                          COMMAND ${PYTHON_EXECUTABLE} -m build ${PYTHON_BUILD_OPTS} --wheel . -o ${CMAKE_CURRENT_BINARY_DIR}
-                          COMMAND ${PYTHON_EXECUTABLE} ./build_config/version.py ./build_config/setup-traci.py ./setup.py
-                          COMMAND ${PYTHON_EXECUTABLE} -m build ${PYTHON_BUILD_OPTS} --wheel . -o ${CMAKE_CURRENT_BINARY_DIR}
-                          WORKING_DIRECTORY ${TOOLS_DIR})
+        install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ./build_config/version.py ./build_config/setup-sumolib.py ./setup.py WORKING_DIRECTORY ${TOOLS_DIR} COMMAND ${PYTHON_EXECUTABLE} -m build ${PYTHON_BUILD_OPTS} --wheel . -o ${CMAKE_BINARY_DIR})"
+                COMPONENT pysumolib)
+        install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ./build_config/version.py ./build_config/setup-traci.py ./setup.py WORKING_DIRECTORY ${TOOLS_DIR} COMMAND ${PYTHON_EXECUTABLE} -m build ${PYTHON_BUILD_OPTS} --wheel . -o ${CMAKE_BINARY_DIR})"
+                COMPONENT pytraci)
         install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} -m pip install --root=\$ENV{DESTDIR}/ --prefix=${CMAKE_INSTALL_PREFIX} -f ${CMAKE_BINARY_DIR} --no-index traci)"
                 COMPONENT pytraci)
     endif ()

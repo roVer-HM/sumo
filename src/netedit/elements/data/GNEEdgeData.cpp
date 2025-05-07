@@ -19,6 +19,7 @@
 /****************************************************************************/
 
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNESegment.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
@@ -31,18 +32,19 @@
 #include "GNEEdgeData.h"
 #include "GNEDataInterval.h"
 
-
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
-// ---------------------------------------------------------------------------
-// GNEEdgeData - methods
-// ---------------------------------------------------------------------------
+GNEEdgeData::GNEEdgeData(GNENet* net) :
+    GNEGenericData(GNE_TAG_EDGEREL_SINGLE, net) {
+}
 
-GNEEdgeData::GNEEdgeData(GNEDataInterval* dataIntervalParent, GNEEdge* edgeParent, const Parameterised::Map& parameters) :
-    GNEGenericData(GNE_TAG_EDGEREL_SINGLE, GUIIconSubSys::getIcon(GUIIcon::EDGEDATA), GLO_EDGEDATA, dataIntervalParent, parameters,
-{}, {edgeParent}, {}, {}, {}, {}) {
+
+GNEEdgeData::GNEEdgeData(GNEDataInterval* dataIntervalParent, GNEEdge* edge, const Parameterised::Map& parameters) :
+    GNEGenericData(GNE_TAG_EDGEREL_SINGLE, dataIntervalParent, parameters) {
+    // set parents
+    setParent<GNEEdge*>(edge);
 }
 
 
@@ -65,10 +67,10 @@ GNEEdgeData::setColor(const GUIVisualizationSettings& s) const {
         const std::string filteredAttribute = myNet->getViewNet()->getViewParent()->getEdgeDataFrame()->getAttributeSelector()->getFilteredAttribute();
         // continue if there is a selected data interval and filtered attribute
         if (dataInterval && (filteredAttribute.size() > 0)) {
-            if (dataInterval->getSpecificAttributeColors().at(myTagProperty.getTag()).exist(filteredAttribute)) {
+            if (dataInterval->getSpecificAttributeColors().at(myTagProperty->getTag()).exist(filteredAttribute)) {
                 // obtain minimum and maximum value
-                const double minValue = dataInterval->getSpecificAttributeColors().at(myTagProperty.getTag()).getMinValue(filteredAttribute);
-                const double maxValue = dataInterval->getSpecificAttributeColors().at(myTagProperty.getTag()).getMaxValue(filteredAttribute);
+                const double minValue = dataInterval->getSpecificAttributeColors().at(myTagProperty->getTag()).getMinValue(filteredAttribute);
+                const double maxValue = dataInterval->getSpecificAttributeColors().at(myTagProperty->getTag()).getMaxValue(filteredAttribute);
                 // get value
                 const double value = parse<double>(getParameter(filteredAttribute, "0"));
                 // return color
@@ -204,7 +206,7 @@ GNEEdgeData::drawLanePartialGL(const GUIVisualizationSettings& s, const GNESegme
         // draw geometry only if we'rent in drawForObjectUnderCursor mode
         if (!s.drawForViewObjectsHandler) {
             // draw over all edge's lanes
-            for (const auto& laneEdge : segment->getLane()->getParentEdge()->getLanes()) {
+            for (const auto& laneEdge : segment->getLane()->getParentEdge()->getChildLanes()) {
                 // Add a draw matrix
                 GLHelper::pushMatrix();
                 // Start with the drawing of the area translating matrix to origin
@@ -222,7 +224,7 @@ GNEEdgeData::drawLanePartialGL(const GUIVisualizationSettings& s, const GNESegme
                 // draw lock icon
                 GNEViewNetHelper::LockIcon::drawLockIcon(d, this, getType(), getPositionInView(), 1);
                 // draw filtered attribute
-                if (getParentEdges().front()->getLanes().front() == laneEdge) {
+                if (getParentEdges().front()->getChildLanes().front() == laneEdge) {
                     drawFilteredAttribute(s, laneEdge->getLaneShape(),
                                           myNet->getViewNet()->getViewParent()->getEdgeDataFrame()->getAttributeSelector()->getFilteredAttribute(),
                                           myNet->getViewNet()->getViewParent()->getEdgeDataFrame()->getIntervalSelector()->getDataInterval());
@@ -274,10 +276,8 @@ GNEEdgeData::getAttribute(SumoXMLAttr key) const {
             return myDataIntervalParent->getAttribute(SUMO_ATTR_BEGIN);
         case SUMO_ATTR_END:
             return myDataIntervalParent->getAttribute(SUMO_ATTR_END);
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -293,25 +293,13 @@ GNEEdgeData::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList
     if (value == getAttribute(key)) {
         return; //avoid needless changes, later logic relies on the fact that attributes have changed
     }
-    switch (key) {
-        case GNE_ATTR_PARAMETERS:
-            GNEChange_Attribute::changeAttribute(this, key, value, undoList);
-            break;
-        default:
-            setCommonAttribute(key, value, undoList);
-            break;
-    }
+    setCommonAttribute(key, value, undoList);
 }
 
 
 bool
 GNEEdgeData::isValid(SumoXMLAttr key, const std::string& value) {
-    switch (key) {
-        case GNE_ATTR_PARAMETERS:
-            return Parameterised::areAttributesValid(value, true);
-        default:
-            return isCommonValid(key, value);
-    }
+    return isCommonValid(key, value);
 }
 
 
@@ -339,16 +327,12 @@ GNEEdgeData::getHierarchyName() const {
 
 void
 GNEEdgeData::setAttribute(SumoXMLAttr key, const std::string& value) {
-    switch (key) {
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
-            // update attribute colors
-            myDataIntervalParent->getDataSetParent()->updateAttributeColors();
-            break;
-        default:
-            setCommonAttribute(key, value);
-            break;
+    setCommonAttribute(this, key, value);
+    if (!isTemplate()) {
+        myDataIntervalParent->getDataSetParent()->updateAttributeColors();
     }
+    // mark interval toolbar for update
+    myNet->getViewNet()->getIntervalBar().markForUpdate();
 }
 
 /****************************************************************************/

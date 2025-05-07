@@ -17,33 +17,29 @@
 ///
 // The Widget for modifying traffic lights
 /****************************************************************************/
-#include <config.h>
 
 #include <netbuild/NBLoadedSUMOTLDef.h>
 #include <netbuild/NBOwnTLDef.h>
-#include <netedit/GNENet.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/GNEViewParent.h>
 #include <netedit/GNEApplicationWindow.h>
+#include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
+#include <netedit/GNEUndoList.h>
+#include <netedit/GNEViewParent.h>
 #include <netedit/changes/GNEChange_TLS.h>
 #include <netedit/dialogs/GNESingleParametersDialog.h>
-#include <netedit/elements/network/GNEInternalLane.h>
-#include <netedit/elements/network/GNEJunction.h>
 #include <netedit/elements/network/GNEConnection.h>
 #include <netedit/elements/network/GNECrossing.h>
+#include <netedit/elements/network/GNEInternalLane.h>
 #include <netedit/frames/GNEOverlappedInspection.h>
 #include <netedit/frames/GNETLSTable.h>
 #include <netimport/NIXMLTrafficLightsHandler.h>
 #include <netwrite/NWWriter_SUMO.h>
-#include <utils/foxtools/MFXMenuButtonTooltip.h>
+#include <utils/foxtools/MFXTextFieldTooltip.h>
+#include <utils/foxtools/MFXToggleButtonTooltip.h>
 #include <utils/gui/div/GUIDesigns.h>
-#include <utils/gui/windows/GUIAppEnum.h>
-#include <utils/options/OptionsCont.h>
 #include <utils/xml/XMLSubSys.h>
 
 #include "GNETLSEditorFrame.h"
-
 
 // ===========================================================================
 // FOX callback mapping
@@ -174,17 +170,22 @@ GNETLSEditorFrame::editTLS(GNEViewNetHelper::ViewObjectsSelector& viewObjects, c
             // show objects under cursor
             myOverlappedInspection->showOverlappedInspection(viewObjects, clickedPosition, shiftKeyPressed);
             // hide if we inspect only one junction
-            if (myOverlappedInspection->getNumberOfOverlappedACs() == 1) {
-                myOverlappedInspection->clearOverlappedInspection();
+            if (myOverlappedInspection->getNumberOfOverlappedACs()) {
+                if (myOverlappedInspection->getNumberOfOverlappedACs() == 1) {
+                    myOverlappedInspection->hiderOverlappedInspection();
+                }
+                for (const auto &junction : viewObjects.getJunctions()) {
+                    if (junction == myOverlappedInspection->getCurrentAC()) {
+                        editJunction(junction);
+                    }
+                }
             }
-            editJunction(viewObjects.getJunctionFront());
         }
     } else if (viewObjects.getAdditionalFront() && myTLSAttributes->isSetDetectorsToggleButtonEnabled() &&
-               (viewObjects.getAdditionalFront()->getTagProperty().getTag() == SUMO_TAG_INDUCTION_LOOP)) {
+               (viewObjects.getAdditionalFront()->getTagProperty()->getTag() == SUMO_TAG_INDUCTION_LOOP)) {
         myTLSAttributes->toggleE1DetectorSelection(viewObjects.getAdditionalFront());
-    } else {
-        myViewNet->setStatusBarText(TL("Click over a junction to edit a TLS"));
     }
+    myViewNet->update();
 }
 
 
@@ -385,7 +386,7 @@ GNETLSEditorFrame::buildInternalLanes(const NBTrafficLightDefinition* tlDef) {
                     backward.move2side(crossing->width / 4);
                     GNEInternalLane* internalLaneReverse = new GNEInternalLane(this, myTLSJunction->getCurrentJunction(), crossing->id + "_r", backward, crossing->tlLinkIndex2);
                     // add into atribute carriers
-                    myViewNet->getNet()->getAttributeCarriers()->insertInternalLane(internalLane);
+                    myViewNet->getNet()->getAttributeCarriers()->insertInternalLane(internalLaneReverse);
                     myInternalLanes[crossing->tlLinkIndex2].push_back(internalLaneReverse);
                 } else {
                     // draw only one lane for both directions
@@ -446,7 +447,7 @@ GNETLSEditorFrame::handleMultiChange(GNELane* lane, FXObject* obj, FXSelector se
         fromIDs.insert(lane->getMicrosimID());
         // if neither the lane nor its edge are selected, apply changes to the whole edge
         if (!lane->getParentEdge()->isAttributeCarrierSelected() && !lane->isAttributeCarrierSelected()) {
-            for (auto it_lane : lane->getParentEdge()->getLanes()) {
+            for (auto it_lane : lane->getParentEdge()->getChildLanes()) {
                 fromIDs.insert(it_lane->getMicrosimID());
             }
         } else {
@@ -454,7 +455,7 @@ GNETLSEditorFrame::handleMultiChange(GNELane* lane, FXObject* obj, FXSelector se
             if (lane->getParentEdge()->isAttributeCarrierSelected()) {
                 const auto selectedEdge = myViewNet->getNet()->getAttributeCarriers()->getSelectedEdges();
                 for (const auto& edge : selectedEdge) {
-                    for (auto it_lane : edge->getLanes()) {
+                    for (auto it_lane : edge->getChildLanes()) {
                         fromIDs.insert(it_lane->getMicrosimID());
                     }
                 }
@@ -2920,7 +2921,7 @@ GNETLSEditorFrame::TLSFile::onCmdLoadTLSProgram(FXObject*, FXSelector, void*) {
     FXFileDialog opendialog(getCollapsableFrame(), "Load TLS Program");
     opendialog.setIcon(GUIIconSubSys::getIcon(GUIIcon::MODETLS));
     opendialog.setSelectMode(SELECTFILE_EXISTING);
-    opendialog.setPatternList("XML files (*.xml,*.xml.gz)\nAll files (*)");
+    opendialog.setPatternList(SUMOXMLDefinitions::XMLFileExtensions.getMultilineString().c_str());
     if (gCurrentFolder.length() != 0) {
         opendialog.setDirectory(gCurrentFolder);
     }
@@ -2980,10 +2981,9 @@ GNETLSEditorFrame::TLSFile::onCmdLoadTLSProgram(FXObject*, FXSelector, void*) {
 
 long
 GNETLSEditorFrame::TLSFile::onCmdSaveTLSProgram(FXObject*, FXSelector, void*) {
-    FXString file = MFXUtils::getFilename2Write(this,
-                    TL("Save TLS Program as"), ".xml",
-                    GUIIconSubSys::getIcon(GUIIcon::MODETLS),
-                    gCurrentFolder);
+    FXString file = MFXUtils::getFilename2Write(this, TL("Save TLS Program as"),
+                    SUMOXMLDefinitions::XMLFileExtensions.getMultilineString().c_str(),
+                    GUIIconSubSys::getIcon(GUIIcon::MODETLS), gCurrentFolder);
     // check file
     if (file != "") {
         // add xml extension

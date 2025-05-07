@@ -21,6 +21,7 @@
 // structures than to write everything from scratch.
 /****************************************************************************/
 
+#include <netedit/GNETagProperties.h>
 #include <netedit/dialogs/GNEDialogACChooser.h>
 #include <netedit/elements/network/GNEWalkingArea.h>
 #include <netedit/frames/common/GNEDeleteFrame.h>
@@ -56,11 +57,11 @@
 #include <utils/xml/NamespaceIDs.h>
 
 #include "GNEApplicationWindow.h"
-#include "GNEViewNet.h"
+#include "GNETagPropertiesDatabase.h"
 #include "GNENet.h"
-#include "GNEViewParent.h"
 #include "GNEUndoList.h"
-
+#include "GNEViewNet.h"
+#include "GNEViewParent.h"
 
 // ===========================================================================
 // FOX callback mapping
@@ -473,13 +474,7 @@ GNEViewParent::onCmdMakeSnapshot(FXObject*, FXSelector, void*) {
     FXFileDialog opendialog(this, TL("Save Snapshot"));
     opendialog.setIcon(GUIIconSubSys::getIcon(GUIIcon::CAMERA));
     opendialog.setSelectMode(SELECTFILE_ANY);
-    opendialog.setPatternList("All Image Files (*.gif, *.bmp, *.xpm, *.pcx, *.ico, *.rgb, *.xbm, *.tga, *.png, *.jpg, *.jpeg, *.tif, *.tiff, *.ps, *.eps, *.pdf, *.svg, *.tex, *.pgf)\n"
-                              "GIF Image (*.gif)\nBMP Image (*.bmp)\nXPM Image (*.xpm)\nPCX Image (*.pcx)\nICO Image (*.ico)\n"
-                              "RGB Image (*.rgb)\nXBM Image (*.xbm)\nTARGA Image (*.tga)\nPNG Image  (*.png)\n"
-                              "JPEG Image (*.jpg, *.jpeg)\nTIFF Image (*.tif, *.tiff)\n"
-                              "Postscript (*.ps)\nEncapsulated Postscript (*.eps)\nPortable Document Format (*.pdf)\n"
-                              "Scalable Vector Graphics (*.svg)\nLATEX text strings (*.tex)\nPortable LaTeX Graphics (*.pgf)\n"
-                              "All Files (*)");
+    opendialog.setPatternList(SUMOXMLDefinitions::ImageFileExtensions.getMultilineString().c_str());
     if (gCurrentFolder.length() != 0) {
         opendialog.setDirectory(gCurrentFolder);
     }
@@ -605,9 +600,9 @@ GNEViewParent::onCmdLocate(FXObject*, FXSelector sel, void*) {
                 chooserLoc = &myACChoosers.ACChooserAdditional;
                 locateTitle = TL("Additional Chooser");
                 for (const auto& additionalTag : viewNet->getNet()->getAttributeCarriers()->getAdditionals()) {
+                    const auto tagProperty = viewNet->getNet()->getTagPropertiesDatabase()->getTagProperty(additionalTag.first, true);
                     // avoid shapes and TAZs
-                    if (!GNEAttributeCarrier::getTagProperty(additionalTag.first).isShapeElement() &&
-                            !GNEAttributeCarrier::getTagProperty(additionalTag.first).isTAZElement()) {
+                    if (!tagProperty->isShapeElement() && !tagProperty->isTAZElement()) {
                         for (const auto& additional : additionalTag.second) {
                             ACsToLocate.push_back(additional.second);
                         }

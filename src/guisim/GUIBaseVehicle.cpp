@@ -103,8 +103,8 @@ FXIMPLEMENT(GUIBaseVehicle::GUIBaseVehiclePopupMenu, GUIGLObjectPopupMenu, GUIBa
  * GUIBaseVehicle::GUIBaseVehiclePopupMenu - methods
  * ----------------------------------------------------------------------- */
 GUIBaseVehicle::GUIBaseVehiclePopupMenu::GUIBaseVehiclePopupMenu(
-    GUIMainWindow& app, GUISUMOAbstractView& parent, GUIGlObject& o)
-    : GUIGLObjectPopupMenu(app, parent, o) {
+    GUIMainWindow& app, GUISUMOAbstractView& parent, GUIGlObject* o) :
+    GUIGLObjectPopupMenu(app, parent, o) {
 }
 
 
@@ -341,9 +341,8 @@ GUIBaseVehicle::~GUIBaseVehicle() {
 
 
 GUIGLObjectPopupMenu*
-GUIBaseVehicle::getPopUpMenu(GUIMainWindow& app,
-                             GUISUMOAbstractView& parent) {
-    GUIGLObjectPopupMenu* ret = new GUIBaseVehiclePopupMenu(app, parent, *this);
+GUIBaseVehicle::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
+    GUIGLObjectPopupMenu* ret = new GUIBaseVehiclePopupMenu(app, parent, this);
     buildPopupHeader(ret, app);
     buildCenterPopupEntry(ret);
     buildNameCopyPopupEntry(ret);
@@ -603,14 +602,18 @@ GUIBaseVehicle::drawOnPos(const GUIVisualizationSettings& s, const Position& pos
         glTranslated(0, 0.7 * s.vehicleName.scaledSize(s.scale), 0);
         glRotated(s.angle, 0, 0, 1);
         const double value = getColorValue(s, s.vehicleColorer.getActive());
-        GLHelper::drawTextSettings(s.vehicleValue, toString(value), Position(0, 0), s.scale, s.angle);
+        if (value != s.MISSING_DATA) {
+            GLHelper::drawTextSettings(s.vehicleValue, toString(value), Position(0, 0), s.scale, s.angle);
+        }
     }
     if (s.vehicleScaleValue.show(this)) {
         glRotated(-s.angle, 0, 0, 1);
         glTranslated(0, 0.7 * s.vehicleName.scaledSize(s.scale), 0);
         glRotated(s.angle, 0, 0, 1);
         const double value = getScaleValue(s, s.vehicleScaler.getActive());
-        GLHelper::drawTextSettings(s.vehicleScaleValue, toString(value), Position(0, 0), s.scale, s.angle);
+        if (value != s.MISSING_DATA) {
+            GLHelper::drawTextSettings(s.vehicleScaleValue, toString(value), Position(0, 0), s.scale, s.angle);
+        }
     }
     if (s.vehicleText.show(this)) {
         std::string error;
@@ -1141,7 +1144,7 @@ bool
 GUIBaseVehicle::drawAction_drawVehicleAsPolyWithCarriagges(const GUIVisualizationSettings& s, double scaledLength, bool asImage) const {
     if (getVType().getParameter().carriageLength > 0 &&
             (!myVehicle.isParking() || myVehicle.getNextStop().parkingarea == nullptr || myVehicle.getNextStop().parkingarea->parkOnRoad())) {
-        drawAction_drawCarriageClass(s, asImage);
+        drawAction_drawCarriageClass(s, scaledLength, asImage);
         return true;
     } else {
         if (asImage && GUIBaseVehicleHelper::drawAction_drawVehicleAsImage(

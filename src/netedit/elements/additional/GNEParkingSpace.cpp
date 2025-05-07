@@ -17,7 +17,10 @@
 ///
 // A lane area vehicles can halt at (GNE version)
 /****************************************************************************/
+#include <config.h>
+
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/changes/GNEChange_Attribute.h>
@@ -27,31 +30,28 @@
 
 #include "GNEParkingSpace.h"
 
-
 // ===========================================================================
 // method definitions
 // ===========================================================================
 
 GNEParkingSpace::GNEParkingSpace(GNENet* net) :
-    GNEAdditional("", net, GLO_PARKING_SPACE, SUMO_TAG_PARKING_SPACE, GUIIconSubSys::getIcon(GUIIcon::PARKINGSPACE), "",
-{}, {}, {}, {}, {}, {}),
-mySlope(0) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional("", net, "", SUMO_TAG_PARKING_SPACE, ""),
+    mySlope(0) {
 }
 
 
-GNEParkingSpace::GNEParkingSpace(GNENet* net, GNEAdditional* parkingAreaParent, const Position& pos,
+GNEParkingSpace::GNEParkingSpace(GNEAdditional* parkingAreaParent, const Position& pos,
                                  const std::string& width, const std::string& length, const std::string& angle, double slope,
                                  const std::string& name, const Parameterised::Map& parameters) :
-    GNEAdditional(net, GLO_PARKING_SPACE, SUMO_TAG_PARKING_SPACE, GUIIconSubSys::getIcon(GUIIcon::PARKINGSPACE), name,
-{}, {}, {}, {parkingAreaParent}, {}, {}),
-Parameterised(parameters),
-myPosition(pos),
-myWidth(width),
-myLength(length),
-myAngle(angle),
-mySlope(slope) {
+    GNEAdditional(parkingAreaParent, SUMO_TAG_PARKING_SPACE, name),
+    Parameterised(parameters),
+    myPosition(pos),
+    myWidth(width),
+    myLength(length),
+    myAngle(angle),
+    mySlope(slope) {
+    // set parents
+    setParent<GNEAdditional*>(parkingAreaParent);
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -91,7 +91,7 @@ GNEParkingSpace::getMoveOperation() {
 
 void
 GNEParkingSpace::writeAdditional(OutputDevice& device) const {
-    device.openTag(getTagProperty().getTag());
+    device.openTag(getTagProperty()->getTag());
     if (!myAdditionalName.empty()) {
         device.writeAttr(SUMO_ATTR_NAME, StringUtils::escapeXML(myAdditionalName));
     }
@@ -109,7 +109,7 @@ GNEParkingSpace::writeAdditional(OutputDevice& device) const {
     if (myAngle.size() > 0) {
         device.writeAttr(SUMO_ATTR_ANGLE, myAngle);
     }
-    if (getAttribute(SUMO_ATTR_SLOPE) != myTagProperty.getDefaultValue(SUMO_ATTR_SLOPE)) {
+    if (mySlope != myTagProperty->getDefaultDoubleValue(SUMO_ATTR_SLOPE)) {
         device.writeAttr(SUMO_ATTR_SLOPE, mySlope);
     }
     // write parameters (Always after children to avoid problems with additionals.xsd)
@@ -289,10 +289,8 @@ GNEParkingSpace::getAttribute(SumoXMLAttr key) const {
             } else {
                 return getParentAdditionals().at(0)->getID();
             }
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -331,7 +329,6 @@ GNEParkingSpace::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndo
         case SUMO_ATTR_ANGLE:
         case SUMO_ATTR_SLOPE:
         case GNE_ATTR_PARENT:
-        case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
@@ -358,8 +355,6 @@ GNEParkingSpace::isValid(SumoXMLAttr key, const std::string& value) {
             return canParse<double>(value);
         case GNE_ATTR_PARENT:
             return (myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_PARKING_AREA, value, false) != nullptr);
-        case GNE_ATTR_PARAMETERS:
-            return areParametersValid(value);
         default:
             return isCommonValid(key, value);
     }
@@ -483,11 +478,8 @@ GNEParkingSpace::setAttribute(SumoXMLAttr key, const std::string& value) {
         case GNE_ATTR_PARENT:
             replaceAdditionalParent(SUMO_TAG_PARKING_AREA, value, 0);
             break;
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
-            break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
 }

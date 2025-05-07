@@ -1,4 +1,4 @@
-Eclipse SUMO sumo Version v1_14_1+16863-ce7ff89bb23
+Eclipse SUMO sumo Version v1_22_0+1676-989a5715aeb
  Copyright (C) 2001-2025 German Aerospace Center (DLR) and others; https://sumo.dlr.de
 A microscopic, multi-modal traffic simulation.
 
@@ -321,6 +321,9 @@ Processing Options:
                                         mode by default
   --railsignal.max-block-length FLOAT  Do not build blocks longer than FLOAT
                                         and issue a warning instead
+  --railsignal.default-classes STR[]   List vehicle classes that uses
+                                        block-based insertion checks even when
+                                        the network has no rail signals for them
   --time-to-impatience TIME            Specify how long a vehicle may wait
                                         until impatience grows from 0 to 1,
                                         defaults to 300, non-positive values
@@ -473,6 +476,9 @@ Routing Options:
                                         and destination will share a taxi by
                                         default
   --persontrip.taxi.waiting-time TIME  Estimated time for taxi pickup
+  --persontrip.ride-public-line        Only use the intended public transport
+                                        line rather than any alternative line
+                                        that stops at the destination
   --railway.max-train-length FLOAT     Use FLOAT as a maximum train length when
                                         initializing the railway router
   --replay-rerouting                   Replay exact rerouting sequence from
@@ -712,6 +718,8 @@ SSM Device Options:
                                         for each timestep
   --device.ssm.write-lane-positions    Whether to write lanes and their
                                         positions for each timestep
+  --device.ssm.write-na                Whether to write conflict outputs with
+                                        no data as NA values or skip it
   --device.ssm.exclude-conflict-types STR  Which conflicts will be excluded
                                         from the log according to the conflict
                                         type they have been classified
@@ -865,7 +873,7 @@ Taxi Device Options:
   --device.taxi.dispatch-period TIME   The period between successive calls to
                                         the dispatcher
   --device.taxi.idle-algorithm STR     The behavior of idle taxis
-                                        [stop|randomCircling]
+                                        [stop|randomCircling|taxistand]
   --device.taxi.idle-algorithm.output FILE  Write information from the idling
                                         algorithm to FILE
 

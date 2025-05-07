@@ -17,8 +17,10 @@
 ///
 //
 /****************************************************************************/
+#include <config.h>
 
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
@@ -31,23 +33,18 @@
 #include "GNEEntryExitDetector.h"
 #include "GNEAdditionalHandler.h"
 
-
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
 GNEEntryExitDetector::GNEEntryExitDetector(SumoXMLTag entryExitTag, GNENet* net) :
-    GNEDetector("", net, GLO_DET_ENTRY, entryExitTag, GUIIconSubSys::getIcon(GUIIcon::E3ENTRY), 0, 0, {}, "", {}, {}, "", "", false, Parameterised::Map()) {
-    // reset default values
-    resetDefaultValues();
+    GNEDetector(net, entryExitTag) {
 }
 
 
-GNEEntryExitDetector::GNEEntryExitDetector(SumoXMLTag entryExitTag, GNENet* net, GNEAdditional* parent, GNELane* lane, const double pos,
+GNEEntryExitDetector::GNEEntryExitDetector(SumoXMLTag entryExitTag, GNEAdditional* parent, GNELane* lane, const double pos,
         const bool friendlyPos, const Parameterised::Map& parameters) :
-    GNEDetector(parent, net, GLO_DET_ENTRY, entryExitTag, GUIIconSubSys::getIcon(GUIIcon::E3ENTRY), pos, 0, {
-    lane
-}, "", "", friendlyPos, parameters) {
+    GNEDetector(parent, entryExitTag, pos, 0, lane, "", "", friendlyPos, parameters) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -58,7 +55,7 @@ GNEEntryExitDetector::~GNEEntryExitDetector() {}
 
 void
 GNEEntryExitDetector::writeAdditional(OutputDevice& device) const {
-    device.openTag(getTagProperty().getTag());
+    device.openTag(getTagProperty()->getTag());
     device.writeAttr(SUMO_ATTR_LANE, getParentLanes().front()->getID());
     device.writeAttr(SUMO_ATTR_POSITION, myPositionOverLane);
     // write common detector parameters
@@ -144,9 +141,9 @@ GNEEntryExitDetector::drawGL(const GUIVisualizationSettings& s) const {
             RGBColor color;
             if (drawUsingSelectColor()) {
                 color = s.colorSettings.selectedAdditionalColor;
-            } else if (myTagProperty.getTag() == SUMO_TAG_DET_ENTRY) {
+            } else if (myTagProperty->getTag() == SUMO_TAG_DET_ENTRY) {
                 color = s.detectorSettings.E3EntryColor;
-            } else if (myTagProperty.getTag() == SUMO_TAG_DET_EXIT) {
+            } else if (myTagProperty->getTag() == SUMO_TAG_DET_EXIT) {
                 color = s.detectorSettings.E3ExitColor;
             }
             // draw parts
@@ -293,9 +290,9 @@ GNEEntryExitDetector::drawEntryLogo(const GUIVisualizationSettings::Detail d,
         glRotated(90, 0, 0, 1);
         // draw Entry or Exit text if isn't being drawn for selecting
         if (d <= GUIVisualizationSettings::Detail::Text) {
-            if (myTagProperty.getTag() == SUMO_TAG_DET_ENTRY) {
+            if (myTagProperty->getTag() == SUMO_TAG_DET_ENTRY) {
                 GLHelper::drawText("Entry", Position(), .1, 1, color, 180);
-            } else if (myTagProperty.getTag() == SUMO_TAG_DET_EXIT) {
+            } else if (myTagProperty->getTag() == SUMO_TAG_DET_EXIT) {
                 GLHelper::drawText("Exit", Position(), .1, 1, color, 180);
             }
         } else {

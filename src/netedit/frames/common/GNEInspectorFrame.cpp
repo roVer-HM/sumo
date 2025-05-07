@@ -19,17 +19,19 @@
 // The Widget for modifying network-element attributes (i.e. lane speed)
 /****************************************************************************/
 
-#include <netedit/GNENet.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/GNEViewParent.h>
 #include <netedit/GNEApplicationWindow.h>
+#include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
+#include <netedit/GNEUndoList.h>
+#include <netedit/GNEViewParent.h>
 #include <netedit/elements/network/GNEEdgeTemplate.h>
+#include <netedit/frames/GNEAttributesEditor.h>
+#include <netedit/frames/GNEElementTree.h>
+#include <netedit/frames/GNEOverlappedInspection.h>
 #include <netedit/frames/network/GNECreateEdgeFrame.h>
 #include <utils/gui/div/GUIDesigns.h>
 
 #include "GNEInspectorFrame.h"
-
 
 // ===========================================================================
 // FOX callback mapping
@@ -80,7 +82,7 @@ GNEInspectorFrame::TemplateEditor::showTemplateEditor() {
     // show template editor only if we're editing an edge in Network mode AND we have at least one inspected edge
     if (myInspectorFrameParent->myViewNet->getEditModes().isCurrentSupermodeNetwork()) {
         for (const auto& AC : myInspectorFrameParent->getViewNet()->getInspectedElements().getACs()) {
-            if (AC->getTagProperty().getTag() == SUMO_TAG_EDGE) {
+            if (AC->getTagProperty()->getTag() == SUMO_TAG_EDGE) {
                 // update buttons and show module
                 updateButtons();
                 show();
@@ -161,7 +163,7 @@ long
 GNEInspectorFrame::TemplateEditor::onCmdSetTemplate(FXObject*, FXSelector, void*) {
     // apply to all selected edges
     for (const auto& AC : myInspectorFrameParent->myViewNet->getInspectedElements().getACs()) {
-        if (AC->getTagProperty().getTag() == SUMO_TAG_EDGE) {
+        if (AC->getTagProperty()->getTag() == SUMO_TAG_EDGE) {
             // set template
             setEdgeTemplate(myInspectorFrameParent->myViewNet->getNet()->getAttributeCarriers()->retrieveEdge(AC->getID()));
             // update buttons
@@ -209,7 +211,7 @@ void
 GNEInspectorFrame::TemplateEditor::updateButtons() {
     const auto& inspectedElements = myInspectorFrameParent->getViewNet()->getInspectedElements();
     // only show set template button if we have exactly one inspected edge
-    if (inspectedElements.isInspectingSingleElement() && (inspectedElements.getFirstAC()->getTagProperty().getTag() == SUMO_TAG_EDGE)) {
+    if (inspectedElements.isInspectingSingleElement() && (inspectedElements.getFirstAC()->getTagProperty()->getTag() == SUMO_TAG_EDGE)) {
         mySetTemplateButton->setText((TLF("Set edge '%' as Template", inspectedElements.getFirstAC()->getID())).c_str());
         mySetTemplateButton->show();
     } else {
@@ -252,19 +254,7 @@ GNEInspectorFrame::GNEInspectorFrame(GNEViewParent* viewParent, GNEViewNet* view
     myOverlappedInspection = new GNEOverlappedInspection(this, false);
 
     // Create Attributes Editor module
-    myAttributesEditor = new GNEAttributesEditor(this, TL("Attributes"), GNEAttributesEditor::EditorOptions::BASIC_ATTRIBUTES);
-
-    // Create Flow Attributes Editor module
-    myFlowAttributesEditor = new GNEAttributesEditor(this, TL("Flow attributes"), GNEAttributesEditor::EditorOptions::FLOW_ATTRIBUTES);
-
-    // Create GEO Parameters Editor module
-    myGEOAttributesEditor = new GNEAttributesEditor(this, TL("GEO attributes"), GNEAttributesEditor::EditorOptions::GEO_ATTRIBUTES);
-
-    // create parameters Editor module
-    myParametersEditor = new GNEFrameAttributeModules::ParametersEditor(this);
-
-    // Create Netedit Attributes Editor module
-    myNeteditAttributesEditor = new GNEAttributesEditor(this, TL("Netedit attributes"), GNEAttributesEditor::EditorOptions::NETEDIT_ATTRIBUTES);
+    myAttributesEditor = new GNEAttributesEditor(this, GNEAttributesEditorType::EditorType::EDITOR);
 
     // Create Template editor module
     myTemplateEditor = new TemplateEditor(this);
@@ -280,8 +270,8 @@ GNEInspectorFrame::~GNEInspectorFrame() {}
 void
 GNEInspectorFrame::show() {
     refreshInspection();
-    // stop select new element
-    myNeteditAttributesEditor->abortReparenting();
+    // stop reparenting
+    myAttributesEditor->abortReparenting();
     // show
     GNEFrame::show();
 }
@@ -335,7 +325,7 @@ GNEInspectorFrame::inspectElement(GNEAttributeCarrier* AC, GNEAttributeCarrier* 
             // iterate over selected ACs
             for (const auto& selectedAC : selectedACs) {
                 // filter ACs to inspect using Tag as criterion
-                if (selectedAC->getTagProperty().getTag() == AC->getTagProperty().getTag()) {
+                if (selectedAC->getTagProperty()->getTag() == AC->getTagProperty()->getTag()) {
                     itemsToInspect.push_back(selectedAC);
                 }
             }
@@ -373,43 +363,39 @@ GNEInspectorFrame::refreshInspection() {
         myBackButton->hide();
     }
     // Show all attribute editors (will be automatically hidden if there are no elements to inspect)
-    myAttributesEditor->showAttributesEditor(inspectedElements.getACs());
-    myFlowAttributesEditor->showAttributesEditor(inspectedElements.getACs());
-    myNeteditAttributesEditor->showAttributesEditor(inspectedElements.getACs());
-    myGEOAttributesEditor->showAttributesEditor(inspectedElements.getACs());
+    myAttributesEditor->showAttributesEditor(inspectedElements.getACs(), true);
     // Hide other moduls
-    myParametersEditor->hideParametersEditor();
     myTemplateEditor->hideTemplateEditor();
     myHierarchicalElementTree->hideHierarchicalElementTree();
     // If vector of attribute Carriers contain data
     if (inspectedElements.isInspectingElements()) {
         // Set header
         std::string headerString;
-        if (inspectedElements.getFirstAC()->getTagProperty().isNetworkElement()) {
+        if (inspectedElements.getFirstAC()->getTagProperty()->isNetworkElement()) {
             headerString = "Net: ";
-        } else if (inspectedElements.getFirstAC()->getTagProperty().isAdditionalElement()) {
+        } else if (inspectedElements.getFirstAC()->getTagProperty()->isAdditionalElement()) {
             headerString = "Additional: ";
-        } else if (inspectedElements.getFirstAC()->getTagProperty().isShapeElement()) {
+        } else if (inspectedElements.getFirstAC()->getTagProperty()->isShapeElement()) {
             headerString = "Shape: ";
-        } else if (inspectedElements.getFirstAC()->getTagProperty().isTAZElement()) {
+        } else if (inspectedElements.getFirstAC()->getTagProperty()->isTAZElement()) {
             headerString = "TAZ: ";
-        } else if (inspectedElements.getFirstAC()->getTagProperty().isWireElement()) {
+        } else if (inspectedElements.getFirstAC()->getTagProperty()->isWireElement()) {
             headerString = "WIRE: ";
-        } else if (inspectedElements.getFirstAC()->getTagProperty().isVehicle()) {
+        } else if (inspectedElements.getFirstAC()->getTagProperty()->isVehicle()) {
             headerString = "Vehicle: ";
-        } else if (inspectedElements.getFirstAC()->getTagProperty().isRoute()) {
+        } else if (inspectedElements.getFirstAC()->getTagProperty()->isRoute()) {
             headerString = "Route: ";
-        } else if (inspectedElements.getFirstAC()->getTagProperty().isPerson()) {
+        } else if (inspectedElements.getFirstAC()->getTagProperty()->isPerson()) {
             headerString = "Person: ";
-        } else if (inspectedElements.getFirstAC()->getTagProperty().isPlanPerson()) {
+        } else if (inspectedElements.getFirstAC()->getTagProperty()->isPlanPerson()) {
             headerString = "PersonPlan: ";
-        } else if (inspectedElements.getFirstAC()->getTagProperty().isContainer()) {
+        } else if (inspectedElements.getFirstAC()->getTagProperty()->isContainer()) {
             headerString = "Container: ";
-        } else if (inspectedElements.getFirstAC()->getTagProperty().isPlanContainer()) {
+        } else if (inspectedElements.getFirstAC()->getTagProperty()->isPlanContainer()) {
             headerString = "ContainerPlan: ";
-        } else if (inspectedElements.getFirstAC()->getTagProperty().isVehicleStop()) {
+        } else if (inspectedElements.getFirstAC()->getTagProperty()->isVehicleStop()) {
             headerString = "Stop: ";
-        } else if (inspectedElements.getFirstAC()->getTagProperty().isDataElement()) {
+        } else if (inspectedElements.getFirstAC()->getTagProperty()->isDataElement()) {
             headerString = "Data: ";
         }
         if (myViewNet->getInspectedElements().isInspectingMultipleElements()) {
@@ -421,9 +407,6 @@ GNEInspectorFrame::refreshInspection() {
         }
         // Set headerString into header label
         getFrameHeaderLabel()->setText(headerString.c_str());
-
-        // show parameters editor
-        myParametersEditor->showParametersEditor();
 
         // If attributes correspond to an Edge and we aren't in demand mode, show template editor
         myTemplateEditor->showTemplateEditor();
@@ -446,12 +429,6 @@ GNEInspectorFrame::refreshInspection() {
 GNEAttributesEditor*
 GNEInspectorFrame::getAttributesEditor() const {
     return myAttributesEditor;
-}
-
-
-GNEAttributesEditor*
-GNEInspectorFrame::getNeteditAttributesEditor() const {
-    return myNeteditAttributesEditor;
 }
 
 

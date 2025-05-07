@@ -19,6 +19,7 @@
 /****************************************************************************/
 
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNESegment.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
@@ -31,19 +32,20 @@
 #include "GNEEdgeRelData.h"
 #include "GNEDataInterval.h"
 
-
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
-// ---------------------------------------------------------------------------
-// GNEEdgeRelData - methods
-// ---------------------------------------------------------------------------
+GNEEdgeRelData::GNEEdgeRelData(GNENet* net) :
+    GNEGenericData(SUMO_TAG_EDGEREL, net) {
+}
+
 
 GNEEdgeRelData::GNEEdgeRelData(GNEDataInterval* dataIntervalParent, GNEEdge* fromEdge, GNEEdge* toEdge,
                                const Parameterised::Map& parameters) :
-    GNEGenericData(SUMO_TAG_EDGEREL, GUIIconSubSys::getIcon(GUIIcon::EDGERELDATA), GLO_EDGERELDATA,
-                   dataIntervalParent, parameters, {}, {fromEdge, toEdge}, {}, {}, {}, {}) {
+    GNEGenericData(SUMO_TAG_EDGEREL, dataIntervalParent, parameters) {
+    // set parents
+    setParents<GNEEdge*>({fromEdge, toEdge});
 }
 
 
@@ -67,8 +69,8 @@ GNEEdgeRelData::setColor(const GUIVisualizationSettings& s) const {
         // continue if there is a selected data interval and filtered attribute
         if (dataInterval && (filteredAttribute.size() > 0)) {
             // obtain minimum and maximum value
-            const double minValue = dataInterval->getSpecificAttributeColors().at(myTagProperty.getTag()).getMinValue(filteredAttribute);
-            const double maxValue = dataInterval->getSpecificAttributeColors().at(myTagProperty.getTag()).getMaxValue(filteredAttribute);
+            const double minValue = dataInterval->getSpecificAttributeColors().at(myTagProperty->getTag()).getMinValue(filteredAttribute);
+            const double maxValue = dataInterval->getSpecificAttributeColors().at(myTagProperty->getTag()).getMaxValue(filteredAttribute);
             // get value
             const double value = parse<double>(getParameter(filteredAttribute, "0"));
             col = GNEViewNetHelper::getRainbowScaledColor(minValue, maxValue, value);
@@ -162,7 +164,7 @@ GNEEdgeRelData::drawLanePartialGL(const GUIVisualizationSettings& s, const GNESe
         // get detail level
         const auto d = s.getDetailLevel(1);
         // draw over all edge's lanes
-        for (const auto& laneEdge : segment->getLane()->getParentEdge()->getLanes()) {
+        for (const auto& laneEdge : segment->getLane()->getParentEdge()->getChildLanes()) {
             // get lane width
             const double laneWidth = s.addSize.getExaggeration(s, laneEdge) * s.edgeRelWidthExaggeration *
                                      (laneEdge->getParentEdge()->getNBEdge()->getLaneWidth(laneEdge->getIndex()) * 0.5);
@@ -187,7 +189,7 @@ GNEEdgeRelData::drawLanePartialGL(const GUIVisualizationSettings& s, const GNESe
             // draw lock icon
             GNEViewNetHelper::LockIcon::drawLockIcon(d, this, getType(), getPositionInView(), 1);
             // draw filtered attribute
-            if (getParentEdges().front()->getLanes().front() == laneEdge) {
+            if (getParentEdges().front()->getChildLanes().front() == laneEdge) {
                 drawFilteredAttribute(s, laneEdge->getLaneShape(),
                                       myNet->getViewNet()->getViewParent()->getEdgeRelDataFrame()->getAttributeSelector()->getFilteredAttribute(),
                                       myNet->getViewNet()->getViewParent()->getEdgeRelDataFrame()->getIntervalSelector()->getDataInterval());
@@ -311,10 +313,8 @@ GNEEdgeRelData::getAttribute(SumoXMLAttr key) const {
             return myDataIntervalParent->getAttribute(SUMO_ATTR_BEGIN);
         case SUMO_ATTR_END:
             return myDataIntervalParent->getAttribute(SUMO_ATTR_END);
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -333,7 +333,6 @@ GNEEdgeRelData::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoL
     switch (key) {
         case SUMO_ATTR_FROM:
         case SUMO_ATTR_TO:
-        case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
@@ -352,8 +351,6 @@ GNEEdgeRelData::isValid(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_TO:
             return SUMOXMLDefinitions::isValidNetID(value) && (myNet->getAttributeCarriers()->retrieveEdge(value, false) != nullptr) &&
                    (value != getParentEdges().front()->getID());
-        case GNE_ATTR_PARAMETERS:
-            return Parameterised::areAttributesValid(value, true);
         default:
             return isCommonValid(key, value);
     }
@@ -395,13 +392,11 @@ GNEEdgeRelData::setAttribute(SumoXMLAttr key, const std::string& value) {
             replaceLastParentEdge(value);
             break;
         }
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
-            // update attribute colors
-            myDataIntervalParent->getDataSetParent()->updateAttributeColors();
-            break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
+            if (!isTemplate()) {
+                myDataIntervalParent->getDataSetParent()->updateAttributeColors();
+            }
             break;
     }
     // mark interval toolbar for update

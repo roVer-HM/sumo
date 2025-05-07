@@ -28,7 +28,7 @@ jobs:
         python_version: [3.8, 3.9, '3.10', 3.11, 3.12, 3.13]
         include:
           - build_type: sumo
-            python_version: 3.8
+            python_version: 3.12
     env:
       CC: cl
       CXX: cl
@@ -41,6 +41,9 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        filter: tree:0
+        # to work around actions/checkout#1467
+        ref: ${{ github.ref }}
 
     - name: Cloning SUMO Libraries
       uses: actions/checkout@v4
@@ -54,14 +57,13 @@ jobs:
         python-version: ${{ matrix.python_version }}
         architecture: x64
 
-    - name: "Set up compiler cache"
-      uses: actions/cache@v4
+    - name: ccache
+      # do a clean build once a day
+      if: github.event_name != 'schedule'
+      uses: hendrikmuhs/ccache-action@v1.2
       with:
-        path: C:\Users\runneradmin\AppData\Local\Mozilla\sccache\cache
-        key: ${{ matrix.build_type }}-${{ matrix.python_version }}-${{ github.head_ref }}-${{ github.run_number }}
-        restore-keys: |
-          ${{ matrix.build_type }}-${{ matrix.python_version }}-${{ github.head_ref }}-
-          ${{ matrix.build_type }}-${{ matrix.python_version }}-
+        key: ${{ matrix.build_type }}-${{ matrix.python_version }}
+        variant: sccache
 
     # required for CMake to find Ninja
     - name: "Set up MSVC Developer Command Prompt"
@@ -132,15 +134,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.8, 3.9, '3.10', 3.11, 3.12]
+        python_version: [3.9, '3.10', 3.11, 3.12, 3.13]
     env:
       TEXTTEST_TMP: 'D:/texttest'
 
     steps:
     - name: Cloning SUMO
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
     - name: Downloading Wheels artifact
       uses: actions/download-artifact@v4
@@ -155,7 +155,7 @@ jobs:
 
     - name: Preparing Python environment
       run: |
-        python -m pip install texttest==4.3.1
+        python -m pip install texttest
         python -m pip install -f python-wheels eclipse_sumo
         python -c "import sumo; print('SUMO_HOME=' + sumo.SUMO_HOME)" >> $env:GITHUB_ENV
 
@@ -163,23 +163,27 @@ jobs:
       run: |
         python -m pip install -r tools/req_ci.txt -r tools/requirements.txt
         $env:TEXTTEST_CI_APPS = "-v ci.fast -a activitygen,dfrouter,duarouter,jtrrouter,marouter,netgen,od2trips,polyconvert,netconvert,sumo"
-        tests\runCiTests.bat $env:pythonLocation\Scripts\texttestc.py
-#        $env:TEXTTEST_CI_APPS = "-v ci.fast -a complex,tools"
-#        tests\runCiTests.bat $env:pythonLocation\Scripts\texttestc.py
-
-    - name: Running "sumo in the wheel" meta tests
-      run: |
-        $env:TEXTTEST_CI_APPS = "-ts meta"
-        tests\runCiTests.bat $env:pythonLocation\Scripts\texttestc.py
+        tests\runCiTests.bat $env:pythonLocation\Scripts\texttest.exe
+        $env:TEXTTEST_CI_APPS = "-v ci.fast -a complex,tools"
+        tests\runCiTests.bat $env:pythonLocation\Scripts\texttest.exe
 
     - name: Installing libsumo
-      run: python -m pip install -f python-wheels libsumo
+      run: |
+        python -m pip install -f python-wheels libsumo
+        python -c "import libsumo; print(libsumo.__file__)"
+
+    - name: Running dependency checker
+      if: github.event_name == 'schedule'
+      run: |
+          Invoke-WebRequest -Uri https://github.com/lucasg/Dependencies/releases/download/v1.11.1/Dependencies_x64_Release_.without.peview.exe.zip -OutFile Dependencies.zip
+          7z x -oDependencies Dependencies.zip
+          $env:PATH += ";" + $env:SUMO_HOME + "\bin"
+          python -c "import libsumo, subprocess; subprocess.call(['Dependencies\\Dependencies.exe', '-modules', '-depth', '2', libsumo.__file__.replace('__init__.py', '_libsumo.pyd')])"
 
     - name: Running libsumo tests
-      if: matrix.python_version == '3.12'
       run: |
         $env:TEXTTEST_CI_APPS = "-a complex.libsumo"
-        tests\runCiTests.bat $env:pythonLocation\Scripts\texttestc.py
+        tests\runCiTests.bat $env:pythonLocation\Scripts\texttest.exe
 
     - name: Compressing test results
       if: failure()
@@ -192,28 +196,3 @@ jobs:
         name: texttesttmp-installed-${{ matrix.python_version }}
         path: D:/texttest_installed.zip
         if-no-files-found: warn
-
-  ###################
-  # publishing wheels
-  ###################
-  publish-wheels:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags')
-    needs: [test-wheels]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-
-    steps:
-    - uses: actions/download-artifact@v4
-
-    # this step removes the sumolib and traci packages which linux takes care of
-    - name: Moving artifacts
-      run: |
-        ls -lR
-        mkdir dist
-        mv ./*-wheels/* dist
-        rm -f dist/sumolib* dist/traci*
-
-    - name: Publish to PyPI
-      if: startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@release/v1

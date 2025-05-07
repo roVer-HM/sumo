@@ -18,22 +18,14 @@
 // A abstract class for data sets
 /****************************************************************************/
 
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-#include <config.h>
-
 #include <netedit/GNENet.h>
-#include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
-#include <netedit/GNEUndoList.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 #include <netedit/frames/common/GNEInspectorFrame.h>
+#include <netedit/frames/GNEElementTree.h>
 
 #include "GNEDataSet.h"
 #include "GNEDataInterval.h"
-
 
 // ===========================================================================
 // member method definitions
@@ -112,8 +104,8 @@ GNEDataSet::AttributeColors::clear() {
 // GNEDataSet - methods
 // ---------------------------------------------------------------------------
 
-GNEDataSet::GNEDataSet(GNENet* net, const std::string dataSetID) :
-    GNEAttributeCarrier(SUMO_TAG_DATASET, net),
+GNEDataSet::GNEDataSet(const std::string& dataSetID, GNENet* net, const std::string& filename) :
+    GNEAttributeCarrier(SUMO_TAG_DATASET, net, filename, false),
     myDataSetID(dataSetID) {
 }
 
@@ -123,7 +115,7 @@ GNEDataSet::~GNEDataSet() {}
 
 GNEHierarchicalElement*
 GNEDataSet::getHierarchicalElement() {
-    return nullptr;
+    return this;
 }
 
 
@@ -239,6 +231,12 @@ GNEDataSet::checkDrawDeleteContour() const {
 
 
 bool
+GNEDataSet::checkDrawDeleteContourSmall() const {
+    return false;
+}
+
+
+bool
 GNEDataSet::checkDrawSelectContour() const {
     return false;
 }
@@ -348,7 +346,7 @@ GNEDataSet::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_ID:
             return myDataSetID;
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -416,7 +414,7 @@ GNEDataSet::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
     // mark interval toolbar for update

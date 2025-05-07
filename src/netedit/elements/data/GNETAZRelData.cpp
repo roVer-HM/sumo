@@ -18,48 +18,46 @@
 // class for TAZ relation data
 /****************************************************************************/
 
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-#include <config.h>
-
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
-#include <netedit/elements/additional/GNETAZ.h>
 #include <netedit/changes/GNEChange_Attribute.h>
+#include <netedit/elements/additional/GNETAZ.h>
 #include <netedit/frames/data/GNETAZRelDataFrame.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/gui/globjects/GLIncludes.h>
 #include <utils/gui/div/GUIGlobalViewObjectsHandler.h>
+#include <utils/gui/globjects/GLIncludes.h>
 
 #include "GNETAZRelData.h"
 #include "GNEDataInterval.h"
-
 
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
-// ---------------------------------------------------------------------------
-// GNETAZRelData - methods
-// ---------------------------------------------------------------------------
+GNETAZRelData::GNETAZRelData(GNENet* net) :
+    GNEGenericData(SUMO_TAG_TAZREL, net),
+    myLastWidth(0) {
+}
+
 
 GNETAZRelData::GNETAZRelData(GNEDataInterval* dataIntervalParent, GNEAdditional* fromTAZ, GNEAdditional* toTAZ,
                              const Parameterised::Map& parameters) :
-    GNEGenericData(SUMO_TAG_TAZREL, GUIIconSubSys::getIcon(GUIIcon::EDGERELDATA), GLO_TAZRELDATA, dataIntervalParent, parameters,
-{}, {}, {}, {fromTAZ, toTAZ}, {}, {}),
-myLastWidth(0) {
+    GNEGenericData(SUMO_TAG_TAZREL, dataIntervalParent, parameters),
+    myLastWidth(0) {
+    // set parents
+    setParents<GNEAdditional*>({fromTAZ, toTAZ});
 }
 
 
 GNETAZRelData::GNETAZRelData(GNEDataInterval* dataIntervalParent, GNEAdditional* TAZ,
                              const Parameterised::Map& parameters) :
-    GNEGenericData(SUMO_TAG_TAZREL, GUIIconSubSys::getIcon(GUIIcon::EDGERELDATA), GLO_TAZRELDATA, dataIntervalParent, parameters,
-{}, {}, {}, {TAZ}, {}, {}),
-myLastWidth(0) {
+    GNEGenericData(SUMO_TAG_TAZREL, dataIntervalParent, parameters),
+    myLastWidth(0) {
+    // set parents
+    setParent<GNEAdditional*>(TAZ);
 }
 
 
@@ -386,10 +384,8 @@ GNETAZRelData::getAttribute(SumoXMLAttr key) const {
             return myDataIntervalParent->getAttribute(SUMO_ATTR_BEGIN);
         case SUMO_ATTR_END:
             return myDataIntervalParent->getAttribute(SUMO_ATTR_END);
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -408,7 +404,6 @@ GNETAZRelData::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoLi
     switch (key) {
         case SUMO_ATTR_FROM:
         case SUMO_ATTR_TO:
-        case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
@@ -425,8 +420,6 @@ GNETAZRelData::isValid(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_TO:
             return SUMOXMLDefinitions::isValidNetID(value) &&
                    (myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_TAZ, value, false) != nullptr);
-        case GNE_ATTR_PARAMETERS:
-            return Parameterised::areAttributesValid(value, true);
         default:
             return isCommonValid(key, value);
     }
@@ -485,7 +478,7 @@ GNETAZRelData::drawTAZRel() const {
     }
     // check if we're inspecting a TAZ
     if ((myNet->getViewNet()->getEditModes().dataEditMode == DataEditMode::DATA_INSPECT) &&
-            inspectedElements.isInspectingSingleElement() && (inspectedElements.getFirstAC()->getTagProperty().getTag() == SUMO_TAG_TAZ)) {
+            inspectedElements.isInspectingSingleElement() && (inspectedElements.getFirstAC()->getTagProperty()->getTag() == SUMO_TAG_TAZ)) {
         // ignore TAZRels with one TAZParent
         if (getParentAdditionals().size() == 2) {
             if ((getParentAdditionals().front() == inspectedElements.getFirstAC())  &&
@@ -520,13 +513,11 @@ GNETAZRelData::setAttribute(SumoXMLAttr key, const std::string& value) {
             updateGeometry();
             break;
         }
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
-            // update attribute colors
-            myDataIntervalParent->getDataSetParent()->updateAttributeColors();
-            break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
+            if (!isTemplate()) {
+                myDataIntervalParent->getDataSetParent()->updateAttributeColors();
+            }
             break;
     }
     // mark interval toolbar for update

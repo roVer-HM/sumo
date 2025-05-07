@@ -18,6 +18,7 @@
 // The thread that performs the loading of a Netedit-net (adapted from
 // GUILoadThread)
 /****************************************************************************/
+
 #include <netbuild/NBFrame.h>
 #include <netbuild/NBNetBuilder.h>
 #include <netimport/NIFrame.h>
@@ -34,7 +35,6 @@
 #include "GNEEvent_NetworkLoaded.h"
 #include "GNELoadThread.h"
 #include "GNENet.h"
-
 
 // ===========================================================================
 // member method definitions
@@ -160,7 +160,7 @@ GNELoadThread::run() {
     // check if create a new net
     if (neteditOptions.getBool("new")) {
         // create new network
-        net = new GNENet(netBuilder);
+        net = new GNENet(netBuilder, myApplicationWindow->getTagPropertiesDatabase());
     } else {
         // declare net loader
         NILoader nl(*netBuilder);
@@ -185,7 +185,7 @@ GNELoadThread::run() {
                 throw ProcessError();
             } else {
                 // now create net with al information loaded in net builder
-                net = new GNENet(netBuilder);
+                net = new GNENet(netBuilder, myApplicationWindow->getTagPropertiesDatabase());
                 // check if change traffic direction
                 if (neteditOptions.getBool("lefthand")) {
                     // force initial geometry computation without volatile options because the net will look strange otherwise
@@ -439,6 +439,9 @@ GNELoadThread::fillOptions(OptionsCont& neteditOptions) {
     neteditOptions.addDescription("containerflow-prefix", "Netedit", TL("Prefix for containerFlow naming"));
 
     // data prefixes
+
+    neteditOptions.doRegister("dataSet-prefix", new Option_String("ds"));
+    neteditOptions.addDescription("dataSet-prefix", "Netedit", TL("Prefix for dataSet naming"));
 
     // mean data prefixes
 

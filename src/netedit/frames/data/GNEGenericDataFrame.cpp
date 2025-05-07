@@ -17,20 +17,20 @@
 ///
 // The Widget for add genericData elements
 /****************************************************************************/
-#include <config.h>
 
-#include <netedit/GNENet.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/GNEViewParent.h>
 #include <netedit/GNEApplicationWindow.h>
+#include <netedit/GNENet.h>
+#include <netedit/GNEViewParent.h>
 #include <netedit/elements/data/GNEDataHandler.h>
 #include <netedit/elements/data/GNEDataInterval.h>
-#include <utils/common/MsgHandler.h>
+#include <netedit/elements/data/GNEEdgeData.h>
+#include <netedit/elements/data/GNEEdgeRelData.h>
+#include <netedit/elements/data/GNETAZRelData.h>
+#include <netedit/frames/GNEAttributesEditor.h>
+#include <netedit/frames/GNEPathCreator.h>
 #include <utils/gui/div/GUIDesigns.h>
-#include <utils/gui/windows/GUIAppEnum.h>
 
 #include "GNEGenericDataFrame.h"
-
 
 // ===========================================================================
 // FOX callback mapping
@@ -41,7 +41,6 @@ FXDEFMAP(GNEGenericDataFrame::DataSetSelector) DataSetSelectorMap[] = {
     FXMAPFUNC(SEL_COMMAND, MID_GNE_DATASET_NEW,         GNEGenericDataFrame::DataSetSelector::onCmdSetNewDataSetID),
     FXMAPFUNC(SEL_COMMAND, MID_GNE_DATASET_SELECTED,    GNEGenericDataFrame::DataSetSelector::onCmdSelectDataSet),
     FXMAPFUNC(SEL_COMMAND, MID_GNE_SELECT,              GNEGenericDataFrame::DataSetSelector::onCmdSelectCheckButton)
-
 };
 
 FXDEFMAP(GNEGenericDataFrame::IntervalSelector) IntervalSelectorMap[] = {
@@ -489,6 +488,10 @@ GNEGenericDataFrame::AttributeSelector::refreshAttributeSelector() {
             }
         }
     }
+    // show parameters
+    if (myGenericDataFrameParent->myTemplateGenericData) {
+        myGenericDataFrameParent->myGenericDataAttributesEditor->showAttributesEditor(myGenericDataFrameParent->myTemplateGenericData, true);
+    }
     // recalc frame
     recalc();
     // update view net
@@ -559,19 +562,13 @@ GNEGenericDataFrame::getPathCreator() const {
 }
 
 
-SumoXMLTag
-GNEGenericDataFrame::getTag() const {
-    return myGenericDataTag;
-}
-
-
 void
 GNEGenericDataFrame::show() {
     // first refresh data set selector
     myDataSetSelector->refreshDataSetSelector(nullptr);
     // check if there is an edge path creator
     if (myPathCreator) {
-        myPathCreator->showPathCreatorModule(GNEAttributeCarrier::getTagProperty(myGenericDataTag), false);
+        myPathCreator->showPathCreatorModule(myTemplateGenericData->getTagProperty(), false);
     }
     // show frame
     GNEFrame::show();
@@ -597,19 +594,13 @@ GNEGenericDataFrame::updateFrameAfterUndoRedo() {
     myDataSetSelector->refreshDataSetSelector(nullptr);
     // check if there is an edge path creator
     if (myPathCreator) {
-        myPathCreator->showPathCreatorModule(GNEAttributeCarrier::getTagProperty(myGenericDataTag), false);
+        myPathCreator->showPathCreatorModule(myTemplateGenericData->getTagProperty(), false);
     }
 }
 
 
 GNEGenericDataFrame::GNEGenericDataFrame(GNEViewParent* viewParent, GNEViewNet* viewNet, SumoXMLTag tag, const bool pathCreator) :
-    GNEFrame(viewParent, viewNet, toString(tag)),
-    myDataSetSelector(nullptr),
-    myIntervalSelector(nullptr),
-    myAttributeSelector(nullptr),
-    myGenericDataAttributes(nullptr),
-    myPathCreator(nullptr),
-    myGenericDataTag(tag) {
+    GNEFrame(viewParent, viewNet, toString(tag)) {
     // create DataSetSelector
     myDataSetSelector = new DataSetSelector(this);
     // create IntervalSelector module
@@ -617,15 +608,27 @@ GNEGenericDataFrame::GNEGenericDataFrame(GNEViewParent* viewParent, GNEViewNet* 
     // create AttributeSelector module
     myAttributeSelector = new AttributeSelector(this, tag);
     // create parameter editor module
-    myGenericDataAttributes = new GNEFrameAttributeModules::GenericDataAttributes(this);
+    myGenericDataAttributesEditor = new GNEAttributesEditor(this, GNEAttributesEditorType::EditorType::CREATOR);
     // create GNEPathCreator module
     if (pathCreator) {
         myPathCreator = new GNEPathCreator(this, viewNet->getNet()->getDataPathManager());
     }
+    // create AC depending of tag
+    if (tag == GNE_TAG_EDGEREL_SINGLE) {
+        myTemplateGenericData = new GNEEdgeData(viewNet->getNet());
+    } else if (tag == SUMO_TAG_EDGEREL) {
+        myTemplateGenericData = new GNEEdgeRelData(viewNet->getNet());
+    } else if (tag == SUMO_TAG_TAZREL) {
+        myTemplateGenericData = new GNETAZRelData(viewNet->getNet());
+    } else {
+        throw ProcessError("Invalid data tag");
+    }
 }
 
 
-GNEGenericDataFrame::~GNEGenericDataFrame() {}
+GNEGenericDataFrame::~GNEGenericDataFrame() {
+    delete myTemplateGenericData;
+}
 
 
 void

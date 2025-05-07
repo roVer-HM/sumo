@@ -20,16 +20,17 @@
 #pragma once
 #include <config.h>
 
-#include <netedit/elements/demand/GNERouteHandler.h>
-#include <netedit/frames/GNEAttributesCreator.h>
-#include <netedit/frames/GNEDemandSelector.h>
-#include <netedit/frames/GNEElementTree.h>
 #include <netedit/frames/GNEFrame.h>
-#include <netedit/frames/GNEPlanCreatorLegend.h>
-#include <netedit/frames/GNETagSelector.h>
-#include <netedit/frames/GNEPlanSelector.h>
-#include <netedit/frames/GNEPlanCreator.h>
 
+// ===========================================================================
+// class declaration
+// ===========================================================================
+
+class GNEAttributesEditor;
+class GNEDemandElementSelector;
+class GNEElementTree;
+class GNEPlanCreator;
+class GNEPlanSelector;
 
 // ===========================================================================
 // class definitions
@@ -88,23 +89,20 @@ protected:
     bool createPath(const bool useLastRoute);
 
 private:
-    /// @brief route handler
-    GNERouteHandler myRouteHandler;
-
     /// @brief Container selectors
-    GNEDemandElementSelector* myContainerSelector;
+    GNEDemandElementSelector* myContainerSelector = nullptr;
 
     /// @brief containerPlan selector
-    GNEPlanSelector* myPlanSelector;
+    GNEPlanSelector* myPlanSelector = nullptr;
 
-    /// @brief internal vehicle attributes
-    GNEAttributesCreator* myContainerPlanAttributes;
+    /// @brief container plan attributes editor
+    GNEAttributesEditor* myContainerPlanAttributesEditor = nullptr;
 
     /// @brief plan Creator
-    GNEPlanCreator* myPlanCreator;
+    GNEPlanCreator* myPlanCreator = nullptr;
 
     /// @brief Container Hierarchy
-    GNEElementTree* myContainerHierarchy;
+    GNEElementTree* myContainerHierarchy = nullptr;
 
     /// @brief plan creator legend
     GNEPlanCreatorLegend* myPlanCreatorLegend;

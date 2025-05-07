@@ -32,32 +32,25 @@
 // ===========================================================================
 
 GNERerouterInterval::GNERerouterInterval(GNENet* net) :
-    GNEAdditional("", net, GLO_REROUTER_INTERVAL, SUMO_TAG_INTERVAL,
-                  GUIIconSubSys::getIcon(GUIIcon::REROUTERINTERVAL), "", {}, {}, {}, {}, {}, {}),
-                            myBegin(0),
-myEnd(0) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional("", net, "", SUMO_TAG_INTERVAL, "") {
 }
 
 
 GNERerouterInterval::GNERerouterInterval(GNERerouterDialog* rerouterDialog) :
-    GNEAdditional(rerouterDialog->getEditedAdditional()->getNet(), GLO_REROUTER_INTERVAL, SUMO_TAG_INTERVAL,
-                  GUIIconSubSys::getIcon(GUIIcon::REROUTERINTERVAL), "", {}, {}, {}, {rerouterDialog->getEditedAdditional()}, {}, {}),
-myBegin(0),
-myEnd(0) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional(rerouterDialog->getEditedAdditional(), SUMO_TAG_INTERVAL, "") {
+    // set parents
+    setParent<GNEAdditional*>(rerouterDialog->getEditedAdditional());
     // update boundary of rerouter parent
     rerouterDialog->getEditedAdditional()->updateCenteringBoundary(true);
 }
 
 
 GNERerouterInterval::GNERerouterInterval(GNEAdditional* rerouterParent, SUMOTime begin, SUMOTime end) :
-    GNEAdditional(rerouterParent->getNet(), GLO_REROUTER, SUMO_TAG_INTERVAL,
-                  GUIIconSubSys::getIcon(GUIIcon::REROUTERINTERVAL), "", {}, {}, {}, {rerouterParent}, {}, {}),
-myBegin(begin),
-myEnd(end) {
+    GNEAdditional(rerouterParent, SUMO_TAG_INTERVAL, ""),
+    myBegin(begin),
+    myEnd(end) {
+    // set parents
+    setParent<GNEAdditional*>(rerouterParent);
     // update boundary of rerouter parent
     rerouterParent->updateCenteringBoundary(true);
 }
@@ -184,7 +177,7 @@ GNERerouterInterval::getAttribute(SumoXMLAttr key) const {
         case GNE_ATTR_PARENT:
             return getParentAdditionals().at(0)->getID();
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -204,7 +197,7 @@ GNERerouterInterval::getAttributeDouble(SumoXMLAttr key) const {
 
 const Parameterised::Map&
 GNERerouterInterval::getACParametersMap() const {
-    return PARAMETERS_EMPTY;
+    return getParametersMap();
 }
 
 
@@ -263,7 +256,7 @@ GNERerouterInterval::setAttribute(SumoXMLAttr key, const std::string& value) {
             myEnd = parse<SUMOTime>(value);
             break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
 }

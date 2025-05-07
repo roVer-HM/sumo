@@ -27,7 +27,6 @@
 
 #include "GNEMultipleParametersDialog.h"
 
-
 // ===========================================================================
 // FOX callback mapping
 // ===========================================================================
@@ -300,7 +299,7 @@ GNEMultipleParametersDialog::ParametersOperations::onCmdLoadParameters(FXObject*
     FXFileDialog opendialog(this, TL("Open Parameter Template"));
     opendialog.setIcon(GUIIconSubSys::getIcon(GUIIcon::GREENVEHICLE));
     opendialog.setSelectMode(SELECTFILE_EXISTING);
-    opendialog.setPatternList(" Parameter Template files (*.xml,*.xml.gz)\nAll files (*)");
+    opendialog.setPatternList(SUMOXMLDefinitions::XMLFileExtensions.getMultilineString().c_str());
     if (gCurrentFolder.length() != 0) {
         opendialog.setDirectory(gCurrentFolder);
     }
@@ -325,7 +324,8 @@ long
 GNEMultipleParametersDialog::ParametersOperations::onCmdSaveParameters(FXObject*, FXSelector, void*) {
     // obtain file to save parameters
     FXString file = MFXUtils::getFilename2Write(this,
-                    TL("Save Parameter Template file"), ".xml",
+                    TL("Save Parameter Template file"),
+                    SUMOXMLDefinitions::XMLFileExtensions.getMultilineString().c_str(),
                     GUIIconSubSys::getIcon(GUIIcon::GREENVEHICLE),
                     gCurrentFolder);
     if (file == "") {
@@ -488,9 +488,9 @@ GNEMultipleParametersDialog::ParametersOptions::onlyForExistentKeys() const {
 // GNEMultipleParametersDialog - methods
 // ---------------------------------------------------------------------------
 
-GNEMultipleParametersDialog::GNEMultipleParametersDialog(GNEFrameAttributeModules::ParametersEditor* parametersEditorInspector) :
-    FXDialogBox(parametersEditorInspector->getInspectorFrameParent()->getViewNet()->getApp(), "Edit parameters", GUIDesignDialogBoxExplicitStretchable(430, 300)),
-    myParametersEditor(parametersEditorInspector) {
+GNEMultipleParametersDialog::GNEMultipleParametersDialog(GNEAttributesEditorType* attributesEditor) :
+    FXDialogBox(attributesEditor->getFrameParent()->getViewNet()->getApp(), "Edit parameters", GUIDesignDialogBoxExplicitStretchable(430, 300)),
+    myAttributesEditor(attributesEditor) {
     // call auxiliar constructor
     constructor();
     // reset
@@ -503,10 +503,10 @@ GNEMultipleParametersDialog::~GNEMultipleParametersDialog() {}
 
 long
 GNEMultipleParametersDialog::onCmdAccept(FXObject*, FXSelector, void*) {
-    const auto& inspectedElements = myParametersEditor->getInspectorFrameParent()->getViewNet()->getInspectedElements();
+    const auto& inspectedElements = myAttributesEditor->getFrameParent()->getViewNet()->getInspectedElements();
     if (inspectedElements.isInspectingElements()) {
         // get undo list
-        GNEUndoList* undoList = myParametersEditor->getInspectorFrameParent()->getViewNet()->getUndoList();
+        GNEUndoList* undoList = myAttributesEditor->getFrameParent()->getViewNet()->getUndoList();
         // declare vector for parameters in stringvector format
         std::vector<std::pair<std::string, std::string> > parametersChanged;
         // declare keep keys vector
@@ -580,7 +580,7 @@ GNEMultipleParametersDialog::onCmdReset(FXObject*, FXSelector, void*) {
     // declare a map for key-values
     std::map<std::string, std::vector<std::string> > keyValuesMap;
     // fill keys
-    for (const auto& AC : myParametersEditor->getInspectorFrameParent()->getViewNet()->getInspectedElements().getACs()) {
+    for (const auto& AC : myAttributesEditor->getEditedAttributeCarriers()) {
         for (const auto& keyAttribute : AC->getACParametersMap()) {
             keyValuesMap[keyAttribute.first].push_back(keyAttribute.second);
         }

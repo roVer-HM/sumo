@@ -17,6 +17,7 @@
 ///
 // Builds demand objects for netedit
 /****************************************************************************/
+
 #include <netedit/GNENet.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
@@ -171,7 +172,7 @@ GNEPlanParents::checkIntegrity(SumoXMLTag planTag, const GNEDemandElement* paren
 }
 
 void
-GNEPlanParents::addChildElements(GNEDemandElement* element) {
+GNEPlanParents::addDemandElementChild(GNEDemandElement* element) {
     if (fromEdge) {
         fromEdge->addChildElement(element);
     }
@@ -227,7 +228,7 @@ GNEPlanParents::clear() {
 bool
 GNEPlanParents::getFromBusStop() const {
     if (fromStoppingPlace) {
-        return (fromStoppingPlace->getTagProperty().getTag() == SUMO_TAG_BUS_STOP);
+        return (fromStoppingPlace->getTagProperty()->getTag() == SUMO_TAG_BUS_STOP);
     } else {
         return false;
     }
@@ -237,7 +238,7 @@ GNEPlanParents::getFromBusStop() const {
 bool
 GNEPlanParents::getToBusStop() const {
     if (toStoppingPlace) {
-        return (toStoppingPlace->getTagProperty().getTag() == SUMO_TAG_BUS_STOP);
+        return (toStoppingPlace->getTagProperty()->getTag() == SUMO_TAG_BUS_STOP);
     } else {
         return false;
     }
@@ -247,7 +248,7 @@ GNEPlanParents::getToBusStop() const {
 bool
 GNEPlanParents::getFromTrainStop() const {
     if (fromStoppingPlace) {
-        return (fromStoppingPlace->getTagProperty().getTag() == SUMO_TAG_TRAIN_STOP);
+        return (fromStoppingPlace->getTagProperty()->getTag() == SUMO_TAG_TRAIN_STOP);
     } else {
         return false;
     }
@@ -257,7 +258,7 @@ GNEPlanParents::getFromTrainStop() const {
 bool
 GNEPlanParents::getToTrainStop() const {
     if (toStoppingPlace) {
-        return (toStoppingPlace->getTagProperty().getTag() == SUMO_TAG_TRAIN_STOP);
+        return (toStoppingPlace->getTagProperty()->getTag() == SUMO_TAG_TRAIN_STOP);
     } else {
         return false;
     }
@@ -267,7 +268,7 @@ GNEPlanParents::getToTrainStop() const {
 bool
 GNEPlanParents::getFromContainerStop() const {
     if (fromStoppingPlace) {
-        return (fromStoppingPlace->getTagProperty().getTag() == SUMO_TAG_CONTAINER_STOP);
+        return (fromStoppingPlace->getTagProperty()->getTag() == SUMO_TAG_CONTAINER_STOP);
     } else {
         return false;
     }
@@ -277,7 +278,7 @@ GNEPlanParents::getFromContainerStop() const {
 bool
 GNEPlanParents::getToContainerStop() const {
     if (toStoppingPlace) {
-        return (toStoppingPlace->getTagProperty().getTag() == SUMO_TAG_CONTAINER_STOP);
+        return (toStoppingPlace->getTagProperty()->getTag() == SUMO_TAG_CONTAINER_STOP);
     } else {
         return false;
     }
@@ -287,7 +288,7 @@ GNEPlanParents::getToContainerStop() const {
 bool
 GNEPlanParents::getFromChargingStation() const {
     if (fromStoppingPlace) {
-        return (fromStoppingPlace->getTagProperty().getTag() == SUMO_TAG_CHARGING_STATION);
+        return (fromStoppingPlace->getTagProperty()->getTag() == SUMO_TAG_CHARGING_STATION);
     } else {
         return false;
     }
@@ -297,7 +298,7 @@ GNEPlanParents::getFromChargingStation() const {
 bool
 GNEPlanParents::getToChargingStation() const {
     if (toStoppingPlace) {
-        return (toStoppingPlace->getTagProperty().getTag() == SUMO_TAG_CHARGING_STATION);
+        return (toStoppingPlace->getTagProperty()->getTag() == SUMO_TAG_CHARGING_STATION);
     } else {
         return false;
     }
@@ -307,7 +308,7 @@ GNEPlanParents::getToChargingStation() const {
 bool
 GNEPlanParents::getFromParkingArea() const {
     if (fromStoppingPlace) {
-        return (fromStoppingPlace->getTagProperty().getTag() == SUMO_TAG_PARKING_AREA);
+        return (fromStoppingPlace->getTagProperty()->getTag() == SUMO_TAG_PARKING_AREA);
     } else {
         return false;
     }
@@ -317,7 +318,7 @@ GNEPlanParents::getFromParkingArea() const {
 bool
 GNEPlanParents::getToParkingArea() const {
     if (toStoppingPlace) {
-        return (toStoppingPlace->getTagProperty().getTag() == SUMO_TAG_PARKING_AREA);
+        return (toStoppingPlace->getTagProperty()->getTag() == SUMO_TAG_PARKING_AREA);
     } else {
         return false;
     }

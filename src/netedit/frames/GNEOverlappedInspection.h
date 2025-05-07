@@ -20,6 +20,7 @@
 #pragma once
 #include <config.h>
 
+#include <netedit/GNEViewNetHelper.h>
 #include <utils/foxtools/MFXGroupBoxModule.h>
 #include <utils/geom/Position.h>
 
@@ -45,7 +46,7 @@ public:
     ~GNEOverlappedInspection();
 
     /// @brief show overlapped inspection
-    void showOverlappedInspection(GNEViewNetHelper::ViewObjectsSelector& viewObjects, const Position &clickedPosition, const bool shiftKeyPressed);
+    void showOverlappedInspection(GNEViewNetHelper::ViewObjectsSelector& viewObjects, const Position& clickedPosition, const bool shiftKeyPressed);
 
     /// @brief show template editor
     void refreshOverlappedInspection();
@@ -59,8 +60,11 @@ public:
     /// @brief check if overlappedInspection modul is shown
     bool overlappedInspectionShown() const;
 
-    /// @brief get number of overlapped ACSs
+    /// @brief get number of overlapped ACs
     int getNumberOfOverlappedACs() const;
+
+    /// @brief get current AC
+    GNEAttributeCarrier* getCurrentAC() const;
 
     /// @name FOX-callbacks
     /// @{
@@ -106,6 +110,9 @@ private:
 
     /// @brief clicked position
     Position myClickedPosition = Position::INVALID;
+
+    /// @brief shift key pressed
+    bool myShiftKeyPressed = false;
 
     /// @brief flag to indicate that this modul is only for junctions
     const bool myOnlyJunctions = false;

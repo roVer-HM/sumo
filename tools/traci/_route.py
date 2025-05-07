@@ -29,9 +29,9 @@ class RouteDomain(Domain):
                         tc.CMD_SUBSCRIBE_ROUTE_CONTEXT, tc.RESPONSE_SUBSCRIBE_ROUTE_CONTEXT)
 
     def getEdges(self, routeID):
-        """getEdges(string) -> list(string)
+        """getEdges(string) -> tuple(string)
 
-        Returns a list of all edges in the route.
+        Returns a tuple of all edges in the route.
         """
         return self._getUniversal(tc.VAR_EDGES, routeID)
 
@@ -41,3 +41,10 @@ class RouteDomain(Domain):
         Adds a new route with the given id consisting of the given list of edge IDs.
         """
         self._setCmd(tc.ADD, routeID, "l", edges)
+
+    def remove(self, routeID):
+        """remove(string) -> None
+
+        Removes the given route.
+        """
+        self._setCmd(tc.REMOVE, routeID)

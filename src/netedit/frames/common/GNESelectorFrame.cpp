@@ -17,27 +17,25 @@
 ///
 // The Widget for modifying selections of network-elements
 /****************************************************************************/
-#include <config.h>
 
 #include <netedit/GNENet.h>
+#include <netedit/GNETagPropertiesDatabase.h>
 #include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
 #include <netedit/elements/network/GNEConnection.h>
 #include <netedit/elements/network/GNECrossing.h>
 #include <netedit/elements/network/GNEWalkingArea.h>
+#include <netedit/frames/GNEMatchAttribute.h>
 #include <utils/foxtools/MFXDynamicLabel.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/globjects/GUIGlObjectStorage.h>
 #include <utils/gui/windows/GUIAppEnum.h>
-#include <utils/xml/NamespaceIDs.h>
 
 #include "GNESelectorFrame.h"
-#include "GNEElementSet.h"
-
 
 // ===========================================================================
 // FOX callback mapping
 // ===========================================================================
+
 FXDEFMAP(GNESelectorFrame::ModificationMode) ModificationModeMap[] = {
     FXMAPFUNC(SEL_COMMAND,  MID_CHOOSEN_OPERATION,  GNESelectorFrame::ModificationMode::onCmdSelectModificationMode)
 };
@@ -103,8 +101,6 @@ GNESelectorFrame::SelectionInformation::updateInformationLabel() {
         updateInformationLabel(TL("Additionals"), ACs->getNumberOfSelectedPureAdditionals());
         updateInformationLabel(TL("Wires"), ACs->getNumberOfSelectedWires());
         updateInformationLabel(TL("TAZs"), ACs->getNumberOfSelectedTAZs());
-        updateInformationLabel(TL("TAZSources"), ACs->getNumberOfSelectedTAZSources());
-        updateInformationLabel(TL("TAZSinks"), ACs->getNumberOfSelectedTAZSinks());
         updateInformationLabel(TL("Polygons"), ACs->getNumberOfSelectedPolygons());
         updateInformationLabel(TL("POIs"), ACs->getNumberOfSelectedPOIs());
         updateInformationLabel(TL("JuPedSim elements"),
@@ -301,11 +297,11 @@ GNESelectorFrame::SelectionOperation::loadFromFile(const std::string& file) cons
                 }
                 GNEAttributeCarrier* AC = GLFUllNameAC.count(line) > 0 ? GLFUllNameAC.at(line) : nullptr;
                 // check if AC exist, is selectable, and isn't locked
-                if (AC && AC->getTagProperty().isSelectable() && !mySelectorFrameParent->getViewNet()->getLockManager().isObjectLocked(AC->getGUIGlObject()->getType(), false)) {
+                if (AC && AC->getTagProperty()->isSelectable() && !mySelectorFrameParent->getViewNet()->getLockManager().isObjectLocked(AC->getGUIGlObject()->getType(), false)) {
                     // now check if we're in the correct supermode to load this element
-                    if (((mySelectorFrameParent->myViewNet->getEditModes().isCurrentSupermodeNetwork()) && !AC->getTagProperty().isDemandElement()) ||
-                            ((mySelectorFrameParent->myViewNet->getEditModes().isCurrentSupermodeDemand()) && AC->getTagProperty().isDemandElement()) ||
-                            ((mySelectorFrameParent->myViewNet->getEditModes().isCurrentSupermodeData()) && AC->getTagProperty().isDataElement())) {
+                    if (((mySelectorFrameParent->myViewNet->getEditModes().isCurrentSupermodeNetwork()) && !AC->getTagProperty()->isDemandElement()) ||
+                            ((mySelectorFrameParent->myViewNet->getEditModes().isCurrentSupermodeDemand()) && AC->getTagProperty()->isDemandElement()) ||
+                            ((mySelectorFrameParent->myViewNet->getEditModes().isCurrentSupermodeData()) && AC->getTagProperty()->isDataElement())) {
                         loadedACs.push_back(AC);
                     }
                 }
@@ -327,7 +323,7 @@ GNESelectorFrame::SelectionOperation::onCmdLoad(FXObject*, FXSelector, void*) {
     FXFileDialog opendialog(getCollapsableFrame(), TL("Open List of Selected Items"));
     opendialog.setIcon(GUIIconSubSys::getIcon(GUIIcon::OPEN));
     opendialog.setSelectMode(SELECTFILE_EXISTING);
-    opendialog.setPatternList("Selection files (*.txt)\nAll files (*)");
+    opendialog.setPatternList(SUMOXMLDefinitions::TXTFileExtensions.getMultilineString().c_str());
     if (gCurrentFolder.length() != 0) {
         opendialog.setDirectory(gCurrentFolder);
     }
@@ -341,8 +337,8 @@ GNESelectorFrame::SelectionOperation::onCmdLoad(FXObject*, FXSelector, void*) {
 
 long
 GNESelectorFrame::SelectionOperation::onCmdSave(FXObject*, FXSelector, void*) {
-    FXString file = MFXUtils::getFilename2Write(this,
-                    TL("Save List of selected Items"), ".txt",
+    FXString file = MFXUtils::getFilename2Write(this, TL("Save List of selected Items"),
+                    SUMOXMLDefinitions::TXTFileExtensions.getMultilineString().c_str(),
                     GUIIconSubSys::getIcon(GUIIcon::SAVE), gCurrentFolder);
     if (file == "") {
         return 1;
@@ -401,6 +397,7 @@ GNESelectorFrame::SelectionOperation::onCmdClear(FXObject*, FXSelector, void*) {
             mySelectorFrameParent->myViewNet->getUndoList()->end();
         }
     }
+    mySelectorFrameParent->myViewNet->updateViewNet();
     return 1;
 }
 
@@ -495,7 +492,7 @@ GNESelectorFrame::SelectionOperation::processMassiveNetworkElementSelection(cons
             }
             // add lanes
             if (!filterLanes || !selectEdges) {
-                for (const auto& lane : incomingEdge->getLanes()) {
+                for (const auto& lane : incomingEdge->getChildLanes()) {
                     networkACs.insert(lane);
                 }
             }
@@ -516,7 +513,7 @@ GNESelectorFrame::SelectionOperation::processMassiveNetworkElementSelection(cons
     // add additionals
     for (const auto& additionalTags : ACs->getAdditionals()) {
         for (const auto& additional : additionalTags.second) {
-            if (additional.second->getTagProperty().isSelectable()) {
+            if (additional.second->getTagProperty()->isSelectable()) {
                 networkACs.insert(additional.second);
             }
         }
@@ -549,7 +546,7 @@ GNESelectorFrame::SelectionOperation::processMassiveDemandElementSelection() con
     // iterate over selectable demand elements
     for (const auto& demandElementTag : ACs->getDemandElements()) {
         for (const auto& demandElement : demandElementTag.second) {
-            if (demandElement.second->getTagProperty().isSelectable()) {
+            if (demandElement.second->getTagProperty()->isSelectable()) {
                 const auto networkACObjectType = demandElement.first->getType();
                 // save locking status in lockedTypes
                 if (massiveSelection.lockedTypes.find(networkACObjectType) == massiveSelection.lockedTypes.end()) {
@@ -576,7 +573,7 @@ GNESelectorFrame::SelectionOperation::processMassiveDataElementSelection() const
     // iterate over selectable demand elements
     for (const auto& genericDataTag : mySelectorFrameParent->myViewNet->getNet()->getAttributeCarriers()->getGenericDatas()) {
         for (const auto& genericData : genericDataTag.second) {
-            if (genericData.second->getTagProperty().isSelectable()) {
+            if (genericData.second->getTagProperty()->isSelectable()) {
                 const auto networkACObjectType = genericData.first->getType();
                 // save locking status in lockedTypes
                 if (massiveSelection.lockedTypes.find(networkACObjectType) == massiveSelection.lockedTypes.end()) {
@@ -723,67 +720,67 @@ GNESelectorFrame::SelectionHierarchy::onCmdParents(FXObject* obj, FXSelector, vo
     const auto selectedACs = viewNet->getNet()->getAttributeCarriers()->getSelectedAttributeCarriers(true);
     // check if there is selected ACs
     if ((selectedACs.size() > 0) && (myCurrentSelectedParent != Selection::NOTHING)) {
-        // vector of hierarchical elements to select
-        std::vector<GNEHierarchicalElement*> HEToSelect;
+        // vector of of element to select or unselect
+        std::vector<GNEAttributeCarrier*> editedParents;
         for (const auto& selectedAC : selectedACs) {
-            if (selectedAC->getTagProperty().getTag() == SUMO_TAG_CONNECTION) {
+            if (selectedAC->getTagProperty()->getTag() == SUMO_TAG_CONNECTION) {
                 const auto connection = viewNet->getNet()->getAttributeCarriers()->retrieveConnection(selectedAC->getGUIGlObject());
-                HEToSelect.push_back(connection->getLaneFrom());
-                HEToSelect.push_back(connection->getLaneTo());
-            } else if (selectedAC->getTagProperty().getTag() == SUMO_TAG_CROSSING) {
+                editedParents.push_back(connection->getLaneFrom());
+                editedParents.push_back(connection->getLaneTo());
+            } else if (selectedAC->getTagProperty()->getTag() == SUMO_TAG_CROSSING) {
                 const auto crossing = viewNet->getNet()->getAttributeCarriers()->retrieveCrossing(selectedAC->getGUIGlObject());
-                HEToSelect.push_back(crossing->getParentJunction());
+                editedParents.push_back(crossing->getParentJunctions().front());
             } else {
                 // get hierarchical element
-                const auto HE = selectedAC->getHierarchicalElement();
+                const auto hierarchicalElement = selectedAC->getHierarchicalElement();
                 // get parent junctions
                 if ((myCurrentSelectedParent == Selection::ALL) || (myCurrentSelectedParent == Selection::JUNCTION)) {
-                    HEToSelect.insert(HEToSelect.end(), HE->getParentJunctions().begin(), HE->getParentJunctions().end());
+                    editedParents.insert(editedParents.end(), hierarchicalElement->getParentJunctions().begin(), hierarchicalElement->getParentJunctions().end());
                 }
                 // get parent edges
                 if ((myCurrentSelectedParent == Selection::ALL) || (myCurrentSelectedParent == Selection::EDGE)) {
-                    if (selectedAC->getTagProperty().getTag() == SUMO_TAG_LANE) {
+                    if (selectedAC->getTagProperty()->getTag() == SUMO_TAG_LANE) {
                         // special case for lanes
-                        HEToSelect.push_back(dynamic_cast<GNELane*>(selectedAC)->getParentEdge());
+                        editedParents.push_back(dynamic_cast<GNELane*>(selectedAC)->getParentEdge());
                     } else {
-                        HEToSelect.insert(HEToSelect.end(), HE->getParentEdges().begin(), HE->getParentEdges().end());
+                        editedParents.insert(editedParents.end(), hierarchicalElement->getParentEdges().begin(), hierarchicalElement->getParentEdges().end());
                     }
                 }
                 // get parent lanes
                 if ((myCurrentSelectedParent == Selection::ALL) || (myCurrentSelectedParent == Selection::LANE)) {
-                    HEToSelect.insert(HEToSelect.end(), HE->getParentLanes().begin(), HE->getParentLanes().end());
+                    editedParents.insert(editedParents.end(), hierarchicalElement->getParentLanes().begin(), hierarchicalElement->getParentLanes().end());
                 }
                 // get parent additional
                 if ((myCurrentSelectedParent == Selection::ALL) || (myCurrentSelectedParent == Selection::ADDITIONAL)) {
-                    HEToSelect.insert(HEToSelect.end(), HE->getParentAdditionals().begin(), HE->getParentAdditionals().end());
+                    editedParents.insert(editedParents.end(), hierarchicalElement->getParentAdditionals().begin(), hierarchicalElement->getParentAdditionals().end());
                 }
                 // get parent wire
                 if ((myCurrentSelectedParent == Selection::ALL) || (myCurrentSelectedParent == Selection::WIRE)) {
-                    HEToSelect.insert(HEToSelect.end(), HE->getParentAdditionals().begin(), HE->getParentAdditionals().end());
+                    editedParents.insert(editedParents.end(), hierarchicalElement->getParentAdditionals().begin(), hierarchicalElement->getParentAdditionals().end());
                 }
                 // get parent demand
                 if ((myCurrentSelectedParent == Selection::ALL) || (myCurrentSelectedParent == Selection::DEMAND)) {
-                    HEToSelect.insert(HEToSelect.end(), HE->getParentDemandElements().begin(), HE->getParentDemandElements().end());
+                    editedParents.insert(editedParents.end(), hierarchicalElement->getParentDemandElements().begin(), hierarchicalElement->getParentDemandElements().end());
                 }
                 // get parent data
                 if ((myCurrentSelectedParent == Selection::ALL) || (myCurrentSelectedParent == Selection::DATA)) {
-                    HEToSelect.insert(HEToSelect.end(), HE->getParentGenericDatas().begin(), HE->getParentGenericDatas().end());
+                    editedParents.insert(editedParents.end(), hierarchicalElement->getParentGenericDatas().begin(), hierarchicalElement->getParentGenericDatas().end());
                 }
             }
         }
         // select HE
-        if (HEToSelect.size() > 0) {
-            if (HEToSelect.size() > 1) {
+        if (editedParents.size() > 0) {
+            if (editedParents.size() > 1) {
                 viewNet->getUndoList()->begin(GUIIcon::SELECT, TL("select parents"));
             }
-            for (const auto& HE : HEToSelect) {
+            for (const auto& HE : editedParents) {
                 if (obj == mySelectParentsButton) {
                     HE->setAttribute(GNE_ATTR_SELECTED, "true", viewNet->getUndoList());
                 } else {
                     HE->setAttribute(GNE_ATTR_SELECTED, "false", viewNet->getUndoList());
                 }
             }
-            if (HEToSelect.size() > 1) {
+            if (editedParents.size() > 1) {
                 viewNet->getUndoList()->end();
             }
         }
@@ -802,112 +799,112 @@ GNESelectorFrame::SelectionHierarchy::onCmdChildren(FXObject* obj, FXSelector, v
     const auto selectedACs = mySelectorFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getSelectedAttributeCarriers(true);
     // check if there is selected ACs
     if ((selectedACs.size() > 0) && (myCurrentSelectedChild != Selection::NOTHING)) {
-        // vector of hierarchical elements to select
-        std::vector<GNEHierarchicalElement*> HEToSelect;
+        // vector of of element to select or unselect
+        std::vector<GNEAttributeCarrier*> editedChildren;
         for (const auto& selectedAC : selectedACs) {
             // get hierarchical element
-            const auto HE = selectedAC->getHierarchicalElement();
+            const auto hierarchicalElement = selectedAC->getHierarchicalElement();
             // junctions
             if ((myCurrentSelectedChild == Selection::ALL) || (myCurrentSelectedChild == Selection::JUNCTION)) {
-                if (selectedAC->getTagProperty().getTag() == SUMO_TAG_JUNCTION) {
+                if (selectedAC->getTagProperty()->getTag() == SUMO_TAG_JUNCTION) {
                     // special case for junction
                     const auto junction = dynamic_cast<GNEJunction*>(selectedAC);
                     // insert edges
-                    HEToSelect.insert(HEToSelect.end(), junction->getGNEIncomingEdges().begin(), junction->getGNEIncomingEdges().end());
-                    HEToSelect.insert(HEToSelect.end(), junction->getGNEOutgoingEdges().begin(), junction->getGNEOutgoingEdges().end());
+                    editedChildren.insert(editedChildren.end(), junction->getGNEIncomingEdges().begin(), junction->getGNEIncomingEdges().end());
+                    editedChildren.insert(editedChildren.end(), junction->getGNEOutgoingEdges().begin(), junction->getGNEOutgoingEdges().end());
                 } else {
-                    HEToSelect.insert(HEToSelect.end(), HE->getChildJunctions().begin(), HE->getChildJunctions().end());
+                    editedChildren.insert(editedChildren.end(), hierarchicalElement->getChildJunctions().begin(), hierarchicalElement->getChildJunctions().end());
                 }
             }
             // edges
             if ((myCurrentSelectedChild == Selection::ALL) || (myCurrentSelectedChild == Selection::EDGE)) {
-                if (selectedAC->getTagProperty().getTag() == SUMO_TAG_EDGE) {
+                if (selectedAC->getTagProperty()->getTag() == SUMO_TAG_EDGE) {
                     // special case for edges
                     const auto edge = dynamic_cast<GNEEdge*>(selectedAC);
                     // insert lanes
-                    HEToSelect.insert(HEToSelect.end(), edge->getLanes().begin(), edge->getLanes().end());
+                    editedChildren.insert(editedChildren.end(), edge->getChildLanes().begin(), edge->getChildLanes().end());
                 } else {
-                    HEToSelect.insert(HEToSelect.end(), HE->getChildEdges().begin(), HE->getChildEdges().end());
+                    editedChildren.insert(editedChildren.end(), hierarchicalElement->getChildEdges().begin(), hierarchicalElement->getChildEdges().end());
                 }
             }
             // connections
             if ((myCurrentSelectedChild == Selection::ALL) || (myCurrentSelectedChild == Selection::CONNECTION)) {
-                if (selectedAC->getTagProperty().getTag() == SUMO_TAG_EDGE) {
+                if (selectedAC->getTagProperty()->getTag() == SUMO_TAG_EDGE) {
                     // case for edges
                     const auto edge = dynamic_cast<GNEEdge*>(selectedAC);
                     // insert connections
-                    HEToSelect.insert(HEToSelect.end(), edge->getGNEConnections().begin(), edge->getGNEConnections().end());
-                } else if (selectedAC->getTagProperty().getTag() == SUMO_TAG_LANE) {
+                    editedChildren.insert(editedChildren.end(), edge->getGNEConnections().begin(), edge->getGNEConnections().end());
+                } else if (selectedAC->getTagProperty()->getTag() == SUMO_TAG_LANE) {
                     // case for lanes
                     const auto lane = dynamic_cast<GNELane*>(selectedAC);
                     // insert connections
                     for (const auto& connection : lane->getParentEdge()->getGNEConnections()) {
                         if (connection->getAttribute(SUMO_ATTR_FROM_LANE) == lane->getAttribute(SUMO_ATTR_INDEX)) {
-                            HEToSelect.push_back(connection);
+                            editedChildren.push_back(connection);
                         }
                     }
-                } else if (selectedAC->getTagProperty().getTag() == SUMO_TAG_JUNCTION) {
+                } else if (selectedAC->getTagProperty()->getTag() == SUMO_TAG_JUNCTION) {
                     // case for junction
                     const auto junction = dynamic_cast<GNEJunction*>(selectedAC);
                     // get connections
                     const auto connections = junction->getGNEConnections();
                     // insert connections
-                    HEToSelect.insert(HEToSelect.end(), connections.begin(), connections.end());
+                    editedChildren.insert(editedChildren.end(), connections.begin(), connections.end());
                 }
             }
             // crossings
             if ((myCurrentSelectedChild == Selection::ALL) || (myCurrentSelectedChild == Selection::CROSSING)) {
-                if (selectedAC->getTagProperty().getTag() == SUMO_TAG_JUNCTION) {
+                if (selectedAC->getTagProperty()->getTag() == SUMO_TAG_JUNCTION) {
                     // case for junction
                     const auto junction = dynamic_cast<GNEJunction*>(selectedAC);
                     // insert crossings
-                    HEToSelect.insert(HEToSelect.end(), junction->getGNECrossings().begin(), junction->getGNECrossings().end());
+                    editedChildren.insert(editedChildren.end(), junction->getGNECrossings().begin(), junction->getGNECrossings().end());
                 }
             }
             // lanes
             if ((myCurrentSelectedChild == Selection::ALL) || (myCurrentSelectedChild == Selection::LANE)) {
-                HEToSelect.insert(HEToSelect.end(), HE->getChildLanes().begin(), HE->getChildLanes().end());
+                editedChildren.insert(editedChildren.end(), hierarchicalElement->getChildLanes().begin(), hierarchicalElement->getChildLanes().end());
             }
             // additional
             if ((myCurrentSelectedChild == Selection::ALL) || (myCurrentSelectedChild == Selection::ADDITIONAL)) {
                 // avoid insert symbols
-                for (const auto& additionalChild : HE->getChildAdditionals()) {
-                    if (!additionalChild->getTagProperty().isWireElement() && !additionalChild->getTagProperty().isSymbol()) {
-                        HEToSelect.push_back(additionalChild);
+                for (const auto& additionalChild : hierarchicalElement->getChildAdditionals()) {
+                    if (!additionalChild->getTagProperty()->isWireElement() && !additionalChild->getTagProperty()->isSymbol()) {
+                        editedChildren.push_back(additionalChild);
                     }
                 }
             }
             // wire
             if ((myCurrentSelectedChild == Selection::ALL) || (myCurrentSelectedChild == Selection::WIRE)) {
                 // avoid insert symbols
-                for (const auto& wireChild : HE->getChildAdditionals()) {
-                    if (wireChild->getTagProperty().isWireElement() && !wireChild->getTagProperty().isSymbol()) {
-                        HEToSelect.push_back(wireChild);
+                for (const auto& wireChild : hierarchicalElement->getChildAdditionals()) {
+                    if (wireChild->getTagProperty()->isWireElement() && !wireChild->getTagProperty()->isSymbol()) {
+                        editedChildren.push_back(wireChild);
                     }
                 }
             }
             // demand
             if ((myCurrentSelectedChild == Selection::ALL) || (myCurrentSelectedChild == Selection::DEMAND)) {
-                HEToSelect.insert(HEToSelect.end(), HE->getChildDemandElements().begin(), HE->getChildDemandElements().end());
+                editedChildren.insert(editedChildren.end(), hierarchicalElement->getChildDemandElements().begin(), hierarchicalElement->getChildDemandElements().end());
             }
             // data
             if ((myCurrentSelectedChild == Selection::ALL) || (myCurrentSelectedChild == Selection::DATA)) {
-                HEToSelect.insert(HEToSelect.end(), HE->getChildGenericDatas().begin(), HE->getChildGenericDatas().end());
+                editedChildren.insert(editedChildren.end(), hierarchicalElement->getChildGenericDatas().begin(), hierarchicalElement->getChildGenericDatas().end());
             }
         }
         // select HE
-        if (HEToSelect.size() > 0) {
-            if (HEToSelect.size() > 1) {
+        if (editedChildren.size() > 0) {
+            if (editedChildren.size() > 1) {
                 mySelectorFrameParent->getViewNet()->getUndoList()->begin(GUIIcon::SELECT, TL("select children"));
             }
-            for (const auto& HE : HEToSelect) {
+            for (const auto& HE : editedChildren) {
                 if (obj == mySelectChildrenButton) {
                     HE->setAttribute(GNE_ATTR_SELECTED, "true", mySelectorFrameParent->getViewNet()->getUndoList());
                 } else {
                     HE->setAttribute(GNE_ATTR_SELECTED, "false", mySelectorFrameParent->getViewNet()->getUndoList());
                 }
             }
-            if (HEToSelect.size() > 1) {
+            if (editedChildren.size() > 1) {
                 mySelectorFrameParent->getViewNet()->getUndoList()->end();
             }
         }
@@ -943,9 +940,7 @@ GNESelectorFrame::GNESelectorFrame(GNEViewParent* viewParent, GNEViewNet* viewNe
     // create Modification Mode modul
     myModificationMode = new ModificationMode(this);
     // create ElementSet modul
-    myNetworkElementSet = new GNEElementSet(this, Supermode::NETWORK, SUMO_TAG_EDGE, SUMO_ATTR_SPEED, ">10.0");
-    myDemandElementSet = new GNEElementSet(this, Supermode::DEMAND, SUMO_TAG_VEHICLE, SUMO_ATTR_ID, "");
-    myDataElementSet = new GNEElementSet(this, Supermode::DATA, GNE_TAG_EDGEREL_SINGLE, GNE_ATTR_PARAMETERS, "key=value");
+    myMatchAttribute = new GNEMatchAttribute(this);
     // create VisualScaling modul
     myVisualScaling = new VisualScaling(this);
     // create SelectionOperation modul
@@ -962,23 +957,7 @@ GNESelectorFrame::~GNESelectorFrame() {}
 
 void
 GNESelectorFrame::show() {
-    // refresh element set
-    if (myViewNet->getEditModes().isCurrentSupermodeNetwork()) {
-        // only show network element set
-        myNetworkElementSet->showElementSet();
-        myDemandElementSet->hideElementSet();
-        myDataElementSet->hideElementSet();
-    } else if (myViewNet->getEditModes().isCurrentSupermodeDemand()) {
-        // only show demand element set
-        myNetworkElementSet->hideElementSet();
-        myDemandElementSet->showElementSet();
-        myDataElementSet->hideElementSet();
-    } else if (myViewNet->getEditModes().isCurrentSupermodeData()) {
-        // only show data element set
-        myNetworkElementSet->hideElementSet();
-        myDemandElementSet->hideElementSet();
-        myDataElementSet->showElementSet();
-    }
+    myMatchAttribute->showMatchAttribute();
     // update information label
     mySelectionInformation->updateInformationLabel();
     // Show frame
@@ -1019,14 +998,14 @@ GNESelectorFrame::selectAttributeCarrier(const GNEViewNetHelper::ViewObjectsSele
         return false;
     }
     // check modes
-    if ((AC->getTagProperty().isNetworkElement() || AC->getTagProperty().isAdditionalElement()) &&
+    if ((AC->getTagProperty()->isNetworkElement() || AC->getTagProperty()->isAdditionalElement()) &&
             !myViewNet->getEditModes().isCurrentSupermodeNetwork()) {
         return false;
     }
-    if (AC->getTagProperty().isDemandElement() && !myViewNet->getEditModes().isCurrentSupermodeDemand()) {
+    if (AC->getTagProperty()->isDemandElement() && !myViewNet->getEditModes().isCurrentSupermodeDemand()) {
         return false;
     }
-    if (AC->getTagProperty().isDataElement() && !myViewNet->getEditModes().isCurrentSupermodeData()) {
+    if (AC->getTagProperty()->isDataElement() && !myViewNet->getEditModes().isCurrentSupermodeData()) {
         return false;
     }
     // filter GLObjects by layer
@@ -1085,7 +1064,7 @@ GNESelectorFrame::handleIDs(const std::vector<GNEAttributeCarrier*>& ACs, const 
         std::set<GNEEdge*> edgesToSelect;
         // iterate over ACsToSelect and extract edges
         for (const auto& AC : ACsToSelect) {
-            if (AC.second->getTagProperty().getTag() == SUMO_TAG_EDGE) {
+            if (AC.second->getTagProperty()->getTag() == SUMO_TAG_EDGE) {
                 edgesToSelect.insert(myViewNet->getNet()->getAttributeCarriers()->retrieveEdge(AC.second->getID()));
             }
         }
@@ -1120,140 +1099,18 @@ GNESelectorFrame::handleIDs(const std::vector<GNEAttributeCarrier*>& ACs, const 
         // first unselect AC of ACsToUnselect and then selects AC of ACsToSelect
         myViewNet->getUndoList()->begin(GUIIcon::MODESELECT, TL("selection"));
         for (const auto& ACToUnselect : ACsToUnselect) {
-            if (ACToUnselect.second->getTagProperty().isSelectable()) {
+            if (ACToUnselect.second->getTagProperty()->isSelectable()) {
                 ACToUnselect.second->setAttribute(GNE_ATTR_SELECTED, "false", myViewNet->getUndoList());
             }
         }
         for (const auto& ACToSelect : ACsToSelect) {
-            if (ACToSelect.second->getTagProperty().isSelectable()) {
+            if (ACToSelect.second->getTagProperty()->isSelectable()) {
                 ACToSelect.second->setAttribute(GNE_ATTR_SELECTED, "true", myViewNet->getUndoList());
             }
         }
         // finish operation
         myViewNet->getUndoList()->end();
     }
-}
-
-
-std::vector<GNEAttributeCarrier*>
-GNESelectorFrame::getMatches(const SumoXMLTag ACTag, const SumoXMLAttr ACAttr, const char compOp, const double val, const std::string& expr) {
-    std::vector<GNEAttributeCarrier*> result;
-    // first retrieve all ACs using ACTag
-    const auto allACbyTag = myViewNet->getNet()->getAttributeCarriers()->retrieveAttributeCarriers(ACTag);
-    // get Tag value
-    const auto& tagValue = GNEAttributeCarrier::getTagProperty(ACTag);
-    // iterate over all ACs
-    for (const auto& AC : allACbyTag) {
-        if (expr == "" && compOp == '@') {
-            result.push_back(AC);
-        } else if (tagValue.hasAttribute(ACAttr) && tagValue.getAttributeProperties(ACAttr).isNumerical()) {
-            double acVal;
-            std::istringstream buf(AC->getAttribute(ACAttr));
-            buf >> acVal;
-            switch (compOp) {
-                case '<':
-                    if (acVal < val) {
-                        result.push_back(AC);
-                    }
-                    break;
-                case '>':
-                    if (acVal > val) {
-                        result.push_back(AC);
-                    }
-                    break;
-                case '=':
-                    if (acVal == val) {
-                        result.push_back(AC);
-                    }
-                    break;
-            }
-        } else {
-            // string match
-            std::string acVal = AC->getAttributeForSelection(ACAttr);
-            switch (compOp) {
-                case '@':
-                    if (acVal.find(expr) != std::string::npos) {
-                        result.push_back(AC);
-                    }
-                    break;
-                case '!':
-                    if (acVal.find(expr) == std::string::npos) {
-                        result.push_back(AC);
-                    }
-                    break;
-                case '=':
-                    if (acVal == expr) {
-                        result.push_back(AC);
-                    }
-                    break;
-                case '^':
-                    if (acVal != expr) {
-                        result.push_back(AC);
-                    }
-                    break;
-            }
-        }
-    }
-    return result;
-}
-
-
-std::vector<GNEAttributeCarrier*>
-GNESelectorFrame::getGenericMatches(const std::vector<GNEGenericData*>& genericDatas, const std::string& attr, const char compOp, const double val, const std::string& expr) {
-    std::vector<GNEAttributeCarrier*> result;
-    // iterate over generic datas
-    for (const auto& genericData : genericDatas) {
-        if (expr == "" && compOp == '@') {
-            result.push_back(genericData);
-        } else if (attr != toString(GNE_ATTR_PARENT)) {
-            double acVal;
-            std::istringstream buf(genericData->getParameter(attr, "0"));
-            buf >> acVal;
-            switch (compOp) {
-                case '<':
-                    if (acVal < val) {
-                        result.push_back(genericData);
-                    }
-                    break;
-                case '>':
-                    if (acVal > val) {
-                        result.push_back(genericData);
-                    }
-                    break;
-                case '=':
-                    if (acVal == val) {
-                        result.push_back(genericData);
-                    }
-                    break;
-            }
-        } else {
-            // string match
-            std::string acVal = genericData->getAttributeForSelection(GNE_ATTR_PARENT);
-            switch (compOp) {
-                case '@':
-                    if (acVal.find(expr) != std::string::npos) {
-                        result.push_back(genericData);
-                    }
-                    break;
-                case '!':
-                    if (acVal.find(expr) == std::string::npos) {
-                        result.push_back(genericData);
-                    }
-                    break;
-                case '=':
-                    if (acVal == expr) {
-                        result.push_back(genericData);
-                    }
-                    break;
-                case '^':
-                    if (acVal != expr) {
-                        result.push_back(genericData);
-                    }
-                    break;
-            }
-        }
-    }
-    return result;
 }
 
 

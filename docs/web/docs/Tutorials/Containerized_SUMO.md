@@ -9,21 +9,22 @@ This tutorial shows how to use SUMO to run simulations inside a docker container
 This tutorial demonstrates how to use SUMO for running simulations without installing the software on your local machine.
 
 It is also possible to run the GUI applications from the docker container.
-The way to do this is highly dependent on your individual setup, so we will not provide the required configuration or commands.
+The way to do this is highly dependent on your individual setup.
+We try [in a dedicated tutorial](Containerized_SUMO_GUI.md) to give advice on how to do this.
 
 ## Getting the docker image
 
 You can either get the latest docker image from the SUMO docker registry by using
 
 ```shell
-  docker pull ghcr.io/eclipse-sumo/sumo:main
+  docker pull ghcr.io/eclipse-sumo/sumo:latest
 ```
 
 or build your own local version of the image by checking out the [SUMO repository](https://github.com/eclipse-sumo/sumo) and executing:
 
 ```shell
   cd build_config/docker
-  docker build -t ghcr.io/eclipse-sumo/sumo:main -f Dockerfile.ubuntu.git .
+  docker build -t ghcr.io/eclipse-sumo/sumo:latest -f Dockerfile.ubuntu.git .
 ```
 
 ## Creating simulation files
@@ -102,7 +103,7 @@ The command to start the container might look like this:
   docker run \
       --rm \
       -v $SIMULATION_FILES_DIR:$SIMULATION_FILES_DIR \
-      ghcr.io/eclipse-sumo/sumo:main \
+      ghcr.io/eclipse-sumo/sumo:latest \
       sumo --configuration-file $SIMULATION_FILES_DIR/hello.sumocfg --full-output $SIMULATION_FILES_DIR/result.xml
 ```
 

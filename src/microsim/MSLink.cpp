@@ -52,6 +52,7 @@
 //#define DEBUG_COND (true)
 #define DEBUG_COND2(obj) (obj->isSelected())
 //#define DEBUG_COND2(obj) (obj->getID() == "train2")
+//#define DEBUG_COND2(obj) (true)
 //#define DEBUG_COND_ZIPPER (gDebugFlag1)
 //#define DEBUG_COND_ZIPPER (true)
 #define DEBUG_COND_ZIPPER (ego->isSelected())
@@ -70,7 +71,7 @@
 
 const SUMOTime MSLink::myLookaheadTime = TIME2STEPS(1);
 // additional caution is needed when approaching a zipper link
-const SUMOTime MSLink::myLookaheadTimeZipper = TIME2STEPS(4);
+const SUMOTime MSLink::myLookaheadTimeZipper = TIME2STEPS(16);
 std::set<std::pair<MSLink*, MSLink*> > MSLink::myRecheck;
 const double MSLink::NO_INTERSECTION(10000);
 
@@ -666,10 +667,14 @@ MSLink::setApproaching(const SUMOVehicle* approaching, const SUMOTime arrivalTim
     const SUMOTime leaveTime = getLeaveTime(arrivalTime, arrivalSpeed, leaveSpeed, approaching->getVehicleType().getLength());
 #ifdef DEBUG_APPROACHING
     if (DEBUG_COND2(approaching)) {
-        std::cout << SIMTIME << " Link '" << (myLaneBefore == 0 ? "NULL" : myLaneBefore->getID()) << "'->'" << (myLane == 0 ? "NULL" : myLane->getID()) << "' Adding approaching vehicle '" << approaching->getID() << "'\nCurrently registered vehicles:" << std::endl;
-        for (auto i = myApproachingVehicles.begin(); i != myApproachingVehicles.end(); ++i) {
-            std::cout << "'" << i->first->getID() << "'" << std::endl;
+        std::cout << SIMTIME << " link=" << getDescription() << " setApproaching veh=" << approaching->getID();
+        if (myApproachingVehicles.size() > 0) {
+            std::cout << " curApproaching=";
+            for (auto i = myApproachingVehicles.begin(); i != myApproachingVehicles.end(); ++i) {
+                std::cout << i->first->getID() << " ";
+            }
         }
+        std::cout << "\n";
     }
 #endif
     myApproachingVehicles.emplace(approaching,
@@ -680,13 +685,16 @@ MSLink::setApproaching(const SUMOVehicle* approaching, const SUMOTime arrivalTim
 
 void
 MSLink::setApproaching(const SUMOVehicle* approaching, ApproachingVehicleInformation ai) {
-
 #ifdef DEBUG_APPROACHING
     if (DEBUG_COND2(approaching)) {
-        std::cout << SIMTIME << " Link '" << (myLaneBefore == 0 ? "NULL" : myLaneBefore->getID()) << "'->'" << (myLane == 0 ? "NULL" : myLane->getID()) << "' Adding approaching vehicle '" << approaching->getID() << "'\nCurrently registered vehicles:" << std::endl;
-        for (auto i = myApproachingVehicles.begin(); i != myApproachingVehicles.end(); ++i) {
-            std::cout << "'" << i->first->getID() << "'" << std::endl;
+        std::cout << SIMTIME << " link=" << getDescription() << " setApproaching veh=" << approaching->getID();
+        if (myApproachingVehicles.size() > 0) {
+            std::cout << " curApproaching=";
+            for (auto i = myApproachingVehicles.begin(); i != myApproachingVehicles.end(); ++i) {
+                std::cout << i->first->getID() << " ";
+            }
         }
+        std::cout << "\n";
     }
 #endif
     myApproachingVehicles.emplace(approaching, ai);
@@ -702,14 +710,16 @@ MSLink::setApproachingPerson(const MSPerson* approaching, const SUMOTime arrival
 
 void
 MSLink::removeApproaching(const SUMOVehicle* veh) {
-
 #ifdef DEBUG_APPROACHING
     if (DEBUG_COND2(veh)) {
-        std::cout << SIMTIME << " Link '" << (myLaneBefore == 0 ? "NULL" : myLaneBefore->getID()) << "'->'" << (myLane == 0 ? "NULL" : myLane->getID()) << std::endl;
-        std::cout << "' Removing approaching vehicle '" << veh->getID() << "'\nCurrently registered vehicles:" << std::endl;
-        for (auto i = myApproachingVehicles.begin(); i != myApproachingVehicles.end(); ++i) {
-            std::cout << "'" << i->first->getID() << "'" << std::endl;
+        std::cout << SIMTIME << " link=" << getDescription() << " removeApproaching veh=" << veh->getID();
+        if (myApproachingVehicles.size() > 0) {
+            std::cout << " curApproaching=";
+            for (auto i = myApproachingVehicles.begin(); i != myApproachingVehicles.end(); ++i) {
+                std::cout << i->first->getID() << " ";
+            }
         }
+        std::cout << "\n";
     }
 #endif
     myApproachingVehicles.erase(veh);
@@ -742,6 +752,17 @@ MSLink::getApproaching(const SUMOVehicle* veh) const {
         return i->second;
     } else {
         return ApproachingVehicleInformation(INVALID_TIME, INVALID_TIME, 0, 0, false, 0, 0, 0, 0, 0);
+    }
+}
+
+
+const MSLink::ApproachingVehicleInformation*
+MSLink::getApproachingPtr(const SUMOVehicle* veh) const {
+    auto i = myApproachingVehicles.find(veh);
+    if (i != myApproachingVehicles.end()) {
+        return &i->second;
+    } else {
+        return nullptr;
     }
 }
 
@@ -1586,6 +1607,7 @@ MSLink::getLeaderInfo(const MSVehicle* ego, double dist, std::vector<const MSPer
             // ignore foe vehicles that will not pass
             if ((!cannotIgnore || leader->isStopped() || sameTarget)
                     && !willPass
+                    && (avi.arrivalTime == INVALID_TIME || leader->getSpeed() < SUMO_const_haltingSpeed)
                     && leader->isFrontOnLane(foeLane)
                     && !isOpposite
                     && !inTheWay
@@ -1876,7 +1898,7 @@ MSLink::checkWalkingAreaFoe(const MSVehicle* ego, const MSLane* foeLane, std::ve
             double dist = ego->getPosition().distanceTo2D(p->getPosition()) - p->getVehicleType().getLength();
             const bool inFront = isInFront(ego, egoPath, p->getPosition()) || isInFront(ego, egoPath, getFuturePosition(p));
             if (inFront) {
-                dist -= ego->getVehicleType().getMinGap();
+                dist -= MAX2(ego->getVehicleType().getMinGap(), MSPModel::SAFETY_GAP);
             }
 #ifdef DEBUG_WALKINGAREA
             if (ego->isSelected()) {
@@ -2011,11 +2033,8 @@ MSLink::getZipperSpeed(const MSVehicle* ego, const double dist, double vSafe,
         // link should have LINKSTATE_MAJOR in this case
         assert(false);
         return vSafe;
-    } else if (myFoeLinks.size() > 1) {
-        throw ProcessError("Zipper junctions with more than two conflicting lanes are not supported (at junction '"
-                           + myJunction->getID() + "')");
     }
-    const double brakeGap = ego->getCarFollowModel().brakeGap(ego->getSpeed(), ego->getCarFollowModel().getMaxDecel(), TS);
+    const double brakeGap = ego->getCarFollowModel().brakeGap(vSafe, ego->getCarFollowModel().getMaxDecel(), TS);
     if (dist > MAX2(myFoeVisibilityDistance, brakeGap)) {
 #ifdef DEBUG_ZIPPER
         const SUMOTime now = MSNet::getInstance()->getCurrentTimeStep();
@@ -2033,6 +2052,7 @@ MSLink::getZipperSpeed(const MSVehicle* ego, const double dist, double vSafe,
              << " numFoes=" << foes->size()
              << "\n")
 #endif
+    const bool uniqueFoeLink = myFoeLinks.size() == 1;
     MSLink* foeLink = myFoeLinks[0];
     for (const auto& item : *foes) {
         if (!item->isVehicle()) {
@@ -2040,7 +2060,22 @@ MSLink::getZipperSpeed(const MSVehicle* ego, const double dist, double vSafe,
         }
         const MSVehicle* foe = dynamic_cast<const MSVehicle*>(item);
         assert(foe != 0);
-        const ApproachingVehicleInformation& avi = foeLink->getApproaching(foe);
+        const ApproachingVehicleInformation* aviPtr = nullptr;
+        if (uniqueFoeLink) {
+            aviPtr = foeLink->getApproachingPtr(foe);
+        } else {
+            // figure out which link is approached by the current foe
+            for (MSLink* fl : myFoeLinks) {
+                aviPtr = fl->getApproachingPtr(foe);
+                if (aviPtr != nullptr) {
+                    break;
+                }
+            }
+        }
+        if (aviPtr == nullptr) {
+            continue;
+        }
+        const ApproachingVehicleInformation& avi = *aviPtr;
         const double foeDist = (foe->isActive() ? avi.dist : MAX2(0.0, avi.dist -
                                 STEPS2TIME(MSNet::getInstance()->getCurrentTimeStep() - foe->getLastActionTime()) * avi.speed));
 
@@ -2088,27 +2123,24 @@ MSLink::getZipperSpeed(const MSVehicle* ego, const double dist, double vSafe,
 
         const double vMax = ego->getLane()->getVehicleMaxSpeed(ego);
         const double vAccel = ego->getCarFollowModel().estimateSpeedAfterDistance(dist, ego->getSpeed(), ego->getCarFollowModel().getMaxAccel());
-        const double vDecel = ego->getCarFollowModel().estimateSpeedAfterDistance(dist, ego->getSpeed(), ego->getCarFollowModel().getMaxDecel());
+        const double vDecel = ego->getCarFollowModel().estimateSpeedAfterDistance(dist, ego->getSpeed(), -ego->getCarFollowModel().getMaxDecel());
         const double vEnd = MIN3(vMax, vAccel, MAX2(uEnd, vDecel));
         const double vAvg = (ego->getSpeed() + vEnd) / 2;
         const double te0 = dist / MAX2(NUMERICAL_EPS, vAvg);
         const double te = MAX2(1.0, ceil((te0) / TS) * TS);
 
+        const double tTarget = tf + ego->getCarFollowModel().getHeadwayTime();
+        const double a = ego->getCarFollowModel().avoidArrivalAccel(dist, tTarget, vSafe, ego->getCarFollowModel().getMaxDecel());
+
         const double gap = dist - foe->getVehicleType().getLength() - ego->getVehicleType().getMinGap() - foeDist;
-        const double safeGap = ego->getCarFollowModel().getSecureGap(ego, foe, vEnd, uEnd, foe->getCarFollowModel().getMaxDecel());
-        // round t to next step size
-        // increase gap to safeGap by the time foe reaches link
-        // gap + u*t - (t * v + a * t^2 / 2) = safeGap
-        const double deltaGap = gap + tf * uAvg - safeGap - vAvg * tf;
-        const double a = 2 * deltaGap / (tf * tf);
-        const double vSafeGap = ego->getSpeed() + ACCEL2SPEED(a);
         const double vFollow = ego->getCarFollowModel().followSpeed(
                                    ego, ego->getSpeed(), gap, avi.speed, foe->getCarFollowModel().getMaxDecel(), foe);
+        const double vSafeGap = MAX2(vFollow, ego->getSpeed() + ACCEL2SPEED(a));
 
         // scale behavior based on ego time to link (te)
         const double w = MIN2(1.0, te / 10);
         const double maxDecel = w * ego->getCarFollowModel().getMaxDecel() + (1 - w) * ego->getCarFollowModel().getEmergencyDecel();
-        const double vZipper = MAX3(vFollow, ego->getSpeed() - ACCEL2SPEED(maxDecel), w * vSafeGap + (1 - w) * vFollow);
+        const double vZipper = MAX3(vFollow, ego->getSpeed() - ACCEL2SPEED(maxDecel), vSafeGap);
 
         vSafe = MIN2(vSafe, vZipper);
 #ifdef DEBUG_ZIPPER
@@ -2122,11 +2154,9 @@ MSLink::getZipperSpeed(const MSVehicle* ego, const double dist, double vSafe,
                                              << " uEnd=" << uEnd
                                              << " uAvg=" << uAvg
                                              << " gap=" << gap
-                                             << " safeGap=" << safeGap
                                              << "\n      "
                                              << " tf=" << tf
                                              << " te=" << te
-                                             << " dg=" << deltaGap
                                              << " aSafeGap=" << a
                                              << " vMax=" << vMax
                                              << " vAccel=" << vAccel

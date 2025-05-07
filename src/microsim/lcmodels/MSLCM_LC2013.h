@@ -193,6 +193,9 @@ protected:
         return dist / abs(laneOffset) > lookForwardDist;
     }
 
+    /// @brief whether there is a lane beyond laneOffset that can be used to overtake the stopped leader on the neighboring lane
+    bool hasFreeLane(int laneOffset, const std::pair<MSVehicle*, double>& neighLeadStopped) const;
+
 protected:
 
     /// @brief information regarding save velocity (unused) and state flags of the ego vehicle
@@ -233,6 +236,8 @@ protected:
     double mySpeedGainLookahead;
     // @brief the minimum time to spent driving without lane change after a speed-gain change
     double mySpeedGainRemainTime;
+    // @brief the threshold value of mySpeedGainProbability for making a speedGain change urgent
+    double mySpeedGainUrgency;
     // @brief bounus factor staying on the inside of multi-lane roundabout
     double myRoundaboutBonus;
     // @brief factor for cooperative speed adjustment

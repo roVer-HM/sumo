@@ -27,30 +27,37 @@
 
 #include "GNERide.h"
 
+
 // ===========================================================================
 // method definitions
 // ===========================================================================
-
-GNERide::GNERide(GNENet* net, SumoXMLTag tag, GUIIcon icon, GNEDemandElement* personParent, const GNEPlanParents& planParameters,
-                 const double arrivalPosition, const std::vector<std::string>& lines, const std::string& group) :
-    GNEDemandElement(personParent, net, GLO_PERSONTRIP, tag, GUIIconSubSys::getIcon(icon),
-                     GNEPathElement::Options::DEMAND_ELEMENT,
-                     planParameters.getJunctions(), planParameters.getEdges(), {},
-planParameters.getAdditionalElements(), planParameters.getDemandElements(personParent), {}),
-                                     GNEDemandElementPlan(this, -1, arrivalPosition),
-                                     myLines(lines),
-myGroup(group) {
-}
-
-
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4355) // mask warning about "this" in initializers
+#endif
 GNERide::GNERide(SumoXMLTag tag, GNENet* net) :
-    GNEDemandElement("", net, GLO_RIDE, tag, GUIIconSubSys::getIcon(GUIIcon::RIDE_EDGE),
-                     GNEPathElement::Options::DEMAND_ELEMENT, {}, {}, {}, {}, {}, {}),
-GNEDemandElementPlan(this, -1, -1) {
-    // reset default values
-    resetDefaultValues();
+    GNEDemandElement("", net, "", tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElementPlan(this, -1, -1) {
 }
 
+
+GNERide::GNERide(SumoXMLTag tag, GNEDemandElement* personParent, const GNEPlanParents& planParameters,
+                 const double arrivalPosition, const std::vector<std::string>& lines, const std::string& group) :
+    GNEDemandElement(personParent, tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElementPlan(this, -1, arrivalPosition),
+    myLines(lines),
+    myGroup(group) {
+    // set parents
+    setParents<GNEJunction*>(planParameters.getJunctions());
+    setParents<GNEEdge*>(planParameters.getEdges());
+    setParents<GNEAdditional*>(planParameters.getAdditionalElements());
+    setParents<GNEDemandElement*>(planParameters.getDemandElements(personParent));
+    // update centering boundary without updating grid
+    updatePlanCenteringBoundary(false);
+}
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 GNERide::~GNERide() {}
 
@@ -225,7 +232,6 @@ bool
 GNERide::isValid(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_LINES:
-            return canParse<std::vector<std::string> >(value);
         case SUMO_ATTR_GROUP:
             return true;
         default:

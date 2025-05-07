@@ -30,17 +30,17 @@
 #include <utils/common/SUMOTime.h>
 #include <utils/common/ToString.h>
 #include <utils/common/UtilExceptions.h>
-#include "SUMOXMLDefinitions.h"
 
+#include "SUMOXMLDefinitions.h"
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
+
 class Position;
 class PositionVector;
 class Boundary;
 class RGBColor;
-
 
 // ===========================================================================
 // class definitions
@@ -182,7 +182,7 @@ public:
      * @return The read value if given and correct; the default value if the attribute does not exist;  -1 if an error occurred
      */
     SUMOTime getOptOffsetReporting(int attr, const char* objectid, bool& ok,
-                                     SUMOTime defaultValue, bool report = true) const;
+                                   SUMOTime defaultValue, bool report = true) const;
 
     /** @brief Tries to read the SUMOTime 'period' attribute
      *

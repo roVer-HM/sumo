@@ -1,0 +1,114 @@
+pipeline {
+  agent {
+    kubernetes {
+      inheritFrom 'my-agent-pod'
+      yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jnlp
+    resources:
+      limits:
+        memory: "4Gi"
+        cpu: "1"
+      requests:
+        memory: "4Gi"
+        cpu: "1"
+  - name: ubuntu-sumo
+    image: ghcr.io/eclipse/eclipse-sumo-build-ubuntu:latest
+    tty: true
+    resources:
+      limits:
+        memory: "4Gi"
+        cpu: "1.5"
+      requests:
+        memory: "4Gi"
+        cpu: "1.5"
+    command:
+    - cat
+    env:
+    - name: "MAVEN_OPTS"
+      value: "-Duser.home=/home/jenkins"
+    volumeMounts:
+    - name: settings-xml
+      mountPath: /home/jenkins/.m2/settings.xml
+      subPath: settings.xml
+      readOnly: true
+    - name: settings-security-xml
+      mountPath: /home/jenkins/.m2/settings-security.xml
+      subPath: settings-security.xml
+      readOnly: true
+    - name: m2-repo
+      mountPath: /home/jenkins/.m2/repository
+  volumes:
+  - name: settings-xml
+    secret:
+      secretName: m2-secret-dir
+      items:
+      - key: settings.xml
+        path: settings.xml
+  - name: settings-security-xml
+    secret:
+      secretName: m2-secret-dir
+      items:
+      - key: settings-security.xml
+        path: settings-security.xml
+  - name: m2-repo
+    emptyDir: {}
+"""
+    }
+  }
+  stages {
+    stage('Building SUMO') {
+      steps {
+        container('ubuntu-sumo') {
+          sh '''
+            # Cloning JuPedSim
+            git -c advice.detachedHead=false clone -q --filter=tree:0 --branch v1.2.1 https://github.com/PedestrianDynamics/jupedsim.git
+
+            # Building JuPedSim
+            cmake -Wno-dev -D CMAKE_INSTALL_PREFIX=jupedsim-install -B jupedsim-build jupedsim
+            cmake --build jupedsim-build -j4 --config Release
+            cmake --install jupedsim-build --config Release
+
+            # Cloning SUMO
+            git -c advice.detachedHead=false clone -q --filter=tree:0 --branch main https://github.com/eclipse-sumo/sumo.git
+            export SUMO_HOME=\${WORKSPACE}/sumo
+
+            # Creating virtual env for Python for the whole process
+            python3 -m venv env
+            env/bin/python3 -m pip install --quiet -r sumo/tools/requirements.txt
+            env/bin/python3 -m pip install --quiet dmgbuild delocate
+
+            # Building SUMO & TraaS
+            export VIRTUAL_ENV=${WORKSPACE}/env
+            cmake -Wno-dev -D CMAKE_INSTALL_PREFIX=sumo-install -B sumo-build sumo
+            cmake --build sumo-build -j4
+            cmake --build sumo-build --target traas
+          '''
+        }
+      }
+    }
+    stage('Maven Artifact - libsumo') {
+      steps {
+        container('ubuntu-sumo') {
+          sh '''
+            cd sumo-build/src/libsumo
+            mvn --batch-mode deploy
+          '''
+        }
+      }
+    }
+    stage('Maven Artifact - libtraci') {
+      steps {
+        container('ubuntu-sumo') {
+          sh '''
+            cd sumo-build/src/libtraci
+            mvn --batch-mode deploy
+          '''
+        }
+      }
+    }
+  }
+}

@@ -182,6 +182,9 @@ RODUAFrame::addDUAOptions() {
     oc.doRegister("persontrip.taxi.waiting-time", new Option_String("300", "TIME"));
     oc.addDescription("persontrip.taxi.waiting-time", "Processing", TL("Estimated time for taxi pickup"));
 
+    oc.doRegister("persontrip.ride-public-line", new Option_Bool(false));
+    oc.addDescription("persontrip.ride-public-line", "Processing", TL("Only use the intended public transport line rather than any alternative line that stops at the destination"));
+
     oc.doRegister("railway.max-train-length", new Option_Float(1000.0));
     oc.addDescription("railway.max-train-length", "Processing", TL("Use FLOAT as a maximum train length when initializing the railway router"));
 }
@@ -229,6 +232,9 @@ RODUAFrame::checkOptions() {
     }
     if (oc.isDefault("routing-algorithm") && (oc.isSet("astar.all-distances") || oc.isSet("astar.landmark-distances") || oc.isSet("astar.save-landmark-distances"))) {
         oc.setDefault("routing-algorithm", "astar");
+    }
+    if (!oc.isDefault("weights.random-factor") && (oc.isSet("astar.all-distances") || oc.isSet("astar.landmark-distances") || oc.isSet("astar.save-landmark-distances"))) {
+        WRITE_WARNING(TL("The option --weights.random-factor should not be used together with astar and precomputed distances."));
     }
 
     if (oc.getString("route-choice-method") != "gawron" && oc.getString("route-choice-method") != "logit") {

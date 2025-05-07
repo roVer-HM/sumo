@@ -18,9 +18,10 @@
 // The Widget for edit type distribution elements
 /****************************************************************************/
 
+#include <netedit/frames/GNEAttributesEditor.h>
+#include <utils/gui/images/GUIIconSubSys.h>
 
 #include "GNETypeDistributionFrame.h"
-
 
 // ===========================================================================
 // method definitions
@@ -36,7 +37,7 @@ GNETypeDistributionFrame::GNETypeDistributionFrame(GNEViewParent* viewParent, GN
     myDistributionSelector = new GNEDistributionFrame::DistributionSelector(this);
 
     /// @brief distribution attributes editor
-    myAttributesEditor = new GNEAttributesEditor(this, TL("Attributes"), GNEAttributesEditor::EditorOptions::BASIC_ATTRIBUTES);
+    myAttributesEditor = new GNEAttributesEditor(this, GNEAttributesEditorType::EditorType::EDITOR);
 
     // Create type distribution attributes editor
     myDistributionValuesEditor = new GNEDistributionFrame::DistributionValuesEditor(this, myDistributionEditor, myDistributionSelector, myAttributesEditor, SUMO_TAG_VTYPE);

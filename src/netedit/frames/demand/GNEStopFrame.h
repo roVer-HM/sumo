@@ -20,22 +20,21 @@
 #pragma once
 #include <config.h>
 
-#include <netedit/elements/demand/GNERouteHandler.h>
 #include <netedit/frames/GNEFrame.h>
-#include <netedit/frames/GNEAttributesCreator.h>
-#include <netedit/frames/GNENeteditAttributes.h>
-#include <netedit/frames/GNEDemandSelector.h>
-#include <netedit/frames/GNETagSelector.h>
-#include <utils/foxtools/MFXDynamicLabel.h>
-#include <utils/vehicle/SUMOVehicleParameter.h>
-#include <utils/xml/CommonXMLStructure.h>
+
+// ===========================================================================
+// class declaration
+// ===========================================================================
+
+class GNEAttributesEditor;
+class GNEDemandElementSelector;
+class GNETagSelector;
+class MFXDynamicLabel;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNEStopFrame
- */
+
 class GNEStopFrame : public GNEFrame {
 
 public:
@@ -102,28 +101,25 @@ protected:
     /// @brief selected demand element in DemandElementSelector
     void demandElementSelected();
 
-private:
-    /// @brief route handler
-    GNERouteHandler myRouteHandler;
+    /// @brief last clicked position
+    Position myLastClickedPosition;
 
+private:
     /// @brief stop parent base object
-    CommonXMLStructure::SumoBaseObject* myStopParentBaseObject;
+    CommonXMLStructure::SumoBaseObject* myStopParentBaseObject = nullptr;
 
     /// @brief plan parameters
     CommonXMLStructure::PlanParameters myPlanParameters;
 
     /// @brief Stop parent selectors
-    GNEDemandElementSelector* myStopParentSelector;
+    GNEDemandElementSelector* myStopParentSelector = nullptr;
 
     /// @brief stop tag selector selector (used to select diffent kind of Stops)
-    GNETagSelector* myStopTagSelector;
+    GNETagSelector* myStopTagSelector = nullptr;
 
-    /// @brief internal Stop attributes
-    GNEAttributesCreator* myStopAttributes;
-
-    /// @brief Netedit parameter
-    GNENeteditAttributes* myNeteditAttributes;
+    /// @brief attributes editor
+    GNEAttributesEditor* myAttributesEditor = nullptr;
 
     /// @brief Help creation
-    HelpCreation* myHelpCreation;
+    HelpCreation* myHelpCreation = nullptr;
 };

@@ -19,6 +19,7 @@
 /****************************************************************************/
 #pragma once
 #include <config.h>
+
 #include "GNEAdditional.h"
 
 // ===========================================================================
@@ -33,11 +34,7 @@ class GNERerouterIntervalDialog;
 // class definitions
 // ===========================================================================
 
-/**
- * @class GNERerouter
- * GNERouteProbReroute
- */
-class GNERouteProbReroute : public GNEAdditional {
+class GNERouteProbReroute : public GNEAdditional, public Parameterised {
 
 public:
     /// @brief default constructor
@@ -156,7 +153,7 @@ public:
 
 protected:
     /// @brief probability with which a vehicle will use the given edge as destination
-    double myProbability;
+    double myProbability = 0;
 
 private:
     /// @brief set attribute after validation

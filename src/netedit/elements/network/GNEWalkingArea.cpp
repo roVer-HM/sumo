@@ -17,9 +17,9 @@
 ///
 // A class for visualizing and editing WalkingAreas
 /****************************************************************************/
-#include <config.h>
 
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/changes/GNEChange_Attribute.h>
@@ -32,18 +32,15 @@
 
 #include "GNEWalkingArea.h"
 
-
 // ===========================================================================
 // method definitions
 // ===========================================================================
 
-GNEWalkingArea::GNEWalkingArea(GNEJunction* parentJunction, const std::string& ID) :
-    GNENetworkElement(parentJunction->getNet(), ID, GLO_WALKINGAREA, SUMO_TAG_WALKINGAREA,
-                      GUIIconSubSys::getIcon(GUIIcon::WALKINGAREA),  {}, {}, {}, {}, {}, {}),
-                                myParentJunction(parentJunction),
-myTesselation(ID, "", RGBColor::GREY, parentJunction->getNBNode()->getWalkingArea(ID).shape, false, true, 0) {
-    // update centering boundary without updating grid
-    updateCenteringBoundary(false);
+GNEWalkingArea::GNEWalkingArea(GNEJunction* junction, const std::string& ID) :
+    GNENetworkElement(junction->getNet(), ID, SUMO_TAG_WALKINGAREA),
+    myTesselation(ID, "", RGBColor::GREY, junction->getNBNode()->getWalkingArea(ID).shape, false, true, 0) {
+    // set parent
+    setParent<GNEJunction*>(junction);
 }
 
 
@@ -59,7 +56,7 @@ GNEWalkingArea::updateGeometry() {
 
 Position
 GNEWalkingArea::getPositionInView() const {
-    return myParentJunction->getPositionInView();
+    return getParentJunctions().front()->getPositionInView();
 }
 
 
@@ -77,6 +74,10 @@ GNEWalkingArea::checkDrawToContour() const {
 
 bool
 GNEWalkingArea::checkDrawRelatedContour() const {
+    // check opened popup
+    if (myNet->getViewNet()->getPopup()) {
+        return myNet->getViewNet()->getPopup()->getGLObject() == this;
+    }
     return false;
 }
 
@@ -97,6 +98,12 @@ GNEWalkingArea::checkDrawDeleteContour() const {
     } else {
         return false;
     }
+}
+
+
+bool
+GNEWalkingArea::checkDrawDeleteContourSmall() const {
+    return false;
 }
 
 
@@ -137,15 +144,9 @@ GNEWalkingArea::removeGeometryPoint(const Position /*clickedPosition*/, GNEUndoL
 }
 
 
-GNEJunction*
-GNEWalkingArea::getParentJunction() const {
-    return myParentJunction;
-}
-
-
 NBNode::WalkingArea&
 GNEWalkingArea::getNBWalkingArea() const {
-    return myParentJunction->getNBNode()->getWalkingArea(getMicrosimID());
+    return getParentJunctions().front()->getNBNode()->getWalkingArea(getMicrosimID());
 }
 
 
@@ -154,13 +155,13 @@ GNEWalkingArea::drawGL(const GUIVisualizationSettings& s) const {
     // declare variables
     const double walkingAreaExaggeration = getExaggeration(s);
     // get walking area shape
-    const auto& walkingAreaShape = myParentJunction->getNBNode()->getWalkingArea(getID()).shape;
+    const auto& walkingAreaShape = getParentJunctions().front()->getNBNode()->getWalkingArea(getID()).shape;
     // only continue if exaggeration is greater than 0 and junction's shape is greater than 4
-    if ((myParentJunction->getNBNode()->getShape().area() > 4) &&
+    if ((getParentJunctions().front()->getNBNode()->getShape().area() > 4) &&
             (walkingAreaShape.size() > 0) && s.drawCrossingsAndWalkingareas) {
         // don't draw this walking area if we're editing their junction parent
         const GNENetworkElement* editedNetworkElement = myNet->getViewNet()->getEditNetworkElementShapes().getEditedNetworkElement();
-        if (!editedNetworkElement || (editedNetworkElement != myParentJunction)) {
+        if (!editedNetworkElement || (editedNetworkElement != getParentJunctions().front())) {
             const auto contourMode = drawInContourMode();
             // get detail level
             const auto d = s.getDetailLevel(walkingAreaExaggeration);
@@ -183,7 +184,7 @@ GNEWalkingArea::drawGL(const GUIVisualizationSettings& s) const {
             }
             // draw dotted contour (except in contour mode) checking if junction parent was inserted with full boundary
             myNetworkElementContour.calculateContourClosedShape(s, d, this, walkingAreaShape, getType(),
-                    walkingAreaExaggeration, myParentJunction, !contourMode);
+                    walkingAreaExaggeration, getParentJunctions().front(), !contourMode);
         }
     }
 }
@@ -203,15 +204,10 @@ GNEWalkingArea::updateGLObject() {
 
 GUIGLObjectPopupMenu*
 GNEWalkingArea::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
-    GUIGLObjectPopupMenu* ret = new GUIGLObjectPopupMenu(app, parent, *this);
-    buildPopupHeader(ret, app);
-    buildCenterPopupEntry(ret);
-    buildNameCopyPopupEntry(ret);
-    // build selection and show parameters menu
-    myNet->getViewNet()->buildSelectionACPopupEntry(ret, this);
-    buildShowParamsPopupEntry(ret);
-    // build position copy entry
-    buildPositionCopyEntry(ret, app);
+    // create popup
+    GUIGLObjectPopupMenu* ret = new GUIGLObjectPopupMenu(app, parent, this);
+    // build common options
+    buildPopUpMenuCommonOptions(ret, app, myNet->getViewNet(), myTagProperty->getTag(), mySelected);
     // check if we're in supermode network
     if (myNet->getViewNet()->getEditModes().isCurrentSupermodeNetwork()) {
         // create menu commands
@@ -255,7 +251,7 @@ GNEWalkingArea::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_SHAPE:
             return toString(walkingArea.shape);
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(nullptr, key);
     }
 }
 
@@ -324,7 +320,7 @@ GNEWalkingArea::isValid(SumoXMLAttr key, const std::string& value) {
 
 const Parameterised::Map&
 GNEWalkingArea::getACParametersMap() const {
-    return GNEAttributeCarrier::PARAMETERS_EMPTY;
+    return getParametersMap();
 }
 
 // ===========================================================================
@@ -420,7 +416,7 @@ GNEWalkingArea::setAttribute(SumoXMLAttr key, const std::string& value) {
             walkingArea.hasCustomShape = true;
             break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(nullptr, key, value);
             break;
     }
 }
@@ -430,8 +426,6 @@ void
 GNEWalkingArea::setMoveShape(const GNEMoveResult& moveResult) {
     // set custom shape
     getNBWalkingArea().shape = moveResult.shapeToUpdate;
-    // update geometry
-    updateGeometry();
 }
 
 

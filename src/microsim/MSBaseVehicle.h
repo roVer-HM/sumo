@@ -431,6 +431,10 @@ public:
     /// @brief return index of edge within route
     int getRoutePosition() const;
 
+    int getArrivalIndex() const {
+        return myParameter->arrivalEdge;
+    }
+
     /// @brief reset index of edge within route
     void resetRoutePosition(int index, DepartLaneDefinition departLaneProcedure);
 
@@ -519,12 +523,15 @@ public:
     /// @brief check for route validity at first insertion attempt
     int getRouteValidity(bool update = true, bool silent = false, std::string* msgReturn = nullptr);
 
+    /// @brief Checks whether the vehilce has the given MoveReminder
+    bool hasReminder(MSMoveReminder* rem) const;
+
     /** @brief Adds a MoveReminder dynamically
      *
      * @param[in] rem the reminder to add
      * @see MSMoveReminder
      */
-    void addReminder(MSMoveReminder* rem);
+    void addReminder(MSMoveReminder* rem, double pos = 0);
 
     /** @brief Removes a MoveReminder dynamically
      *
@@ -953,10 +960,12 @@ public:
      * If the distance is not given it is calculated from the brake gap.
      * The gap returned does not include the minGap.
      * @param dist    up to which distance to look at least for a leader
+     * @param considerCrossingFoes Whether vehicles on crossing foe links should be considered
      * @return The leading vehicle together with the gap; (0, -1) if no leader was found.
      */
-    virtual std::pair<const MSVehicle* const, double> getLeader(double dist = 0) const {
+    virtual std::pair<const MSVehicle* const, double> getLeader(double dist = 0, bool considerCrossingFoes = true) const {
         UNUSED_PARAMETER(dist);
+        UNUSED_PARAMETER(considerCrossingFoes);
         WRITE_WARNING(TL("getLeader not yet implemented for meso"));
         return std::make_pair(nullptr, -1);
     }
@@ -981,6 +990,8 @@ public:
 
     /// @brief apply departEdge and arrivalEdge attributes
     void setDepartAndArrivalEdge();
+
+    int getDepartEdge() const;
 
     int getInsertionChecks() const;
 
@@ -1015,6 +1026,10 @@ public:
         return myChargingMemory;
     }
     //@}
+
+protected:
+    /// @brief reset rail signal approach information
+    virtual void resetApproachOnReroute() {};
 
 protected:
     /// @brief This vehicle's parameter.
@@ -1137,6 +1152,9 @@ private:
 
     /// @brief patch stop.pars.index to record the number of skipped candidate edges before stop.edge (in a looped route)
     void setSkips(MSStop& stop, int prevActiveStops);
+
+    /// @brief remove outdated driveways on reroute
+    SUMOTime activateRemindersOnReroute(SUMOTime currentTime);
 
 private:
     /// invalidated assignment operator

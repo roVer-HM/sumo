@@ -136,7 +136,26 @@ Helper::subscribe(const int commandId, const std::string& id, const std::vector<
         s.range = std::numeric_limits<double>::max();
     }
     if (s.variables.size() == 1 && s.variables.front() == -1) {
-        s.variables.clear();
+        if (contextDomain == 0) {
+            if (commandId == libsumo::CMD_SUBSCRIBE_VEHICLE_VARIABLE) {
+                // default for vehicles is edge id and lane position
+                s.variables = {libsumo::VAR_ROAD_ID, libsumo::VAR_LANEPOSITION};
+                s.parameters.push_back(std::make_shared<tcpip::Storage>());
+            } else if (commandId == libsumo::CMD_SUBSCRIBE_EDGE_VARIABLE ||
+                       commandId == libsumo::CMD_SUBSCRIBE_INDUCTIONLOOP_VARIABLE ||
+                       commandId == libsumo::CMD_SUBSCRIBE_LANE_VARIABLE ||
+                       commandId == libsumo::CMD_SUBSCRIBE_LANEAREA_VARIABLE ||
+                       commandId == libsumo::CMD_SUBSCRIBE_MULTIENTRYEXIT_VARIABLE) {
+                // default for detectors, edges and lanes is vehicle number
+                s.variables[0] = libsumo::LAST_STEP_VEHICLE_NUMBER;
+            } else {
+                // for all others id list
+                s.variables[0] = libsumo::TRACI_ID_LIST;
+            }
+        } else {
+            s.variables.clear();
+            s.parameters.clear();
+        }
     }
     handleSingleSubscription(s);
     libsumo::Subscription* modifiedSubscription = nullptr;
@@ -272,14 +291,14 @@ Helper::handleSingleSubscription(const Subscription& s) {
     }
     auto wrapper = myWrapper.find(getCommandId);
     if (wrapper == myWrapper.end()) {
-        throw TraCIException("Unsupported command specified");
+        throw TraCIException("Unsupported command " + toHex(getCommandId, 2) + " specified");
     }
     std::shared_ptr<VariableWrapper> handler = wrapper->second;
     VariableWrapper* container = handler.get();
     if (s.contextDomain > 0) {
         auto containerWrapper = myWrapper.find(s.commandId + 0x20);
         if (containerWrapper == myWrapper.end()) {
-            throw TraCIException("Unsupported domain specified");
+            throw TraCIException("Unsupported domain " + toHex(s.commandId + 0x20, 2) + " specified");
         }
         container = containerWrapper->second.get();
         container->setContext(&s.id);
@@ -294,22 +313,19 @@ Helper::handleSingleSubscription(const Subscription& s) {
                     container->empty(objID);
                 } else {
                     (*k)->resetPos();
-                    handler->handle(objID, variable, container, k->get());
+                    try {
+                        if (!handler->handle(objID, variable, container, k->get())) {
+                            throw TraCIException("Unsupported variable " + toHex(variable, 2) + " specified");
+                        }
+                    } catch (const std::invalid_argument&) {
+                        throw TraCIException("Unsupported variable " + toHex(variable, 2) + " specified");
+                    }
                     ++k;
                 }
             }
-        } else {
-            if (s.contextDomain == 0 && getCommandId == libsumo::CMD_GET_VEHICLE_VARIABLE) {
-                // default for vehicles is edge id and lane position
-                handler->handle(objID, VAR_ROAD_ID, container, nullptr);
-                handler->handle(objID, VAR_LANEPOSITION, container, nullptr);
-            } else if (s.contextDomain > 0) {
-                // default for contexts is an empty map (similar to id list)
-                container->empty(objID);
-            } else if (!handler->handle(objID, libsumo::LAST_STEP_VEHICLE_NUMBER, container, nullptr)) {
-                // default for detectors is vehicle number, for all others id list
-                handler->handle(objID, libsumo::TRACI_ID_LIST, container, nullptr);
-            }
+        } else if (s.contextDomain > 0) {
+            // default for contexts is an empty map (similar to id list)
+            container->empty(objID);
         }
     }
 }
@@ -1423,7 +1439,7 @@ Helper::postProcessRemoteControl() {
 bool
 Helper::moveToXYMap(const Position& pos, double maxRouteDistance, bool mayLeaveNetwork, const std::string& origID, const double angle,
                     double speed, const ConstMSEdgeVector& currentRoute, const int routePosition, const MSLane* currentLane, double currentLanePos, bool onRoad,
-                    SUMOVehicleClass vClass, bool setLateralPos,
+                    SUMOVehicleClass vClass, double currentAngle, bool setLateralPos,
                     double& bestDistance, MSLane** lane, double& lanePos, int& routeOffset, ConstMSEdgeVector& edges) {
     // collect edges around the vehicle/person
 #ifdef DEBUG_MOVEXY
@@ -1445,6 +1461,7 @@ Helper::moveToXYMap(const Position& pos, double maxRouteDistance, bool mayLeaveN
         const MSEdge* prevEdge = nullptr;
         const MSEdge* nextEdge = nullptr;
         bool onRoute = false;
+        bool useCurrentAngle = false;
         // the next if/the clause sets "onRoute", "prevEdge", and "nextEdge", depending on
         //  whether the currently seen edge is an internal one or a normal one
         if (e->isWalkingArea() || e->isCrossing()) {
@@ -1541,6 +1558,10 @@ Helper::moveToXYMap(const Position& pos, double maxRouteDistance, bool mayLeaveN
             }
             if (prevEdgePos != currentRoute.end() && (prevEdgePos + 1) != currentRoute.end()) {
                 onRoute = *(prevEdgePos + 1) == nextEdge;
+            } else {
+                // we cannot make use of route information and should make
+                // use of the current angle if the user did not supply an angle
+                useCurrentAngle = angle == INVALID_DOUBLE_VALUE;
             }
 #ifdef DEBUG_MOVEXY_ANGLE
             std::cout << "internal:" << e->getID() << " prev:" << Named::getIDSecure(prevEdge) << " next:" << Named::getIDSecure(nextEdge) << "\n";
@@ -1591,7 +1612,8 @@ Helper::moveToXYMap(const Position& pos, double maxRouteDistance, bool mayLeaveN
                 // ambiguous mapping. Don't trust this
                 dist2 = FAR_AWAY;
             }
-            const double angleDiff = (angle == INVALID_DOUBLE_VALUE || l->getEdge().isWalkingArea() ? 0 : GeomHelper::getMinAngleDiff(angle, langle));
+            const double angle2 = useCurrentAngle ? currentAngle : angle;
+            const double angleDiff = (angle2 == INVALID_DOUBLE_VALUE || l->getEdge().isWalkingArea() ? 0 : GeomHelper::getMinAngleDiff(angle2, langle));
 #ifdef DEBUG_MOVEXY_ANGLE
             std::cout << std::setprecision(gPrecision)
                       << " candLane=" << l->getID() << " lAngle=" << langle << " lLength=" << l->getLength()
@@ -1849,10 +1871,42 @@ Helper::moveToXYMap_matchingRoutePosition(const Position& pos, const std::string
 
 double
 Helper::patchShapeDistance(const MSLane* lane, const Position& pos, double dist, bool wasPerpendicular) {
-    if ((lane->isNormal() || lane->isCrossing()) && (wasPerpendicular || lane->getShape().nearest_offset_to_point25D(pos, true) != GeomHelper::INVALID_OFFSET)) {
+    if (!lane->isWalkingArea() && (wasPerpendicular || lane->getShape().nearest_offset_to_point25D(pos, true) != GeomHelper::INVALID_OFFSET)) {
         dist = MAX2(0.0, dist - lane->getWidth() * 0.5);
     }
     return dist;
+}
+
+
+int
+Helper::readDistanceRequest(tcpip::Storage& data, TraCIRoadPosition& roadPos, Position& pos) {
+    int distType = 0;
+    StoHelp::readCompound(data, 2, "Retrieval of distance requires two parameter as compound.");
+    const int posType = data.readUnsignedByte();
+    switch (posType) {
+        case libsumo::POSITION_ROADMAP: {
+            roadPos.edgeID = data.readString();
+            roadPos.pos = data.readDouble();
+            roadPos.laneIndex = data.readUnsignedByte();
+            break;
+        }
+        case libsumo::POSITION_2D:
+        case libsumo::POSITION_3D: {
+            pos.setx(data.readDouble());
+            pos.sety(data.readDouble());
+            if (posType == libsumo::POSITION_3D) {
+                pos.setz(data.readDouble());
+            }
+            break;
+        }
+        default:
+            throw TraCIException("Unknown position format used for distance request.");
+    }
+    distType = data.readUnsignedByte();
+    if (distType != libsumo::REQUEST_DRIVINGDIST) {
+        throw TraCIException("Only driving distance is supported.");
+    }
+    return posType;
 }
 
 
@@ -1953,10 +2007,117 @@ Helper::SubscriptionWrapper::wrapStringDoublePair(const std::string& objID, cons
 
 
 bool
+Helper::SubscriptionWrapper::wrapStringDoublePairList(const std::string& objID, const int variable, const std::vector<std::pair<std::string, double> >& value) {
+    auto sl = std::make_shared<TraCIStringDoublePairList>();
+    sl->value = value;
+    (*myActiveResults)[objID][variable] = sl;
+    return true;
+}
+
+
+bool
 Helper::SubscriptionWrapper::wrapStringPair(const std::string& objID, const int variable, const std::pair<std::string, std::string>& value) {
     auto sl = std::make_shared<TraCIStringList>();
     sl->value.push_back(value.first);
     sl->value.push_back(value.second);
+    (*myActiveResults)[objID][variable] = sl;
+    return true;
+}
+
+
+bool
+Helper::SubscriptionWrapper::wrapIntPair(const std::string& objID, const int variable, const std::pair<int, int>& value) {
+    auto sl = std::make_shared<TraCIIntList>();
+    sl->value.push_back(value.first);
+    sl->value.push_back(value.second);
+    (*myActiveResults)[objID][variable] = sl;
+    return true;
+}
+
+
+bool
+Helper::SubscriptionWrapper::wrapStage(const std::string& objID, const int variable, const TraCIStage& value) {
+    (*myActiveResults)[objID][variable] = std::make_shared<TraCIStage>(value);
+    return true;
+}
+
+
+bool
+Helper::SubscriptionWrapper::wrapReservationVector(const std::string& objID, const int variable, const std::vector<libsumo::TraCIReservation>& value) {
+    auto sl = std::make_shared<TraCIReservationVectorWrapped>();
+    sl->value = value;
+    (*myActiveResults)[objID][variable] = sl;
+    return true;
+}
+
+
+bool
+Helper::SubscriptionWrapper::wrapLogicVector(const std::string& objID, const int variable, const std::vector<libsumo::TraCILogic>& value) {
+    auto sl = std::make_shared<TraCILogicVectorWrapped>();
+    sl->value = value;
+    (*myActiveResults)[objID][variable] = sl;
+    return true;
+}
+
+
+bool
+Helper::SubscriptionWrapper::wrapLinkVectorVector(const std::string& objID, const int variable, const std::vector<std::vector<libsumo::TraCILink> >& value) {
+    auto sl = std::make_shared<TraCILinkVectorVectorWrapped>();
+    sl->value = value;
+    (*myActiveResults)[objID][variable] = sl;
+    return true;
+}
+
+
+bool
+Helper::SubscriptionWrapper::wrapSignalConstraintVector(const std::string& objID, const int variable, const std::vector<libsumo::TraCISignalConstraint>& value) {
+    auto sl = std::make_shared<TraCISignalConstraintVectorWrapped>();
+    sl->value = value;
+    (*myActiveResults)[objID][variable] = sl;
+    return true;
+}
+
+
+bool
+Helper::SubscriptionWrapper::wrapJunctionFoeVector(const std::string& objID, const int variable, const std::vector<libsumo::TraCIJunctionFoe>& value) {
+    auto sl = std::make_shared<TraCIJunctionFoeVectorWrapped>();
+    sl->value = value;
+    (*myActiveResults)[objID][variable] = sl;
+    return true;
+}
+
+
+bool
+Helper::SubscriptionWrapper::wrapNextStopDataVector(const std::string& objID, const int variable, const std::vector<libsumo::TraCINextStopData>& value) {
+    auto sl = std::make_shared<TraCINextStopDataVectorWrapped>();
+    sl->value = value;
+    (*myActiveResults)[objID][variable] = sl;
+    return true;
+}
+
+
+bool
+Helper::SubscriptionWrapper::wrapVehicleDataVector(const std::string& objID, const int variable, const std::vector<libsumo::TraCIVehicleData>& value) {
+    auto sl = std::make_shared<TraCIVehicleDataVectorWrapped>();
+    sl->value = value;
+    (*myActiveResults)[objID][variable] = sl;
+    return true;
+}
+
+
+bool
+Helper::SubscriptionWrapper::wrapBestLanesDataVector(const std::string& objID, const int variable, const std::vector<libsumo::TraCIBestLanesData>& value) {
+    auto sl = std::make_shared<TraCIBestLanesDataVectorWrapped>();
+    sl->value = value;
+    (*myActiveResults)[objID][variable] = sl;
+    return true;
+}
+
+
+bool
+Helper::SubscriptionWrapper::wrapNextTLSDataVector(const std::string& objID, const int variable, const std::vector<libsumo::TraCINextTLSData>& value) {
+    auto sl = std::make_shared<TraCINextTLSDataVectorWrapped>();
+    sl->value = value;
     (*myActiveResults)[objID][variable] = sl;
     return true;
 }

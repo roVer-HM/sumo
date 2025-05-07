@@ -15,13 +15,26 @@ A vehicle can be equipped with an Taxi device to make it part of the taxi fleet.
 To attach a Taxi device to a vehicle, the [standard device-equipment
 procedures](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#devices) can be applied using `<device name>=taxi`.
 
-For instance, a single vehicle can configured as taxi as in the following minimal example
+For instance, a single vehicle can configured as taxi as in the following minimal example:
 
 ```xml
     <vehicle id="v0" route="route0" depart="0" line="taxi">
         <param key="has.taxi.device" value="true"/>
     </vehicle>
 ```
+
+The following table gives the full list of possible parameters for the taxi device (all parameter names have to be prepended with "device.taxi"):
+
+| Parameter                        | Type             | Range                     | Default          | Description                                                                         |
+| -------------------------------- | ---------------- | ------------------------- | ---------------- | ----------------------------------------------------------------------------------- |
+| dispatch-algorithm               | enum             | {greedy; greedyClosest; greedyShared; routeExtension; traci} | greedy | The dispatch algorithm                                     |
+| dispatch-algorithm.output        | string           |                           | -                | Write information from the dispatch algorithm to a file                             |
+| dispatch-algorithm.params        | string           |                           | -                | Provide absLossThreshold and relLossThreshold thresholds for greedyShared dispatch algorithm as KEY1:VALUE1[,KEY2:VALUE] |
+| dispatch-period                  | float (s)        |                           | 60               | The period between successive calls to the dispatcher                               |
+| idle-algorithm                   | enum             | {stop; randomCircling; taxistand} | stop     | The behavior of idle taxis                                                          |
+| idle-algorithm.output            | string           |                           | -                | Write information from the idling algorithm to file                                 |
+
+
 
 # Taxi Requests
 
@@ -125,6 +138,12 @@ algorithms are available
 !!! note
     User-contributed dispatch algorithms are welcome.
 
+The period in which the dispatch algorithm runs can be controlled with option **--device.taxi.dispatch-period**. The default is 60s.
+
+## Algorithm-Output
+
+Option **--device.taxi.dispatch-algorithm.output FILE** is can be set to receive extra outputs from algorithms (i.e. for ride sharing metrics).
+
 # Taxi Behavior
 
 By default, taxis will remain in the simulation until all persons have left. To make them leave the simulation at an earlier time, the end time can be defined using a generic parameter in their ```vType``` or ```vehicle```-definition:
@@ -154,7 +173,11 @@ When using idle-algorithm **taxistand**, the following inputs must be provided:
 - the list of parkingAreas that may be used for a particular taxi or taxi fleet must be defined as a `<rerouter>`-element according to the [description for parking search simulation](Rerouter.md#rerouting_to_an_alternative_parking_area).
 - the taxi must define the parameter `device.taxi.stands-rerouter` either as a child element of the `<vehicle>` or its `<vType>` and declare the rerouter id.
 
-The strategy for choosing among the alternative taxi stands follows the description for parking search simulation (i.e. with respect to prior knowledge of remaining capacity).
+By default, an idle taxi will pick the first parkingarea in the list of alternatives (`<parkingAreaReroute` entries in the `<rerouter>`).
+If the [generic parameter](GenericParameters.md) `<param key="parking.ignoreDest" value="1"/>` is set in the vehicle or vType, then the "best" according to the rerouting strategy is used (i.e. the stand closest to the current vehicle location).
+
+The strategy for choosing among the alternative taxi stands follows the description for [parking search simulation](Rerouter.md#determining_the_alternative_parking_area) (i.e. with respect to prior knowledge of remaining capacity).
+
 
 Example declarations for the rerouter and the taxi vType that references it:
 

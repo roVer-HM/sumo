@@ -117,10 +117,15 @@ public:
         std::string victimType;
         double colliderSpeed;
         double victimSpeed;
+        Position colliderFront;
+        Position victimFront;
+        Position colliderBack;
+        Position victimBack;
         std::string type;
         const MSLane* lane;
         double pos;
         SUMOTime time;
+        SUMOTime continuationTime;
     };
 
     typedef std::map<std::string, std::vector<Collision> > CollisionMap;

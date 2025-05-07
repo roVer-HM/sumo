@@ -15,65 +15,50 @@
 /// @author  Pablo Alvarez Lopez
 /// @date    Jan 2020
 ///
-// A abstract class for data sets
+// A abstract class for generic datas
 /****************************************************************************/
 #pragma once
 #include <config.h>
 
-#include <netbuild/NBEdge.h>
-#include <netbuild/NBVehicle.h>
+#include <netedit/elements/GNEAttributeCarrier.h>
 #include <netedit/elements/GNEHierarchicalElement.h>
 #include <netedit/elements/GNEPathElement.h>
-#include <utils/common/Parameterised.h>
-#include <utils/geom/PositionVector.h>
-#include <utils/gui/div/GUIGeometry.h>
 #include <utils/gui/globjects/GUIGlObject.h>
-#include <utils/router/SUMOAbstractRouter.h>
+#include <utils/common/Parameterised.h>
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
 
-class GNEViewNet;
 class GNEDataInterval;
-
+class GNENet;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNEGenericData
- * @brief An Element which don't belong to GNENet but has influence in the simulation
- */
-class GNEGenericData : public GNEPathElement, public Parameterised, public GNEHierarchicalElement {
+
+class GNEGenericData : public GNEAttributeCarrier, public GNEHierarchicalElement, public GUIGlObject, public GNEPathElement, public Parameterised {
 
 public:
+    /// @brief default Constructor
+    GNEGenericData(SumoXMLTag tag, GNENet* net);
+
     /**@brief Constructor
      * @param[in] tag generic data Tag (edgeData, laneData, etc.)
-     * @param[in] GLType GUIGlObjectType associated to this Generic Data
      * @param[in] dataIntervalParent pointer to data interval parent
      * @param[in] parameters parameters map
-     * @param[in] junctionParents vector of junction parents
-     * @param[in] edgeParents vector of edge parents
-     * @param[in] laneParents vector of lane parents
-     * @param[in] additionalParents vector of additional parents
-     * @param[in] demandElementParents vector of demand element parents
-     * @param[in] genericDataParents vector of generic data parents
      */
-    GNEGenericData(const SumoXMLTag tag, FXIcon* icon, const GUIGlObjectType type, GNEDataInterval* dataIntervalParent,
-                   const Parameterised::Map& parameters,
-                   const std::vector<GNEJunction*>& junctionParents,
-                   const std::vector<GNEEdge*>& edgeParents,
-                   const std::vector<GNELane*>& laneParents,
-                   const std::vector<GNEAdditional*>& additionalParents,
-                   const std::vector<GNEDemandElement*>& demandElementParents,
-                   const std::vector<GNEGenericData*>& genericDataParents);
+    GNEGenericData(const SumoXMLTag tag, GNEDataInterval* dataIntervalParent,
+                   const Parameterised::Map& parameters);
 
     /// @brief Destructor
     virtual ~GNEGenericData();
 
     /// @brief check if current generic data is visible
     virtual bool isGenericDataVisible() const = 0;
+
+    /// @brief get GNEHierarchicalElement associated with this AttributeCarrier
+    GNEHierarchicalElement* getHierarchicalElement();
 
     /// @brief get GUIGlObject associated with this AttributeCarrier
     GUIGlObject* getGUIGlObject();
@@ -110,6 +95,9 @@ public:
 
     /// @brief check if draw delete contour (pink/white)
     bool checkDrawDeleteContour() const;
+
+    /// @brief check if draw delete contour small (pink/white)
+    bool checkDrawDeleteContourSmall() const;
 
     /// @brief check if draw select contour (blue)
     bool checkDrawSelectContour() const;

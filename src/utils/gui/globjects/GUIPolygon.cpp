@@ -179,16 +179,14 @@ TesselatedPolygon::drawTesselation(const PositionVector& shape) const {
     }
 }
 
-
 // ===========================================================================
 // GUIPolygon method definitions
 // ===========================================================================
 
 GUIPolygon::GUIPolygon(const std::string& id, const std::string& type, const RGBColor& color,
-                       const PositionVector& shape, bool geo, bool fill,
-                       double lineWidth, double layer, double angle, const std::string& imgFile,
-                       bool relativePath, const std::string& name):
-    TesselatedPolygon(id, type, color, shape, geo, fill, lineWidth, layer, angle, imgFile, relativePath, name),
+                       const PositionVector& shape, bool geo, bool fill, double lineWidth,
+                       double layer, double angle, const std::string& imgFile, const std::string& name):
+    TesselatedPolygon(id, type, color, shape, geo, fill, lineWidth, layer, angle, imgFile, name),
     GUIGlObject_AbstractAdd(GLO_POLYGON, id, GUIIconSubSys::getIcon(GUIIcon::POLY)),
     myRotatedShape(nullptr) {
     if (angle != 0.) {
@@ -205,7 +203,7 @@ GUIPolygon::~GUIPolygon() {
 GUIGLObjectPopupMenu*
 GUIPolygon::getPopUpMenu(GUIMainWindow& app,
                          GUISUMOAbstractView& parent) {
-    GUIGLObjectPopupMenu* ret = new GUIGLObjectPopupMenu(app, parent, *this);
+    GUIGLObjectPopupMenu* ret = new GUIGLObjectPopupMenu(app, parent, this);
     buildPopupHeader(ret, app, false);
     GUIDesigns::buildFXMenuCommand(ret, "(" + getShapeType() + ")", nullptr, nullptr, 0);
     new FXMenuSeparator(ret);

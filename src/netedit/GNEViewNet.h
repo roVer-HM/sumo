@@ -24,15 +24,6 @@
 
 #include "GNEViewNetHelper.h"
 
-
-// ===========================================================================
-// class declaration
-// ===========================================================================
-class GNEFrame;
-class GNENet;
-class GNEUndoList;
-class GNEViewParent;
-
 // ===========================================================================
 // class definitions
 // ===========================================================================
@@ -93,16 +84,10 @@ public:
     void updateObjectsInPosition(const Position& pos);
 
     /// @brief get objects in the given shape (using triangulation)
-    void updateObjectsInShape(const PositionVector &shape);
+    void updateObjectsInShape(const PositionVector& shape);
 
     /// @brief redraw elements only for calculating boundary
     void redrawPathElementContours();
-
-    /** @brief Builds an entry which allows to (de)select the object
-     * @param ret The popup menu to add the entry to
-     * @param AC AttributeCarrier that will be select/unselected
-     */
-    void buildSelectionACPopupEntry(GUIGLObjectPopupMenu* ret, GNEAttributeCarrier* AC);
 
     /// @brief set color scheme
     bool setColorScheme(const std::string& name);
@@ -572,9 +557,6 @@ public:
     /// @brief set statusBar text
     void setStatusBarText(const std::string& text);
 
-    /// @brief reset last clicked position
-    void resetLastClickedPosition();
-
     /// @brief whether to autoselect nodes or to lanes
     bool autoSelectNodes();
 
@@ -747,9 +729,6 @@ private:
 
     /// @brief draw preview roundabout
     bool myDrawPreviewRoundabout = false;
-
-    /// @brief last clicked position
-    Position myLastClickedPosition = Position::INVALID;
 
     /// @brief flag for mark if during this frame a popup was created (needed to avoid problems in linux with CursorDialogs)
     bool myCreatedPopup = false;

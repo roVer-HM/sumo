@@ -23,7 +23,7 @@ import sys
 import subprocess
 from collections import namedtuple
 import re
-from xml.sax import parse, parseString, handler, saxutils
+from xml.sax import parse, parseString, handler
 import optparse
 import argparse
 import io
@@ -31,6 +31,7 @@ from argparse import RawDescriptionHelpFormatter  # noqa
 from copy import deepcopy
 from functools import wraps
 from .miscutils import openz, parseTime
+from .xml import xmlescape
 
 
 class ConfigurationReader(handler.ContentHandler):
@@ -96,6 +97,7 @@ def assign_prefixed_options(args, allowed_programs):
     remaining = []
     consumed = False
     for arg_index, arg in enumerate(args):
+        used = False
         if consumed:
             consumed = False
             continue
@@ -105,14 +107,18 @@ def assign_prefixed_options(args, allowed_programs):
                 program = arg[2:separator_index]
                 if program in allowed_programs:
                     try:
-                        if '--' in args[arg_index+1]:
-                            raise ValueError()
-                        option = [arg[separator_index+1:], args[arg_index+1]]
+                        if '=' in arg:
+                            option = arg[separator_index+1:].split('=')
+                        else:
+                            if '--' in args[arg_index+1]:
+                                raise ValueError()
+                            option = [arg[separator_index+1:], args[arg_index+1]]
+                            consumed = True
                     except (IndexError, ValueError):
                         raise ValueError("Please amend prefixed argument %s with a value." % arg)
+                    used = True
                     prefixed_options.setdefault(program, []).append(option)
-                    consumed = True
-        if not consumed:
+        if not used:
             remaining.append(arg)
     return prefixed_options, remaining
 
@@ -140,10 +146,6 @@ def readOptions(filename):
     optionReader = OptionReader()
     parse(filename, optionReader)
     return optionReader.opts
-
-
-def xmlescape(value):
-    return saxutils.escape(str(value), {'"': '&quot;'})
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -206,9 +208,7 @@ class ArgumentParser(argparse.ArgumentParser):
         return s
 
     def __init__(self, *args, **kwargs):
-        self._allowed_programs = kwargs.get("allowed_programs", [])
-        if "allowed_programs" in kwargs:
-            del kwargs["allowed_programs"]
+        self._allowed_programs = kwargs.pop("allowed_programs", [])
         self._catch_all = None
         argparse.ArgumentParser.__init__(self, *args, **kwargs)
         # add common argument for loading configuration
@@ -222,22 +222,15 @@ class ArgumentParser(argparse.ArgumentParser):
     def add_argument(self, *args, **kwargs):
         # due argparse only accept certain values (action, choices, type, help...),
         #  we need to extract extra parameters before call add_argument
-        fix_path = kwargs.get("fix_path")
-        if "fix_path" in kwargs:
-            del kwargs["fix_path"]
-        # get category
-        category = kwargs.get("category")
-        if "category" in kwargs:
-            del kwargs["category"]
-        catch_all = kwargs.get("catch_all", False)
-        if "catch_all" in kwargs:
-            del kwargs["catch_all"]
+        fix_path = kwargs.pop("fix_path", False)
+        category = kwargs.pop("category", None)
+        catch_all = kwargs.pop("catch_all", False)
         # get action
         action = kwargs.get("action")
         # parse argument
         a = argparse.ArgumentParser.add_argument(self, *args, **kwargs)
         # check if fix path
-        if fix_path is True:
+        if fix_path:
             for s in a.option_strings:
                 if s.startswith("--"):
                     self._fix_path_args.add(s[2:])
@@ -263,7 +256,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
     def add_mutually_exclusive_group(self, required=False):
         group = argparse.ArgumentParser.add_mutually_exclusive_group(self, required=required)
-        group.add_argument = handleCategoryWrapper(group.add_argument)
+        group.add_argument = handleCategoryWrapper(self, group.add_argument)
         return group
 
     def _write_config_file(self, namespace, toString=False):
@@ -403,7 +396,20 @@ class ArgumentParser(argparse.ArgumentParser):
                     if option.name in self._fix_path_args and not value.startswith("http"):
                         value = os.path.join(os.path.dirname(cfg_file), value)
                     if option.name in pos_map and option.name != 'remaining_args':
-                        pos_args[pos_map[option.name]] = value
+                        if ',' in value:
+                            value = value.split(',')
+                        else:
+                            value = value.split()
+                        for i, v in enumerate(value):
+                            pos_args[pos_map[option.name]] = v
+                            if i + 1 < len(value):
+                                # shift pos_map
+                                pos_args.append(None)
+                                curPos = pos_map[option.name]
+                                for o, pos in pos_map.items():
+                                    if pos >= curPos:
+                                        pos_map[o] += 1
+
                     elif not is_set:
                         if value == "True":
                             config_args += ["--" + option.name]
@@ -456,14 +462,17 @@ class ArgumentParser(argparse.ArgumentParser):
         return namespace, remaining_args
 
 
-def handleCategoryWrapper(func):
+def handleCategoryWrapper(parser, func):
     @wraps(func)
     def inner(*args, **kwargs):
-        category = kwargs.get("category")
         # remove category from arguments and set in result
-        if "category" in kwargs:
-            del kwargs["category"]
+        category = kwargs.pop("category", None)
+        fix_path = kwargs.pop("fix_path", True)
         result = func(*args, **kwargs)
+        if fix_path:
+            for s in result.option_strings:
+                if s.startswith("--"):
+                    parser._fix_path_args.add(s[2:])
         result.category = category
         # set if is a boolean
         action = kwargs.get("action")

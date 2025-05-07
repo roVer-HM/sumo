@@ -18,14 +18,14 @@
 // Dialog used to fix network elements during saving
 /****************************************************************************/
 
-#include <utils/gui/windows/GUIAppEnum.h>
-#include <utils/gui/div/GUIDesigns.h>
 #include <netedit/GNENet.h>
-#include <netedit/GNEViewNet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
+#include <netedit/GNEViewNet.h>
+#include <utils/gui/div/GUIDesigns.h>
+#include <utils/gui/windows/GUIAppEnum.h>
 
 #include "GNEFixNetworkElements.h"
-
 
 // ===========================================================================
 // FOX callback mapping
@@ -69,9 +69,9 @@ GNEFixNetworkElements::GNEFixNetworkElements(GNEViewNet* viewNet, const std::vec
     std::vector<GNENetworkElement*> invalidEdges, invalidCrossings;
     // fill groups
     for (const auto& invalidNetworkElement : invalidNetworkElements) {
-        if (invalidNetworkElement->getTagProperty().getTag() == SUMO_TAG_EDGE) {
+        if (invalidNetworkElement->getTagProperty()->getTag() == SUMO_TAG_EDGE) {
             invalidEdges.push_back(invalidNetworkElement);
-        } else if (invalidNetworkElement->getTagProperty().getTag() == SUMO_TAG_CROSSING) {
+        } else if (invalidNetworkElement->getTagProperty()->getTag() == SUMO_TAG_CROSSING) {
             invalidCrossings.push_back(invalidNetworkElement);
         }
     }
@@ -186,7 +186,8 @@ GNEFixNetworkElements::FixOptions::setInvalidElements(const std::vector<GNENetwo
 bool
 GNEFixNetworkElements::FixOptions::saveContents() const {
     const FXString file = MFXUtils::getFilename2Write(myTable,
-                          TL("Save list of conflicted items"), ".txt",
+                          TL("Save list of conflicted items"),
+                          SUMOXMLDefinitions::TXTFileExtensions.getMultilineString().c_str(),
                           GUIIconSubSys::getIcon(GUIIcon::SAVE), gCurrentFolder);
     if (file == "") {
         return false;

@@ -17,6 +17,7 @@
 ///
 //
 /****************************************************************************/
+#include <config.h>
 
 #include <netedit/GNENet.h>
 #include <netedit/GNESegment.h>
@@ -32,32 +33,27 @@
 #include "GNEOverheadWire.h"
 #include "GNEAdditionalHandler.h"
 
-
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
 GNEOverheadWire::GNEOverheadWire(GNENet* net) :
-    GNEAdditional("", net, GLO_OVERHEAD_WIRE_SEGMENT, SUMO_TAG_OVERHEAD_WIRE_SECTION,
-                  GUIIconSubSys::getIcon(GUIIcon::OVERHEADWIRE), "", {}, {}, {}, {}, {}, {}),
-                            myStartPos(0),
-                            myEndPos(0),
-myFriendlyPosition(false) {
-    // reset default values
-    resetDefaultValues();
+    GNEAdditional("", net, "", SUMO_TAG_OVERHEAD_WIRE_SECTION, "") {
 }
 
 
-GNEOverheadWire::GNEOverheadWire(const std::string& id, std::vector<GNELane*> lanes, GNEAdditional* substation, GNENet* net,
+GNEOverheadWire::GNEOverheadWire(const std::string& id, GNENet* net, const std::string& filename, std::vector<GNELane*> lanes, GNEAdditional* substation,
                                  const double startPos, const double endPos, const bool friendlyPos, const std::vector<std::string>& forbiddenInnerLanes,
                                  const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, GLO_OVERHEAD_WIRE_SEGMENT, SUMO_TAG_OVERHEAD_WIRE_SECTION,
-                  GUIIconSubSys::getIcon(GUIIcon::OVERHEADWIRE), "", {}, {}, lanes, {substation}, {}, {}),
-Parameterised(parameters),
-myStartPos(startPos),
-myEndPos(endPos),
-myFriendlyPosition(friendlyPos),
-myForbiddenInnerLanes(forbiddenInnerLanes) {
+    GNEAdditional(id, net, filename, SUMO_TAG_OVERHEAD_WIRE_SECTION, ""),
+    Parameterised(parameters),
+    myStartPos(startPos),
+    myEndPos(endPos),
+    myFriendlyPosition(friendlyPos),
+    myForbiddenInnerLanes(forbiddenInnerLanes) {
+    // set parents
+    setParents<GNELane*>(lanes);
+    setParent<GNEAdditional*>(substation);
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -88,7 +84,7 @@ GNEOverheadWire::writeAdditional(OutputDevice& device) const {
     device.writeAttr(SUMO_ATTR_STARTPOS, myStartPos);
     device.writeAttr(SUMO_ATTR_ENDPOS, myEndPos);
     if (myFriendlyPosition) {
-        device.writeAttr(SUMO_ATTR_FRIENDLY_POS, true);
+        device.writeAttr(SUMO_ATTR_FRIENDLY_POS, myFriendlyPosition);
     }
     if (!myForbiddenInnerLanes.empty()) {
         device.writeAttr(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN, myForbiddenInnerLanes);
@@ -394,12 +390,10 @@ GNEOverheadWire::getAttribute(SumoXMLAttr key) const {
             return toString(myFriendlyPosition);
         case SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN:
             return toString(myForbiddenInnerLanes);
-        case GNE_ATTR_PARAMETERS:
-            return getParametersStr();
         case GNE_ATTR_SHIFTLANEINDEX:
             return "";
         default:
-            return getCommonAttribute(key);
+            return getCommonAttribute(this, key);
     }
 }
 
@@ -445,7 +439,6 @@ GNEOverheadWire::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndo
         case SUMO_ATTR_ENDPOS:
         case SUMO_ATTR_FRIENDLY_POS:
         case SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN:
-        case GNE_ATTR_PARAMETERS:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
@@ -466,25 +459,22 @@ GNEOverheadWire::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return (myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_TRACTION_SUBSTATION, value, false) != nullptr);
             }
-        case SUMO_ATTR_LANES:
-            if (value.empty()) {
-                return false;
-            } else if (canParse<std::vector<GNELane*> >(myNet, value, false)) {
-                // check if lanes are consecutives
-                return lanesConsecutives(parse<std::vector<GNELane*> >(myNet, value));
-            } else {
-                return false;
-            }
         case SUMO_ATTR_STARTPOS:
-            return canParse<double>(value);
+            if (value.empty() || (value == TL("lane start"))) {
+                return true;
+            } else {
+                return canParse<double>(value);
+            }
         case SUMO_ATTR_ENDPOS:
-            return canParse<double>(value);
+            if (value.empty() || (value == TL("lane end"))) {
+                return true;
+            } else {
+                return canParse<double>(value);
+            }
         case SUMO_ATTR_FRIENDLY_POS:
             return canParse<bool>(value);
         case SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN:
             return true;
-        case GNE_ATTR_PARAMETERS:
-            return areParametersValid(value);
         default:
             return isCommonValid(key, value);
     }
@@ -520,14 +510,22 @@ GNEOverheadWire::setAttribute(SumoXMLAttr key, const std::string& value) {
             replaceAdditionalParentLanes(value);
             break;
         case SUMO_ATTR_STARTPOS:
-            myStartPos = parse<double>(value);
+            if (value.empty() || (value == TL("lane start"))) {
+                myStartPos = INVALID_DOUBLE;
+            } else {
+                myStartPos = parse<double>(value);
+            }
             // update geometry (except for template)
             if (getParentLanes().size() > 0) {
                 updateGeometry();
             }
             break;
         case SUMO_ATTR_ENDPOS:
-            myEndPos = parse<double>(value);
+            if (value.empty() || (value == TL("lane end"))) {
+                myEndPos = INVALID_DOUBLE;
+            } else {
+                myEndPos = parse<double>(value);
+            }
             // update geometry (except for template)
             if (getParentLanes().size() > 0) {
                 updateGeometry();
@@ -539,14 +537,11 @@ GNEOverheadWire::setAttribute(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN:
             myForbiddenInnerLanes = parse<std::vector<std::string> >(value);
             break;
-        case GNE_ATTR_PARAMETERS:
-            setParametersStr(value);
-            break;
         case GNE_ATTR_SHIFTLANEINDEX:
             shiftLaneIndex();
             break;
         default:
-            setCommonAttribute(key, value);
+            setCommonAttribute(this, key, value);
             break;
     }
 }

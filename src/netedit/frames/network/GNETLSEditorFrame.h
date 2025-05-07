@@ -23,16 +23,18 @@
 #include <netedit/frames/GNEFrame.h>
 #include <netbuild/NBTrafficLightLogic.h>
 
-
 // ===========================================================================
 // class declarations
 // ===========================================================================
-class NBTrafficLightDefinition;
+
+class GNEInternalLane;
+class GNEOverlappedInspection;
+class GNETLSTable;
+class MFXTextFieldTooltip;
+class MFXToggleButtonTooltip;
 class NBLoadedSUMOTLDef;
 class NBOwnTLDef;
-class GNEInternalLane;
-class GNETLSTable;
-class GNEOverlappedInspection;
+class NBTrafficLightDefinition;
 
 // ===========================================================================
 // class definitions
@@ -588,7 +590,7 @@ public:
      * @param[in] clickedPosition clicked position
      * @param[in] viewObjects The clicked objects under cursor
      */
-    void editTLS(GNEViewNetHelper::ViewObjectsSelector& viewObjects, const Position &clickedPosition, const bool shiftKeyPressed);
+    void editTLS(GNEViewNetHelper::ViewObjectsSelector& viewObjects, const Position& clickedPosition, const bool shiftKeyPressed);
 
     /// @brief check if modifications in TLS was saved
     bool isTLSSaved();

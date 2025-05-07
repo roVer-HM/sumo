@@ -21,6 +21,7 @@
 #include <config.h>
 
 #include <unordered_set>
+#include <netedit/elements/GNEMoveElement.h>
 #include <utils/foxtools/MFXButtonTooltip.h>
 #include <utils/foxtools/MFXMenuButtonTooltip.h>
 #include <utils/foxtools/MFXCheckableButton.h>
@@ -28,8 +29,7 @@
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <utils/gui/globjects/GUIGlObjectTypes.h>
 #include <utils/gui/div/GUIGlobalViewObjectsHandler.h>
-
-#include "GNEMoveElement.h"
+#include <utils/xml/CommonXMLStructure.h>
 
 // ===========================================================================
 // enum
@@ -137,9 +137,13 @@ enum class DataEditMode {
 // class declarations
 // ===========================================================================
 
-// main elements
 class GNEAttributeCarrier;
+class GNEFrame;
+class GNENet;
+class GNETagPropertiesDatabase;
+class GNEUndoList;
 class GNEViewNet;
+class GNEViewParent;
 // network elements
 class GNENetworkElement;
 class GNEJunction;
@@ -334,6 +338,9 @@ struct GNEViewNetHelper {
 
         /// @brief update merging junctions
         void updateMergingJunctions();
+
+        /// @brief fill the given SUMO base object with the current single objects
+        void fillSumoBaseObject(CommonXMLStructure::SumoBaseObject* baseObjet) const;
 
         /// @brief filter all elements except the given GLO type
         void filterAllExcept(GUIGlObjectType exception);

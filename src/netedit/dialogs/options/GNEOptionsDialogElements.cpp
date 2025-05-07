@@ -33,6 +33,9 @@
 #include "GNEOptionsDialogElements.h"
 #include "GNEOptionsDialog.h"
 
+// ===========================================================================
+// Defines
+// ===========================================================================
 
 #define MARGIN 4
 #define MINNAMEWIDTH 200
@@ -539,7 +542,7 @@ GNEOptionsDialogElements::InputFilename::restoreOption() {
 long
 GNEOptionsDialogElements::InputFilename::onCmdOpenDialog(FXObject*, FXSelector, void*) {
     // get file
-    const auto file = GNEApplicationWindowHelper::openFileDialog(this, (myName.find("output") != std::string::npos), false);
+    const auto file = GNEApplicationWindowHelper::openXMLFileDialog(this, (myName.find("output") != std::string::npos), false);
     // check that file is valid
     if (file.size() > 0) {
         myFilenameTextField->setText(file.c_str(), TRUE);

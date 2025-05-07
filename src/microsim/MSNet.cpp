@@ -460,10 +460,10 @@ MSNet::generateStatistics(const SUMOTime start, const long now) {
             }
         }
         // print vehicle statistics
-        const std::string discardNotice = ((myVehicleControl->getLoadedVehicleNo() != myVehicleControl->getDepartedVehicleNo()) ?
-                                           " (Loaded: " + toString(myVehicleControl->getLoadedVehicleNo()) + ")" : "");
+        const std::string vehDiscardNotice = ((myVehicleControl->getLoadedVehicleNo() != myVehicleControl->getDepartedVehicleNo()) ?
+                                              " (Loaded: " + toString(myVehicleControl->getLoadedVehicleNo()) + ")" : "");
         msg << "Vehicles:\n"
-            << " Inserted: " << myVehicleControl->getDepartedVehicleNo() << discardNotice << "\n"
+            << " Inserted: " << myVehicleControl->getDepartedVehicleNo() << vehDiscardNotice << "\n"
             << " Running: " << myVehicleControl->getRunningVehicleNo() << "\n"
             << " Waiting: " << myInserter->getWaitingVehicleNo() << "\n";
 
@@ -491,8 +491,10 @@ MSNet::generateStatistics(const SUMOTime start, const long now) {
             msg << " Emergency Braking: " << myVehicleControl->getEmergencyBrakingCount() << "\n";
         }
         if (myPersonControl != nullptr && myPersonControl->getLoadedNumber() > 0) {
+            const std::string discardNotice = ((myPersonControl->getLoadedNumber() != myPersonControl->getDepartedNumber()) ?
+                                               " (Loaded: " + toString(myPersonControl->getLoadedNumber()) + ")" : "");
             msg << "Persons:\n"
-                << " Inserted: " << myPersonControl->getLoadedNumber() << "\n"
+                << " Inserted: " << myPersonControl->getDepartedNumber() << discardNotice << "\n"
                 << " Running: " << myPersonControl->getRunningNumber() << "\n";
             if (myPersonControl->getJammedNumber() > 0) {
                 msg << " Jammed: " << myPersonControl->getJammedNumber() << "\n";
@@ -509,8 +511,10 @@ MSNet::generateStatistics(const SUMOTime start, const long now) {
             }
         }
         if (myContainerControl != nullptr && myContainerControl->getLoadedNumber() > 0) {
+            const std::string discardNotice = ((myContainerControl->getLoadedNumber() != myContainerControl->getDepartedNumber()) ?
+                                               " (Loaded: " + toString(myContainerControl->getLoadedNumber()) + ")" : "");
             msg << "Containers:\n"
-                << " Inserted: " << myContainerControl->getLoadedNumber() << "\n"
+                << " Inserted: " << myContainerControl->getDepartedNumber() << "\n"
                 << " Running: " << myContainerControl->getRunningNumber() << "\n";
             if (myContainerControl->getJammedNumber() > 0) {
                 msg << " Jammed: " << myContainerControl->getJammedNumber() << "\n";
@@ -541,6 +545,9 @@ MSNet::writeCollisions() const {
     OutputDevice& od = OutputDevice::getDeviceByOption("collision-output");
     for (const auto& item : myCollisions) {
         for (const auto& c : item.second) {
+            if (c.time != SIMSTEP) {
+                continue;
+            }
             od.openTag("collision");
             od.writeAttr("time", time2string(getCurrentTimeStep()));
             od.writeAttr("type", c.type);
@@ -552,6 +559,10 @@ MSNet::writeCollisions() const {
             od.writeAttr("victimType", c.victimType);
             od.writeAttr("colliderSpeed", c.colliderSpeed);
             od.writeAttr("victimSpeed", c.victimSpeed);
+            od.writeAttr("colliderFront", c.colliderFront);
+            od.writeAttr("colliderBack", c.colliderBack);
+            od.writeAttr("victimFront", c.victimFront);
+            od.writeAttr("victimBack", c.victimBack);
             od.closeTag();
         }
     }
@@ -790,7 +801,7 @@ MSNet::simulationStep(const bool onlyMove) {
         myEdges->planMovements(myStep);
 
         // register junction approaches based on planned velocities as basis for right-of-way decision
-        myEdges->setJunctionApproaches(myStep);
+        myEdges->setJunctionApproaches();
 
         // decide right-of-way and execute movements
         myEdges->executeMovements(myStep);
@@ -1317,13 +1328,20 @@ MSNet::registerCollision(const SUMOTrafficObject* collider, const SUMOTrafficObj
         for (Collision& old : it->second) {
             if (old.victim == victim->getID()) {
                 // collision from previous step continues
-                old.colliderSpeed = collider->getSpeed();
-                old.victimSpeed = victim->getSpeed();
-                old.type = collisionType;
-                old.lane = lane;
-                old.pos = pos;
-                old.time = myStep;
+                old.continuationTime = myStep;
                 return false;
+            }
+        }
+    } else {
+        // maybe the roles have been reversed
+        auto it2 = myCollisions.find(victim->getID());
+        if (it2 != myCollisions.end()) {
+            for (Collision& old : it2->second) {
+                if (old.victim == collider->getID()) {
+                    // collision from previous step continues (keep the old roles)
+                    old.continuationTime = myStep;
+                    return false;
+                }
             }
         }
     }
@@ -1333,10 +1351,15 @@ MSNet::registerCollision(const SUMOTrafficObject* collider, const SUMOTrafficObj
     c.victimType = victim->getVehicleType().getID();
     c.colliderSpeed = collider->getSpeed();
     c.victimSpeed = victim->getSpeed();
+    c.colliderFront = collider->getPosition();
+    c.victimFront = victim->getPosition();
+    c.colliderBack = collider->getPosition(-collider->getVehicleType().getLength());
+    c.victimBack = victim->getPosition(-victim->getVehicleType().getLength());
     c.type = collisionType;
     c.lane = lane;
     c.pos = pos;
     c.time = myStep;
+    c.continuationTime = myStep;
     myCollisions[collider->getID()].push_back(c);
     return true;
 }
@@ -1346,7 +1369,7 @@ void
 MSNet::removeOutdatedCollisions() {
     for (auto it = myCollisions.begin(); it != myCollisions.end();) {
         for (auto it2 = it->second.begin(); it2 != it->second.end();) {
-            if (it2->time != myStep) {
+            if (it2->continuationTime != myStep) {
                 it2 = it->second.erase(it2);
             } else {
                 it2++;

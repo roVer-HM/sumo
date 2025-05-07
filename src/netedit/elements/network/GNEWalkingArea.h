@@ -41,14 +41,14 @@ class GNEEdge;
  * a popup menu. Messages are routeted to an internal dataTarget and to the
  * editor (hence inheritance from FXDelegator)
  */
-class GNEWalkingArea : public GNENetworkElement {
+class GNEWalkingArea : public GNENetworkElement, public Parameterised {
 
 public:
     /**@brief Constructor
-     * @param[in] parentJunction GNEJunction in which this crossing is placed
+     * @param[in] junction GNEJunction in which this crossing is placed
      * @param[in] ID walkingArea ID
      */
-    GNEWalkingArea(GNEJunction* parentJunction, const std::string& ID);
+    GNEWalkingArea(GNEJunction* junction, const std::string& ID);
 
     /// @brief Destructor
     ~GNEWalkingArea();
@@ -82,6 +82,9 @@ public:
     /// @brief check if draw delete contour (pink/white)
     bool checkDrawDeleteContour() const;
 
+    /// @brief check if draw delete contour small (pink/white)
+    bool checkDrawDeleteContourSmall() const;
+
     /// @brief check if draw select contour (blue)
     bool checkDrawSelectContour() const;
 
@@ -99,9 +102,6 @@ public:
     void removeGeometryPoint(const Position clickedPosition, GNEUndoList* undoList);
 
     /// @}
-
-    /// @brief get parent Junction
-    GNEJunction* getParentJunction() const;
 
     /// @brief get referente to NBode::WalkingArea
     NBNode::WalkingArea& getNBWalkingArea() const;
@@ -175,9 +175,6 @@ public:
     const Parameterised::Map& getACParametersMap() const;
 
 protected:
-    /// @brief the parent junction of this crossing
-    GNEJunction* myParentJunction;
-
     /// @brief An object that stores the shape and its tesselation
     mutable TesselatedPolygon myTesselation;
 

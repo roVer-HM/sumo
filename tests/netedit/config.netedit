@@ -1,4 +1,5 @@
 import_config_file:../config_all
+interpreter:python
 binary:test.py
 use_case_record_mode:GUI
 virtual_display_wm_executable:fluxbox
@@ -74,15 +75,23 @@ netas:netAs.net.xml
 
 additionals:additionals.add.xml
 additionalsas:additionalsAs.add.xml
+additionalssecondfile:additional.secondFile.add.xml
+additionalsthirdFilefile:additional.thirdFile.add.xml
 
 routes:routes.rou.xml
 routesas:routesAs.rou.xml
+routesssecondfile:routes.secondFile.add.xml
+routessthirdFilefile:routes.thirdFile.add.xml
 
 datas:datas.dat.xml
 datasas:datasAs.dat.xml
+datasssecondfile:datas.secondFile.add.xml
+datassthirdFilefile:datas.thirdFile.add.xml
 
 meandatas:datas.med.add.xml
 meandatasas:datasAs.med.add.xml
+meandatasssecondfile:datas.secondFile.med.add.xml
+meandatassthirdFilefile:datasAs.thirdFile.med.add.xml
 
 guisettingsoutput:guisettingsoutput.xml
 cfg:config.cfg
@@ -103,6 +112,14 @@ additionalsas:<!-- generated{[->]}-->
 additionalsas:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
 additionalsas:\\{REPLACE /}
 
+additionalssecondfile:<!-- generated{[->]}-->
+additionalssecondfile:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
+additionalssecondfile:\\{REPLACE /}
+
+additionalsthirdFilefile:<!-- generated{[->]}-->
+additionalsthirdFilefile:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
+additionalsthirdFilefile:\\{REPLACE /}
+
 routes:<!-- generated{[->]}-->
 routes:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
 routes:\\{REPLACE /}
@@ -110,6 +127,14 @@ routes:\\{REPLACE /}
 routesas:<!-- generated{[->]}-->
 routesas:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
 routesas:\\{REPLACE /}
+
+routesssecondfile:<!-- generated{[->]}-->
+routesssecondfile:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
+routesssecondfile:\\{REPLACE /}
+
+routessthirdFilefile:<!-- generated{[->]}-->
+routessthirdFilefile:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
+routessthirdFilefile:\\{REPLACE /}
 
 datas:<!-- generated{[->]}-->
 datas:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
@@ -119,6 +144,14 @@ datasas:<!-- generated{[->]}-->
 datasas:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
 datasas:\\{REPLACE /}
 
+datasssecondfile:<!-- generated{[->]}-->
+datasssecondfile:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
+datasssecondfile:\\{REPLACE /}
+
+datassthirdFilefile:<!-- generated{[->]}-->
+datassthirdFilefile:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
+datassthirdFilefile:\\{REPLACE /}
+
 meandatas:<!-- generated{[->]}-->
 meandatas:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
 meandatas:\\{REPLACE /}
@@ -126,6 +159,14 @@ meandatas:\\{REPLACE /}
 meandatasas:<!-- generated{[->]}-->
 meandatasas:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
 meandatasas:\\{REPLACE /}
+
+meandatasssecondfile:<!-- generated{[->]}-->
+meandatasssecondfile:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
+meandatasssecondfile:\\{REPLACE /}
+
+meandatassthirdFilefile:<!-- generated{[->]}-->
+meandatassthirdFilefile:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
+meandatassthirdFilefile:\\{REPLACE /}
 
 netcon:<!--{[->]}-->
 netedg:<!--{[->]}-->
