@@ -2,6 +2,26 @@
 title: ChangeLog
 ---
 
+## Version 1.23.1 (08.05.2025)
+
+### Bugfixes
+
+- sumo
+  - Fixed crash when person jumps between stops #16641
+  - Fixed invalid arrivalPos when person jumps between stops #16642
+  - Fixed crash when using `overtakeReroute` #16647
+ 
+- netedit
+  - Short connections are visible again when activating 'show connections' #16644 (regression in 1.22.0)
+  - Fixed crash setting a negative time treshhold in E2 detectors
+  - Fixed crash when using new selection mode features #16648
+  - Fixed crash when placing two vaporizers on the same edge #16649
+
+- Tools
+  - gtfs2pt.py: option **--write-terminals** now works when setting **--osm-routes** #16645
+  - gtfs2pt.py: fixed crash when loading **--osm-routes** with smaller network #16646
+      
+
 ## Version 1.23.0 (06.05.2025)
 
 ### Bugfixes
@@ -21,7 +41,7 @@ title: ChangeLog
   - Fixed invalid bestLaneOffset when an edge has usable lanes divided by forbidden lanes. This could result in invalid departure errors #16287
   - Fixed crash after lane change with E3 detector using `detectPersons="car"` #16296
   - Ensured simulation terminates when using LC2013 with sublane model #16297
-  - Fixed crash when using option **--device.rerouting.threads** with option **--weights.random-factor** and rerouters #16347  
+  - Fixed crash when using option **--device.rerouting.threads** with option **--weights.random-factor** and rerouters #16347
   - Fixed collision due to unsafe lane changing ahead of a zipper merge #16305
   - Fixed duplicate collision output when using **--collision-action warn** #16397
   - Fixed misclassification of some frontal-collisions as normal (rear-end) collision #16398
@@ -38,7 +58,7 @@ title: ChangeLog
   - Stops in flows are now correctly handled when saving and loading state #16527
   - Fixed invalid behavior when rerouter closes multiple lanes or edges with different permissions in the same interval #13846
   - Fixed rare crash on loading rail simulation with internal links #16532
-  - Fixed insufficient precision when using **--fcd-replay** with JuPedSim #16047  
+  - Fixed insufficient precision when using **--fcd-replay** with JuPedSim #16047
   - Free insertion now takes into account a stop on the insertion edge #16592
   - Insertion after jump no longer skips stop on the insertion edge #16583
   - Fixed treatment of stationfinder device parameter `checkEnergyForRoute` #16380
@@ -95,7 +115,7 @@ title: ChangeLog
   - Fixed invalid ptline-output when running with option **--ptstop-output.no-bidi** #16534
   - Option **--ptline-clean-up** now cleans up more stops #16540
   - Fixed failure to join junctions #16557
-  - Fixed bug where a loaded network successively changed it's geometry #16609 
+  - Fixed bug where a loaded network successively changed it's geometry #16609
 
 - durarouter
   - Fixed invalid route output when loading invalid routes with stops and setting option **--ignore-errors** #16365
@@ -138,7 +158,7 @@ title: ChangeLog
   - analyzePersonPlans.py: fixed invalid car use classification #16549
   - distributeChargingStations.py: Fixed invalid position of generated parking area when input contains negative positions #16560
   - ptlines2flows.py: Fixed invalid route with **--extend-to-fringe** when pt line is split #16573
-  - ptlines2flows.py: No longer writing invalid (disconnected) routes when using a modified input network. Instead disconnected parts are bridged with jumps #16292    
+  - ptlines2flows.py: No longer writing invalid (disconnected) routes when using a modified input network. Instead disconnected parts are bridged with jumps #16292
   - loading tool config with multiple positional input file arguments now works #16447
 
 ### Enhancements
@@ -232,7 +252,7 @@ title: ChangeLog
   - edgeDataFromFlow.py: Now supports custom column names with option **--id-column** and **--time-column** and custom interpretation of time values with option **--time-scale** #16555
   - generateTurnRatios.py: added option **--split-types** to create type-specific turn ration attributes #16579
   - analyzePersonPlans.py: now handles rides without line attribute #16617
-    
+
 
 ### Miscellaneous
 
