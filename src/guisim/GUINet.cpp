@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -219,6 +219,15 @@ GUINet::getLinkTLIndex(const MSLink* const link) const {
         return -1;
     }
     return myLogics2Wrapper.find(myLogics->getActive((*i).second))->second->getLinkIndex(link);
+}
+
+
+GUITrafficLightLogicWrapper*
+GUINet::getTLLWrapper(MSTrafficLightLogic* tll) {
+    if (myLogics2Wrapper.find(tll) == myLogics2Wrapper.end()) {
+        return nullptr;
+    }
+    return myLogics2Wrapper.find(tll)->second;
 }
 
 
@@ -720,7 +729,13 @@ GUINet::loadEdgeData(const std::string& file) {
         retrieverDefs.push_back(new SAXWeightsHandler::ToRetrieveDefinition(attr, true, retrieverDefsInternal.back()));
     }
     SAXWeightsHandler handler(retrieverDefs, "");
-    return XMLSubSys::runParser(handler, file);
+    // temporarily modify warning threshold to avoid swamping the UI
+    const int threshold = MsgHandler::getWarningInstance()->getAggregationThreshold();
+    MsgHandler::getWarningInstance()->setAggregationThreshold(10);
+    bool ok = XMLSubSys::runParser(handler, file);
+    MsgHandler::getWarningInstance()->clear(false);
+    MsgHandler::getWarningInstance()->setAggregationThreshold(threshold);
+    return ok;
 }
 
 

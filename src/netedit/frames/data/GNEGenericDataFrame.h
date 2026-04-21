@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -21,6 +21,7 @@
 #include <config.h>
 
 #include <netedit/frames/GNEFrame.h>
+#include <netedit/frames/common/GNEGroupBoxModule.h>
 
 // ===========================================================================
 // class declaration
@@ -43,7 +44,7 @@ public:
     // class DataSetSelector
     // ===========================================================================
 
-    class DataSetSelector : public MFXGroupBoxModule {
+    class DataSetSelector : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNEGenericDataFrame::DataSetSelector)
 
@@ -103,7 +104,7 @@ public:
     // class IntervalSelector
     // ===========================================================================
 
-    class IntervalSelector : public MFXGroupBoxModule {
+    class IntervalSelector : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNEGenericDataFrame::IntervalSelector)
 
@@ -182,7 +183,7 @@ public:
     // class AttributeSelector
     // ===========================================================================
 
-    class AttributeSelector : public MFXGroupBoxModule {
+    class AttributeSelector : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNEGenericDataFrame::AttributeSelector)
 
@@ -201,6 +202,9 @@ public:
 
         /// @brief get color for the given value
         const RGBColor& getScaledColor(const double min, const double max, const double value) const;
+
+        /// @brief getgeneric data tag
+        SumoXMLTag getGenericDataTag() const;
 
         /// @name FOX-callbacks
         /// @{
@@ -280,9 +284,6 @@ protected:
 
     /// @brief edge path creator (used for Walks, rides and trips)
     GNEPathCreator* myPathCreator = nullptr;
-
-    /// @brief template generic data
-    GNEGenericData* myTemplateGenericData = nullptr;
 
 private:
     /// @brief Invalidated copy constructor.

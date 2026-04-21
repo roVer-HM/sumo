@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -34,14 +34,14 @@
 // member method definitions
 // ===========================================================================
 
-GNEPythonTool::GNEPythonTool(GNEApplicationWindow* GNEApp, const std::string& toolPath,
+GNEPythonTool::GNEPythonTool(GNEApplicationWindow* applicationWindow, const std::string& toolPath,
                              const std::string& templateStr, FXMenuPane* menu) :
-    myGNEApp(GNEApp),
+    myApplicationWindow(applicationWindow),
     myToolPath(toolPath),
     myPythonToolName(FileHelpers::getFileFromPath(toolPath, true)) {
     // build menu command
     myMenuCommand = GUIDesigns::buildFXMenuCommandShortcut(menu, myPythonToolName, "", TL("Execute python tool '") + myPythonToolName + "'.",
-                    GUIIconSubSys::getIcon(GUIIcon::TOOL_PYTHON), GNEApp, MID_GNE_OPENPYTHONTOOLDIALOG);
+                    GUIIconSubSys::getIcon(GUIIcon::TOOL_PYTHON), applicationWindow, MID_GNE_OPENPYTHONTOOLDIALOG);
     // parse tool options
     if (templateStr.size() > 0) {
         try {
@@ -56,12 +56,6 @@ GNEPythonTool::GNEPythonTool(GNEApplicationWindow* GNEApp, const std::string& to
 
 
 GNEPythonTool::~GNEPythonTool() {}
-
-
-GNEApplicationWindow*
-GNEPythonTool::getGNEApp() const {
-    return myGNEApp;
-}
 
 
 const std::string&

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,7 +19,10 @@
 /****************************************************************************/
 
 #include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <netedit/GNETagProperties.h>
+#include <netedit/dialogs/basic/GNEHelpBasicDialog.h>
 #include <netedit/elements/network/GNELane.h>
 #include <netedit/frames/common/GNEInspectorFrame.h>
 #include <utils/gui/div/GUIDesigns.h>
@@ -40,14 +43,14 @@ FXDEFMAP(GNEOverlappedInspection) OverlappedInspectionMap[] = {
 };
 
 // Object implementation
-FXIMPLEMENT(GNEOverlappedInspection,       MFXGroupBoxModule,     OverlappedInspectionMap,        ARRAYNUMBER(OverlappedInspectionMap))
+FXIMPLEMENT(GNEOverlappedInspection,       GNEGroupBoxModule,     OverlappedInspectionMap,        ARRAYNUMBER(OverlappedInspectionMap))
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
 
 GNEOverlappedInspection::GNEOverlappedInspection(GNEFrame* frameParent, const bool onlyJunctions) :
-    MFXGroupBoxModule(frameParent, onlyJunctions ? TL("Overlapped junctions") : TL("Overlapped elements")),
+    GNEGroupBoxModule(frameParent, onlyJunctions ? TL("Overlapped junctions") : TL("Overlapped elements")),
     myFrameParent(frameParent),
     myOnlyJunctions(onlyJunctions) {
     FXHorizontalFrame* frameButtons = new FXHorizontalFrame(getCollapsableFrame(), GUIDesignAuxiliarHorizontalFrame);
@@ -230,7 +233,7 @@ GNEOverlappedInspection::onCmdListItemSelected(FXObject*, FXSelector, void*) {
 
 long
 GNEOverlappedInspection::onCmdOverlappingHelp(FXObject*, FXSelector, void*) {
-    FXDialogBox* helpDialog = new FXDialogBox(getCollapsableFrame(), TL("GEO attributes Help"), GUIDesignDialogBox);
+    // create text for help dialog
     std::ostringstream help;
     help
             << TL(" - Click in the same position") << "\n"
@@ -238,11 +241,9 @@ GNEOverlappedInspection::onCmdOverlappingHelp(FXObject*, FXSelector, void*) {
             << TL(" - Shift + Click in the same") << "\n"
             << TL("   position to inspect") << "\n"
             << TL("   previous element");
-    new FXLabel(helpDialog, help.str().c_str(), nullptr, GUIDesignLabelFrameInformation);
-    // "OK"
-    GUIDesigns::buildFXButton(helpDialog, TL("OK"), "", TL("close"), GUIIconSubSys::getIcon(GUIIcon::ACCEPT), helpDialog, FXDialogBox::ID_ACCEPT, GUIDesignButtonOK);
-    helpDialog->create();
-    helpDialog->show(PLACEMENT_SCREEN);
+    // create help dialog
+    GNEHelpBasicDialog(myFrameParent->getViewNet()->getViewParent()->getGNEAppWindows(),
+                       TL("GEO attributes Help"), help);
     return 1;
 }
 

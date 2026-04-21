@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2006-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2006-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -21,8 +21,16 @@
 #pragma once
 #include <config.h>
 
-#include "MFXListIcon.h"
-#include "MFXTextFieldSearch.h"
+#include "fxheader.h"
+
+// ===========================================================================
+// class declaration
+// ===========================================================================
+
+class MFXListIcon;
+class MFXStaticToolTip;
+class MFXTextFieldIcon;
+class MFXTextFieldSearch;
 
 // ===========================================================================
 // class definitions
@@ -42,8 +50,8 @@ public:
     };
 
     /// @brief Construct a Combo Box widget with room to display cols columns of text
-    MFXComboBoxIcon(FXComposite* p, FXint cols, const bool canSearch,
-                    const int visibleItems, FXObject* tgt, FXSelector sel = 0, FXuint opts = COMBOBOX_NORMAL,
+    MFXComboBoxIcon(FXComposite* p, MFXStaticToolTip* staticToolTip, const bool canSearch,
+                    const int visibleItems, FXObject* tgt, FXSelector sel, FXuint opts,
                     FXint x = 0, FXint y = 0, FXint w = 0, FXint h = 0,
                     FXint pl = DEFAULT_PAD, FXint pr = DEFAULT_PAD, FXint pt = DEFAULT_PAD, FXint pb = DEFAULT_PAD);
 
@@ -84,7 +92,7 @@ public:
     void setNumVisible(FXint nvis);
 
     /// @brief Set the text in the textField
-    void setText(const FXString& text);
+    void setText(const FXString& text, FXbool notify = FALSE);
 
     /// @brief Return true if current item
     FXbool isItemCurrent(FXint index) const;

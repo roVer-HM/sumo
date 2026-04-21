@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -678,9 +678,6 @@ GLHelper::setGL2PS(bool active) {
 void
 GLHelper::drawSpaceOccupancies(const double exaggeration, const Position& pos, const double rotation,
                                const double width, const double length, const bool vehicle) {
-    // declare colors
-    const RGBColor red(255, 0, 0, 255);
-    const RGBColor green(0, 255, 0, 255);
     // declare geometry
     PositionVector geom;
     const double w = width / 2. - 0.1 * exaggeration;
@@ -691,13 +688,7 @@ GLHelper::drawSpaceOccupancies(const double exaggeration, const Position& pos, c
     geom.push_back(Position(+w, +h, 0.));
     geom.push_back(Position(-w, +h, 0.));
     geom.push_back(Position(-w, +0, 0.));
-    /*
-    geom.push_back(Position(pos.x(), pos.y(), pos.z()));
-    geom.push_back(Position(pos.x() + (*l).second.myWidth, pos.y(), pos.z()));
-    geom.push_back(Position(pos.x() + (*l).second.myWidth, pos.y() - (*l).second.myLength, pos.z()));
-    geom.push_back(Position(pos.x(), pos.y() - (*l).second.myLength, pos.z()));
-    geom.push_back(Position(pos.x(), pos.y(), pos.z()));
-    */
+
     // push matrix
     GLHelper::pushMatrix();
     // translate
@@ -705,7 +696,7 @@ GLHelper::drawSpaceOccupancies(const double exaggeration, const Position& pos, c
     // rotate
     glRotated(rotation, 0, 0, 1);
     // set color
-    GLHelper::setColor(vehicle ? green : red);
+    GLHelper::setColor(vehicle ? RGBColor::RED : RGBColor::GREEN);
     // draw box lines
     GLHelper::drawBoxLines(geom, 0.1 * exaggeration);
     // pop matrix

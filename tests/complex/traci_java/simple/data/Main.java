@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2017-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2017-2026 German Aerospace Center (DLR) and others.
 // TraaS module
 // Copyright (C) 2013-2017 Dresden University of Technology
 // This program and the accompanying materials are made available under the
@@ -24,14 +24,7 @@ import org.eclipse.sumo.libtraci.*;
 
 public class Main {
     public static void main(String[] args) {
-        if (System.getProperty("os.name").startsWith("Windows") && Simulation.class.toString().contains("libsumo")) {
-            System.loadLibrary("iconv-2");
-            System.loadLibrary("intl-8");
-            System.loadLibrary("libcrypto-3-x64");
-            System.loadLibrary("libssl-3-x64");
-            System.loadLibrary("proj_9");
-        }
-        System.loadLibrary("libtracijni");
+        Simulation.preloadLibraries();
         String sumo_bin = "sumo";
         String config_file = "data/config.sumocfg";
         double step_length = 0.1;
@@ -41,7 +34,6 @@ public class Main {
         if (args.length > 1) {
             config_file = args[1];
         }
-
         Simulation.start(new StringVector(new String[] {sumo_bin,
                                           "-c", config_file,
                                           "--start",

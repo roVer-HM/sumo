@@ -1,5 +1,5 @@
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2011-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -27,7 +27,7 @@ class Edge:
 
     """ Edges from a sumo network """
 
-    def __init__(self, id, fromN, toN, prio, function, name, edgeType=''):
+    def __init__(self, id, fromN, toN, prio, function, name, edgeType='', routingType=''):
         self._id = id
         self._from = fromN
         self._to = toN
@@ -52,6 +52,7 @@ class Edge:
         self._tls = None
         self._name = name
         self._type = edgeType
+        self._routingType = routingType
         self._params = {}
         self._bidi = None
         self._selected = False
@@ -76,6 +77,10 @@ class Edge:
 
     def getType(self):
         return self._type
+
+    def getRoutingType(self):
+        """ Return the effective routingType that would be used by duarouter or sumo"""
+        return self._routingType if self._routingType != "" else self._type
 
     def getTLS(self):
         return self._tls
@@ -122,7 +127,8 @@ class Edge:
             for e, conns in self._outgoing.items():
                 allowedConns = [c for c in conns if
                                 c.getFromLane().allows(vClass) and
-                                c.getToLane().allows(vClass)]
+                                c.getToLane().allows(vClass) and
+                                c.allows(vClass)]
                 if allowedConns:
                     result[e] = allowedConns
             return result

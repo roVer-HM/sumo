@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,6 +18,8 @@
 // Database with all information about netedit elements
 /****************************************************************************/
 
+#include <netedit/elements/moving/GNEMoveElementLaneDouble.h>
+#include <netedit/elements/moving/GNEMoveElementLaneSingle.h>
 #include <netedit/GNENet.h>
 #include <utils/emissions/PollutantsInterface.h>
 #include <utils/options/OptionsCont.h>
@@ -361,7 +363,7 @@ GNETagPropertiesDatabase::writeAttributeHelp() const {
                 dev << "|" << toString(attr->getAttr()) << "|"
                     << attr->getDescription() << "|"
                     << StringUtils::replace(attr->getDefinition(), "\n", " ");
-                if (attr->hasDefaultValue()) {
+                if (attr->hasDefaultValue() && attr->getDefaultStringValue() != "") {
                     dev << " *default:* **" << attr->getDefaultStringValue() << "**";
                 }
                 dev << "|\n";
@@ -568,6 +570,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                 GNETagProperties::Type::NETWORKELEMENT,
                 GNETagProperties::Property::RTREE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NETWORK,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::JUNCTION, GUIGlObjectType::GLO_JUNCTION, currentTag, TL("Junction"));
         // set values of attributes
@@ -599,7 +602,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Whether the junction-blocking-heuristic should be activated at this node"),
-                                   GNEAttributeCarrier::True);
+                                   GNEAttributeCarrier::TRUE_STR);
 
         auto rightOfWay = new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_RIGHT_OF_WAY,
                 GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::DISCRETE | GNEAttributeProperties::Property::DEFAULTVALUE,
@@ -614,6 +617,13 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                 TL("Whether this junction is at the fringe of the network"),
                 SUMOXMLDefinitions::FringeTypeValues.getString(FringeType::DEFAULT));
         fringe->setDiscreteValues(SUMOXMLDefinitions::FringeTypeValues.getStrings());
+
+        auto roundabout = new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_ROUNDABOUT,
+                GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::DISCRETE | GNEAttributeProperties::Property::DEFAULTVALUE,
+                GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                TL("Whether this junction may be considered when guessing roundabouts"),
+                SUMOXMLDefinitions::FringeTypeValues.getString(FringeType::DEFAULT));
+        roundabout->setDiscreteValues(SUMOXMLDefinitions::RoundaboutTypeValues.getStrings());
 
         fillNameAttribute(myTagProperties[currentTag]);
 
@@ -642,7 +652,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Whether this junction is part of a roundabout"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
     }
     currentTag = SUMO_TAG_TYPE;
     {
@@ -651,6 +661,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                 GNETagProperties::Type::NETWORKELEMENT,
                 GNETagProperties::Property::NOTDRAWABLE | GNETagProperties::Property::NOTSELECTABLE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NETWORK,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::EDGETYPE, GUIGlObjectType::GLO_EDGETYPE, currentTag, TL("EdgeType"));
         // set values of attributes
@@ -708,6 +719,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                 GNETagProperties::Type::NETWORKELEMENT,
                 GNETagProperties::Property::NOTDRAWABLE | GNETagProperties::Property::NOTSELECTABLE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NETWORK,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::LANETYPE, GUIGlObjectType::GLO_LANETYPE, currentTag, TL("LaneType"));
         // set values of attributes
@@ -732,6 +744,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                 GNETagProperties::Type::NETWORKELEMENT,
                 GNETagProperties::Property::RTREE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NETWORK,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::EDGE, GUIGlObjectType::GLO_EDGE, currentTag, TL("Edge"));
         // set values of attributes
@@ -820,7 +833,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UNIQUE, // virtual attribute to check of this edge is part of a bidirectional railway (cannot be edited)
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Show if edge is bidirectional"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_DISTANCE,
                                    GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UNIQUE,
@@ -843,7 +856,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UNIQUE, // cannot be edited
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Whether this edge is part of a roundabout"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
     }
     currentTag = SUMO_TAG_LANE;
     {
@@ -852,6 +865,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                 GNETagProperties::Type::NETWORKELEMENT,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NETWORK,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::LANE, GUIGlObjectType::GLO_LANE, currentTag, TL("Lane"));
         // set values of attributes
@@ -886,7 +900,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::COPYABLE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Enable or disable lane as acceleration lane"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_CUSTOMSHAPE,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::POSITION | GNEAttributeProperties::Property::LIST | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
@@ -931,8 +945,9 @@ GNETagPropertiesDatabase::fillNetworkElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(SUMO_TAG_NET),
                 GNETagProperties::Type::NETWORKELEMENT,
-                GNETagProperties::Property::NO_PROPERTY,
+                GNETagProperties::Property::NOPARAMETERS,
                 GNETagProperties::Over::JUNCTION,
+                FileBucket::Type::NETWORK,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::CROSSING, GUIGlObjectType::GLO_CROSSING, currentTag, TL("Crossing"));
         // set values of attributes
@@ -947,7 +962,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Whether the pedestrians have priority over the vehicles (automatically set to true at tls-controlled intersections)"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_WIDTH,
                                    GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
@@ -979,6 +994,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                 GNETagProperties::Type::NETWORKELEMENT,
                 GNETagProperties::Property::NOPARAMETERS,
                 GNETagProperties::Over::JUNCTION,
+                FileBucket::Type::NETWORK,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::WALKINGAREA, GUIGlObjectType::GLO_WALKINGAREA, currentTag, TL("WalkingArea"));
         // set values of attributes
@@ -1008,6 +1024,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                 GNETagProperties::Type::NETWORKELEMENT,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::JUNCTION,
+                FileBucket::Type::NETWORK,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::CONNECTION, GUIGlObjectType::GLO_CONNECTION, currentTag, TL("Connection"));
         // set values of attributes
@@ -1035,13 +1052,13 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("if set, vehicles which pass this (lane-2-lane) connection) will not wait"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_KEEP_CLEAR,
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("if set to false, vehicles which pass this (lane-2-lane) connection) will not worry about blocking the intersection"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_CONTPOS,
                                    GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE | GNEAttributeProperties::Property::DEFAULTVALUE,
@@ -1053,7 +1070,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("If set to true, This connection will not be TLS-controlled despite its node being controlled"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_VISIBILITY_DISTANCE,
                                    GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE | GNEAttributeProperties::Property::DEFAULTVALUE,
@@ -1108,7 +1125,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("if set to true, vehicles will make a turn in 2 steps"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_TYPE,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::DEFAULTVALUE,
@@ -1133,6 +1150,7 @@ GNETagPropertiesDatabase::fillNetworkElements() {
                 GNETagProperties::Type::INTERNALLANE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::JUNCTION,
+                FileBucket::Type::NETWORK,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::JUNCTION, GUIGlObjectType::GLO_TLLOGIC, currentTag, TL("InternalLanes"));
         //  internal lanes does't have attributes
@@ -1150,11 +1168,12 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::STOPPINGPLACE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::POS_LANE_START | GNETagProperties::Conflicts::POS_LANE_END,
                 GUIIcon::BUSSTOP, GUIGlObjectType::GLO_BUS_STOP, currentTag, TL("BusStop"),
                 {}, FXRGBA(240, 255, 205, 255));
         // set common attributes
-        fillCommonStoppingPlaceAttributes(myTagProperties[currentTag], true);
+        fillCommonStoppingPlaceAttributes(myTagProperties[currentTag], true, false);
 
         // set specific attributes
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_LINES,
@@ -1181,11 +1200,12 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::STOPPINGPLACE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::POS_LANE_START | GNETagProperties::Conflicts::POS_LANE_END,
                 GUIIcon::TRAINSTOP, GUIGlObjectType::GLO_TRAIN_STOP, currentTag, TL("TrainStop"),
                 {}, FXRGBA(240, 255, 205, 255));
         // set common attributes
-        fillCommonStoppingPlaceAttributes(myTagProperties[currentTag], true);
+        fillCommonStoppingPlaceAttributes(myTagProperties[currentTag], true, false);
 
         // set specific attributes
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_LINES,
@@ -1213,9 +1233,10 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT,
                 GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::REPARENT,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::POS_LANE,
                 GUIIcon::ACCESS, GUIGlObjectType::GLO_ACCESS, currentTag, TL("Access"),
-        {SUMO_TAG_BUS_STOP, SUMO_TAG_TRAIN_STOP}, FXRGBA(240, 255, 205, 255));
+        {SUMO_TAG_BUS_STOP, SUMO_TAG_TRAIN_STOP, SUMO_TAG_CONTAINER_STOP}, FXRGBA(240, 255, 205, 255));
         // set values of attributes
         fillLaneAttribute(myTagProperties[currentTag], false);
 
@@ -1236,11 +1257,12 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::STOPPINGPLACE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::POS_LANE_START | GNETagProperties::Conflicts::POS_LANE_END,
                 GUIIcon::CONTAINERSTOP, GUIGlObjectType::GLO_CONTAINER_STOP, currentTag, TL("ContainerStop"),
                 {}, FXRGBA(240, 255, 205, 255));
         // set common attributes
-        fillCommonStoppingPlaceAttributes(myTagProperties[currentTag], true);
+        fillCommonStoppingPlaceAttributes(myTagProperties[currentTag], true, false);
 
         // set specific attributes
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_LINES,
@@ -1267,11 +1289,12 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::STOPPINGPLACE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::POS_LANE_START | GNETagProperties::Conflicts::POS_LANE_END,
                 GUIIcon::CHARGINGSTATION, GUIGlObjectType::GLO_CHARGING_STATION, currentTag, TL("ChargingStation"),
                 {}, FXRGBA(240, 255, 205, 255));
         // set common attributes
-        fillCommonStoppingPlaceAttributes(myTagProperties[currentTag], false);
+        fillCommonStoppingPlaceAttributes(myTagProperties[currentTag], false, false);
 
         // set specific attributes
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_CHARGINGPOWER,
@@ -1279,6 +1302,12 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Charging power in W"),
                                    "22000");
+
+        new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_TOTALPOWER,
+                                   GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE | GNEAttributeProperties::Property::DEFAULTVALUE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   TL("Total power in W"),
+                                   "0");
 
         auto efficiency = new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_EFFICIENCY,
                 GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::RANGE | GNEAttributeProperties::Property::DEFAULTVALUE,
@@ -1291,7 +1320,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Enable or disable charge in transit, i.e. vehicle must or must not to stop for charging"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_CHARGEDELAY,
                                    GNEAttributeProperties::Property::SUMOTIME | GNEAttributeProperties::Property::DEFAULTVALUE,
@@ -1324,11 +1353,12 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::STOPPINGPLACE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::POS_LANE_START | GNETagProperties::Conflicts::POS_LANE_END,
                 GUIIcon::PARKINGAREA, GUIGlObjectType::GLO_PARKING_AREA, currentTag, TL("ParkingArea"),
                 {}, FXRGBA(240, 255, 205, 255));
         // set common attributes
-        fillCommonStoppingPlaceAttributes(myTagProperties[currentTag], false);
+        fillCommonStoppingPlaceAttributes(myTagProperties[currentTag], false, true);
 
         // set specific attributes
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_DEPARTPOS,
@@ -1365,17 +1395,11 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                                    TL("The length of the road-side parking spaces. By default (endPos - startPos) / roadsideCapacity"),
                                    "", "0");
 
-        new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_ANGLE,
-                                   GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::ANGLE | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
-                                   TL("The angle of the road-side parking spaces relative to the lane angle, positive means clockwise"),
-                                   "0");
-
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_LEFTHAND,
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
-                                   TL("Enable or disable lefthand position"),
-                                   GNEAttributeCarrier::False);
+                                   TL("Visual placement to the left of the lane (in righthand networks)"),
+                                   GNEAttributeCarrier::FALSE_STR);
 
     }
     currentTag = SUMO_TAG_PARKING_SPACE;
@@ -1385,6 +1409,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT,
                 GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::REPARENT | GNETagProperties::Property::RTREE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::PARKINGSPACE, GUIGlObjectType::GLO_PARKING_SPACE, currentTag, TL("ParkingSpace"),
         {SUMO_TAG_PARKING_AREA}, FXRGBA(240, 255, 205, 255));
@@ -1425,6 +1450,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::DETECTOR,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::POS_LANE,
                 GUIIcon::E1, GUIGlObjectType::GLO_E1DETECTOR, currentTag, TL("E1 InductionLoop"),
                 {}, FXRGBA(210, 233, 255, 255));
@@ -1456,6 +1482,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::DETECTOR,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::E2, GUIGlObjectType::GLO_E2DETECTOR, currentTag, TL("E2 LaneAreaDetector"),
                 {}, FXRGBA(210, 233, 255, 255));
@@ -1466,13 +1493,19 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
 
         fillPosOverLaneAttribute(myTagProperties[currentTag]);
 
+        // this is a "virtual attribute", only used for movement
+        new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_ENDPOS,
+                                   GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
+                                   GNEAttributeProperties::Edit::NO_EDIT,
+                                   TL("The end position on the lane the detector shall be laid on in meters"));
+
         fillFriendlyPosAttribute(myTagProperties[currentTag]);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_LENGTH,
                                    GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("The length of the detector in meters"),
-                                   "10");
+                                   toString(GNEMoveElementLaneDouble::defaultSize));
 
         fillNameAttribute(myTagProperties[currentTag]);
 
@@ -1497,7 +1530,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Show detector in sumo-gui"),
-                                   GNEAttributeCarrier::True);
+                                   GNEAttributeCarrier::TRUE_STR);
     }
     currentTag = GNE_TAG_MULTI_LANE_AREA_DETECTOR;
     {
@@ -1506,6 +1539,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::DETECTOR,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::CONSECUTIVE_LANES,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::E2, GUIGlObjectType::GLO_E2DETECTOR, SUMO_TAG_LANE_AREA_DETECTOR, TL("E2 MultiLaneAreaDetector"),
                 {}, FXRGBA(210, 233, 255, 255));
@@ -1549,7 +1583,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Show detector in sumo-gui"),
-                                   GNEAttributeCarrier::True);
+                                   GNEAttributeCarrier::TRUE_STR);
     }
     currentTag = SUMO_TAG_ENTRY_EXIT_DETECTOR;
     {
@@ -1558,6 +1592,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::DETECTOR,
                 GNETagProperties::Property::RTREE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_ADDITIONAL_CHILDREN,
                 GUIIcon::E3, GUIGlObjectType::GLO_DET_ENTRYEXIT, currentTag, TL("E3 EntryExitDetector"),
                 {}, FXRGBA(210, 233, 255, 255));
@@ -1586,7 +1621,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("If set to true, no error will be reported if vehicles leave the detector without first entering it"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         fillDetectorThresholdAttributes(myTagProperties[currentTag], false);
 
@@ -1594,7 +1629,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Whether no warning should be issued when a vehicle arrives within the detector area."),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
     }
     currentTag = SUMO_TAG_DET_ENTRY;
     {
@@ -1603,6 +1638,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::DETECTOR,
                 GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::REPARENT,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::POS_LANE,
                 GUIIcon::E3ENTRY, GUIGlObjectType::GLO_DET_ENTRY, currentTag, TL("E3 DetEntry"),
         {SUMO_TAG_ENTRY_EXIT_DETECTOR}, FXRGBA(210, 233, 255, 255));
@@ -1621,6 +1657,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::DETECTOR,
                 GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::REPARENT,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::POS_LANE,
                 GUIIcon::E3EXIT, GUIGlObjectType::GLO_DET_EXIT, currentTag, TL("E3 DetExit"),
         {SUMO_TAG_ENTRY_EXIT_DETECTOR}, FXRGBA(210, 233, 255, 255));
@@ -1639,6 +1676,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::DETECTOR,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::POS_LANE,
                 GUIIcon::E1INSTANT, GUIGlObjectType::GLO_E1DETECTOR_INSTANT, currentTag, TL("E3 DetExit"),
                 {}, FXRGBA(210, 233, 255, 255));
@@ -1668,6 +1706,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT,
                 GNETagProperties::Property::CENTERAFTERCREATION,
                 GNETagProperties::Over::EDGE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::ROUTEPROBE, GUIGlObjectType::GLO_ROUTEPROBE, currentTag, TL("RouteProbe"),
                 {}, FXRGBA(210, 233, 255, 255));
@@ -1701,6 +1740,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT,
                 GNETagProperties::Property::RTREE | GNETagProperties::Property::DIALOG,
                 GNETagProperties::Over::LANES,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::VARIABLESPEEDSIGN, GUIGlObjectType::GLO_VSS, currentTag, TL("VariableSpeedSign"),
                 {}, FXRGBA(210, 233, 255, 255));
@@ -1729,6 +1769,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT,
                 GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS | GNETagProperties::Property::NOTSELECTABLE | GNETagProperties::Property::SYMBOL,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::LANE, GUIGlObjectType::GLO_VSS, currentTag, TL("VariableSpeedSign (lane)"),
         {SUMO_TAG_VSS}, FXRGBA(210, 233, 255, 255));
@@ -1738,20 +1779,21 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(SUMO_TAG_VIEWSETTINGS_ADDITIONALS),
                 GNETagProperties::Type::ADDITIONALELEMENT,
-                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
+                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS | GNETagProperties::Property::LISTED,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::VSSSTEP, GUIGlObjectType::GLO_VSS_STEP, currentTag, TL("VariableSpeedSign Step"),
         {SUMO_TAG_VSS}, FXRGBA(210, 233, 255, 255));
         // set values of attributes
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_TIME,
-                                   GNEAttributeProperties::Property::SUMOTIME | GNEAttributeProperties::Property::UNIQUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Property::SUMOTIME | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::SORTABLE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("Time"));
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_SPEED,
-                                   GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::SORTABLE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("Speed"),
                                    toString(OptionsCont::getOptions().getFloat("default.speed")));
     }
@@ -1762,6 +1804,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::CALIBRATOR,
                 GNETagProperties::Property::DIALOG | GNETagProperties::Property::CENTERAFTERCREATION,
                 GNETagProperties::Over::EDGE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::CALIBRATOR, GUIGlObjectType::GLO_CALIBRATOR, currentTag, TL("Calibrator"),
                 {}, FXRGBA(253, 255, 206, 255));
@@ -1802,6 +1845,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::CALIBRATOR,
                 GNETagProperties::Property::DIALOG | GNETagProperties::Property::CENTERAFTERCREATION,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::CALIBRATOR, GUIGlObjectType::GLO_CALIBRATOR, SUMO_TAG_CALIBRATOR, TL("CalibratorLane"),
                 {}, FXRGBA(253, 255, 206, 255));
@@ -1840,50 +1884,52 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(SUMO_TAG_VIEWSETTINGS_ADDITIONALS),
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::CALIBRATOR,
-                GNETagProperties::Property::XMLCHILD,
+                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::LISTED,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::FLOW, GUIGlObjectType::GLO_CALIBRATOR_FLOW, SUMO_TAG_FLOW, TL("CalibratorFlow"),
         {SUMO_TAG_CALIBRATOR}, FXRGBA(253, 255, 206, 255));
         // set values of attributes
-        new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_ROUTE,
-                                   GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
-                                   GNEAttributeProperties::Edit::EDITMODE,
-                                   TL("The id of the route the vehicle shall drive along"));
-
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_BEGIN,
-                                   GNEAttributeProperties::Property::SUMOTIME | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Property::SUMOTIME | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::SORTABLE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("First calibrator flow departure time"),
                                    "0");
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_END,
-                                   GNEAttributeProperties::Property::SUMOTIME | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Property::SUMOTIME | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::SORTABLE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("End of departure interval"),
                                    "3600");
 
-        // fill common vehicle attributes
-        fillCommonVehicleAttributes(myTagProperties[currentTag]);
-
-        // optional attributes (at least one must be defined)
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_TYPE,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::ACTIVATABLE | GNEAttributeProperties::Property::VTYPE,
-                                   GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("The id of the vehicle type to use for this calibrator flow"),
                                    DEFAULT_VTYPE_ID);
 
+        new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_ROUTE,
+                                   GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
+                                   GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
+                                   TL("The id of the route the vehicle shall drive along"));
+
+        // at least one of the following attributes must be defined
+
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_VEHSPERHOUR,
                                    GNEAttributeProperties::Property::INT | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::ACTIVATABLE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("Number of vehicles per hour, equally spaced"),
                                    "1800");
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_SPEED,
                                    GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::ACTIVATABLE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("Vehicle's speed"),
                                    "15");
+
+        // fill common vehicle attributes
+        fillCommonVehicleAttributes(myTagProperties[currentTag]);
     }
     currentTag = SUMO_TAG_REROUTER;
     {
@@ -1892,6 +1938,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT,
                 GNETagProperties::Property::RTREE | GNETagProperties::Property::DIALOG,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::REROUTER, GUIGlObjectType::GLO_REROUTER, currentTag, TL("Rerouter"),
                 {}, FXRGBA(255, 213, 213, 255));
@@ -1930,13 +1977,13 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Whether the router should be inactive initially (and switched on in the gui)"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_OPTIONAL,
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("If rerouter is optional"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
     }
     currentTag = GNE_TAG_REROUTER_SYMBOL;
     {
@@ -1945,6 +1992,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT,
                 GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS | GNETagProperties::Property::NOTSELECTABLE | GNETagProperties::Property::SYMBOL,
                 GNETagProperties::Over::EDGE,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::EDGE, GUIGlObjectType::GLO_REROUTER, currentTag, TL("Rerouter (Edge)"),
         {GNE_TAG_REROUTER_SYMBOL}, FXRGBA(255, 213, 213, 255));
@@ -1956,19 +2004,20 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT,
                 GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::REROUTERINTERVAL, GUIGlObjectType::GLO_REROUTER_INTERVAL, currentTag, TL("Rerouter Interval"),
         {SUMO_TAG_REROUTER}, FXRGBA(255, 213, 213, 255));
         // set values of attributes
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_BEGIN,
-                                   GNEAttributeProperties::Property::SUMOTIME | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Property::SUMOTIME | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::SORTABLE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("Begin"),
                                    "0");
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_END,
-                                   GNEAttributeProperties::Property::SUMOTIME | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Property::SUMOTIME | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::SORTABLE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("End"),
                                    "3600");
     }
@@ -1977,8 +2026,9 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(SUMO_TAG_VIEWSETTINGS_ADDITIONALS),
                 GNETagProperties::Type::ADDITIONALELEMENT,
-                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
+                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS | GNETagProperties::Property::LISTED,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::CLOSINGREROUTE, GUIGlObjectType::GLO_REROUTER_CLOSINGREROUTE, currentTag, TL("ClosingReroute"),
         {SUMO_TAG_INTERVAL}, FXRGBA(255, 213, 213, 255));
@@ -1992,8 +2042,9 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(SUMO_TAG_VIEWSETTINGS_ADDITIONALS),
                 GNETagProperties::Type::ADDITIONALELEMENT,
-                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
+                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS | GNETagProperties::Property::LISTED,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::CLOSINGLANEREROUTE, GUIGlObjectType::GLO_REROUTER_CLOSINGLANEREROUTE, currentTag, TL("ClosingLaneReroute"),
         {SUMO_TAG_INTERVAL}, FXRGBA(255, 213, 213, 255));
@@ -2007,8 +2058,9 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(SUMO_TAG_VIEWSETTINGS_ADDITIONALS),
                 GNETagProperties::Type::ADDITIONALELEMENT,
-                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
+                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS | GNETagProperties::Property::LISTED,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::DESTPROBREROUTE, GUIGlObjectType::GLO_REROUTER_DESTPROBREROUTE, currentTag, TL("DestinationProbabilityReroute"),
         {SUMO_TAG_INTERVAL}, FXRGBA(255, 213, 213, 255));
@@ -2017,7 +2069,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_PROB,
                                    GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("SUMO Probability"),
                                    "1");
     }
@@ -2026,50 +2078,52 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(SUMO_TAG_VIEWSETTINGS_ADDITIONALS),
                 GNETagProperties::Type::ADDITIONALELEMENT,
-                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
+                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS | GNETagProperties::Property::LISTED,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::PARKINGZONEREROUTE, GUIGlObjectType::GLO_REROUTER_PARKINGAREAREROUTE, currentTag, TL("ParkingAreaReroute"),
         {SUMO_TAG_INTERVAL}, FXRGBA(255, 213, 213, 255));
         // set values of attributes
         auto parking = new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_PARKING,
                 GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::SYNONYM,
-                GNEAttributeProperties::Edit::EDITMODE,
+                GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                 TL("ParkingArea ID"));
         parking->setSynonym(SUMO_ATTR_ID);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_PROB,
                                    GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("SUMO Probability"),
                                    "1");
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_VISIBLE,
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("Enable or disable visibility for parking area reroutes"),
-                                   GNEAttributeCarrier::True);
+                                   GNEAttributeCarrier::TRUE_STR);
     }
     currentTag = SUMO_TAG_ROUTE_PROB_REROUTE;
     {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(SUMO_TAG_VIEWSETTINGS_ADDITIONALS),
                 GNETagProperties::Type::ADDITIONALELEMENT,
-                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
+                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS | GNETagProperties::Property::LISTED,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::ROUTEPROBREROUTE, GUIGlObjectType::GLO_REROUTER_ROUTEPROBREROUTE, currentTag, TL("RouteProbabilityReroute"),
         {SUMO_TAG_INTERVAL}, FXRGBA(255, 213, 213, 255));
         // set values of attributes
         auto route = new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_ROUTE,
                                                 GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::SYNONYM | GNEAttributeProperties::Property::UPDATEGEOMETRY,
-                                                GNEAttributeProperties::Edit::EDITMODE,
+                                                GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                                 TL("Route"));
         route->setSynonym(SUMO_ATTR_ID);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_PROB,
                                    GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("SUMO Probability"),
                                    "1");
     }
@@ -2080,6 +2134,7 @@ GNETagPropertiesDatabase::fillAdditionalElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT,
                 GNETagProperties::Property::CENTERAFTERCREATION,
                 GNETagProperties::Over::EDGE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::VAPORIZER, GUIGlObjectType::GLO_VAPORIZER, currentTag, TL("Vaporizer"),
                 {}, FXRGBA(253, 255, 206, 255));
@@ -2113,6 +2168,7 @@ GNETagPropertiesDatabase::fillShapeElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::SHAPE,
                 GNETagProperties::Property::RTREE | GNETagProperties::Property::GEOSHAPE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::POLY, GUIGlObjectType::GLO_POLYGON, currentTag, TL("Polygon"),
                 {}, FXRGBA(240, 255, 205, 255));
@@ -2132,7 +2188,7 @@ GNETagPropertiesDatabase::fillShapeElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("An information whether the polygon shall be filled"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_LINEWIDTH,
                                    GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE | GNEAttributeProperties::Property::DEFAULTVALUE,
@@ -2164,7 +2220,7 @@ GNETagPropertiesDatabase::fillShapeElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::GEOEDITOR,
                                    TL("Enable or disable GEO attributes"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_GEOSHAPE,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::POSITION | GNEAttributeProperties::Property::LIST | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
@@ -2183,6 +2239,7 @@ GNETagPropertiesDatabase::fillShapeElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::SHAPE,
                 GNETagProperties::Property::RTREE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::POI, GUIGlObjectType::GLO_POI, currentTag, TL("PointOfInterest"),
                 {}, FXRGBA(210, 233, 255, 255));
@@ -2204,6 +2261,7 @@ GNETagPropertiesDatabase::fillShapeElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::SHAPE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::POS_LANE,
                 GUIIcon::POILANE, GUIGlObjectType::GLO_POI, SUMO_TAG_POI, TL("PointOfInterestLane"),
                 {}, FXRGBA(210, 233, 255, 255));
@@ -2232,6 +2290,7 @@ GNETagPropertiesDatabase::fillShapeElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::SHAPE,
                 GNETagProperties::Property::RTREE | GNETagProperties::Property::REQUIRE_PROJ,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::POIGEO, GUIGlObjectType::GLO_POI, SUMO_TAG_POI, TL("PointOfInterestGeo"),
                 {}, FXRGBA(210, 233, 255, 255));
@@ -2265,6 +2324,7 @@ GNETagPropertiesDatabase::fillTAZElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::TAZELEMENT,
                 GNETagProperties::Property::RTREE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::TAZ, GUIGlObjectType::GLO_TAZ, currentTag, TL("TrafficAssignmentZones"));
         // set values of attributes
@@ -2288,13 +2348,13 @@ GNETagPropertiesDatabase::fillTAZElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("An information whether the TAZ shall be filled"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         auto edgesWithin = new GNEAttributeProperties(myTagProperties[currentTag], GNE_ATTR_EDGES_WITHIN,
                 GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::COPYABLE,
                 GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::NETEDITEDITOR,
                 TL("Use the edges within the shape"),
-                GNEAttributeCarrier::True);
+                GNEAttributeCarrier::TRUE_STR);
         edgesWithin->setAlternativeName(TL("edges within"));
     }
     currentTag = SUMO_TAG_TAZSOURCE;
@@ -2304,6 +2364,7 @@ GNETagPropertiesDatabase::fillTAZElements() {
                 GNETagProperties::Type::OTHER,
                 GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
                 GNETagProperties::Over::EDGE,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::TAZEDGE, GUIGlObjectType::GLO_TAZ, currentTag, TL("TAZ Source"),
         {SUMO_TAG_TAZ});
@@ -2323,6 +2384,7 @@ GNETagPropertiesDatabase::fillTAZElements() {
                 GNETagProperties::Type::OTHER,
                 GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
                 GNETagProperties::Over::EDGE,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::TAZEDGE, GUIGlObjectType::GLO_TAZ, currentTag, TL("TAZ Sink"),
         {SUMO_TAG_TAZ});
@@ -2348,6 +2410,7 @@ GNETagPropertiesDatabase::fillWireElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::WIRE,
                 GNETagProperties::Property::RTREE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::TRACTION_SUBSTATION, GUIGlObjectType::GLO_TRACTIONSUBSTATION, currentTag, TL("TractionSubstation"));
         // set attribute properties
@@ -2378,6 +2441,7 @@ GNETagPropertiesDatabase::fillWireElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::WIRE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::CONSECUTIVE_LANES,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::OVERHEADWIRE, GUIGlObjectType::GLO_OVERHEAD_WIRE_SEGMENT, currentTag, TL("WireSection"));
         // set attribute properties
@@ -2419,6 +2483,7 @@ GNETagPropertiesDatabase::fillWireElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::WIRE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::OVERHEADWIRE_CLAMP, GUIGlObjectType::GLO_OVERHEAD_WIRE_SEGMENT, currentTag, TL("OverheadWireClamp"));
         // set attribute properties
@@ -2457,6 +2522,7 @@ GNETagPropertiesDatabase::fillJuPedSimElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::SHAPE | GNETagProperties::Type::JUPEDSIM,
                 GNETagProperties::Property::RTREE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::JPS_WALKABLEAREA, GUIGlObjectType::GLO_JPS_WALKABLEAREA, SUMO_TAG_POLY, TL("JuPedSim WalkableArea"),
                 {}, FXRGBA(253, 255, 206, 255));
@@ -2474,7 +2540,7 @@ GNETagPropertiesDatabase::fillJuPedSimElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::GEOEDITOR,
                                    TL("Enable or disable GEO attributes"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_GEOSHAPE,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::POSITION | GNEAttributeProperties::Property::LIST | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
@@ -2488,6 +2554,7 @@ GNETagPropertiesDatabase::fillJuPedSimElements() {
                 GNETagProperties::Type::ADDITIONALELEMENT | GNETagProperties::Type::SHAPE | GNETagProperties::Type::JUPEDSIM,
                 GNETagProperties::Property::RTREE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::JPS_OBSTACLE, GUIGlObjectType::GLO_JPS_OBSTACLE, SUMO_TAG_POLY, TL("JuPedSim Obstacle"),
                 {}, FXRGBA(253, 255, 206, 255));
@@ -2505,7 +2572,7 @@ GNETagPropertiesDatabase::fillJuPedSimElements() {
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::GEOEDITOR,
                                    TL("Enable or disable GEO attributes"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_GEOSHAPE,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::POSITION | GNEAttributeProperties::Property::LIST | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
@@ -2518,26 +2585,14 @@ GNETagPropertiesDatabase::fillJuPedSimElements() {
 void
 GNETagPropertiesDatabase::fillDemandElements() {
     // fill demand elements
-    SumoXMLTag currentTag = SUMO_TAG_ROUTE_DISTRIBUTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties[GNE_TAG_SUPERMODE_DEMAND],
-                GNETagProperties::Type::DEMANDELEMENT,
-                GNETagProperties::Property::NOTDRAWABLE | GNETagProperties::Property::NOTSELECTABLE | GNETagProperties::Property::NOPARAMETERS,
-                GNETagProperties::Over::VIEW,
-                GNETagProperties::Conflicts::NO_CONFLICTS,
-                GUIIcon::ROUTEDISTRIBUTION, GUIGlObjectType::GLO_ROUTE_DISTRIBUTION, currentTag, TL("RouteDistribution"));
-
-        // set values of attributes
-        fillIDAttribute(myTagProperties[currentTag], true);
-    }
-    currentTag = SUMO_TAG_ROUTE;
+    SumoXMLTag currentTag = SUMO_TAG_ROUTE;
     {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties[GNE_TAG_SUPERMODE_DEMAND],
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::ROUTE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::CONSECUTIVE_EDGES,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::ROUTE, GUIGlObjectType::GLO_ROUTE, currentTag, TL("Route"));
 
@@ -2546,29 +2601,8 @@ GNETagPropertiesDatabase::fillDemandElements() {
 
         // add common route attributes
         fillCommonRouteAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_ROUTEREF;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties[GNE_TAG_SUPERMODE_DEMAND],
-                GNETagProperties::Type::DEMANDELEMENT,
-                GNETagProperties::Property::XMLCHILD,
-                GNETagProperties::Over::VIEW,
-                GNETagProperties::Conflicts::NO_CONFLICTS,
-                GUIIcon::ROUTEREF, GUIGlObjectType::GLO_ROUTE_REF, currentTag, TL("Route (Ref)"),
-        {SUMO_TAG_ROUTE_DISTRIBUTION});
 
-        // set values of attributes
-        new GNEAttributeProperties(myTagProperties[currentTag], GNE_ATTR_ROUTE_DISTRIBUTION,
-                                   GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE,
-                                   GNEAttributeProperties::Edit::EDITMODE,
-                                   TL("Route distribution in which this routeRef is defined"));
-
-        new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_REFID,
-                                   GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE,
-                                   GNEAttributeProperties::Edit::EDITMODE,
-                                   TL("Reference ID of route"));
-
+        // add distribution probability
         fillDistributionProbability(myTagProperties[currentTag], true);
     }
     currentTag = GNE_TAG_ROUTE_EMBEDDED;
@@ -2578,6 +2612,7 @@ GNETagPropertiesDatabase::fillDemandElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::ROUTE,
                 GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::CONSECUTIVE_EDGES,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::ROUTE, GUIGlObjectType::GLO_ROUTE_EMBEDDED, SUMO_TAG_ROUTE, TL("Route (embedded)"),
         {GNE_TAG_VEHICLE_WITHROUTE, GNE_TAG_FLOW_WITHROUTE});
@@ -2585,13 +2620,65 @@ GNETagPropertiesDatabase::fillDemandElements() {
         // add common route attributes
         fillCommonRouteAttributes(myTagProperties[currentTag]);
     }
+    currentTag = SUMO_TAG_ROUTE_DISTRIBUTION;
+    {
+        // set values of tag
+        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties[GNE_TAG_SUPERMODE_DEMAND],
+                GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::ROUTE | GNETagProperties::Type::DISTRIBUTION,
+                GNETagProperties::Property::NOTDRAWABLE | GNETagProperties::Property::NOTSELECTABLE | GNETagProperties::Property::NOPARAMETERS,
+                GNETagProperties::Over::VIEW,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
+                GNETagProperties::Conflicts::NO_CONFLICTS,
+                GUIIcon::ROUTEDISTRIBUTION, GUIGlObjectType::GLO_ROUTE_DISTRIBUTION, currentTag, TL("RouteDistribution"));
+
+        // set values of attributes
+        fillIDAttribute(myTagProperties[currentTag], true);
+    }
+    currentTag = GNE_TAG_ROUTEREF;
+    {
+        // set values of tag
+        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties[GNE_TAG_SUPERMODE_DEMAND],
+                GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::DISTRIBUTIONREF,
+                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
+                GNETagProperties::Over::VIEW,
+                FileBucket::Type::NOTHING,
+                GNETagProperties::Conflicts::NO_CONFLICTS,
+                GUIIcon::ROUTEREF, GUIGlObjectType::GLO_ROUTE_REF, currentTag, TL("Route (Ref)"),
+        {SUMO_TAG_ROUTE_DISTRIBUTION});
+
+        new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_REFID,
+                                   GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE,
+                                   GNEAttributeProperties::Edit::EDITMODE,
+                                   TL("Reference ID of route"));
+
+        // add distribution probability
+        fillDistributionProbability(myTagProperties[currentTag], false);
+    }
+    currentTag = SUMO_TAG_VTYPE;
+    {
+        // set values of tag
+        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties[GNE_TAG_SUPERMODE_DEMAND],
+                GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VTYPE,
+                GNETagProperties::Property::NOTDRAWABLE | GNETagProperties::Property::NOTSELECTABLE | GNETagProperties::Property::VCLASS_ICON | GNETagProperties::Property::EXTENDED,
+                GNETagProperties::Over::VIEW,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
+                GNETagProperties::Conflicts::NO_CONFLICTS,
+                GUIIcon::VTYPE, GUIGlObjectType::GLO_VTYPE, currentTag, TL("VehicleType"));
+
+        // set values of attributes
+        fillIDAttribute(myTagProperties[currentTag], true);
+
+        // add common vType attributes
+        fillCommonVTypeAttributes(myTagProperties[currentTag]);
+    }
     currentTag = SUMO_TAG_VTYPE_DISTRIBUTION;
     {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties[GNE_TAG_SUPERMODE_DEMAND],
-                GNETagProperties::Type::DEMANDELEMENT,
+                GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VTYPE | GNETagProperties::Type::DISTRIBUTION,
                 GNETagProperties::Property::NOTDRAWABLE | GNETagProperties::Property::NOTSELECTABLE | GNETagProperties::Property::NOPARAMETERS,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::VTYPEDISTRIBUTION, GUIGlObjectType::GLO_VTYPE_DISTRIBUTION, currentTag, TL("TypeDistribution"));
 
@@ -2604,45 +2691,25 @@ GNETagPropertiesDatabase::fillDemandElements() {
         // set values of attributes
         fillIDAttribute(myTagProperties[currentTag], true);
     }
-    currentTag = SUMO_TAG_VTYPE;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties[GNE_TAG_SUPERMODE_DEMAND],
-                GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VTYPE,
-                GNETagProperties::Property::NOTDRAWABLE | GNETagProperties::Property::NOTSELECTABLE | GNETagProperties::Property::VCLASS_ICON | GNETagProperties::Property::EXTENDED,
-                GNETagProperties::Over::VIEW,
-                GNETagProperties::Conflicts::NO_CONFLICTS,
-                GUIIcon::VTYPE, GUIGlObjectType::GLO_VTYPE, currentTag, TL("VehicleType"));
-
-        // set values of attributes
-        fillIDAttribute(myTagProperties[currentTag], true);
-
-        // add common vType attributes
-        fillCommonVTypeAttributes(myTagProperties[currentTag]);
-    }
     currentTag = GNE_TAG_VTYPEREF;
     {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties[GNE_TAG_SUPERMODE_DEMAND],
-                GNETagProperties::Type::DEMANDELEMENT,
-                GNETagProperties::Property::XMLCHILD,
+                GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::DISTRIBUTIONREF,
+                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::VTYPEREF, GUIGlObjectType::GLO_VTYPE_REF, currentTag, TL("VType (Ref)"),
         {SUMO_TAG_VTYPE_DISTRIBUTION});
-
-        // set values of attributes
-        new GNEAttributeProperties(myTagProperties[currentTag], GNE_ATTR_VTYPE_DISTRIBUTION,
-                                   GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE,
-                                   GNEAttributeProperties::Edit::EDITMODE,
-                                   TL("VType distribution in which this vTypeRef is defined"));
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_REFID,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE,
                                    GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Reference ID of vType"));
 
-        fillDistributionProbability(myTagProperties[currentTag], true);
+        // add distribution probability
+        fillDistributionProbability(myTagProperties[currentTag], false);
     }
 }
 
@@ -2657,6 +2724,7 @@ GNETagPropertiesDatabase::fillVehicleElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VEHICLE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::TRIP, GUIGlObjectType::GLO_TRIP, currentTag, TL("TripEdges"),
                 {}, FXRGBA(253, 255, 206, 255), "trip (from-to edges)");
@@ -2697,6 +2765,7 @@ GNETagPropertiesDatabase::fillVehicleElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VEHICLE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_JUNCTION,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::TRIP_JUNCTIONS, GUIGlObjectType::GLO_TRIP, SUMO_TAG_TRIP, TL("TripJunctions"),
                 {}, FXRGBA(255, 213, 213, 255), "trip (from-to junctions)");
@@ -2732,6 +2801,7 @@ GNETagPropertiesDatabase::fillVehicleElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VEHICLE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::TRIP_TAZS, GUIGlObjectType::GLO_TRIP, SUMO_TAG_TRIP, TL("TripTAZs"),
                 {}, FXRGBA(240, 255, 205, 255), "trip (from-to TAZs)");
@@ -2767,8 +2837,9 @@ GNETagPropertiesDatabase::fillVehicleElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VEHICLE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::ROUTE,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
-                GUIIcon::VEHICLE, GUIGlObjectType::GLO_VEHICLE, currentTag, TL("VehicleRoute"),
+                GUIIcon::VEHICLE, GUIGlObjectType::GLO_VEHICLE, SUMO_TAG_VEHICLE, TL("VehicleRoute"),
                 {}, FXRGBA(210, 233, 255, 255), "vehicle (over route)");
 
         // set values of attributes
@@ -2807,6 +2878,7 @@ GNETagPropertiesDatabase::fillVehicleElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VEHICLE,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::ROUTE_EMBEDDED,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::VEHICLE, GUIGlObjectType::GLO_VEHICLE, SUMO_TAG_VEHICLE, TL("VehicleEmbeddedRoute"),
                 {}, FXRGBA(210, 233, 255, 255), "vehicle (embedded route)");
@@ -2822,12 +2894,12 @@ GNETagPropertiesDatabase::fillVehicleElements() {
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_DEPARTEDGE,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::UPDATEGEOMETRY | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::EDITMODE,
                                    TL("The index of the edge within route the vehicle starts at"));
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_ARRIVALEDGE,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::UPDATEGEOMETRY | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::EDITMODE,
                                    TL("The index of the edge within route the vehicle ends at"));
 
         // add common attributes
@@ -2842,6 +2914,7 @@ GNETagPropertiesDatabase::fillVehicleElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VEHICLE | GNETagProperties::Type::FLOW,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::FLOW, GUIGlObjectType::GLO_FLOW, currentTag, TL("FlowEdges"),
                 {}, FXRGBA(253, 255, 206, 255), "flow (from-to edges)");
@@ -2883,6 +2956,7 @@ GNETagPropertiesDatabase::fillVehicleElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VEHICLE | GNETagProperties::Type::FLOW,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_JUNCTION,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::FLOW_JUNCTIONS, GUIGlObjectType::GLO_FLOW, SUMO_TAG_FLOW, TL("FlowJunctions"),
                 {}, FXRGBA(255, 213, 213, 255), "flow (from-to junctions)");
@@ -2919,6 +2993,7 @@ GNETagPropertiesDatabase::fillVehicleElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VEHICLE | GNETagProperties::Type::FLOW,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::FLOW_TAZS, GUIGlObjectType::GLO_FLOW, SUMO_TAG_FLOW, TL("FlowTAZs"),
                 {}, FXRGBA(240, 255, 205, 255), "flow (from-to TAZs)");
@@ -2955,6 +3030,7 @@ GNETagPropertiesDatabase::fillVehicleElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VEHICLE | GNETagProperties::Type::FLOW,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::ROUTE,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::ROUTEFLOW, GUIGlObjectType::GLO_ROUTEFLOW, SUMO_TAG_FLOW, TL("FlowRoute"),
                 {}, FXRGBA(210, 233, 255, 255), "flow (over route)");
@@ -2996,6 +3072,7 @@ GNETagPropertiesDatabase::fillVehicleElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::VEHICLE | GNETagProperties::Type::FLOW,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::ROUTE_EMBEDDED,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::ROUTEFLOW, GUIGlObjectType::GLO_ROUTEFLOW, SUMO_TAG_FLOW, TL("FlowEmbeddedRoute"),
                 {}, FXRGBA(210, 233, 255, 255), "flow (embedded route)");
@@ -3011,12 +3088,12 @@ GNETagPropertiesDatabase::fillVehicleElements() {
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_DEPARTEDGE,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::UPDATEGEOMETRY | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::EDITMODE,
                                    TL("The index of the edge within route the flow starts at"));
 
         new GNEAttributeProperties(myTagProperties[currentTag], SUMO_ATTR_ARRIVALEDGE,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::UPDATEGEOMETRY | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::EDITMODE,
                                    TL("The index of the edge within route the flow ends at"));
 
         // add common attributes
@@ -3038,6 +3115,7 @@ GNETagPropertiesDatabase::fillStopElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::STOP_VEHICLE,
                 GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::POS_LANE_START | GNETagProperties::Conflicts::POS_LANE_END,
                 GUIIcon::STOPELEMENT, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, TL("StopLane"),
         {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(255, 213, 213, 255));
@@ -3073,7 +3151,7 @@ GNETagPropertiesDatabase::fillStopElements() {
                     GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Edit::NETEDITEDITOR,
                     GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                     TL("Force size during creation"),
-                    GNEAttributeCarrier::False);
+                    GNEAttributeCarrier::FALSE_STR);
 
             new GNEAttributeProperties(myTagProperties[currentTag], GNE_ATTR_REFERENCE,
                     GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::DISCRETE | GNEAttributeProperties::Edit::NETEDITEDITOR,
@@ -3088,6 +3166,7 @@ GNETagPropertiesDatabase::fillStopElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::STOP_VEHICLE,
                 GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::BUSSTOP,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::STOPELEMENT, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, TL("StopBusStop"),
         {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(255, 213, 213, 255));
@@ -3107,6 +3186,7 @@ GNETagPropertiesDatabase::fillStopElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::STOP_VEHICLE,
                 GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::TRAINSTOP,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::STOPELEMENT, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, TL("StopTrainStop"),
         {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(255, 213, 213, 255));
@@ -3126,6 +3206,7 @@ GNETagPropertiesDatabase::fillStopElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::STOP_VEHICLE,
                 GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::CONTAINERSTOP,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::STOPELEMENT, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, TL("StopContainerStop"),
         {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(255, 213, 213, 255));
@@ -3145,6 +3226,7 @@ GNETagPropertiesDatabase::fillStopElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::STOP_VEHICLE,
                 GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::CHARGINGSTATION,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::STOPELEMENT, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, TL("StopChargingStation"),
         {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(255, 213, 213, 255));
@@ -3164,6 +3246,7 @@ GNETagPropertiesDatabase::fillStopElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::STOP_VEHICLE,
                 GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::PARKINGAREA,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::STOPELEMENT, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, TL("StopParkingArea"),
         {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(255, 213, 213, 255));
@@ -3189,6 +3272,7 @@ GNETagPropertiesDatabase::fillWaypointElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::STOP_VEHICLE | GNETagProperties::Type::WAYPOINT_VEHICLE,
                 GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::LANE,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::POS_LANE_START | GNETagProperties::Conflicts::POS_LANE_END,
                 GUIIcon::WAYPOINT, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, TL("WaypointLane"),
         {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(240, 255, 205, 255));
@@ -3224,7 +3308,7 @@ GNETagPropertiesDatabase::fillWaypointElements() {
                     GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Edit::NETEDITEDITOR,
                     GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                     TL("Force size during creation"),
-                    GNEAttributeCarrier::False);
+                    GNEAttributeCarrier::FALSE_STR);
 
             new GNEAttributeProperties(myTagProperties[currentTag], GNE_ATTR_REFERENCE,
                     GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::DISCRETE | GNEAttributeProperties::Edit::NETEDITEDITOR,
@@ -3239,6 +3323,7 @@ GNETagPropertiesDatabase::fillWaypointElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::STOP_VEHICLE | GNETagProperties::Type::WAYPOINT_VEHICLE,
                 GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::BUSSTOP,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::WAYPOINT, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, TL("WaypointBusStop"),
         {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(240, 255, 205, 255));
@@ -3258,6 +3343,7 @@ GNETagPropertiesDatabase::fillWaypointElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::STOP_VEHICLE | GNETagProperties::Type::WAYPOINT_VEHICLE,
                 GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::TRAINSTOP,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::WAYPOINT, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, TL("WaypointTrainStop"),
         {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(240, 255, 205, 255));
@@ -3275,8 +3361,9 @@ GNETagPropertiesDatabase::fillWaypointElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_STOPS),
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::STOP_VEHICLE | GNETagProperties::Type::WAYPOINT_VEHICLE,
-                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
+                GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::CONTAINERSTOP,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::WAYPOINT, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, TL("WaypointContainerStop"),
         {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(240, 255, 205, 255));
@@ -3296,6 +3383,7 @@ GNETagPropertiesDatabase::fillWaypointElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::STOP_VEHICLE | GNETagProperties::Type::WAYPOINT_VEHICLE,
                 GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::CHARGINGSTATION,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::WAYPOINT, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, TL("WaypointChargingStation"),
         {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(240, 255, 205, 255));
@@ -3313,8 +3401,9 @@ GNETagPropertiesDatabase::fillWaypointElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_STOPS),
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::STOP_VEHICLE | GNETagProperties::Type::WAYPOINT_VEHICLE,
-                GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS,
+                GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::PARKINGAREA,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::WAYPOINT, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, TL("WaypointParkingArea"),
         {SUMO_TAG_ROUTE, SUMO_TAG_TRIP, SUMO_TAG_FLOW}, FXRGBA(240, 255, 205, 255));
@@ -3340,6 +3429,7 @@ GNETagPropertiesDatabase::fillPersonElements() {
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::PERSON,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::PERSON, GUIGlObjectType::GLO_PERSON, currentTag, TL("Person"));
 
@@ -3355,7 +3445,8 @@ GNETagPropertiesDatabase::fillPersonElements() {
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_SUPERMODE_DEMAND),
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::PERSON | GNETagProperties::Type::FLOW,
                 GNETagProperties::Property::NO_PROPERTY,
-                GNETagProperties::Over::BUSSTOP,
+                GNETagProperties::Over::VIEW,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::PERSONFLOW, GUIGlObjectType::GLO_PERSONFLOW, currentTag, TL("PersonFlow"));
 
@@ -3377,7 +3468,8 @@ GNETagPropertiesDatabase::fillContainerElements() {
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_SUPERMODE_DEMAND),
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::CONTAINER,
                 GNETagProperties::Property::NO_PROPERTY,
-                GNETagProperties::Over::BUSSTOP,
+                GNETagProperties::Over::VIEW,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::CONTAINER, GUIGlObjectType::GLO_CONTAINER, currentTag, TL("Container"));
 
@@ -3392,7 +3484,8 @@ GNETagPropertiesDatabase::fillContainerElements() {
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_SUPERMODE_DEMAND),
                 GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::CONTAINER | GNETagProperties::Type::FLOW,
                 GNETagProperties::Property::NO_PROPERTY,
-                GNETagProperties::Over::BUSSTOP,
+                GNETagProperties::Over::VIEW,
+                FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::CONTAINERFLOW, GUIGlObjectType::GLO_CONTAINERFLOW, currentTag, TL("ContainerFlow"));
 
@@ -3410,7 +3503,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
     // declare common tag types and properties
     const auto tagType = GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::CONTAINERPLAN | GNETagProperties::Type::TRANSPORT;
     const auto tagProperty = GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS;
-    const auto tagPropertyTAZ = GNETagProperties::Property::RTREE | tagProperty;
+    const auto files = FileBucket::Type::NOTHING;
     const auto conflicts = GNETagProperties::Conflicts::NO_CONFLICTS;
     const std::vector<SumoXMLTag> parents({SUMO_TAG_CONTAINER, SUMO_TAG_CONTAINERFLOW});
     const unsigned int color = FXRGBA(240, 255, 205, 255);
@@ -3423,27 +3516,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_EDGE_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_EDGE_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3453,7 +3526,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3463,7 +3536,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3473,7 +3546,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3483,7 +3556,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3493,169 +3566,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("parkingArea")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    // from taz
-    currentTag = GNE_TAG_TRANSPORT_TAZ_EDGE;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("taz"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_TAZ_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("taz"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_TAZ_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("taz"), TL("junction")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_TAZ_BUSSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("taz"), TL("busStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_TAZ_TRAINSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("taz"), TL("trainStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_TAZ_CONTAINERSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("taz"), TL("containerStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_TAZ_CHARGINGSTATION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("taz"), TL("chargingStation")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_TAZ_PARKINGAREA;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("taz"), TL("parkingArea")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    // from junction
-    currentTag = GNE_TAG_TRANSPORT_JUNCTION_EDGE;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("junction"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_JUNCTION_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("junction"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_JUNCTION_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("junction"), TL("junction")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_JUNCTION_BUSSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("junction"), TL("busStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_JUNCTION_TRAINSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("junction"), TL("trainStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_JUNCTION_CONTAINERSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("junction"), TL("containerStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_JUNCTION_CHARGINGSTATION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("junction"), TL("chargingStation")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_JUNCTION_PARKINGAREA;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("junction"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("edge"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3666,27 +3577,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_BUSSTOP_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_BUSSTOP_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3696,7 +3587,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3706,7 +3597,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3716,7 +3607,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3726,7 +3617,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3736,7 +3627,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("busStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3747,27 +3638,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_TRAINSTOP_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_TRAINSTOP_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3777,7 +3648,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3787,7 +3658,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3797,7 +3668,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3807,7 +3678,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3817,7 +3688,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("trainStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3828,27 +3699,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_CONTAINERSTOP_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_CONTAINERSTOP_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3858,7 +3709,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3868,7 +3719,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3878,7 +3729,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3888,7 +3739,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3898,7 +3749,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("containerStop"), TL("parkingArea")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -3910,27 +3761,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_CHARGINGSTATION_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_CHARGINGSTATION_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3940,7 +3771,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3950,7 +3781,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3960,7 +3791,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3970,7 +3801,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3980,7 +3811,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("chargingStation"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -3991,27 +3822,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_PARKINGAREA_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTransportCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSPORT_PARKINGAREA_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -4021,7 +3832,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -4031,7 +3842,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -4041,7 +3852,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -4051,7 +3862,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -4061,7 +3872,7 @@ GNETagPropertiesDatabase::fillContainerTransportElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSPORTS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Transport"), TL("parkingArea"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTransportCommonAttributes(myTagProperties[currentTag]);
@@ -4074,7 +3885,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
     // declare common tag types and properties
     const auto tagType = GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::CONTAINERPLAN | GNETagProperties::Type::TRANSHIP;
     const auto tagProperty = GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS;
-    const auto tagPropertyTAZ = GNETagProperties::Property::RTREE | tagProperty;
+    const auto files = FileBucket::Type::NOTHING;
     const auto conflicts = GNETagProperties::Conflicts::NO_CONFLICTS;
     const std::vector<SumoXMLTag> parents({SUMO_TAG_CONTAINER, SUMO_TAG_CONTAINERFLOW});
     const unsigned int color = FXRGBA(210, 233, 255, 255);
@@ -4087,7 +3898,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::CONSECUTIVE_EDGES,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("Tranship"), TL("edges")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("Tranship"), TL("edges")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4098,27 +3909,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_EDGE_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_EDGE_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4128,7 +3919,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4138,7 +3929,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4148,7 +3939,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4158,7 +3949,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4168,169 +3959,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("parkingArea")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    // from taz
-    currentTag = GNE_TAG_TRANSHIP_TAZ_EDGE;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("taz"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_TAZ_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("taz"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_TAZ_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("taz"), TL("junction")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_TAZ_BUSSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("taz"), TL("busStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_TAZ_TRAINSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("taz"), TL("trainStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_TAZ_CONTAINERSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("taz"), TL("containerStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_TAZ_CHARGINGSTATION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("taz"), TL("chargingStation")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_TAZ_PARKINGAREA;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("taz"), TL("parkingArea")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    // from junction
-    currentTag = GNE_TAG_TRANSHIP_JUNCTION_EDGE;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("junction"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_JUNCTION_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("junction"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_JUNCTION_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("junction"), TL("junction")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_JUNCTION_BUSSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("junction"), TL("busStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_JUNCTION_TRAINSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("junction"), TL("trainStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_JUNCTION_CONTAINERSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("junction"), TL("containerStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_JUNCTION_CHARGINGSTATION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("junction"), TL("chargingStation")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_JUNCTION_PARKINGAREA;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("junction"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("edge"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4341,27 +3970,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_BUSSTOP_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_BUSSTOP_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4371,7 +3980,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4381,7 +3990,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4391,7 +4000,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4401,7 +4010,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4411,7 +4020,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("busStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4422,27 +4031,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_TRAINSTOP_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_TRAINSTOP_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4452,7 +4041,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4462,7 +4051,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4472,7 +4061,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4482,7 +4071,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4492,7 +4081,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("trainStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4503,27 +4092,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_CONTAINERSTOP_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_CONTAINERSTOP_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4533,7 +4102,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4543,7 +4112,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4553,7 +4122,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4563,7 +4132,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4573,7 +4142,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("containerStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4584,27 +4153,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_CHARGINGSTATION_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_CHARGINGSTATION_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4614,7 +4163,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4624,7 +4173,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4634,7 +4183,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4644,7 +4193,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4654,7 +4203,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("chargingStation"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4665,27 +4214,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_PARKINGAREA_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillTranshipCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_TRANSHIP_PARKINGAREA_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
-                GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4695,7 +4224,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4705,7 +4234,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4715,7 +4244,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4725,7 +4254,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4735,7 +4264,7 @@ GNETagPropertiesDatabase::fillContainerTranshipElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_TRANSHIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Tranship"), TL("parkingArea"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillTranshipCommonAttributes(myTagProperties[currentTag]);
@@ -4749,6 +4278,7 @@ GNETagPropertiesDatabase::fillContainerStopElements() {
     const auto tagType = GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::CONTAINERPLAN | GNETagProperties::Type::STOP_CONTAINER;
     const auto tagProperty = GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS;
     const auto conflicts = GNETagProperties::Conflicts::NO_CONFLICTS;
+    const auto files = FileBucket::Type::NOTHING;
     const std::vector<SumoXMLTag> parents({SUMO_TAG_CONTAINER, SUMO_TAG_CONTAINERFLOW});
     const unsigned int color = FXRGBA(255, 213, 213, 255);
     const GUIIcon icon = GUIIcon::STOPELEMENT;
@@ -4760,7 +4290,7 @@ GNETagPropertiesDatabase::fillContainerStopElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_CONTAINERSTOPS), tagType, tagProperty,
                 GNETagProperties::Over::EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("ContainerStop"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("ContainerStop"), TL("edge")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -4771,7 +4301,7 @@ GNETagPropertiesDatabase::fillContainerStopElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_CONTAINERSTOPS), tagType, tagProperty,
                 GNETagProperties::Over::BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("ContainerStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("ContainerStop"), TL("busStop")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -4782,7 +4312,7 @@ GNETagPropertiesDatabase::fillContainerStopElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_CONTAINERSTOPS), tagType, tagProperty,
                 GNETagProperties::Over::TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("ContainerStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("ContainerStop"), TL("trainStop")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -4793,7 +4323,7 @@ GNETagPropertiesDatabase::fillContainerStopElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_CONTAINERSTOPS), tagType, tagProperty,
                 GNETagProperties::Over::CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("ContainerStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("ContainerStop"), TL("containerStop")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -4803,7 +4333,7 @@ GNETagPropertiesDatabase::fillContainerStopElements() {
     {
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_CONTAINERSTOPS), tagType, tagProperty,
                 GNETagProperties::Over::CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("ContainerStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("ContainerStop"), TL("chargingStation")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -4814,7 +4344,7 @@ GNETagPropertiesDatabase::fillContainerStopElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_CONTAINERSTOPS), tagType, tagProperty,
                 GNETagProperties::Over::PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("ContainerStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("ContainerStop"), TL("parkingArea")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -4829,6 +4359,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
     const auto tagType = GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::PERSONPLAN | GNETagProperties::Type::PERSONTRIP;
     const auto tagProperty = GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS;
     const auto tagPropertyTAZ = GNETagProperties::Property::RTREE | tagProperty;
+    const auto files = FileBucket::Type::NOTHING;
     const auto conflicts = GNETagProperties::Conflicts::NO_CONFLICTS;
     const std::vector<SumoXMLTag> parents({SUMO_TAG_PERSON, SUMO_TAG_PERSONFLOW});
     const unsigned int color = FXRGBA(253, 255, 206, 255);
@@ -4841,7 +4372,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4851,7 +4382,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4861,7 +4392,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4871,7 +4402,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4881,7 +4412,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4891,7 +4422,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4901,7 +4432,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4911,7 +4442,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("edge"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4922,7 +4453,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4932,7 +4463,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4942,7 +4473,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4952,7 +4483,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4962,7 +4493,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4972,7 +4503,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4982,7 +4513,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -4992,7 +4523,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("taz"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5003,7 +4534,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5013,7 +4544,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5023,7 +4554,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5033,7 +4564,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5043,7 +4574,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5053,7 +4584,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5063,7 +4594,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5073,7 +4604,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("junction"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5084,7 +4615,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5094,7 +4625,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5104,7 +4635,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5114,7 +4645,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5124,7 +4655,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5134,7 +4665,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5144,7 +4675,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5154,7 +4685,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("busStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5165,7 +4696,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5175,7 +4706,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5185,7 +4716,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5195,7 +4726,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5205,7 +4736,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5215,7 +4746,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5225,7 +4756,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5235,7 +4766,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("trainStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5246,7 +4777,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5256,7 +4787,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5266,7 +4797,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5276,7 +4807,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5286,7 +4817,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5296,7 +4827,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5306,7 +4837,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5316,7 +4847,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("containerStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5327,7 +4858,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5337,7 +4868,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5347,7 +4878,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5357,7 +4888,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5367,7 +4898,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5377,7 +4908,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5387,7 +4918,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5397,7 +4928,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("chargingStation"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5408,7 +4939,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5418,7 +4949,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5428,7 +4959,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5438,7 +4969,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5448,7 +4979,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5458,7 +4989,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5468,7 +4999,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5478,7 +5009,7 @@ GNETagPropertiesDatabase::fillPersonPlanTrips() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONTRIPS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("PersonTrip"), TL("parkingArea"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillPersonTripCommonAttributes(myTagProperties[currentTag]);
@@ -5492,6 +5023,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
     const auto tagType = GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::PERSONPLAN | GNETagProperties::Type::WALK;
     const auto tagProperty = GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS;
     const auto tagPropertyTAZ = GNETagProperties::Property::RTREE | tagProperty;
+    const auto files = FileBucket::Type::NOTHING;
     const auto conflicts = GNETagProperties::Conflicts::NO_CONFLICTS;
     const std::vector<SumoXMLTag> parents({SUMO_TAG_PERSON, SUMO_TAG_PERSONFLOW});
     const unsigned int color = FXRGBA(240, 255, 205, 255);
@@ -5504,7 +5036,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::CONSECUTIVE_EDGES,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("Walk"), TL("edges")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("Walk"), TL("edges")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5514,7 +5046,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::ROUTE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("Walk"), TL("route")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("Walk"), TL("route")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5525,7 +5057,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5535,7 +5067,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5545,7 +5077,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5555,7 +5087,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5565,7 +5097,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5575,7 +5107,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5585,7 +5117,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5595,7 +5127,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("edge"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5606,7 +5138,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5616,7 +5148,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5626,7 +5158,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5636,7 +5168,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5646,7 +5178,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5656,7 +5188,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5666,7 +5198,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5676,7 +5208,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("taz"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5687,7 +5219,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5697,7 +5229,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5707,7 +5239,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5717,7 +5249,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5727,7 +5259,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5737,7 +5269,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5747,7 +5279,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5757,7 +5289,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("junction"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5768,7 +5300,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5778,7 +5310,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5788,7 +5320,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5798,7 +5330,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5808,7 +5340,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5818,7 +5350,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5828,7 +5360,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5838,7 +5370,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("busStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5849,7 +5381,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5859,7 +5391,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5869,7 +5401,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5879,7 +5411,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5889,7 +5421,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5899,7 +5431,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5909,7 +5441,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5919,7 +5451,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("trainStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5930,7 +5462,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5940,7 +5472,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5950,7 +5482,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5960,7 +5492,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5970,7 +5502,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5980,7 +5512,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -5990,7 +5522,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6000,7 +5532,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("containerStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6011,7 +5543,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6021,7 +5553,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6031,7 +5563,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6041,7 +5573,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6051,7 +5583,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6061,7 +5593,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6071,7 +5603,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6081,7 +5613,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("chargingStation"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6092,7 +5624,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6102,7 +5634,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagPropertyTAZ,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("taz")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("taz")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6112,7 +5644,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("junction")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6122,7 +5654,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6132,7 +5664,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6142,7 +5674,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6152,7 +5684,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6162,7 +5694,7 @@ GNETagPropertiesDatabase::fillPersonPlanWalks() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_WALKS), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Walk"), TL("parkingArea"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillWalkCommonAttributes(myTagProperties[currentTag]);
@@ -6175,7 +5707,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
     // declare common tag types and properties
     const auto tagType = GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::PERSONPLAN | GNETagProperties::Type::RIDE;
     const auto tagProperty = GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS;
-    const auto tagPropertyTAZ = GNETagProperties::Property::RTREE | tagProperty;
+    const auto files = FileBucket::Type::NOTHING;
     const auto conflicts = GNETagProperties::Conflicts::NO_CONFLICTS;
     const std::vector<SumoXMLTag> parents({SUMO_TAG_PERSON, SUMO_TAG_PERSONFLOW});
     const unsigned int color = FXRGBA(253, 255, 206, 255);
@@ -6188,27 +5720,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_EDGE_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_EDGE_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6218,7 +5730,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6228,7 +5740,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6238,7 +5750,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6248,7 +5760,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6258,169 +5770,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("parkingArea")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    // from taz
-    currentTag = GNE_TAG_RIDE_TAZ_EDGE;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("taz"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_TAZ_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("taz"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_TAZ_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("taz"), TL("junction")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_TAZ_BUSSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("taz"), TL("busStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_TAZ_TRAINSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("taz"), TL("trainStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_TAZ_CONTAINERSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("taz"), TL("containerStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_TAZ_CHARGINGSTATION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("taz"), TL("chargingStation")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_TAZ_PARKINGAREA;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("taz"), TL("parkingArea")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    // from junction
-    currentTag = GNE_TAG_RIDE_JUNCTION_EDGE;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("junction"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_JUNCTION_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("junction"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_JUNCTION_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("junction"), TL("junction")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_JUNCTION_BUSSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("junction"), TL("busStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_JUNCTION_TRAINSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("junction"), TL("trainStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_JUNCTION_CONTAINERSTOP;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("junction"), TL("containerStop")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_JUNCTION_CHARGINGSTATION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("junction"), TL("chargingStation")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_JUNCTION_PARKINGAREA;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("junction"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("edge"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6431,27 +5781,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_BUSSTOP_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_BUSSTOP_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6461,7 +5791,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6471,7 +5801,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6481,7 +5811,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6491,7 +5821,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6501,7 +5831,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("busStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6512,27 +5842,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_TRAINSTOP_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_TRAINSTOP_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6542,7 +5852,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6552,7 +5862,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6562,7 +5872,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6572,7 +5882,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6582,7 +5892,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("trainStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6593,27 +5903,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_CONTAINERSTOP_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_CONTAINERSTOP_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6623,7 +5913,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6633,7 +5923,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6643,7 +5933,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6653,7 +5943,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6663,7 +5953,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("containerStop"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6674,27 +5964,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_CHARGINGSTATION_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_CHARGINGSTATION_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6704,7 +5974,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6714,7 +5984,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6724,7 +5994,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6734,7 +6004,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6744,7 +6014,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("chargingStation"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6755,27 +6025,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("edge")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_PARKINGAREA_TAZ;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagPropertyTAZ,
-                GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_TAZ,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("taz")), parents, color);
-        // set values of attributes
-        fillPlanParentAttributes(myTagProperties[currentTag]);
-        fillRideCommonAttributes(myTagProperties[currentTag]);
-    }
-    currentTag = GNE_TAG_RIDE_PARKINGAREA_JUNCTION;
-    {
-        // set values of tag
-        myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
-                GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_JUNCTION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("junction")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("edge")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6785,7 +6035,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("busStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6795,7 +6045,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("trainStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6805,7 +6055,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("containerStop")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6815,7 +6065,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("chargingStation")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6825,7 +6075,7 @@ GNETagPropertiesDatabase::fillPersonPlanRides() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_RIDES), tagType, tagProperty,
                 GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %->%", TL("Ride"), TL("parkingArea"), TL("parkingArea")), parents, color);
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
         fillRideCommonAttributes(myTagProperties[currentTag]);
@@ -6838,6 +6088,7 @@ GNETagPropertiesDatabase::fillPersonStopElements() {
     // declare common tag types and properties
     const auto tagType = GNETagProperties::Type::DEMANDELEMENT | GNETagProperties::Type::PERSONPLAN | GNETagProperties::Type::STOP_PERSON;
     const auto tagProperty = GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOPARAMETERS;
+    const auto files = FileBucket::Type::NOTHING;
     const auto conflicts = GNETagProperties::Conflicts::NO_CONFLICTS;
     const std::vector<SumoXMLTag> parents({SUMO_TAG_PERSON, SUMO_TAG_PERSONFLOW});
     const unsigned int color = FXRGBA(255, 213, 213, 255);
@@ -6850,7 +6101,7 @@ GNETagPropertiesDatabase::fillPersonStopElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONSTOPS), tagType, tagProperty,
                 GNETagProperties::Over::EDGE,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("PersonStop"), TL("edge")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("PersonStop"), TL("edge")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -6861,7 +6112,7 @@ GNETagPropertiesDatabase::fillPersonStopElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONSTOPS), tagType, tagProperty,
                 GNETagProperties::Over::BUSSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("PersonStop"), TL("busStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("PersonStop"), TL("busStop")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -6872,7 +6123,7 @@ GNETagPropertiesDatabase::fillPersonStopElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONSTOPS), tagType, tagProperty,
                 GNETagProperties::Over::TRAINSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("PersonStop"), TL("trainStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("PersonStop"), TL("trainStop")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -6883,7 +6134,7 @@ GNETagPropertiesDatabase::fillPersonStopElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONSTOPS), tagType, tagProperty,
                 GNETagProperties::Over::CONTAINERSTOP,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("PersonStop"), TL("containerStop")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("PersonStop"), TL("containerStop")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -6893,7 +6144,7 @@ GNETagPropertiesDatabase::fillPersonStopElements() {
     {
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONSTOPS), tagType, tagProperty,
                 GNETagProperties::Over::CHARGINGSTATION,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("PersonStop"), TL("chargingStation")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("PersonStop"), TL("chargingStation")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -6904,7 +6155,7 @@ GNETagPropertiesDatabase::fillPersonStopElements() {
         // set values of tag
         myTagProperties[currentTag] = new GNETagProperties(currentTag, mySetTagProperties.at(GNE_TAG_PERSONSTOPS), tagType, tagProperty,
                 GNETagProperties::Over::PARKINGAREA,
-                conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("PersonStop"), TL("parkingArea")), parents, color);
+                files, conflicts, icon, GLType, xmlTag, StringUtils::format("%: %", TL("PersonStop"), TL("parkingArea")), parents, color);
 
         // set values of attributes
         fillPlanParentAttributes(myTagProperties[currentTag]);
@@ -6924,45 +6175,30 @@ GNETagPropertiesDatabase::fillCommonAttributes(GNETagProperties* tagProperties) 
                 TLF("Center view over element % after creation", tagProperties->getTagStr()));
         commonAttribute->setAlternativeName(TL("center view"));
     }
-    // fill file attributes
-    if (!tagProperties->isChild() && !tagProperties->isSymbol()) {
-        if (tagProperties->isAdditionalElement()) {
-            commonAttribute = new GNEAttributeProperties(tagProperties, GNE_ATTR_ADDITIONAL_FILE,
-                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::FILESAVE | GNEAttributeProperties::Property::DEFAULTVALUE,
-                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::NETEDITEDITOR,
-                    TL("The path to the additional file"));
-            commonAttribute->setFilenameExtensions(SUMOXMLDefinitions::AdditionalFileExtensions.getMultilineString());
-            commonAttribute->setAlternativeName(TL("add. file"));
-        } else if (tagProperties->isDemandElement()) {
-            commonAttribute = new GNEAttributeProperties(tagProperties, GNE_ATTR_DEMAND_FILE,
-                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::FILESAVE | GNEAttributeProperties::Property::DEFAULTVALUE,
-                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::NETEDITEDITOR,
-                    TL("The path to the route file"));
-            commonAttribute->setFilenameExtensions(SUMOXMLDefinitions::RouteFileExtensions.getMultilineString());
-            commonAttribute->setAlternativeName(TL("route file"));
-        } else if (tagProperties->isDataElement()) {
-            commonAttribute = new GNEAttributeProperties(tagProperties, GNE_ATTR_DATA_FILE,
-                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::FILESAVE | GNEAttributeProperties::Property::DEFAULTVALUE,
-                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::NETEDITEDITOR,
-                    TL("The path to the data file"));
-            commonAttribute->setFilenameExtensions(SUMOXMLDefinitions::EdgeDataFileExtensions.getMultilineString());
-            commonAttribute->setAlternativeName(TL("data file"));
-        } else if (tagProperties->isMeanData()) {
-            commonAttribute = new GNEAttributeProperties(tagProperties, GNE_ATTR_MEANDATA_FILE,
-                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::FILESAVE | GNEAttributeProperties::Property::DEFAULTVALUE,
-                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::NETEDITEDITOR,
-                    TL("The path to the data file"));
-            commonAttribute->setFilenameExtensions(SUMOXMLDefinitions::MeanDataFileExtensions.getMultilineString());
-            commonAttribute->setAlternativeName(TL("mean file"));
-        }
+    // fill save file attributes
+    if (tagProperties->saveInNetworkFile()) {
+        commonAttribute = new GNEAttributeProperties(tagProperties, GNE_ATTR_SAVEFILE,
+                GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::FILESAVE | GNEAttributeProperties::Property::DEFAULTVALUE,
+                GNEAttributeProperties::Edit::NETEDITEDITOR,
+                TL("The path to the file to save this element (not editable for network elements)"));
+        commonAttribute->setFilenameExtensions(SUMOXMLDefinitions::AdditionalFileExtensions.getStrings());
+        commonAttribute->setAlternativeName(TL("File"));
+    } else if (tagProperties->saveInParentFile()) {
+        commonAttribute = new GNEAttributeProperties(tagProperties, GNE_ATTR_SAVEFILE,
+                GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::FILESAVE | GNEAttributeProperties::Property::DEFAULTVALUE,
+                GNEAttributeProperties::Edit::NETEDITEDITOR,
+                TL("The path to the file to save this element (the same of their parent)"));
+        commonAttribute->setFilenameExtensions(SUMOXMLDefinitions::AdditionalFileExtensions.getStrings());
+        commonAttribute->setAlternativeName(TL("File"));
+    } else {
+        commonAttribute = new GNEAttributeProperties(tagProperties, GNE_ATTR_SAVEFILE,
+                GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::FILESAVE | GNEAttributeProperties::Property::DEFAULTVALUE,
+                GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::NETEDITEDITOR,
+                TL("The path to the file to save this element"));
+        commonAttribute->setFilenameExtensions(SUMOXMLDefinitions::AdditionalFileExtensions.getStrings());
+        commonAttribute->setAlternativeName(TL("File"));
     }
-    /*
-    new GNEAttributeProperties(myTagProperties[currentTag], relativePath,
-            GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
-            GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
-            TL("Enable or disable use image file as a relative path"),
-            toString(Shape::DEFAULT_RELATIVEPATH));
-    */
+
     // if this is a drawable element, add front and select attributes
     if (tagProperties->isDrawable()) {
         commonAttribute = new GNEAttributeProperties(tagProperties, GNE_ATTR_FRONTELEMENT,
@@ -6974,7 +6210,7 @@ GNETagPropertiesDatabase::fillCommonAttributes(GNETagProperties* tagProperties) 
                 GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                 GNEAttributeProperties::Edit::NETEDITEDITOR,
                 TL("Toggle select element"),
-                GNEAttributeCarrier::False);
+                GNEAttributeCarrier::FALSE_STR);
     }
     // check if element can be reparent
     if (tagProperties->canBeReparent()) {
@@ -6995,7 +6231,7 @@ GNETagPropertiesDatabase::fillCommonAttributes(GNETagProperties* tagProperties) 
 
 
 void
-GNETagPropertiesDatabase::fillCommonStoppingPlaceAttributes(GNETagProperties* tagProperties, const bool includeColor) {
+GNETagPropertiesDatabase::fillCommonStoppingPlaceAttributes(GNETagProperties* tagProperties, const bool includeColor, const bool parkingAreaAngle) {
     // set values of attributes
     fillIDAttribute(tagProperties, true);
 
@@ -7005,13 +6241,13 @@ GNETagPropertiesDatabase::fillCommonStoppingPlaceAttributes(GNETagProperties* ta
                                GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
                                GNEAttributeProperties::Edit::EDITMODE,
                                TL("The begin position on the lane (the lower position on the lane) in meters"),
-                               TL("lane start"), "INVALID_DOUBLE");
+                               GNEMoveElementLaneSingle::PositionType::STARPOS, "INVALID_DOUBLE");
 
     new GNEAttributeProperties(tagProperties, SUMO_ATTR_ENDPOS,
                                GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
                                GNEAttributeProperties::Edit::EDITMODE,
                                TL("The end position on the lane (the higher position on the lane) in meters, must be larger than startPos by more than 0.1m"),
-                               TL("lane end"), "INVALID_DOUBLE");
+                               GNEMoveElementLaneSingle::PositionType::ENDPOS, "INVALID_DOUBLE");
 
     fillFriendlyPosAttribute(tagProperties);
 
@@ -7021,24 +6257,31 @@ GNETagPropertiesDatabase::fillCommonStoppingPlaceAttributes(GNETagProperties* ta
         fillColorAttribute(tagProperties, "");
     }
 
+    new GNEAttributeProperties(tagProperties, SUMO_ATTR_ANGLE,
+                               GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::ANGLE | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
+                               GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                               parkingAreaAngle ? TL("The angle of the road-side parking spaces relative to the lane angle, positive means clockwise") :
+                               TLF("Angle of waiting %s relative to lane angle", tagProperties->getTag() == SUMO_TAG_CONTAINER_STOP ? toString(SUMO_TAG_CONTAINER) : toString(SUMO_TAG_PERSON)),
+                               "0");
+
     // netedit attributes
     new GNEAttributeProperties(tagProperties, GNE_ATTR_SIZE,
                                GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE | GNEAttributeProperties::Property::UPDATEGEOMETRY | GNEAttributeProperties::Property::DEFAULTVALUE,
                                GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::NETEDITEDITOR,
                                TLF("Length of %", tagProperties->getTagStr()),
-                               "10");
+                               toString(GNEMoveElementLaneDouble::defaultSize));
 
     auto forceSize = new GNEAttributeProperties(tagProperties, GNE_ATTR_FORCESIZE,
             GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
             GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::NETEDITEDITOR,
             TL("Force size during creation"),
-            GNEAttributeCarrier::False);
+            GNEAttributeCarrier::FALSE_STR);
     forceSize->setAlternativeName(TL("force size"));
 
     auto reference = new GNEAttributeProperties(tagProperties, GNE_ATTR_REFERENCE,
             GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::DISCRETE,
             GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::NETEDITEDITOR,
-            TLF("Reference position used for creating %", tagProperties->getTagStr()));
+            TLF("Longitudinal reference position for creating %", tagProperties->getTagStr()));
     reference->setDiscreteValues(SUMOXMLDefinitions::ReferencePositions.getStrings());
 }
 
@@ -7096,7 +6339,7 @@ GNETagPropertiesDatabase::fillCommonRouteAttributes(GNETagProperties* tagPropert
     // fill route attributes
     new GNEAttributeProperties(tagProperties, SUMO_ATTR_EDGES,
                                GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::LIST | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
-                               GNEAttributeProperties::Edit::EDITMODE,
+                               GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                TL("The edges the vehicle shall drive along, given as their ids, separated using spaces"));
 
     fillColorAttribute(tagProperties, "");
@@ -7118,9 +6361,10 @@ GNETagPropertiesDatabase::fillCommonRouteAttributes(GNETagProperties* tagPropert
 
 void
 GNETagPropertiesDatabase::fillCommonVTypeAttributes(GNETagProperties* tagProperties) {
+    // fill vType attributes
     auto vClass = new GNEAttributeProperties(tagProperties, SUMO_ATTR_VCLASS,
             GNEAttributeProperties::Property::DISCRETE | GNEAttributeProperties::Property::DEFAULTVALUE,
-            GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+            GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
             TL("An abstract vehicle class"),
             "passenger");
     vClass->setDiscreteValues(SumoVehicleClassStrings.getStrings());
@@ -7245,7 +6489,8 @@ GNETagPropertiesDatabase::fillCommonVTypeAttributes(GNETagProperties* tagPropert
                                TL("The interval length for which vehicle performs its decision logic (acceleration and lane-changing)"),
                                toString(OptionsCont::getOptions().getFloat("default.action-step-length")));
 
-    fillDistributionProbability(tagProperties, false);
+    // add distribution probability
+    fillDistributionProbability(tagProperties, true);
 
     new GNEAttributeProperties(tagProperties, SUMO_ATTR_OSGFILE,
                                GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::DEFAULTVALUE,
@@ -8020,7 +7265,7 @@ GNETagPropertiesDatabase::fillCommonStopAttributes(GNETagProperties* tagProperti
                                    GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                    TL("Whether the stop may be skipped if no passengers wants to embark or disembark"),
-                                   GNEAttributeCarrier::False);
+                                   GNEAttributeCarrier::FALSE_STR);
     }
 
     new GNEAttributeProperties(tagProperties, SUMO_ATTR_JUMP,
@@ -8347,6 +7592,7 @@ GNETagPropertiesDatabase::fillDataElements() {
                 GNETagProperties::Type::DATAELEMENT,
                 GNETagProperties::Property::NOTDRAWABLE | GNETagProperties::Property::NOPARAMETERS | GNETagProperties::Property::NOTSELECTABLE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::DATA,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::DATASET, GUIGlObjectType::GLO_DATASET, currentTag, TL("DataSet"));
 
@@ -8361,6 +7607,7 @@ GNETagPropertiesDatabase::fillDataElements() {
                 GNETagProperties::Type::DATAELEMENT,
                 GNETagProperties::Property::NOTDRAWABLE | GNETagProperties::Property::NOPARAMETERS | GNETagProperties::Property::XMLCHILD | GNETagProperties::Property::NOTSELECTABLE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::DATAINTERVAL, GUIGlObjectType::GLO_DATAINTERVAL, currentTag, TL("DataInterval"),
         {SUMO_TAG_DATASET});
@@ -8389,6 +7636,7 @@ GNETagPropertiesDatabase::fillDataElements() {
                 GNETagProperties::Type::DATAELEMENT | GNETagProperties::Type::GENERICDATA,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::EDGE,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::EDGEDATA, GUIGlObjectType::GLO_EDGEDATA, SUMO_TAG_EDGE, TL("EdgeRelationSingle"));
     }
@@ -8399,6 +7647,7 @@ GNETagPropertiesDatabase::fillDataElements() {
                 GNETagProperties::Type::DATAELEMENT | GNETagProperties::Type::GENERICDATA,
                 GNETagProperties::Property::NO_PROPERTY,
                 GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::EDGERELDATA, GUIGlObjectType::GLO_EDGERELDATA, currentTag, TL("EdgeRelation"));
 
@@ -8420,6 +7669,7 @@ GNETagPropertiesDatabase::fillDataElements() {
                 GNETagProperties::Type::DATAELEMENT | GNETagProperties::Type::GENERICDATA,
                 GNETagProperties::Property::RTREE | GNETagProperties::Property::XMLCHILD,
                 GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ,
+                FileBucket::Type::NOTHING,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::TAZRELDATA, GUIGlObjectType::GLO_TAZRELDATA, currentTag, TL("TAZRelation"),
         {SUMO_TAG_DATAINTERVAL});
@@ -8442,6 +7692,7 @@ GNETagPropertiesDatabase::fillDataElements() {
                 GNETagProperties::Type::MEANDATA,
                 GNETagProperties::Property::NOTDRAWABLE | GNETagProperties::Property::NOPARAMETERS | GNETagProperties::Property::NOTSELECTABLE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::MEANDATA | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::MEANDATAEDGE, GUIGlObjectType::GLO_MEANDATA, currentTag, TL("MeanDataEdge"));
 
@@ -8455,6 +7706,7 @@ GNETagPropertiesDatabase::fillDataElements() {
                 GNETagProperties::Type::MEANDATA,
                 GNETagProperties::Property::NOTDRAWABLE | GNETagProperties::Property::NOPARAMETERS | GNETagProperties::Property::NOTSELECTABLE,
                 GNETagProperties::Over::VIEW,
+                FileBucket::Type::MEANDATA | FileBucket::Type::ADDITIONAL,
                 GNETagProperties::Conflicts::NO_CONFLICTS,
                 GUIIcon::MEANDATALANE, GUIGlObjectType::GLO_MEANDATA, currentTag, TL("MeanDataLane"));
 
@@ -8470,6 +7722,13 @@ GNETagPropertiesDatabase::fillCommonMeanDataAttributes(GNETagProperties* tagProp
     fillIDAttribute(tagProperties, true);
 
     fillFileAttribute(tagProperties);
+
+    auto meanDataType = new GNEAttributeProperties(tagProperties, SUMO_ATTR_TYPE,
+            GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::DISCRETE | GNEAttributeProperties::Property::DEFAULTVALUE,
+            GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+            TL("Type of data generated by this mean data"),
+            SUMOXMLDefinitions::MeanDataTypes.getString(MeanDataType::DEFAULT));
+    meanDataType->setDiscreteValues(SUMOXMLDefinitions::MeanDataTypes.getStrings());
 
     new GNEAttributeProperties(tagProperties, SUMO_ATTR_PERIOD,
                                GNEAttributeProperties::Property::SUMOTIME | GNEAttributeProperties::Property::DEFAULTVALUE,
@@ -8500,7 +7759,7 @@ GNETagPropertiesDatabase::fillCommonMeanDataAttributes(GNETagProperties* tagProp
                                GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                TL("If set, junction internal edges/lanes will be written as well"),
-                               GNEAttributeCarrier::False);
+                               GNEAttributeCarrier::FALSE_STR);
 
     new GNEAttributeProperties(tagProperties, SUMO_ATTR_MAX_TRAVELTIME,
                                GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::DEFAULTVALUE,
@@ -8529,7 +7788,7 @@ GNETagPropertiesDatabase::fillCommonMeanDataAttributes(GNETagProperties* tagProp
                                GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                TL("whether aggregation should be performed over all vehicles that entered the edge/lane in the aggregation interval"),
-                               GNEAttributeCarrier::False);
+                               GNEAttributeCarrier::FALSE_STR);
 
     fillDetectPersonsAttribute(tagProperties);
 
@@ -8547,21 +7806,22 @@ GNETagPropertiesDatabase::fillCommonMeanDataAttributes(GNETagProperties* tagProp
             GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::FILEOPEN | GNEAttributeProperties::Property::DEFAULTVALUE,
             GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
             TL("Restrict output to the given list of edges given in file"));
-    edgesFile->setFilenameExtensions(SUMOXMLDefinitions::OutputFileExtensions.getMultilineString());
+    edgesFile->setFilenameExtensions(SUMOXMLDefinitions::OutputFileExtensions.getStrings());
 
     new GNEAttributeProperties(tagProperties, SUMO_ATTR_AGGREGATE,
                                GNEAttributeProperties::Property::BOOL | GNEAttributeProperties::Property::DEFAULTVALUE,
                                GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                TL("Whether the traffic statistic of all edges shall be aggregated into a single value"),
-                               GNEAttributeCarrier::False);
+                               GNEAttributeCarrier::FALSE_STR);
 }
+
 
 void
 GNETagPropertiesDatabase::fillIDAttribute(GNETagProperties* tagProperties, const bool createMode) {
     if (createMode) {
         new GNEAttributeProperties(tagProperties, SUMO_ATTR_ID,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE,
-                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TLF("ID of %", tagProperties->getTagStr()));
     } else {
         new GNEAttributeProperties(tagProperties, SUMO_ATTR_ID,
@@ -8587,13 +7847,13 @@ GNETagPropertiesDatabase::fillEdgeAttribute(GNETagProperties* tagProperties, con
         // set values of attributes
         auto edge = new GNEAttributeProperties(tagProperties, SUMO_ATTR_EDGE,
                                                GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::SYNONYM | GNEAttributeProperties::Property::UPDATEGEOMETRY,
-                                               GNEAttributeProperties::Edit::EDITMODE,
+                                               GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                                TL("The id of an edge in the simulation network"));
         edge->setSynonym(SUMO_ATTR_ID);
     } else {
         new GNEAttributeProperties(tagProperties, SUMO_ATTR_EDGE,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
-                                   GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TL("The id of an edge in the simulation network"));
     }
 }
@@ -8604,13 +7864,13 @@ GNETagPropertiesDatabase::fillLaneAttribute(GNETagProperties* tagProperties, con
     if (synonymID) {
         auto lane = new GNEAttributeProperties(tagProperties, SUMO_ATTR_LANE,
                                                GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::SYNONYM | GNEAttributeProperties::Property::UPDATEGEOMETRY,
-                                               GNEAttributeProperties::Edit::EDITMODE,
+                                               GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                                TLF("The name of the lane the % shall be located at", tagProperties->getTagStr()));
         lane->setSynonym(SUMO_ATTR_ID);
     } else {
         new GNEAttributeProperties(tagProperties, SUMO_ATTR_LANE,
                                    GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
-                                   GNEAttributeProperties::Edit::EDITMODE,
+                                   GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                    TLF("The name of the lane the % shall be located at", tagProperties->getTagStr()));
     }
 }
@@ -8624,7 +7884,7 @@ GNETagPropertiesDatabase::fillFriendlyPosAttribute(GNETagProperties* tagProperti
                                TL("If set, no error will be reported if element is placed behind the lane.") + std::string("\n") +
                                TL("Instead, it will be placed 0.1 meters from the lanes end or at position 0.1,") + std::string("\n") +
                                TL("if the position was negative and larger than the lanes length after multiplication with - 1"),
-                               GNEAttributeCarrier::False);
+                               GNEAttributeCarrier::FALSE_STR);
 }
 
 
@@ -8643,7 +7903,7 @@ GNETagPropertiesDatabase::fillFileAttribute(GNETagProperties* tagProperties) {
                                            GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::FILESAVE | GNEAttributeProperties::Property::DEFAULTVALUE,
                                            GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                            TL("The path to the output file"));
-    file->setFilenameExtensions(SUMOXMLDefinitions::OutputFileExtensions.getMultilineString());
+    file->setFilenameExtensions(SUMOXMLDefinitions::OutputFileExtensions.getStrings());
 }
 
 
@@ -8653,7 +7913,7 @@ GNETagPropertiesDatabase::fillOutputAttribute(GNETagProperties* tagProperties) {
             GNEAttributeProperties::Property::STRING | GNEAttributeProperties::Property::FILESAVE | GNEAttributeProperties::Property::DEFAULTVALUE,
             GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
             TL("Path to the output file for writing information"));
-    output->setFilenameExtensions(SUMOXMLDefinitions::OutputFileExtensions.getMultilineString());
+    output->setFilenameExtensions(SUMOXMLDefinitions::OutputFileExtensions.getStrings());
 }
 
 
@@ -8671,7 +7931,7 @@ GNETagPropertiesDatabase::fillImgFileAttribute(GNETagProperties* tagProperties, 
                                              GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
                                              TLF("A bitmap to use for rendering this %", tagProperties->getTagStr()));
     }
-    imgFile->setFilenameExtensions(SUMOXMLDefinitions::ImageFileExtensions.getMultilineString());
+    imgFile->setFilenameExtensions(SUMOXMLDefinitions::ImageFileExtensions.getStrings());
 }
 
 
@@ -8689,13 +7949,13 @@ void
 GNETagPropertiesDatabase::fillAllowDisallowAttributes(GNETagProperties* tagProperties) {
     new GNEAttributeProperties(tagProperties, SUMO_ATTR_ALLOW,
                                GNEAttributeProperties::Property::VCLASS | GNEAttributeProperties::Property::LIST | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::COPYABLE,
-                               GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                               GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                TL("Explicitly allows the given vehicle classes (not given will be not allowed)"),
                                "all");
 
     new GNEAttributeProperties(tagProperties, SUMO_ATTR_DISALLOW,
                                GNEAttributeProperties::Property::VCLASS | GNEAttributeProperties::Property::LIST | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::COPYABLE,
-                               GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                               GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                TL("Explicitly disallows the given vehicle classes (not given will be allowed)"));
 }
 
@@ -8704,7 +7964,7 @@ void
 GNETagPropertiesDatabase::fillPosOverLaneAttribute(GNETagProperties* tagProperties) {
     new GNEAttributeProperties(tagProperties, SUMO_ATTR_POSITION,
                                GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::UNIQUE | GNEAttributeProperties::Property::DEFAULTVALUE | GNEAttributeProperties::Property::UPDATEGEOMETRY,
-                               GNEAttributeProperties::Edit::EDITMODE,
+                               GNEAttributeProperties::Edit::EDITMODE | GNEAttributeProperties::Edit::DIALOGEDITOR,
                                TLF("The position on the lane the % shall be laid on in meters", tagProperties->getTagStr()),
                                "0");
 }
@@ -8774,19 +8034,18 @@ GNETagPropertiesDatabase::fillDetectorThresholdAttributes(GNETagProperties* tagP
 
 
 void
-GNETagPropertiesDatabase::fillDistributionProbability(GNETagProperties* tagProperties, const bool visible) {
-    if (visible) {
+GNETagPropertiesDatabase::fillDistributionProbability(GNETagProperties* tagProperties, const bool defaultValue) {
+    if (defaultValue) {
         new GNEAttributeProperties(tagProperties, SUMO_ATTR_PROB,
                                    GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE | GNEAttributeProperties::Property::DEFAULTVALUE,
                                    GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
-                                   TL("The probability when being added to a distribution without an explicit probability"),
-                                   "1");
+                                   TL("The probability when being added to a distribution"),
+                                   toString(DEFAULT_VEH_PROB));
     } else {
         new GNEAttributeProperties(tagProperties, SUMO_ATTR_PROB,
-                                   GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE | GNEAttributeProperties::Property::DEFAULTVALUE,
-                                   GNEAttributeProperties::Edit::NO_EDIT,
-                                   TL("The probability when being added to a distribution without an explicit probability"),
-                                   "1");
+                                   GNEAttributeProperties::Property::FLOAT | GNEAttributeProperties::Property::POSITIVE,
+                                   GNEAttributeProperties::Edit::CREATEMODE | GNEAttributeProperties::Edit::EDITMODE,
+                                   TL("The probability when being added to a distribution"));
     }
 }
 

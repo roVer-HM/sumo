@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -72,16 +72,20 @@ private:
     typedef RailEdge<E, V> _RailEdge;
     typedef SUMOAbstractRouter<_RailEdge, V> _InternalRouter;
     typedef DijkstraRouter<_RailEdge, V> _InternalDijkstra;
+    typedef std::map<const E*, RouterProhibition> Prohibitions;
 
 public:
 
     /// Constructor
     RailwayRouter(const std::vector<E*>& edges, bool unbuildIsWarning, typename SUMOAbstractRouter<E, V>::Operation effortOperation,
                   typename SUMOAbstractRouter<E, V>::Operation ttOperation = nullptr, bool silent = false,
-                  const bool havePermissions = false, const bool haveRestrictions = false, double maxTrainLength = 5000) :
+                  bool havePermissions = false, const bool haveRestrictions = false, double maxTrainLength = 5000,
+                  double reversalPenalty = 60) :
         SUMOAbstractRouter<E, V>("RailwayRouter", unbuildIsWarning, effortOperation, ttOperation, havePermissions, haveRestrictions),
         myInternalRouter(nullptr), myOriginal(nullptr), mySilent(silent),
-        myMaxTrainLength(maxTrainLength) {
+        myMaxTrainLength(maxTrainLength),
+        myLastFrom(nullptr) {
+        myReversalPenalty = reversalPenalty;
         myStaticOperation = effortOperation;
         for (const E* const edge : edges) {
             myInitialEdges.push_back(edge->getRailwayRoutingEdge());
@@ -108,16 +112,16 @@ public:
         return _compute(from, to, vehicle, msTime, into, silent, false);
     }
 
-    void prohibit(const std::vector<E*>& toProhibit) {
+    void prohibit(const Prohibitions& toProhibit) {
         ensureInternalRouter();
-        std::vector<_RailEdge*> railEdges;
-        for (E* edge : toProhibit) {
-            railEdges.push_back(edge->getRailwayRoutingEdge());
+        typename _InternalRouter::Prohibitions _toProhibit;
+        for (auto item : toProhibit) {
+            _toProhibit[item.first->getRailwayRoutingEdge()] = item.second;
         }
-        myInternalRouter->prohibit(railEdges);
+        myInternalRouter->prohibit(_toProhibit);
         this->myProhibited = toProhibit;
 #ifdef RailwayRouter_DEBUG_ROUTES
-        std::cout << "RailRouter prohibit=" << toString(toProhibit) << "\n";
+        std::cout << "RailRouter numProhibitions=" << toProhibit.size() << "\n";
 #endif
     }
 
@@ -142,12 +146,18 @@ public:
                         *lengthp -= savingsFactor * lengthCorrection;
                     }
                 }
+                effort += myReversalPenalty;
             }
             prev = e;
         }
         return effort;
     }
 
+    inline void setBulkMode(const bool mode) {
+        if (myInternalRouter != nullptr) {
+            myInternalRouter->setBulkMode(mode);
+        }
+    }
 
 private:
     RailwayRouter(RailwayRouter* other) :
@@ -167,8 +177,9 @@ private:
 
     bool _compute(const E* from, const E* to, const V* const vehicle, SUMOTime msTime, std::vector<const E*>& into, bool silent, bool avoidUnsafeBackTracking) {
         // make sure that the vehicle can turn-around when starting on a short edge (the virtual turn-around for this lies backwards along the route / track)
+        // if reversals are forbidden (negative penalty), we don't need to check this
         std::vector<double> backLengths;
-        double backDist = vehicle->getLength() - from->getLength();
+        double backDist = myReversalPenalty >= 0 ? vehicle->getLength() - from->getLength() : 0;
         const E* start = from;
         while (backDist > 0) {
             const E* prev = getStraightPredecessor(start, into, (int)backLengths.size());
@@ -199,7 +210,11 @@ private:
         }
 
         std::vector<const _RailEdge*> intoTmp;
+        if (myLastFrom != start) {
+            myInternalRouter->setBulkMode(false);
+        }
         bool success = myInternalRouter->compute(start->getRailwayRoutingEdge(), to->getRailwayRoutingEdge(), vehicle, msTime, intoTmp, silent);
+        myLastFrom = start;
 #ifdef RailwayRouter_DEBUG_ROUTES
         std::cout << "RailRouter veh=" << vehicle->getID() << " from=" << from->getID() << " to=" << to->getID() << " t=" << time2string(msTime)
                   << " safe=" << avoidUnsafeBackTracking << " success=" << success << " into=" << toString(into) << "\n";
@@ -218,19 +233,19 @@ private:
 #ifdef RailwayRouter_DEBUG_ROUTES
             std::cout << "RailRouter: internal result=" << toString(intoTmp) << "\n";
             std::cout << "RailRouter: expanded result=" << toString(into) << "\n";
+            std::cout << "RailRouter: backLengths=" << toString(backLengths) << " bls=" << backLengths.size() << " intoSize=" << intoSize << " final result=" << toString(into) << "\n";
 #endif
             if (backLengths.size() > 0) {
                 // skip the virtual back-edges
                 into.erase(into.begin() + intoSize, into.begin() + intoSize + backLengths.size());
-#ifdef RailwayRouter_DEBUG_ROUTES
-                std::cout << "RailRouter: backLengths=" << toString(backLengths) << " intoSize=" << intoSize << " final result=" << toString(into) << "\n";
-#endif
                 if (*(into.begin() + intoSize) != from) {
                     if (!avoidUnsafeBackTracking) {
                         // try again, this time with more safety (but unable to
                         // make use of turn-arounds on short edge)
                         into.erase(into.begin() + intoSize, into.end());
-                        return _compute(from, to, vehicle, msTime, into, silent, true);
+                        // we are starting from a different edge and are thus violating the assumptions of bulk mode
+                        success = _compute(from, to, vehicle, msTime, into, silent, true);
+                        return success;
                     } else {
                         WRITE_WARNING("Railway routing failure due to turn-around on short edge '" + from->getID()
                                       + "' for vehicle '" + vehicle->getID() + "' time=" + time2string(msTime) + ".");
@@ -240,7 +255,7 @@ private:
             if (this->myProhibited.size() > 0) {
                 // make sure that turnarounds don't use prohibited edges
                 for (const E* e : into) {
-                    if (std::find(this->myProhibited.begin(), this->myProhibited.end(), e) != this->myProhibited.end()) {
+                    if (this->myProhibited.find(e) != this->myProhibited.end()) {
                         into.clear();
                         success = false;
                         break;
@@ -263,7 +278,7 @@ private:
             myRailEdges = myInitialEdges;
             int numericalID = myInitialEdges.back()->getNumericalID() + 1;
             for (_RailEdge* railEdge : myInitialEdges) {
-                railEdge->init(myRailEdges, numericalID, myMaxTrainLength);
+                railEdge->init(myRailEdges, numericalID, myMaxTrainLength, myReversalPenalty >= 0);
             }
         }
         return myRailEdges;
@@ -334,6 +349,9 @@ private:
     const bool mySilent;
 
     const double myMaxTrainLength;
+
+    /// @brief track previous edge for correct bulk routing
+    const E* myLastFrom;
 
 #ifdef HAVE_FOX
     /// The mutex used to avoid concurrent updates of myRailEdges

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,15 +19,14 @@
 /****************************************************************************/
 
 #include <microsim/devices/MSDevice_BTreceiver.h>
+#include <netedit/changes/GNEChange_Attribute.h>
+#include <netedit/elements/moving/GNEMoveElementPlanParent.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagProperties.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/changes/GNEChange_Attribute.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/gui/windows/GUIAppEnum.h>
 #include <utils/gui/div/GUIBasePersonHelper.h>
 #include <utils/gui/div/GUIDesigns.h>
+#include <utils/gui/windows/GUIAppEnum.h>
 #include <utils/xml/NamespaceIDs.h>
 
 #include "GNEPerson.h"
@@ -144,17 +143,20 @@ GNEPerson::GNESelectedPersonsPopupMenu::onCmdTransform(FXObject* obj, FXSelector
 #pragma warning(disable: 4355) // mask warning about "this" in initializers
 #endif
 GNEPerson::GNEPerson(SumoXMLTag tag, GNENet* net) :
-    GNEDemandElement("", net, "", tag, GNEPathElement::Options::DEMAND_ELEMENT),
-    GNEDemandElementFlow(this) {
+    GNEDemandElement(net, tag),
+    GNEDemandElementFlow(this),
+    myMoveElementPlanParent(new GNEMoveElementPlanParent(this, departPos, departPosProcedure)) {
     // enable set and persons per hour as default flow values
     toggleAttribute(SUMO_ATTR_END, true);
     toggleAttribute(SUMO_ATTR_PERSONSPERHOUR, true);
 }
 
 
-GNEPerson::GNEPerson(SumoXMLTag tag, GNENet* net, const std::string& filename, GNEDemandElement* pType, const SUMOVehicleParameter& personparameters) :
-    GNEDemandElement(personparameters.id, net, filename, tag, GNEPathElement::Options::DEMAND_ELEMENT),
-    GNEDemandElementFlow(this, personparameters) {
+GNEPerson::GNEPerson(SumoXMLTag tag, GNENet* net, FileBucket* fileBucket, GNEDemandElement* pType,
+                     const SUMOVehicleParameter& personparameters) :
+    GNEDemandElement(personparameters.id, net, tag, fileBucket),
+    GNEDemandElementFlow(this, personparameters),
+    myMoveElementPlanParent(new GNEMoveElementPlanParent(this, departPos, departPosProcedure)) {
     // set parents
     setParent<GNEDemandElement*>(pType);
     // set manually vtypeID (needed for saving)
@@ -167,25 +169,21 @@ GNEPerson::GNEPerson(SumoXMLTag tag, GNENet* net, const std::string& filename, G
 GNEPerson::~GNEPerson() {}
 
 
-GNEMoveOperation*
-GNEPerson::getMoveOperation() {
-    const auto firstContainerPlan = getChildDemandElements().front();
-    // check first person plan
-    if (firstContainerPlan->getTagProperty()->isPlanStopPerson()) {
-        return nullptr;
-    } else if (firstContainerPlan->getParentEdges().size() > 0) {
-        // get lane
-        const GNELane* lane = firstContainerPlan->getParentEdges().front()->getLaneByAllowedVClass(getVClass());
-        // declare departPos
-        double posOverLane = 0;
-        if (canParse<double>(getDepartPos())) {
-            posOverLane = parse<double>(getDepartPos());
-        }
-        // return move operation
-        return new GNEMoveOperation(this, lane, posOverLane, false);
-    } else {
-        return nullptr;
-    }
+GNEMoveElement*
+GNEPerson::getMoveElement() const {
+    return myMoveElementPlanParent;
+}
+
+
+Parameterised*
+GNEPerson::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNEPerson::getParameters() const {
+    return this;
 }
 
 
@@ -203,8 +201,6 @@ GNEPerson::writeDemandElement(OutputDevice& device) const {
         // write person attributes, including VType
         write(device, OptionsCont::getOptions(), myTagProperty->getXMLTag(), getTypeParent()->getID());
     }
-    // write flow attributes
-    writeFlowAttributes(this, device);
     // write parameters
     writeParams(device);
     // write child demand elements associated to this person (Rides, Walks...)
@@ -518,7 +514,7 @@ GNEPerson::getAttributePosition(SumoXMLAttr key) const {
             }
         }
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have a Position attribute of type '" + toString(key) + "'");
+            return getCommonAttributePosition(key);
     }
 }
 
@@ -592,12 +588,6 @@ GNEPerson::getHierarchyName() const {
     return getTagStr() + ": " + getAttribute(SUMO_ATTR_ID);
 }
 
-
-const Parameterised::Map&
-GNEPerson::getACParametersMap() const {
-    return getParametersMap();
-}
-
 // ===========================================================================
 // protected
 // ===========================================================================
@@ -642,7 +632,7 @@ GNEPerson::setAttribute(SumoXMLAttr key, const std::string& value) {
             break;
         case SUMO_ATTR_TYPE:
             if (getID().size() > 0) {
-                replaceDemandElementParent(SUMO_TAG_VTYPE, value, 0);
+                replaceDemandElementParent(NamespaceIDs::types, value, 0);
                 // set manually vtypeID (needed for saving)
                 vtypeid = value;
             }
@@ -684,25 +674,6 @@ void
 GNEPerson::toggleAttribute(SumoXMLAttr key, const bool value) {
     // toggle flow attributes
     toggleFlowAttribute(key, value);
-}
-
-
-void
-GNEPerson::setMoveShape(const GNEMoveResult& moveResult) {
-    // change departPos
-    departPosProcedure = DepartPosDefinition::GIVEN;
-    departPos = moveResult.newFirstPos;
-    // update geometry
-    updateGeometry();
-}
-
-
-void
-GNEPerson::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
-    undoList->begin(this, "departPos of " + getTagStr());
-    // now set departPos
-    setAttribute(SUMO_ATTR_DEPARTPOS, toString(moveResult.newFirstPos), undoList);
-    undoList->end();
 }
 
 /****************************************************************************/

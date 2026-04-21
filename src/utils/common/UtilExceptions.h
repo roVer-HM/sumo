@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -22,11 +22,11 @@
 /****************************************************************************/
 #pragma once
 #include <config.h>
+
 #include <string>
 #include <stdexcept>
 
 #include "Translation.h"
-
 
 // ===========================================================================
 // class definitions
@@ -37,14 +37,23 @@
  * reported before throwing the exception or in the message parameter.
  */
 class ProcessError : public std::runtime_error {
+
 public:
     /// @brief constructor
-    ProcessError()
-        : std::runtime_error(TL("Process Error")) {}
+    ProcessError();
 
-    /// @brief constructor
-    ProcessError(const std::string& msg)
-        : std::runtime_error(msg) {}
+    /// @brief parameter constructor
+    ProcessError(const std::string& msg);
+
+    /// @brief get trace
+    const std::string& getTrace() const;
+
+private:
+    /// @brief exception trace
+    std::string myTrace;
+
+    /// @brief process trace
+    void processTrace();
 };
 
 
@@ -54,10 +63,10 @@ public:
  * A message will be supplied.
  */
 class InvalidArgument : public ProcessError {
+
 public:
     /// @brief constructor
-    InvalidArgument(const std::string& message)
-        : ProcessError(message) {}
+    InvalidArgument(const std::string& message);
 };
 
 
@@ -66,10 +75,10 @@ public:
  * Thrown when data required by a method is missing
  */
 class EmptyData : public ProcessError {
+
 public:
     /// @brief constructor
-    EmptyData()
-        : ProcessError(TL("Empty Data")) {}
+    EmptyData();
 };
 
 
@@ -79,10 +88,10 @@ public:
  * something else contained the wrong characters
  */
 class FormatException : public ProcessError {
+
 public:
     /// @brief constructor
-    FormatException(const std::string& msg)
-        : ProcessError(msg) {}
+    FormatException(const std::string& msg);
 };
 
 
@@ -93,10 +102,10 @@ public:
  * digits and a dot
  */
 class NumberFormatException : public FormatException {
+
 public:
     /// @brief constructor
-    NumberFormatException(const std::string& data)
-        : FormatException(TLF("Invalid Number Format %", data)) {}
+    NumberFormatException(const std::string& data);
 };
 
 
@@ -106,10 +115,10 @@ public:
  * time representation HH:MM:SS isn't valid
  */
 class TimeFormatException : public FormatException {
+
 public:
     /// @brief constructor
-    TimeFormatException(const std::string& data)
-        : FormatException(TLF("Invalid Time Format %", data)) {}
+    TimeFormatException(const std::string& data);
 };
 
 
@@ -119,10 +128,10 @@ public:
  * boolean does not match
  */
 class BoolFormatException : public FormatException {
+
 public:
     /// @brief constructor
-    BoolFormatException(const std::string& data)
-        : FormatException(TLF("Invalid Bool Format %", data)) {}
+    BoolFormatException(const std::string& data);
 };
 
 
@@ -132,10 +141,10 @@ public:
  * bounderies is accessed
  */
 class OutOfBoundsException : public ProcessError {
+
 public:
     /// @brief constructor
-    OutOfBoundsException(const std::string& msg = TL("Out Of Bounds"))
-        : ProcessError(msg) {}
+    OutOfBoundsException(const std::string& msg = TL("Out Of Bounds"));
 };
 
 
@@ -145,24 +154,23 @@ public:
  * which is not known to the container
  */
 class UnknownElement : public ProcessError {
+
 public:
     /// @brief constructor
-    UnknownElement()
-        : ProcessError(TL("Unknown Element")) {}
+    UnknownElement();
 
     /// @brief constructor
-    UnknownElement(const std::string& msg)
-        : ProcessError(msg) {}
+    UnknownElement(const std::string& msg);
 };
 
 /**
  * IOError
  */
 class IOError : public ProcessError {
+
 public:
     /// @brief constructor
-    IOError(const std::string& message)
-        : ProcessError(message) {}
+    IOError(const std::string& message);
 };
 
 /// define SOFT_ASSERT raise an assertion in debug mode everywhere except on the windows test server

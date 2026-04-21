@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -119,7 +119,7 @@ GUIShortcutsSubSys::buildAccelerators(FXAccelTable* accelTable, FXObject* target
     accelTable->addAccel(parseKey(KEY_d, KEYMODIFIER_CONTROL), target, FXSEL(SEL_COMMAND, MID_HOTKEY_CTRL_D_SINGLESIMULATIONSTEP_OPENDEMANDELEMENTS));
     accelTable->addAccel(parseKey(KEY_D, KEYMODIFIER_CONTROL), target, FXSEL(SEL_COMMAND, MID_HOTKEY_CTRL_D_SINGLESIMULATIONSTEP_OPENDEMANDELEMENTS));
 
-    // special case: we can NOT overwritte here the ctrl+E shortcut in SUMO-GUI
+    // special case: we can NOT overwrite here the ctrl+E shortcut in SUMO-GUI
     if (!sumogui) {
         accelTable->addAccel(parseKey(KEY_e, KEYMODIFIER_CONTROL), target, FXSEL(SEL_COMMAND, MID_HOTKEY_CTRL_E_EDITSELECTION_LOADNETEDITCONFIG));
         accelTable->addAccel(parseKey(KEY_E, KEYMODIFIER_CONTROL), target, FXSEL(SEL_COMMAND, MID_HOTKEY_CTRL_E_EDITSELECTION_LOADNETEDITCONFIG));
@@ -222,6 +222,9 @@ GUIShortcutsSubSys::buildAccelerators(FXAccelTable* accelTable, FXObject* target
 
     accelTable->addAccel(parseKey(KEY_s, KEYMODIFIER_CONTROL, KEYMODIFIER_SHIFT), target, FXSEL(SEL_COMMAND, MID_HOTKEY_CTRL_SHIFT_S_SAVESUMOCONFIG));
     accelTable->addAccel(parseKey(KEY_S, KEYMODIFIER_CONTROL, KEYMODIFIER_SHIFT), target, FXSEL(SEL_COMMAND, MID_HOTKEY_CTRL_SHIFT_S_SAVESUMOCONFIG));
+
+    accelTable->addAccel(parseKey(KEY_t, KEYMODIFIER_CONTROL, KEYMODIFIER_SHIFT), target, FXSEL(SEL_COMMAND, MID_HOTKEY_CTRL_SHIFT_T_OPEN_NET));
+    accelTable->addAccel(parseKey(KEY_T, KEYMODIFIER_CONTROL, KEYMODIFIER_SHIFT), target, FXSEL(SEL_COMMAND, MID_HOTKEY_CTRL_SHIFT_T_OPEN_NET));
 
     // shift hotkeys
 

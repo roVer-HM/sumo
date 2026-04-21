@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -23,6 +23,8 @@
 #include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewParent.h>
+#include <netedit/dialogs/basic/GNEQuestionBasicDialog.h>
+#include <netedit/dialogs/basic/GNEInformationBasicDialog.h>
 #include <netedit/changes/GNEChange_TAZSourceSink.h>
 #include <netedit/elements/additional/GNEAdditionalHandler.h>
 #include <netedit/elements/additional/GNETAZ.h>
@@ -57,10 +59,10 @@ FXDEFMAP(GNETAZFrame::TAZEdgesGraphic) TAZEdgesGraphicMap[] = {
 };
 
 // Object implementation
-FXIMPLEMENT(GNETAZFrame::TAZSaveChanges,            MFXGroupBoxModule,     TAZSaveChangesMap,              ARRAYNUMBER(TAZSaveChangesMap))
-FXIMPLEMENT(GNETAZFrame::TAZChildDefaultParameters, MFXGroupBoxModule,     TAZChildDefaultParametersMap,   ARRAYNUMBER(TAZChildDefaultParametersMap))
-FXIMPLEMENT(GNETAZFrame::TAZSelectionStatistics,    MFXGroupBoxModule,     TAZSelectionStatisticsMap,      ARRAYNUMBER(TAZSelectionStatisticsMap))
-FXIMPLEMENT(GNETAZFrame::TAZEdgesGraphic,           MFXGroupBoxModule,     TAZEdgesGraphicMap,             ARRAYNUMBER(TAZEdgesGraphicMap))
+FXIMPLEMENT(GNETAZFrame::TAZSaveChanges,            GNEGroupBoxModule,     TAZSaveChangesMap,              ARRAYNUMBER(TAZSaveChangesMap))
+FXIMPLEMENT(GNETAZFrame::TAZChildDefaultParameters, GNEGroupBoxModule,     TAZChildDefaultParametersMap,   ARRAYNUMBER(TAZChildDefaultParametersMap))
+FXIMPLEMENT(GNETAZFrame::TAZSelectionStatistics,    GNEGroupBoxModule,     TAZSelectionStatisticsMap,      ARRAYNUMBER(TAZSelectionStatisticsMap))
+FXIMPLEMENT(GNETAZFrame::TAZEdgesGraphic,           GNEGroupBoxModule,     TAZEdgesGraphicMap,             ARRAYNUMBER(TAZEdgesGraphicMap))
 
 
 // ===========================================================================
@@ -144,7 +146,7 @@ GNETAZFrame::CurrentTAZ::TAZEdgeColor::TAZEdgeColor() :
 
 
 GNETAZFrame::CurrentTAZ::CurrentTAZ(GNETAZFrame* TAZFrameParent) :
-    MFXGroupBoxModule(TAZFrameParent, TL("TAZ")),
+    GNEGroupBoxModule(TAZFrameParent, TL("TAZ")),
     myTAZFrameParent(TAZFrameParent),
     myEditedTAZ(nullptr),
     myMaxSourcePlusSinkWeight(0),
@@ -332,7 +334,7 @@ GNETAZFrame::CurrentTAZ::addSourceSink(GNETAZSourceSink* sourceSink) {
 // ---------------------------------------------------------------------------
 
 GNETAZFrame::TAZCommonStatistics::TAZCommonStatistics(GNETAZFrame* TAZFrameParent) :
-    MFXGroupBoxModule(TAZFrameParent, TL("TAZ Statistics")),
+    GNEGroupBoxModule(TAZFrameParent, TL("TAZ Statistics")),
     myTAZFrameParent(TAZFrameParent) {
     // create label for statistics
     myStatisticsLabel = new FXLabel(getCollapsableFrame(), TL("Statistics"), 0, GUIDesignLabelFrameInformation);
@@ -382,7 +384,7 @@ GNETAZFrame::TAZCommonStatistics::updateStatistics() {
 // ---------------------------------------------------------------------------
 
 GNETAZFrame::TAZSaveChanges::TAZSaveChanges(GNETAZFrame* TAZFrameParent) :
-    MFXGroupBoxModule(TAZFrameParent, TL("Modifications")),
+    GNEGroupBoxModule(TAZFrameParent, TL("Modifications")),
     myTAZFrameParent(TAZFrameParent) {
     // Create groupbox for save changes
     mySaveChangesButton = GUIDesigns::buildFXButton(getCollapsableFrame(), TL("Confirm changes"), "", "", GUIIconSubSys::getIcon(GUIIcon::SAVE), this, MID_OK, GUIDesignButton);
@@ -471,7 +473,7 @@ GNETAZFrame::TAZSaveChanges::onCmdCancelChanges(FXObject*, FXSelector, void*) {
 // ---------------------------------------------------------------------------
 
 GNETAZFrame::TAZChildDefaultParameters::TAZChildDefaultParameters(GNETAZFrame* TAZFrameParent) :
-    MFXGroupBoxModule(TAZFrameParent, TL("TAZ Sources/Sinks")),
+    GNEGroupBoxModule(TAZFrameParent, TL("TAZ Sources/Sinks")),
     myTAZFrameParent(TAZFrameParent),
     myDefaultTAZSourceWeight(1),
     myDefaultTAZSinkWeight(1) {
@@ -669,15 +671,15 @@ GNETAZFrame::TAZChildDefaultParameters::onCmdSetDefaultValues(FXObject* obj, FXS
             // check if myDefaultTAZSourceWeight is greater than 0
             if (myDefaultTAZSourceWeight >= 0) {
                 // set valid color
-                myTextFieldDefaultValueTAZSources->setTextColor(FXRGB(0, 0, 0));
+                myTextFieldDefaultValueTAZSources->setTextColor(GUIDesignTextColorBlack);
             } else {
                 // set invalid color
-                myTextFieldDefaultValueTAZSources->setTextColor(FXRGB(255, 0, 0));
+                myTextFieldDefaultValueTAZSources->setTextColor(GUIDesignTextColorRed);
                 myDefaultTAZSourceWeight = 1;
             }
         } else {
             // set invalid color
-            myTextFieldDefaultValueTAZSources->setTextColor(FXRGB(255, 0, 0));
+            myTextFieldDefaultValueTAZSources->setTextColor(GUIDesignTextColorRed);
             myDefaultTAZSourceWeight = 1;
         }
     } else if (obj == myTextFieldDefaultValueTAZSinks) {
@@ -687,15 +689,15 @@ GNETAZFrame::TAZChildDefaultParameters::onCmdSetDefaultValues(FXObject* obj, FXS
             // check if myDefaultTAZSinkWeight is greater than 0
             if (myDefaultTAZSinkWeight >= 0) {
                 // set valid color
-                myTextFieldDefaultValueTAZSinks->setTextColor(FXRGB(0, 0, 0));
+                myTextFieldDefaultValueTAZSinks->setTextColor(GUIDesignTextColorBlack);
             } else {
                 // set invalid color
-                myTextFieldDefaultValueTAZSinks->setTextColor(FXRGB(255, 0, 0));
+                myTextFieldDefaultValueTAZSinks->setTextColor(GUIDesignTextColorRed);
                 myDefaultTAZSinkWeight = 1;
             }
         } else {
             // set invalid color
-            myTextFieldDefaultValueTAZSinks->setTextColor(FXRGB(255, 0, 0));
+            myTextFieldDefaultValueTAZSinks->setTextColor(GUIDesignTextColorRed);
             myDefaultTAZSinkWeight = 1;
         }
     }
@@ -776,6 +778,7 @@ GNETAZFrame::TAZChildDefaultParameters::onCmdUseSelectedEdges(FXObject*, FXSelec
 
 long
 GNETAZFrame::TAZChildDefaultParameters::onCmdSetZeroFringeProbabilities(FXObject*, FXSelector, void*) {
+    auto GNEApp = myTAZFrameParent->getViewNet()->getViewParent()->getGNEAppWindows();
     // compute and update
     auto& neteditOptions = OptionsCont::getOptions();
     myTAZFrameParent->getViewNet()->getNet()->computeAndUpdate(neteditOptions, false);
@@ -837,9 +840,11 @@ GNETAZFrame::TAZChildDefaultParameters::onCmdSetZeroFringeProbabilities(FXObject
                                  // multiple TAZs
                                  TL("Set weight 0 in ") + toString(sources.size()) + TL(" sources and ") +
                                  toString(sinks.size()) + TL(" sinks from ") + toString(TAZs.size()) + TL(" TAZs?");
-        // ask if continue
-        const FXuint answer = FXMessageBox::question(this, MBOX_YES_NO, TL("Set zero fringe probabilities"), "%s", text.c_str());
-        if (answer == 1) { // 1:yes, 2:no, 4:esc
+        // open question dialog
+        const GNEQuestionBasicDialog questionDialog(GNEApp, GNEDialog::Buttons::YES_NO,
+                TL("Set zero fringe probabilities"), text);
+        // continue depending of answer
+        if (questionDialog.getResult() == GNEDialog::Result::ACCEPT) {
             myTAZFrameParent->myViewNet->getUndoList()->begin(GUIIcon::TAZ, TL("set zero fringe probabilities"));
             for (const auto& source : sources) {
                 source->setAttribute(SUMO_ATTR_WEIGHT, "0", myTAZFrameParent->myViewNet->getUndoList());
@@ -851,7 +856,7 @@ GNETAZFrame::TAZChildDefaultParameters::onCmdSetZeroFringeProbabilities(FXObject
         }
     } else {
         // show information box
-        FXMessageBox::information(this, MBOX_OK, TL("Set zero fringe probabilities"), TL("No source/sinks to update."));
+        GNEInformationBasicDialog(GNEApp, TL("Set zero fringe probabilities"), TL("No source/sinks to update."));
     }
     return 1;
 }
@@ -861,7 +866,7 @@ GNETAZFrame::TAZChildDefaultParameters::onCmdSetZeroFringeProbabilities(FXObject
 // ---------------------------------------------------------------------------
 
 GNETAZFrame::TAZSelectionStatistics::TAZSelectionStatistics(GNETAZFrame* TAZFrameParent) :
-    MFXGroupBoxModule(TAZFrameParent, TL("Selection Statistics")),
+    GNEGroupBoxModule(TAZFrameParent, TL("Selection Statistics")),
     myTAZFrameParent(TAZFrameParent) {
     // create default TAZ Source weight
     myTAZSourceFrame = new FXHorizontalFrame(getCollapsableFrame(), GUIDesignAuxiliarHorizontalFrame);
@@ -982,7 +987,7 @@ GNETAZFrame::TAZSelectionStatistics::onCmdSetNewValues(FXObject* obj, FXSelector
             // check if myDefaultTAZSourceWeight is greater than 0
             if (newTAZSourceWeight >= 0) {
                 // set valid color in TextField
-                myTextFieldTAZSourceWeight->setTextColor(FXRGB(0, 0, 0));
+                myTextFieldTAZSourceWeight->setTextColor(GUIDesignTextColorBlack);
                 // enable save button
                 myTAZFrameParent->myTAZSaveChanges->enableButtonsAndBeginUndoList();
                 // update weight of all TAZSources
@@ -993,11 +998,11 @@ GNETAZFrame::TAZSelectionStatistics::onCmdSetNewValues(FXObject* obj, FXSelector
                 myTAZFrameParent->getCurrentTAZModule()->refreshTAZEdges();
             } else {
                 // set invalid color
-                myTextFieldTAZSourceWeight->setTextColor(FXRGB(255, 0, 0));
+                myTextFieldTAZSourceWeight->setTextColor(GUIDesignTextColorRed);
             }
         } else {
             // set invalid color
-            myTextFieldTAZSourceWeight->setTextColor(FXRGB(255, 0, 0));
+            myTextFieldTAZSourceWeight->setTextColor(GUIDesignTextColorRed);
         }
     } else if (obj == myTextFieldTAZSinkWeight) {
         // check if given value is valid
@@ -1006,7 +1011,7 @@ GNETAZFrame::TAZSelectionStatistics::onCmdSetNewValues(FXObject* obj, FXSelector
             // check if myDefaultTAZSinkWeight is greater than 0
             if (newTAZSinkWeight >= 0) {
                 // set valid color in TextField
-                myTextFieldTAZSinkWeight->setTextColor(FXRGB(0, 0, 0));
+                myTextFieldTAZSinkWeight->setTextColor(GUIDesignTextColorBlack);
                 // enable save button
                 myTAZFrameParent->myTAZSaveChanges->enableButtonsAndBeginUndoList();
                 // update weight of all TAZSources
@@ -1017,11 +1022,11 @@ GNETAZFrame::TAZSelectionStatistics::onCmdSetNewValues(FXObject* obj, FXSelector
                 myTAZFrameParent->getCurrentTAZModule()->refreshTAZEdges();
             } else {
                 // set invalid color
-                myTextFieldTAZSinkWeight->setTextColor(FXRGB(255, 0, 0));
+                myTextFieldTAZSinkWeight->setTextColor(GUIDesignTextColorRed);
             }
         } else {
             // set invalid color
-            myTextFieldTAZSinkWeight->setTextColor(FXRGB(255, 0, 0));
+            myTextFieldTAZSinkWeight->setTextColor(GUIDesignTextColorRed);
         }
     }
     return 1;
@@ -1131,9 +1136,9 @@ GNETAZFrame::TAZSelectionStatistics::updateStatistics() {
         myStatisticsLabel->setText(information.str().c_str());
         // set TextFields (Text and color)
         myTextFieldTAZSourceWeight->setText(joinToString(weightSourceSet, " ").c_str());
-        myTextFieldTAZSourceWeight->setTextColor(FXRGB(0, 0, 0));
+        myTextFieldTAZSourceWeight->setTextColor(GUIDesignTextColorBlack);
         myTextFieldTAZSinkWeight->setText(joinToString(weightSinkSet, " ").c_str());
-        myTextFieldTAZSinkWeight->setTextColor(FXRGB(0, 0, 0));
+        myTextFieldTAZSinkWeight->setTextColor(GUIDesignTextColorBlack);
     } else {
         // hide TAZSources/Sinks frames
         myTAZSourceFrame->hide();
@@ -1148,7 +1153,7 @@ GNETAZFrame::TAZSelectionStatistics::updateStatistics() {
 // ---------------------------------------------------------------------------
 
 GNETAZFrame::TAZEdgesGraphic::TAZEdgesGraphic(GNETAZFrame* TAZFrameParent) :
-    MFXGroupBoxModule(TAZFrameParent, TL("Edges")),
+    GNEGroupBoxModule(TAZFrameParent, TL("Edges")),
     myTAZFrameParent(TAZFrameParent),
     myEdgeDefaultColor(RGBColor::GREY),
     myEdgeSelectedColor(RGBColor::MAGENTA) {
@@ -1484,9 +1489,8 @@ GNETAZFrame::shapeDrawed() {
             myBaseTAZ->addStringListAttribute(SUMO_ATTR_EDGES, std::vector<std::string>());
         }
         // declare additional handler
-        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myBaseTAZ->hasStringAttribute(GNE_ATTR_ADDITIONAL_FILE) ?
-                                               myBaseTAZ->getStringAttribute(GNE_ATTR_ADDITIONAL_FILE) : "",
-                                               myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
+        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myViewNet->getNet()->getACTemplates()->getTemplateAC(SUMO_TAG_TAZ)->getFileBucket(),
+                                               myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed());
         // build TAZ
         additionalHandler.parseSumoBaseObject(myBaseTAZ);
         // Write info

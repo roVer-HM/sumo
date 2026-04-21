@@ -1,5 +1,5 @@
-Eclipse SUMO activitygen Version v1_20_0+1699-94bb18538d6
- Copyright (C) 2001-2025 German Aerospace Center (DLR) and others; https://sumo.dlr.de
+Eclipse SUMO activitygen v1_25_0+0045-28a3daf62ee
+ Copyright (C) 2001-2026 German Aerospace Center (DLR) and others; https://sumo.dlr.de
  Copyright (C) 2010-2012 Technische Universitaet Muenchen
 Generates trips of persons throughout a day for the microscopic, multi-modal
  traffic simulation SUMO.
@@ -22,13 +22,26 @@ Input Options:
 
 Output Options:
   --write-license                  Include license info into every output file
+  --write-metadata                 Write parsable metadata (configuration etc.)
+                                    instead of comments
   --output-prefix STR              Prefix which is applied to all output files.
+                                    The special string 'TIME' is replaced by the
+                                    current time.
+  --output-suffix STR              Suffix which is applied to all output files.
                                     The special string 'TIME' is replaced by the
                                     current time.
   --precision INT                  Defines the number of digits after the comma
                                     for floating point output
   --precision.geo INT              Defines the number of digits after the comma
                                     for lon,lat output
+  --output.compression STR         Defines the standard compression algorithm
+                                    (currently only for parquet output)
+  --output.format STR              Defines the standard output format if not
+                                    derivable from the file name ('xml', 'csv',
+                                    'parquet')
+  --output.column-header STR       How to derive column headers from attribute
+                                    names ('none', 'tag', 'auto', 'plain')
+  --output.column-separator STR    Separator in CSV output
   -H, --human-readable-time        Write time values as hour:minute:second or
                                     day:hour:minute:second rather than seconds
   -o, --output-file FILE           Write generated trips to FILE

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -28,6 +28,7 @@
 #include <utils/common/MsgHandler.h>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/ToString.h>
+#include <utils/vehicle/SUMOVehicle.h>
 #include <utils/iodevices/OutputDevice.h>
 #include "SUMOAbstractRouter.h"
 #include "DijkstraRouter.h"
@@ -52,6 +53,7 @@ template<class E, class L, class N, class V>
 class IntermodalRouter : public SUMOAbstractRouter<E, IntermodalTrip<E, N, V> > {
 public:
     typedef IntermodalNetwork<E, L, N, V> Network;
+    typedef typename SUMOAbstractRouter<E, SUMOVehicle>::Prohibitions _Prohibitions;
 
 private:
     typedef void(*CreateNetCallback)(IntermodalRouter <E, L, N, V>&);
@@ -113,10 +115,12 @@ public:
     bool compute(const E* from, const E* to,
                  const double departPos, const std::string& originStopID,
                  const double arrivalPos, const std::string& stopID,
-                 const double speed, const V* const vehicle, const SVCPermissions modeSet, const SUMOTime msTime,
+                 const double speed, const V* const vehicle,
+                 const SUMOVTypeParameter& pars,
+                 const SVCPermissions modeSet, const SUMOTime msTime,
                  std::vector<TripItem>& into, const double externalFactor = 0.) {
         createNet();
-        _IntermodalTrip trip(from, to, departPos, arrivalPos, speed, msTime, 0, vehicle, modeSet, myExternalEffort, externalFactor);
+        _IntermodalTrip trip(from, to, departPos, arrivalPos, speed, msTime, nullptr, pars, vehicle, modeSet, myExternalEffort, externalFactor);
         std::vector<const _IntermodalEdge*> intoEdges;
         //std::cout << "compute from=" << from->getID() << " to=" << to->getID() << " dPos=" << departPos << " aPos=" << arrivalPos << " stopID=" << stopID << " speed=" << speed << " veh=" << Named::getIDSecure(vehicle) << " modeSet=" << modeSet << " t=" << msTime << " iFrom=" << myIntermodalNet->getDepartEdge(from, trip.departPos)->getID() << " iTo=" << (stopID != "" ? myIntermodalNet->getStopEdge(stopID) : myIntermodalNet->getArrivalEdge(to, trip.arrivalPos))->getID() << "\n";
         const _IntermodalEdge* iFrom = originStopID != "" ? myIntermodalNet->getStopEdge(originStopID) : myIntermodalNet->getDepartEdge(from, trip.departPos);
@@ -234,13 +238,13 @@ public:
         }
     }
 
-    void prohibit(const std::vector<E*>& toProhibit) {
+    void prohibit(const _Prohibitions& toProhibit) {
         createNet();
-        std::vector<_IntermodalEdge*> toProhibitPE;
-        for (typename std::vector<E*>::const_iterator it = toProhibit.begin(); it != toProhibit.end(); ++it) {
-            toProhibitPE.push_back(myIntermodalNet->getBothDirections(*it).first);
-            toProhibitPE.push_back(myIntermodalNet->getBothDirections(*it).second);
-            toProhibitPE.push_back(myIntermodalNet->getCarEdge(*it));
+        typename _InternalRouter::Prohibitions toProhibitPE;
+        for (auto item : toProhibit) {
+            toProhibitPE[myIntermodalNet->getBothDirections(item.first).first] = item.second;
+            toProhibitPE[myIntermodalNet->getBothDirections(item.first).second] = item.second;
+            toProhibitPE[myIntermodalNet->getCarEdge(item.first)] = item.second;
         }
         myInternalRouter->prohibit(toProhibitPE);
     }
@@ -259,7 +263,9 @@ public:
 
     void writeWeights(OutputDevice& dev) {
         createNet();
-        _IntermodalTrip trip(nullptr, nullptr, 0., 0., DEFAULT_PEDESTRIAN_SPEED, 0, 0, nullptr, SVC_PASSENGER | SVC_BICYCLE | SVC_BUS);
+        SUMOVTypeParameter dummyVT(DEFAULT_PEDTYPE_ID, SVC_PEDESTRIAN);
+        _IntermodalTrip trip(nullptr, nullptr, 0., 0., DEFAULT_PEDESTRIAN_SPEED, 0, nullptr,
+                             dummyVT, nullptr, SVC_PASSENGER | SVC_BICYCLE | SVC_BUS);
         for (_IntermodalEdge* e : myIntermodalNet->getAllEdges()) {
             dev.openTag(SUMO_TAG_EDGE);
             dev.writeAttr(SUMO_ATTR_ID, e->getID());

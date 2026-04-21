@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -126,9 +126,10 @@ public:
 
     /// @name functions used for mark (select) elements
     /// @{
+    ///
     /// @brief add element into list of elements under cursor
     bool selectObject(const GUIGlObject* GLObject, const double layer, const bool checkDuplicated,
-                      const bool fullBoundary, const GNESegment* segment);
+                      const GNESegment* segment);
 
     /// @brief add geometryPoint into list of elements under cursor
     bool selectGeometryPoint(const GUIGlObject* GLObject, const int newIndex, const double layer);
@@ -218,7 +219,7 @@ protected:
     GLObjectsSortedContainer mySortedSelectedObjects;
 
     /// @brief map with selected elements and if was selected with full boundary (used only to avoid double selections)
-    std::unordered_map<const GUIGlObject*, std::pair<bool, const GNESegment*> > mySelectedObjects;
+    std::unordered_map<const GUIGlObject*, const GNESegment*> mySelectedObjects;
 
     /// @brief number of selected objects
     int myNumberOfSelectedObjects = 0;

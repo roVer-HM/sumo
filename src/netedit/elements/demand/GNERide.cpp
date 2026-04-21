@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,12 +18,8 @@
 // A class for visualizing rides in Netedit
 /****************************************************************************/
 
-#include <utils/gui/windows/GUIAppEnum.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 #include <netedit/GNENet.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <utils/gui/div/GUIDesigns.h>
 
 #include "GNERide.h"
 
@@ -36,14 +32,14 @@
 #pragma warning(disable: 4355) // mask warning about "this" in initializers
 #endif
 GNERide::GNERide(SumoXMLTag tag, GNENet* net) :
-    GNEDemandElement("", net, "", tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElement(net, tag),
     GNEDemandElementPlan(this, -1, -1) {
 }
 
 
 GNERide::GNERide(SumoXMLTag tag, GNEDemandElement* personParent, const GNEPlanParents& planParameters,
                  const double arrivalPosition, const std::vector<std::string>& lines, const std::string& group) :
-    GNEDemandElement(personParent, tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElement(personParent, tag),
     GNEDemandElementPlan(this, -1, arrivalPosition),
     myLines(lines),
     myGroup(group) {
@@ -62,9 +58,21 @@ GNERide::GNERide(SumoXMLTag tag, GNEDemandElement* personParent, const GNEPlanPa
 GNERide::~GNERide() {}
 
 
-GNEMoveOperation*
-GNERide::getMoveOperation() {
-    return getPlanMoveOperation();
+GNEMoveElement*
+GNERide::getMoveElement() const {
+    return myMoveElementPlan;
+}
+
+
+Parameterised*
+GNERide::getParameters() {
+    return nullptr;
+}
+
+
+const Parameterised*
+GNERide::getParameters() const {
+    return nullptr;
 }
 
 
@@ -257,12 +265,6 @@ GNERide::getHierarchyName() const {
     return getPlanHierarchyName();
 }
 
-
-const Parameterised::Map&
-GNERide::getACParametersMap() const {
-    return getParametersMap();
-}
-
 // ===========================================================================
 // private
 // ===========================================================================
@@ -280,24 +282,6 @@ GNERide::setAttribute(SumoXMLAttr key, const std::string& value) {
             setPlanAttribute(key, value);
             break;
     }
-}
-
-
-void
-GNERide::setMoveShape(const GNEMoveResult& moveResult) {
-    // change both position
-    myArrivalPosition = moveResult.newLastPos;
-    // update geometry
-    updateGeometry();
-}
-
-
-void
-GNERide::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
-    undoList->begin(this, "arrivalPos of " + getTagStr());
-    // now adjust start position
-    setAttribute(SUMO_ATTR_ARRIVALPOS, toString(moveResult.newFirstPos), undoList);
-    undoList->end();
 }
 
 /****************************************************************************/

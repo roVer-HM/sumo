@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -32,7 +32,7 @@
 // ===========================================================================
 
 GNEVType::GNEVType(SumoXMLTag tag, GNENet* net) :
-    GNEDemandElement("", net, "", tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElement(net, tag),
     SUMOVTypeParameter(""),
     myDefaultVehicleType(true),
     myDefaultVehicleTypeModified(false) {
@@ -41,8 +41,8 @@ GNEVType::GNEVType(SumoXMLTag tag, GNENet* net) :
 }
 
 
-GNEVType::GNEVType(const std::string& vTypeID, GNENet* net, const SUMOVehicleClass& defaultVClass) :
-    GNEDemandElement(vTypeID, net, "", SUMO_TAG_VTYPE, GNEPathElement::Options::DEMAND_ELEMENT),
+GNEVType::GNEVType(const std::string& vTypeID, GNENet* net, FileBucket* fileBucket, const SUMOVehicleClass& defaultVClass) :
+    GNEDemandElement(vTypeID, net, SUMO_TAG_VTYPE, fileBucket),
     SUMOVTypeParameter(vTypeID),
     myDefaultVehicleType(true),
     myDefaultVehicleTypeModified(false) {
@@ -53,8 +53,8 @@ GNEVType::GNEVType(const std::string& vTypeID, GNENet* net, const SUMOVehicleCla
 }
 
 
-GNEVType::GNEVType(const std::string& vTypeID, GNENet* net, const std::string& filename) :
-    GNEDemandElement(vTypeID, net, filename, SUMO_TAG_VTYPE, GNEPathElement::Options::DEMAND_ELEMENT),
+GNEVType::GNEVType(const std::string& vTypeID, GNENet* net, FileBucket* fileBucket) :
+    GNEDemandElement(vTypeID, net, SUMO_TAG_VTYPE, fileBucket),
     SUMOVTypeParameter(vTypeID),
     myDefaultVehicleType(false),
     myDefaultVehicleTypeModified(false) {
@@ -65,8 +65,20 @@ GNEVType::GNEVType(const std::string& vTypeID, GNENet* net, const std::string& f
 }
 
 
-GNEVType::GNEVType(GNENet* net, const std::string& filename, const SUMOVTypeParameter& vTypeParameter) :
-    GNEDemandElement(vTypeParameter.id, net, filename, SUMO_TAG_VTYPE, GNEPathElement::Options::DEMAND_ELEMENT),
+GNEVType::GNEVType(const GNEAdditional* calibrator) :
+    GNEDemandElement(calibrator->getNet()->getAttributeCarriers()->generateDemandElementID(SUMO_TAG_VTYPE), calibrator->getNet(),
+                     SUMO_TAG_VTYPE, calibrator->getFileBucket()),
+    SUMOVTypeParameter(""),
+    myDefaultVehicleType(false),
+    myDefaultVehicleTypeModified(false) {
+    // init Rail Visualization Parameters
+    initRailVisualizationParameters();
+    id = getID();
+}
+
+
+GNEVType::GNEVType(GNENet* net, FileBucket* fileBucket, const SUMOVTypeParameter& vTypeParameter) :
+    GNEDemandElement(vTypeParameter.id, net, SUMO_TAG_VTYPE, fileBucket),
     SUMOVTypeParameter(vTypeParameter),
     myDefaultVehicleType(false),
     myDefaultVehicleTypeModified(false) {
@@ -76,8 +88,7 @@ GNEVType::GNEVType(GNENet* net, const std::string& filename, const SUMOVTypePara
 
 
 GNEVType::GNEVType(const std::string& newVTypeID, GNENet* net, GNEVType* vTypeOriginal) :
-    GNEDemandElement(newVTypeID, net, vTypeOriginal->getFilename(), vTypeOriginal->getTagProperty()->getTag(),
-                     GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElement(newVTypeID, net, vTypeOriginal->getTagProperty()->getTag(), vTypeOriginal->getFileBucket()),
     SUMOVTypeParameter(*vTypeOriginal),
     myDefaultVehicleType(false),
     myDefaultVehicleTypeModified(false) {
@@ -91,9 +102,21 @@ GNEVType::GNEVType(const std::string& newVTypeID, GNENet* net, GNEVType* vTypeOr
 GNEVType::~GNEVType() {}
 
 
-GNEMoveOperation*
-GNEVType::getMoveOperation() {
+GNEMoveElement*
+GNEVType::getMoveElement() const {
     return nullptr;
+}
+
+
+Parameterised*
+GNEVType::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNEVType::getParameters() const {
+    return this;
 }
 
 
@@ -489,15 +512,15 @@ GNEVType::getAttribute(SumoXMLAttr key) const {
             }
         // other
         case GNE_ATTR_DEFAULT_VTYPE:
-            return toString(myDefaultVehicleType);
+            return myDefaultVehicleType ? TRUE_STR : FALSE_STR;
         case GNE_ATTR_DEFAULT_VTYPE_MODIFIED:
             if (myDefaultVehicleType) {
-                return toString(myDefaultVehicleTypeModified);
+                return myDefaultVehicleTypeModified ? TRUE_STR : FALSE_STR;
             } else {
-                return False;
+                return FALSE_STR;
             }
         default:
-            return getCommonAttribute(this, key);
+            return getCommonAttribute(key);
     }
 }
 
@@ -544,14 +567,14 @@ GNEVType::getAttributeDouble(SumoXMLAttr key) const {
                 return parse<double>(myTagProperty->getDefaultStringValue(SUMO_ATTR_PROB));
             }
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
+            return getCommonAttributeDouble(key);
     }
 }
 
 
 Position
 GNEVType::getAttributePosition(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have a Position attribute of type '" + toString(key) + "'");
+    return getCommonAttributePosition(key);
 }
 
 
@@ -891,7 +914,7 @@ GNEVType::isValid(SumoXMLAttr key, const std::string& value) {
                 return false;
             }
         default:
-            return isCommonValid(key, value);
+            return isCommonAttributeValid(key, value);
     }
 }
 
@@ -946,12 +969,6 @@ GNEVType::getPopUpID() const {
 std::string
 GNEVType::getHierarchyName() const {
     return getTagStr() + ": " + getAttribute(SUMO_ATTR_ID) ;
-}
-
-
-const Parameterised::Map&
-GNEVType::getACParametersMap() const {
-    return getParametersMap();
 }
 
 
@@ -1827,27 +1844,22 @@ GNEVType::setAttribute(SumoXMLAttr key, const std::string& value) {
             break;
         case GNE_ATTR_DEFAULT_VTYPE_MODIFIED:
             myDefaultVehicleTypeModified = parse<bool>(value);
+            if (myDefaultVehicleTypeModified) {
+                myFileBucket->removeDefaultVType();
+                myFileBucket->addElement(false);
+            } else {
+                myFileBucket->addDefaultVType();
+                myFileBucket->removeElement(false);
+            }
             break;
         default:
-            setCommonAttribute(this, key, value);
+            setCommonAttribute(key, value);
             break;
     }
     // check if geometry must be marked as deprecated
     if (myTagProperty->hasAttribute(key) && (myTagProperty->getAttributeProperties(key)->requireUpdateGeometry())) {
         updateGeometry();
     }
-}
-
-
-void
-GNEVType::setMoveShape(const GNEMoveResult& /*moveResult*/) {
-    // vehicleTypes cannot be moved
-}
-
-
-void
-GNEVType::commitMoveShape(const GNEMoveResult& /*moveResult*/, GNEUndoList* /*undoList*/) {
-    // vehicleTypes cannot be moved
 }
 
 

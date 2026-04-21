@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2003-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2003-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -112,10 +112,10 @@ public:
     virtual std::pair<double, double> getVehicleMeanSpeeds() const override;
 
     /// @brief lock access to vehicle removal/additions for thread synchronization
-    void secureVehicles();
+    void secureVehicles() override;
 
     /// @brief unlock access to vehicle removal/additions for thread synchronization
-    void releaseVehicles();
+    void releaseVehicles() override;
 
 
 private:

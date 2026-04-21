@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2011-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -40,6 +40,7 @@ def get_args(args=None):
     arg_parser.add_argument("-f", "--fuzzy", action="store_true", default=False,
                             help="use fuzzy matching to prefill new message ids")
     arg_parser.add_argument("--sumo-home", default=SUMO_HOME, help="SUMO root directory to use")
+    arg_parser.add_argument("-o", "--out-dir", help="output directory to use")
     return arg_parser.parse_args(args)
 
 
@@ -75,6 +76,8 @@ def generate_po(sumo_home, path, languages, pot_file, gui_pot_file, py_pot_file,
             for s in new.readlines():
                 if s.startswith("#") and sumo_home in s:
                     fixed.write(s.replace(sumo_home, "").replace("\\", "/").replace("#: /", "#: "))
+                elif s.strip() == r'"Content-Type: text/plain; charset=CHARSET\n"':
+                    fixed.write(s.replace("CHARSET", "UTF-8"))
                 else:
                     fixed.write(s)
         os.remove(new.name)
@@ -109,6 +112,8 @@ def main(args=None):
     options = get_args(args)
     if options.lang is None:
         options.lang = [os.path.basename(p)[:-8] for p in glob(options.sumo_home + "/data/po/*_sumo.po")]
+    if options.out_dir is None:
+        options.out_dir = options.sumo_home + "/data"
     pot_file = options.sumo_home + "/data/po/sumo.pot"
     gui_pot_file = options.sumo_home + "/data/po/gui.pot"
     py_pot_file = options.sumo_home + "/data/po/py.pot"
@@ -117,9 +122,11 @@ def main(args=None):
     for lang in options.lang:
         po_files = ["%s/data/po/%s_%s" % (options.sumo_home, lang, os.path.basename(pot)[:-1])
                     for pot in (pot_file, gui_pot_file, py_pot_file)]
-        merged_po_file = "%s/data/po/%s.po" % (options.sumo_home, lang)
+        if not os.path.exists("%s/po" % options.out_dir):
+            os.makedirs("%s/po" % options.out_dir)
+        merged_po_file = "%s/po/%s.po" % (options.out_dir, lang)
         subprocess.check_call([path + "msgcat"] + po_files + ["--output-file=" + merged_po_file])
-        d = "%s/data/locale/%s/LC_MESSAGES" % (options.sumo_home, lang)
+        d = "%s/locale/%s/LC_MESSAGES" % (options.out_dir, lang)
         try:
             os.makedirs(d)
         except OSError:

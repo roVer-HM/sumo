@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,47 +19,44 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # go to select mode
-netedit.selectMode()
+netedit.changeMode("select")
 
 # select all using invert
-netedit.selectionInvert()
+netedit.selection("invert")
 
 # go to inspect mode
-netedit.inspectMode()
+netedit.changeMode("inspect")
 
 # inspect busstops
 netedit.leftClick(referencePosition, netedit.positions.elements.additionals.trainStop)
 
 # Change parameter name with a valid value
-netedit.modifyAttribute(netedit.attrs.trainStop.inspectSelection.reference, "dummy", True)
+netedit.modifyAttributeOverlapped(netedit.attrs.trainStop.inspectSelection.reference, "dummy")
 
 # Change parameter name with a valid value
-netedit.modifyAttribute(netedit.attrs.trainStop.inspectSelection.reference, "", True)
+netedit.modifyAttributeOverlapped(netedit.attrs.trainStop.inspectSelection.reference, "")
 
 # Change parameter name with a valid value
-netedit.modifyAttribute(netedit.attrs.trainStop.inspectSelection.reference, "left", True)
+netedit.modifyAttributeOverlapped(netedit.attrs.trainStop.inspectSelection.reference, "left")
 
 # Change parameter name with a valid value
-netedit.modifyAttribute(netedit.attrs.trainStop.inspectSelection.reference, "center", True)
+netedit.modifyAttributeOverlapped(netedit.attrs.trainStop.inspectSelection.reference, "center")
 
 # Change parameter name with a valid value
-netedit.modifyAttribute(netedit.attrs.trainStop.inspectSelection.reference, "right", True)
+netedit.modifyAttributeOverlapped(netedit.attrs.trainStop.inspectSelection.reference, "right")
 
 # Check undos and redos
 netedit.checkUndoRedo(referencePosition)
 
 # save netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

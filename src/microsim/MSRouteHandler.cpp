@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -618,6 +618,7 @@ MSRouteHandler::closeVehicle() {
     if (myVehicleParameter->departProcedure == DepartDefinition::GIVEN) {
         // let's check whether this vehicle had to depart before the simulation starts
         if (!(myAddVehiclesDirectly || checkLastDepart()) || (myVehicleParameter->depart < string2time(OptionsCont::getOptions().getString("begin")) && !myAmLoadingState)) {
+            mySkippedVehicles.insert(myVehicleParameter->id);
             return;
         }
     }
@@ -901,7 +902,7 @@ MSRouteHandler::closeTransportableFlow() {
                 // poisson: randomize first depart
                 myVehicleParameter->incrementFlow(1, &myParsingRNG);
             }
-            for (; i < myVehicleParameter->repetitionNumber && (myVehicleParameter->repetitionNumber != std::numeric_limits<int>::max()
+            for (; i < myVehicleParameter->repetitionNumber && (myVehicleParameter->repetitionNumber != std::numeric_limits<long long int>::max()
                     || depart + myVehicleParameter->repetitionTotalOffset <= myVehicleParameter->repetitionEnd); i++) {
                 // type existence has been checked on opening
                 MSVehicleType* const type = MSNet::getInstance()->getVehicleControl().getVType(myVehicleParameter->vtypeid, &myParsingRNG);
@@ -982,7 +983,7 @@ MSRouteHandler::addFlowTransportable(SUMOTime depart, MSVehicleType* type, const
 
 void
 MSRouteHandler::closeVType() {
-    MSVehicleType* vehType = MSVehicleType::build(*myCurrentVType);
+    MSVehicleType* vehType = MSVehicleType::build(*myCurrentVType, getFileName());
     vehType->check();
     if (!MSNet::getInstance()->getVehicleControl().addVType(vehType)) {
         const std::string id = vehType->getID();
@@ -1148,9 +1149,12 @@ MSRouteHandler::addRideOrTransport(const SUMOSAXAttributes& attrs, const SumoXML
                 myVehicleParameter->depart = startVeh->depart;
             }
             if (startVeh == nullptr) {
-                throw ProcessError("Unknown vehicle '" + vehID + "' in triggered departure for " + agent + " '" + aid + "'.");
-            }
-            if (startVeh->departProcedure == DepartDefinition::TRIGGERED) {
+                if (mySkippedVehicles.count(vehID) == 0) {
+                    throw ProcessError("Unknown vehicle '" + vehID + "' in triggered departure for " + agent + " '" + aid + "'.");
+                }
+                // we cannot simply throw here because we need to parse the rest of the person (just to discard it)
+                from = MSEdge::getAllEdges().front();  // a dummy edge to keep parsing active
+            } else if (startVeh->departProcedure == DepartDefinition::TRIGGERED) {
                 throw ProcessError("Cannot use triggered vehicle '" + vehID + "' in triggered departure for " + agent + " '" + aid + "'.");
             }
         }
@@ -1390,6 +1394,9 @@ MSRouteHandler::addStop(const SUMOSAXAttributes& attrs) {
             if (attrs.hasAttribute(SUMO_ATTR_POSITION)) {
                 WRITE_WARNINGF(TL("Deprecated attribute 'pos' in description of stop%."), errorSuffix);
                 stop.endPos = attrs.getOpt<double>(SUMO_ATTR_POSITION, nullptr, ok, stop.endPos);
+            }
+            if (stop.endPos < 0) {
+                stop.endPos += edge->getLength();
             }
             stop.startPos = attrs.getOpt<double>(SUMO_ATTR_STARTPOS, nullptr, ok, MAX2(0., stop.endPos - MIN_STOP_LENGTH));
             if (!myAmLoadingState) {

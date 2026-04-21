@@ -1,10 +1,12 @@
 Success.
-Building scenario in '/home/erdm_ja/.texttest/tmp/complex.perf.02Apr073429.2111038/complex.perf/gtfs_mitte/plain/test'.
+Building scenario in '/home/erdm_ja/.texttest/tmp/complex.perf.23Jan075703.2659769/complex.perf/gtfs_mitte/plain/test'.
 generating trips...
 Skipping line '1231708' because it only drives at night
 Skipping line '2194813' because it only drives at night
 Skipping line '2194814' because it only drives at night
 Skipping line '2202086' because it only drives at night
+Extending up to route split between 319339413#2 and -1102154066#3
+Extending up to route split between 1102154066#2 and 1105526087
 Skipping line '2206192' because it only drives at night
 Skipping line '2211984' because it only drives at night
 Skipping line '2211985' because it only drives at night
@@ -19,31 +21,20 @@ Skipping line '3353027' because it only drives at night
 Skipping line '35040' because it only drives at night
 Skipping line '6187328' because it only drives at night
 Skipping line '6187329' because it only drives at night
-Imported 105 lines with 304 stops and skipped 16 lines
-   bus: 45
+Imported 100 lines with 303 stops and skipped 16 lines
+   bus: 44
    light_rail: 18
    subway: 8
-   train: 12
+   train: 8
    tram: 22
 done.
 running SUMO to determine actual departure times...
 done.
-Success.
 creating routes...
 done.
-Success.
-Success.
-Success.
-Success.
-Success.
-Success.
-Success.
-Success.
-Success.
-Success.
 Written configuration to 'osm.sumocfg'
-function import_gtfs called at Wed, 02 Apr 2025 07:34:51 +0000
-function import_gtfs finished after 0.315670 seconds
+function import_gtfs called at Fri, 23 Jan 2026 07:57:39 +0000
+function import_gtfs finished after 0.296165 seconds
 Success.
 Success.
 Success.

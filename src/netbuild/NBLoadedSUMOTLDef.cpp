@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2011-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -82,6 +82,7 @@ NBTrafficLightLogic*
 NBLoadedSUMOTLDef::myCompute(int brakingTimeSeconds) {
     // @todo what to do with those parameters?
     UNUSED_PARAMETER(brakingTimeSeconds);
+    initExtraConflicts();
     reconstructLogic();
     myTLLogic->closeBuilding(false);
     patchIfCrossingsAdded();
@@ -349,8 +350,8 @@ NBLoadedSUMOTLDef::patchIfCrossingsAdded() {
                     (int)(phases.front().state.size()) < noLinksAll ||
                     ((int)(phases.front().state.size()) > noLinksAll && !customIndex))) {
             // collect edges
-            EdgeVector fromEdges(size, (NBEdge*)nullptr);
-            EdgeVector toEdges(size, (NBEdge*)nullptr);
+            EdgeVector fromEdges(numNormalLinks, (NBEdge*)nullptr);
+            EdgeVector toEdges(numNormalLinks, (NBEdge*)nullptr);
             std::vector<int> fromLanes(size, 0);
             collectEdgeVectors(fromEdges, toEdges, fromLanes);
             const std::string crossingDefaultState(crossings.size(), 'r');
@@ -426,14 +427,14 @@ NBLoadedSUMOTLDef::initNeedsContRelation() const {
                                                                c1.getFrom(), c1.getTo(), c1.getFromLane(), c2.getFrom(), c2.getTo(), c2.getFromLane());
                             const bool forbidden = forbids(c2.getFrom(), c2.getTo(), c1.getFrom(), c1.getTo(), true, controlledWithin);
                             const bool isFoes = foes(c2.getFrom(), c2.getTo(), c1.getFrom(), c1.getTo()) && !c2.getFrom()->isTurningDirectionAt(c2.getTo());
-                            const bool hasContRel = forbidden || rightTurnConflict;
-                            const bool indirectLeft = c1.getFrom()->getConnection(c1.getFromLane(), c1.getTo(), c1.getToLane()).indirectLeft;
+                            const bool hasContRel = (forbidden && state[i1] != 's') || rightTurnConflict;
                             if (hasContRel) {
                                 myNeedsContRelation.insert(StreamPair(c1.getFrom(), c1.getTo(), c2.getFrom(), c2.getTo()));
                             }
+                            const bool indirectLeft = c1.getFrom()->getConnection(c1.getFromLane(), c1.getTo(), c1.getToLane()).indirectLeft;
                             if (isFoes && (state[i1] == 's' || (!hasContRel && state[i2] == 'G' && !indirectLeft))) {
                                 myExtraConflicts.insert(std::make_pair(i1, i2));
-                                //std::cout << getID() << " prog=" << getProgramID() << " phase=" << (it - phases.begin()) << " extraConflict i1=" << i1 << " i2=" << i2 
+                                //std::cout << getID() << " prog=" << getProgramID() << " phase=" << (it - phases.begin()) << " extraConflict i1=" << i1 << " i2=" << i2
                                 //    << " c1=" << c1 << " c2=" << c2 << "\n";
                             }
                             //std::cout << getID() << " p=" << (it - phases.begin()) << " i1=" << i1 << " i2=" << i2 << " rightTurnConflict=" << rightTurnConflict << " forbidden=" << forbidden << " isFoes=" << isFoes << "\n";

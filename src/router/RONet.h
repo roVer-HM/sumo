@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -64,6 +64,8 @@ class RONet {
 public:
 
     typedef std::map<const SUMOTime, std::vector<RORoutable*> > RoutablesMap;
+    typedef std::map<const ROEdge*, RouterProhibition> Prohibitions;
+    typedef std::map<const ROLane*, RouterProhibition> LaneProhibitions;
 
     /// @brief Constructor
     RONet();
@@ -84,7 +86,7 @@ public:
      * @param[in] svc The vehicle class the restriction refers to
      * @param[in] speed The restricted speed
      */
-    void addRestriction(const std::string& id, const SUMOVehicleClass svc, const double speed);
+    void addSpeedRestriction(const std::string& id, const SUMOVehicleClass svc, const double speed);
 
 
     /** @brief Returns the restrictions for an edge type
@@ -94,9 +96,25 @@ public:
      */
     const std::map<SUMOVehicleClass, double>* getRestrictions(const std::string& id) const;
 
-    bool hasRestrictions() const {
-        return !myRestrictions.empty();
+    bool hasSpeedRestrictions() const {
+        return !mySpeedRestrictions.empty();
     }
+
+    bool hasParamRestrictions() const {
+        return myHaveParamRestrictions;
+    }
+
+    void setParamRestrictions() {
+        myHaveParamRestrictions = true;
+    }
+
+    /// @brief retriefe edge type specific routing preference
+    double getPreference(const std::string& routingType, const SUMOVTypeParameter& pars) const;
+
+    /// @brief add edge type specific routing preference
+    void addPreference(const std::string& routingType, SUMOVehicleClass svc, double prio);
+    /// @brief add edge type specific routing preference
+    void addPreference(const std::string& routingType, std::string vType, double prio);
 
     /// @name Insertion and retrieval of graph parts
     //@{
@@ -441,6 +459,19 @@ public:
     /// @brief whether efforts were loaded from file
     bool hasLoadedEffort() const;
 
+    double getMaxTraveltime() const {
+        return myMaxTraveltime;
+    }
+
+    const Prohibitions& getProhibitions() const {
+        return myProhibitions;
+    }
+
+    void updateLaneProhibitions(SUMOTime begin);
+
+    void addProhibition(const ROEdge* edge, const RouterProhibition& prohibition);
+    void addLaneProhibition(const ROLane* lane, const RouterProhibition& prohibition);
+
     OutputDevice* getRouteOutput(const bool alternative = false) {
         if (alternative) {
             return myRouteAlternativesOutput;
@@ -572,7 +603,14 @@ private:
     bool myHavePermissions;
 
     /// @brief The vehicle class specific speed restrictions
-    std::map<std::string, std::map<SUMOVehicleClass, double> > myRestrictions;
+    std::map<std::string, std::map<SUMOVehicleClass, double> > mySpeedRestrictions;
+
+    /// @brief whether parameter-based access restrictions are configured
+    bool myHaveParamRestrictions;
+
+    /// @brief Preferences for routing
+    std::map<SUMOVehicleClass, std::map<std::string, double> > myVClassPreferences;
+    std::map<std::string, std::map<std::string, double> > myVTypePreferences;
 
     /// @brief The number of internal edges in the dictionary
     int myNumInternalEdges;
@@ -586,8 +624,20 @@ private:
     /// @brief whether to calculate routes for public transport
     const bool myDoPTRouting;
 
+    /// @brief whether to preserve flows
+    const bool myKeepFlows;
+
     /// @brief whether the network contains bidirectional railway edges
     bool myHasBidiEdges;
+
+    /// @brief the maximum traveltime beyond which routing is considered a failure
+    const double myMaxTraveltime;
+
+    /// @brief temporary edge closing (rerouters)
+    Prohibitions myProhibitions;
+    /// @brief temporary lane closing (rerouters)
+    LaneProhibitions myLaneProhibitions;
+    std::map<double, std::set<const ROLane*> > myLaneProhibitionTimes;
 
 #ifdef HAVE_FOX
 private:

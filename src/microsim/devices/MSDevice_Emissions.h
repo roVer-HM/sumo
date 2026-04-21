@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -74,7 +74,6 @@ public:
      */
     static void buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& into);
 
-
 public:
     /** @brief Constructor
      *
@@ -134,6 +133,9 @@ public:
         return myWrittenAttributes;
     }
 
+    /// @brief initialize attribute mask (once)
+    static void initOnce();
+
     /// @brief resets the attribute mask
     static void cleanup();
 
@@ -159,9 +161,6 @@ private:
     static SumoXMLAttrMask myWrittenAttributes;
     static SumoXMLAttrMask getDefaultMask();
     static bool myAmInitialized;
-
-    /// @brief initialize attribute mask (once)
-    static void initOnce();
 
 private:
     /// @brief Invalidated copy constructor.

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,15 +19,11 @@
 /****************************************************************************/
 #include <config.h>
 
-#include <netedit/GNENet.h>
-#include <netedit/GNETagProperties.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
 #include <netedit/changes/GNEChange_Attribute.h>
-#include <netedit/dialogs/GNECalibratorDialog.h>
+#include <netedit/dialogs/elements/GNECalibratorDialog.h>
+#include <netedit/GNENet.h>
+#include <netedit/GNEUndoList.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/gui/globjects/GLIncludes.h>
-#include <utils/gui/div/GUIGlobalViewObjectsHandler.h>
 #include <utils/xml/NamespaceIDs.h>
 
 #include "GNECalibrator.h"
@@ -37,21 +33,21 @@
 // ===========================================================================
 
 GNECalibrator::GNECalibrator(SumoXMLTag tag, GNENet* net) :
-    GNEAdditional("", net, "", tag, ""),
-    myCalibratorContours(new std::vector<GNEContour*>()) {
+    GNEAdditional(net, tag),
+    myEdgeCalibratorContours(new std::vector<GNEContour*>()) {
 }
 
 
-GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, const std::string& filename, GNEEdge* edge, double pos, SUMOTime frequency, const std::string& name,
+GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, FileBucket* fileBucket, GNEEdge* edge, double pos, SUMOTime frequency, const std::string& name,
                              const std::string& output, const double jamThreshold, const std::vector<std::string>& vTypes, const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, filename, SUMO_TAG_CALIBRATOR, name),
+    GNEAdditional(id, net, SUMO_TAG_CALIBRATOR, fileBucket, name),
     Parameterised(parameters),
     myPositionOverLane(pos),
     myFrequency(frequency),
     myOutput(output),
     myJamThreshold(jamThreshold),
     myVTypes(vTypes),
-    myCalibratorContours(new std::vector<GNEContour*>()) {
+    myEdgeCalibratorContours(new std::vector<GNEContour*>()) {
     // set parents
     setParent<GNEEdge*>(edge);
     // update centering boundary without updating grid
@@ -59,17 +55,17 @@ GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, const std::stri
 }
 
 
-GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, const std::string& filename, GNEEdge* edge, double pos, SUMOTime frequency, const std::string& name,
+GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, FileBucket* fileBucket, GNEEdge* edge, double pos, SUMOTime frequency, const std::string& name,
                              const std::string& output, GNEAdditional* routeProbe, const double jamThreshold, const std::vector<std::string>& vTypes,
                              const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, filename, SUMO_TAG_CALIBRATOR, name),
+    GNEAdditional(id, net, SUMO_TAG_CALIBRATOR, fileBucket, name),
     Parameterised(parameters),
     myPositionOverLane(pos),
     myFrequency(frequency),
     myOutput(output),
     myJamThreshold(jamThreshold),
     myVTypes(vTypes),
-    myCalibratorContours(new std::vector<GNEContour*>()) {
+    myEdgeCalibratorContours(new std::vector<GNEContour*>()) {
     // set parents
     setParent<GNEEdge*>(edge);
     setParent<GNEAdditional*>(routeProbe);
@@ -78,16 +74,16 @@ GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, const std::stri
 }
 
 
-GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, const std::string& filename, GNELane* lane, double pos, SUMOTime frequency, const std::string& name,
+GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, FileBucket* fileBucket, GNELane* lane, double pos, SUMOTime frequency, const std::string& name,
                              const std::string& output, const double jamThreshold, const std::vector<std::string>& vTypes, const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, filename, GNE_TAG_CALIBRATOR_LANE, name),
+    GNEAdditional(id, net, GNE_TAG_CALIBRATOR_LANE, fileBucket, name),
     Parameterised(parameters),
     myPositionOverLane(pos),
     myFrequency(frequency),
     myOutput(output),
     myJamThreshold(jamThreshold),
     myVTypes(vTypes),
-    myCalibratorContours(new std::vector<GNEContour*>()) {
+    myEdgeCalibratorContours(new std::vector<GNEContour*>()) {
     // set parents
     setParent<GNELane*>(lane);
     // update centering boundary without updating grid
@@ -95,17 +91,17 @@ GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, const std::stri
 }
 
 
-GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, const std::string& filename, GNELane* lane, double pos, SUMOTime frequency, const std::string& name,
+GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, FileBucket* fileBucket, GNELane* lane, double pos, SUMOTime frequency, const std::string& name,
                              const std::string& output, GNEAdditional* routeProbe, const double jamThreshold, const std::vector<std::string>& vTypes,
                              const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, filename, GNE_TAG_CALIBRATOR_LANE, name),
+    GNEAdditional(id, net, GNE_TAG_CALIBRATOR_LANE, fileBucket, name),
     Parameterised(parameters),
     myPositionOverLane(pos),
     myFrequency(frequency),
     myOutput(output),
     myJamThreshold(jamThreshold),
     myVTypes(vTypes),
-    myCalibratorContours(new std::vector<GNEContour*>()) {
+    myEdgeCalibratorContours(new std::vector<GNEContour*>()) {
     // set parents
     setParent<GNELane*>(lane);
     setParent<GNEAdditional*>(routeProbe);
@@ -115,10 +111,28 @@ GNECalibrator::GNECalibrator(const std::string& id, GNENet* net, const std::stri
 
 
 GNECalibrator::~GNECalibrator() {
-    for (auto it = myCalibratorContours->begin(); it != myCalibratorContours->end(); it++) {
+    for (auto it = myEdgeCalibratorContours->begin(); it != myEdgeCalibratorContours->end(); it++) {
         delete *it;
     }
-    delete myCalibratorContours;
+    delete myEdgeCalibratorContours;
+}
+
+
+GNEMoveElement*
+GNECalibrator::getMoveElement() const {
+    return nullptr;
+}
+
+
+Parameterised*
+GNECalibrator::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNECalibrator::getParameters() const {
+    return this;
 }
 
 
@@ -126,8 +140,9 @@ void
 GNECalibrator::writeAdditional(OutputDevice& device) const {
     // open tag
     device.openTag(SUMO_TAG_CALIBRATOR);
-    // write parameters
-    device.writeAttr(SUMO_ATTR_ID, getID());
+    // write common additional attributes
+    writeAdditionalAttributes(device);
+    // write specific attributes
     if (getParentEdges().size() > 0) {
         device.writeAttr(SUMO_ATTR_EDGE, getParentEdges().front()->getID());
     }
@@ -137,9 +152,6 @@ GNECalibrator::writeAdditional(OutputDevice& device) const {
     device.writeAttr(SUMO_ATTR_POSITION, myPositionOverLane);
     if (time2string(myFrequency) != "1.00") {
         device.writeAttr(SUMO_ATTR_PERIOD, time2string(myFrequency));
-    }
-    if (!myAdditionalName.empty()) {
-        device.writeAttr(SUMO_ATTR_NAME, myAdditionalName);
     }
     if (!myOutput.empty()) {
         device.writeAttr(SUMO_ATTR_OUTPUT, myOutput);
@@ -183,44 +195,37 @@ GNECalibrator::fixAdditionalProblem() {
 }
 
 
-GNEMoveOperation*
-GNECalibrator::getMoveOperation() {
-    // calibrators cannot be moved
-    return nullptr;
-}
-
-
 void
 GNECalibrator::updateGeometry() {
     // get shape depending of we have a edge or a lane
     if (getParentLanes().size() > 0) {
-        // update geometry
+        // simply update geometry
         myAdditionalGeometry.updateGeometry(getParentLanes().front()->getLaneShape(), myPositionOverLane, 0);
     } else if (getParentEdges().size() > 0) {
-        // clear extra geometries and contours
-        if (getParentEdges().size() != myCalibratorContours->size()) {
-            for (auto it = myCalibratorContours->begin(); it != myCalibratorContours->end(); it++) {
-                delete *it;
-            }
-            myCalibratorContours->clear();
-            for (int i = 1; i < (int)getParentEdges().front()->getChildLanes().size(); i++) {
-                myCalibratorContours->push_back(new GNEContour());
-            }
+        // clear all contours
+        for (auto it = myEdgeCalibratorContours->begin(); it != myEdgeCalibratorContours->end(); it++) {
+            delete *it;
         }
+        // clear all edge geometries
         myEdgeCalibratorGeometries.clear();
+        myEdgeCalibratorContours->clear();
         // iterate over every lane and upadte geometries
         for (const auto& lane : getParentEdges().front()->getChildLanes()) {
+            // this is needed for centering calibratorFlows as additional listed
             if (lane == getParentEdges().front()->getChildLanes().front()) {
                 myAdditionalGeometry.updateGeometry(lane->getLaneShape(), myPositionOverLane, 0);
-            } else {
-                // add new calibrator geometry
-                GUIGeometry calibratorGeometry;
-                calibratorGeometry.updateGeometry(lane->getLaneShape(), myPositionOverLane, 0);
-                myEdgeCalibratorGeometries.push_back(calibratorGeometry);
             }
+            // add new calibrator geometry
+            GUIGeometry calibratorGeometry;
+            calibratorGeometry.updateGeometry(lane->getLaneShape(), myPositionOverLane, 0);
+            myEdgeCalibratorGeometries.push_back(calibratorGeometry);
+            // also add a new contour
+            myEdgeCalibratorContours->push_back(new GNEContour());
         }
-    } else {
-        throw ProcessError(TL("Both edges and lanes aren't defined"));
+    }
+    // update geometries of all children
+    for (const auto& rerouterElement : getChildAdditionals()) {
+        rerouterElement->updateGeometry();
     }
 }
 
@@ -274,13 +279,16 @@ GNECalibrator::drawGL(const GUIVisualizationSettings& s) const {
         const double exaggeration = getExaggeration(s);
         // get detail level
         const auto d = s.getDetailLevel(exaggeration);
-        // draw first calibrator symbols
-        drawCalibratorSymbol(s, d, exaggeration, myAdditionalGeometry.getShape().front(),
-                             myAdditionalGeometry.getShapeRotations().front() + 90, -1);
-        // draw rest of calibrator symbols
-        for (int i = 0; i < (int)myEdgeCalibratorGeometries.size(); i++) {
-            drawCalibratorSymbol(s, d, exaggeration, myEdgeCalibratorGeometries.at(i).getShape().front(),
-                                 myEdgeCalibratorGeometries.at(i).getShapeRotations().front() + 90, i);
+        if (myEdgeCalibratorGeometries.size() > 0) {
+            // draw all calibrator symbols
+            for (int i = 0; i < (int)myEdgeCalibratorGeometries.size(); i++) {
+                drawCalibratorSymbol(s, d, exaggeration, myEdgeCalibratorGeometries.at(i).getShape().front(),
+                                     myEdgeCalibratorGeometries.at(i).getShapeRotations().front(), i);
+            }
+        } else {
+            // draw single calibrator symbol
+            drawCalibratorSymbol(s, d, exaggeration, myAdditionalGeometry.getShape().front(),
+                                 myAdditionalGeometry.getShapeRotations().front(), -1);
         }
         // draw additional ID
         drawAdditionalID(s);
@@ -315,7 +323,7 @@ GNECalibrator::checkDrawMoveContour() const {
 
 
 void
-GNECalibrator::openAdditionalDialog() {
+GNECalibrator::openAdditionalDialog(FXWindow* /* restoringFocusWindow */) {
     // Open calibrator dialog
     GNECalibratorDialog calibratorDialog(this);
 }
@@ -352,20 +360,26 @@ GNECalibrator::getAttribute(SumoXMLAttr key) const {
         case GNE_ATTR_SHIFTLANEINDEX:
             return "";
         default:
-            return getCommonAttribute(this, key);
+            return getCommonAttribute(key);
     }
 }
 
 
 double
 GNECalibrator::getAttributeDouble(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
+    return getCommonAttributeDouble(key);
 }
 
 
-const Parameterised::Map&
-GNECalibrator::getACParametersMap() const {
-    return getParametersMap();
+Position
+GNECalibrator::getAttributePosition(SumoXMLAttr key) const {
+    return getCommonAttributePosition(key);
+}
+
+
+PositionVector
+GNECalibrator::getAttributePositionVector(SumoXMLAttr key) const {
+    return getCommonAttributePositionVector(key);
 }
 
 
@@ -430,7 +444,7 @@ GNECalibrator::isValid(SumoXMLAttr key, const std::string& value) {
             }
         case SUMO_ATTR_PERIOD:
         case SUMO_ATTR_FREQUENCY:
-            return canParse<SUMOTime>(value);
+            return canParse<SUMOTime>(value) ? (parse<SUMOTime>(value) >= 0) : false;
         case SUMO_ATTR_NAME:
             return SUMOXMLDefinitions::isValidAttribute(value);
         case SUMO_ATTR_OUTPUT:
@@ -450,7 +464,7 @@ GNECalibrator::isValid(SumoXMLAttr key, const std::string& value) {
                 return SUMOXMLDefinitions::isValidListOfTypeID(value);
             }
         default:
-            return isCommonValid(key, value);
+            return isCommonAttributeValid(key, value);
     }
 }
 
@@ -482,7 +496,7 @@ GNECalibrator::drawCalibratorSymbol(const GUIVisualizationSettings& s, const GUI
         // translate to position
         glTranslated(pos.x(), pos.y(), 0);
         // rotate over lane
-        GUIGeometry::rotateOverLane(rot);
+        GUIGeometry::rotateOverLane(rot + 90);
         // scale
         glScaled(exaggeration, exaggeration, 1);
         // set drawing mode
@@ -518,8 +532,8 @@ GNECalibrator::drawCalibratorSymbol(const GUIVisualizationSettings& s, const GUI
         // draw dotted contours
         if (symbolIndex == -1) {
             myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
-        } else if (symbolIndex < (int)myCalibratorContours->size()) {
-            myCalibratorContours->at(symbolIndex)->drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
+        } else {
+            myEdgeCalibratorContours->at(symbolIndex)->drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
         }
     }
     GUIGlObject* parentBoundary = nullptr;
@@ -531,11 +545,16 @@ GNECalibrator::drawCalibratorSymbol(const GUIVisualizationSettings& s, const GUI
     // calculate dotted contour
     if (symbolIndex == -1) {
         myAdditionalContour.calculateContourRectangleShape(s, d, this, pos, s.additionalSettings.calibratorWidth,
-                s.additionalSettings.calibratorHeight * 0.5, getType(), 0, s.additionalSettings.calibratorHeight * 0.5, rot,
+                s.additionalSettings.calibratorHeight * 0.5, getType(), 0, s.additionalSettings.calibratorHeight * 0.5, rot + 90,
                 exaggeration, parentBoundary);
-    } else if (symbolIndex < (int)myCalibratorContours->size()) {
-        myCalibratorContours->at(symbolIndex)->calculateContourRectangleShape(s, d, this, pos, s.additionalSettings.calibratorWidth,
-                s.additionalSettings.calibratorHeight * 0.5, getType(), 0, s.additionalSettings.calibratorHeight * 0.5, rot,
+    } else {
+        if (symbolIndex == 0) {
+            myAdditionalContour.calculateContourRectangleShape(s, d, this, pos, s.additionalSettings.calibratorWidth,
+                    s.additionalSettings.calibratorHeight * 0.5, getType(), 0, s.additionalSettings.calibratorHeight * 0.5, rot + 90,
+                    exaggeration, parentBoundary);
+        }
+        myEdgeCalibratorContours->at(symbolIndex)->calculateContourRectangleShape(s, d, this, pos, s.additionalSettings.calibratorWidth,
+                s.additionalSettings.calibratorHeight * 0.5, getType(), 0, s.additionalSettings.calibratorHeight * 0.5, rot + 90,
                 exaggeration, parentBoundary);
     }
 }
@@ -579,22 +598,9 @@ GNECalibrator::setAttribute(SumoXMLAttr key, const std::string& value) {
             shiftLaneIndex();
             break;
         default:
-            setCommonAttribute(this, key, value);
+            setCommonAttribute(key, value);
             break;
     }
 }
-
-
-void
-GNECalibrator::setMoveShape(const GNEMoveResult& /*moveResult*/) {
-    // nothing to do
-}
-
-
-void
-GNECalibrator::commitMoveShape(const GNEMoveResult& /*moveResult*/, GNEUndoList* /*undoList*/) {
-    // nothing to do
-}
-
 
 /****************************************************************************/

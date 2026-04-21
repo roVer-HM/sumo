@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,18 +18,14 @@
 // Representation of Stops in netedit
 /****************************************************************************/
 
-#include <netedit/GNENet.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/GNEViewParent.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 #include <netedit/changes/GNEChange_ToggleAttribute.h>
-#include <netedit/frames/common/GNEMoveFrame.h>
-#include <netedit/frames/demand/GNEStopFrame.h>
+#include <netedit/GNENet.h>
+#include <netedit/GNEUndoList.h>
 #include <utils/gui/div/GLHelper.h>
+#include <utils/gui/images/GUITextureSubSys.h>
 
 #include "GNEStopPlan.h"
-
 
 // ===========================================================================
 // member method definitions
@@ -39,15 +35,15 @@
 #pragma warning(disable: 4355) // mask warning about "this" in initializers
 #endif
 GNEStopPlan::GNEStopPlan(SumoXMLTag tag, GNENet* net) :
-    GNEDemandElement("", net, "", tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElement(net, tag),
     GNEDemandElementPlan(this, -1, -1) {
 }
 
 
 GNEStopPlan::GNEStopPlan(SumoXMLTag tag, GNEDemandElement* personParent, const GNEPlanParents& planParameters,
                          const double endPos, const SUMOTime duration, const SUMOTime until, const std::string& actType,
-                         bool friendlyPos, const int parameterSet) :
-    GNEDemandElement(personParent, tag, GNEPathElement::Options::DEMAND_ELEMENT),
+                         const bool friendlyPos, const int parameterSet) :
+    GNEDemandElement(personParent, tag),
     GNEDemandElementPlan(this, -1, endPos),
     myDuration(duration),
     myUntil(until),
@@ -70,9 +66,21 @@ GNEStopPlan::GNEStopPlan(SumoXMLTag tag, GNEDemandElement* personParent, const G
 GNEStopPlan::~GNEStopPlan() {}
 
 
-GNEMoveOperation*
-GNEStopPlan::getMoveOperation() {
-    return getPlanMoveOperation();
+GNEMoveElement*
+GNEStopPlan::getMoveElement() const {
+    return myMoveElementPlan;
+}
+
+
+Parameterised*
+GNEStopPlan::getParameters() {
+    return nullptr;
+}
+
+
+const Parameterised*
+GNEStopPlan::getParameters() const {
+    return nullptr;
 }
 
 
@@ -428,12 +436,6 @@ GNEStopPlan::getHierarchyName() const {
     return getPlanHierarchyName();
 }
 
-
-const Parameterised::Map&
-GNEStopPlan::getACParametersMap() const {
-    return getParametersMap();
-}
-
 // ===========================================================================
 // private
 // ===========================================================================
@@ -490,24 +492,6 @@ GNEStopPlan::toggleAttribute(SumoXMLAttr key, const bool value) {
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
     }
-}
-
-
-void
-GNEStopPlan::setMoveShape(const GNEMoveResult& moveResult) {
-    // change endPos
-    myArrivalPosition = moveResult.newFirstPos;
-    // update geometry
-    updateGeometry();
-}
-
-
-void
-GNEStopPlan::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
-    undoList->begin(this, "endPos of " + getTagStr());
-    // now adjust start position
-    setAttribute(SUMO_ATTR_ENDPOS, toString(moveResult.newFirstPos), undoList);
-    undoList->end();
 }
 
 /****************************************************************************/

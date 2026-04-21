@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -141,7 +141,7 @@ public:
          * @param[in] numLanes The total number of lanes for which the data was collected
          * @exception IOError If an error on writing occurs (!!! not yet implemented)
          */
-        virtual void write(OutputDevice& dev, long long int attributeMask, const SUMOTime period,
+        virtual void write(OutputDevice& dev, const SumoXMLAttrMask& attributeMask, const SUMOTime period,
                            const int numLanes, const double speedLimit, const double defaultTravelTime,
                            const int numVehicles = -1) const = 0;
 
@@ -262,7 +262,7 @@ public:
          * @param[in] numLanes The total number of lanes for which the data was collected
          * @exception IOError If an error on writing occurs (!!! not yet implemented)
          */
-        void write(OutputDevice& dev, long long int attributeMask, const SUMOTime period,
+        void write(OutputDevice& dev, const SumoXMLAttrMask& attributeMask, const SUMOTime period,
                    const int numLanes, const double speedLimit, const double defaultTravelTime,
                    const int numVehicles = -1) const;
 
@@ -329,7 +329,7 @@ public:
                const std::string& vTypes,
                const std::string& writeAttributes,
                const std::vector<MSEdge*>& edges,
-               bool aggregate);
+               AggregateType aggregate);
 
 
     /// @brief Destructor
@@ -395,6 +395,9 @@ public:
         return defaultValue;
     }
 
+    /// @brief retrieve all MeanDataValues
+    const std::vector<MSMoveReminder*> getReminders() const;
+
 protected:
     /** @brief Create an instance of MeanDataValues
      *
@@ -434,7 +437,7 @@ protected:
                    const MSEdge* const edge, SUMOTime startTime, SUMOTime stopTime);
 
 
-    /** @brief Writes aggregate of all edge values into the given stream
+    /** @brief Writes aggregated data of all edge values into the given stream
      *
      * microsim: It is checked whether the dump shall be generated edge-
      *  or lane-wise. In the first case, the lane-data are collected
@@ -446,6 +449,19 @@ protected:
      * @param[in] stopTime Last time step the data were gathered
      */
     void writeAggregated(OutputDevice& dev, SUMOTime startTime, SUMOTime stopTime);
+
+    /** @brief Writes aggregated data for each TAZ into the given stream
+     *
+     * microsim: It is checked whether the dump shall be generated edge-
+     *  or lane-wise. In the first case, the lane-data are collected
+     *  and aggregated and written directly. In the second case, "writeLane"
+     *  is used to write each lane's state.
+     *
+     * @param[in] dev The output device to write the data into
+     * @param[in] startTime First time step the data were gathered
+     * @param[in] stopTime Last time step the data were gathered
+     */
+    void writeAggregatedTAZ(OutputDevice& dev, SUMOTime startTime, SUMOTime stopTime);
 
     /** @brief Writes the interval opener
      *
@@ -488,8 +504,6 @@ protected:
     const bool myAmEdgeBased;
 
 private:
-    static long long int initWrittenAttributes(const std::string writeAttributes, const std::string& id);
-
     /// @brief The first and the last time step to write information (-1 indicates always)
     const SUMOTime myDumpBegin, myDumpEnd;
 
@@ -498,6 +512,8 @@ private:
 
     /// @brief The corresponding first edges
     MSEdgeVector myEdges;
+
+    ConstMSEdgeVector myTAZ;
 
     /// @brief The index in myEdges / myMeasures
     std::map<const MSEdge*, int> myEdgeIndex;
@@ -512,10 +528,10 @@ private:
     const bool myTrackVehicles;
 
     /// @brief bit mask for checking attributes to be written
-    const long long int myWrittenAttributes;
+    const SumoXMLAttrMask myWrittenAttributes;
 
     /// @brief whether the data for all edges shall be aggregated
-    const bool myAggregate;
+    const AggregateType myAggregate;
 
     /// @brief The intervals for which output still has to be generated (only in the tracking case)
     std::list< std::pair<SUMOTime, SUMOTime> > myPendingIntervals;

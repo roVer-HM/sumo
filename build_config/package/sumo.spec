@@ -2,7 +2,7 @@
 # spec file for package sumo
 #
 # Copyright (c) 2022 SUSE LLC
-# Copyright (c) 2001-2025 DLR (http://www.dlr.de/) and contributors
+# Copyright (c) 2001-2026 DLR (http://www.dlr.de/) and contributors
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -33,10 +33,23 @@ BuildRequires:  gcc-c++
 BuildRequires:  cmake3
 %else
 BuildRequires:  cmake
-%endif
-BuildRequires:  python3-setuptools
-BuildRequires:  python3-devel
 BuildRequires:  java-devel
+%endif
+%if 0%{?fedora_version} > 36 || 0%{?suse_version} >= 1600
+BuildRequires:  python3-build
+BuildRequires:  python3-hatchling
+BuildRequires:  python3-pip
+BuildRequires:  pkgconfig(geos)
+BuildRequires:  jupedsim
+%endif
+%if 0%{?fedora_version} > 36
+BuildRequires:  libarrow-devel
+BuildRequires:  parquet-libs-devel
+%endif
+BuildRequires:  python3-devel
+%if 0%{?fedora_version} || 0%{?suse_version}
+BuildRequires:  python3-matplotlib
+%endif
 BuildRequires:  swig
 BuildRequires:  help2man
 BuildRequires:  pkgconfig
@@ -84,14 +97,15 @@ Requires:       libsumocpp = %{version}
 This package provides development libraries and headers needed to build
 software using libsumocpp.
 
+%if 0%{?fedora_version} > 36 || 0%{?suse_version} >= 1600
 %package -n python3-libsumo
 Summary:        libsumo Python3 module
-Requires:       %{name} = %{version}-%{release}
-Provides:       python3-%{name} = %{version}
-Obsoletes:      python3-%{name} < %{version}
+Requires:       %{name}
 
 %description -n python3-libsumo
-The libsumo python module provides support to connect to and remote control a running sumo simulation.
+The libsumo python module provides support to connect to and remote control
+a running sumo simulation. This package also contains traci, simpla and sumolib.
+%endif
 
 %if 0%{?fedora_version} || 0%{?centos_version}
 %global debug_package %{nil}
@@ -102,17 +116,20 @@ The libsumo python module provides support to connect to and remote control a ru
 # Use real shebang
 find . -name "*.py" -o -name "*.pyw" | xargs sed -i 's,^#!%{_bindir}/env python$,#!%{_bindir}/python3,'
 find . -name "*.py" -o -name "*.pyw" | xargs sed -i 's,^#!%{_bindir}/env python3$,#!%{_bindir}/python3,'
+%if 0%{?fedora_version}
+rm -rf tools/contributed/sumopy
+%endif
 
 %build
 mkdir cmake-build
 cd cmake-build
 %if 0%{?centos_version} && 0%{?centos_version} < 800
-cmake3 -DCMAKE_INSTALL_PREFIX:PATH=/usr -DPYTHON_EXECUTABLE=/usr/bin/python3 ..
+cmake3 -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_SYSCONFDIR=/etc -DPython_EXECUTABLE=/usr/bin/python3 ..
 %else
 %if 0%{?suse_version}
-cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DEIGEN3_INCLUDE_DIR=/usr/include/eigen3 -DPYTHON_EXECUTABLE=/usr/bin/python3 ..
+cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_SYSCONFDIR=/etc -DEIGEN3_INCLUDE_DIR=/usr/include/eigen3 -DPython_EXECUTABLE=/usr/bin/python3 ..
 %else
-cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DPYTHON_EXECUTABLE=/usr/bin/python3 ..
+cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_SYSCONFDIR=/etc -DPython_EXECUTABLE=/usr/bin/python3 ..
 %endif
 %endif
 make %{?_smp_mflags}
@@ -121,33 +138,27 @@ make %{?_smp_mflags} man
 %install
 cd cmake-build
 %make_install
+%if 0%{?centos_version} && 0%{?centos_version} < 800
+DESTDIR=%{buildroot} cmake3 --install . --component linux_integration
+%else
+DESTDIR=%{buildroot} cmake --install . --component linux_integration
+%endif
+%if 0%{?fedora_version} > 36 || 0%{?suse_version} >= 1600
+DESTDIR=%{buildroot} cmake --install . --component python_package
+install -d -m 755 %{buildroot}%{python3_sitearch}
+mv %{buildroot}%{python3_sitelib}/libsumo* %{buildroot}%{python3_sitearch}
+%endif
 cd ..
 rm -rf %{buildroot}%{_datadir}/sumo/tools/libsumo %{buildroot}%{_datadir}/sumo/tools/libtraci
 ln -s %{_datadir}/sumo/tools/assign/duaIterate.py %{buildroot}%{_bindir}/duaIterate.py
 ln -s %{_datadir}/sumo/tools/osmWebWizard.py %{buildroot}%{_bindir}/osmWebWizard.py
 ln -s %{_datadir}/sumo/tools/randomTrips.py %{buildroot}%{_bindir}/randomTrips.py
 ln -s %{_datadir}/sumo/tools/traceExporter.py %{buildroot}%{_bindir}/traceExporter.py
-install -d -m 755 %{buildroot}%{_mandir}/man1
-install -p -m 644 docs/man/*.1 %{buildroot}%{_mandir}/man1
-install -d -m 755 %{buildroot}%{_sysconfdir}/profile.d
-install -p -m 644 build_config/package/*sh %{buildroot}%{_sysconfdir}/profile.d
-install -d -m 755 %{buildroot}%{_datadir}/applications
-install -p -m 644 build_config/package/%{name}.desktop %{buildroot}%{_datadir}/applications
-install -p -m 644 build_config/package/netedit.desktop %{buildroot}%{_datadir}/applications
-install -p -m 644 build_config/package/osmWebWizard.desktop %{buildroot}%{_datadir}/applications
-install -d -m 755 %{buildroot}%{_datadir}/pixmaps
-install -p -m 644 build_config/package/%{name}.png %{buildroot}%{_datadir}/pixmaps
-install -p -m 644 build_config/package/netedit.png %{buildroot}%{_datadir}/pixmaps
-install -p -m 644 build_config/package/osmWebWizard.png %{buildroot}%{_datadir}/pixmaps
-%if 0%{?suse_version}
-install -d -m 755 %{buildroot}%{_datadir}/mime/application
-install -p -m 644 build_config/package/%{name}.xml %{buildroot}%{_datadir}/mime/application/%{name}.xml
-%endif
 %fdupes %{buildroot}%{_datadir}
 
 %check
 cd cmake-build
-#make %{?_smp_mflags} test
+make %{?_smp_mflags} test
 
 %post -n libsumocpp -p /sbin/ldconfig
 %postun -n libsumocpp -p /sbin/ldconfig
@@ -155,52 +166,37 @@ cd cmake-build
 %files
 %defattr(-,root,root)
 %{_bindir}/*
+%if 0%{?fedora_version} || 0%{?sle_version} >= 150400 || 0%{?suse_version} >= 1600
 %{_libdir}/libsumocs.so
 %{_libdir}/libtracics.so
 %{_libdir}/liblibsumojni.so
 %{_libdir}/liblibtracijni.so
+%endif
 %{_datadir}/sumo
 %doc AUTHORS README.md ChangeLog CONTRIBUTING.md NOTICE.md docs/pydoc docs/userdoc docs/examples docs/tutorial
-%if 0%{?suse_version} < 1500
-%doc LICENSE
-%else
 %license LICENSE
-%endif
 %{_mandir}/man1/*
 %config %{_sysconfdir}/profile.d/%{name}.*sh
 %{_datadir}/applications/*.desktop
 %{_datadir}/pixmaps/*.png
-%if 0%{?suse_version}
 %{_datadir}/mime/application
-%endif
 
 %files -n libsumocpp
-%if 0%{?suse_version} < 1500
-%doc LICENSE
-%else
 %license LICENSE
-%endif
 %{_libdir}/libsumocpp.so
 %{_libdir}/libtracicpp.so
 
 %files -n libsumocpp-devel
-%if 0%{?suse_version} < 1500
-%doc LICENSE
-%else
 %license LICENSE
-%endif
 %{_includedir}/libsumo
 
+%if 0%{?fedora_version} > 36 || 0%{?suse_version} >= 1600
 %files -n python3-libsumo
-%if 0%{?suse_version} < 1500
-%doc LICENSE
-%else
 %license LICENSE
-%endif
 %{python3_sitelib}/sumolib*/
 %{python3_sitelib}/traci*/
 %{python3_sitelib}/simpla*/
 %{python3_sitearch}/libsumo*/
-%{python3_sitearch}/libtraci*/
+%endif
 
 %changelog

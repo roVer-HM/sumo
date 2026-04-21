@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,46 +19,43 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # Go to data supermode
-netedit.supermodeData()
+netedit.changeSupermode("data")
 
 # change to edgeRelData
-netedit.edgeRelData()
+netedit.changeMode("edgeRelData")
 
 # create dataSet
-netedit.createDataSet()
+netedit.createDataSet("newDataSet")
 
 # create data interval
-netedit.createDataInterval()
+netedit.createDataInterval("0", "3600")
 
 # set invalid parameters
-netedit.changeDefaultValue(netedit.attrs.edgeRelData.create.parameters, "dummyValues")
+netedit.modifyAttribute(netedit.attrs.edgeRelData.create.parameters, "dummyValues")
 
 # create edgeRelData
-netedit.leftClick(referencePosition, netedit.positions.elements.edge0_dataMode)
-netedit.leftClick(referencePosition, netedit.positions.elements.edge1_dataMode)
-netedit.typeEnter()
+netedit.leftClickData(referencePosition, netedit.positions.elements.edge0)
+netedit.leftClickData(referencePosition, netedit.positions.elements.edge1)
+netedit.typeKey("enter")
 
 # set valid parameters
-netedit.changeDefaultValue(netedit.attrs.edgeRelData.create.parameters, "param1=value2|param3=value4")
+netedit.modifyAttribute(netedit.attrs.edgeRelData.create.parameters, "param1=value2|param3=value4")
 
 # create edgeRelData
-netedit.typeEnter()
+netedit.typeKey("enter")
 
 # Check undo redo
 netedit.checkUndoRedo(referencePosition)
 
 # save netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

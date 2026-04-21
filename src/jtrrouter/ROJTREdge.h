@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2004-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2004-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -54,7 +54,7 @@ public:
      * @param[in] to The node the edge ends at
      * @param[in] index The numeric id of the edge
      */
-    ROJTREdge(const std::string& id, RONode* from, RONode* to, int index, const int priority, const std::string& type);
+    ROJTREdge(const std::string& id, RONode* from, RONode* to, int index, const int priority, const std::string& type, const std::string& routingType);
 
 
     /// @brief Destructor
@@ -100,12 +100,12 @@ public:
     void setTurnDefaults(const std::vector<double>& defs);
 
     /// @brief register source flow on this edge
-    int getSourceFlow() const {
+    long long int getSourceFlow() const {
         return mySourceFlows;
     }
 
     /// @brief register flow on this edge
-    void changeSourceFlow(int value) {
+    void changeSourceFlow(long long int value) {
         mySourceFlows += value;
     }
 
@@ -121,7 +121,7 @@ private:
 
     /// @brief the flows departing from this edge in the given time
     //ValueTimeLine<int> mySourceFlows;
-    int mySourceFlows;
+    long long int mySourceFlows;
 
 private:
     /// @brief invalidated copy constructor

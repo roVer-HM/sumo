@@ -25,14 +25,14 @@ For instance, a single vehicle can configured as taxi as in the following minima
 
 The following table gives the full list of possible parameters for the taxi device (all parameter names have to be prepended with "device.taxi"):
 
-| Parameter                        | Type             | Range                     | Default          | Description                                                                         |
-| -------------------------------- | ---------------- | ------------------------- | ---------------- | ----------------------------------------------------------------------------------- |
+| Parameter                        | Type             | Range                                                        | Default          | Description                                                                         |
+| -------------------------------- | ---------------- | ------------------------------------------------------------ | ---------------- | ----------------------------------------------------------------------------------- |
 | dispatch-algorithm               | enum             | {greedy; greedyClosest; greedyShared; routeExtension; traci} | greedy | The dispatch algorithm                                     |
-| dispatch-algorithm.output        | string           |                           | -                | Write information from the dispatch algorithm to a file                             |
-| dispatch-algorithm.params        | string           |                           | -                | Provide absLossThreshold and relLossThreshold thresholds for greedyShared dispatch algorithm as KEY1:VALUE1[,KEY2:VALUE] |
-| dispatch-period                  | float (s)        |                           | 60               | The period between successive calls to the dispatcher                               |
-| idle-algorithm                   | enum             | {stop; randomCircling; taxistand} | stop     | The behavior of idle taxis                                                          |
-| idle-algorithm.output            | string           |                           | -                | Write information from the idling algorithm to file                                 |
+| dispatch-algorithm.output        | string           |                                                              | -                | Write information from the dispatch algorithm to a file                             |
+| dispatch-algorithm.params        | string           |                                                              | -                | Provide absLossThreshold and relLossThreshold thresholds for greedyShared dispatch algorithm as KEY1:VALUE1[,KEY2:VALUE] |
+| dispatch-period                  | float (s)        |                                                              | 60               | The period between successive calls to the dispatcher                               |
+| idle-algorithm                   | enum             | {stop; randomCircling; taxistand}                            | stop     | The behavior of idle taxis                                                          |
+| idle-algorithm.output            | string           |                                                              | -                | Write information from the idling algorithm to file                                 |
 
 
 
@@ -296,6 +296,16 @@ If a taxi is not in state empty the following re-dispatch calls are supported
 - new reservations have no overlap with previous reservation: append new reservations to the previous reservations
 - new reservations include all previous unique reservation ids exactly twice: reset current route and stops and treat as complete new dispatch. If one of the persons of the earlier reservation is already picked up, ignore the first occurrence of the reservation in the reservation list
 - new reservations mentions include all previous unique reservation ids once or twice, all customers that are mentioned once are already picked up: reset current route and stops, use the single-occurrence ids as as drop-of
+
+## Controlling Idle Taxis
+
+The default idle algorithm ("stop") aims to ensure that the taxi doesn't exit the simulation (which were to happen if it ever drives past the final edge of it's route). To this end, it makes the taxi stop where it is or uses an existing stop on the route of the taxi and sets it to `triggered="person"` (which effectively makes the taxi wait indefinitely until the next dispatch).
+
+In oder to send an idle taxi to another destination, the following things need to happend in order:
+
+1. The taxi needs to extend it's route (i.e. with `vehicle.changeTarget` or `vehicle.setRoute`)
+2. The current stop must be aborted with `vehicle.resume`
+3. A new stop must be added (i.e. with `vehicle.setStop`.
 
 # Outputs
 

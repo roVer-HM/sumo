@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,41 +19,41 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # go to demand mode
-netedit.supermodeDemand()
+netedit.changeSupermode("demand")
 
 # go to type mode
-netedit.typeMode()
+netedit.changeMode("type")
 
 # change value
-netedit.modifyAttribute(netedit.attrs.type.editDefault.sigma, "", False)
+netedit.modifyAttribute(netedit.attrs.type.editDefault.sigma, "")
 
 # change value
-netedit.modifyAttribute(netedit.attrs.type.editDefault.sigma, "dummySigma", False)
+netedit.modifyAttribute(netedit.attrs.type.editDefault.sigma, "dummySigma")
 
 # change value
-netedit.modifyAttribute(netedit.attrs.type.editDefault.sigma, "-30", False)
+netedit.modifyAttribute(netedit.attrs.type.editDefault.sigma, "-30")
 
 # change value
-netedit.modifyAttribute(netedit.attrs.type.editDefault.sigma, "20.5", False)
+netedit.modifyAttribute(netedit.attrs.type.editDefault.sigma, "20.5")
 
 # change value
-netedit.modifyAttribute(netedit.attrs.type.editDefault.sigma, "0.52", False)
+netedit.modifyAttribute(netedit.attrs.type.editDefault.sigma, "0.15")
+
+# change value
+netedit.modifyAttribute(netedit.attrs.type.editDefaultModified.sigma, "0.52")
 
 # Check undo redo
 netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

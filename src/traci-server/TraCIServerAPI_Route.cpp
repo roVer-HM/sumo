@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -25,6 +25,7 @@
 #include <microsim/MSRoute.h>
 #include <microsim/MSEdge.h>
 #include <libsumo/Route.h>
+#include <libsumo/StorageHelper.h>
 #include <libsumo/TraCIConstants.h>
 #include "TraCIServerAPI_Route.h"
 
@@ -32,25 +33,6 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-bool
-TraCIServerAPI_Route::processGet(TraCIServer& server, tcpip::Storage& inputStorage,
-                                 tcpip::Storage& outputStorage) {
-    const int variable = inputStorage.readUnsignedByte();
-    const std::string id = inputStorage.readString();
-    server.initWrapper(libsumo::RESPONSE_GET_ROUTE_VARIABLE, variable, id);
-    try {
-        if (!libsumo::Route::handleVariable(id, variable, &server, &inputStorage)) {
-            return server.writeErrorStatusCmd(libsumo::CMD_GET_ROUTE_VARIABLE, "Get Route Variable: unsupported variable " + toHex(variable, 2) + " specified", outputStorage);
-        }
-    } catch (libsumo::TraCIException& e) {
-        return server.writeErrorStatusCmd(libsumo::CMD_GET_ROUTE_VARIABLE, e.what(), outputStorage);
-    }
-    server.writeStatusCmd(libsumo::CMD_GET_ROUTE_VARIABLE, libsumo::RTYPE_OK, "", outputStorage);
-    server.writeResponseWithLength(outputStorage, server.getWrapperStorage());
-    return true;
-}
-
-
 bool
 TraCIServerAPI_Route::processSet(TraCIServer& server, tcpip::Storage& inputStorage,
                                  tcpip::Storage& outputStorage) {
@@ -66,32 +48,17 @@ TraCIServerAPI_Route::processSet(TraCIServer& server, tcpip::Storage& inputStora
     try {
         // process
         switch (variable) {
-            case libsumo::ADD: {
-                std::vector<std::string> edgeIDs;
-                if (!server.readTypeCheckingStringList(inputStorage, edgeIDs)) {
-                    return server.writeErrorStatusCmd(libsumo::CMD_SET_ROUTE_VARIABLE, "A string list is needed for adding a new route.", outputStorage);
-                }
-                libsumo::Route::add(id, edgeIDs);
-            }
-            break;
+            case libsumo::ADD:
+                libsumo::Route::add(id, StoHelp::readTypedStringList(inputStorage, "A string list is needed for adding a new route."));
+                break;
             case libsumo::REMOVE: {
                 libsumo::Route::remove(id);
             }
             break;
             case libsumo::VAR_PARAMETER: {
-                if (inputStorage.readUnsignedByte() != libsumo::TYPE_COMPOUND) {
-                    return server.writeErrorStatusCmd(libsumo::CMD_SET_ROUTE_VARIABLE, "A compound object is needed for setting a parameter.", outputStorage);
-                }
-                //read itemNo
-                inputStorage.readInt();
-                std::string name;
-                if (!server.readTypeCheckingString(inputStorage, name)) {
-                    return server.writeErrorStatusCmd(libsumo::CMD_SET_ROUTE_VARIABLE, "The name of the parameter must be given as a string.", outputStorage);
-                }
-                std::string value;
-                if (!server.readTypeCheckingString(inputStorage, value)) {
-                    return server.writeErrorStatusCmd(libsumo::CMD_SET_ROUTE_VARIABLE, "The value of the parameter must be given as a string.", outputStorage);
-                }
+                StoHelp::readCompound(inputStorage, 2, "A compound object of size 2 is needed for setting a parameter.");
+                const std::string name = StoHelp::readTypedString(inputStorage, "The name of the parameter must be given as a string.");
+                const std::string value = StoHelp::readTypedString(inputStorage, "The value of the parameter must be given as a string.");
                 libsumo::Route::setParameter(id, name, value);
             }
             break;

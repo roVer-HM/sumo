@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,11 +18,12 @@
 // A abstract class for data sets
 /****************************************************************************/
 
-#include <netedit/GNENet.h>
-#include <netedit/GNEViewParent.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 #include <netedit/frames/common/GNEInspectorFrame.h>
 #include <netedit/frames/GNEElementTree.h>
+#include <netedit/GNEApplicationWindow.h>
+#include <netedit/GNENet.h>
+#include <netedit/GNEViewParent.h>
 
 #include "GNEDataSet.h"
 #include "GNEDataInterval.h"
@@ -104,8 +105,13 @@ GNEDataSet::AttributeColors::clear() {
 // GNEDataSet - methods
 // ---------------------------------------------------------------------------
 
-GNEDataSet::GNEDataSet(const std::string& dataSetID, GNENet* net, const std::string& filename) :
-    GNEAttributeCarrier(SUMO_TAG_DATASET, net, filename, false),
+GNEDataSet::GNEDataSet(GNENet* net) :
+    GNEAttributeCarrier(SUMO_TAG_DATASET, net) {
+}
+
+
+GNEDataSet::GNEDataSet(const std::string& dataSetID, GNENet* net, FileBucket* fileBucket) :
+    GNEAttributeCarrier(SUMO_TAG_DATASET, net, fileBucket),
     myDataSetID(dataSetID) {
 }
 
@@ -119,6 +125,24 @@ GNEDataSet::getHierarchicalElement() {
 }
 
 
+GNEMoveElement*
+GNEDataSet::getMoveElement() const {
+    return nullptr;
+}
+
+
+Parameterised*
+GNEDataSet::getParameters() {
+    return nullptr;
+}
+
+
+const Parameterised*
+GNEDataSet::getParameters() const {
+    return nullptr;
+}
+
+
 GUIGlObject*
 GNEDataSet::getGUIGlObject() {
     return nullptr;
@@ -128,6 +152,12 @@ GNEDataSet::getGUIGlObject() {
 const GUIGlObject*
 GNEDataSet::getGUIGlObject() const {
     return nullptr;
+}
+
+
+FileBucket*
+GNEDataSet::getFileBucket() const {
+    return myFileBucket;
 }
 
 
@@ -270,7 +300,7 @@ GNEDataSet::removeDataIntervalChild(GNEDataInterval* dataInterval) {
         myDataIntervalChildren.erase(dataInterval->getAttributeDouble(SUMO_ATTR_BEGIN));
         // remove it from inspected elements and GNEElementTree
         myNet->getViewNet()->getInspectedElements().uninspectAC(dataInterval);
-        myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(dataInterval);
+        myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(dataInterval);
         // remove reference from attributeCarriers
         myNet->getAttributeCarriers()->deleteDataInterval(dataInterval);
     } else {
@@ -346,14 +376,25 @@ GNEDataSet::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_ID:
             return myDataSetID;
         default:
-            return getCommonAttribute(this, key);
+            return getCommonAttribute(key);
     }
 }
 
 
 double
 GNEDataSet::getAttributeDouble(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
+    return getCommonAttributeDouble(key);
+}
+
+
+Position
+GNEDataSet::getAttributePosition(SumoXMLAttr key) const {
+    return getCommonAttributePosition(key);
+}
+
+
+PositionVector GNEDataSet::getAttributePositionVector(SumoXMLAttr key) const {
+    return getCommonAttributePositionVector(key);
 }
 
 
@@ -380,7 +421,7 @@ GNEDataSet::isValid(SumoXMLAttr key, const std::string& value) {
                 return false;
             }
         default:
-            return isCommonValid(key, value);
+            return isCommonAttributeValid(key, value);
     }
 }
 
@@ -397,12 +438,6 @@ GNEDataSet::getHierarchyName() const {
 }
 
 
-const Parameterised::Map&
-GNEDataSet::getACParametersMap() const {
-    return getParametersMap();
-}
-
-
 void
 GNEDataSet::setAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
@@ -414,11 +449,13 @@ GNEDataSet::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         default:
-            setCommonAttribute(this, key, value);
+            setCommonAttribute(key, value);
             break;
     }
     // mark interval toolbar for update
-    myNet->getViewNet()->getIntervalBar().markForUpdate();
+    if (!isTemplate()) {
+        myNet->getViewNet()->getIntervalBar().markForUpdate();
+    }
 }
 
 

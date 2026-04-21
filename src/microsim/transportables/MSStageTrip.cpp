@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -135,7 +135,7 @@ MSStageTrip::getVehicles(MSVehicleControl& vehControl, MSTransportable* transpor
             pars.back()->departProcedure = DepartDefinition::TRIGGERED;
         }
     }
-    ConstMSRoutePtr const routeDummy = std::make_shared<MSRoute>(transportable->getID() + "_0", ConstMSEdgeVector({ origin }), false, nullptr, std::vector<SUMOVehicleParameter::Stop>());
+    ConstMSRoutePtr const routeDummy = std::make_shared<MSRoute>(transportable->getID() + "_0", ConstMSEdgeVector({ origin }), false, nullptr, StopParVector());
     std::vector<SUMOVehicle*> result;
     for (SUMOVehicleParameter* vehPar : pars) {
         const bool isTaxi = vehPar->vtypeid == DEFAULT_TAXITYPE_ID && vehPar->line == "taxi";
@@ -185,7 +185,7 @@ MSStageTrip::reroute(const SUMOTime time, MSTransportableRouter& router, MSTrans
         }
         if (router.compute(origin, destination, departPos, prevStop == nullptr ? "" : prevStop->getID(),
                            myArrivalPos, myDestinationStop == nullptr ? "" : myDestinationStop->getID(),
-                           transportable->getMaxSpeed() * myWalkFactor, vehicle, myModeSet, time, result)) {
+                           transportable->getMaxSpeed() * myWalkFactor, vehicle, transportable->getVTypeParameter(), myModeSet, time, result)) {
             double totalCost = 0;
             for (const MSTransportableRouter::TripItem& item : result) {
                 totalCost += item.cost;
@@ -206,8 +206,8 @@ MSStageTrip::reroute(const SUMOTime time, MSTransportableRouter& router, MSTrans
         bool carUsed = false;
         for (std::vector<MSTransportableRouter::TripItem>::iterator it = minResult.begin(); it != minResult.end(); ++it) {
             if (!it->edges.empty()) {
-                MSStoppingPlace* bs = MSNet::getInstance()->getStoppingPlace(it->destStop, SUMO_TAG_BUS_STOP);
-                double localArrivalPos = bs != nullptr ? bs->getAccessPos(it->edges.back()) : it->edges.back()->getLength() / 2.;
+                MSStoppingPlace* bs = MSNet::getInstance()->getStoppingPlace(it->destStop);
+                double localArrivalPos = bs != nullptr ? bs->getAccessPos(it->edges.back()) : it->arrivalPos;
                 const MSEdge* const first = it->edges.front();
                 const MSEdge* const rideOrigin = origin->isTazConnector() && stages.empty() ? first : nullptr;
                 if (it + 1 == minResult.end() && myHaveArrivalPos) {
@@ -247,7 +247,7 @@ MSStageTrip::reroute(const SUMOTime time, MSTransportableRouter& router, MSTrans
                     previous->setCosts(it->cost);
                     previous->setTrip(this);
                     stages.push_back(previous);
-                } else if (isTaxi) {
+                } else if (isTaxi && it->line == minVehicle->getID()) {
                     const ConstMSEdgeVector& prevEdges = previous->getEdges();
                     if (prevEdges.size() >= 2 && previous->getDestinationStop() == nullptr) {
                         // determine walking direction and let the previous
@@ -266,10 +266,6 @@ MSStageTrip::reroute(const SUMOTime time, MSTransportableRouter& router, MSTrans
                     previous->setTrip(this);
                     stages.push_back(previous);
                 } else if (minVehicle != nullptr && it->line == minVehicle->getID()) {
-                    if (bs == nullptr && it + 1 != minResult.end()) {
-                        // we have no defined endpoint and are in the middle of the trip, drive as far as possible
-                        localArrivalPos = it->edges.back()->getLength();
-                    }
                     previous = new MSStageDriving(rideOrigin, it->edges.back(), bs, localArrivalPos, 0.0, std::vector<std::string>({ it->line }));
                     previous->setParameters(*this);
                     previous->setCosts(it->cost);

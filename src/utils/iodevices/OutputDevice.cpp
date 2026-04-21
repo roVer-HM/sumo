@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2004-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2004-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -70,6 +70,15 @@ OutputDevice::getDevice(const std::string& name, bool usePrefix) {
         return *myOutputDevices[name];
     }
     // build the device
+    const OptionsCont& oc = OptionsCont::getOptions();
+    const int len = (int)name.length();
+    bool isParquet = (oc.exists("output.format") && oc.getString("output.format") == "parquet") || (len > 8 && name.substr(len - 8) == ".parquet");
+#ifndef HAVE_PARQUET
+    if (isParquet) {
+        WRITE_WARNING("Compiled without Parquet support, falling back to XML.")
+        isParquet = false;
+    }
+#endif
     OutputDevice* dev = nullptr;
     // check whether the device shall print to stdout
     if (name == "stdout") {
@@ -78,7 +87,7 @@ OutputDevice::getDevice(const std::string& name, bool usePrefix) {
         dev = OutputDevice_CERR::getDevice();
     } else if (FileHelpers::isSocket(name)) {
         try {
-            const bool ipv6 = name[0] == '[';  // IPv6 adresses may be written like '[::1]:8000'
+            const bool ipv6 = name[0] == '[';  // IPv6 addresses may be written like '[::1]:8000'
             const size_t sepIndex = name.find(":", ipv6 ? name.find("]") : 0);
             const int port = StringUtils::toInt(name.substr(sepIndex + 1));
             dev = new OutputDevice_Network(ipv6 ? name.substr(1, sepIndex - 2) : name.substr(0, sepIndex), port);
@@ -89,8 +98,8 @@ OutputDevice::getDevice(const std::string& name, bool usePrefix) {
         }
     } else {
         std::string name2 = (name == "nul" || name == "NUL") ? "/dev/null" : name;
-        if (usePrefix && OptionsCont::getOptions().isSet("output-prefix") && name2 != "/dev/null") {
-            std::string prefix = OptionsCont::getOptions().getString("output-prefix");
+        if (usePrefix && oc.isSet("output-prefix") && name2 != "/dev/null") {
+            std::string prefix = oc.getString("output-prefix");
             const std::string::size_type metaTimeIndex = prefix.find("TIME");
             if (metaTimeIndex != std::string::npos) {
                 const time_t rawtime = std::chrono::system_clock::to_time_t(OptionsIO::getLoadTime());
@@ -101,12 +110,32 @@ OutputDevice::getDevice(const std::string& name, bool usePrefix) {
             }
             name2 = FileHelpers::prependToLastPathComponent(prefix, name);
         }
+        if (usePrefix && oc.isSet("output-suffix") && name2 != "/dev/null") {
+            std::string suffix = oc.getString("output-suffix");
+            const std::string::size_type metaTimeIndex = suffix.find("TIME");
+            if (metaTimeIndex != std::string::npos) {
+                const time_t rawtime = std::chrono::system_clock::to_time_t(OptionsIO::getLoadTime());
+                char buffer [80];
+                struct tm* timeinfo = localtime(&rawtime);
+                strftime(buffer, 80, "%Y-%m-%d-%H-%M-%S", timeinfo);
+                suffix.replace(metaTimeIndex, 4, buffer);
+            }
+            name2 = FileHelpers::appendBeforeExtension(name2, suffix);
+        }
         name2 = StringUtils::substituteEnvironment(name2, &OptionsIO::getLoadTime());
-        const int len = (int)name.length();
-        dev = new OutputDevice_File(name2, len > 3 && name.substr(len - 3) == ".gz");
+        dev = new OutputDevice_File(name2, isParquet);
     }
+    if ((oc.exists("output.format") && oc.getString("output.format") == "csv") || (len > 4 && name.substr(len - 4) == ".csv") || (len > 7 && name.substr(len - 7) == ".csv.gz")) {
+        dev->setFormatter(new CSVFormatter(oc.getString("output.column-header"), oc.getString("output.column-separator")[0]));
+    }
+#ifdef HAVE_PARQUET
+    if (isParquet) {
+        dev->setFormatter(new ParquetFormatter(oc.getString("output.column-header"), oc.getString("output.compression")));
+    }
+#endif
     dev->setPrecision();
     dev->getOStream() << std::setiosflags(std::ios::fixed);
+    dev->myWriteMetadata = oc.exists("write-metadata") && oc.getBool("write-metadata");
     myOutputDevices[name] = dev;
     return *dev;
 }
@@ -182,24 +211,6 @@ OutputDevice::closeAll(bool keepErrorRetrievers) {
 }
 
 
-std::string
-OutputDevice::realString(const double v, const int precision) {
-    std::ostringstream oss;
-    if (v == 0) {
-        return "0";
-    }
-    if (fabs(v) < pow(10., -precision)) {
-        oss.setf(std::ios::scientific, std::ios::floatfield);
-    } else {
-        oss.setf(std::ios::fixed, std::ios::floatfield);     // use decimal format
-        oss.setf(std::ios::showpoint);    // print decimal point
-        oss << std::setprecision(precision);
-    }
-    oss << v;
-    return oss.str();
-}
-
-
 // ===========================================================================
 // member method definitions
 // ===========================================================================
@@ -244,12 +255,6 @@ OutputDevice::setPrecision(int precision) {
 }
 
 
-int
-OutputDevice::precision() {
-    return (int)getOStream().precision();
-}
-
-
 bool
 OutputDevice::writeXMLHeader(const std::string& rootElement,
                              const std::string& schemaFile,
@@ -259,7 +264,7 @@ OutputDevice::writeXMLHeader(const std::string& rootElement,
         attrs[SUMO_ATTR_XMLNS] = "http://www.w3.org/2001/XMLSchema-instance";
         attrs[SUMO_ATTR_SCHEMA_LOCATION] = "http://sumo.dlr.de/xsd/" + schemaFile;
     }
-    return myFormatter->writeXMLHeader(getOStream(), rootElement, attrs, includeConfig);
+    return myFormatter->writeXMLHeader(getOStream(), rootElement, attrs, myWriteMetadata, includeConfig);
 }
 
 
@@ -299,6 +304,31 @@ OutputDevice::inform(const std::string& msg, const bool progress) {
         getOStream() << msg << '\n';
     }
     postWriteHook();
+}
+
+
+const SumoXMLAttrMask
+OutputDevice::parseWrittenAttributes(const std::vector<std::string>& attrList, const std::string& desc, const std::map<std::string, SumoXMLAttrMask>& special) {
+    SumoXMLAttrMask result;
+    for (std::string attrName : attrList) {
+        if (attrName == "all") {
+            result.set();
+        } else if (special.count(attrName) > 0) {
+            result |= special.find(attrName)->second;
+        } else {
+            if (SUMOXMLDefinitions::Attrs.hasString(attrName)) {
+                int attrNr = SUMOXMLDefinitions::Attrs.get(attrName);
+                if (attrNr < (int)result.size()) {
+                    result.set(attrNr);
+                } else {
+                    WRITE_ERRORF(TL("Attribute '%' is not support for filtering written attributes in %."), attrName, desc);
+                }
+            } else {
+                WRITE_ERRORF(TL("Unknown attribute '%' to write in %."), attrName, desc);
+            }
+        }
+    }
+    return result;
 }
 
 

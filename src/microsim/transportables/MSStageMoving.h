@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -75,13 +75,16 @@ public:
     /// Returns the position of the container
     Position getPosition(SUMOTime now) const;
 
-    /// Returns the angle of the container
+    /// Returns the angle of the transportable
     double getAngle(SUMOTime now) const;
 
-    /// Returns the time the container spent waiting
+    /// Returns the time the transportable spent waiting
     SUMOTime getWaitingTime() const;
 
-    /// Returns the speed of the container
+    /// Returns the cumulative time the transportable spent waiting
+    SUMOTime getTotalWaitingTime() const;
+
+    /// Returns the speed of the transportable
     double getSpeed() const;
 
     /// Returns the configured speed in this stage

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2016-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2016-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,21 +19,28 @@
 /****************************************************************************/
 #pragma once
 #include <config.h>
-#include "GNENetworkElement.h"
 
 #include <netbuild/NBEdge.h>
+#include <utils/gui/div/GUIGeometry.h>
+
+#include "GNENetworkElement.h"
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
-class GNEEdge;
 
+class GNEEdge;
+class GNEMoveElementConnection;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
 
 class GNEConnection : public GNENetworkElement {
+
+    /// @brief friend classses
+    friend class GNEMoveElementConnection;
+
 public:
     /** Constructor
      * @param[in] from The edge the vehicles leave
@@ -45,6 +52,20 @@ public:
     /// @brief Destructor
     ~GNEConnection();
 
+    /// @brief methods to retrieve the elements linked to this connection
+    /// @{
+
+    /// @brief get GNEMoveElement associated with this connection
+    GNEMoveElement* getMoveElement() const override;
+
+    /// @brief get parameters associated with this connection
+    Parameterised* getParameters() override;
+
+    /// @brief get parameters associated with this connection (constant)
+    const Parameterised* getParameters() const override;
+
+    /// @}
+
     /// @name Functions related with geometry of element
     /// @{
 
@@ -52,7 +73,7 @@ public:
     const PositionVector& getConnectionShape() const;
 
     /// @brief update pre-computed geometry information
-    void updateGeometry();
+    void updateGeometry() override;
 
     /// @brief Returns position of hierarchical element in view
     Position getPositionInView() const;
@@ -63,39 +84,28 @@ public:
     /// @{
 
     /// @brief check if draw from contour (green)
-    bool checkDrawFromContour() const;
+    bool checkDrawFromContour() const override;
 
     /// @brief check if draw from contour (magenta)
-    bool checkDrawToContour() const;
+    bool checkDrawToContour() const override;
 
     /// @brief check if draw related contour (cyan)
-    bool checkDrawRelatedContour() const;
+    bool checkDrawRelatedContour() const override;
 
     /// @brief check if draw over contour (orange)
-    bool checkDrawOverContour() const;
+    bool checkDrawOverContour() const override;
 
     /// @brief check if draw delete contour (pink/white)
-    bool checkDrawDeleteContour() const;
+    bool checkDrawDeleteContour() const override;
 
     /// @brief check if draw delete contour small (pink/white)
-    bool checkDrawDeleteContourSmall() const;
+    bool checkDrawDeleteContourSmall() const override;
 
     /// @brief check if draw select contour (blue)
-    bool checkDrawSelectContour() const;
+    bool checkDrawSelectContour() const override;
 
     /// @brief check if draw move contour (red)
-    bool checkDrawMoveContour() const;
-
-    /// @}
-
-    /// @name Functions related with move elements
-    /// @{
-
-    /// @brief get move operation for the given shapeOffset (can be nullptr)
-    GNEMoveOperation* getMoveOperation();
-
-    /// @brief remove geometry point in the clicked position
-    void removeGeometryPoint(const Position clickedPosition, GNEUndoList* undoList);
+    bool checkDrawMoveContour() const override;
 
     /// @}
 
@@ -116,6 +126,7 @@ public:
 
     /// @briefthe get lane index of the outgoing lane
     int getToLaneIndex() const;
+
     /// @brief get Edge::Connection
     NBEdge::Connection& getNBEdgeConnection() const;
 
@@ -146,13 +157,13 @@ public:
      * @return The built popup-menu
      * @see GUIGlObject::getPopUpMenu
      */
-    GUIGLObjectPopupMenu* getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent);
+    GUIGLObjectPopupMenu* getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) override;
 
     /// @brief return exaggeration associated with this GLObject
-    double getExaggeration(const GUIVisualizationSettings& s) const;
+    double getExaggeration(const GUIVisualizationSettings& s) const override;
 
     /// @brief Returns the boundary to which the view shall be centered in order to show the object
-    Boundary getCenteringBoundary() const;
+    Boundary getCenteringBoundary() const override;
 
     /// @brief update centering boundary (implies change in RTREE)
     void updateCenteringBoundary(const bool updateGrid);
@@ -161,13 +172,13 @@ public:
      * @param[in] s The settings for the current view (may influence drawing)
      * @see GUIGlObject::drawGL
      */
-    void drawGL(const GUIVisualizationSettings& s) const;
+    void drawGL(const GUIVisualizationSettings& s) const override;
 
     /// @brief delete element
-    void deleteGLObject();
+    void deleteGLObject() override;
 
     /// @brief update GLObject (geometry, ID, etc.)
-    void updateGLObject();
+    void updateGLObject() override;
 
     /// @}
 
@@ -182,43 +193,56 @@ public:
      * @param[in] key The attribute key
      * @return string with the value associated to key
      */
-    std::string getAttribute(SumoXMLAttr key) const;
+    std::string getAttribute(SumoXMLAttr key) const override;
 
-    /* @brief method for getting the Attribute of an XML key in PositionVector format
+    /* @brief method for getting the Attribute of an XML key in double format
+     * @param[in] key The attribute key
+     * @return double with the value associated to key
+     */
+    double getAttributeDouble(SumoXMLAttr key) const override;
+
+    /* @brief method for getting the Attribute of an XML key in position format
      * @param[in] key The attribute key
      * @return position with the value associated to key
      */
-    PositionVector getAttributePositionVector(SumoXMLAttr key) const;
+    Position getAttributePosition(SumoXMLAttr key) const override;
+
+    /* @brief method for getting the Attribute of an XML key in positionVector format
+     * @param[in] key The attribute key
+     * @return positionVector with the value associated to key
+     */
+    PositionVector getAttributePositionVector(SumoXMLAttr key) const override;
 
     /* @brief method for setting the attribute and letting the object perform additional changes
      * @param[in] key The attribute key
      * @param[in] value The new value
      * @param[in] undoList The undoList on which to register changes
      */
-    void setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList);
+    void setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList) override;
 
     /* @brief method for checking if the key and their conrrespond attribute are valids
      * @param[in] key The attribute key
      * @param[in] value The value associated to key key
      * @return true if the value is valid, false in other case
      */
-    bool isValid(SumoXMLAttr key, const std::string& value);
+    bool isValid(SumoXMLAttr key, const std::string& value) override;
 
     /* @brief method for check if the value for certain attribute is set
      * @param[in] key The attribute key
      */
-    bool isAttributeEnabled(SumoXMLAttr key) const;
+    bool isAttributeEnabled(SumoXMLAttr key) const override;
 
     /* @brief method for check if the value for certain attribute is computed (for example, due a network recomputing)
      * @param[in] key The attribute key
      */
-    bool isAttributeComputed(SumoXMLAttr key) const;
+    bool isAttributeComputed(SumoXMLAttr key) const override;
+
     /// @}
 
-    /// @brief get parameters map
-    const Parameterised::Map& getACParametersMap() const;
-
 protected:
+    /// @brief move element connection
+    GNEMoveElementConnection* myMoveElementConnection = nullptr;
+
     /// @brief Linkstate. @note cached because after 'undo' the connection needs to be drawn while the node logic (NBRequest) has not been recomputed
     LinkState myLinkState;
 
@@ -236,13 +260,7 @@ protected:
 
 private:
     /// @brief set attribute after validation
-    void setAttribute(SumoXMLAttr key, const std::string& value);
-
-    /// @brief set move shape
-    void setMoveShape(const GNEMoveResult& moveResult);
-
-    /// @brief commit move shape
-    void commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList);
+    void setAttribute(SumoXMLAttr key, const std::string& value) override;
 
     /// @brief manage change of tlLinkindices
     void changeTLIndex(SumoXMLAttr key, int tlIndex, int tlIndex2, GNEUndoList* undoList);
@@ -258,10 +276,11 @@ private:
 
     /// @brief draw connection
     void drawConnection(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
-                        const PositionVector& shape, const double exaggeration) const;
+                        const GUIGeometry& superposedGeometry, const double exaggeration) const;
 
     /// @brief draw arrows over connections
-    void drawConnectionArrows(const GUIVisualizationSettings& s, const RGBColor& color) const;
+    void drawConnectionArrows(const GUIVisualizationSettings& s, const GUIGeometry& superposedGeometry,
+                              const RGBColor& color) const;
 
     /// @brief draw edge value
     void drawEdgeValues(const GUIVisualizationSettings& s, const PositionVector& shape) const;

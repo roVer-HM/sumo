@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2007-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2007-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -178,6 +178,9 @@ public:
     ///@brief compute time to pick up the given reservation
     static SUMOTime computePickupTime(SUMOTime t, const MSDevice_Taxi* taxi, const Reservation& res, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router);
 
+    ///@brief compute whether the reservation is servable
+    bool isReachable(SUMOTime t, const MSDevice_Taxi* taxi, const Reservation& res, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router);
+
     ///@brief compute directTime and detourTime
     static double computeDetourTime(SUMOTime t, SUMOTime viaTime, const MSDevice_Taxi* taxi,
                                     const MSEdge* from, double fromPos,
@@ -203,6 +206,10 @@ protected:
     OutputDevice* myOutput;
 
     int myReservationCount;
+
+    /// @brief the duration before canceling unreachable reservations
+    SUMOTime myKeepUnreachableResTime;
+
     std::map<std::string, std::vector<Reservation*> > myGroupReservations;
 
 };

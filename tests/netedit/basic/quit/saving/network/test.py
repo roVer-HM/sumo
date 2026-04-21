@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,17 +19,14 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # Change to create mode
-netedit.createEdgeMode()
+netedit.changeMode("createEdge")
 
 # Create two nodes
 netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.left)
@@ -38,31 +35,31 @@ netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.ri
 netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.left)
 
 # go to additional mode
-netedit.additionalMode()
+netedit.changeMode("additional")
 
 # select busStop
-netedit.changeElement("busStop")
+netedit.changeElement("additionalFrame", "busStop")
 
 # create busStop in mode "reference left"
-netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.center, offsetY=20)
+netedit.leftClickOffset(referencePosition, netedit.positions.network.junction.cross.center, 0, 20)
 
 # go to demand mode
-netedit.supermodeDemand()
+netedit.changeSupermode("demand")
 
 # go to route mode
-netedit.routeMode()
+netedit.changeMode("route")
 
 # create route using three edges
-netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.center, offsetY=20)
+netedit.leftClickOffset(referencePosition, netedit.positions.network.junction.cross.center, 0, 20)
 
 # press enter to create route
-netedit.typeEnter()
+netedit.typeKey("enter")
 
 # Go to data supermode
-netedit.supermodeData()
+netedit.changeSupermode("data")
 
 # change to edgeData
-netedit.edgeData()
+netedit.changeMode("edgeData")
 
 # create dataSet
 netedit.createDataSet()
@@ -71,10 +68,10 @@ netedit.createDataSet()
 netedit.createDataInterval()
 
 # create edgeData
-netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.center, offsetY=20)
+netedit.leftClickOffset(referencePosition, netedit.positions.network.junction.cross.center, 0, 20)
 
 # change to edgeData
-netedit.meanData()
+netedit.changeMode("meanData")
 
 # create mean data
 netedit.createMeanData()

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2017-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2017-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -485,7 +485,7 @@ Helper::getDrivingDistance(std::pair<const MSLane*, double>& roadPos1, std::pair
     if (newRoute.empty()) {
         return libsumo::INVALID_DOUBLE_VALUE;
     }
-    MSRoute route("", newRoute, false, nullptr, std::vector<SUMOVehicleParameter::Stop>());
+    MSRoute route("", newRoute, false, nullptr, StopParVector());
     return distance + route.getDistanceBetween(roadPos1.second, roadPos2.second, roadPos1.first, roadPos2.first);
 }
 
@@ -1200,7 +1200,7 @@ Helper::applySubscriptionFilterTurn(const Subscription& s, std::set<const SUMOTr
         std::cout << "  On junction '" << l->getJunction()->getID() << "' (no. foe links = " << l->getFoeLinks().size() << "):" << std::endl;
 #endif
         for (auto& foeLane : l->getFoeLanes()) {
-            if (foeLane->getEdge().isCrossing()) {
+            if (foeLane->isCrossing()) {
 #ifdef DEBUG_SURROUNDING
                 std::cout << "   skipping crossing foeLane '" << foeLane->getID() << "'" << std::endl;
 #endif
@@ -1613,7 +1613,7 @@ Helper::moveToXYMap(const Position& pos, double maxRouteDistance, bool mayLeaveN
                 dist2 = FAR_AWAY;
             }
             const double angle2 = useCurrentAngle ? currentAngle : angle;
-            const double angleDiff = (angle2 == INVALID_DOUBLE_VALUE || l->getEdge().isWalkingArea() ? 0 : GeomHelper::getMinAngleDiff(angle2, langle));
+            const double angleDiff = (angle2 == INVALID_DOUBLE_VALUE || l->isWalkingArea() ? 0 : GeomHelper::getMinAngleDiff(angle2, langle));
 #ifdef DEBUG_MOVEXY_ANGLE
             std::cout << std::setprecision(gPrecision)
                       << " candLane=" << l->getID() << " lAngle=" << langle << " lLength=" << l->getLength()
@@ -1817,7 +1817,7 @@ Helper::moveToXYMap_matchingRoutePosition(const Position& pos, const std::string
         collectObjectsInRange(libsumo::CMD_GET_LANE_VARIABLE, shape, 100, into);
         for (const Named* named : into) {
             const MSLane* cand = dynamic_cast<const MSLane*>(named);
-            if ((cand->getEdge().isWalkingArea() || cand->getEdge().isCrossing())
+            if ((cand->isWalkingArea() || cand->isCrossing())
                     && routeJunctions.count(cand->getEdge().getToJunction()) != 0) {
                 if (findCloserLane(&cand->getEdge(), pos, vClass, bestDistance, lane)) {
                     routeOffset = routeJunctions[cand->getEdge().getToJunction()];

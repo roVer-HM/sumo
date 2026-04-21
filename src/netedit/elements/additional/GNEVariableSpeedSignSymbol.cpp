@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -17,12 +17,9 @@
 ///
 //
 /****************************************************************************/
-#include <config.h>
 
 #include <netedit/GNENet.h>
-#include <netedit/GNEViewNet.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/gui/globjects/GLIncludes.h>
 
 #include "GNEVariableSpeedSignSymbol.h"
 
@@ -31,7 +28,7 @@
 // ===========================================================================
 
 GNEVariableSpeedSignSymbol::GNEVariableSpeedSignSymbol(GNENet* net) :
-    GNEAdditional("", net, "", GNE_TAG_VSS_SYMBOL, "") {
+    GNEAdditional(net, GNE_TAG_VSS_SYMBOL) {
 }
 
 
@@ -49,9 +46,20 @@ GNEVariableSpeedSignSymbol::~GNEVariableSpeedSignSymbol() {
 }
 
 
-GNEMoveOperation*
-GNEVariableSpeedSignSymbol::getMoveOperation() {
-    // GNEVariableSpeedSignSymbols cannot be moved
+GNEMoveElement*
+GNEVariableSpeedSignSymbol::getMoveElement() const {
+    return nullptr;
+}
+
+
+Parameterised*
+GNEVariableSpeedSignSymbol::getParameters() {
+    return nullptr;
+}
+
+
+const Parameterised*
+GNEVariableSpeedSignSymbol::getParameters() const {
     return nullptr;
 }
 
@@ -150,20 +158,26 @@ GNEVariableSpeedSignSymbol::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_LANE:
             return getParentLanes().front()->getID();
         default:
-            return getCommonAttribute(nullptr, key);
+            return getCommonAttribute(key);
     }
 }
 
 
 double
-GNEVariableSpeedSignSymbol::getAttributeDouble(SumoXMLAttr /*key*/) const {
-    return 0;
+GNEVariableSpeedSignSymbol::getAttributeDouble(SumoXMLAttr key) const {
+    return getCommonAttributeDouble(key);
 }
 
 
-const Parameterised::Map&
-GNEVariableSpeedSignSymbol::getACParametersMap() const {
-    return getParametersMap();
+Position
+GNEVariableSpeedSignSymbol::getAttributePosition(SumoXMLAttr key) const {
+    return getCommonAttributePosition(key);
+}
+
+
+PositionVector
+GNEVariableSpeedSignSymbol::getAttributePositionVector(SumoXMLAttr key) const {
+    return getCommonAttributePositionVector(key);
 }
 
 
@@ -175,7 +189,7 @@ GNEVariableSpeedSignSymbol::setAttribute(SumoXMLAttr key, const std::string& val
 
 bool
 GNEVariableSpeedSignSymbol::isValid(SumoXMLAttr key, const std::string& value) {
-    return isCommonValid(key, value);
+    return isCommonAttributeValid(key, value);
 }
 
 
@@ -246,18 +260,7 @@ GNEVariableSpeedSignSymbol::drawVSSSymbol(const GUIVisualizationSettings& s, con
 
 void
 GNEVariableSpeedSignSymbol::setAttribute(SumoXMLAttr key, const std::string& value) {
-    setCommonAttribute(this, key, value);
-}
-
-
-void
-GNEVariableSpeedSignSymbol::setMoveShape(const GNEMoveResult& /*moveResult*/) {
-    // nothing to do
-}
-
-void
-GNEVariableSpeedSignSymbol::commitMoveShape(const GNEMoveResult& /*moveResult*/, GNEUndoList* /*undoList*/) {
-    // nothing to do
+    setCommonAttribute(key, value);
 }
 
 /****************************************************************************/

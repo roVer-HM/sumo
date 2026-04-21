@@ -1,5 +1,5 @@
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2011-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -238,6 +238,16 @@ class Lane:
         """
         return self._outgoing
 
+    def getOutgoingEdges(self):
+        """
+        Returns all outgoing edges from this lane.
+        """
+        result = []
+        for conn in self.getOutgoing():
+            if conn.getTo() not in result:
+                result.append(conn.getTo())
+        return result
+
     def getOutgoingLanes(self):
         """
         Returns all outgoing lanes from this lane.
@@ -297,6 +307,8 @@ class Lane:
 
     def allows(self, vClass):
         """true if this lane allows the given vehicle class"""
+        if vClass is None or vClass == "ignoring":
+            return True
         return vClass in self._allowed
 
     def setNeigh(self, neigh):

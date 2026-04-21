@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -50,15 +50,14 @@ FXDEFMAP(GNEElementTree) HierarchicalElementTreeMap[] = {
 
 
 // Object implementation
-FXIMPLEMENT(GNEElementTree,    MFXGroupBoxModule,     HierarchicalElementTreeMap,     ARRAYNUMBER(HierarchicalElementTreeMap))
-
+FXIMPLEMENT(GNEElementTree,    GNEGroupBoxModule,     HierarchicalElementTreeMap,     ARRAYNUMBER(HierarchicalElementTreeMap))
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
 
 GNEElementTree::GNEElementTree(GNEFrame* frameParent) :
-    MFXGroupBoxModule(frameParent, TL("Hierarchy")),
+    GNEGroupBoxModule(frameParent, TL("Hierarchy")),
     myFrameParent(frameParent) {
     // Create tree list with fixed height
     myTreeListDynamic = new MFXTreeListDynamic(getCollapsableFrame(), this, MID_GNE_ACHIERARCHY_SHOWCHILDMENU, GUIDesignTreeListFixedHeight);
@@ -313,8 +312,8 @@ GNEElementTree::createPopUpMenu(int X, int Y, GNEAttributeCarrier* clickedAC) {
         // create center menu command
         FXMenuCommand* centerMenuCommand = GUIDesigns::buildFXMenuCommand(pane, TL("Center"), GUIIconSubSys::getIcon(GUIIcon::RECENTERVIEW), this, MID_GNE_CENTER);
         // disable Centering for Vehicle Types, data sets and data intervals
-        if (myClickedAC->getTagProperty()->isType() || (myClickedAC->getTagProperty()->getTag() == SUMO_TAG_DATASET) ||
-                (myClickedAC->getTagProperty()->getTag() == SUMO_TAG_DATAINTERVAL)) {
+        if (myClickedAC->getTagProperty()->isType() || myClickedAC->getTagProperty()->isDistribution() || myClickedAC->getTagProperty()->isDistributionReference() ||
+                (myClickedAC->getTagProperty()->getTag() == SUMO_TAG_DATASET) || (myClickedAC->getTagProperty()->getTag() == SUMO_TAG_DATAINTERVAL)) {
             centerMenuCommand->disable();
         }
         // create inspect and delete menu commands

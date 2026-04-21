@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2017-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2017-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -370,7 +370,7 @@ void
 Lane::setAllowed(const std::string& laneID, std::vector<std::string> allowedClasses) {
     MSLane* const l = getLane(laneID);
     l->setPermissions(parseVehicleClasses(allowedClasses), MSLane::CHANGE_PERMISSIONS_PERMANENT);
-    l->getEdge().rebuildAllowedLanes();
+    l->getEdge().rebuildAllowedLanes(false, true);
 }
 
 
@@ -384,7 +384,7 @@ void
 Lane::setDisallowed(const std::string& laneID, std::vector<std::string> disallowedClasses) {
     MSLane* const l = getLane(laneID);
     l->setPermissions(invertPermissions(parseVehicleClasses(disallowedClasses)), MSLane::CHANGE_PERMISSIONS_PERMANENT); // negation yields allowed
-    l->getEdge().rebuildAllowedLanes();
+    l->getEdge().rebuildAllowedLanes(false, true);
 }
 
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -40,14 +40,14 @@ public:
     /// @brief Destructor
     ~GNEHierarchicalElement();
 
-    /// @brief get parents(used in GNE_Change)
-    const GNEHierarchicalStructureParents getParents() const;
-
     /// @brief clear hierarchical structure parents (used in GNE_Change)
     void clearParents();
 
-    /// @name common get functions
+    /// @name get parent functions
     /// @{
+
+    /// @brief get parents container
+    const GNEHierarchicalStructureParents& getParents() const;
 
     /// @brief get parent junctions
     const GNEHierarchicalContainerParents<GNEJunction*>& getParentJunctions() const;
@@ -72,6 +72,14 @@ public:
 
     /// @brief get parent demand elements
     const GNEHierarchicalContainerParents<GNEGenericData*>& getParentGenericDatas() const;
+
+    /// @}
+
+    /// @name get children functions
+    /// @{
+
+    /// @brief get child container
+    const GNEHierarchicalStructureChildren& getChildren() const;
 
     /// @brief get child junctions
     const GNEHierarchicalContainerChildren<GNEJunction*>& getChildJunctions() const;
@@ -117,6 +125,18 @@ public:
     template<typename ChildType>
     void addChildElement(ChildType* element) {
         myHierarchicalStructureChildren.add(element);
+    }
+
+    /// @brief Sort childrens
+    template<typename ChildType>
+    void sortChildren(std::vector<ChildType*> sortedChildrens) {
+        // remove elements and add again
+        for (auto child : sortedChildrens) {
+            myHierarchicalStructureChildren.remove(child);
+        }
+        for (auto child : sortedChildrens) {
+            myHierarchicalStructureChildren.add(child);
+        }
     }
 
     /// @}
@@ -203,12 +223,6 @@ public:
     std::string getNewListOfParents(const GNENetworkElement* currentElement, const GNENetworkElement* newNextElement) const;
 
     /// @}
-
-    /// @brief check if children are overlapped (Used by Rerouters)
-    bool checkChildAdditionalsOverlapping() const;
-
-    /// @brief check if child demand elements are overlapped
-    bool checkChildDemandElementsOverlapping() const;
 
 private:
     /// @brief hierarchical structure with parents

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -69,7 +69,7 @@ public:
     /// Constructor
     MSRoute(const std::string& id, const ConstMSEdgeVector& edges,
             const bool isPermanent, const RGBColor* const c,
-            const std::vector<SUMOVehicleParameter::Stop>& stops,
+            const StopParVector& stops,
             SUMOTime replacedTime = -1,
             int replacedIndex = 0);
 
@@ -87,6 +87,9 @@ public:
 
     /// returns the destination edge
     const MSEdge* getLastEdge() const;
+
+    /// returns the origin edge
+    const MSEdge* getFirstEdge() const;
 
     /** @brief removes the route from the internal dict if it is not marked as permanent */
     void checkRemoval(bool force = false) const;
@@ -223,7 +226,7 @@ public:
     }
 
     /// Returns the stops
-    const std::vector<SUMOVehicleParameter::Stop>& getStops() const;
+    const StopParVector& getStops() const;
 
 public:
     /** @brief Adds a route to the dictionary.
@@ -302,7 +305,7 @@ private:
     bool myReroute;
 
     /// @brief List of the stops on the parsed route
-    std::vector<SUMOVehicleParameter::Stop> myStops;
+    StopParVector myStops;
 
     /// The time where this route was replaced with an alternative route (or -1)
     SUMOTime myReplacedTime;

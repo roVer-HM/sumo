@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -17,15 +17,12 @@
 ///
 //
 /****************************************************************************/
-#include <config.h>
 
-#include <netedit/GNENet.h>
-#include <netedit/GNETagProperties.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/changes/GNEChange_Additional.h>
 #include <netedit/changes/GNEChange_Attribute.h>
-#include <netedit/dialogs/GNERerouterDialog.h>
+#include <netedit/dialogs/elements/GNERerouterDialog.h>
+#include <netedit/elements/moving/GNEMoveElementView.h>
+#include <netedit/GNENet.h>
+#include <netedit/GNEUndoList.h>
 
 #include "GNERerouter.h"
 #include "GNERerouterSymbol.h"
@@ -35,20 +32,17 @@
 // ===========================================================================
 
 GNERerouter::GNERerouter(GNENet* net) :
-    GNEAdditional("", net, "", SUMO_TAG_REROUTER, ""),
-    myProbability(0),
-    myOff(false),
-    myOptional(false),
-    myTimeThreshold(0) {
+    GNEAdditional(net, SUMO_TAG_REROUTER),
+    GNEAdditionalSquared(this) {
 }
 
 
-GNERerouter::GNERerouter(const std::string& id, GNENet* net, const std::string& filename, const Position& pos, const std::string& name,
+GNERerouter::GNERerouter(const std::string& id, GNENet* net, FileBucket* fileBucket, const Position& pos, const std::string& name,
                          double probability, bool off, bool optional, SUMOTime timeThreshold, const std::vector<std::string>& vTypes,
                          const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, filename, SUMO_TAG_REROUTER, name),
+    GNEAdditional(id, net, SUMO_TAG_REROUTER, fileBucket, name),
+    GNEAdditionalSquared(this, pos),
     Parameterised(parameters),
-    myPosition(pos),
     myProbability(probability),
     myOff(off),
     myOptional(optional),
@@ -63,17 +57,35 @@ GNERerouter::~GNERerouter() {
 }
 
 
+GNEMoveElement*
+GNERerouter::getMoveElement() const {
+    return myMoveElementView;
+}
+
+
+Parameterised*
+GNERerouter::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNERerouter::getParameters() const {
+    return this;
+}
+
+
 void
 GNERerouter::writeAdditional(OutputDevice& device) const {
     // avoid write rerouters without edges
     if (getAttribute(SUMO_ATTR_EDGES).size() > 0) {
         device.openTag(SUMO_TAG_REROUTER);
-        device.writeAttr(SUMO_ATTR_ID, getID());
+        // write common additional attributes
+        writeAdditionalAttributes(device);
+        // write move atributes
+        myMoveElementView->writeMoveAttributes(device);
+        // write specific attributes
         device.writeAttr(SUMO_ATTR_EDGES, getAttribute(SUMO_ATTR_EDGES));
-        device.writeAttr(SUMO_ATTR_POSITION, myPosition);
-        if (!myAdditionalName.empty()) {
-            device.writeAttr(SUMO_ATTR_NAME, StringUtils::escapeXML(myAdditionalName));
-        }
         if (myProbability != 1.0) {
             device.writeAttr(SUMO_ATTR_PROB, myProbability);
         }
@@ -137,62 +149,21 @@ GNERerouter::checkDrawMoveContour() const {
 }
 
 
-GNEMoveOperation*
-GNERerouter::getMoveOperation() {
-    // return move operation for additional placed in view
-    return new GNEMoveOperation(this, myPosition);
-}
-
-
 void
 GNERerouter::updateGeometry() {
-    // update additional geometry
-    myAdditionalGeometry.updateSinglePosGeometry(myPosition, 0);
-    // update geometries (boundaries of all children)
-    for (const auto& additionalChildren : getChildAdditionals()) {
-        additionalChildren->updateGeometry();
-        for (const auto& rerouterElement : additionalChildren->getChildAdditionals()) {
-            rerouterElement->updateGeometry();
-        }
-    }
+    updatedSquaredGeometry();
 }
 
 
 Position
 GNERerouter::getPositionInView() const {
-    return myPosition;
+    return myPosOverView;
 }
 
 
 void
 GNERerouter::updateCenteringBoundary(const bool updateGrid) {
-    // remove additional from grid
-    if (updateGrid) {
-        myNet->removeGLObjectFromGrid(this);
-    }
-    // now update geometry
-    updateGeometry();
-    // add shape boundary
-    myAdditionalBoundary = myAdditionalGeometry.getShape().getBoxBoundary();
-    /*
-        // add positions of all childrens (intervals and symbols)
-        for (const auto& additionalChildren : getChildAdditionals()) {
-            myAdditionalBoundary.add(additionalChildren->getPositionInView());
-            for (const auto& rerouterElement : additionalChildren->getChildAdditionals()) {
-                myAdditionalBoundary.add(rerouterElement->getPositionInView());
-                // special case for parking area rerouter
-                if (rerouterElement->getTagProperty()->getTag() == SUMO_TAG_PARKING_AREA_REROUTE) {
-                    myAdditionalBoundary.add(rerouterElement->getParentAdditionals().at(1)->getCenteringBoundary());
-                }
-            }
-        }
-    */
-    // grow
-    myAdditionalBoundary.grow(5);
-    // add additional into RTREE again
-    if (updateGrid) {
-        myNet->addGLObjectIntoGrid(this);
-    }
+    updatedSquaredCenteringBoundary(updateGrid);
 }
 
 
@@ -203,8 +174,9 @@ GNERerouter::splitEdgeGeometry(const double /*splitPosition*/, const GNENetworkE
 
 
 void
-GNERerouter::openAdditionalDialog() {
+GNERerouter::openAdditionalDialog(FXWindow* restoringFocusWindow) {
     // Open rerouter dialog
+    UNUSED_PARAMETER(restoringFocusWindow);
     GNERerouterDialog(this);
 }
 
@@ -223,7 +195,7 @@ GNERerouter::drawGL(const GUIVisualizationSettings& s) const {
         // draw parent and child lines
         drawParentChildLines(s, s.additionalSettings.connectionColor, true);
         // draw Rerouter
-        drawSquaredAdditional(s, myPosition, s.additionalSettings.rerouterSize, GUITexture::REROUTER, GUITexture::REROUTER_SELECTED);
+        drawSquaredAdditional(s, s.additionalSettings.rerouterSize, GUITexture::REROUTER, GUITexture::REROUTER_SELECTED);
         // iterate over additionals and check if drawn
         for (const auto& interval : getChildAdditionals()) {
             // if rerouter or their intevals are selected, then draw
@@ -260,8 +232,6 @@ GNERerouter::getAttribute(SumoXMLAttr key) const {
             }
             return toString(edges);
         }
-        case SUMO_ATTR_POSITION:
-            return toString(myPosition);
         case SUMO_ATTR_NAME:
             return myAdditionalName;
         case SUMO_ATTR_PROB:
@@ -275,7 +245,7 @@ GNERerouter::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_OPTIONAL:
             return toString(myOptional);
         default:
-            return getCommonAttribute(this, key);
+            return myMoveElementView->getMovingAttribute(key);
     }
 }
 
@@ -286,14 +256,20 @@ GNERerouter::getAttributeDouble(SumoXMLAttr key) const {
         case SUMO_ATTR_PROB:
             return myProbability;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
+            return myMoveElementView->getMovingAttributeDouble(key);
     }
 }
 
 
-const Parameterised::Map&
-GNERerouter::getACParametersMap() const {
-    return getParametersMap();
+Position
+GNERerouter::getAttributePosition(SumoXMLAttr key) const {
+    return myMoveElementView->getMovingAttributePosition(key);
+}
+
+
+PositionVector
+GNERerouter::getAttributePositionVector(SumoXMLAttr key) const {
+    return myMoveElementView->getMovingAttributePositionVector(key);
 }
 
 
@@ -309,7 +285,6 @@ GNERerouter::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList
             rebuildRerouterSymbols(value, undoList);
             break;
         case SUMO_ATTR_ID:
-        case SUMO_ATTR_POSITION:
         case SUMO_ATTR_NAME:
         case SUMO_ATTR_PROB:
         case SUMO_ATTR_HALTING_TIME_THRESHOLD:
@@ -319,7 +294,7 @@ GNERerouter::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            setCommonAttribute(key, value, undoList);
+            myMoveElementView->setMovingAttribute(key, value, undoList);
             break;
     }
 }
@@ -332,8 +307,6 @@ GNERerouter::isValid(SumoXMLAttr key, const std::string& value) {
             return isValidAdditionalID(value);
         case SUMO_ATTR_EDGES:
             return canParse<std::vector<GNEEdge*> >(myNet, value, false);
-        case SUMO_ATTR_POSITION:
-            return canParse<Position>(value);
         case SUMO_ATTR_NAME:
             return SUMOXMLDefinitions::isValidAttribute(value);
         case SUMO_ATTR_PROB:
@@ -351,7 +324,7 @@ GNERerouter::isValid(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_OPTIONAL:
             return canParse<bool>(value);
         default:
-            return isCommonValid(key, value);
+            return myMoveElementView->isMovingAttributeValid(key, value);
     }
 }
 
@@ -380,13 +353,6 @@ GNERerouter::setAttribute(SumoXMLAttr key, const std::string& value) {
             // update microsimID
             setAdditionalID(value);
             break;
-        case SUMO_ATTR_POSITION:
-            myPosition = parse<Position>(value);
-            // update boundary (except for template)
-            if (getID().size() > 0) {
-                updateCenteringBoundary(true);
-            }
-            break;
         case SUMO_ATTR_NAME:
             myAdditionalName = value;
             break;
@@ -406,26 +372,13 @@ GNERerouter::setAttribute(SumoXMLAttr key, const std::string& value) {
             myOptional = parse<bool>(value);
             break;
         default:
-            setCommonAttribute(this, key, value);
+            myMoveElementView->setMovingAttribute(key, value);
             break;
     }
-}
-
-
-void
-GNERerouter::setMoveShape(const GNEMoveResult& moveResult) {
-    // update position
-    myPosition = moveResult.shapeToUpdate.front();
-    // update geometry
-    updateGeometry();
-}
-
-
-void
-GNERerouter::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
-    undoList->begin(this, "position of " + getTagStr());
-    GNEChange_Attribute::changeAttribute(this, SUMO_ATTR_POSITION, toString(moveResult.shapeToUpdate.front()), undoList);
-    undoList->end();
+    // update boundary (except for template)
+    if (getID().size() > 0) {
+        updateCenteringBoundary(true);
+    }
 }
 
 
@@ -443,7 +396,7 @@ GNERerouter::rebuildRerouterSymbols(const std::string& value, GNEUndoList* undoL
         // create VSS Symbol
         GNEAdditional* VSSSymbol = new GNERerouterSymbol(this, edge);
         // add it using GNEChange_Additional
-        myNet->getViewNet()->getUndoList()->add(new GNEChange_Additional(VSSSymbol, true), true);
+        myNet->getUndoList()->add(new GNEChange_Additional(VSSSymbol, true), true);
     }
     undoList->end();
 }

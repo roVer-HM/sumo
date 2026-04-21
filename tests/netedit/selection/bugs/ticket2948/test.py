@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,17 +19,14 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # Change to create edge mode
-netedit.createEdgeMode()
+netedit.changeMode("createEdge")
 
 # select two-way mode
 netedit.changeEditMode(netedit.attrs.modes.network.twoWayMode)
@@ -42,40 +39,40 @@ netedit.leftClick(referencePosition, netedit.positions.network.junction.position
 netedit.leftClick(referencePosition, netedit.positions.network.junction.positionB)
 netedit.leftClick(referencePosition, netedit.positions.network.junction.positionC)
 netedit.leftClick(referencePosition, netedit.positions.network.junction.positionD)
-netedit.cancelEdge()
+netedit.typeKey("esc")
 
 # rebuild network
-netedit.rebuildNetwork()
+netedit.computeJunctions()
 
 # go to select mode
-netedit.selectMode()
+netedit.changeMode("select")
 
 # select all elements using invert operation
-netedit.selectionInvert()
+netedit.selection("invert")
 
 # go to inspect mode
-netedit.inspectMode()
+netedit.changeMode("inspect")
 
 # inspect set of junctions
 netedit.leftClick(referencePosition, netedit.positions.network.junction.positionA)
 
 # Set all Junctions as traffic lighs
-netedit.modifyAttribute(netedit.attrs.junction.inspectSelection.type, "traffic_light", True)
+netedit.modifyAttributeOverlapped(netedit.attrs.junction.inspectSelection.type, "traffic_light")
 
 # inspect set of edges
-netedit.leftClick(referencePosition, netedit.positions.network.junction.positionA, offsetX=100)
+netedit.leftClickOffset(referencePosition, netedit.positions.network.junction.positionA, 100, 0)
 
 # change all speed of edges
-netedit.modifyAttribute(netedit.attrs.edge.inspectSelection.speed, "20", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspectSelection.speed, "20")
 
 # rebuild network
-netedit.rebuildNetwork()
+netedit.computeJunctions()
 
 # Check undo and redo
 netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

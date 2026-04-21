@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2007-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2007-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -42,6 +42,8 @@ class DistrictEdgeComputer:
     def computeWithin(self, polygons, options):
         districtBoxes = {}
         for district in polygons:
+            if district.geo:
+                district.shape = [self._net.convertLonLat2XY(x, y) for x, y in district.shape]
             districtBoxes[district.id] = district.getBoundingBox()
         for idx, edge in enumerate(self._net.getEdges()):
             shape = edge.getShape()
@@ -95,7 +97,7 @@ class DistrictEdgeComputer:
             if len(filtered) == 0:
                 print("District '" + district.id + "' has no edges!")
             else:
-                color = ' color="%s"' % district.color if district.color is not None else ''
+                color = ' color="%s"' % district.color_str if district.color_str is not None else ''
                 if options.weighted:
                     if options.shapeinfo:
                         fd.write('    <taz id="%s" shape="%s"%s>\n' %

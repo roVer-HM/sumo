@@ -1,5 +1,5 @@
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2012-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -86,6 +86,7 @@ class Benchmarker:
     - benchmarking a code block that isn't wrapped in a function
     - benchmarking a function only in some calls
     """
+
     def __init__(self, active, description):
         self.active = active
         self.description = description
@@ -241,6 +242,7 @@ def getFreeSocketPort(numTries=10):
     for _ in range(numTries):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind(('', 0))
             p = s.getsockname()[1]
             s.close()
@@ -355,6 +357,8 @@ def openz(fileOrURL, mode="r", **kwargs):
             if "b" in mode:
                 return gzip.open(fileOrURL, mode="w")
             return gzip.open(fileOrURL, mode="wt", encoding=encoding)
+        if kwargs.get("trySocket") and fileOrURL.isdigit():
+            return getSocketStream(int(fileOrURL), mode)
         if kwargs.get("tryGZip", True) and "r" in mode:
             with gzip.open(fileOrURL) as fd:
                 fd.read(1)

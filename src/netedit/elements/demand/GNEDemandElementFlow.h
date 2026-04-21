@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -50,9 +50,6 @@ protected:
     /// @brief draw flow label
     void drawFlowLabel(const Position& position, const double rotation, const double width,
                        const double length, const double exaggeration) const;
-
-    /// @brief write flow attributes
-    void writeFlowAttributes(const GNEDemandElement* flowElement, OutputDevice& device) const;
 
     /// @brief inherited from GNEAttributeCarrier and adapted to GNEDemandElementFlow
     /// @{
@@ -111,9 +108,6 @@ protected:
 private:
     /// @brief set flow default attributes
     void setDefaultFlowAttributes(GNEDemandElement* flowElement);
-
-    /// @brief adjust decimal value
-    std::string adjustDecimalValue(const double value, const int precission) const;
 
     /// @brief Invalidated copy constructor.
     GNEDemandElementFlow(const GNEDemandElementFlow&) = delete;

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -501,6 +501,24 @@ MSDevice_Vehroutes::writePendingOutput(const bool includeUnfinished) {
             pc.erase(pc.loadedBegin()->second);
         }
     }
+    // Flush any remaining sorted outputs that may still be buffered
+    if (mySorted) {
+        for (const auto& routeInfo : myRouteInfos.routeXML) {
+            for (const auto& rouXML : routeInfo.second) {
+                (*myRouteInfos.routeOut) << rouXML.second;
+            }
+        }
+        if (net->hasPersons()) {
+            const SortedRouteInfo& personRouteInfos = net->getPersonControl().getRouteInfo();
+            if (personRouteInfos.routeOut != myRouteInfos.routeOut) {
+                for (const auto& routeInfo : personRouteInfos.routeXML) {
+                    for (const auto& rouXML : routeInfo.second) {
+                        (*personRouteInfos.routeOut) << rouXML.second;
+                    }
+                }
+            }
+        }
+    }
 }
 
 
@@ -596,6 +614,9 @@ MSDevice_Vehroutes::loadState(const SUMOSAXAttributes& attrs) {
         if (attrs.hasAttribute(SUMO_ATTR_EDGE)) {
             myLastSavedAt = MSEdge::dictionary(attrs.getString(SUMO_ATTR_EDGE));
         }
+    }
+    if (myHolder.hasDeparted()) {
+        myLastRouteIndex = myHolder.getRoutePosition();
     }
 }
 

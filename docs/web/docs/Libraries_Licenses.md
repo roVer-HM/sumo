@@ -6,14 +6,16 @@ This page lists all licenses of code SUMO depends on directly for
 compiling. There may be secondary references (like the C++ standard
 library or a particular OpenGL implementation) which are not mentioned
 here except for the cases where we deliver binaries for that code.
+There is also a [machine readable version](https://github.com/eclipse-sumo/sumo/blob/main/docs/dependencies.txt) of that list in [Package URL](https://github.com/package-url/purl-spec) format.
 
 ## Code in the repository
 
 All the code which can be found under <SUMO\>/src and <SUMO\>/tools except
 for <SUMO\>/src/foreign and <SUMO\>/tools/contributed is since 03.10.2017
-(revision 26300) licensed under [EPL
-V2](https://www.eclipse.org/legal/epl-2.0/). All earlier versions were
-licensed under [GPL V3+](https://gnu.org/licenses/gpl.html). The code in
+(revision 26300) licensed under [EPL V2](https://www.eclipse.org/legal/epl-2.0/)
+with [GPL V2 or later](https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html)
+as a secondary license option. All earlier versions were only
+licensed under GPL V2+. The code in
 <SUMO\>/src/foreign and <SUMO\>/tools/contributed should have separate
 license files but we strive to list them here as well:
 
@@ -23,8 +25,12 @@ license files but we strive to list them here as well:
   from 2012-09-28
 - Modifications: fixed invalid buffer length calculation, fixed
   compiler warnings, removed "using namespace std"
-- License: [based on BSD
-  License](https://github.com/itm/shawn/blob/master/shawn-licence.txt)
+- License: [based on BSD License](https://github.com/itm/shawn/blob/master/shawn-licence.txt)
+
+### [JSON for Modern C++](https://github.com/nlohmann/json) - JSON parsing for PHEMlight
+
+ - Version: 3.10.5
+ - License: [MIT](http://opensource.org/licenses/MIT)
 
 ### [Font Stash](https://github.com/memononen/fontstash) - Text rendering in openGL
 
@@ -32,8 +38,7 @@ license files but we strive to list them here as well:
   2017-09-23
 - Modifications: only included necessary files fontstash.h,
   glfontstash.h, stb_truetype.h
-- License: [zlib
-  License](https://github.com/memononen/fontstash/blob/master/LICENSE.txt),
+- License: [zlib License](https://github.com/memononen/fontstash/blob/master/LICENSE.txt),
   includes std_truetype which is in the public domain
 
 ### [RTree](https://www.superliminal.com/sources/RTreeTemplate.zip) - Improved tiling for the drawing area
@@ -64,7 +69,7 @@ license files but we strive to list them here as well:
 
 ## Mandatory and highly recommended
 
-### [Microsoft Visual C++ Redistributable](https://www.google.com/url?q=https://support.microsoft.com/en-us/kb/2977003) - Visual C++ Runtime Components (Windows only)
+### [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) - Visual C++ Runtime Components (Windows only)
 
 - [Microsoft Software
   License](https://www.visualstudio.com/en-us/mt171551.aspx)
@@ -90,7 +95,7 @@ can be omitted, but [sumo-gui](sumo-gui.md),
     binary
     distribution](https://github.com/winlibs/libjpeg/blob/master/README.md)
 
-### [PROJ.4](https://proj.org/) - Cartographic Projections Library
+### [PROJ](https://proj.org/) - Cartographic Projections Library
 
 can be omitted, but import of geo referenced networks like OpenStreetMap
 won't work
@@ -137,6 +142,10 @@ are distributed under GPL and are not part of the SUMO download.
 
 - [​MIT License](https://github.com/fmtlib/fmt/blob/master/LICENSE)
 
+### [JuPedSim](https://jupedsim.org/) - Pedestrian Simulator
+
+- Version: 1.3.0
+- [LGPL3+](https://www.gnu.org/licenses/lgpl-3.0)
 
 ## Data and Documentation
 

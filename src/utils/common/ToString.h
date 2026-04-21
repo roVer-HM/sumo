@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -124,6 +124,12 @@ template <>
 inline std::string toString<FringeType>(const FringeType& fringeType, std::streamsize accuracy) {
     UNUSED_PARAMETER(accuracy);
     return SUMOXMLDefinitions::FringeTypeValues.getString(fringeType);
+}
+
+template <>
+inline std::string toString<RoundaboutType>(const RoundaboutType& roundaboutType, std::streamsize accuracy) {
+    UNUSED_PARAMETER(accuracy);
+    return SUMOXMLDefinitions::RoundaboutTypeValues.getString(roundaboutType);
 }
 
 template <>
@@ -312,6 +318,15 @@ inline std::string joinNamedToStringSorting(const std::set<T*>& ns, const T_BETW
     return joinToStringSorting(ids, between);
 }
 
+template <typename T, typename T_BETWEEN>
+inline std::string joinNamedToStringSorting(const std::set<T*, ComparatorIdLess>& ns, const T_BETWEEN& between) {
+    std::vector<std::string> ids;
+    for (T* n : ns) {
+        ids.push_back(Named::getIDSecure(n));
+    }
+    return joinToStringSorting(ids, between);
+}
+
 
 template <typename T, typename C, typename T_BETWEEN>
 inline std::string joinNamedToString(const std::set<T*, C>& ns, const T_BETWEEN& between) {
@@ -344,6 +359,17 @@ inline std::string toString(const std::set<V*>& v, std::streamsize accuracy = gP
     UNUSED_PARAMETER(accuracy);
     std::vector<std::string> ids;
     for (typename std::set<V*>::const_iterator it = v.begin(); it != v.end(); ++it) {
+        ids.push_back((*it)->getID());
+    }
+    return joinToStringSorting(ids, " ");
+}
+
+
+template <typename V>
+inline std::string toString(const std::set<V*, ComparatorNumericalIdLess>& v, std::streamsize accuracy = gPrecision) {
+    UNUSED_PARAMETER(accuracy);
+    std::vector<std::string> ids;
+    for (typename std::set<V*, ComparatorNumericalIdLess>::const_iterator it = v.begin(); it != v.end(); ++it) {
         ids.push_back((*it)->getID());
     }
     return joinToStringSorting(ids, " ");

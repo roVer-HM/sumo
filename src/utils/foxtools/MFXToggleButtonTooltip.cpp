@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -17,10 +17,13 @@
 ///
 // Button similar to FXToggleButton but with the possibility of showing tooltips
 /****************************************************************************/
-#include <config.h>
 
+#include "MFXStaticToolTip.h"
 #include "MFXToggleButtonTooltip.h"
 
+// ===========================================================================
+// FOX callback mapping
+// ===========================================================================
 
 FXDEFMAP(MFXToggleButtonTooltip) MFXToggleButtonTooltipMap[] = {
     FXMAPFUNC(SEL_ENTER,    0,  MFXToggleButtonTooltip::onEnter),
@@ -28,9 +31,12 @@ FXDEFMAP(MFXToggleButtonTooltip) MFXToggleButtonTooltipMap[] = {
     FXMAPFUNC(SEL_MOTION,   0,  MFXToggleButtonTooltip::onMotion),
 };
 
-
 // Object implementation
 FXIMPLEMENT(MFXToggleButtonTooltip, FXToggleButton, MFXToggleButtonTooltipMap, ARRAYNUMBER(MFXToggleButtonTooltipMap))
+
+// ===========================================================================
+// method definitions
+// ===========================================================================
 
 MFXToggleButtonTooltip::MFXToggleButtonTooltip(FXComposite* p, MFXStaticToolTip* staticToolTip,
         const std::string& text1, const std::string& text2, FXIcon* ic1, FXIcon* ic2, FXObject* tgt,

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -181,6 +181,11 @@ NBTrafficLightLogicCont::computeLogics(OptionsCont& oc) {
                 oDef->setTLControllingInformation();
                 for (NBNode* node : oDef->getNodes()) {
                     node->removeTrafficLight(def);
+                    for (auto c : node->getCrossings()) {
+                        c->customTLIndex = -1;
+                        c->customTLIndex2 = -1;
+                        c->tlLinkIndex2 = -1;
+                    }
                 }
                 removeProgram(def->getID(), def->getProgramID());
                 insert(oDef);

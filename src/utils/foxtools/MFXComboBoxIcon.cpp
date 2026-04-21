@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2006-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2006-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,22 +19,15 @@
 //
 /****************************************************************************/
 
-// =========================================================================
-// included modules
-// =========================================================================
-
 #include <utils/common/MsgHandler.h>
+#include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/images/GUIIconSubSys.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 
 #include "MFXComboBoxIcon.h"
-
-// =========================================================================
-// defines
-// =========================================================================
-
-#define ICON_SPACING        4   // Spacing between icon and label (2 + 2)
-#define ICON_SIZE           16
+#include "MFXListIcon.h"
+#include "MFXListIconItem.h"
+#include "MFXTextFieldSearch.h"
 
 // ===========================================================================
 // FOX callback mapping
@@ -68,14 +61,14 @@ FXIMPLEMENT(MFXComboBoxIcon,    FXPacker,   MFXComboBoxIconMap, ARRAYNUMBER(MFXC
 // member method definitions
 // ===========================================================================
 
-MFXComboBoxIcon::MFXComboBoxIcon(FXComposite* p, FXint cols, const bool canSearch, const int visibleItems,
+MFXComboBoxIcon::MFXComboBoxIcon(FXComposite* p, MFXStaticToolTip* staticToolTip, const bool canSearch, const int visibleItems,
                                  FXObject* tgt, FXSelector sel, FXuint opts, FXint x, FXint y, FXint w, FXint h, FXint pl, FXint pr, FXint pt, FXint pb):
     FXPacker(p, opts, x, y, w, h, 0, 0, 0, 0, 0, 0) {
     flags |= FLAG_ENABLED;
     target = tgt;
     message = sel;
     // create text field
-    myTextFieldIcon = new MFXTextFieldIcon(this, cols, nullptr, this, MFXComboBoxIcon::ID_TEXT, 0, 0, 0, 0, 0, pl, pr, pt, pb);
+    myTextFieldIcon = new MFXTextFieldIcon(this, staticToolTip, GUIIcon::EMPTY, this, MFXComboBoxIcon::ID_TEXT, 0, 0, 0, 0, 0, pl, pr, pt, pb);
     if (options & COMBOBOX_STATIC) {
         myTextFieldIcon->setEditable(FALSE);
     }
@@ -83,10 +76,10 @@ MFXComboBoxIcon::MFXComboBoxIcon(FXComposite* p, FXint cols, const bool canSearc
     myPane = new FXPopup(this, FRAME_LINE);
     // check if create search button
     if (canSearch) {
-        myTextFieldSearch = new MFXTextFieldSearch(myPane, 1, this, ID_SEARCH, FRAME_THICK | LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT, 0, 0, 0, 0, 2, 2, 2, 2);
+        myTextFieldSearch = new MFXTextFieldSearch(myPane, staticToolTip, this, ID_SEARCH, FRAME_THICK | LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT, 0, 0, 0, 0, 2, 2, 2, 2);
         // create label for empty icon
         myNoItemsLabel = new FXLabel(myPane, TL("No matches found"), nullptr, FRAME_THICK | LAYOUT_FIX_WIDTH | LAYOUT_FIX_HEIGHT, 0, 0, 0, 0, 2, 2, 2, 2);
-        myNoItemsLabel->setTextColor(FXRGB(255, 0, 0));
+        myNoItemsLabel->setTextColor(GUIDesignTextColorRed);
         myNoItemsLabel->hide();
     }
     // create list icon
@@ -210,8 +203,8 @@ MFXComboBoxIcon::setNumVisible(FXint nvis) {
 
 
 void
-MFXComboBoxIcon::setText(const FXString& text) {
-    myTextFieldIcon->setText(text);
+MFXComboBoxIcon::setText(const FXString& text, FXbool notify) {
+    myTextFieldIcon->setText(text, notify);
 }
 
 
@@ -438,7 +431,7 @@ MFXComboBoxIcon::onTextChanged(FXObject*, FXSelector, void* ptr) {
 long
 MFXComboBoxIcon::onTextCommand(FXObject*, FXSelector, void* ptr) {
     // reset background colors
-    myTextFieldIcon->setBackColor(FXRGB(255, 255, 255));
+    myTextFieldIcon->setBackColor(GUIDesignBackgroundColorWhite);
     // check if item exist
     for (int i = 0; i < myList->getNumItems(); i++) {
         const auto itemText = myList->tolowerString(myList->getItem(i)->getText());

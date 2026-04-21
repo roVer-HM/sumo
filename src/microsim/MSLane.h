@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -572,17 +572,22 @@ public:
      * @return This lane's resulting max. speed
      */
     inline double getVehicleMaxSpeed(const SUMOTrafficObject* const veh) const {
+        return getVehicleMaxSpeed(veh, veh->getMaxSpeed());
+    }
+
+
+    inline double getVehicleMaxSpeed(const SUMOTrafficObject* const veh, double vehMaxSpeed) const {
         if (myRestrictions != nullptr) {
             std::map<SUMOVehicleClass, double>::const_iterator r = myRestrictions->find(veh->getVClass());
             if (r != myRestrictions->end()) {
                 if (mySpeedByVSS || mySpeedByTraCI) {
-                    return MIN2(myMaxSpeed, MIN2(veh->getMaxSpeed(), r->second * veh->getChosenSpeedFactor()));
+                    return MIN2(myMaxSpeed, MIN2(vehMaxSpeed, r->second * veh->getChosenSpeedFactor()));
                 } else {
-                    return MIN2(veh->getMaxSpeed(), r->second * veh->getChosenSpeedFactor());
+                    return MIN2(vehMaxSpeed, r->second * veh->getChosenSpeedFactor());
                 }
             }
         }
-        return MIN2(veh->getMaxSpeed(), myMaxSpeed * veh->getChosenSpeedFactor());
+        return MIN2(vehMaxSpeed, myMaxSpeed * veh->getChosenSpeedFactor());
     }
 
 
@@ -765,6 +770,8 @@ public:
         return *myEdge;
     }
 
+    const MSJunction* getFromJunction() const;
+    const MSJunction* getToJunction() const;
 
     /** @brief Returns the lane's follower if it is an internal lane, the edge of the lane otherwise
      * @return This lane's follower
@@ -874,6 +881,9 @@ public:
 
     /** Returns whether the lane pertains to a crossing edge*/
     bool isCrossing() const;
+
+    /** Returns whether the lane pertains to a crossing edge*/
+    bool isPriorityCrossing() const;
 
     /** Returns whether the lane pertains to a walkingarea*/
     bool isWalkingArea() const;
@@ -1362,6 +1372,15 @@ public:
         return myIntermodalCollisionAction;
     }
 
+    static DepartSpeedDefinition& getDefaultDepartSpeedDefinition() {
+        return myDefaultDepartSpeedDefinition;
+    }
+
+    static double& getDefaultDepartSpeed() {
+        return myDefaultDepartSpeed;
+    }
+
+
     static const long CHANGE_PERMISSIONS_PERMANENT = 0;
     static const long CHANGE_PERMISSIONS_GUI = 1;
 
@@ -1625,7 +1644,8 @@ private:
     static SUMOTime myIntermodalCollisionStopTime;
     static double myCollisionMinGapFactor;
     static bool myExtrapolateSubstepDepart;
-
+    static DepartSpeedDefinition myDefaultDepartSpeedDefinition;
+    static double myDefaultDepartSpeed;
     /**
      * @class vehicle_position_sorter
      * @brief Sorts vehicles by their position (descending)

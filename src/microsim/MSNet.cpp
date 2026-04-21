@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -144,6 +144,7 @@ const std::string MSNet::STAGE_INSERTIONS("insertion");
 const std::string MSNet::STAGE_REMOTECONTROL("remoteControl");
 
 const NamedObjectCont<MSStoppingPlace*> MSNet::myEmptyStoppingPlaceCont;
+const std::vector<MSStoppingPlace*> MSNet::myEmptyStoppingPlaceVector;
 
 // ===========================================================================
 // static member method definitions
@@ -192,6 +193,7 @@ MSNet::getInstance(void) {
 
 void
 MSNet::initStatic() {
+    gRoutingPreferences = false;
     MSDriveWay::init();
 }
 
@@ -356,6 +358,50 @@ MSNet::getRestrictions(const std::string& id) const {
         return nullptr;
     }
     return &i->second;
+}
+
+
+double
+MSNet::getPreference(const std::string& routingType, const SUMOVTypeParameter& pars) const {
+    if (gRoutingPreferences) {
+        auto it = myVTypePreferences.find(pars.id);
+        if (it != myVTypePreferences.end()) {
+            auto it2 = it->second.find(routingType);
+            if (it2 != it->second.end()) {
+                return it2->second;
+            }
+        }
+        auto it3 = myVClassPreferences.find(pars.vehicleClass);
+        if (it3 != myVClassPreferences.end()) {
+            auto it4 = it3->second.find(routingType);
+            if (it4 != it3->second.end()) {
+                return it4->second;
+            }
+        }
+        // fallback to generel preferences
+        it = myVTypePreferences.find("");
+        if (it != myVTypePreferences.end()) {
+            auto it2 = it->second.find(routingType);
+            if (it2 != it->second.end()) {
+                return it2->second;
+            }
+        }
+    }
+    return 1;
+}
+
+
+void
+MSNet::addPreference(const std::string& routingType, SUMOVehicleClass svc, double prio) {
+    myVClassPreferences[svc][routingType] = prio;
+    gRoutingPreferences = true;
+}
+
+
+void
+MSNet::addPreference(const std::string& routingType, std::string vType, double prio) {
+    myVTypePreferences[vType][routingType] = prio;
+    gRoutingPreferences = true;
 }
 
 void
@@ -620,7 +666,7 @@ MSNet::writeStatistics(const SUMOTime start, const long now) const {
 
 
 void
-MSNet::writeSummaryOutput() {
+MSNet::writeSummaryOutput(bool finalStep) {
     // summary output
     const OptionsCont& oc = OptionsCont::getOptions();
     const bool hasOutput = oc.isSet("summary-output");
@@ -628,7 +674,9 @@ MSNet::writeSummaryOutput() {
     if (hasOutput || hasPersonOutput) {
         const SUMOTime period = string2time(oc.getString("summary-output.period"));
         const SUMOTime begin = string2time(oc.getString("begin"));
-        if (period > 0 && (myStep - begin) % period != 0) {
+        if ((period > 0 && (myStep - begin) % period != 0 && !finalStep)
+                // it's the final step but we already wrote output
+                || (finalStep && (period <= 0 || (myStep - begin) % period == 0))) {
             return;
         }
     }
@@ -655,6 +703,7 @@ MSNet::writeSummaryOutput() {
         std::pair<double, double> meanSpeed = myVehicleControl->getVehicleMeanSpeeds();
         od.writeAttr("meanSpeed", meanSpeed.first);
         od.writeAttr("meanSpeedRelative", meanSpeed.second);
+        od.writeAttr("discarded", myVehicleControl->getDiscardedVehicleNo());
         if (myLogExecutionTime) {
             od.writeAttr("duration", mySimStepDuration);
         }
@@ -675,6 +724,7 @@ MSNet::writeSummaryOutput() {
         od.writeAttr("ended", pc.getEndedNumber());
         od.writeAttr("arrived", pc.getArrivedNumber());
         od.writeAttr("teleports", pc.getTeleportCount());
+        od.writeAttr("discarded", pc.getDiscardedNumber());
         if (myLogExecutionTime) {
             od.writeAttr("duration", mySimStepDuration);
         }
@@ -719,6 +769,8 @@ MSNet::closeSimulation(SUMOTime start, const std::string& reason) {
     if (OptionsCont::getOptions().isSet("statistic-output")) {
         writeStatistics(start, now);
     }
+    // maybe write a final line of output if reporting is periodic
+    writeSummaryOutput(true);
 }
 
 
@@ -1066,13 +1118,17 @@ MSNet::writeOutput() {
 
     // check fcd dumps
     if (OptionsCont::getOptions().isSet("fcd-output")) {
-        MSFCDExport::write(OutputDevice::getDeviceByOption("fcd-output"), myStep, myHasElevation);
+        if (OptionsCont::getOptions().isSet("person-fcd-output")) {
+            MSFCDExport::write(OutputDevice::getDeviceByOption("fcd-output"), myStep, SUMO_TAG_VEHICLE);
+            MSFCDExport::write(OutputDevice::getDeviceByOption("person-fcd-output"), myStep, SUMO_TAG_PERSON);
+        } else {
+            MSFCDExport::write(OutputDevice::getDeviceByOption("fcd-output"), myStep);
+        }
     }
 
     // check emission dumps
     if (OptionsCont::getOptions().isSet("emission-output")) {
-        MSEmissionExport::write(OutputDevice::getDeviceByOption("emission-output"), myStep,
-                                oc.getInt("emission-output.precision"));
+        MSEmissionExport::write(OutputDevice::getDeviceByOption("emission-output"), myStep);
     }
 
     // battery dumps
@@ -1144,7 +1200,7 @@ MSNet::writeOutput() {
             std::string output = OptionsCont::getOptions().getString("vtk-output");
             std::string filename = output + "_" + timestep + ".vtp";
 
-            OutputDevice_File dev(filename, false);
+            OutputDevice_File dev(filename);
 
             //build a huge mass of xml files
             MSVTKExport::write(dev, myStep);
@@ -1385,8 +1441,15 @@ MSNet::removeOutdatedCollisions() {
 
 
 bool
-MSNet::addStoppingPlace(const SumoXMLTag category, MSStoppingPlace* stop) {
-    return myStoppingPlaces[category == SUMO_TAG_TRAIN_STOP ? SUMO_TAG_BUS_STOP : category].add(stop->getID(), stop);
+MSNet::addStoppingPlace(SumoXMLTag category, MSStoppingPlace* stop) {
+    if (category == SUMO_TAG_TRAIN_STOP) {
+        category = SUMO_TAG_BUS_STOP;
+    }
+    const bool isNew = myStoppingPlaces[category].add(stop->getID(), stop);
+    if (isNew && stop->getMyName() != "") {
+        myNamedStoppingPlaces[category][stop->getMyName()].push_back(stop);
+    }
+    return isNew;
 }
 
 
@@ -1432,6 +1495,22 @@ MSNet::getStoppingPlaceID(const MSLane* lane, const double pos, const SumoXMLTag
         }
     }
     return "";
+}
+
+
+const std::vector<MSStoppingPlace*>&
+MSNet::getStoppingPlaceAlternatives(const std::string& name, SumoXMLTag category) const {
+    if (category == SUMO_TAG_TRAIN_STOP) {
+        category = SUMO_TAG_BUS_STOP;
+    }
+    auto it = myNamedStoppingPlaces.find(category);
+    if (it != myNamedStoppingPlaces.end()) {
+        auto it2 = it->second.find(name);
+        if (it2 != it->second.end()) {
+            return it2->second;
+        }
+    }
+    return myEmptyStoppingPlaceVector;
 }
 
 
@@ -1528,7 +1607,10 @@ MSNet::existTractionSubstation(const std::string& substationId) {
 
 
 MSVehicleRouter&
-MSNet::getRouterTT(const int rngIndex, const MSEdgeVector& prohibited) const {
+MSNet::getRouterTT(int rngIndex, const Prohibitions& prohibited) const {
+    if (MSGlobals::gNumSimThreads == 1) {
+        rngIndex = 0;
+    }
     if (myRouterTT.count(rngIndex) == 0) {
         const std::string routingAlgorithm = OptionsCont::getOptions().getString("routing-algorithm");
         if (routingAlgorithm == "dijkstra") {
@@ -1546,7 +1628,10 @@ MSNet::getRouterTT(const int rngIndex, const MSEdgeVector& prohibited) const {
 
 
 MSVehicleRouter&
-MSNet::getRouterEffort(const int rngIndex, const MSEdgeVector& prohibited) const {
+MSNet::getRouterEffort(int rngIndex, const Prohibitions& prohibited) const {
+    if (MSGlobals::gNumSimThreads == 1) {
+        rngIndex = 0;
+    }
     if (myRouterEffort.count(rngIndex) == 0) {
         myRouterEffort[rngIndex] = new DijkstraRouter<MSEdge, SUMOVehicle>(MSEdge::getAllEdges(), true, &MSNet::getEffort, &MSNet::getTravelTime, false, nullptr, true);
     }
@@ -1556,7 +1641,10 @@ MSNet::getRouterEffort(const int rngIndex, const MSEdgeVector& prohibited) const
 
 
 MSPedestrianRouter&
-MSNet::getPedestrianRouter(const int rngIndex, const MSEdgeVector& prohibited) const {
+MSNet::getPedestrianRouter(int rngIndex, const Prohibitions& prohibited) const {
+    if (MSGlobals::gNumSimThreads == 1) {
+        rngIndex = 0;
+    }
     if (myPedestrianRouter.count(rngIndex) == 0) {
         myPedestrianRouter[rngIndex] = new MSPedestrianRouter();
     }
@@ -1566,11 +1654,14 @@ MSNet::getPedestrianRouter(const int rngIndex, const MSEdgeVector& prohibited) c
 
 
 MSTransportableRouter&
-MSNet::getIntermodalRouter(const int rngIndex, const int routingMode, const MSEdgeVector& prohibited) const {
+MSNet::getIntermodalRouter(int rngIndex, const int routingMode, const Prohibitions& prohibited) const {
+    if (MSGlobals::gNumSimThreads == 1) {
+        rngIndex = 0;
+    }
     const OptionsCont& oc = OptionsCont::getOptions();
     const int key = rngIndex * oc.getInt("thread-rngs") + routingMode;
     if (myIntermodalRouter.count(key) == 0) {
-        const int carWalk = SUMOVehicleParserHelper::parseCarWalkTransfer(oc, MSDevice_Taxi::getTaxi() != nullptr);
+        const int carWalk = SUMOVehicleParserHelper::parseCarWalkTransfer(oc, MSDevice_Taxi::hasFleet() || myInserter->hasTaxiFlow());
         const std::string routingAlgorithm = OptionsCont::getOptions().getString("routing-algorithm");
         const double taxiWait = STEPS2TIME(string2time(OptionsCont::getOptions().getString("persontrip.taxi.waiting-time")));
         if (routingMode == libsumo::ROUTING_MODE_COMBINED) {

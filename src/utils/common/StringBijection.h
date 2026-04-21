@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2011-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -47,7 +47,7 @@ public:
 #endif
     /// @brief bijection entry
     struct Entry {
-        const char* str;
+        const std::string str;
         const T key;
     };
 #ifdef _MSC_VER
@@ -152,6 +152,7 @@ public:
     }
 
     /// @brief get multiline string (all strings concatenated and separated by '\n')
+    /// @note this will be removed after unifying all FXFileDialog
     std::string getMultilineString() const {
         std::string result;
         if (myT2String.size() > 0) {

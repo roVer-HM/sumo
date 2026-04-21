@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -33,8 +33,8 @@
 // member method definitions
 // ===========================================================================
 
-GNENetDiffTool::GNENetDiffTool(GNEApplicationWindow* GNEApp, const std::string& toolPath, FXMenuPane* menu) :
-    GNEPythonTool(GNEApp, toolPath, "", menu) {
+GNENetDiffTool::GNENetDiffTool(GNEApplicationWindow* applicationWindow, const std::string& toolPath, FXMenuPane* menu) :
+    GNEPythonTool(applicationWindow, toolPath, "", menu) {
     // fill options
     fillNetDiffOptions(myPythonToolsOptions);
     fillNetDiffOptions(myPythonToolsOptionsOriginal);
@@ -48,7 +48,7 @@ void
 GNENetDiffTool::setCurrentValues() {
     myPythonToolsOptions.resetWritable();
     // obtain curren network folder
-    const auto networkPath = OptionsCont::getOptions().getString("net-file");
+    const auto networkPath = OptionsCont::getOptions().getString("sumo-net-file");
     if (networkPath.empty()) {
         myPythonToolsOptions.set("outprefix", "");
     } else {
@@ -60,9 +60,9 @@ GNENetDiffTool::setCurrentValues() {
 void
 GNENetDiffTool::postProcessing() {
     // first check if there is a network
-    if (myGNEApp->getViewNet()) {
+    if (myApplicationWindow->getViewNet()) {
         // get selector operator modul from selector frame
-        auto selectorModul = myGNEApp->getViewNet()->getViewParent()->getSelectorFrame()->getSelectionOperationModul();
+        auto selectorModul = myApplicationWindow->getViewNet()->getViewParent()->getSelectorFrame()->getSelectionOperationModul();
         // select elements
         if (myPythonToolsOptions.getBool("select-modified")) {
             selectorModul->loadFromFile(myPythonToolsOptions.getString("outprefix") + ".changed.sel.txt");
@@ -149,27 +149,29 @@ GNENetDiffTool::fillNetDiffOptions(OptionsCont& options) {
 void
 GNENetDiffTool::loadShapes(const std::string& file) {
     // get undo list
-    auto undoList = myGNEApp->getUndoList();
+    auto undoList = myApplicationWindow->getUndoList();
     // disable validation for additionals
     XMLSubSys::setValidation("never", "auto", "auto");
+    // get (or create) bucket for this new file
+    auto bucket = myApplicationWindow->getFileBucketHandler()->getBucket(FileBucket::Type::ADDITIONAL, file, true);
     // Create additional handler
-    GNEGeneralHandler generalHandler(myGNEApp->getViewNet()->getNet(), file, myGNEApp->isUndoRedoAllowed(), true);
+    GNEGeneralHandler generalHandler(myApplicationWindow->getViewNet()->getNet(), bucket, myApplicationWindow->isUndoRedoAllowed());
     // begin undoList operation
     undoList->begin(Supermode::NETWORK, GUIIcon::SUPERMODENETWORK, TL("load shapes from '") + file + "'");
     // Run parser
     if (!generalHandler.parse()) {
         // write error
-        WRITE_ERROR(TL("Loading of shape file failed: ") + file);
+        WRITE_ERROR(TLF("Loading of shape file '%' failed", file));
     } else {
         // write info
-        WRITE_MESSAGE(TL("Loading of shape file successfully: ") + file);
+        WRITE_MESSAGE(TLF("Loading of shape file '%' successfully", file));
     }
     // end undoList operation
     undoList->end();
     // restore validation for additionals
     XMLSubSys::setValidation("auto", "auto", "auto");
     // update view
-    myGNEApp->getViewNet()->update();
+    myApplicationWindow->getViewNet()->update();
 }
 
 /****************************************************************************/

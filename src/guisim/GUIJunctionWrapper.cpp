@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -134,6 +134,10 @@ GUIJunctionWrapper::getExaggeration(const GUIVisualizationSettings& s) const {
 
 Boundary
 GUIJunctionWrapper::getCenteringBoundary() const {
+    if (GUIGlobals::gSecondaryShape) {
+        const Position& p = myJunction.getPosition(true);
+        return Boundary(p.x() - 1, p.y() - 1, p.x() + 1, p.y() + 1);
+    }
     Boundary b = myBoundary;
     b.grow(1);
     return b;

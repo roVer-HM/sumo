@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -233,6 +233,7 @@
 #include "icons/tracker.xpm"
 #include "icons/hall_of_fame.xpm"
 #include "icons/clear_message_window.xpm"
+#include "icons/github.xpm"
 
 #include "icons/viewdefault.xpm"
 #include "icons/viewjupedsim.xpm"
@@ -536,6 +537,15 @@
 #include "icons/sum.xpm"
 #include "icons/back.xpm"
 
+#include "icons/error_large.xpm"
+#include "icons/error_small.xpm"
+#include "icons/information_large.xpm"
+#include "icons/information_small.xpm"
+#include "icons/question_large.xpm"
+#include "icons/question_small.xpm"
+#include "icons/warning_large.xpm"
+#include "icons/warning_small.xpm"
+
 #include "icons/grid.xpm"
 #include "icons/grid1.xpm"
 #include "icons/grid2.xpm"
@@ -545,8 +555,26 @@
 #include "icons/googlemaps.xpm"
 #include "icons/osm.xpm"
 
+#include "icons/filedialog/bigfolder.xpm"
+#include "icons/filedialog/bookclr.xpm"
+#include "icons/filedialog/bookset.xpm"
+#include "icons/filedialog/dirupicon.xpm"
+#include "icons/filedialog/filecopy.xpm"
+#include "icons/filedialog/filedelete.xpm"
+#include "icons/filedialog/filehidden.xpm"
+#include "icons/filedialog/filelink.xpm"
+#include "icons/filedialog/filemove.xpm"
+#include "icons/filedialog/fileshown.xpm"
+#include "icons/filedialog/foldernew.xpm"
+#include "icons/filedialog/gotohome.xpm"
+#include "icons/filedialog/gotowork.xpm"
+#include "icons/filedialog/showbigicons.xpm"
+#include "icons/filedialog/showdetails.xpm"
+#include "icons/filedialog/showsmallicons.xpm"
+
 #include "icons/languages/de.xpm"
 #include "icons/languages/es.xpm"
+#include "icons/languages/pt.xpm"
 #include "icons/languages/fr.xpm"
 #include "icons/languages/it.xpm"
 #include "icons/languages/en.xpm"
@@ -555,6 +583,7 @@
 #include "icons/languages/zh.xpm"
 #include "icons/languages/zht.xpm"
 #include "icons/languages/ja.xpm"
+#include "icons/languages/ko.xpm"
 
 // ===========================================================================
 // static member variable definitions
@@ -598,6 +627,7 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::FULL_SCREEN] = new FXXPMIcon(a, full_screen_xpm);
     myIcons[GUIIcon::HALL_OF_FAME] = new FXXPMIcon(a, hall_of_fame_xpm);   /** temporal? **/
     myIcons[GUIIcon::CLEARMESSAGEWINDOW] = new FXXPMIcon(a, clear_message_window_xpm);
+    myIcons[GUIIcon::GITHUB] = new FXXPMIcon(a, github_xpm);
 
     myIcons[GUIIcon::VIEWDEFAULT] = new FXXPMIcon(a, viewdefault_xpm);
     myIcons[GUIIcon::VIEWJUPEDSIM] = new FXXPMIcon(a, viewjupedsim_xpm);
@@ -1085,6 +1115,15 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::SUM] = new FXXPMIcon(a, sum_xpm);
     myIcons[GUIIcon::BACK] = new FXXPMIcon(a, back_xpm);
 
+    myIcons[GUIIcon::ERROR_LARGE] = new FXXPMIcon(a, error_large_xpm);
+    myIcons[GUIIcon::ERROR_SMALL] = new FXXPMIcon(a, error_small_xpm);
+    myIcons[GUIIcon::INFORMATION_LARGE] = new FXXPMIcon(a, information_large_xpm);
+    myIcons[GUIIcon::INFORMATION_SMALL] = new FXXPMIcon(a, information_small_xpm);
+    myIcons[GUIIcon::QUESTION_LARGE] = new FXXPMIcon(a, question_large_xpm);
+    myIcons[GUIIcon::QUESTION_SMALL] = new FXXPMIcon(a, question_small_xpm);
+    myIcons[GUIIcon::WARNING_LARGE] = new FXXPMIcon(a, warning_large_xpm);
+    myIcons[GUIIcon::WARNING_SMALL] = new FXXPMIcon(a, warning_small_xpm);
+
     myIcons[GUIIcon::GRID] = new FXXPMIcon(a, grid_xpm);
     myIcons[GUIIcon::GRID1] = new FXXPMIcon(a, grid1_xpm);
     myIcons[GUIIcon::GRID2] = new FXXPMIcon(a, grid2_xpm);
@@ -1094,9 +1133,27 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::GOOGLEMAPS] = new FXXPMIcon(a, googlemaps_xpm);
     myIcons[GUIIcon::OSM] = new FXXPMIcon(a, osm_xpm);
 
+    myIcons[GUIIcon::FILEDIALOG_BOOK_CLR] = new FXXPMIcon(a, filedialog_bookclr_xpm);
+    myIcons[GUIIcon::FILEDIALOG_BOOK_SET] = new FXXPMIcon(a, filedialog_bookset_xpm);
+    myIcons[GUIIcon::FILEDIALOG_DIRUP_ICON] = new FXXPMIcon(a, filedialog_dirupicon_xpm);
+    myIcons[GUIIcon::FILEDIALOG_FILE_COPY] = new FXXPMIcon(a, filedialog_filecopy_xpm);
+    myIcons[GUIIcon::FILEDIALOG_FILE_DELETE] = new FXXPMIcon(a, filedialog_filedelete_xpm);
+    myIcons[GUIIcon::FILEDIALOG_FILE_HIDDEN] = new FXXPMIcon(a, filedialog_filehidden_xpm);
+    myIcons[GUIIcon::FILEDIALOG_FILE_LINK] = new FXXPMIcon(a, filedialog_filelink_xpm);
+    myIcons[GUIIcon::FILEDIALOG_FILE_MOVE] = new FXXPMIcon(a, filedialog_filemove_xpm);
+    myIcons[GUIIcon::FILEDIALOG_FILE_SHOWN] = new FXXPMIcon(a, filedialog_fileshown_xpm);
+    myIcons[GUIIcon::FILEDIALOG_FOLDER_BIG] = new FXXPMIcon(a, filedialog_bigfolder_xpm);
+    myIcons[GUIIcon::FILEDIALOG_FOLDER_NEW] = new FXXPMIcon(a, filedialog_foldernew_xpm);
+    myIcons[GUIIcon::FILEDIALOG_GOTO_HOME] = new FXXPMIcon(a, filedialog_gotohome_xpm);
+    myIcons[GUIIcon::FILEDIALOG_GOTO_WORK] = new FXXPMIcon(a, filedialog_gotowork_xpm);
+    myIcons[GUIIcon::FILEDIALOG_SHOW_BIGICONS] = new FXXPMIcon(a, filedialog_showbigicons_xpm);
+    myIcons[GUIIcon::FILEDIALOG_SHOW_DETAILS] = new FXXPMIcon(a, filedialog_showdetails_xpm);
+    myIcons[GUIIcon::FILEDIALOG_SHOW_SMALLICONS] = new FXXPMIcon(a, filedialog_showsmallicons_xpm);
+
     myIcons[GUIIcon::LANGUAGE_EN] = new FXXPMIcon(a, language_en_xpm);
     myIcons[GUIIcon::LANGUAGE_DE] = new FXXPMIcon(a, language_de_xpm);
     myIcons[GUIIcon::LANGUAGE_ES] = new FXXPMIcon(a, language_es_xpm);
+    myIcons[GUIIcon::LANGUAGE_PT] = new FXXPMIcon(a, language_pt_xpm);
     myIcons[GUIIcon::LANGUAGE_FR] = new FXXPMIcon(a, language_fr_xpm);
     myIcons[GUIIcon::LANGUAGE_IT] = new FXXPMIcon(a, language_it_xpm);
     myIcons[GUIIcon::LANGUAGE_HU] = new FXXPMIcon(a, language_hu_xpm);
@@ -1104,6 +1161,7 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::LANGUAGE_ZH] = new FXXPMIcon(a, language_zh_xpm);
     myIcons[GUIIcon::LANGUAGE_ZHT] = new FXXPMIcon(a, language_zht_xpm);
     myIcons[GUIIcon::LANGUAGE_JA] = new FXXPMIcon(a, language_ja_xpm);
+    myIcons[GUIIcon::LANGUAGE_KO] = new FXXPMIcon(a, language_ko_xpm);
 
     // ... and create them
     for (const auto& icon : myIcons) {

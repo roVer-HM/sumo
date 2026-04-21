@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -313,6 +313,12 @@ public:
     /// @brief mark option as positional
     void setPositional();
 
+    /// @brief check if this option is editable
+    bool isEditable() const;
+
+    /// @brief set editable
+    void setEditable(const bool value);
+
     /// @brief retrieve list separator
     const std::string& getListSeparator() const;
 
@@ -381,6 +387,9 @@ private:
 
     /// @brief this option is positional (needed for python tools)
     bool myPositional = false;
+
+    /// @brief this option can be edited using option dialog
+    bool myEditable = true;
 
     /// @brief the list separator for this option (needed for python tools)
     std::string myListSeparator = "";

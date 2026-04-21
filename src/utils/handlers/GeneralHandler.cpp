@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,22 +18,17 @@
 // General element handler
 /****************************************************************************/
 
-
-// ===========================================================================
-// included modules
-// ===========================================================================
-
+#include <utils/common/FileBucket.h>
 #include <utils/xml/XMLSubSys.h>
 
 #include "GeneralHandler.h"
-
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
 
-GeneralHandler::GeneralHandler(const std::string& file) :
-    SUMOSAXHandler(file) {
+GeneralHandler::GeneralHandler(FileBucket* fileBucket) :
+    SUMOSAXHandler(fileBucket->getFilename()) {
 }
 
 
@@ -42,10 +37,7 @@ GeneralHandler::~GeneralHandler() {}
 
 bool
 GeneralHandler::parse() {
-    // run parser and postParser Task
-    const bool parseResult = XMLSubSys::runParser(*this, getFileName());
-    const bool postTaskResult = postParserTasks();
-    return parseResult && postTaskResult;
+    return XMLSubSys::runParser(*this, getFileName());
 }
 
 

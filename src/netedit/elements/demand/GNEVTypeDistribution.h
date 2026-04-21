@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -26,54 +26,64 @@
 // class definitions
 // ===========================================================================
 
-class GNEVTypeDistribution : public GNEDemandElement, public Parameterised  {
+class GNEVTypeDistribution : public GNEDemandElement  {
 
 public:
     /// @brief default constructor
     GNEVTypeDistribution(GNENet* net);
 
     /// @brief parameter constructor
-    GNEVTypeDistribution(const std::string& ID, GNENet* net, const std::string& filename, const int deterministic);
+    GNEVTypeDistribution(const std::string& ID, GNENet* net, FileBucket* fileBucket,
+                         const int deterministic);
 
     /// @brief destructor
     ~GNEVTypeDistribution();
 
-    /**@brief get move operation
-     * @note returned GNEMoveOperation can be nullptr
-     */
-    GNEMoveOperation* getMoveOperation();
+    /// @brief methods to retrieve the elements linked to this vTypeDistribution
+    /// @{
+
+    /// @brief get GNEMoveElement associated with this vTypeDistribution
+    GNEMoveElement* getMoveElement() const override;
+
+    /// @brief get parameters associated with this vTypeDistribution
+    Parameterised* getParameters() override;
+
+    /// @brief get parameters associated with this vTypeDistribution (constant)
+    const Parameterised* getParameters() const override;
+
+    /// @}
 
     /**@brief write demand element element into a xml file
      * @param[in] device device in which write parameters of demand element element
      */
-    void writeDemandElement(OutputDevice& device) const;
+    void writeDemandElement(OutputDevice& device) const override;
 
     /// @brief check if current demand element is valid to be written into XML
-    Problem isDemandElementValid() const;
+    Problem isDemandElementValid() const override;
 
     /// @brief return a string with the current demand element problem
-    std::string getDemandElementProblem() const;
+    std::string getDemandElementProblem() const override;
 
     /// @brief fix demand element problem
-    void fixDemandElementProblem();
+    void fixDemandElementProblem() override;
 
     /// @name members and functions relative to elements common to all demand elements
     /// @{
     /// @brief obtain VClass related with this demand element
-    SUMOVehicleClass getVClass() const;
+    SUMOVehicleClass getVClass() const override;
 
     /// @brief get color
-    const RGBColor& getColor() const;
+    const RGBColor& getColor() const override;
 
     /// @}
 
     /// @name Functions related with geometry of element
     /// @{
     /// @brief update pre-computed geometry information
-    void updateGeometry();
+    void updateGeometry() override;
 
     /// @brief Returns position of additional in view
-    Position getPositionInView() const;
+    Position getPositionInView() const override;
     /// @}
 
     /// @name inherited from GUIGlObject
@@ -81,21 +91,21 @@ public:
     /**@brief Returns the name of the parent object
      * @return This object's parent id
      */
-    std::string getParentName() const;
+    std::string getParentName() const override;
 
     /**@brief Returns the boundary to which the view shall be centered in order to show the object
      * @return The boundary the object is within
      */
-    Boundary getCenteringBoundary() const;
+    Boundary getCenteringBoundary() const override;
 
     /// @brief split geometry
-    void splitEdgeGeometry(const double splitPosition, const GNENetworkElement* originalElement, const GNENetworkElement* newElement, GNEUndoList* undoList);
+    void splitEdgeGeometry(const double splitPosition, const GNENetworkElement* originalElement, const GNENetworkElement* newElement, GNEUndoList* undoList) override;
 
     /**@brief Draws the object
      * @param[in] s The settings for the current view (may influence drawing)
      * @see GUIGlObject::drawGL
      */
-    void drawGL(const GUIVisualizationSettings& s) const;
+    void drawGL(const GUIVisualizationSettings& s) const override;
 
     /// @}
 
@@ -103,27 +113,27 @@ public:
     /// @{
 
     /// @brief compute pathElement
-    void computePathElement();
+    void computePathElement() override;
 
     /**@brief Draws partial object over lane
      * @param[in] s The settings for the current view (may influence drawing)
      * @param[in] segment lane segment
      * @param[in] offsetFront front offset
      */
-    void drawLanePartialGL(const GUIVisualizationSettings& s, const GNESegment* segment, const double offsetFront) const;
+    void drawLanePartialGL(const GUIVisualizationSettings& s, const GNESegment* segment, const double offsetFront) const override;
 
     /**@brief Draws partial object over junction
      * @param[in] s The settings for the current view (may influence drawing)
      * @param[in] segment junction segment
      * @param[in] offsetFront front offset
      */
-    void drawJunctionPartialGL(const GUIVisualizationSettings& s, const GNESegment* segment, const double offsetFront) const;
+    void drawJunctionPartialGL(const GUIVisualizationSettings& s, const GNESegment* segment, const double offsetFront) const override;
 
     /// @brief get first path lane
-    GNELane* getFirstPathLane() const;
+    GNELane* getFirstPathLane() const override;
 
     /// @brief get last path lane
-    GNELane* getLastPathLane() const;
+    GNELane* getLastPathLane() const override;
     /// @}
 
     /// @brief inherited from GNEAttributeCarrier
@@ -132,19 +142,19 @@ public:
      * @param[in] key The attribute key
      * @return string with the value associated to key
      */
-    std::string getAttribute(SumoXMLAttr key) const;
+    std::string getAttribute(SumoXMLAttr key) const override;
 
-    /* @brief method for getting the Attribute of an XML key in double format (to avoid unnecessary parse<double>(...) for certain attributes)
+    /* @brief method for getting the Attribute of an XML key in double format
      * @param[in] key The attribute key
      * @return double with the value associated to key
      */
-    double getAttributeDouble(SumoXMLAttr key) const;
+    double getAttributeDouble(SumoXMLAttr key) const override;
 
-    /* @brief method for getting the Attribute of an XML key in Position format (used in person plans)
+    /* @brief method for getting the Attribute of an XML key in position format
      * @param[in] key The attribute key
-     * @return double with the value associated to key
+     * @return position with the value associated to key
      */
-    Position getAttributePosition(SumoXMLAttr key) const;
+    Position getAttributePosition(SumoXMLAttr key) const override;
 
     /* @brief method for setting the attribute and letting the object perform additional changes
      * @param[in] key The attribute key
@@ -152,24 +162,21 @@ public:
      * @param[in] undoList The undoList on which to register changes
      * @param[in] net optionally the GNENet to inform about gui updates
      */
-    void setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList);
+    void setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList) override;
 
     /* @brief method for setting the attribute and letting the object perform additional changes
      * @param[in] key The attribute key
      * @param[in] value The new value
      * @param[in] undoList The undoList on which to register changes
      */
-    bool isValid(SumoXMLAttr key, const std::string& value);
+    bool isValid(SumoXMLAttr key, const std::string& value) override;
 
     /// @brief get PopPup ID (Used in AC Hierarchy)
-    std::string getPopUpID() const;
+    std::string getPopUpID() const override;
 
     /// @brief get Hierarchy Name (Used in AC Hierarchy)
-    std::string getHierarchyName() const;
+    std::string getHierarchyName() const override;
     /// @}
-
-    /// @brief get parameters map
-    const Parameterised::Map& getACParametersMap() const;
 
 protected:
     /// @brief deterministic distribution
@@ -177,13 +184,7 @@ protected:
 
 private:
     /// @brief method for setting the attribute and nothing else
-    void setAttribute(SumoXMLAttr key, const std::string& value);
-
-    /// @brief set move shape
-    void setMoveShape(const GNEMoveResult& moveResult);
-
-    /// @brief commit move shape
-    void commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList);
+    void setAttribute(SumoXMLAttr key, const std::string& value) override;
 
     /// @brief Invalidated copy constructor.
     GNEVTypeDistribution(GNEVTypeDistribution*) = delete;

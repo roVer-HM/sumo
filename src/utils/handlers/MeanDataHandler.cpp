@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -30,8 +30,8 @@
 // method definitions
 // ===========================================================================
 
-MeanDataHandler::MeanDataHandler(const std::string& filename) :
-    CommonHandler(filename) {
+MeanDataHandler::MeanDataHandler(FileBucket* fileBucket) :
+    CommonHandler(fileBucket) {
 }
 
 
@@ -90,59 +90,64 @@ MeanDataHandler::endParseAttributes() {
 
 void
 MeanDataHandler::parseSumoBaseObject(CommonXMLStructure::SumoBaseObject* obj) {
-    // switch tag
-    switch (obj->getTag()) {
-        case SUMO_TAG_MEANDATA_EDGE:
-            if (buildEdgeMeanData(obj,
-                                  obj->getStringAttribute(SUMO_ATTR_ID),
-                                  obj->getStringAttribute(SUMO_ATTR_FILE),
-                                  obj->getTimeAttribute(SUMO_ATTR_PERIOD),
-                                  obj->getTimeAttribute(SUMO_ATTR_BEGIN),
-                                  obj->getTimeAttribute(SUMO_ATTR_END),
-                                  obj->getBoolAttribute(SUMO_ATTR_TRACK_VEHICLES),
-                                  obj->getStringListAttribute(SUMO_ATTR_WRITE_ATTRIBUTES),
-                                  obj->getBoolAttribute(SUMO_ATTR_AGGREGATE),
-                                  obj->getStringListAttribute(SUMO_ATTR_EDGES),
-                                  obj->getStringAttribute(SUMO_ATTR_EDGESFILE),
-                                  obj->getStringAttribute(SUMO_ATTR_EXCLUDE_EMPTY),
-                                  obj->getBoolAttribute(SUMO_ATTR_WITH_INTERNAL),
-                                  obj->getStringListAttribute(SUMO_ATTR_DETECT_PERSONS),
-                                  obj->getDoubleAttribute(SUMO_ATTR_MIN_SAMPLES),
-                                  obj->getDoubleAttribute(SUMO_ATTR_MAX_TRAVELTIME),
-                                  obj->getStringListAttribute(SUMO_ATTR_VTYPES),
-                                  obj->getDoubleAttribute(SUMO_ATTR_HALTING_SPEED_THRESHOLD))) {
-                obj->markAsCreated();
-            };
-            break;
-        case SUMO_TAG_MEANDATA_LANE:
-            if (buildLaneMeanData(obj,
-                                  obj->getStringAttribute(SUMO_ATTR_ID),
-                                  obj->getStringAttribute(SUMO_ATTR_FILE),
-                                  obj->getTimeAttribute(SUMO_ATTR_PERIOD),
-                                  obj->getTimeAttribute(SUMO_ATTR_BEGIN),
-                                  obj->getTimeAttribute(SUMO_ATTR_END),
-                                  obj->getBoolAttribute(SUMO_ATTR_TRACK_VEHICLES),
-                                  obj->getStringListAttribute(SUMO_ATTR_WRITE_ATTRIBUTES),
-                                  obj->getBoolAttribute(SUMO_ATTR_AGGREGATE),
-                                  obj->getStringListAttribute(SUMO_ATTR_EDGES),
-                                  obj->getStringAttribute(SUMO_ATTR_EDGESFILE),
-                                  obj->getStringAttribute(SUMO_ATTR_EXCLUDE_EMPTY),
-                                  obj->getBoolAttribute(SUMO_ATTR_WITH_INTERNAL),
-                                  obj->getStringListAttribute(SUMO_ATTR_DETECT_PERSONS),
-                                  obj->getDoubleAttribute(SUMO_ATTR_MIN_SAMPLES),
-                                  obj->getDoubleAttribute(SUMO_ATTR_MAX_TRAVELTIME),
-                                  obj->getStringListAttribute(SUMO_ATTR_VTYPES),
-                                  obj->getDoubleAttribute(SUMO_ATTR_HALTING_SPEED_THRESHOLD))) {
-                obj->markAsCreated();
-            }
-            break;
-        default:
-            break;
-    }
-    // now iterate over childrens
-    for (const auto& child : obj->getSumoBaseObjectChildren()) {
-        // call this function recursively
-        parseSumoBaseObject(child);
+    // check if loading was aborted
+    if (!myAbortLoading) {
+        // switch tag
+        switch (obj->getTag()) {
+            case SUMO_TAG_MEANDATA_EDGE:
+                if (buildEdgeMeanData(obj,
+                                      obj->getStringAttribute(SUMO_ATTR_ID),
+                                      obj->getStringAttribute(SUMO_ATTR_FILE),
+                                      obj->getStringAttribute(SUMO_ATTR_TYPE),
+                                      obj->getTimeAttribute(SUMO_ATTR_PERIOD),
+                                      obj->getTimeAttribute(SUMO_ATTR_BEGIN),
+                                      obj->getTimeAttribute(SUMO_ATTR_END),
+                                      obj->getBoolAttribute(SUMO_ATTR_TRACK_VEHICLES),
+                                      obj->getStringListAttribute(SUMO_ATTR_WRITE_ATTRIBUTES),
+                                      obj->getBoolAttribute(SUMO_ATTR_AGGREGATE),
+                                      obj->getStringListAttribute(SUMO_ATTR_EDGES),
+                                      obj->getStringAttribute(SUMO_ATTR_EDGESFILE),
+                                      obj->getStringAttribute(SUMO_ATTR_EXCLUDE_EMPTY),
+                                      obj->getBoolAttribute(SUMO_ATTR_WITH_INTERNAL),
+                                      obj->getStringListAttribute(SUMO_ATTR_DETECT_PERSONS),
+                                      obj->getDoubleAttribute(SUMO_ATTR_MIN_SAMPLES),
+                                      obj->getDoubleAttribute(SUMO_ATTR_MAX_TRAVELTIME),
+                                      obj->getStringListAttribute(SUMO_ATTR_VTYPES),
+                                      obj->getDoubleAttribute(SUMO_ATTR_HALTING_SPEED_THRESHOLD))) {
+                    obj->markAsCreated();
+                };
+                break;
+            case SUMO_TAG_MEANDATA_LANE:
+                if (buildLaneMeanData(obj,
+                                      obj->getStringAttribute(SUMO_ATTR_ID),
+                                      obj->getStringAttribute(SUMO_ATTR_FILE),
+                                      obj->getStringAttribute(SUMO_ATTR_TYPE),
+                                      obj->getTimeAttribute(SUMO_ATTR_PERIOD),
+                                      obj->getTimeAttribute(SUMO_ATTR_BEGIN),
+                                      obj->getTimeAttribute(SUMO_ATTR_END),
+                                      obj->getBoolAttribute(SUMO_ATTR_TRACK_VEHICLES),
+                                      obj->getStringListAttribute(SUMO_ATTR_WRITE_ATTRIBUTES),
+                                      obj->getBoolAttribute(SUMO_ATTR_AGGREGATE),
+                                      obj->getStringListAttribute(SUMO_ATTR_EDGES),
+                                      obj->getStringAttribute(SUMO_ATTR_EDGESFILE),
+                                      obj->getStringAttribute(SUMO_ATTR_EXCLUDE_EMPTY),
+                                      obj->getBoolAttribute(SUMO_ATTR_WITH_INTERNAL),
+                                      obj->getStringListAttribute(SUMO_ATTR_DETECT_PERSONS),
+                                      obj->getDoubleAttribute(SUMO_ATTR_MIN_SAMPLES),
+                                      obj->getDoubleAttribute(SUMO_ATTR_MAX_TRAVELTIME),
+                                      obj->getStringListAttribute(SUMO_ATTR_VTYPES),
+                                      obj->getDoubleAttribute(SUMO_ATTR_HALTING_SPEED_THRESHOLD))) {
+                    obj->markAsCreated();
+                }
+                break;
+            default:
+                break;
+        }
+        // now iterate over childrens
+        for (const auto& child : obj->getSumoBaseObjectChildren()) {
+            // call this function recursively
+            parseSumoBaseObject(child);
+        }
     }
 }
 
@@ -155,6 +160,7 @@ MeanDataHandler::parseEdgeMeanData(const SUMOSAXAttributes& attrs) {
     const std::string id = attrs.get<std::string>(SUMO_ATTR_ID, "", parsedOk);
     const std::string file = attrs.get<std::string>(SUMO_ATTR_FILE, id.c_str(), parsedOk);
     // optional attributes
+    std::string type = attrs.getOpt<std::string>(SUMO_ATTR_TYPE, id.c_str(), parsedOk, "");
     const SUMOTime period = attrs.getOptSUMOTimeReporting(SUMO_ATTR_PERIOD, id.c_str(), parsedOk, TIME2STEPS(-1));
     const SUMOTime begin = attrs.getOptSUMOTimeReporting(SUMO_ATTR_BEGIN, id.c_str(), parsedOk, TIME2STEPS(-1));
     const SUMOTime end = attrs.getOptSUMOTimeReporting(SUMO_ATTR_END, id.c_str(), parsedOk, TIME2STEPS(-1));
@@ -170,13 +176,21 @@ MeanDataHandler::parseEdgeMeanData(const SUMOSAXAttributes& attrs) {
     const double maxTravel = attrs.getOpt<double>(SUMO_ATTR_MAX_TRAVELTIME, id.c_str(), parsedOk, 100000);
     const std::vector<std::string> vTypes = attrs.getOpt<std::vector<std::string> >(SUMO_ATTR_VTYPES, id.c_str(), parsedOk, {});
     const double speedThreshold = attrs.getOpt<double>(SUMO_ATTR_HALTING_SPEED_THRESHOLD, id.c_str(), parsedOk, 0.1);
+    // adjust type
+    if (type == "performance") {
+        type = "";
+    } else if (type == "hbefa") {
+        WRITE_WARNING(TL("The netstate type 'hbefa' is deprecated. Using 'emissions' instead."));
+        type = "emissions";
+    }
     // continue if flag is ok
-    if (parsedOk) {
+    if (parsedOk && checkType(SUMO_TAG_MEANDATA_EDGE, id, type)) {
         // set tag
         myCommonXMLStructure.getCurrentSumoBaseObject()->setTag(SUMO_TAG_MEANDATA_EDGE);
         // add all attributes
         myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_ID, id);
         myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_FILE, file);
+        myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_TYPE, type);
         myCommonXMLStructure.getCurrentSumoBaseObject()->addTimeAttribute(SUMO_ATTR_PERIOD, period);
         myCommonXMLStructure.getCurrentSumoBaseObject()->addTimeAttribute(SUMO_ATTR_BEGIN, begin);
         myCommonXMLStructure.getCurrentSumoBaseObject()->addTimeAttribute(SUMO_ATTR_END, end);
@@ -206,6 +220,7 @@ MeanDataHandler::parseLaneMeanData(const SUMOSAXAttributes& attrs) {
     const std::string id = attrs.get<std::string>(SUMO_ATTR_ID, "", parsedOk);
     const std::string file = attrs.get<std::string>(SUMO_ATTR_FILE, id.c_str(), parsedOk);
     // optional attributes
+    const std::string type = attrs.getOpt<std::string>(SUMO_ATTR_TYPE, id.c_str(), parsedOk, "");
     const SUMOTime period = attrs.getOptSUMOTimeReporting(SUMO_ATTR_PERIOD, id.c_str(), parsedOk, TIME2STEPS(-1));
     const SUMOTime begin = attrs.getOptSUMOTimeReporting(SUMO_ATTR_BEGIN, id.c_str(), parsedOk, TIME2STEPS(-1));
     const SUMOTime end = attrs.getOptSUMOTimeReporting(SUMO_ATTR_END, id.c_str(), parsedOk, TIME2STEPS(-1));
@@ -222,12 +237,13 @@ MeanDataHandler::parseLaneMeanData(const SUMOSAXAttributes& attrs) {
     const std::vector<std::string> vTypes = attrs.getOpt<std::vector<std::string> >(SUMO_ATTR_VTYPES, id.c_str(), parsedOk, {});
     const double speedThreshold = attrs.getOpt<double>(SUMO_ATTR_HALTING_SPEED_THRESHOLD, id.c_str(), parsedOk, 0.1);
     // continue if flag is ok
-    if (parsedOk) {
+    if (parsedOk && checkType(SUMO_TAG_MEANDATA_LANE, id, type)) {
         // set tag
         myCommonXMLStructure.getCurrentSumoBaseObject()->setTag(SUMO_TAG_MEANDATA_LANE);
         // add all attributes
         myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_ID, id);
         myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_FILE, file);
+        myCommonXMLStructure.getCurrentSumoBaseObject()->addStringAttribute(SUMO_ATTR_TYPE, type);
         myCommonXMLStructure.getCurrentSumoBaseObject()->addTimeAttribute(SUMO_ATTR_PERIOD, period);
         myCommonXMLStructure.getCurrentSumoBaseObject()->addTimeAttribute(SUMO_ATTR_BEGIN, begin);
         myCommonXMLStructure.getCurrentSumoBaseObject()->addTimeAttribute(SUMO_ATTR_END, end);
@@ -245,6 +261,17 @@ MeanDataHandler::parseLaneMeanData(const SUMOSAXAttributes& attrs) {
         myCommonXMLStructure.getCurrentSumoBaseObject()->addDoubleAttribute(SUMO_ATTR_HALTING_SPEED_THRESHOLD, speedThreshold);
     } else {
         myCommonXMLStructure.getCurrentSumoBaseObject()->setTag(SUMO_TAG_ERROR);
+    }
+}
+
+
+bool
+MeanDataHandler::checkType(const SumoXMLTag currentTag, const std::string& id, const std::string& type) {
+    if (SUMOXMLDefinitions::MeanDataTypes.hasString(type)) {
+        return true;
+    } else {
+        writeError(TLF("Attribute '%' defined in % with id '%' doesn't have a valid value (given '%').", toString(SUMO_ATTR_TYPE), toString(currentTag), id, type));
+        return false;
     }
 }
 

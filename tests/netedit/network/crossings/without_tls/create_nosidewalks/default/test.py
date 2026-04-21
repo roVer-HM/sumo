@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,20 +19,17 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # Rebuild network
-netedit.rebuildNetwork()
+netedit.computeJunctions()
 
 # set crossing mode
-netedit.crossingMode()
+netedit.changeMode("crossing")
 
 # select central node
 netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.center)
@@ -41,23 +38,17 @@ netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.ce
 netedit.leftClick(referencePosition, netedit.positions.network.edge.leftTop)
 netedit.leftClick(referencePosition, netedit.positions.network.edge.leftBot)
 netedit.createCrossing(False)
-netedit.rebuildNetwork()
+netedit.computeJunctions()
 
 # Check undo redo
 netedit.undo(referencePosition, 1)
 
-netedit.rebuildNetwork()
+netedit.computeJunctions()
 
 netedit.redo(referencePosition, 1)
 
-# save network
-netedit.saveNetwork(True, referencePosition)
-
-# press space to fix crossings
-netedit.typeSpace()
-
-# save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+# fix crossings
+netedit.fixCrossings("removeInvalidCrossings")
 
 # quit netedit
 netedit.quit(neteditProcess)

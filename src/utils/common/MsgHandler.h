@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2003-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2003-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -161,16 +161,23 @@ public:
         return *this;
     }
 
+    void setAggregationThreshold(const int thresh) {
+        myAggregationThreshold = thresh;
+    }
+
+    int getAggregationThreshold() const {
+        return myAggregationThreshold;
+    }
+
 protected:
 
-    std::string buildTimestampPrefix(void) const;
-    std::string buildProcessIdPrefix(void) const;
+    std::string buildProcessIdPrefix() const;
 
     /// @brief Builds the string which includes the mml-message type
     inline std::string build(const std::string& msg, bool addType) {
         std::string prefix;
         if (myWriteTimestamps) {
-            prefix += buildTimestampPrefix();
+            prefix += "[" + StringUtils::isoTimeString() + "] ";
         }
         if (myWriteProcessId) {
             prefix += buildProcessIdPrefix();
@@ -200,10 +207,6 @@ protected:
 
     virtual bool aggregationThresholdReached(const std::string& format) {
         return myAggregationThreshold >= 0 && myAggregationCount[format]++ >= myAggregationThreshold;
-    }
-
-    void setAggregationThreshold(const int thresh) {
-        myAggregationThreshold = thresh;
     }
 
     /// @brief standard constructor

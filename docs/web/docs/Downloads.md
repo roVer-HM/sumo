@@ -57,6 +57,7 @@ repositories include a nightly build as well (called ***sumo-git***).
 - [openSUSE Leap 15.4 repository](https://download.opensuse.org/repositories/science:/dlr/15.4/)
 - [openSUSE Leap 15.5 repository](https://download.opensuse.org/repositories/science:/dlr/15.5/)
 - [openSUSE Leap 15.6 repository](https://download.opensuse.org/repositories/science:/dlr/15.6/)
+- [openSUSE Leap 16.0 repository](https://download.opensuse.org/repositories/science:/dlr/16.0/)
 - [openSUSE Tumbleweed repository](https://download.opensuse.org/repositories/science:/dlr/openSUSE_Tumbleweed/)
 - [Fedora 36 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_36/)
 - [Fedora 37 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_37/)
@@ -65,12 +66,14 @@ repositories include a nightly build as well (called ***sumo-git***).
 - [Fedora 40 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_40/)
 - [Fedora 41 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_41/)
 - [Fedora 42 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_42/)
+- [Fedora 43 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_43/)
 - [Fedora Rawhide repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_Rawhide/)
 - [CentOS 7 repository](https://download.opensuse.org/repositories/science:/dlr/CentOS_7/)
 - [Debian 9 repository](https://download.opensuse.org/repositories/science:/dlr/Debian_9.0/)
 - [Debian 10 repository](https://download.opensuse.org/repositories/science:/dlr/Debian_10/)
 - [Debian 11 repository](https://download.opensuse.org/repositories/science:/dlr/Debian_11/)
 - [Debian 12 repository](https://download.opensuse.org/repositories/science:/dlr/Debian_12/)
+- [Debian 13 repository](https://download.opensuse.org/repositories/science:/dlr/Debian_13/)
 - [Debian Testing repository](https://download.opensuse.org/repositories/science:/dlr/Debian_Testing/)
 - [Debian Unstable repository](https://download.opensuse.org/repositories/science:/dlr/Debian_Unstable/)
 - [xUbuntu 16.04 repository](https://download.opensuse.org/repositories/science:/dlr/xUbuntu_16.04/)
@@ -78,6 +81,7 @@ repositories include a nightly build as well (called ***sumo-git***).
 - [xUbuntu 20.04 repository](https://download.opensuse.org/repositories/science:/dlr/xUbuntu_20.04/)
 - [xUbuntu 22.04 repository](https://download.opensuse.org/repositories/science:/dlr/xUbuntu_22.04/)
 - [xUbuntu 24.04 repository](https://download.opensuse.org/repositories/science:/dlr/xUbuntu_24.04/)
+- [Arch repository](https://download.opensuse.org/repositories/science:/dlr/Arch/)
 
 Furthermore there are a debian and an ubuntu
 launchpad project as well as an archlinux package:
@@ -151,15 +155,19 @@ Starting with SUMO 1.8.0 (for macOS since 1.12.0) the installation is also possi
 
 You can install either the applications: `pip install eclipse-sumo` or only traci (`pip install traci`), libsumo (`pip install libsumo`) or sumolib (`pip install sumolib`).
 
-This should work for Windows, macOS and all Linux versions which are more recent than 2014.
-The applications are available for Python 2 and Python 3, libsumo only for Python 3.6 and above. This gives an easy way to test
+This should work for Windows, macOS and all Linux versions which are more recent than 2014. Linux wheels are provided in four flavours:
+[manylinux2014 and manylinux_2_28](https://github.com/pypa/manylinux) for x86_64 and aarch64. manylinux2014 is missing some components such as GDAL and JuPedSim but manylinux_2_28 should be feature complete
+(pip usually chooses the newest version compatible with your system, so unless you are still on CentOS 7 or openSUSE 15.x you should be fine).
+
+The applications are available for Python 2 and Python 3, libsumo only for Python 3.9 and above. This gives an easy way to test
 a new SUMO version via [virtual environments](https://docs.python.org/3/library/venv.html) or a nightly build using the following commands (on Linux):
 ```
 python -m venv sumo_test
-cd sumo_test
-. bin/activate
+. sumo_test/bin/activate
 pip install eclipse-sumo
+python -c "import sumo; print('SUMO_HOME=' + sumo.SUMO_HOME)"
 ```
+The last line prints the value to set for the SUMO_HOME environment variable when using this virtual environment.
 
 !!! caution "macOS dependencies"
     In order to use the Python wheels on macOS you need to have all the dependencies installed and up to date via brew for instance by following the [standard installation](Installing/index.md#macos) once.
@@ -199,18 +207,21 @@ see [the notes below](Downloads.md#note_on_licensing). The following packages ca
 <li>Windows zip with all extras (contains GPL code): <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-win64extra-git.zip">https://sumo.dlr.de/daily/sumo-win64extra-git.zip</a><?php getInfo("sumo-win64extra-git.zip","d",true);?></li>
 <li>Windows 64-bit binaries of the SUMO game: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-game-win64-git.zip">https://sumo.dlr.de/daily/sumo-game-win64-git.zip</a><?php getInfo("sumo-game-win64-git.zip","d",true);?></li>
 <li>Windows 64-bit debug version: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-win64Debug-git.zip">https://sumo.dlr.de/daily/sumo-win64Debug-git.zip</a><?php getInfo("sumo-win64Debug-git.zip","d",true);?></li>
+<li>macOS pkg installer: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-git.pkg">sumo-git.pkg</a><?php getInfo("sumo-git.pkg","r",false);?></li>
 </ul>
 
-The nightly builds are also available as [Python wheels](https://sumo.dlr.de/daily/wheels/).
+The nightly builds are also available as [home made Python wheels](https://sumo.dlr.de/daily/wheels/) and
+[Python wheels built by GitHub Actions](https://sumo.dlr.de/daily/ciwheels/). The latter are usually preferred,
+since they cover more different Python versions, especially for Windows and macOS. But if you prefer a binary from Berlin
+use the first source.
 To install the latest nightly version (it is strongly encouraged to do this in a virtual environment) use [the instructions above](#python_packages_virtual_environments) replacing the install line with:
 ```
-pip install -f https://sumo.dlr.de/daily/wheels/ eclipse-sumo
+pip install -f https://sumo.dlr.de/daily/ciwheels/ eclipse-sumo
 ```
 Although this is a python package, it contains all compiled SUMO binaries and should be fully functional (see the requirements in [the section above](#python_packages_virtual_environments)).
 The nightly python wheels are also available for libsumo, sumolib and traci.
 
 The Linux [repositories](#repositories) at the open build service contain a nightly build as well.
-This is unfortunately not the case for the Debian, Ubuntu and Arch versions.
 
 [The corresponding documentation](https://sumo.dlr.de/daily/userdoc) is
 also visible live including [Doxygen

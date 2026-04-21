@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,13 +19,10 @@
 /****************************************************************************/
 #include <config.h>
 
+#include <netedit/changes/GNEChange_Attribute.h>
+#include <netedit/elements/moving/GNEMoveElementView.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagProperties.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/GNEViewParent.h>
-#include <netedit/changes/GNEChange_Attribute.h>
-#include <netedit/frames/network/GNETLSEditorFrame.h>
 
 #include "GNEMultiEntryExitDetector.h"
 
@@ -34,16 +31,17 @@
 // ===========================================================================
 
 GNEMultiEntryExitDetector::GNEMultiEntryExitDetector(GNENet* net) :
-    GNEAdditional("", net, "", SUMO_TAG_ENTRY_EXIT_DETECTOR, "") {
+    GNEAdditional(net, SUMO_TAG_ENTRY_EXIT_DETECTOR),
+    GNEAdditionalSquared(this) {
 }
 
 
-GNEMultiEntryExitDetector::GNEMultiEntryExitDetector(const std::string& id, GNENet* net, const std::string& filename, const Position pos, const SUMOTime freq,
+GNEMultiEntryExitDetector::GNEMultiEntryExitDetector(const std::string& id, GNENet* net, FileBucket* fileBucket, const Position pos, const SUMOTime freq,
         const std::string& outputFilename, const std::vector<std::string>& vehicleTypes, const std::vector<std::string>& nextEdges, const std::string& detectPersons,
         const std::string& name, const SUMOTime timeThreshold, const double speedThreshold, const bool openEntry, const bool expectedArrival, const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, filename, SUMO_TAG_ENTRY_EXIT_DETECTOR, name),
+    GNEAdditional(id, net, SUMO_TAG_ENTRY_EXIT_DETECTOR, fileBucket, name),
+    GNEAdditionalSquared(this, pos),
     Parameterised(parameters),
-    myPosition(pos),
     myPeriod(freq),
     myOutputFilename(outputFilename),
     myVehicleTypes(vehicleTypes),
@@ -55,16 +53,32 @@ GNEMultiEntryExitDetector::GNEMultiEntryExitDetector(const std::string& id, GNEN
     myExpectedArrival(expectedArrival) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
+    // set default output filename
+    if (outputFilename.empty()) {
+        myOutputFilename = id + ".xml";
+    }
 }
 
 
-GNEMultiEntryExitDetector::~GNEMultiEntryExitDetector() {}
+GNEMultiEntryExitDetector::~GNEMultiEntryExitDetector() {
+}
 
 
-GNEMoveOperation*
-GNEMultiEntryExitDetector::getMoveOperation() {
-    // return move operation for additional placed in view
-    return new GNEMoveOperation(this, myPosition);
+GNEMoveElement*
+GNEMultiEntryExitDetector::getMoveElement() const {
+    return myMoveElementView;
+}
+
+
+Parameterised*
+GNEMultiEntryExitDetector::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNEMultiEntryExitDetector::getParameters() const {
+    return this;
 }
 
 
@@ -83,11 +97,11 @@ GNEMultiEntryExitDetector::writeAdditional(OutputDevice& device) const {
     // check entry/exits
     if (entry && exit) {
         device.openTag(getTagProperty()->getTag());
-        device.writeAttr(SUMO_ATTR_ID, getID());
-        if (!myAdditionalName.empty()) {
-            device.writeAttr(SUMO_ATTR_NAME, StringUtils::escapeXML(myAdditionalName));
-        }
-        device.writeAttr(SUMO_ATTR_POSITION, myPosition);
+        // write common additional attributes
+        writeAdditionalAttributes(device);
+        // write move atributes
+        myMoveElementView->writeMoveAttributes(device);
+        // write specific attributes
         if (getAttribute(SUMO_ATTR_PERIOD).size() > 0) {
             device.writeAttr(SUMO_ATTR_PERIOD, time2string(myPeriod));
         }
@@ -158,33 +172,19 @@ GNEMultiEntryExitDetector::checkDrawMoveContour() const {
 
 void
 GNEMultiEntryExitDetector::updateGeometry() {
-    // update additional geometry
-    myAdditionalGeometry.updateSinglePosGeometry(myPosition, 0);
+    updatedSquaredGeometry();
 }
 
 
 Position
 GNEMultiEntryExitDetector::getPositionInView() const {
-    return myPosition;
+    return myPosOverView;
 }
 
 
 void
 GNEMultiEntryExitDetector::updateCenteringBoundary(const bool updateGrid) {
-    // remove additional from grid
-    if (updateGrid) {
-        myNet->removeGLObjectFromGrid(this);
-    }
-    // now update geometry
-    updateGeometry();
-    // add shape boundary
-    myAdditionalBoundary = myAdditionalGeometry.getShape().getBoxBoundary();
-    // grow
-    myAdditionalBoundary.grow(5);
-    // add additional into RTREE again
-    if (updateGrid) {
-        myNet->addGLObjectIntoGrid(this);
-    }
+    updatedSquaredCenteringBoundary(updateGrid);
 }
 
 
@@ -208,7 +208,7 @@ GNEMultiEntryExitDetector::drawGL(const GUIVisualizationSettings& s) const {
         // draw parent and child lines
         drawParentChildLines(s, s.additionalSettings.connectionColor);
         // draw E3
-        drawSquaredAdditional(s, myPosition, s.detectorSettings.E3Size, GUITexture::E3, GUITexture::E3_SELECTED);
+        drawSquaredAdditional(s, s.detectorSettings.E3Size, GUITexture::E3, GUITexture::E3_SELECTED);
     }
 }
 
@@ -218,8 +218,6 @@ GNEMultiEntryExitDetector::getAttribute(SumoXMLAttr key) const {
     switch (key) {
         case SUMO_ATTR_ID:
             return getMicrosimID();
-        case SUMO_ATTR_POSITION:
-            return toString(myPosition);
         case SUMO_ATTR_PERIOD:
             if (myPeriod == SUMOTime_MAX_PERIOD) {
                 return "";
@@ -245,20 +243,26 @@ GNEMultiEntryExitDetector::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_EXPECT_ARRIVAL:
             return toString(myExpectedArrival);
         default:
-            return getCommonAttribute(this, key);
+            return myMoveElementView->getMovingAttribute(key);
     }
 }
 
 
 double
 GNEMultiEntryExitDetector::getAttributeDouble(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
+    return myMoveElementView->getMovingAttributeDouble(key);
 }
 
 
-const Parameterised::Map&
-GNEMultiEntryExitDetector::getACParametersMap() const {
-    return getParametersMap();
+Position
+GNEMultiEntryExitDetector::getAttributePosition(SumoXMLAttr key) const {
+    return myMoveElementView->getMovingAttributePosition(key);
+}
+
+
+PositionVector
+GNEMultiEntryExitDetector::getAttributePositionVector(SumoXMLAttr key) const {
+    return myMoveElementView->getMovingAttributePositionVector(key);
 }
 
 
@@ -270,7 +274,6 @@ GNEMultiEntryExitDetector::setAttribute(SumoXMLAttr key, const std::string& valu
     switch (key) {
         case SUMO_ATTR_ID:
         case SUMO_ATTR_PERIOD:
-        case SUMO_ATTR_POSITION:
         case SUMO_ATTR_NAME:
         case SUMO_ATTR_FILE:
         case SUMO_ATTR_VTYPES:
@@ -283,7 +286,7 @@ GNEMultiEntryExitDetector::setAttribute(SumoXMLAttr key, const std::string& valu
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            setCommonAttribute(key, value, undoList);
+            myMoveElementView->setMovingAttribute(key, value, undoList);
             break;
     }
 }
@@ -294,8 +297,6 @@ GNEMultiEntryExitDetector::isValid(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_ID:
             return isValidDetectorID(value);
-        case SUMO_ATTR_POSITION:
-            return canParse<Position>(value);
         case SUMO_ATTR_PERIOD:
             if (value.empty()) {
                 return true;
@@ -331,7 +332,7 @@ GNEMultiEntryExitDetector::isValid(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_EXPECT_ARRIVAL:
             return canParse<bool>(value);
         default:
-            return isCommonValid(key, value);
+            return myMoveElementView->isMovingAttributeValid(key, value);
     }
 }
 
@@ -382,13 +383,6 @@ GNEMultiEntryExitDetector::setAttribute(SumoXMLAttr key, const std::string& valu
             // update microsimID
             setAdditionalID(value);
             break;
-        case SUMO_ATTR_POSITION:
-            myPosition = parse<Position>(value);
-            // update boundary (except for template)
-            if (getID().size() > 0) {
-                updateCenteringBoundary(true);
-            }
-            break;
         case SUMO_ATTR_PERIOD:
             if (value.empty()) {
                 myPeriod = SUMOTime_MAX_PERIOD;
@@ -424,27 +418,13 @@ GNEMultiEntryExitDetector::setAttribute(SumoXMLAttr key, const std::string& valu
             myExpectedArrival = parse<bool>(value);
             break;
         default:
-            setCommonAttribute(this, key, value);
+            myMoveElementView->setMovingAttribute(key, value);
             break;
     }
+    // update boundary (except for template)
+    if (getID().size() > 0) {
+        updateCenteringBoundary(true);
+    }
 }
-
-
-void
-GNEMultiEntryExitDetector::setMoveShape(const GNEMoveResult& moveResult) {
-    // update position
-    myPosition = moveResult.shapeToUpdate.front();
-    // update geometry
-    updateGeometry();
-}
-
-
-void
-GNEMultiEntryExitDetector::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
-    undoList->begin(this, "position of " + getTagStr());
-    GNEChange_Attribute::changeAttribute(this, SUMO_ATTR_POSITION, toString(moveResult.shapeToUpdate.front()), undoList);
-    undoList->end();
-}
-
 
 /****************************************************************************/

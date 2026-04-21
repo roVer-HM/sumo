@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,78 +19,75 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # go to select mode
-netedit.selectMode()
+netedit.changeMode("select")
 
 # try to select node gneJ0 and delete it (Error in element set)
 netedit.focusOnFrame()
 for x in range(0, 8):
-    netedit.typeTab()
+    netedit.typeKey("tab")
 
 # paste the new elementClass
-netedit.pasteIntoTextField("dummyElement")
+netedit.updateText("dummyElement")
 
 # set elementClass
-netedit.typeEnter()
+netedit.typeKey("enter")
 
 # try to select node gneJ0 and delete it (Error in element type)
 netedit.focusOnFrame()
 for x in range(0, 8):
-    netedit.typeTab()
+    netedit.typeKey("tab")
 
 # paste the new elementClass
-netedit.pasteIntoTextField("Network")
+netedit.updateText("Network")
 
 # jump to element
 for x in range(0, 3):
-    netedit.typeTab()
+    netedit.typeKey("tab")
 
 # paste the new elementType
-netedit.pasteIntoTextField("dummyType")
+netedit.updateText("dummyType")
 
 # type tab to set elementType
-netedit.typeEnter()
+netedit.typeKey("enter")
 
 # try to select node gneJ0 and delete it (Error in set)
 netedit.focusOnFrame()
 for x in range(0, 8):
-    netedit.typeTab()
+    netedit.typeKey("tab")
 
 # paste the new elementClass
-netedit.pasteIntoTextField("Network")
+netedit.updateText("Network")
 
 # jump to element
 for x in range(0, 3):
-    netedit.typeTab()
+    netedit.typeKey("tab")
 
 # paste the new elementType
-netedit.pasteIntoTextField("junction")
+netedit.updateText("junction")
 
 # jump to attribute
 for x in range(0, 2):
-    netedit.typeTab()
+    netedit.typeKey("tab")
 
 # paste the new attribute
-netedit.pasteIntoTextField("dummyAttribute")
+netedit.updateText("dummyAttribute")
 
 # type enter to set attribute
-netedit.typeEnter()
+netedit.typeKey("enter")
 
 # try to select node gneJ0 and delete it (Error in type of element)
-netedit.selectItems("Network elements", "junction", "id", "J0")
-netedit.deleteSelectedItems()
+netedit.selectNetworkItems("junction", "id", "J0")
+netedit.delete()
 
 # save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

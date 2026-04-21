@@ -1,5 +1,5 @@
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2013-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2013-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -21,13 +21,32 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import gc
+import sys
+
 import matplotlib
-from ..options import ArgumentParser
 from pylab import arange, close, cm, figure, legend, log, plt, savefig, show, title
 from pylab import xlabel, xlim, xticks, ylabel, ylim, yticks
 from matplotlib.ticker import FuncFormatter as ff
 from matplotlib.collections import LineCollection
+
+from ..options import ArgumentParser
 mpl_version = tuple(map(int, matplotlib.__version__.split(".")[:3]))
+
+if sys.version_info[:2] >= (3, 14):
+    # workaround for https://github.com/matplotlib/matplotlib/issues/29157
+    if mpl_version < (3, 10, 5):
+        import copy  # noqa
+
+        def _safe_path_deepcopy(self, memo):
+            # create new instance and deepcopy only attributes (avoid deepcopy(super()))
+            cls = self.__class__
+            new = cls.__new__(cls)
+            memo[id(self)] = new
+            for k, v in self.__dict__.items():
+                new.__dict__[k] = copy.deepcopy(v, memo)
+            return new
+
+        matplotlib.path.Path.__deepcopy__ = _safe_path_deepcopy
 
 # http://datadebrief.blogspot.de/2010/10/plotting-sunrise-sunset-times-in-python.html
 
@@ -55,6 +74,8 @@ def addPlotOptions(ap):
                     default=None, help="Defines the colors to use")
     ap.add_argument("--colormap", dest="colormap", category="visualization",
                     default="nipy_spectral", help="Defines the colormap to use")
+    ap.add_argument("--colormap.center", dest="colormapCenter", type=float, category="visualization",
+                    help="centers colors at the given value")
     ap.add_argument("-l", "--labels", dest="labels", category="visualization",
                     default=None, help="Defines the labels to use")
     ap.add_argument("--xlim", dest="xlim", category="visualization",
@@ -266,7 +287,10 @@ def getColor(options, i, a):
         else:
             matplotlib.colormaps.register(name="CUSTOM", cmap=colormap)
         options.colormap = "CUSTOM"
-    cNorm = matplotlib.colors.Normalize(vmin=0, vmax=a)
+    if options.colormapCenter:
+        cNorm = matplotlib.colors.TwoSlopeNorm(vmin=0, vcenter=options.colormapCenter, vmax=a)
+    else:
+        cNorm = matplotlib.colors.Normalize(vmin=0, vmax=a)
     scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=getColorMap(options))
     return scalarMap.to_rgba(i)
 
@@ -393,9 +417,19 @@ def parseColorMap(mapDef):
     return colormap
 
 
-def parseTicks(tickfile):
-    # whether we're loading <FLOAT>:<LABEL> instead of <LABEL>
+def parseTicks(tickfile, mapping=None):
+    # there are multiple possible formats:
+    # 1. for defining the order (label is a data value or a wildcard):
+    #   <LABEL>
+    # 2. for defining the tick positions for the data values
+    #   <FLOAT>:<LABEL>
+    # 3. for defining the tick positions and a mapping from data values to displayed labels
+    #   <FLOAT>:<DATA>:<LABEL>
+
+    # whether explicit tick positions  are available
     haveOffsets = True
+    # whether a data->label mapping is available
+
     offsets = []
     labels = []
     with open(tickfile) as tf:
@@ -408,7 +442,12 @@ def parseTicks(tickfile):
                 of = float(of_label[0])
                 offsets.append(of)
                 if len(of_label) > 1:
-                    labels.append(' '.join(of_label[1:]))
+                    if len(of_label) == 3:
+                        labels.append(of_label[2])
+                        if mapping is not None:
+                            mapping[of_label[1]] = of_label[2]
+                    else:
+                        labels.append(' '.join(of_label[1:]))
                 else:
                     # also accept <FLOAT> format
                     labels.append(str(of))

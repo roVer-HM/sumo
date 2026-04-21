@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -49,7 +49,7 @@ FXMutex MSRoute::myDictMutex(true);
 MSRoute::MSRoute(const std::string& id,
                  const ConstMSEdgeVector& edges,
                  const bool isPermanent, const RGBColor* const c,
-                 const std::vector<SUMOVehicleParameter::Stop>& stops,
+                 const StopParVector& stops,
                  SUMOTime replacedTime,
                  int replacedIndex) :
     Named(id), myEdges(edges), myAmPermanent(isPermanent),
@@ -91,6 +91,13 @@ const MSEdge*
 MSRoute::getLastEdge() const {
     assert(myEdges.size() > 0);
     return myEdges.back();
+}
+
+
+const MSEdge*
+MSRoute::getFirstEdge() const {
+    assert(myEdges.size() > 0);
+    return myEdges.front();
 }
 
 
@@ -400,7 +407,7 @@ MSRoute::getColor() const {
 }
 
 
-const std::vector<SUMOVehicleParameter::Stop>&
+const StopParVector&
 MSRoute::getStops() const {
     return myStops;
 }

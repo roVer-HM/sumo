@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -23,6 +23,12 @@
 #include <utils/xml/SUMOSAXHandler.h>
 
 // ===========================================================================
+// class declaration
+// ===========================================================================
+
+class FileBucket;
+
+// ===========================================================================
 // class definitions
 // ===========================================================================
 
@@ -30,9 +36,9 @@ class GeneralHandler : public SUMOSAXHandler {
 
 public:
     /**@brief Constructor
-     * @param[in] file Name of the parsed file
+     * @param[in] bucket FileBucket in which place the element
      */
-    GeneralHandler(const std::string& file);
+    GeneralHandler(FileBucket* fileBucket);
 
     /// @brief Destructor
     ~GeneralHandler();
@@ -46,9 +52,6 @@ private:
 
     /// @brief end element
     virtual void endTag() = 0;
-
-    /// @brief run post parser tasks
-    virtual bool postParserTasks() = 0;
 
     /// @name inherited from SUMOSAXHandler
     /// @{

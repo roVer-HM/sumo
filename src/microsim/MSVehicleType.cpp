@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -24,6 +24,7 @@
 #include <config.h>
 
 #include <cassert>
+#include <utils/common/MsgHandler.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/common/FileHelpers.h>
 #include <utils/common/RandHelper.h>
@@ -166,6 +167,12 @@ MSVehicleType::setVClass(SUMOVehicleClass vclass) {
 
 
 void
+MSVehicleType::setGUIShape(SUMOVehicleShape shape) {
+    myParameter.shape = shape;
+    myParameter.parametersSet |= VTYPEPARS_SHAPE_SET;
+}
+
+void
 MSVehicleType::setPreferredLateralAlignment(const LatAlignmentDefinition& latAlignment, double latAlignmentOffset) {
     myParameter.latAlignmentProcedure = latAlignment;
     myParameter.latAlignmentOffset = latAlignmentOffset;
@@ -198,9 +205,9 @@ MSVehicleType::setDefaultProbability(const double& prob) {
 void
 MSVehicleType::setSpeedFactor(const double& factor) {
     if (myOriginalType != nullptr && factor < 0) {
-        myParameter.speedFactor.getParameter()[0] = myOriginalType->myParameter.speedFactor.getParameter()[0];
+        myParameter.speedFactor.setParameter(0, myOriginalType->myParameter.speedFactor.getParameter(0));
     } else {
-        myParameter.speedFactor.getParameter()[0] = factor;
+        myParameter.speedFactor.setParameter(0, factor);
     }
     myParameter.parametersSet |= VTYPEPARS_SPEEDFACTOR_SET;
 }
@@ -209,9 +216,9 @@ MSVehicleType::setSpeedFactor(const double& factor) {
 void
 MSVehicleType::setSpeedDeviation(const double& dev) {
     if (myOriginalType != nullptr && dev < 0) {
-        myParameter.speedFactor.getParameter()[1] = myOriginalType->myParameter.speedFactor.getParameter()[1];
+        myParameter.speedFactor.setParameter(1, myOriginalType->myParameter.speedFactor.getParameter(1));
     } else {
-        myParameter.speedFactor.getParameter()[1] = dev;
+        myParameter.speedFactor.setParameter(1, dev);
     }
     myParameter.parametersSet |= VTYPEPARS_SPEEDFACTOR_SET;
 }
@@ -323,7 +330,7 @@ MSVehicleType::setShape(SUMOVehicleShape shape) {
 
 // ------------ Static methods for building vehicle types
 MSVehicleType*
-MSVehicleType::build(SUMOVTypeParameter& from) {
+MSVehicleType::build(SUMOVTypeParameter& from, const std::string& fileName) {
     if (from.hasParameter("vehicleMass")) {
         if (from.wasSet(VTYPEPARS_MASS_SET)) {
             WRITE_WARNINGF(TL("The vType '%' has a 'mass' attribute and a 'vehicleMass' parameter. The 'mass' attribute will take precedence."), from.id);
@@ -401,7 +408,7 @@ MSVehicleType::build(SUMOVTypeParameter& from) {
             break;
     }
     // init Rail visualization parameters
-    vtype->myParameter.initRailVisualizationParameters();
+    vtype->myParameter.initRailVisualizationParameters(fileName);
     return vtype;
 }
 
@@ -430,8 +437,8 @@ MSVehicleType::duplicateType(const std::string& id, bool persistent) const {
         vtype->myOriginalType = this;
     }
     if (!MSNet::getInstance()->getVehicleControl().addVType(vtype)) {
-        std::string singular = persistent ? "" : "singular ";
-        throw ProcessError("could not add " + singular + "type " + vtype->getID());
+        std::string singular = persistent ? "" : TL("singular ");
+        throw ProcessError(TLF("could not add %type %", singular, vtype->getID()));
     }
     return vtype;
 }

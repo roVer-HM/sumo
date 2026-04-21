@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // activitygen module
 // Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
 // This program and the accompanying materials are made available under the
@@ -44,9 +44,9 @@ void AGFrame::fillOptions() {
     OptionsCont& oc = OptionsCont::getOptions();
     // Options handling
     oc.addCallExample("--net-file <INPUT>.net.xml --stat-file <INPUT>.stat.xml --output <OUTPUT>.rou.xml --rand",
-                      "generate a trips file from a stats file on a given net using arbitrary random seed");
+                      TL("generate a trips file from a stats file on a given net using arbitrary random seed"));
     oc.addCallExample("--net-file <INPUT>.net.xml --stat-file <INPUT>.stat.xml --output <OUTPUT>.rou.xml --duration-d <NBR_OF_DAYS>",
-                      "generate a trips file from a stats file on a given net for numerous days (with fixed random seed)");
+                      TL("generate a trips file from a stats file on a given net for numerous days (with fixed random seed)"));
 
     // Add categories and insert the standard options
     SystemFrame::addConfigurationOptions(oc);

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -177,7 +177,8 @@ MSStageDriving::getPosition(SUMOTime /* now */) const {
 double
 MSStageDriving::getAngle(SUMOTime /* now */) const {
     if (isWaiting4Vehicle()) {
-        return getEdgeAngle(myWaitingEdge, myWaitingPos) + M_PI / 2. * (MSGlobals::gLefthand ? -1 : 1);
+        const double offset = myOriginStop == nullptr ? M_PI / 2 : myOriginStop->getAngle();
+        return getEdgeAngle(myWaitingEdge, myWaitingPos) + offset * (MSGlobals::gLefthand ? -1 : 1);
     } else if (myArrived >= 0) {
         return getEdgeAngle(myDestination, myArrivalPos) + M_PI / 2. * (MSGlobals::gLefthand ? -1 : 1);
     } else {

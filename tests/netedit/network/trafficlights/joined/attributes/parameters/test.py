@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,17 +19,14 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # go to TLS mode
-netedit.selectTLSMode()
+netedit.changeMode("TLS")
 
 # select junction
 netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.center)
@@ -47,23 +44,23 @@ netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.le
 netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.right)
 
 # join tls
-netedit.typeEnter()
+netedit.typeKey("enter")
 
 # Change generic parameters with an invalid value (dummy)
-netedit.modifyAttribute(netedit.attrs.TLS.join.attributes.parameters, "dummyGenericParameters", False)
+netedit.modifyAttribute(netedit.attrs.TLS.attributesJoined.parameters, "dummyGenericParameters")
 
 # Change generic parameters with an invalid value (invalid format)
-netedit.modifyAttribute(netedit.attrs.TLS.join.attributes.parameters, "key1|key2|key3", False)
+netedit.modifyAttribute(netedit.attrs.TLS.attributesJoined.parameters, "key1|key2|key3")
 
 # Change generic parameters with a valid value
-netedit.modifyAttribute(netedit.attrs.TLS.join.attributes.parameters,
-                        "keyFinal1=value1|keyFinal2=value2|keyFinal3=value3", False)
+netedit.modifyAttribute(netedit.attrs.TLS.attributesJoined.parameters,
+                        "keyFinal1=value1|keyFinal2=value2|keyFinal3=value3")
 
 # type enter to save changes
-netedit.typeEnter()
+netedit.typeKey("enter")
 
 # type ESC (for undo-redo)
-netedit.typeEscape()
+netedit.typeKey("esc")
 
 # Check undo
 netedit.undo(referencePosition, 1)
@@ -72,7 +69,7 @@ netedit.undo(referencePosition, 1)
 netedit.redo(referencePosition, 1)
 
 # save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

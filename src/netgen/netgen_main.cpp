@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -58,10 +58,10 @@
 void
 fillOptions() {
     OptionsCont& oc = OptionsCont::getOptions();
-    oc.addCallExample("-c <CONFIGURATION>", "create net from given configuration");
-    oc.addCallExample("--grid [grid-network options] -o <OUTPUTFILE>", "create grid net");
-    oc.addCallExample("--spider [spider-network options] -o <OUTPUTFILE>", "create spider net");
-    oc.addCallExample("--rand [random-network options] -o <OUTPUTFILE>", "create random net");
+    oc.addCallExample("-c <CONFIGURATION>", TL("create net from given configuration"));
+    oc.addCallExample("--grid [grid-network options] -o <OUTPUTFILE>", TL("create grid net"));
+    oc.addCallExample("--spider [spider-network options] -o <OUTPUTFILE>", TL("create spider net"));
+    oc.addCallExample("--rand [random-network options] -o <OUTPUTFILE>", TL("create random net"));
 
     oc.setAdditionalHelpMessage(" Either \"--grid\", \"--spider\" or \"--rand\" must be supplied.\n  In dependence to these switches other options are used.");
 
@@ -232,7 +232,7 @@ int
 main(int argc, char** argv) {
     OptionsCont& oc = OptionsCont::getOptions();
     oc.setApplicationDescription(TL("Synthetic network generator for the microscopic, multi-modal traffic simulation SUMO."));
-    oc.setApplicationName("netgenerate", "Eclipse SUMO netgenerate Version " VERSION_STRING);
+    oc.setApplicationName("netgenerate", "Eclipse SUMO netgenerate " VERSION_STRING);
     int ret = 0;
     try {
         // initialise the application system (messaging, xml, options)
@@ -257,7 +257,7 @@ main(int argc, char** argv) {
         nb.applyOptions(oc);
         if (oc.isSet("type-files")) {
             NIXMLTypesHandler handler(nb.getTypeCont());
-            NITypeLoader::load(handler, oc.getStringVector("type-files"), "types");
+            NITypeLoader::load(handler, oc.getStringVector("type-files"), toString(SUMO_TAG_TYPES));
         }
         // build the netgen-network description
         NGNet* net = buildNetwork(nb);

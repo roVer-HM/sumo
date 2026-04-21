@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -13,17 +13,17 @@
 /****************************************************************************/
 /// @file    GNEParkingArea.cpp
 /// @author  Pablo Alvarez Lopez
+/// @author  Mirko Barthauer
 /// @date    Feb 2018
 ///
 // A lane area vehicles can park at (GNE version)
 /****************************************************************************/
 
+#include <netedit/changes/GNEChange_Attribute.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagProperties.h>
-#include <netedit/changes/GNEChange_Attribute.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/options/OptionsCont.h>
-#include <utils/vehicle/SUMORouteHandler.h>
 
 #include "GNEParkingArea.h"
 
@@ -36,18 +36,17 @@ GNEParkingArea::GNEParkingArea(GNENet* net) :
 }
 
 
-GNEParkingArea::GNEParkingArea(const std::string& id, GNENet* net, const std::string& filename, GNELane* lane, const double startPos, const double endPos,
+GNEParkingArea::GNEParkingArea(const std::string& id, GNENet* net, FileBucket* fileBucket, GNELane* lane, const double startPos, const double endPos,
                                const std::string& departPos, const std::string& name, const std::vector<std::string>& badges,
                                const bool friendlyPosition, const int roadSideCapacity, const bool onRoad, const double width,
                                const double length, const double angle, const bool lefthand, const Parameterised::Map& parameters) :
-    GNEStoppingPlace(id, net, filename, SUMO_TAG_PARKING_AREA, lane, startPos,
-                     endPos, name, friendlyPosition, RGBColor::INVISIBLE, parameters),
+    GNEStoppingPlace(id, net, fileBucket, SUMO_TAG_PARKING_AREA, lane, startPos,
+                     endPos, name, friendlyPosition, RGBColor::INVISIBLE, angle, parameters),
     myDepartPos(departPos),
     myRoadSideCapacity(roadSideCapacity),
     myOnRoad(onRoad),
     myWidth(width),
     myLength(length),
-    myAngle(angle),
     myLefthand(lefthand),
     myAcceptedBadges(badges) {
     // update centering boundary without updating grid
@@ -75,9 +74,6 @@ GNEParkingArea::writeAdditional(OutputDevice& device) const {
     }
     if (myLength != myTagProperty->getDefaultDoubleValue(SUMO_ATTR_LENGTH)) {
         device.writeAttr(SUMO_ATTR_LENGTH, myLength);
-    }
-    if (myAngle != myTagProperty->getDefaultDoubleValue(SUMO_ATTR_ANGLE)) {
-        device.writeAttr(SUMO_ATTR_ANGLE, myAngle);
     }
     if (myDepartPos != myTagProperty->getDefaultStringValue(SUMO_ATTR_DEPARTPOS)) {
         device.writeAttr(SUMO_ATTR_DEPARTPOS, myDepartPos);
@@ -109,11 +105,11 @@ GNEParkingArea::updateGeometry() {
     // calculate length
     const double length = (myLength > 0) ? myLength : spaceDim;
     // Update common geometry of stopping place
-    setStoppingPlaceGeometry(myWidth);
+    setStoppingPlaceGeometry((myOnRoad)? 0 : myWidth);
     // Obtain a copy of the shape
     PositionVector tmpShape = myAdditionalGeometry.getShape();
     // Move shape to side
-    tmpShape.move2side(1.5 * offsetSign + myWidth);
+    tmpShape.move2side(offsetSign * (1.5 + myWidth));
     // Get position of the sign
     mySymbolPosition = tmpShape.getLineCenter();
     // clear LotSpaceDefinitions
@@ -137,7 +133,7 @@ GNEParkingArea::drawGL(const GUIVisualizationSettings& s) const {
         // Obtain exaggeration of the draw
         const double parkingAreaExaggeration = getExaggeration(s);
         // check if draw moving geometry points
-        const bool movingGeometryPoints = drawMovingGeometryPoints(false);
+        const bool movingGeometryPoints = drawMovingGeometryPoints();
         // get detail level
         const auto d = s.getDetailLevel(parkingAreaExaggeration);
         // draw geometry only if we'rent in drawForObjectUnderCursor mode
@@ -176,10 +172,10 @@ GNEParkingArea::drawGL(const GUIVisualizationSettings& s) const {
                 }
             }
             // draw geometry points
-            if (movingGeometryPoints && (myStartPosition != INVALID_DOUBLE)) {
+            if (movingGeometryPoints && (myStartPosOverLane != INVALID_DOUBLE)) {
                 drawLeftGeometryPoint(s, d, myAdditionalGeometry.getShape().front(), myAdditionalGeometry.getShapeRotations().front(), baseColor);
             }
-            if (movingGeometryPoints && (myEndPosition != INVALID_DOUBLE)) {
+            if (movingGeometryPoints && (myEndPosPosOverLane != INVALID_DOUBLE)) {
                 drawRightGeometryPoint(s, d, myAdditionalGeometry.getShape().back(), myAdditionalGeometry.getShapeRotations().back(), baseColor);
             }
             // pop layer matrix
@@ -222,12 +218,10 @@ GNEParkingArea::getAttribute(SumoXMLAttr key) const {
             return toString(myWidth);
         case SUMO_ATTR_LENGTH:
             return toString(myLength);
-        case SUMO_ATTR_ANGLE:
-            return toString(myAngle);
         case SUMO_ATTR_LEFTHAND:
             return toString(myLefthand);
         default:
-            return getStoppingPlaceAttribute(this, key);
+            return getStoppingPlaceAttribute(key);
     }
 }
 
@@ -242,8 +236,6 @@ GNEParkingArea::getAttributeDouble(SumoXMLAttr key) const {
             const double spaceDim = myRoadSideCapacity > 0 ? (getAttributeDouble(SUMO_ATTR_ENDPOS) - getAttributeDouble(SUMO_ATTR_STARTPOS)) / myRoadSideCapacity * getParentLanes().front()->getLengthGeometryFactor() : 7.5;
             return (myLength > 0) ? myLength : spaceDim;
         }
-        case SUMO_ATTR_ANGLE:
-            return myAngle;
         default:
             return getStoppingPlaceAttributeDouble(key);
     }
@@ -259,7 +251,6 @@ GNEParkingArea::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoL
         case SUMO_ATTR_ONROAD:
         case SUMO_ATTR_WIDTH:
         case SUMO_ATTR_LENGTH:
-        case SUMO_ATTR_ANGLE:
         case SUMO_ATTR_LEFTHAND:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
@@ -305,8 +296,6 @@ GNEParkingArea::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return canParse<double>(value) && (parse<double>(value) > 0);
             }
-        case SUMO_ATTR_ANGLE:
-            return canParse<double>(value);
         case SUMO_ATTR_LEFTHAND:
             return canParse<bool>(value);
         default:
@@ -374,9 +363,6 @@ GNEParkingArea::setAttribute(SumoXMLAttr key, const std::string& value) {
                 space->updateGeometry();
             }
             break;
-        case SUMO_ATTR_ANGLE:
-            myAngle = parse<double>(value);
-            break;
         case SUMO_ATTR_LEFTHAND:
             myLefthand = parse<bool>(value);
             if (!isTemplate()) {
@@ -384,7 +370,7 @@ GNEParkingArea::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         default:
-            setStoppingPlaceAttribute(this, key, value);
+            setStoppingPlaceAttribute(key, value);
             break;
     }
 }

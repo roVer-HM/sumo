@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2024-06-11 22:14:38 by Eclipse SUMO od2trips Version v1_20_0+0443-233e48e5c88
+<!-- generated on 2025-11-14T15:07:10.470897+01:00 by Eclipse SUMO od2trips v1_25_0+0045-28a3daf62ee
 -->
 
 <od2tripsConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/od2tripsConfiguration.xsd">
@@ -48,8 +48,14 @@
         <!-- Include license info into every output file -->
         <write-license value="false" type="BOOL"/>
 
+        <!-- Write parsable metadata (configuration etc.) instead of comments -->
+        <write-metadata value="false" type="BOOL"/>
+
         <!-- Prefix which is applied to all output files. The special string &apos;TIME&apos; is replaced by the current time. -->
         <output-prefix value="" type="STR"/>
+
+        <!-- Suffix which is applied to all output files. The special string &apos;TIME&apos; is replaced by the current time. -->
+        <output-suffix value="" type="STR"/>
 
         <!-- Defines the number of digits after the comma for floating point output -->
         <precision value="2" type="INT"/>
@@ -57,11 +63,23 @@
         <!-- Defines the number of digits after the comma for lon,lat output -->
         <precision.geo value="6" type="INT"/>
 
+        <!-- Defines the standard compression algorithm (currently only for parquet output) -->
+        <output.compression value="" type="STR"/>
+
+        <!-- Defines the standard output format if not derivable from the file name (&apos;xml&apos;, &apos;csv&apos;, &apos;parquet&apos;) -->
+        <output.format value="xml" type="STR"/>
+
+        <!-- How to derive column headers from attribute names (&apos;none&apos;, &apos;tag&apos;, &apos;auto&apos;, &apos;plain&apos;) -->
+        <output.column-header value="tag" type="STR"/>
+
+        <!-- Separator in CSV output -->
+        <output.column-separator value=";" type="STR"/>
+
         <!-- Write time values as hour:minute:second or day:hour:minute:second rather than seconds -->
         <human-readable-time value="false" synonymes="H" type="BOOL"/>
 
         <!-- Writes trip definitions into FILE -->
-        <output-file value="" synonymes="o output" type="FILE"/>
+        <output-file value="" synonymes="o output" deprecated="output" type="FILE"/>
 
         <!-- Writes flow definitions into FILE -->
         <flow-output value="" type="FILE"/>
@@ -79,7 +97,7 @@
         <persontrips.modes value="" type="STR[]"/>
 
         <!-- Does not save vtype information -->
-        <ignore-vehicle-type value="false" synonymes="no-vtype" type="BOOL"/>
+        <ignore-vehicle-type value="false" synonymes="no-vtype" deprecated="no-vtype" type="BOOL"/>
 
         <!-- Writes trips between junctions -->
         <junctions value="false" type="BOOL"/>
@@ -160,7 +178,7 @@
         <xml-validation value="local" synonymes="X" type="STR"/>
 
         <!-- Disables output of warnings -->
-        <no-warnings value="false" synonymes="W suppress-warnings" type="BOOL"/>
+        <no-warnings value="false" synonymes="W suppress-warnings" deprecated="suppress-warnings" type="BOOL"/>
 
         <!-- Aggregate warnings of the same type whenever more than INT occur -->
         <aggregate-warnings value="-1" type="INT"/>
@@ -184,16 +202,16 @@
         <language value="C" type="STR"/>
 
         <!-- Continue on broken input -->
-        <ignore-errors value="false" synonymes="dismiss-loading-errors" type="BOOL"/>
+        <ignore-errors value="false" synonymes="dismiss-loading-errors" deprecated="dismiss-loading-errors" type="BOOL"/>
 
     </report>
 
     <random_number>
         <!-- Initialises the random number generator with the current system time -->
-        <random value="false" synonymes="abs-rand" type="BOOL"/>
+        <random value="false" synonymes="abs-rand" deprecated="abs-rand" type="BOOL"/>
 
         <!-- Initialises the random number generator with the given value -->
-        <seed value="23423" synonymes="srand" type="INT"/>
+        <seed value="23423" synonymes="srand" deprecated="srand" type="INT"/>
 
     </random_number>
 

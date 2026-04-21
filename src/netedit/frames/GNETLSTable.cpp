@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -24,7 +24,7 @@
 #include <netedit/elements/GNEAttributeCarrier.h>
 #include <utils/foxtools/MFXLabelTooltip.h>
 #include <utils/foxtools/MFXMenuButtonTooltip.h>
-#include <utils/foxtools/MFXTextFieldTooltip.h>
+#include <utils/foxtools/MFXTextFieldIcon.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/images/GUIIconSubSys.h>
 #include <utils/gui/windows/GUIAppEnum.h>
@@ -79,7 +79,7 @@ FXIMPLEMENT(GNETLSTable, FXHorizontalFrame, GNETLSTableMap, ARRAYNUMBER(GNETLSTa
 // ---------------------------------------------------------------------------
 
 GNETLSTable::GNETLSTable(GNETLSEditorFrame::TLSPhases* TLSPhasesParent) :
-    FXHorizontalFrame(TLSPhasesParent->getCollapsableFrame(), GUIDesignAuxiliarFrameFixWidth),
+    FXHorizontalFrame(TLSPhasesParent->getCollapsableFrame(), GUIDesignAuxiliarFrameFixedWidth(0)),
     myProgramFont(new FXFont(getApp(), "Courier New", 10)),
     myIndexFont(new FXFont(getApp(), "Segoe UI", 9)),
     myIndexSelectedFont(new FXFont(getApp(), "Segoe UI", 9, FXFont::Bold)),
@@ -280,6 +280,47 @@ GNETLSTable::setColumnLabelBot(const int column, const std::string& text) {
 
 
 long
+GNETLSTable::testTable(const InternalTestStep::TLSTableTest* tableTest) {
+    // obtain cell
+    if (tableTest->row >= (int)myRows.size()) {
+        throw ProcessError(TL("Invalid row in table test"));
+    } else if (tableTest->column >= (int)myColumns.size()) {
+        throw ProcessError(TL("Invalid column in table test"));
+    } else {
+        // get cell
+        Cell* cell = myRows.at(tableTest->row)->getCells().at(tableTest->column);
+        // continue depending of operation
+        if (tableTest->sel == MID_GNE_TLSTABLE_ADDPHASE) {
+            return onCmdAddPhase(cell->getAddPhaseButton(), 0, nullptr);
+        } else if (tableTest->sel == MID_GNE_TLSTABLE_COPYPHASE) {
+            return onCmdDuplicatePhase(cell->getDuplicatePhaseButton(), 0, nullptr);
+        } else if (tableTest->sel == MID_GNE_TLSTABLE_ADDPHASEALLRED) {
+            return onCmdAddPhaseAllRed(cell->getAddAllRedPhaseButton(), 0, nullptr);
+        } else if (tableTest->sel == MID_GNE_TLSTABLE_ADDPHASEALLYELLOW) {
+            return onCmdAddPhaseAllYellow(cell->getAddAllYellowPhaseButton(), 0, nullptr);
+        } else if (tableTest->sel == MID_GNE_TLSTABLE_ADDPHASEALLGREEN) {
+            return onCmdAddPhaseAllGreen(cell->getAddAllGreenPhaseButton(), 0, nullptr);
+        } else if (tableTest->sel == MID_GNE_TLSTABLE_ADDPHASEALLGREENPRIORITY) {
+            return onCmdAddPhaseAllGreenPriority(cell->getAddAllGreenPriorityPhaseButton(), 0, nullptr);
+        } else if (tableTest->sel == MID_GNE_TLSTABLE_REMOVEPHASE) {
+            return onCmdRemovePhase(cell->getButton(), 0, nullptr);
+        } else if (tableTest->sel == MID_GNE_TLSTABLE_MOVEUPPHASE) {
+            return onCmdMoveUpPhase(cell->getButton(), 0, nullptr);
+        } else if (tableTest->sel == MID_GNE_TLSTABLE_MOVEDOWNPHASE) {
+            return onCmdMoveDownPhase(cell->getButton(), 0, nullptr);
+        } else if (tableTest->sel == MID_GNE_TLSTABLE_TEXTFIELD) {
+            // set text in text field
+            cell->getTextField()->setText(tableTest->text.c_str(), TRUE);
+            return 1;
+        } else {
+            // unknown operation
+            throw ProcessError(TL("Unknown operation in table test"));
+        }
+    }
+}
+
+
+long
 GNETLSTable::onFocusRow(FXObject* sender, FXSelector, void*) {
     int selectedRow = -1;
     // search selected text field
@@ -328,11 +369,11 @@ GNETLSTable::onCmdEditRow(FXObject* sender, FXSelector, void*) {
             if (textField == sender) {
                 // edit value and change value depending of result
                 if (myTLSPhasesParent->changePhaseValue(columnIndex, rowIndex, textField->getText().text())) {
-                    textField->setTextColor(FXRGB(0, 0, 0));
+                    textField->setTextColor(GUIDesignTextColorBlack);
                     textField->killFocus();
                     myTLSPhasesParent->getTLSEditorParent()->update();
                 } else {
-                    textField->setTextColor(FXRGB(255, 0, 0));
+                    textField->setTextColor(GUIDesignTextColorRed);
                 }
                 return 1;
             }
@@ -624,7 +665,7 @@ GNETLSTable::moveFocus() {
 // GNETLSTable::Cell - methods
 // ---------------------------------------------------------------------------
 
-GNETLSTable::Cell::Cell(GNETLSTable* TLSTable, MFXTextFieldTooltip* textField, int col, int row) :
+GNETLSTable::Cell::Cell(GNETLSTable* TLSTable, MFXTextFieldIcon* textField, int col, int row) :
     myTLSTable(TLSTable),
     myTextField(textField),
     myCol(col),
@@ -916,7 +957,7 @@ GNETLSTable::Cell::setTooltip(const std::string& toolTip) {
 }
 
 
-MFXTextFieldTooltip*
+MFXTextFieldIcon*
 GNETLSTable::Cell::getTextField() const {
     return myTextField;
 }
@@ -1016,7 +1057,9 @@ GNETLSTable::Cell::getType() const {
 
 void
 GNETLSTable::Cell::hideMenuButtonPopup() {
-    myMenuButtonPopup->popdown();
+    if (myMenuButtonPopup) {
+        myMenuButtonPopup->popdown();
+    }
 }
 
 
@@ -1043,7 +1086,7 @@ GNETLSTable::Column::Column(GNETLSTable* table, const int index, const char type
     myIndex(index),
     myType(type) {
     // create vertical frame
-    myVerticalFrame = new FXVerticalFrame(table, GUIDesignAuxiliarFrameFixWidth);
+    myVerticalFrame = new FXVerticalFrame(table, GUIDesignAuxiliarFrameFixedWidth(0));
     // create top label
     switch (myType) {
         case 's':
@@ -1064,7 +1107,7 @@ GNETLSTable::Column::Column(GNETLSTable* table, const int index, const char type
             break;
     }
     // create vertical frame for cells
-    myVerticalCellFrame = new FXVerticalFrame(myVerticalFrame, GUIDesignAuxiliarFrameFixWidth);
+    myVerticalCellFrame = new FXVerticalFrame(myVerticalFrame, GUIDesignAuxiliarFrameFixedWidth(0));
     // create bot label
     switch (myType) {
         case 's':
@@ -1193,6 +1236,7 @@ GNETLSTable::Column::Column() :
 
 GNETLSTable::Row::Row(GNETLSTable* table) :
     myTable(table) {
+    const auto staticTooltipMenu = table->getTLSPhasesParent()->getTLSEditorParent()->getViewNet()->getViewParent()->getGNEAppWindows()->getStaticTooltipMenu();
     // build textFields
     for (int columnIndex = 0; columnIndex < (FXint)table->myColumns.size(); columnIndex++) {
         // get number of cells
@@ -1216,17 +1260,17 @@ GNETLSTable::Row::Row(GNETLSTable* table) :
             case ('m'):
             case ('-'): {
                 // create textField for values
-                auto textField = new MFXTextFieldTooltip(table->myColumns.at(columnIndex)->getVerticalCellFrame(),
-                        table->getTLSPhasesParent()->getTLSEditorParent()->getViewNet()->getViewParent()->getGNEAppWindows()->getStaticTooltipMenu(),
-                        GUIDesignTextFieldNCol, table, MID_GNE_TLSTABLE_TEXTFIELD, GUIDesignTextFieldTLSTable);
+                auto textField = new MFXTextFieldIcon(table->myColumns.at(columnIndex)->getVerticalCellFrame(),
+                                                      staticTooltipMenu, GUIIcon::EMPTY, table,
+                                                      MID_GNE_TLSTABLE_TEXTFIELD, GUIDesignTextFieldTLSTable);
                 myCells.push_back(new Cell(table, textField, columnIndex, numCells));
                 break;
             }
             case ('p'): {
                 // create text field for program (state)
-                auto textField = new MFXTextFieldTooltip(table->myColumns.at(columnIndex)->getVerticalCellFrame(),
-                        table->getTLSPhasesParent()->getTLSEditorParent()->getViewNet()->getViewParent()->getGNEAppWindows()->getStaticTooltipMenu(),
-                        GUIDesignTextFieldNCol, table, MID_GNE_TLSTABLE_TEXTFIELD, GUIDesignTextFieldTLSTable);
+                auto textField = new MFXTextFieldIcon(table->myColumns.at(columnIndex)->getVerticalCellFrame(),
+                                                      staticTooltipMenu, GUIIcon::EMPTY, table,
+                                                      MID_GNE_TLSTABLE_TEXTFIELD, GUIDesignTextFieldTLSTable);
                 // set special font
                 textField->setFont(myTable->myProgramFont);
                 myCells.push_back(new Cell(table, textField, columnIndex, numCells));
@@ -1240,8 +1284,7 @@ GNETLSTable::Row::Row(GNETLSTable* table) :
             case ('d'): {
                 // create button for delete phase
                 auto button = new MFXButtonTooltip(table->myColumns.at(columnIndex)->getVerticalCellFrame(),
-                                                   table->getTLSPhasesParent()->getTLSEditorParent()->getViewNet()->getViewParent()->getGNEAppWindows()->getStaticTooltipMenu(),
-                                                   (std::string("\t") + TL("Delete phase") + std::string("\t") + TL("Delete this phase.")).c_str(),
+                                                   staticTooltipMenu, (std::string("\t") + TL("Delete phase") + std::string("\t") + TL("Delete this phase.")).c_str(),
                                                    GUIIconSubSys::getIcon(GUIIcon::REMOVE), table, MID_GNE_TLSTABLE_REMOVEPHASE, GUIDesignButtonIcon);
                 myCells.push_back(new Cell(table, button, columnIndex, numCells));
                 break;
@@ -1249,8 +1292,7 @@ GNETLSTable::Row::Row(GNETLSTable* table) :
             case ('t'): {
                 // create button for move up phase
                 auto button = new MFXButtonTooltip(table->myColumns.at(columnIndex)->getVerticalCellFrame(),
-                                                   table->getTLSPhasesParent()->getTLSEditorParent()->getViewNet()->getViewParent()->getGNEAppWindows()->getStaticTooltipMenu(),
-                                                   (std::string("\t") + TL("Move phase up") + std::string("\t") + TL("Move this phase up.")).c_str(),
+                                                   staticTooltipMenu, (std::string("\t") + TL("Move phase up") + std::string("\t") + TL("Move this phase up.")).c_str(),
                                                    GUIIconSubSys::getIcon(GUIIcon::ARROW_UP), table, MID_GNE_TLSTABLE_MOVEUPPHASE, GUIDesignButtonIcon);
                 myCells.push_back(new Cell(table, button, columnIndex, numCells));
                 break;
@@ -1258,8 +1300,7 @@ GNETLSTable::Row::Row(GNETLSTable* table) :
             case ('b'): {
                 // create button for move down phase
                 auto button = new MFXButtonTooltip(table->myColumns.at(columnIndex)->getVerticalCellFrame(),
-                                                   table->getTLSPhasesParent()->getTLSEditorParent()->getViewNet()->getViewParent()->getGNEAppWindows()->getStaticTooltipMenu(),
-                                                   (std::string("\t") + TL("Move phase down") + std::string("\t") + TL("Move this phase down.")).c_str(),
+                                                   staticTooltipMenu, (std::string("\t") + TL("Move phase down") + std::string("\t") + TL("Move this phase down.")).c_str(),
                                                    GUIIconSubSys::getIcon(GUIIcon::ARROW_DOWN), table, MID_GNE_TLSTABLE_MOVEDOWNPHASE, GUIDesignButtonIcon);
                 myCells.push_back(new Cell(table, button, columnIndex, numCells));
                 break;

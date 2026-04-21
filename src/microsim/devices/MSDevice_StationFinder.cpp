@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -113,7 +113,7 @@ MSDevice_StationFinder::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicl
 // ---------------------------------------------------------------------------
 MSDevice_StationFinder::MSDevice_StationFinder(SUMOVehicle& holder)
     : MSVehicleDevice(holder, "stationfinder_" + holder.getID()),
-      MSStoppingPlaceRerouter(SUMO_TAG_CHARGING_STATION, "device.stationfinder.charging", true, false, {
+      MSStoppingPlaceRerouter("device.stationfinder.charging", true, {
     {"waitingTime", 1.}, {"chargingTime", 1.}
 }, { {"waitingTime", false}, {"chargingTime", false} }),
 myVeh(dynamic_cast<MSVehicle&>(holder)),
@@ -427,7 +427,7 @@ MSDevice_StationFinder::findChargingStation(SUMOAbstractRouter<MSEdge, SUMOVehic
     std::vector<double> probs(candidates.size(), 1.);
     bool newDestination;
     myCheckValidity = constrainTT;
-    MSStoppingPlace* bestCandidate = rerouteStoppingPlace(candidates, probs, myHolder, newDestination, newRoute, scores);
+    MSStoppingPlace* bestCandidate = rerouteStoppingPlace(nullptr, candidates, probs, myHolder, newDestination, newRoute, scores);
     myCheckValidity = true;
     minStation = dynamic_cast<MSChargingStation*>(bestCandidate);
     return minStation;
@@ -527,7 +527,7 @@ MSDevice_StationFinder::planOpportunisticCharging() {
     // check next stop
     double capacityDelta = MAX2(0., myTargetSoC * myBattery->getMaximumBatteryCapacity() - myBattery->getActualBatteryCapacity());
     if (myHolder.hasStops() && capacityDelta > 0.) {
-        MSStop& nextStop = myHolder.getNextStop();
+        const MSStop& nextStop = myHolder.getNextStop();
         if (myHolder.isStopped() || nextStop.chargingStation != nullptr || myHolder.getCurrentRouteEdge() != nextStop.edge ||
                 nextStop.getMinDuration(SIMSTEP) < myMinOpportunisticTime) {
             return false;
@@ -582,7 +582,7 @@ MSDevice_StationFinder::teleportToChargingStation(const SUMOTime /*currentTime*/
 #endif
         // remove the vehicle if teleport to a charging station fails
         if (myHolder.isStopped()) {
-            MSStop& currentStop = myHolder.getNextStop();
+            MSStop& currentStop = myHolder.getNextStopMutable();
             currentStop.duration += DELTA_T;
             SUMOVehicleParameter::Stop& stopPar = const_cast<SUMOVehicleParameter::Stop&>(currentStop.pars);
             stopPar.jump = -1;
@@ -836,7 +836,7 @@ MSDevice_StationFinder::useStoppingPlace(MSStoppingPlace* /* stoppingPlace */) {
 }
 
 
-SUMOAbstractRouter<MSEdge, SUMOVehicle>& MSDevice_StationFinder::getRouter(SUMOVehicle& veh, const MSEdgeVector& prohibited) {
+SUMOAbstractRouter<MSEdge, SUMOVehicle>& MSDevice_StationFinder::getRouter(SUMOVehicle& veh, const Prohibitions& prohibited) {
     return MSRoutingEngine::getRouterTT(veh.getRNGIndex(), veh.getVClass(), prohibited);
 }
 

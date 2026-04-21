@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -22,26 +22,22 @@
 #include <config.h>
 
 #include <unordered_map>
+
 #include <netedit/frames/GNEFrame.h>
 #include <netedit/GNEViewNetHelper.h>
-#include <utils/foxtools/MFXComboBoxIcon.h>
+#include "GNEGroupBoxModule.h"
 
 // ===========================================================================
 // class declaration
 // ===========================================================================
 
-class GNEAttributeProperties;
 class GNEMatchAttribute;
-class GNEMatchGenericDataAttribute;
-class GNETagProperties;
+class MFXComboBoxIcon;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNESelectorFrame
- * The Widget for modifying selections of network-elements
- */
+
 class GNESelectorFrame : public GNEFrame {
 
 public:
@@ -49,7 +45,7 @@ public:
     // class SelectionInformation
     // ===========================================================================
 
-    class SelectionInformation : public MFXGroupBoxModule {
+    class SelectionInformation : public GNEGroupBoxModule {
 
     public:
         /// @brief constructor
@@ -86,7 +82,7 @@ public:
     // class ModificationMode
     // ===========================================================================
 
-    class ModificationMode : public MFXGroupBoxModule {
+    class ModificationMode : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNESelectorFrame::ModificationMode)
 
@@ -147,7 +143,7 @@ public:
     // class VisualScaling
     // ===========================================================================
 
-    class VisualScaling : public MFXGroupBoxModule {
+    class VisualScaling : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNESelectorFrame::VisualScaling)
 
@@ -188,7 +184,7 @@ public:
     // class SelectionOperation
     // ===========================================================================
 
-    class SelectionOperation : public MFXGroupBoxModule {
+    class SelectionOperation : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNESelectorFrame::SelectionOperation)
 
@@ -295,7 +291,7 @@ public:
     // class SelectionHierarchy
     // ===========================================================================
 
-    class SelectionHierarchy : public MFXGroupBoxModule {
+    class SelectionHierarchy : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNESelectorFrame::SelectionHierarchy)
 
@@ -394,7 +390,7 @@ public:
     // class Legend
     // ===========================================================================
 
-    class Information : public MFXGroupBoxModule {
+    class Information : public GNEGroupBoxModule {
 
     public:
         /// @brief constructor

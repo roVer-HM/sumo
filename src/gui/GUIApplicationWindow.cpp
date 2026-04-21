@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -31,10 +31,13 @@
 
 #include <guisim/GUILane.h>
 #include <guisim/GUINet.h>
+#include <guisim/GUITrafficLightLogicWrapper.h>
 #include <microsim/MSEdgeControl.h>
 #include <microsim/MSInsertionControl.h>
 #include <microsim/MSStateHandler.h>
 #include <microsim/transportables/MSTransportableControl.h>
+#include <microsim/devices/MSRoutingEngine.h>
+#include <microsim/traffic_lights/MSTLLogicControl.h>
 #include <netload/NLHandler.h>
 #include <traci-server/TraCIServer.h>
 #include <utils/common/MsgHandler.h>
@@ -105,6 +108,7 @@ FXDEFMAP(GUIApplicationWindow) GUIApplicationWindowMap[] = {
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_F9_EDIT_VIEWSCHEME,                      GUIApplicationWindow::onCmdEditViewScheme),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_I_EDITVIEWPORT,                     GUIApplicationWindow::onCmdEditViewport),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_T_OPENNETEDIT_OPENSUMO,             GUIApplicationWindow::onCmdOpenInNetedit),
+    FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_SHIFT_T_OPEN_NET,                   GUIApplicationWindow::onCmdOpenInNetedit),
     // gaming
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_H_APPSETTINGS_OPENEDGETYPES,    GUIApplicationWindow::onCmdAppSettings),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_G_GAMINGMODE_TOGGLEGRID,        GUIApplicationWindow::onCmdGaming),
@@ -123,7 +127,7 @@ FXDEFMAP(GUIApplicationWindow) GUIApplicationWindowMap[] = {
 #endif
     // Time
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_A_MODE_STARTSIMULATION_ADDITIONALS_STOPS,        GUIApplicationWindow::onCmdStart),
-    FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_A_STARTSIMULATION_OPENADDITIONALELEMENTS,          GUIApplicationWindow::onCmdStart),
+    FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_A_STARTSIMULATION_OPENADDITIONALELEMENTS,   GUIApplicationWindow::onCmdStart),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_S_MODE_STOPSIMULATION_SELECT,                    GUIApplicationWindow::onCmdStop),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_CTRL_S_STOPSIMULATION_SAVENETWORK,               GUIApplicationWindow::onCmdStop),
     FXMAPFUNC(SEL_COMMAND,  MID_HOTKEY_D_MODE_SINGLESIMULATIONSTEP_DELETE,              GUIApplicationWindow::onCmdStep),
@@ -152,7 +156,7 @@ FXDEFMAP(GUIApplicationWindow) GUIApplicationWindowMap[] = {
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_QUICK_RELOAD,                               GUIApplicationWindow::onUpdReload),
     FXMAPFUNC(SEL_UPDATE,   MID_RECENTFILE,                                             GUIApplicationWindow::onUpdOpenRecent),
     FXMAPFUNC(SEL_UPDATE,   MID_NEW_MICROVIEW,                                          GUIApplicationWindow::onUpdAddView),
-    FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_A_STARTSIMULATION_OPENADDITIONALELEMENTS,          GUIApplicationWindow::onUpdStart),
+    FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_A_STARTSIMULATION_OPENADDITIONALELEMENTS,   GUIApplicationWindow::onUpdStart),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_S_STOPSIMULATION_SAVENETWORK,               GUIApplicationWindow::onUpdStop),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_D_SINGLESIMULATIONSTEP_OPENDEMANDELEMENTS,  GUIApplicationWindow::onUpdStep),
     FXMAPFUNC(SEL_UPDATE,   MID_SIMSAVE,                                                GUIApplicationWindow::onUpdNeedsNetwork),
@@ -164,6 +168,7 @@ FXDEFMAP(GUIApplicationWindow) GUIApplicationWindowMap[] = {
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_F9_EDIT_VIEWSCHEME,                              GUIApplicationWindow::onUpdNeedsNetwork),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_I_EDITVIEWPORT,                             GUIApplicationWindow::onUpdNeedsNetwork),
     FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_T_OPENNETEDIT_OPENSUMO,                     GUIApplicationWindow::onUpdNeedsNetwork),
+    FXMAPFUNC(SEL_UPDATE,   MID_HOTKEY_CTRL_SHIFT_T_OPEN_NET,                           GUIApplicationWindow::onUpdNeedsNetwork),
     FXMAPFUNC(SEL_UPDATE,   MID_TOOLBAREDIT_LOADADDITIONALS,                            GUIApplicationWindow::onUpdNeedsSumoConfig),
     FXMAPFUNC(SEL_UPDATE,   MID_TOOLBAREDIT_LOADDEMAND,                                 GUIApplicationWindow::onUpdNeedsSumoConfig),
     FXMAPFUNC(SEL_UPDATE,   MID_DEMAND_SCALE,                                           GUIApplicationWindow::onUpdNeedsNetwork),
@@ -217,6 +222,8 @@ FXDEFMAP(GUIApplicationWindow) GUIApplicationWindowMap[] = {
     FXMAPFUNC(SEL_UPDATE,   MID_LANGUAGE_HU,    GUIApplicationWindow::onUpdChangeLanguage),
     FXMAPFUNC(SEL_COMMAND,  MID_LANGUAGE_JA,    GUIApplicationWindow::onCmdChangeLanguage),
     FXMAPFUNC(SEL_UPDATE,   MID_LANGUAGE_JA,    GUIApplicationWindow::onUpdChangeLanguage),
+    FXMAPFUNC(SEL_COMMAND,  MID_LANGUAGE_KO,    GUIApplicationWindow::onCmdChangeLanguage),
+    FXMAPFUNC(SEL_UPDATE,   MID_LANGUAGE_KO,    GUIApplicationWindow::onUpdChangeLanguage),
     // keys
     FXMAPFUNC(SEL_KEYPRESS,              0,     GUIApplicationWindow::onKeyPress),
     FXMAPFUNC(SEL_KEYRELEASE,            0,     GUIApplicationWindow::onKeyRelease),
@@ -534,6 +541,9 @@ GUIApplicationWindow::fillMenuBar() {
     myOpenInNetedit = GUIDesigns::buildFXMenuCommandShortcut(myEditMenu,
                       TL("Open in netedit"), "Ctrl+T", TL("Opens current simulation in NETEDIT."),
                       GUIIconSubSys::getIcon(GUIIcon::NETEDIT_MINI), this, MID_HOTKEY_CTRL_T_OPENNETEDIT_OPENSUMO);
+    myOpenNetInNetedit = GUIDesigns::buildFXMenuCommandShortcut(myEditMenu,
+                         TL("Open network in netedit"), "Ctrl+Shift+T", TL("Opens current network in NETEDIT."),
+                         GUIIconSubSys::getIcon(GUIIcon::NETEDIT_MINI), this, MID_HOTKEY_CTRL_SHIFT_T_OPEN_NET);
     // build settings menu
     mySettingsMenu = new FXMenuPane(this);
     GUIDesigns::buildFXMenuTitle(myMenuBar, TL("&Settings"), nullptr, mySettingsMenu);
@@ -875,8 +885,7 @@ long
 GUIApplicationWindow::onCmdEditChosen(FXObject* menu, FXSelector, void*) {
     FXMenuCommand* mc = dynamic_cast<FXMenuCommand*>(menu);
     if (mc->getText() == StringUtils::replace(TL("Edit Selected..."), "&", "").c_str()) {
-        GUIDialog_GLChosenEditor* chooser =
-            new GUIDialog_GLChosenEditor(this, &gSelected);
+        GUIDialog_GLChosenEditor* chooser = new GUIDialog_GLChosenEditor(this, &gSelected);
         chooser->create();
         chooser->show();
     } else {
@@ -967,9 +976,20 @@ GUIApplicationWindow::onCmdTutorial(FXObject*, FXSelector, void*) {
 
 
 long
-GUIApplicationWindow::onCmdOpenInNetedit(FXObject*, FXSelector, void*) {
+GUIApplicationWindow::onCmdOpenInNetedit(FXObject* sender, FXSelector, void* ptr) {
     if (myGLWindows.empty()) {
         return 1;
+    }
+    bool onlyNet;
+    if (sender == myOpenNetInNetedit) {
+        onlyNet = true;
+    } else if (sender == myOpenInNetedit) {
+        onlyNet = false;
+    } else {
+        // we have to check (menu-item) sender first because ptr is only valid when
+        // triggered via hotkey
+        FXEvent* e = (FXEvent*) ptr;
+        onlyNet = (e->state & SHIFTMASK) != 0;
     }
     FXRegistry reg("SUMO netedit", "netedit");
     reg.read();
@@ -989,7 +1009,7 @@ GUIApplicationWindow::onCmdOpenInNetedit(FXObject*, FXSelector, void*) {
     // declare command for calling netedit using the viewport saved in registry
     std::string cmd = netedit + " --registry-viewport";
     // continue depending if we're loading only a network or the entire sumo config
-    if (myLoadAdditionalsInNetedit->shown()) {
+    if (myLoadAdditionalsInNetedit->shown() && !onlyNet) {
         cmd += " --sumocfg-file \"" + OptionsCont::getOptions().getString("configuration-file") + "\"";
         // check if ignore additional or demand elements
         if (myLoadAdditionalsInNetedit->getCheck() == FALSE) {
@@ -1827,7 +1847,7 @@ void
 GUIApplicationWindow::handleEvent_SimulationLoaded(GUIEvent* e) {
     myAmLoading = false;
     GUIEvent_SimulationLoaded* ec = static_cast<GUIEvent_SimulationLoaded*>(e);
-    // check whether the loading was successfull
+    // check whether the loading was successful
     if (ec->myNet == nullptr) {
         // report failure
         setStatusBarText(TLF("Loading of '%' failed!", ec->myFile));
@@ -1900,6 +1920,17 @@ GUIApplicationWindow::handleEvent_SimulationLoaded(GUIEvent* e) {
                     myCollisionSounds = settings.getEventDistribution("collision");
                     if (settings.getJamSoundTime() > 0) {
                         myJamSoundTime = settings.getJamSoundTime();
+                    }
+                    for (const std::string& tlsID : settings.getTrackers()) {
+                        if (MSNet::getInstance()->getTLSControl().knows(tlsID)) {
+                            MSTrafficLightLogic* tll = MSNet::getInstance()->getTLSControl().get(tlsID).getActive();
+                            GUITrafficLightLogicWrapper* tllW = GUINet::getGUIInstance()->getTLLWrapper(tll);
+                            if (tllW) {
+                                tllW->begin2TrackPhases(this);
+                            }
+                        } else {
+                            WRITE_WARNINGF("Tracker for unknown tlLogic '%' in settings file '%'", tlsID, fname);
+                        }
                     }
                 }
             } else {

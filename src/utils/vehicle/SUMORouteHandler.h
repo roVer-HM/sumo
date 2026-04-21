@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -64,9 +64,6 @@ public:
     /**@brief check start and end position of a stop
      * @brief return */
     static StopPos checkStopPos(double& startPos, double& endPos, const double laneLength, const double minLength, const bool friendlyPos);
-
-    /// @brief check if start and end position of a stop is valid
-    static bool isStopPosValid(const double startPos, const double endPos, const double laneLength, const double minLength, const bool friendlyPos);
 
     /// @brief returns the first departure time that was ever read
     SUMOTime getFirstDepart() const;
@@ -231,7 +228,7 @@ protected:
     double myCurrentCosts;
 
     /// @brief List of the stops on the parsed route
-    std::vector<SUMOVehicleParameter::Stop> myActiveRouteStops;
+    StopParVector myActiveRouteStops;
 
     /// @brief The currently parsed vehicle type
     SUMOVTypeParameter* myCurrentVType;
@@ -253,6 +250,9 @@ protected:
 
     /// @brief whether references to internal routes are allowed in this context
     bool myAllowInternalRoutes;
+
+    /// @brief IDs of skipped vehicles to suppress errors for the triggered transportables within
+    std::set<std::string> mySkippedVehicles;
 
 private:
     /// @brief Invalidated copy constructor

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2011-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -26,7 +26,6 @@ from __future__ import print_function
 
 import sys
 import os
-import codecs
 try:
     from StringIO import StringIO
 except ImportError:
@@ -296,8 +295,10 @@ class AttributeStore:
 
             elif tag == TAG_EDGE and oldChildren:
                 # see CAVEAT9
+                oldKeys = list(oldChildren.id_attrs.keys())
                 children = oldChildren
-                for k, (n, v, c) in oldChildren.id_attrs.items():
+                for k in oldKeys:
+                    n, v, c = oldChildren.id_attrs[k]
                     if c:
                         deletedNeigh = False
                         for k2, (n2, v2, c2) in c.id_attrs.items():
@@ -353,9 +354,10 @@ class AttributeStore:
                 (tag == TAG_EDGE and name == "type")):
             return None
         elif destValue is None:
-            return DEFAULT_VALUES[name]
-        else:
-            return destValue
+            destValue = DEFAULT_VALUES[name]
+            if sourceValue == destValue:
+                return None
+        return destValue
 
     def hasChangedConnection(self, tagid, attrs):
         tag, id = tagid
@@ -554,10 +556,11 @@ class AttributeStore:
 
 
 def create_plain(netfile, netconvert, plain_geo):
-    prefix = netfile[:-8]
+    prefix = netfile[:-11] if netfile[-3:] == '.gz' else netfile[:-8]
     call([netconvert,
           "--sumo-net-file", netfile,
           "--plain-output-prefix", prefix,
+          "--default.spreadtype", "right",  # overwrite value in net
           "--roundabouts.guess", "false"]
          + (["--proj.plain-geo"] if plain_geo else []))
     return prefix
@@ -592,7 +595,7 @@ def xmldiff(options, source, dest, diff, type, copy_tags, patchImport,
         elif not have_dest:
             print("Dest file %s is missing. Assuming all elements are deleted." % dest)
 
-        with codecs.open(diff, 'w', 'utf-8') as diff_file:
+        with sumolib.openz(diff, 'w') as diff_file:
             sumolib.xml.writeHeader(diff_file, root=root, schemaPath=schema, rootAttrs=version, options=options)
             if copy_tags:
                 attributeStore.write(diff_file, "<!-- Copied Elements -->\n")
@@ -650,6 +653,9 @@ def handle_children(xmlfile, handle_parsenode):
                         schema = "tllogic_file.xsd"
                     if parsenode.hasAttribute("version"):
                         version = ' version="%s"' % parsenode.getAttribute("version")
+                    if parsenode.hasAttribute("spreadType"):
+                        DEFAULT_VALUES["spreadType"] = parsenode.getAttribute("spreadType")
+                        version = ' version="%s"' % parsenode.getAttribute("version")
                     if root not in ("edges", "nodes", "connections", "tlLogics"):
                         # do not write schema information
                         version = None
@@ -671,13 +677,13 @@ def main(options):
     selectionOutputFiles = []
     shapeOutputFiles = []
     if options.write_selections:
-        selectionOutputFiles.append(codecs.open(options.outprefix + '.created.sel.txt', 'w', 'utf-8'))
-        selectionOutputFiles.append(codecs.open(options.outprefix + '.deleted.sel.txt', 'w', 'utf-8'))
-        selectionOutputFiles.append(codecs.open(options.outprefix + '.changed.sel.txt', 'w', 'utf-8'))
+        selectionOutputFiles.append(sumolib.openz(options.outprefix + '.created.sel.txt', 'w'))
+        selectionOutputFiles.append(sumolib.openz(options.outprefix + '.deleted.sel.txt', 'w'))
+        selectionOutputFiles.append(sumolib.openz(options.outprefix + '.changed.sel.txt', 'w'))
     if options.write_shapes:
-        shapeOutputFiles.append(codecs.open(options.outprefix + '.created.shape.add.xml', 'w', 'utf-8'))
-        shapeOutputFiles.append(codecs.open(options.outprefix + '.deleted.shape.add.xml', 'w', 'utf-8'))
-        shapeOutputFiles.append(codecs.open(options.outprefix + '.changed.shape.add.xml', 'w', 'utf-8'))
+        shapeOutputFiles.append(sumolib.openz(options.outprefix + '.created.shape.add.xml', 'w'))
+        shapeOutputFiles.append(sumolib.openz(options.outprefix + '.deleted.shape.add.xml', 'w'))
+        shapeOutputFiles.append(sumolib.openz(options.outprefix + '.changed.shape.add.xml', 'w'))
         for f in shapeOutputFiles:
             sumolib.writeXMLHeader(f, "$Id$", "additional", options=options)  # noqa
 

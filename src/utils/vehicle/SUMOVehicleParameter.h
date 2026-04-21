@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -101,6 +101,7 @@ const int STOP_POSLAT_SET = 2 << 18;
 const int STOP_ONDEMAND_SET = 2 << 19;
 const int STOP_JUMP_SET = 2 << 20;
 const int STOP_JUMP_UNTIL_SET = 2 << 21;
+const int STOP_PRIORITY_SET = 2 << 22;
 
 const double MIN_STOP_LENGTH = 2 * POSITION_EPS;
 
@@ -456,6 +457,9 @@ public:
         /// @brief whether the stop may be skipped
         bool onDemand = false;
 
+        /// @brief priority for weighting/skipping stops
+        double priority = -1;
+
         /// @brief transfer time if there shall be a jump from this stop to the next route edge
         SUMOTime jump = -1;
 
@@ -489,7 +493,6 @@ public:
         /// @brief return flags as per Vehicle::getStops
         int getFlags() const;
     };
-
 
     /** @brief Returns whether the given parameter was set
      * @param[in] what The parameter which one asks for
@@ -761,10 +764,10 @@ public:
     /// @name Repetition definition
     /// @{
     /// @brief The number of times the vehicle shall be repeatedly inserted
-    int repetitionNumber;
+    long long int repetitionNumber;
 
     /// @brief The number of times the vehicle was already inserted
-    int repetitionsDone;
+    long long int repetitionsDone;
 
     /// @brief The time offset between vehicle reinsertions
     SUMOTime repetitionOffset;
@@ -870,3 +873,5 @@ protected:
     bool areInsertionChecksValid(const std::string& value) const;
 
 };
+
+typedef std::vector<SUMOVehicleParameter::Stop> StopParVector;

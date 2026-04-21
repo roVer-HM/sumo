@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2024-03-01 12:47:21 by Eclipse SUMO sumo Version v1_19_0+1117-574facbaf55
+<!-- generated on 2025-07-09 16:35:53 by Eclipse SUMO sumo Version v1_23_1+0964-c15482fcffc
 This data file and the accompanying materials
 are made available under the terms of the Eclipse Public License v2.0
 which accompanies this distribution, and is available at
@@ -11,7 +11,7 @@ Public License 2.0 are satisfied: GNU General Public License, version 2
 or later which is available at
 https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
 SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
-<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+<sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
         <net-file value="net.net.xml"/>
@@ -21,7 +21,7 @@ SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
     <output>
         <write-license value="true"/>
         <fcd-output value="fcd.xml"/>
-        <fcd-output.attributes value="all"/>
+        <fcd-output.attributes value="traffic,misc"/>
     </output>
 
     <time>
@@ -39,7 +39,7 @@ SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
         <no-step-log value="true"/>
     </report>
 
-</configuration>
+</sumoConfiguration>
 -->
 
 <fcd-export xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/fcd_file.xsd">
@@ -165,7 +165,7 @@ SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
         <vehicle id="v1" x="397.41" y="495.22" angle="89.76" type="thin" speed="13.89" pos="153.81" lane="1si_1" slope="0.00" signals="0" acceleration="0.00" accelerationLat="-0.14" distance="153.81" odometer="153.81" posLat="0.17" speedLat="0.06" arrivalDelay="0.00"/>
     </timestep>
     <timestep time="15.50">
-        <vehicle id="v0" x="393.79" y="491.78" angle="89.99" type="DEFAULT_VEHTYPE" speed="0.00" pos="150.00" lane="1si_0" slope="0.00" signals="0" acceleration="-0.00" accelerationLat="-0.00" distance="150.00" odometer="144.90" posLat="0.03" speedLat="-0.00" arrivalDelay="0.00"/>
+        <vehicle id="v0" x="393.79" y="491.78" angle="89.99" type="DEFAULT_VEHTYPE" speed="0.00" pos="150.00" lane="1si_0" slope="0.00" signals="0" acceleration="0.00" accelerationLat="-0.00" distance="150.00" odometer="144.90" posLat="0.03" speedLat="-0.00" arrivalDelay="0.00"/>
         <vehicle id="v1" x="404.00" y="495.21" angle="90.03" type="thin" speed="13.89" pos="160.76" lane="1si_1" slope="0.00" signals="0" acceleration="0.00" accelerationLat="-0.13" distance="160.76" odometer="160.76" posLat="0.16" speedLat="-0.01" arrivalDelay="0.00"/>
     </timestep>
     <timestep time="16.00">

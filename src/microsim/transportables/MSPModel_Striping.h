@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2014-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2014-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -478,7 +478,7 @@ private:
     static int getStripeOffset(int origStripes, int destStripes, bool addRemainder);
 
     ///@brief add vehicles driving across
-    static bool addCrossingVehs(const MSLane* crossing, int stripes, double lateral_offset, int dir, Obstacles& crossingVehs, bool prio);
+    static bool addCrossingVehs(const MSLane* crossing, int stripes, double lateral_offset, int dir, Obstacles& crossingVehs, bool prio, bool flipY);
 
     ///@brief retrieve vehicle obstacles on the given lane
     static Obstacles getVehicleObstacles(const MSLane* lane, int dir, PState* ped = 0);

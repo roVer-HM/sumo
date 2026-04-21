@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2017-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2017-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -191,7 +191,7 @@ TrafficLight::getServedPersonCount(const std::string& tlsID, int index) {
     for (int i = 0; i < (int)state.size(); i++) {
         if (state[i] == LINKSTATE_TL_GREEN_MAJOR) {
             for (MSLink* link : active->getLinksAt(i)) {
-                if (link->getLane()->getEdge().isCrossing()) {
+                if (link->getLane()->isCrossing()) {
                     // walking forwards across
                     for (MSTransportable* person : link->getLaneBefore()->getEdge().getPersons()) {
                         if (static_cast<MSPerson*>(person)->getNextEdge() == link->getLane()->getEdge().getID()) {
@@ -205,7 +205,7 @@ TrafficLight::getServedPersonCount(const std::string& tlsID, int index) {
                             result += 1;
                         }
                     }
-                } else if (link->getLaneBefore()->getEdge().isCrossing()) {
+                } else if (link->getLaneBefore()->isCrossing()) {
                     // walking backwards across (in case both sides are separately controlled)
                     for (MSTransportable* person : link->getLane()->getEdge().getPersons()) {
                         if (static_cast<MSPerson*>(person)->getNextEdge() == link->getLaneBefore()->getEdge().getID()) {

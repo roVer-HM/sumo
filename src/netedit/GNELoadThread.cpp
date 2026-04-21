@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -32,7 +32,6 @@
 #include <utils/xml/XMLSubSys.h>
 
 #include "GNEApplicationWindow.h"
-#include "GNEEvent_NetworkLoaded.h"
 #include "GNELoadThread.h"
 #include "GNENet.h"
 
@@ -69,57 +68,86 @@ GNELoadThread::run() {
     MsgHandler::getMessageInstance()->addRetriever(myMessageRetriever);
     MsgHandler::getErrorInstance()->addRetriever(myErrorRetriever);
     MsgHandler::getWarningInstance()->addRetriever(myWarningRetriever);
-    // flag for check if input is valid
-    bool validInput = false;
-    // declare network
-    GNENet* net = nullptr;
+    // type of loading
+    GNEEvent_FileLoaded::Type type = GNEEvent_FileLoaded::Type::INVALID_TYPE;
     // declare loaded file
     std::string loadedFile;
     // check conditions
     if (neteditOptions.getBool("new")) {
         // create new network
-        validInput = true;
+        type = GNEEvent_FileLoaded::Type::NEW;
     } else if (neteditOptions.getString("osm-files").size() > 0) {
         // load an osm file
-        validInput = true;
-    } else if (neteditOptions.getString("net-file").size() > 0) {
+        type = GNEEvent_FileLoaded::Type::OSM;
+    } else if (neteditOptions.getString("sumo-net-file").size() > 0) {
         // load a network file
-        validInput = true;
-        loadedFile = neteditOptions.getString("net-file");
+        type = GNEEvent_FileLoaded::Type::NETWORK;
+        // set network as default file in file bucket
+        myApplicationWindow->getFileBucketHandler()->setDefaultFilenameFile(FileBucket::Type::NETWORK, neteditOptions.getString("sumo-net-file"));
+    } else if (neteditOptions.getString("netecfg-file").size() > 0) {
+        // load a sumo config file
+        type = GNEEvent_FileLoaded::Type::NETECFG;
+        // set sumo config as loaded file
+        loadedFile = neteditOptions.getString("netecfg-file");
     } else if (neteditOptions.getString("sumocfg-file").size() > 0) {
+        // load a sumo config file
+        type = GNEEvent_FileLoaded::Type::SUMOCFG;
         // set sumo config as loaded file
         loadedFile = neteditOptions.getString("sumocfg-file");
-        // declare parser for sumo config file
-        GNEApplicationWindowHelper::GNESumoConfigHandler confighandler(myApplicationWindow->getSumoOptions(), loadedFile);
-        // if there is an error loading sumo config, stop
-        if (confighandler.loadSumoConfig()) {
-            validInput = true;
-        } else {
-            WRITE_ERRORF(TL("Loading of sumo config file '%' failed."), loadedFile);
-            submitEndAndCleanup(net, loadedFile);
-            return 0;
-        }
+    } else if (neteditOptions.getString("netccfg-file").size() > 0) {
+        // load a netconvert config file
+        type = GNEEvent_FileLoaded::Type::NETCCFG;
+        // set netconvert config file as loaded file
+        loadedFile = neteditOptions.getString("netccfg-file");
     } else if (neteditOptions.getString("configuration-file").size() > 0) {
-        // set netedit config as loaded file
+        // get configuration
         loadedFile = neteditOptions.getString("configuration-file");
-        // declare parser for netedit config file
-        GNEApplicationWindowHelper::GNENeteditConfigHandler confighandler(loadedFile);
-        // if there is an error loading sumo config, stop
-        if (confighandler.loadNeteditConfig()) {
-            validInput = true;
+        // check the extension to determine what we're loading
+        if (StringUtils::endsWith(loadedFile, ".netccfg")) {
+            // load a netconvert config file
+            type = GNEEvent_FileLoaded::Type::NETCCFG;
+        } else if (StringUtils::endsWith(loadedFile, ".sumocfg")) {
+            // load a sumo config file
+            type = GNEEvent_FileLoaded::Type::SUMOCFG;
+        } else if (StringUtils::endsWith(loadedFile, ".netecfg")) {
+            // load a netedit config file
+            type = GNEEvent_FileLoaded::Type::NETECFG;
         } else {
-            WRITE_ERRORF(TL("Loading of netedit config file '%' failed."), loadedFile);
-            submitEndAndCleanup(net, loadedFile);
-            return 0;
+            // invalid config
+            type = GNEEvent_FileLoaded::Type::INVALID_CONFIG;
+            // stop loading
+            return submitEndAndCleanup(type, nullptr, loadedFile);
         }
     } else if (loadConsoleOptions()) {
-        validInput = true;
+        // load information through console
+        type = GNEEvent_FileLoaded::Type::CONSOLE;
+    }
+    // run handlers
+    if (type == GNEEvent_FileLoaded::Type::SUMOCFG) {
+        // declare parser for sumo config file
+        GNEApplicationWindowHelper::GNESumoConfigHandler confighandler(myApplicationWindow, loadedFile);
+        // if there is an error loading sumo config, stop
+        if (!confighandler.loadSumoConfig()) {
+            return submitEndAndCleanup(type, nullptr, loadedFile);
+        }
+    } else if (type == GNEEvent_FileLoaded::Type::NETCCFG) {
+        // declare parser for netedit config file
+        GNEApplicationWindowHelper::GNENetconvertConfigHandler confighandler(loadedFile);
+        // if there is an error loading sumo config, stop
+        if (!confighandler.loadNetconvertConfig()) {
+            return submitEndAndCleanup(type, nullptr, loadedFile);
+        }
+    } else if (type == GNEEvent_FileLoaded::Type::NETECFG) {
+        // declare parser for netedit config file
+        GNEApplicationWindowHelper::GNENeteditConfigHandler confighandler(myApplicationWindow, loadedFile);
+        // if there is an error loading sumo config, stop
+        if (!confighandler.loadNeteditConfig()) {
+            return submitEndAndCleanup(type, nullptr, loadedFile);
+        }
     }
     // check input
-    if (!validInput) {
-        WRITE_ERROR(TL("Invalid input network option. Load with either sumo/netedit/netconvert config or with -new option"));
-        submitEndAndCleanup(net, loadedFile);
-        return 0;
+    if (type == GNEEvent_FileLoaded::Type::INVALID_TYPE) {
+        return submitEndAndCleanup(type, nullptr, loadedFile);
     }
     // update aggregate warnings
     if (neteditOptions.isDefault("aggregate-warnings")) {
@@ -131,9 +159,7 @@ GNELoadThread::run() {
     if (!(NIFrame::checkOptions(neteditOptions) && NBFrame::checkOptions(neteditOptions) &&
             NWFrame::checkOptions(neteditOptions) && SystemFrame::checkOptions(neteditOptions))) {
         // options are not valid
-        WRITE_ERROR(TL("Invalid Options. Nothing loaded"));
-        submitEndAndCleanup(net, loadedFile);
-        return 0;
+        return submitEndAndCleanup(GNEEvent_FileLoaded::Type::INVALID_OPTIONS, nullptr, loadedFile);
     }
     // clear message instances
     MsgHandler::getErrorInstance()->clear();
@@ -143,9 +169,7 @@ GNELoadThread::run() {
     RandHelper::initRandGlobal();
     // check if geo projection can be initialized
     if (!GeoConvHelper::init(neteditOptions)) {
-        WRITE_ERROR(TL("Could not build projection!"));
-        submitEndAndCleanup(net, loadedFile);
-        return 0;
+        return submitEndAndCleanup(GNEEvent_FileLoaded::Type::INVALID_PROJECTION, nullptr, loadedFile);
     }
     // set validation
     XMLSubSys::setValidation(neteditOptions.getString("xml-validation"), neteditOptions.getString("xml-validation.net"), neteditOptions.getString("xml-validation.routes"));
@@ -157,10 +181,12 @@ GNELoadThread::run() {
     NBNetBuilder* netBuilder = new NBNetBuilder();
     // apply netedit options in netBuilder. In this options we have all information for building network
     netBuilder->applyOptions(neteditOptions);
+    // declare network
+    GNENet* net = nullptr;
     // check if create a new net
     if (neteditOptions.getBool("new")) {
         // create new network
-        net = new GNENet(netBuilder, myApplicationWindow->getTagPropertiesDatabase());
+        net = new GNENet(myApplicationWindow, netBuilder);
     } else {
         // declare net loader
         NILoader nl(*netBuilder);
@@ -185,7 +211,7 @@ GNELoadThread::run() {
                 throw ProcessError();
             } else {
                 // now create net with al information loaded in net builder
-                net = new GNENet(netBuilder, myApplicationWindow->getTagPropertiesDatabase());
+                net = new GNENet(myApplicationWindow, netBuilder);
                 // check if change traffic direction
                 if (neteditOptions.getBool("lefthand")) {
                     // force initial geometry computation without volatile options because the net will look strange otherwise
@@ -227,21 +253,22 @@ GNELoadThread::run() {
         }
     }
     // only a single setting file is supported
-    submitEndAndCleanup(net, loadedFile, neteditOptions.getString("gui-settings-file"), neteditOptions.getBool("registry-viewport"));
-    return 0;
+    return submitEndAndCleanup(type, net, loadedFile, neteditOptions.getString("gui-settings-file"),
+                               neteditOptions.getBool("registry-viewport"));
 }
 
 
-
-void
-GNELoadThread::submitEndAndCleanup(GNENet* net, const std::string& loadedFile, const std::string& guiSettingsFile, const bool viewportFromRegistry) {
+FXint
+GNELoadThread::submitEndAndCleanup(GNEEvent_FileLoaded::Type type, GNENet* net, const std::string& loadedFile,
+                                   const std::string& guiSettingsFile, const bool viewportFromRegistry) {
     // remove message callbacks
     MsgHandler::getErrorInstance()->removeRetriever(myErrorRetriever);
     MsgHandler::getWarningInstance()->removeRetriever(myWarningRetriever);
     MsgHandler::getMessageInstance()->removeRetriever(myMessageRetriever);
     // inform parent about the process
-    myEventQueue.push_back(new GNEEvent_NetworkLoaded(net, loadedFile, guiSettingsFile, viewportFromRegistry));
+    myEventQueue.push_back(new GNEEvent_FileLoaded(type, net, loadedFile, guiSettingsFile, viewportFromRegistry));
     myEventThrow.signal();
+    return 0;
 }
 
 
@@ -273,41 +300,65 @@ GNELoadThread::fillOptions(OptionsCont& neteditOptions) {
     neteditOptions.addOptionSubTopic("Time");
 
     // TOPIC: Input
+    neteditOptions.doRegister("netecfg-file", new Option_FileName());
+    neteditOptions.addSynonyme("netecfg-file", "netecfg");
+    neteditOptions.addDescription("netecfg-file", "Input", TL("Load netedit config"));
+    neteditOptions.addXMLDefault("netecfg-file", "neteditConfiguration");
+    neteditOptions.setOptionEditable("netecfg-file", false);
 
     neteditOptions.doRegister("sumocfg-file", new Option_FileName());
     neteditOptions.addSynonyme("sumocfg-file", "sumocfg");
     neteditOptions.addDescription("sumocfg-file", "Input", TL("Load sumo config"));
     neteditOptions.addXMLDefault("sumocfg-file", "sumoConfiguration");
+    neteditOptions.setOptionEditable("sumocfg-file", false);
+
+    neteditOptions.doRegister("netccfg-file", new Option_FileName());
+    neteditOptions.addSynonyme("netccfg-file", "netccfg");
+    neteditOptions.addDescription("netccfg-file", "Input", TL("Load netconvert config"));
+    neteditOptions.addXMLDefault("netccfg-file", "netconvertConfiguration");
+    neteditOptions.setOptionEditable("netccfg-file", false);
 
     neteditOptions.doRegister("additional-files", 'a', new Option_FileName());
     neteditOptions.addSynonyme("additional-files", "additional");
     neteditOptions.addDescription("additional-files", "Input", TL("Load additional and shapes descriptions from FILE(s)"));
+    neteditOptions.setOptionEditable("additional-files", false);
 
     neteditOptions.doRegister("route-files", 'r', new Option_FileName());
     neteditOptions.addSynonyme("route-files", "routes");
     neteditOptions.addDescription("route-files", "Input", TL("Load demand elements descriptions from FILE(s)"));
+    neteditOptions.setOptionEditable("route-files", false);
 
     neteditOptions.doRegister("data-files", 'd', new Option_FileName());
     neteditOptions.addSynonyme("data-files", "data");
     neteditOptions.addDescription("data-files", "Input", TL("Load data elements descriptions from FILE(s)"));
+    neteditOptions.setOptionEditable("data-files", false);
 
     neteditOptions.doRegister("meandata-files", 'm', new Option_FileName());
     neteditOptions.addSynonyme("meandata-files", "meandata");
     neteditOptions.addDescription("meandata-files", "Input", TL("Load meanData descriptions from FILE(s)"));
+    neteditOptions.setOptionEditable("meandata-files", false);
 
     neteditOptions.doRegister("ignore-missing-inputs", new Option_Bool(false));
     neteditOptions.addDescription("ignore-missing-inputs", "Input", TL("Reset path values (additional, route, data...) after loading netedit config"));
 
+    neteditOptions.doRegister("autosave-netconvert-file", new Option_Bool(false));
+    neteditOptions.addDescription("autosave-netconvert-file", "Input", TL("If enabled, automatically save a netconvert configuration after saving a netedit config"));
+
     neteditOptions.doRegister("selection-file", new Option_FileName());
     neteditOptions.addDescription("selection-file", "Input", TL("Load element selection"));
 
+    neteditOptions.doRegister("test-file", new Option_FileName());
+    neteditOptions.addDescription("test-file", "Input", TL("Test file"));
+
     // TOPIC: Output
 
-    neteditOptions.doRegister("tls-file", new Option_String());
+    neteditOptions.doRegister("tls-file", new Option_FileName());
     neteditOptions.addDescription("tls-file", "Output", TL("File in which TLS Programs must be saved"));
+    neteditOptions.setOptionEditable("tls-file", false);
 
-    neteditOptions.doRegister("edgetypes-file", new Option_String());
+    neteditOptions.doRegister("edgetypes-file", new Option_FileName());
     neteditOptions.addDescription("edgetypes-file", "Output", TL("File in which edgeTypes must be saved"));
+    neteditOptions.setOptionEditable("edgetypes-file", false);
 
     // TOPIC: Netedit
 
@@ -331,7 +382,7 @@ GNELoadThread::fillOptions(OptionsCont& neteditOptions) {
     neteditOptions.addDescription("e2.friendlyPos.automatic", "Netedit", TL("If the lane is shorter than the additional, automatically enable friendlyPos"));
 
     neteditOptions.doRegister("force-saving", new Option_Bool(false));
-    neteditOptions.addDescription("force-saving", "Netedit", TL("If enabled, elements will be saved regardless of whether they have been edited or not"));
+    neteditOptions.addDescription("force-saving", "Netedit", TL("If enabled, loaded elements will be saved regardless of whether they have been edited or not (usually used in netedit test)"));
 
     // network prefixes
 
@@ -511,6 +562,10 @@ GNELoadThread::fillOptions(OptionsCont& neteditOptions) {
     NBFrame::fillOptions(neteditOptions, false);
     NWFrame::fillOptions(neteditOptions, false);
     RandHelper::insertRandOptions(neteditOptions);
+
+    // don't edit net and config file
+    neteditOptions.setOptionEditable("sumo-net-file", false);
+    neteditOptions.setOptionEditable("configuration-file", false);
 }
 
 

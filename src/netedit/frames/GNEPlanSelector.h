@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -32,7 +32,7 @@ class GNEFrame;
 // class definitions
 // ===========================================================================
 
-class GNEPlanSelector : public MFXGroupBoxModule {
+class GNEPlanSelector : public GNEGroupBoxModule {
     /// @brief FOX-declaration
     FXDECLARE(GNEPlanSelector)
 
@@ -100,11 +100,8 @@ protected:
     /// @brief check if selected plan is valid
     bool isPlanValid() const;
 
-    /// @brief fill person templates
-    void fillPersonPlanTemplates(GNENet* net);
-
-    /// @brief fill container templates
-    void fillContainerPlanTemplates(GNENet* net);
+    /// @brief plan type
+    SumoXMLTag myPlanType;
 
 private:
     /// @brief pointer to Frame Parent
@@ -115,7 +112,4 @@ private:
 
     /// @brief current plan template;
     std::pair<GNETagProperties*, GNEDemandElement*> myCurrentPlanTemplate;
-
-    /// @brief list with demand templates
-    std::vector<std::pair<GNETagProperties*, GNEDemandElement*> > myPlanTemplates;
 };

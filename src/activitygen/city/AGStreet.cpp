@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2010-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2010-2026 German Aerospace Center (DLR) and others.
 // activitygen module
 // Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
 // This program and the accompanying materials are made available under the
@@ -32,8 +32,9 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-AGStreet::AGStreet(const std::string& id, RONode* from, RONode* to, int index, const int priority, const std::string& type) :
-    ROEdge(id, from, to, index, priority, type), myPopulation(0.), myNumWorkplaces(0.) {
+AGStreet::AGStreet(const std::string& id, RONode* from, RONode* to, int index, const int priority, const std::string& type, const std::string& routingType) :
+    ROEdge(id, from, to, index, priority, type, routingType),
+    myPopulation(0.), myNumWorkplaces(0.) {
 }
 
 

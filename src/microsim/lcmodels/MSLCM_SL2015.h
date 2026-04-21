@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2013-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -112,8 +112,6 @@ public:
     double getOppositeSafetyFactor() const override;
 
     void prepareStep() override;
-
-    double getExtraReservation(int bestLaneOffset) const override;
 
     /// @brief whether the current vehicles shall be debugged
     bool debugVehicle() const override;
@@ -340,6 +338,9 @@ protected:
     /// @brief compute speed when committing to an urgent change that is safe in regard to leading vehicles
     double commitFollowSpeed(double speed, double latDist, double secondsToLeaveLane, const MSLeaderDistanceInfo& leaders, double foeOffset) const;
 
+    /// @brief check whether the sublane continues on the next lane
+    bool sublaneEnds(int i, const MSLane* next, double shift);
+
     /// @brief estimate average speed over mySpeedGainLookahead time
     double forecastAverageSpeed(double vSafe, double vMax, double gap, double vLeader) const;
 
@@ -424,8 +425,6 @@ protected:
     double myMinGapLat;
     // @brief willingness to encroach on other vehicles laterally (pushing them around)
     double myPushy;
-    // @brief willingness to undercut longitudinal safe gaps
-    double myAssertive;
     // @brief dynamic component of willingness for longitudinal gap reduction
     double myImpatience;
     double myMinImpatience;

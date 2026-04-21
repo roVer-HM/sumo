@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -30,17 +30,53 @@
 // method definitions
 // ===========================================================================
 
-CommonHandler::CommonHandler(const std::string& filename) :
-    myFilename(filename) {
+CommonHandler::CommonHandler(FileBucket* fileBucket) :
+    myFileBucket(fileBucket) {
 }
 
 
 CommonHandler::~CommonHandler() {}
 
 
+void
+CommonHandler::forceOverwriteElements() {
+    myOverwriteElements = true;
+}
+
+
+void
+CommonHandler::forceRemainElements() {
+    myRemainElements = true;
+}
+
+
+void
+CommonHandler::abortLoading() {
+    myAbortLoading = true;
+}
+
+
 bool
 CommonHandler::isErrorCreatingElement() const {
     return myErrorCreatingElement;
+}
+
+
+bool
+CommonHandler::isForceOverwriteElements() const {
+    return myOverwriteElements;
+}
+
+
+bool
+CommonHandler::isForceRemainElements() const {
+    return myRemainElements;
+}
+
+
+bool
+CommonHandler::isAbortLoading() const {
+    return myAbortLoading;
 }
 
 
@@ -323,14 +359,15 @@ CommonHandler::checkValidDemandElementID(const SumoXMLTag tag, const std::string
 
 
 void
-CommonHandler::writeWarningOverwritting(const SumoXMLTag tag, const std::string& id) {
-    WRITE_WARNING(TLF("Overwritting % with ID '%'", toString(tag), id));
+CommonHandler::writeWarningOverwriting(const SumoXMLTag tag, const std::string& id) {
+    WRITE_WARNING(TLF("Overwriting % with ID '%'", toString(tag), id));
 }
 
 
 bool
 CommonHandler::writeWarningDuplicated(const SumoXMLTag tag, const std::string& id, const SumoXMLTag checkedTag) {
-    return writeError(TLF("Could not build % with ID '%' in netedit; Found another % with the same ID.", toString(tag), id, toString(checkedTag)));
+    WRITE_WARNING(TLF("Could not build % with ID '%' in netedit; Found another % with the same ID.", toString(tag), id, toString(checkedTag)));
+    return false;
 }
 
 
@@ -349,32 +386,55 @@ CommonHandler::writeErrorInvalidPosition(const SumoXMLTag tag, const std::string
 
 
 bool
-CommonHandler::writeErrorEmptyEdges(const SumoXMLTag tag, const std::string& id) {
-    return writeError(TLF("Could not build % with ID '%' in netedit; List of edges cannot be empty.", toString(tag), id));
-}
-
-
-bool
 CommonHandler::writeErrorInvalidLanes(const SumoXMLTag tag, const std::string& id) {
     return writeError(TLF("Could not build % with ID '%' in netedit; List of lanes isn't valid.", toString(tag), id));
 }
 
 
 bool
-CommonHandler::writeErrorInvalidParent(const SumoXMLTag tag, const std::string& id, const SumoXMLTag parentTag, const std::string& parentID) {
-    return writeError(TLF("Could not build % with ID '%' in netedit; % parent with ID '%' doesn't exist.", toString(tag), id, toString(parentTag), parentID));
+CommonHandler::writeErrorInvalidParent(const SumoXMLTag tag, const std::string& id, const std::vector<SumoXMLTag> parentTags, const std::string& parentID) {
+    if (parentTags.size() == 1) {
+        return writeError(TLF("Could not build % with ID '%' in netedit; % parent with ID '%' doesn't exist.", toString(tag), id, toString(parentTags.front()), parentID));
+    } else {
+        return writeError(TLF("Could not build % with ID '%' in netedit; % parent with ID '%' doesn't exist.", toString(tag), id, parseParentTags(parentTags), parentID));
+    }
 }
 
 
 bool
-CommonHandler::writeErrorInvalidParent(const SumoXMLTag tag, const SumoXMLTag parentTag, const std::string& parentID) {
-    return writeError(TLF("Could not build % in netedit; % parent with ID '%' doesn't exist.", toString(tag), toString(parentTag), parentID));
+CommonHandler::writeErrorInvalidParent(const SumoXMLTag tag, const std::vector<SumoXMLTag> parentTags, const std::string& parentID) {
+    if (parentTags.size() == 1) {
+        return writeError(TLF("Could not build % in netedit; % parent with ID '%' doesn't exist.", toString(tag), toString(parentTags.front()), parentID));
+    } else {
+        return writeError(TLF("Could not build % in netedit; % parent with ID '%' doesn't exist.", toString(tag), parseParentTags(parentTags), parentID));
+    }
 }
 
 
 bool
-CommonHandler::writeErrorInvalidParent(const SumoXMLTag tag, const SumoXMLTag parentTag) {
-    return writeError(TLF("Could not build % in netedit; % parent doesn't exist.", toString(tag), toString(parentTag)));
+CommonHandler::writeErrorInvalidParent(const SumoXMLTag tag, const std::vector<SumoXMLTag> parentTags) {
+    if (parentTags.size() == 1) {
+        return writeError(TLF("Could not build % in netedit; % parent doesn't exist.", toString(tag), toString(parentTags.front())));
+    } else {
+        return writeError(TLF("Could not build % in netedit; % parent doesn't exist.", toString(tag), parseParentTags(parentTags)));
+    }
+}
+
+
+std::string
+CommonHandler::parseParentTags(std::vector<SumoXMLTag> parentTags) const {
+    std::string parentTagsStr;
+    // Join all but the last with ", ", then add " or " + last
+    std::string result;
+    for (int i = 0; i < ((int)parentTags.size() - 1); i++) {
+        if (i != 0) {
+            result.append(", ");
+        }
+        result.append(toString(parentTags[i]));
+    }
+    result.append(TL(" or "));
+    result.append(toString(parentTags.back()));
+    return result;
 }
 
 /****************************************************************************/

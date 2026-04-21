@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -29,6 +29,7 @@
 #include <microsim/MSVehicleControl.h>
 #include <microsim/output/MSRouteProbe.h>
 #include <utils/xml/SUMOXMLDefinitions.h>
+#include <utils/common/MsgHandler.h>
 #include <utils/common/ToString.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/common/StringTokenizer.h>
@@ -80,7 +81,7 @@ bool
 METriggeredCalibrator::tryEmit(MESegment* s, MEVehicle* vehicle) {
     if (s->initialise(vehicle, vehicle->getParameter().depart)) {
         if (!MSNet::getInstance()->getVehicleControl().addVehicle(vehicle->getID(), vehicle)) {
-            throw ProcessError("Emission of vehicle '" + vehicle->getID() + "' in calibrator '" + getID() + "'failed!");
+            throw ProcessError(TLF("Emission of vehicle '%' in calibrator '%' failed!", vehicle->getID(), getID()));
         }
         return true;
     }

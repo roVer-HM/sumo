@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -106,7 +106,7 @@ public:
         typename SUMOAbstractRouter<FlippedEdge<E, N, V>, V>::Operation flippedOperation,
         const std::shared_ptr<const FlippedLookupTable> flippedLookup = nullptr,
         const bool havePermissions = false, const bool haveRestrictions = false,
-        const std::vector<FlippedEdge<E, N, V>*>* toProhibit = nullptr) :
+        const std::map<const FlippedEdge<E, N, V>*, RouterProhibition>* toProhibit = nullptr) :
         myFlippedEdges(flippedEdges),
         myFlippedPartition(flippedPartition),
         myNumberOfLevels(numberOfLevels),
@@ -211,7 +211,7 @@ protected:
     /// @brief The boolean flag indicating whether edge restrictions need to be considered or not
     const bool myHaveRestrictions;
     /// @brief The list of explicitly prohibited edges
-    const std::vector<FlippedEdge<E, N, V>*>* myProhibited;
+    const std::map<const FlippedEdge<E, N, V>*, RouterProhibition>* myProhibited;
     /// @brief The node-to-edge router (for a backward graph with flipped edges)
     Node2EdgeRouter<FlippedEdge<E, N, V>, FlippedNode<E, N, V>, V, M>* myNode2EdgeRouter;
     /// @brief A Dijkstra based centralized label-correcting algorithm
@@ -476,8 +476,7 @@ void AFBuild<E, N, V, M>::computeArcFlagsAux(SUMOTime msTime, const int sHARCLev
             if (supercellEdge->isInternal()) {
                 continue;
             }
-            if ((myNode2EdgeRouter->edgeInfo(supercellEdge))->prohibited
-                    || myNode2EdgeRouter->isProhibited(supercellEdge, vehicle)) {
+            if (myNode2EdgeRouter->isProhibited(supercellEdge, vehicle, STEPS2TIME(msTime))) {
                 continue;
             }
 #ifdef AFBU_DEBUG_LEVEL_1
@@ -503,8 +502,7 @@ void AFBuild<E, N, V, M>::computeArcFlagsAux(SUMOTime msTime, const int sHARCLev
         const ArcInfo* arcInfo = *iter2;
         assert(!arcInfo->edge->isInternal());
         assert(myNode2EdgeRouter);
-        assert(!(myNode2EdgeRouter->edgeInfo(arcInfo->edge))->prohibited
-               && !myNode2EdgeRouter->isProhibited(arcInfo->edge, vehicle));
+        assert(!myNode2EdgeRouter->isProhibited(arcInfo->edge, vehicle, STEPS2TIME(msTime)));
         size_t numberOfBoundaryNodes = arcInfo->effortsToBoundaryNodes.size();
         size_t index;
         bool onShortestPath = false;
@@ -528,8 +526,7 @@ void AFBuild<E, N, V, M>::computeArcFlagsAux(SUMOTime msTime, const int sHARCLev
                 ArcInfo* followerInfo = myArcInfos[follower.first->getNumericalID()];
 
                 // check whether it can be used
-                if ((myNode2EdgeRouter->edgeInfo(follower.first))->prohibited
-                        || myNode2EdgeRouter->isProhibited(follower.first, vehicle)) {
+                if (myNode2EdgeRouter->isProhibited(follower.first, vehicle, sTime)) {
                     myErrorMsgHandler->inform("Vehicle '" + Named::getIDSecure(vehicle) + "' is not allowed on source edge '" + followerInfo->edge->getID() + "'.");
                     continue;
                 }
@@ -582,8 +579,7 @@ void AFBuild<E, N, V, M>::computeArcFlagsAux(SUMOTime msTime, const int sHARCLev
 #endif
     for (const FlippedEdge<E, N, V>* edgeInsideCell : edgesInsideCell) {
         ArcInfo* arcInfo = myArcInfos[edgeInsideCell->getNumericalID()];
-        if ((myNode2EdgeRouter->edgeInfo(edgeInsideCell))->prohibited
-                || myNode2EdgeRouter->isProhibited(edgeInsideCell, vehicle)) {
+        if (myNode2EdgeRouter->isProhibited(edgeInsideCell, vehicle, STEPS2TIME(msTime))) {
             continue;
         }
         arcInfosOnAShortestPath.insert(arcInfo);

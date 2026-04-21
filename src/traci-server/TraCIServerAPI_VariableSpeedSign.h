@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -33,16 +33,6 @@
  */
 class TraCIServerAPI_VariableSpeedSign {
 public:
-    /** @brief Processes a get value command (Command 0xa6: Get VariableSpeedSign Variable)
-     *
-     * @param[in] server The TraCI-server-instance which schedules this request
-     * @param[in] inputStorage The storage to read the command from
-     * @param[out] outputStorage The storage to write the result to
-     */
-    static bool processGet(TraCIServer& server, tcpip::Storage& inputStorage,
-                           tcpip::Storage& outputStorage);
-
-
     /** @brief Processes a set value command (Command 0xc6: Change VariableSpeedSign State)
      *
      * @param[in] server The TraCI-server-instance which schedules this request

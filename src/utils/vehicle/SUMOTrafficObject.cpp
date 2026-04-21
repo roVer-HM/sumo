@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -56,7 +56,7 @@ SUMOTrafficObject::getStringParam(const std::string& paramName, const bool requi
 
 double
 SUMOTrafficObject::getFloatParam(const std::string& paramName, const bool required, const double deflt, bool checkDist) const {
-    const std::string val = getStringParam(paramName, required, toString(deflt));
+    const std::string val = getStringParam(paramName, required, toString(deflt, 16));
     if (!checkDist) {
         try {
             return StringUtils::toDouble(val);

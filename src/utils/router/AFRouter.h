@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2012-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -392,13 +392,14 @@ public:
                  SUMOTime msTime, std::vector<const E*>& into, bool silent = false) {
         assert(from != nullptr && to != nullptr);
         // check whether from and to can be used
-        if (this->myEdgeInfos[from->getNumericalID()].prohibited || this->isProhibited(from, vehicle)) {
+        if (this->isProhibited(from, vehicle, STEPS2TIME(msTime))) {
             if (!silent) {
                 this->myErrorMsgHandler->inform("Vehicle '" + Named::getIDSecure(vehicle) + "' is not allowed on source edge '" + from->getID() + "'.");
             }
             return false;
         }
-        if (this->myEdgeInfos[to->getNumericalID()].prohibited || this->isProhibited(to, vehicle)) {
+        // technically, a temporary permission might be lifted by the time of arrival
+        if (this->isProhibited(to, vehicle, STEPS2TIME(msTime))) {
             if (!silent) {
                 this->myErrorMsgHandler->inform("Vehicle '" + Named::getIDSecure(vehicle) + "' is not allowed on destination edge '" + to->getID() + "'.");
             }
@@ -468,7 +469,7 @@ public:
                 auto& followerInfo = this->myEdgeInfos[follower.first->getNumericalID()];
                 const FlagInfo* followerFlagInfo = (*myFlagInfos)[follower.first->getNumericalID()];
                 // check whether it can be used
-                if (followerInfo.prohibited || this->isProhibited(follower.first, vehicle)) {
+                if (this->isProhibited(follower.first, vehicle, leaveTime)) {
                     continue;
                 }
 #ifdef AFRO_DEBUG_LEVEL_1

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2017-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2017-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -484,14 +484,17 @@ Simulation::getDistanceRoad(const std::string& edgeID1, double pos1, const std::
 
 
 libsumo::TraCIStage
-Simulation::findRoute(const std::string& fromEdge, const std::string& toEdge, const std::string& vType, const double depart, const int routingMode) {
+Simulation::findRoute(const std::string& fromEdge, const std::string& toEdge, const std::string& vType,
+                      double depart, int routingMode, double departPos, double arrivalPos) {
     tcpip::Storage content;
-    StoHelp::writeCompound(content, 5);
+    StoHelp::writeCompound(content, 7);
     StoHelp::writeTypedString(content, fromEdge);
     StoHelp::writeTypedString(content, toEdge);
     StoHelp::writeTypedString(content, vType);
     StoHelp::writeTypedDouble(content, depart);
     StoHelp::writeTypedInt(content, routingMode);
+    StoHelp::writeTypedDouble(content, departPos);
+    StoHelp::writeTypedDouble(content, arrivalPos);
     return Dom::getTraCIStage(libsumo::FIND_ROUTE, "", &content);
 }
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -132,6 +132,9 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
     oc.doRegister("reserved-ids", new Option_FileName());
     oc.addDescription("reserved-ids", "Processing", TL("Ensures that generated ids do not included any of the typed IDs from FILE (sumo-gui selection file format)"));
 
+    oc.doRegister("kept-ids", new Option_FileName());
+    oc.addDescription("kept-ids", "Processing", TL("Ensures that objects with typed IDs from FILE (sumo-gui selection file format) are not renamed"));
+
     if (!forNetgen) {
         oc.doRegister("dismiss-vclasses", new Option_Bool(false));
         oc.addDescription("dismiss-vclasses", "Processing", TL("Removes vehicle class restrictions from imported edges"));
@@ -214,7 +217,7 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
         oc.addDescription("geometry.min-radius.fix.railways", "Processing", TL("Straighten edge geometries to avoid turning radii less than geometry.min-radius (only railways)"));
 
         oc.doRegister("geometry.junction-mismatch-threshold", new Option_Float(20));
-        oc.addDescription("geometry.junction-mismatch-threshold", "Processing", TL("Warn if the junction shape is to far away from the original node position"));
+        oc.addDescription("geometry.junction-mismatch-threshold", "Processing", TL("Warn if the junction shape is too far away from the original node position"));
 
         oc.doRegister("geometry.check-overlap", new Option_Float(0));
         oc.addDescription("geometry.check-overlap", "Processing", TL("Warn if edges overlap by more than the given threshold value"));
@@ -356,9 +359,15 @@ NBFrame::fillOptions(OptionsCont& oc, bool forNetgen) {
         oc.addDescription("junctions.join-exclude", "Junctions", TL("Interprets STR[] as list of junctions to exclude from joining"));
     }
 
-    oc.doRegister("junctions.join-same", new Option_Bool(false));
+    oc.doRegister("junctions.join-same", new Option_Float(-1));
     oc.addDescription("junctions.join-same", "Junctions",
-                      "Joins junctions that have the same coordinates even if not connected");
+                      "Joins junctions that have similar coordinates even if not connected");
+
+    if (!forNetgen) {
+        oc.doRegister("junctions.attach-removed", new Option_Float(-1));
+        oc.addDescription("junctions.attach-removed", "Junctions",
+                          "Attach junction to the closest edge within FLOAT distance that has it's id in param removedNodeIDs (for joining networks)");
+    }
 
     oc.doRegister("max-join-ids", new Option_Integer(4));
     oc.addDescription("max-join-ids", "Junctions", "Abbreviate junction or TLS id if it joins more than INT junctions");

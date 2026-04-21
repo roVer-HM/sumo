@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsd:schema elementFormDefault="qualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 
-    <xsd:include schemaLocation="tazTypes.xsd" />
+    <xsd:include schemaLocation="types/taz.xsd" />
 
     <xsd:element name="net" type="netType">
         <xsd:key name="edgeKey">
@@ -79,6 +79,7 @@
         <xsd:attribute name="length" type="positiveFloatType" use="optional"/>
         <xsd:attribute name="bidi" type="xsd:string" use="optional"/>
         <xsd:attribute name="type" type="xsd:string" use="optional"/>
+        <xsd:attribute name="routingType" type="xsd:string" use="optional"/>
         <xsd:attribute name="shape" type="shapeTypeTwo" use="optional"/>
         <xsd:attribute name="distance" type="floatType"/>
         <xsd:attribute name="spreadType" type="spreadTypeType" use="optional"/>
@@ -170,6 +171,15 @@
                     <xsd:enumeration value="default"/>
                     <xsd:enumeration value="outer"/>
                     <xsd:enumeration value="inner"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:attribute name="roundabout" use="optional">
+            <xsd:simpleType>
+                <xsd:restriction base="xsd:string">
+                    <xsd:enumeration value="1"/>
+                    <xsd:enumeration value="0"/>
+                    <xsd:enumeration value="default"/>
                 </xsd:restriction>
             </xsd:simpleType>
         </xsd:attribute>

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2012-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -133,7 +133,7 @@ public:
             if (from->isInternal()) {
                 continue;
             }
-            if (this->myEdgeInfos[from->getNumericalID()].prohibited || this->isProhibited(from, vehicle)) {
+            if (this->isProhibited(from, vehicle, STEPS2TIME(msTime))) {
                 if (!silent) {
                     this->myErrorMsgHandler->inform("Vehicle '" + Named::getIDSecure(vehicle) + "' is not allowed on source edge '" + from->getID() + "'.");
                 }
@@ -199,7 +199,7 @@ public:
             for (const std::pair<const E*, const E*>& follower : minEdge->getViaSuccessors(vClass)) {
                 auto& followerInfo = this->myEdgeInfos[follower.first->getNumericalID()];
                 // check whether it can be used
-                if (followerInfo.prohibited || this->isProhibited(follower.first, vehicle)) {
+                if (this->isProhibited(follower.first, vehicle, leaveTime)) {
                     continue;
                 }
                 double effort = minimumInfo->effort + effortDelta;
@@ -447,7 +447,7 @@ void Node2EdgeRouter<E, N, V, M>::init(std::vector<const E*> fromEdges, const V*
         }
         int edgeID = from->getNumericalID();
         auto& fromInfo = this->myEdgeInfos[edgeID];
-        if (fromInfo.prohibited || this->isProhibited(from, vehicle)) {
+        if (this->isProhibited(from, vehicle, STEPS2TIME(msTime))) {
             continue;
         }
         fromInfo.effort = 0.;

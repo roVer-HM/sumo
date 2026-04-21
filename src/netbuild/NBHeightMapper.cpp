@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2011-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2011-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -196,7 +196,11 @@ NBHeightMapper::loadShapeFile(const std::string& file) {
 
     // triangle coordinates are stored in WGS84 and later matched with network coordinates in WGS84
     // build coordinate transformation
+#if GDAL_VERSION_MAJOR < 3
     OGRSpatialReference* sr_src = layer->GetSpatialRef();
+#else
+    const OGRSpatialReference* sr_src = layer->GetSpatialRef();
+#endif
     OGRSpatialReference sr_dest;
     sr_dest.SetWellKnownGeogCS("WGS84");
     OGRCoordinateTransformation* toWGS84 = OGRCreateCoordinateTransformation(sr_src, &sr_dest);

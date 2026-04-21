@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -30,12 +30,13 @@
 // ===========================================================================
 
 GNEVTypeDistribution::GNEVTypeDistribution(GNENet* net) :
-    GNEDemandElement("", net, "", SUMO_TAG_VTYPE_DISTRIBUTION, GNEPathElement::Options::DEMAND_ELEMENT) {
+    GNEDemandElement(net, SUMO_TAG_VTYPE_DISTRIBUTION) {
 }
 
 
-GNEVTypeDistribution::GNEVTypeDistribution(const std::string& ID, GNENet* net, const std::string& filename, const int deterministic) :
-    GNEDemandElement(ID, net, filename, SUMO_TAG_VTYPE_DISTRIBUTION, GNEPathElement::Options::DEMAND_ELEMENT),
+GNEVTypeDistribution::GNEVTypeDistribution(const std::string& ID, GNENet* net, FileBucket* fileBucket,
+        const int deterministic) :
+    GNEDemandElement(ID, net, SUMO_TAG_VTYPE_DISTRIBUTION, fileBucket),
     myDeterministic(deterministic) {
 }
 
@@ -43,9 +44,20 @@ GNEVTypeDistribution::GNEVTypeDistribution(const std::string& ID, GNENet* net, c
 GNEVTypeDistribution::~GNEVTypeDistribution() {}
 
 
-GNEMoveOperation*
-GNEVTypeDistribution::getMoveOperation() {
-    // distributions cannot be moved
+GNEMoveElement*
+GNEVTypeDistribution::getMoveElement() const {
+    return nullptr;
+}
+
+
+Parameterised*
+GNEVTypeDistribution::getParameters() {
+    return nullptr;
+}
+
+
+const Parameterised*
+GNEVTypeDistribution::getParameters() const {
     return nullptr;
 }
 
@@ -58,20 +70,11 @@ GNEVTypeDistribution::writeDemandElement(OutputDevice& device) const {
     if (myDeterministic != myTagProperty->getDefaultIntValue(SUMO_ATTR_DETERMINISTIC)) {
         device.writeAttr(SUMO_ATTR_DETERMINISTIC, myDeterministic);
     }
-    // check if write vType or refs)
+    // write references
     for (const auto& refChild : getChildDemandElements()) {
-        if (refChild->getTagProperty()->getTag() == GNE_TAG_VTYPEREF) {
-            int numReferences = 0;
-            for (const auto& vTypeChild : refChild->getParentDemandElements().at(1)->getChildDemandElements()) {
-                if (vTypeChild->getTagProperty()->getTag() == GNE_TAG_VTYPEREF) {
-                    numReferences++;
-                }
-            }
-            if (numReferences == 1) {
-                refChild->getParentDemandElements().at(1)->writeDemandElement(device);
-            } else {
-                refChild->writeDemandElement(device);
-            }
+        if (refChild->getTagProperty()->isDistributionReference() &&
+                (refChild->getParentDemandElements().front() == this)) {
+            refChild->writeDemandElement(device);
         }
     }
     device.closeTag();
@@ -99,23 +102,27 @@ GNEVTypeDistribution::fixDemandElementProblem() {
 
 SUMOVehicleClass
 GNEVTypeDistribution::getVClass() const {
-    for (const auto& childDemandElement : getChildDemandElements()) {
-        if (childDemandElement->getTagProperty()->hasAttribute(SUMO_ATTR_REFID)) {
-            return childDemandElement->getVClass();
+    // get value of first referenced vType
+    for (const auto& vTypeRef : getChildDemandElements()) {
+        if (vTypeRef->getTagProperty()->isDistributionReference()) {
+            return vTypeRef->getParentDemandElements().at(1)->getVClass();
         }
     }
-    return SVC_IGNORING;
+    // if this distribution doesn't have vTypes, use default vType
+    return myNet->getAttributeCarriers()->retrieveDemandElement(SUMO_TAG_TYPE, DEFAULT_VTYPE_ID)->getVClass();
 }
 
 
 const RGBColor&
 GNEVTypeDistribution::getColor() const {
-    for (const auto& childDemandElement : getChildDemandElements()) {
-        if (childDemandElement->getTagProperty()->hasAttribute(SUMO_ATTR_REFID)) {
-            return childDemandElement->getColor();
+    // get value of first referenced vType
+    for (const auto& vTypeRef : getChildDemandElements()) {
+        if (vTypeRef->getTagProperty()->isDistributionReference()) {
+            return vTypeRef->getParentDemandElements().at(1)->getColor();
         }
     }
-    return RGBColor::YELLOW;
+    // if this distribution doesn't have vTypes, use default vType
+    return myNet->getAttributeCarriers()->retrieveDemandElement(SUMO_TAG_TYPE, DEFAULT_VTYPE_ID)->getColor();
 }
 
 
@@ -127,11 +134,14 @@ GNEVTypeDistribution::updateGeometry() {
 
 Position
 GNEVTypeDistribution::getPositionInView() const {
-    if (getChildDemandElements().size() > 0) {
-        return getChildDemandElements().front()->getPositionInView();
-    } else {
-        return Position();
+    // get value of first referenced vType
+    for (const auto& vTypeRef : getChildDemandElements()) {
+        if (vTypeRef->getTagProperty()->isDistributionReference()) {
+            return vTypeRef->getParentDemandElements().at(1)->getPositionInView();
+        }
     }
+    // if this distribution doesn't have vTypes, use default vType
+    return myNet->getAttributeCarriers()->retrieveDemandElement(SUMO_TAG_TYPE, DEFAULT_VTYPE_ID)->getPositionInView();
 }
 
 
@@ -143,11 +153,7 @@ GNEVTypeDistribution::getParentName() const {
 
 Boundary
 GNEVTypeDistribution::getCenteringBoundary() const {
-    if (getChildDemandElements().size() > 0) {
-        return getChildDemandElements().front()->getCenteringBoundary();
-    } else {
-        return Boundary(-0.1, -0.1, 0.1, 0.1);
-    }
+    return Boundary(-0.1, -0.1, 0.1, 0.1);
 }
 
 
@@ -204,46 +210,47 @@ GNEVTypeDistribution::getAttribute(SumoXMLAttr key) const {
             } else {
                 return toString(myDeterministic);
             }
+        case GNE_ATTR_SAVEFILE:
+            return getCommonAttribute(key);
         default:
-            // check if the given attribute is part of
-            for (const auto& childDemandElement : getChildDemandElements()) {
-                if (childDemandElement->getTagProperty()->hasAttribute(SUMO_ATTR_REFID)) {
-                    return childDemandElement->getParentDemandElements().at(1)->getAttribute(key);
+            // get value of first referenced vType
+            for (const auto& vTypeRef : getChildDemandElements()) {
+                if (vTypeRef->getTagProperty()->isDistributionReference() &&
+                        (vTypeRef->getParentDemandElements().at(1)->getTagProperty()->getTag() == SUMO_TAG_VTYPE)) {
+                    return vTypeRef->getParentDemandElements().at(1)->getAttribute(key);
                 }
             }
-            return "";
+            // if this distribution doesn't have vTypes, use default vType
+            return myNet->getAttributeCarriers()->retrieveDemandElement(SUMO_TAG_VTYPE, DEFAULT_VTYPE_ID)->getAttribute(key);
     }
 }
 
 
 double
 GNEVTypeDistribution::getAttributeDouble(SumoXMLAttr key) const {
-    // first try to get value from type child
-    for (const auto& childDemandElement : getChildDemandElements()) {
-        if (childDemandElement->getTagProperty()->hasAttribute(SUMO_ATTR_REFID)) {
-            return childDemandElement->getParentDemandElements().at(1)->getAttributeDouble(key);
+    // get value of first referenced vType
+    for (const auto& vTypeRef : getChildDemandElements()) {
+        if (vTypeRef->getTagProperty()->isDistributionReference() &&
+                (vTypeRef->getParentDemandElements().at(1)->getTagProperty()->getTag() == SUMO_TAG_VTYPE)) {
+            return vTypeRef->getParentDemandElements().at(1)->getAttributeDouble(key);
         }
     }
-    // special cases for vehicles
-    switch (key) {
-        case SUMO_ATTR_WIDTH:
-            return 1;
-        case SUMO_ATTR_LENGTH:
-            return 3;
-        default:
-            return 0;
-    }
+    // if this distribution doesn't have vTypes, use default vType
+    return myNet->getAttributeCarriers()->retrieveDemandElement(SUMO_TAG_VTYPE, DEFAULT_VTYPE_ID)->getAttributeDouble(key);
 }
 
 
 Position
 GNEVTypeDistribution::getAttributePosition(SumoXMLAttr key) const {
-    for (const auto& childDemandElement : getChildDemandElements()) {
-        if (childDemandElement->getTagProperty()->hasAttribute(SUMO_ATTR_REFID)) {
-            return childDemandElement->getAttributePosition(key);
+    // get value of first referenced vType
+    for (const auto& vTypeRef : getChildDemandElements()) {
+        if (vTypeRef->getTagProperty()->isDistributionReference() &&
+                (vTypeRef->getParentDemandElements().at(1)->getTagProperty()->getTag() == SUMO_TAG_VTYPE)) {
+            return vTypeRef->getParentDemandElements().at(1)->getAttributePosition(key);
         }
     }
-    return Position();
+    // if this distribution doesn't have vTypes, use default vType
+    return myNet->getAttributeCarriers()->retrieveDemandElement(SUMO_TAG_VTYPE, DEFAULT_VTYPE_ID)->getAttributePosition(key);
 }
 
 
@@ -276,7 +283,7 @@ GNEVTypeDistribution::isValid(SumoXMLAttr key, const std::string& value) {
                 return canParse<int>(value) && (parse<int>(value) >= 0);
             }
         default:
-            return isCommonValid(key, value);
+            return isCommonAttributeValid(key, value);
     }
 }
 
@@ -290,12 +297,6 @@ GNEVTypeDistribution::getPopUpID() const {
 std::string
 GNEVTypeDistribution::getHierarchyName() const {
     return getTagStr() + ": " + getAttribute(SUMO_ATTR_ID) ;
-}
-
-
-const Parameterised::Map&
-GNEVTypeDistribution::getACParametersMap() const {
-    throw InvalidArgument(getTagStr() + " doesn't have parameters");
 }
 
 // ===========================================================================
@@ -316,21 +317,9 @@ GNEVTypeDistribution::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         default:
-            setCommonAttribute(this, key, value);
+            setCommonAttribute(key, value);
             break;
     }
-}
-
-
-void
-GNEVTypeDistribution::setMoveShape(const GNEMoveResult& /*moveResult*/) {
-    // distributions cannot be moved
-}
-
-
-void
-GNEVTypeDistribution::commitMoveShape(const GNEMoveResult& /*moveResult*/, GNEUndoList* /*undoList*/) {
-    // distributions cannot be moved
 }
 
 /****************************************************************************/

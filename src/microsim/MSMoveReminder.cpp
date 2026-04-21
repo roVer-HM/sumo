@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2008-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -82,9 +82,9 @@ MSMoveReminder::updateDetector(SUMOTrafficObject& veh, double entryPos, double l
         // the vehicle already has reported its values before; use these
         // however, if this was called from prepareDetectorForWriting the time
         // only has a resolution of DELTA_T and might be invalid
-        const SUMOTime previousEntryTime = j->second.first;
-        if (previousEntryTime <= currentTime) {
-            entryTime = previousEntryTime;
+        const SUMOTime previousUpdateTime = j->second.first;
+        if (previousUpdateTime <= currentTime) {
+            entryTime = previousUpdateTime;
             entryPos = j->second.second;
         }
     }
@@ -106,6 +106,24 @@ MSMoveReminder::updateDetector(SUMOTrafficObject& veh, double entryPos, double l
         // clean up after the vehicle has left the area of this reminder
         removeFromVehicleUpdateValues(veh);
     }
+}
+
+void
+MSMoveReminder::saveReminderState(OutputDevice& out, const SUMOTrafficObject& veh) {
+    auto j = myLastVehicleUpdateValues.find(veh.getNumericalID());
+    if (j != myLastVehicleUpdateValues.end()) {
+        out.openTag(SUMO_TAG_REMINDER);
+        out.writeAttr(SUMO_ATTR_ID, getDescription());
+        out.writeAttr(SUMO_ATTR_TIME, (*j).second.first);
+        out.writeAttr(SUMO_ATTR_POSITION, (*j).second.second);
+        out.closeTag();
+    }
+}
+
+
+void
+MSMoveReminder::loadReminderState(long long int numID, SUMOTime time, double pos) {
+    myLastVehicleUpdateValues[numID] = std::make_pair(time, pos);
 }
 
 

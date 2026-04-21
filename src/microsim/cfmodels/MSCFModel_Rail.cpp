@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2012-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -93,10 +93,6 @@ MSCFModel_Rail::MSCFModel_Rail(const MSVehicleType* vtype) :
     if (vtype->wasSet(VTYPEPARS_LENGTH_SET)) {
         myTrainParams.length = vtype->getLength();
     }
-    if (vtype->wasSet(VTYPEPARS_MASS_SET)) {
-        // kg to tons
-        myTrainParams.weight = vtype->getMass() / 1000;
-    }
     myTrainParams.mf = vtype->getParameter().getCFParam(SUMO_ATTR_MASSFACTOR, myTrainParams.mf);
     myTrainParams.decl = vtype->getParameter().getCFParam(SUMO_ATTR_DECEL, myTrainParams.decl);
     setMaxDecel(myTrainParams.decl);
@@ -104,6 +100,10 @@ MSCFModel_Rail::MSCFModel_Rail(const MSVehicleType* vtype) :
     // update type parameters so they are shown correctly in the gui (if defaults from trainType are used)
     const_cast<MSVehicleType*>(vtype)->setMaxSpeed(myTrainParams.vmax);
     const_cast<MSVehicleType*>(vtype)->setLength(myTrainParams.length);
+    if (!vtype->wasSet(VTYPEPARS_MASS_SET)) {
+        // tons to kg
+        const_cast<MSVehicleType*>(vtype)->setMass(myTrainParams.weight * 1000);
+    }
 
     // init tabular curves
     myTrainParams.traction = vtype->getParameter().getCFProfile(SUMO_ATTR_TRACTION_TABLE, myTrainParams.traction);
@@ -187,6 +187,16 @@ MSCFModel_Rail::duplicate(const MSVehicleType* vtype) const {
     return new MSCFModel_Rail(vtype);
 }
 
+double
+MSCFModel_Rail::getRotWeight(const MSVehicle* const veh) const {
+    return getWeight(veh) * myTrainParams.mf;
+}
+
+double
+MSCFModel_Rail::getWeight(const MSVehicle* const veh) const {
+    // kg to tons
+    return veh->getVehicleType().getMass() / 1000;
+}
 
 double MSCFModel_Rail::maxNextSpeed(double speed, const MSVehicle* const veh) const {
 
@@ -199,36 +209,35 @@ double MSCFModel_Rail::maxNextSpeed(double speed, const MSVehicle* const veh) co
     double res = myTrainParams.getResistance(speed); // kN
 
     double slope = veh->getSlope();
-    double gr = myTrainParams.weight * GRAVITY * sin(DEG2RAD(slope)); //kN
+    double gr = getWeight(veh) * GRAVITY * sin(DEG2RAD(slope)); //kN
 
     double totalRes = res + gr; //kN
 
     double trac = myTrainParams.getTraction(speed); // kN
-
     double a;
     if (speed < targetSpeed) {
-        a = (trac - totalRes) / myTrainParams.getRotWeight(); //kN/t == N/kg
+        a = (trac - totalRes) / getRotWeight(veh); //kN/t == N/kg
     } else {
         a = 0.;
         if (totalRes > trac) {
-            a = (trac - totalRes) / myTrainParams.getRotWeight(); //kN/t == N/kg
+            a = (trac - totalRes) / getRotWeight(veh); //kN/t == N/kg
         }
     }
     double maxNextSpeed = speed + ACCEL2SPEED(a);
 
 //    std::cout << veh->getID() << " speed: " << (speed*3.6) << std::endl;
 
-    return maxNextSpeed;
+    return MIN2(myTrainParams.vmax, maxNextSpeed);
 }
 
 
 double MSCFModel_Rail::minNextSpeed(double speed, const MSVehicle* const veh) const {
 
     const double slope = veh->getSlope();
-    const double gr = myTrainParams.weight * GRAVITY * sin(DEG2RAD(slope)); //kN
+    const double gr = getWeight(veh) * GRAVITY * sin(DEG2RAD(slope)); //kN
     const double res = myTrainParams.getResistance(speed); // kN
     const double totalRes = res + gr; //kN
-    const double a = myTrainParams.decl + totalRes / myTrainParams.getRotWeight();
+    const double a = myTrainParams.decl + totalRes / getRotWeight(veh);
     const double vMin = speed - ACCEL2SPEED(a);
     if (MSGlobals::gSemiImplicitEulerUpdate) {
         return MAX2(vMin, 0.);

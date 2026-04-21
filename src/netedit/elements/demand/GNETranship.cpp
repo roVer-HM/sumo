@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,15 +18,10 @@
 // A class for visualizing tranships in Netedit
 /****************************************************************************/
 
-#include <utils/gui/windows/GUIAppEnum.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 #include <netedit/GNENet.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <utils/gui/div/GUIDesigns.h>
 
 #include "GNETranship.h"
-#include "GNERoute.h"
 
 
 // ===========================================================================
@@ -37,14 +32,14 @@
 #pragma warning(disable: 4355) // mask warning about "this" in initializers
 #endif
 GNETranship::GNETranship(SumoXMLTag tag, GNENet* net) :
-    GNEDemandElement("", net, "", tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElement(net, tag),
     GNEDemandElementPlan(this, -1, -1) {
 }
 
 
 GNETranship::GNETranship(SumoXMLTag tag, GNEDemandElement* containerParent, const GNEPlanParents& planParameters,
                          const double departPosition, const double arrivalPosition, const double speed, const SUMOTime duration) :
-    GNEDemandElement(containerParent, tag, GNEPathElement::Options::DEMAND_ELEMENT),
+    GNEDemandElement(containerParent, tag),
     GNEDemandElementPlan(this, departPosition, arrivalPosition),
     mySpeed(speed),
     myDuration(duration) {
@@ -63,9 +58,21 @@ GNETranship::GNETranship(SumoXMLTag tag, GNEDemandElement* containerParent, cons
 GNETranship::~GNETranship() {}
 
 
-GNEMoveOperation*
-GNETranship::getMoveOperation() {
-    return getPlanMoveOperation();
+GNEMoveElement*
+GNETranship::getMoveElement() const {
+    return myMoveElementPlan;
+}
+
+
+Parameterised*
+GNETranship::getParameters() {
+    return nullptr;
+}
+
+
+const Parameterised*
+GNETranship::getParameters() const {
+    return nullptr;
 }
 
 
@@ -280,12 +287,6 @@ GNETranship::getHierarchyName() const {
     return getPlanHierarchyName();
 }
 
-
-const Parameterised::Map&
-GNETranship::getACParametersMap() const {
-    return getParametersMap();
-}
-
 // ===========================================================================
 // private
 // ===========================================================================
@@ -311,24 +312,6 @@ GNETranship::setAttribute(SumoXMLAttr key, const std::string& value) {
             setPlanAttribute(key, value);
             break;
     }
-}
-
-
-void
-GNETranship::setMoveShape(const GNEMoveResult& moveResult) {
-    // change both position
-    myArrivalPosition = moveResult.newFirstPos;
-    // update geometry
-    updateGeometry();
-}
-
-
-void
-GNETranship::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
-    undoList->begin(this, "arrivalPos of " + getTagStr());
-    // now adjust start position
-    setAttribute(SUMO_ATTR_ARRIVALPOS, toString(moveResult.newFirstPos), undoList);
-    undoList->end();
 }
 
 /****************************************************************************/

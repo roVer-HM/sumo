@@ -1,45 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-04-23 23:15:27 by Eclipse SUMO sumo Version v1_22_0+1676-989a5715aeb
+<!-- generated on 2026-01-17T17:50:02.689537+01:00 by Eclipse SUMO sumo v1_25_0+1031-30c9dee08ac
 -->
 
 <xsd:schema elementFormDefault="qualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-
-    <xsd:include schemaLocation="baseTypes.xsd"/>
-    <xsd:element name="sumoConfiguration" type="configurationType"/>
-
-    <xsd:complexType name="configurationType">
+    <xsd:complexType name="sumoConfigurationType">
         <xsd:all>
-            <xsd:element name="input" type="inputTopicType" minOccurs="0"/>
-            <xsd:element name="output" type="outputTopicType" minOccurs="0"/>
-            <xsd:element name="time" type="timeTopicType" minOccurs="0"/>
-            <xsd:element name="processing" type="processingTopicType" minOccurs="0"/>
-            <xsd:element name="routing" type="routingTopicType" minOccurs="0"/>
-            <xsd:element name="report" type="reportTopicType" minOccurs="0"/>
-            <xsd:element name="emissions" type="emissionsTopicType" minOccurs="0"/>
-            <xsd:element name="communication" type="communicationTopicType" minOccurs="0"/>
-            <xsd:element name="battery" type="batteryTopicType" minOccurs="0"/>
-            <xsd:element name="example_device" type="example_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="ssm_device" type="ssm_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="toc_device" type="toc_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="driver_state_device" type="driver_state_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="bluelight_device" type="bluelight_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="fcd_device" type="fcd_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="elechybrid_device" type="elechybrid_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="taxi_device" type="taxi_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="glosa_device" type="glosa_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="tripinfo_device" type="tripinfo_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="vehroutes_device" type="vehroutes_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="friction_device" type="friction_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="fcd_replay_device" type="fcd_replay_deviceTopicType" minOccurs="0"/>
-            <xsd:element name="traci_server" type="traci_serverTopicType" minOccurs="0"/>
-            <xsd:element name="mesoscopic" type="mesoscopicTopicType" minOccurs="0"/>
-            <xsd:element name="random_number" type="random_numberTopicType" minOccurs="0"/>
-            <xsd:element name="gui_only" type="gui_onlyTopicType" minOccurs="0"/>
+            <xsd:element name="input" type="sumoinputTopicType" minOccurs="0"/>
+            <xsd:element name="output" type="sumooutputTopicType" minOccurs="0"/>
+            <xsd:element name="time" type="sumotimeTopicType" minOccurs="0"/>
+            <xsd:element name="processing" type="sumoprocessingTopicType" minOccurs="0"/>
+            <xsd:element name="routing" type="sumoroutingTopicType" minOccurs="0"/>
+            <xsd:element name="report" type="sumoreportTopicType" minOccurs="0"/>
+            <xsd:element name="emissions" type="sumoemissionsTopicType" minOccurs="0"/>
+            <xsd:element name="communication" type="sumocommunicationTopicType" minOccurs="0"/>
+            <xsd:element name="battery" type="sumobatteryTopicType" minOccurs="0"/>
+            <xsd:element name="example_device" type="sumoexample_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="ssm_device" type="sumossm_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="toc_device" type="sumotoc_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="driver_state_device" type="sumodriver_state_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="bluelight_device" type="sumobluelight_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="fcd_device" type="sumofcd_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="elechybrid_device" type="sumoelechybrid_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="taxi_device" type="sumotaxi_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="glosa_device" type="sumoglosa_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="tripinfo_device" type="sumotripinfo_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="vehroutes_device" type="sumovehroutes_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="friction_device" type="sumofriction_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="fcd_replay_device" type="sumofcd_replay_deviceTopicType" minOccurs="0"/>
+            <xsd:element name="traci_server" type="sumotraci_serverTopicType" minOccurs="0"/>
+            <xsd:element name="mesoscopic" type="sumomesoscopicTopicType" minOccurs="0"/>
+            <xsd:element name="random_number" type="sumorandom_numberTopicType" minOccurs="0"/>
+            <xsd:element name="gui_only" type="sumogui_onlyTopicType" minOccurs="0"/>
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="inputTopicType">
+    <xsd:complexType name="sumoinputTopicType">
         <xsd:all>
             <xsd:element name="net-file" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="route-files" type="fileOptionType" minOccurs="0"/>
@@ -53,12 +49,18 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="outputTopicType">
+    <xsd:complexType name="sumooutputTopicType">
         <xsd:all>
             <xsd:element name="write-license" type="boolOptionType" minOccurs="0"/>
+            <xsd:element name="write-metadata" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="output-prefix" type="strOptionType" minOccurs="0"/>
+            <xsd:element name="output-suffix" type="strOptionType" minOccurs="0"/>
             <xsd:element name="precision" type="intOptionType" minOccurs="0"/>
             <xsd:element name="precision.geo" type="intOptionType" minOccurs="0"/>
+            <xsd:element name="output.compression" type="strOptionType" minOccurs="0"/>
+            <xsd:element name="output.format" type="strOptionType" minOccurs="0"/>
+            <xsd:element name="output.column-header" type="strOptionType" minOccurs="0"/>
+            <xsd:element name="output.column-separator" type="strOptionType" minOccurs="0"/>
             <xsd:element name="human-readable-time" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="netstate-dump" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="netstate-dump.empty-edges" type="boolOptionType" minOccurs="0"/>
@@ -89,6 +91,7 @@
             <xsd:element name="fcd-output.filter-edges.input-file" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="fcd-output.attributes" type="strArrayOptionType" minOccurs="0"/>
             <xsd:element name="fcd-output.filter-shapes" type="strArrayOptionType" minOccurs="0"/>
+            <xsd:element name="person-fcd-output" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="device.ssm.filter-edges.input-file" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="full-output" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="queue-output" type="fileOptionType" minOccurs="0"/>
@@ -148,7 +151,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="timeTopicType">
+    <xsd:complexType name="sumotimeTopicType">
         <xsd:all>
             <xsd:element name="begin" type="timeOptionType" minOccurs="0"/>
             <xsd:element name="end" type="timeOptionType" minOccurs="0"/>
@@ -156,7 +159,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="processingTopicType">
+    <xsd:complexType name="sumoprocessingTopicType">
         <xsd:all>
             <xsd:element name="step-method.ballistic" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="extrapolate-departpos" type="boolOptionType" minOccurs="0"/>
@@ -206,9 +209,13 @@
             <xsd:element name="tls.delay_based.detector-range" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="tls.yellow.min-decel" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="railsignal-moving-block" type="boolOptionType" minOccurs="0"/>
+            <xsd:element name="railsignal.moving-block.default-classes" type="strArrayOptionType" minOccurs="0"/>
+            <xsd:element name="railsignal.moving-block.max-dist" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="railsignal.max-block-length" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="railsignal.default-classes" type="strArrayOptionType" minOccurs="0"/>
             <xsd:element name="time-to-impatience" type="timeOptionType" minOccurs="0"/>
+            <xsd:element name="default.departspeed" type="strOptionType" minOccurs="0"/>
+            <xsd:element name="default.departlane" type="strOptionType" minOccurs="0"/>
             <xsd:element name="default.action-step-length" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="default.carfollowmodel" type="strOptionType" minOccurs="0"/>
             <xsd:element name="default.speeddev" type="floatOptionType" minOccurs="0"/>
@@ -246,14 +253,16 @@
             <xsd:element name="mapmatch.junctions" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="mapmatch.taz" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="weights.turnaround-penalty" type="floatOptionType" minOccurs="0"/>
+            <xsd:element name="weights.reversal-penalty" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="persontrip.walk-opposite-factor" type="floatOptionType" minOccurs="0"/>
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="routingTopicType">
+    <xsd:complexType name="sumoroutingTopicType">
         <xsd:all>
             <xsd:element name="routing-algorithm" type="strOptionType" minOccurs="0"/>
             <xsd:element name="weights.random-factor" type="floatOptionType" minOccurs="0"/>
+            <xsd:element name="weights.random-factor.dynamic" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="weights.minor-penalty" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="weights.tls-penalty" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="weights.priority-factor" type="floatOptionType" minOccurs="0"/>
@@ -277,6 +286,8 @@
             <xsd:element name="device.rerouting.adaptation-weight" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.rerouting.adaptation-steps" type="intOptionType" minOccurs="0"/>
             <xsd:element name="device.rerouting.adaptation-interval" type="timeOptionType" minOccurs="0"/>
+            <xsd:element name="device.rerouting.threshold.factor" type="floatOptionType" minOccurs="0"/>
+            <xsd:element name="device.rerouting.threshold.constant" type="timeOptionType" minOccurs="0"/>
             <xsd:element name="device.rerouting.with-taz" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="device.rerouting.mode" type="strOptionType" minOccurs="0"/>
             <xsd:element name="device.rerouting.init-with-loaded-weights" type="boolOptionType" minOccurs="0"/>
@@ -294,7 +305,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="reportTopicType">
+    <xsd:complexType name="sumoreportTopicType">
         <xsd:all>
             <xsd:element name="verbose" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="print-options" type="boolOptionType" minOccurs="0"/>
@@ -318,7 +329,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="emissionsTopicType">
+    <xsd:complexType name="sumoemissionsTopicType">
         <xsd:all>
             <xsd:element name="emissions.volumetric-fuel" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="phemlight-path" type="fileOptionType" minOccurs="0"/>
@@ -332,7 +343,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="communicationTopicType">
+    <xsd:complexType name="sumocommunicationTopicType">
         <xsd:all>
             <xsd:element name="device.btreceiver.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.btreceiver.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -352,7 +363,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="batteryTopicType">
+    <xsd:complexType name="sumobatteryTopicType">
         <xsd:all>
             <xsd:element name="device.stationfinder.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.stationfinder.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -382,7 +393,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="example_deviceTopicType">
+    <xsd:complexType name="sumoexample_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.example.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.example.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -391,7 +402,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="ssm_deviceTopicType">
+    <xsd:complexType name="sumossm_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.ssm.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.ssm.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -411,7 +422,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="toc_deviceTopicType">
+    <xsd:complexType name="sumotoc_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.toc.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.toc.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -438,7 +449,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="driver_state_deviceTopicType">
+    <xsd:complexType name="sumodriver_state_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.driverstate.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.driverstate.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -456,7 +467,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="bluelight_deviceTopicType">
+    <xsd:complexType name="sumobluelight_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.bluelight.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.bluelight.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -466,7 +477,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="fcd_deviceTopicType">
+    <xsd:complexType name="sumofcd_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.fcd.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.fcd.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -481,7 +492,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="elechybrid_deviceTopicType">
+    <xsd:complexType name="sumoelechybrid_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.elechybrid.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.elechybrid.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -489,7 +500,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="taxi_deviceTopicType">
+    <xsd:complexType name="sumotaxi_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.taxi.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.taxi.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -498,12 +509,13 @@
             <xsd:element name="device.taxi.dispatch-algorithm.output" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="device.taxi.dispatch-algorithm.params" type="strOptionType" minOccurs="0"/>
             <xsd:element name="device.taxi.dispatch-period" type="timeOptionType" minOccurs="0"/>
+            <xsd:element name="device.taxi.dispatch-keep-unreachable" type="timeOptionType" minOccurs="0"/>
             <xsd:element name="device.taxi.idle-algorithm" type="strOptionType" minOccurs="0"/>
             <xsd:element name="device.taxi.idle-algorithm.output" type="fileOptionType" minOccurs="0"/>
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="glosa_deviceTopicType">
+    <xsd:complexType name="sumoglosa_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.glosa.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.glosa.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -518,7 +530,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="tripinfo_deviceTopicType">
+    <xsd:complexType name="sumotripinfo_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.tripinfo.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.tripinfo.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -526,7 +538,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="vehroutes_deviceTopicType">
+    <xsd:complexType name="sumovehroutes_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.vehroute.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.vehroute.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -534,7 +546,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="friction_deviceTopicType">
+    <xsd:complexType name="sumofriction_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.friction.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.friction.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -544,7 +556,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="fcd_replay_deviceTopicType">
+    <xsd:complexType name="sumofcd_replay_deviceTopicType">
         <xsd:all>
             <xsd:element name="device.fcd-replay.probability" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="device.fcd-replay.explicit" type="strArrayOptionType" minOccurs="0"/>
@@ -553,14 +565,14 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="traci_serverTopicType">
+    <xsd:complexType name="sumotraci_serverTopicType">
         <xsd:all>
             <xsd:element name="remote-port" type="intOptionType" minOccurs="0"/>
             <xsd:element name="num-clients" type="intOptionType" minOccurs="0"/>
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="mesoscopicTopicType">
+    <xsd:complexType name="sumomesoscopicTopicType">
         <xsd:all>
             <xsd:element name="mesosim" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="meso-edgelength" type="floatOptionType" minOccurs="0"/>
@@ -582,7 +594,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="random_numberTopicType">
+    <xsd:complexType name="sumorandom_numberTopicType">
         <xsd:all>
             <xsd:element name="random" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="seed" type="intOptionType" minOccurs="0"/>
@@ -590,7 +602,7 @@
         </xsd:all>
     </xsd:complexType>
 
-    <xsd:complexType name="gui_onlyTopicType">
+    <xsd:complexType name="sumogui_onlyTopicType">
         <xsd:all>
             <xsd:element name="gui-settings-file" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="quit-on-end" type="boolOptionType" minOccurs="0"/>

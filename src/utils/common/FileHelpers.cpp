@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -269,6 +269,29 @@ FileHelpers::prependToLastPathComponent(const std::string& prefix, const std::st
         return path.substr(0, sep_index + 1) + prefix + path.substr(sep_index + 1);
     }
 }
+
+
+std::string
+FileHelpers::appendBeforeExtension(const std::string& path, const std::string& suffix, bool checkSep) {
+    if (checkSep) {
+        const std::string::size_type sep_index = path.find_last_of("\\/");
+        if (sep_index == std::string::npos) {
+            return appendBeforeExtension(path, suffix, false);
+        } else {
+            return path.substr(0, sep_index + 1) + appendBeforeExtension(path.substr(sep_index + 1), suffix, false);
+        }
+    }
+    auto components = StringTokenizer(path, ".").getVector();
+    for (int i = (int)components.size() - 1; i >= 0; i--) {
+        // assume anything after a dot with less then 5 letters is part of the extension
+        if (i == 0 || components[i].size() > 4) {
+            components[i] += suffix;
+            break;
+        }
+    }
+    return joinToString(components, ".");
+}
+
 
 // ---------------------------------------------------------------------------
 // binary reading/writing functions

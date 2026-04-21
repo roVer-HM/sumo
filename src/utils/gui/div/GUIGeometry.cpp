@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -72,16 +72,16 @@ GUIGeometry::updateGeometry(const PositionVector& shape, const double posOverSha
     // first clear geometry
     clearGeometry();
     // get shape length
-    const double shapeLength = shape.length();
+    const double shapeLength = shape.length2D();
     // calculate position and rotation
     if (posOverShape < 0) {
-        myShape.push_back(shape.positionAtOffset(0, lateralOffset));
+        myShape.push_back(shape.positionAtOffset2D(0, lateralOffset));
         myShapeRotations.push_back(shape.rotationDegreeAtOffset(0));
     } else if (posOverShape > shapeLength) {
-        myShape.push_back(shape.positionAtOffset(shapeLength, lateralOffset));
+        myShape.push_back(shape.positionAtOffset2D(shapeLength, lateralOffset));
         myShapeRotations.push_back(shape.rotationDegreeAtOffset(shapeLength));
     } else {
-        myShape.push_back(shape.positionAtOffset(posOverShape, lateralOffset));
+        myShape.push_back(shape.positionAtOffset2D(posOverShape, lateralOffset));
         myShapeRotations.push_back(shape.rotationDegreeAtOffset(posOverShape));
     }
 }

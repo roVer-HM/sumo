@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -36,7 +36,7 @@
 // ===========================================================================
 
 GNEGenericData::GNEGenericData(SumoXMLTag tag, GNENet* net) :
-    GNEAttributeCarrier(tag, net, "", true),
+    GNEAttributeCarrier(tag, net),
     GUIGlObject(net->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGLType(), "",
                 GUIIconSubSys::getIcon(net->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGUIIcon())),
     GNEPathElement(GNEPathElement::Options::DATA_ELEMENT),
@@ -45,7 +45,7 @@ GNEGenericData::GNEGenericData(SumoXMLTag tag, GNENet* net) :
 
 
 GNEGenericData::GNEGenericData(const SumoXMLTag tag, GNEDataInterval* dataIntervalParent, const Parameterised::Map& parameters) :
-    GNEAttributeCarrier(tag, dataIntervalParent->getNet(), dataIntervalParent->getFilename(), false),
+    GNEAttributeCarrier(tag, dataIntervalParent->getNet(), dataIntervalParent->getFileBucket()),
     GUIGlObject(dataIntervalParent->getNet()->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGLType(), dataIntervalParent->getID(),
                 GUIIconSubSys::getIcon(dataIntervalParent->getNet()->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGUIIcon())),
     GNEPathElement(GNEPathElement::Options::DATA_ELEMENT),
@@ -63,6 +63,24 @@ GNEGenericData::getHierarchicalElement() {
 }
 
 
+GNEMoveElement*
+GNEGenericData::getMoveElement() const {
+    return nullptr;
+}
+
+
+Parameterised*
+GNEGenericData::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNEGenericData::getParameters() const {
+    return this;
+}
+
+
 GUIGlObject*
 GNEGenericData::getGUIGlObject() {
     return this;
@@ -72,6 +90,16 @@ GNEGenericData::getGUIGlObject() {
 const GUIGlObject*
 GNEGenericData::getGUIGlObject() const {
     return this;
+}
+
+
+FileBucket*
+GNEGenericData::getFileBucket() const {
+    if (isTemplate()) {
+        return nullptr;
+    } else {
+        return myDataIntervalParent->getFileBucket();
+    }
 }
 
 
@@ -85,7 +113,7 @@ void
 GNEGenericData::drawAttribute(const PositionVector& shape) const {
     if ((myTagProperty->getTag() == GNE_TAG_EDGEREL_SINGLE) && (shape.length() > 0)) {
         // obtain pointer to edge data frame (only for code legibly)
-        const GNEEdgeDataFrame* edgeDataFrame = myDataIntervalParent->getNet()->getViewNet()->getViewParent()->getEdgeDataFrame();
+        const GNEEdgeDataFrame* edgeDataFrame = myDataIntervalParent->getNet()->getViewParent()->getEdgeDataFrame();
         // check if we have to filter generic data
         if (edgeDataFrame->shown()) {
             // check attribute
@@ -228,7 +256,7 @@ GNEGenericData::getParameterWindow(GUIMainWindow& app, GUISUMOAbstractView& /* p
 
 void
 GNEGenericData::deleteGLObject() {
-    myNet->deleteGenericData(this, myNet->getViewNet()->getUndoList());
+    myNet->deleteGenericData(this, myNet->getUndoList());
 }
 
 
@@ -240,7 +268,7 @@ GNEGenericData::selectGLObject() {
         selectAttributeCarrier();
     }
     // update information label
-    myNet->getViewNet()->getViewParent()->getSelectorFrame()->getSelectionInformation()->updateInformationLabel();
+    myNet->getViewParent()->getSelectorFrame()->getSelectionInformation()->updateInformationLabel();
 }
 
 
@@ -250,15 +278,21 @@ GNEGenericData::updateGLObject() {
 }
 
 
-bool
-GNEGenericData::isPathElementSelected() const {
-    return mySelected;
+Position
+GNEGenericData::getAttributePosition(SumoXMLAttr key) const {
+    return getCommonAttributePosition(key);
 }
 
 
-const Parameterised::Map&
-GNEGenericData::getACParametersMap() const {
-    return getParametersMap();
+PositionVector
+GNEGenericData::getAttributePositionVector(SumoXMLAttr key) const {
+    return getCommonAttributePositionVector(key);
+}
+
+
+bool
+GNEGenericData::isPathElementSelected() const {
+    return mySelected;
 }
 
 // ---------------------------------------------------------------------------

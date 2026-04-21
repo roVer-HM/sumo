@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -22,24 +22,21 @@
 #include <config.h>
 
 #include <vector>
-
-#include <utils/common/UtilExceptions.h>
 #include <netedit/frames/network/GNETLSEditorFrame.h>
+#include <utils/tests/InternalTestStep.h>
 
 // ===========================================================================
 // class declaration
 // ===========================================================================
 
-class MFXTextFieldTooltip;
+class MFXTextFieldIcon;
 class MFXLabelTooltip;
 class MFXMenuButtonTooltip;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNETLSTable
- */
+
 class GNETLSTable : public FXHorizontalFrame {
     /// @brief fox declaration
     FXDECLARE(GNETLSTable)
@@ -101,8 +98,12 @@ public:
      */
     void setTableSize(const std::string& columnsType, const int numberRow);
 
+    /// @brief test table (using internal tests)
+    long testTable(const InternalTestStep::TLSTableTest* tableTest);
+
     /// @name FOX callbacks
     /// @{
+
     /// @brief called when a row is focused
     long onFocusRow(FXObject*, FXSelector, void*);
 
@@ -153,7 +154,7 @@ protected:
 
     public:
         /// @brief constructor for textField
-        Cell(GNETLSTable* TLSTable, MFXTextFieldTooltip* textField, int col, int row);
+        Cell(GNETLSTable* TLSTable, MFXTextFieldIcon* textField, int col, int row);
 
         /// @brief constructor for index label
         Cell(GNETLSTable* TLSTable, FXLabel* indexLabel, FXLabel* indexLabelBold, int col, int row);
@@ -186,7 +187,7 @@ protected:
         void setTooltip(const std::string& toolTip);
 
         /// @brief get textField
-        MFXTextFieldTooltip* getTextField() const;
+        MFXTextFieldIcon* getTextField() const;
 
         /// @brief get index label
         FXLabel* getIndexLabel() const;
@@ -240,8 +241,8 @@ protected:
         /// @brief pointer to TLSTable parent
         GNETLSTable* myTLSTable = nullptr;
 
-        /// @brief MFXTextFieldTooltip
-        MFXTextFieldTooltip* myTextField = nullptr;
+        /// @brief MFXTextFieldIcon
+        MFXTextFieldIcon* myTextField = nullptr;
 
         /// @brief index label
         FXLabel* myIndexLabel = nullptr;

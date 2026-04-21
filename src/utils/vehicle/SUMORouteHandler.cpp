@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -23,6 +23,7 @@
 #include <config.h>
 
 #include <utils/common/MsgHandler.h>
+#include <utils/common/FileHelpers.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/vehicle/SUMOVTypeParameter.h>
 #include <utils/vehicle/SUMOVehicleParserHelper.h>
@@ -349,16 +350,6 @@ SUMORouteHandler::checkStopPos(double& startPos, double& endPos, const double la
 }
 
 
-bool
-SUMORouteHandler::isStopPosValid(const double startPos, const double endPos, const double laneLength, const double minLength, const bool friendlyPos) {
-    // declare dummy start and end positions
-    double dummyStartPos = startPos;
-    double dummyEndPos = endPos;
-    // return checkStopPos
-    return (checkStopPos(dummyStartPos, dummyEndPos, laneLength, minLength, friendlyPos) == STOPPOS_VALID);
-}
-
-
 SUMOTime
 SUMORouteHandler::getFirstDepart() const {
     return myFirstDepart;
@@ -378,7 +369,12 @@ SUMORouteHandler::addParam(const SUMOSAXAttributes& attrs) {
     // only continue if key isn't empty
     if (ok && (key.size() > 0)) {
         // circumventing empty string test
-        const std::string val = attrs.hasAttribute(SUMO_ATTR_VALUE) ? attrs.getString(SUMO_ATTR_VALUE) : "";
+        std::string val = attrs.hasAttribute(SUMO_ATTR_VALUE) ? attrs.getString(SUMO_ATTR_VALUE) : "";
+        // check special params that must be interpreted as relative paths
+        if ((myVehicleParameter != nullptr || myCurrentVType != nullptr)
+                && (key == "device.toc.file" || key == "device.ssm.file")) {
+            val = FileHelpers::checkForRelativity(val, getFileName());
+        }
         // add parameter in current created element
         if (!myParamStack.empty()) {
             myParamStack.back()->setParameter(key, val);
@@ -453,6 +449,9 @@ SUMORouteHandler::parseStop(SUMOVehicleParameter::Stop& stop, const SUMOSAXAttri
     }
     if (attrs.hasAttribute(SUMO_ATTR_ONDEMAND)) {
         stop.parametersSet |= STOP_ONDEMAND_SET;
+    }
+    if (attrs.hasAttribute(SUMO_ATTR_PRIORITY)) {
+        stop.parametersSet |= STOP_PRIORITY_SET;
     }
     if (attrs.hasAttribute(SUMO_ATTR_JUMP)) {
         stop.parametersSet |= STOP_JUMP_SET;
@@ -564,6 +563,7 @@ SUMORouteHandler::parseStop(SUMOVehicleParameter::Stop& stop, const SUMOSAXAttri
     stop.posLat = attrs.getOpt<double>(SUMO_ATTR_POSITION_LAT, nullptr, ok, INVALID_DOUBLE);
     stop.actType = attrs.getOpt<std::string>(SUMO_ATTR_ACTTYPE, nullptr, ok, "");
     stop.onDemand = attrs.getOpt<bool>(SUMO_ATTR_ONDEMAND, nullptr, ok, false);
+    stop.priority = attrs.getOpt<double>(SUMO_ATTR_PRIORITY, nullptr, ok, -1);
     stop.jump = attrs.getOptSUMOTimeReporting(SUMO_ATTR_JUMP, nullptr, ok, -1);
     stop.jumpUntil = attrs.getOptSUMOTimeReporting(SUMO_ATTR_JUMP_UNTIL, nullptr, ok, -1);
     stop.collision = attrs.getOpt<bool>(SUMO_ATTR_COLLISION, nullptr, ok, false);

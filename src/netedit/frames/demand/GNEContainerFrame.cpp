@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -255,8 +255,8 @@ GNEContainerFrame::createPath(const bool /*useLastRoute*/) {
         // create container
         GNEDemandElement* container = buildContainer();
         // declare route handler
-        GNERouteHandler routeHandler(myViewNet->getNet(), container->getAttribute(GNE_ATTR_DEMAND_FILE),
-                                     myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
+        GNERouteHandler routeHandler(myViewNet->getNet(), container->getFileBucket(),
+                                     myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), true);
         // check if container and container plan can be created
         if (routeHandler.buildContainerPlan(myPlanSelector->getCurrentPlanTemplate(),
                                             container, myContainerPlanAttributesEditor, myPlanCreator, true)) {
@@ -299,7 +299,7 @@ GNEContainerFrame::buildContainer() {
     // add pType parameter
     myContainerBaseObject->addStringAttribute(SUMO_ATTR_TYPE, myTypeSelector->getCurrentDemandElement()->getID());
     // declare route handler
-    GNERouteHandler routeHandler(myViewNet->getNet(), myContainerBaseObject->hasStringAttribute(GNE_ATTR_DEMAND_FILE) ? myContainerBaseObject->getStringAttribute(GNE_ATTR_DEMAND_FILE) : "",
+    GNERouteHandler routeHandler(myViewNet->getNet(), myViewNet->getNet()->getACTemplates()->getTemplateAC(containerTag)->getFileBucket(),
                                  myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
     // check if we're creating a container or containerFlow
     if (containerTag == SUMO_TAG_CONTAINER) {

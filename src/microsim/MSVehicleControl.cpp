@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -97,10 +97,6 @@ MSVehicleControl::initDefaultTypes() {
     myVTypeDict[DEFAULT_RAILTYPE_ID] = MSVehicleType::build(defRailType);
 
     SUMOVTypeParameter defContainerType(DEFAULT_CONTAINERTYPE_ID, SVC_CONTAINER);
-    // ISO Container TEU (cannot set this based on vClass)
-    defContainerType.length = 6.1;
-    defContainerType.width = 2.4;
-    defContainerType.height = 2.6;
     defContainerType.parametersSet |= VTYPEPARS_VEHICLECLASS_SET;
     myVTypeDict[DEFAULT_CONTAINERTYPE_ID] = MSVehicleType::build(defContainerType);
 
@@ -112,7 +108,9 @@ SUMOVehicle*
 MSVehicleControl::buildVehicle(SUMOVehicleParameter* defs,
                                ConstMSRoutePtr route, MSVehicleType* type,
                                const bool ignoreStopErrors, const VehicleDefinitionSource source, bool addRouteStops) {
-    MSVehicle* built = new MSVehicle(defs, route, type, type->computeChosenSpeedDeviation(source == VehicleDefinitionSource::ROUTEFILE || source == VehicleDefinitionSource::STATE ? MSRouteHandler::getParsingRNG() : nullptr));
+    const double speedFactor = (source == VehicleDefinitionSource::STATE ? 1 :
+                                type->computeChosenSpeedDeviation(source == VehicleDefinitionSource::ROUTEFILE ? MSRouteHandler::getParsingRNG() : nullptr));
+    MSVehicle* built = new MSVehicle(defs, route, type, speedFactor);
     initVehicle(built, ignoreStopErrors, addRouteStops, source);
     return built;
 }
@@ -243,8 +241,13 @@ MSVehicleControl::saveState(OutputDevice& out) {
         out.writeAttr(SUMO_ATTR_PROBS, item.second->getProbs());
         out.closeTag();
     }
+    std::vector<SUMOVehicle*> sortedVehs;
     for (const auto& item : myVehicleDict) {
-        item.second->saveState(out);
+        sortedVehs.push_back(item.second);
+    }
+    std::sort(sortedVehs.begin(), sortedVehs.end(), ComparatorNumericalIdLess());
+    for (SUMOVehicle* veh : sortedVehs) {
+        veh->saveState(out);
     }
 }
 

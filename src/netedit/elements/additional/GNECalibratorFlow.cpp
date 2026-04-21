@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,15 +19,12 @@
 /****************************************************************************/
 #include <config.h>
 
+#include <netedit/changes/GNEChange_Attribute.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagProperties.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/changes/GNEChange_Attribute.h>
-#include <utils/options/OptionsCont.h>
-#include <utils/gui/globjects/GLIncludes.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/common/StringTokenizer.h>
+#include <utils/gui/images/GUITextureSubSys.h>
+#include <utils/options/OptionsCont.h>
 #include <utils/xml/NamespaceIDs.h>
 
 #include "GNECalibratorFlow.h"
@@ -37,7 +34,8 @@
 // ===========================================================================
 
 GNECalibratorFlow::GNECalibratorFlow(GNENet* net) :
-    GNEAdditional("", net, "", GNE_TAG_CALIBRATOR_FLOW, "") {
+    GNEAdditional(net, GNE_TAG_CALIBRATOR_FLOW),
+    GNEAdditionalListed(this) {
     // set VPH and speed enabled
     toggleAttribute(SUMO_ATTR_VEHSPERHOUR, true);
     toggleAttribute(SUMO_ATTR_SPEED, true);
@@ -46,8 +44,10 @@ GNECalibratorFlow::GNECalibratorFlow(GNENet* net) :
 }
 
 
-GNECalibratorFlow::GNECalibratorFlow(GNEAdditional* calibratorParent, GNEDemandElement* vehicleType, GNEDemandElement* route) :
-    GNEAdditional(calibratorParent, GNE_TAG_CALIBRATOR_FLOW, "") {
+GNECalibratorFlow::GNECalibratorFlow(GNEAdditional* calibratorParent, const SUMOTime begin, const SUMOTime end,
+                                     GNEDemandElement* vehicleType, GNEDemandElement* route) :
+    GNEAdditional(calibratorParent, GNE_TAG_CALIBRATOR_FLOW, ""),
+    GNEAdditionalListed(this) {
     // set parents
     setParent<GNEAdditional*>(calibratorParent);
     setParents<GNEDemandElement*>({vehicleType, route});
@@ -55,13 +55,19 @@ GNECalibratorFlow::GNECalibratorFlow(GNEAdditional* calibratorParent, GNEDemandE
     updateCenteringBoundary(false);
     // reset ID
     id.clear();
+    // set begin and end
+    depart = begin;
+    repetitionEnd = end;
+    // set default vehsperhour
+    setAttribute(SUMO_ATTR_VEHSPERHOUR, "1800");
 }
 
 
 GNECalibratorFlow::GNECalibratorFlow(GNEAdditional* calibratorParent, GNEDemandElement* vehicleType, GNEDemandElement* route,
                                      const SUMOVehicleParameter& vehicleParameters) :
     GNEAdditional(calibratorParent, GNE_TAG_CALIBRATOR_FLOW, ""),
-    SUMOVehicleParameter(vehicleParameters) {
+    SUMOVehicleParameter(vehicleParameters),
+    GNEAdditionalListed(this) {
     // set parents
     setParent<GNEAdditional*>(calibratorParent);
     setParents<GNEDemandElement*>({vehicleType, route});
@@ -75,6 +81,24 @@ GNECalibratorFlow::GNECalibratorFlow(GNEAdditional* calibratorParent, GNEDemandE
 GNECalibratorFlow::~GNECalibratorFlow() {}
 
 
+GNEMoveElement*
+GNECalibratorFlow::getMoveElement() const {
+    return nullptr;
+}
+
+
+Parameterised*
+GNECalibratorFlow::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNECalibratorFlow::getParameters() const {
+    return this;
+}
+
+
 void
 GNECalibratorFlow::writeAdditional(OutputDevice& device) const {
     if (isAttributeEnabled(SUMO_ATTR_TYPE) || isAttributeEnabled(SUMO_ATTR_VEHSPERHOUR) || isAttributeEnabled(SUMO_ATTR_SPEED)) {
@@ -86,10 +110,6 @@ GNECalibratorFlow::writeAdditional(OutputDevice& device) const {
         device.writeAttr(SUMO_ATTR_END, getAttribute(SUMO_ATTR_END));
         // write route
         device.writeAttr(SUMO_ATTR_ROUTE, getParentDemandElements().at(1)->getID());
-        // VPH
-        if (isAttributeEnabled(SUMO_ATTR_VEHSPERHOUR)) {
-            device.writeAttr(SUMO_ATTR_VEHSPERHOUR, getAttribute(SUMO_ATTR_VEHSPERHOUR));
-        }
         // write parameters
         SUMOVehicleParameter::writeParams(device);
         // close vehicle tag
@@ -124,28 +144,15 @@ GNECalibratorFlow::checkDrawMoveContour() const {
 }
 
 
-GNEMoveOperation*
-GNECalibratorFlow::getMoveOperation() {
-    // calibrators flow cannot be moved
-    return nullptr;
-}
-
-
 void
 GNECalibratorFlow::updateGeometry() {
-    // update centering boundary (needed for centering)
-    updateCenteringBoundary(false);
+    updateGeometryListedAdditional();
 }
 
 
 Position
 GNECalibratorFlow::getPositionInView() const {
-    // get rerouter parent position
-    Position signPosition = getParentAdditionals().front()->getPositionInView();
-    // set position depending of indexes
-    signPosition.add(4.5, (getDrawPositionIndex() * -1) + 1, 0);
-    // return signPosition
-    return signPosition;
+    return getListedPositionInView();
 }
 
 
@@ -169,18 +176,9 @@ GNECalibratorFlow::getParentName() const {
 
 void
 GNECalibratorFlow::drawGL(const GUIVisualizationSettings& s) const {
-    if (myNet->getViewNet()->getDataViewOptions().showAdditionals()) {
-        // push rotation matrix
-        GLHelper::pushMatrix();
-        // move to parent additional position
-        glTranslated(getParentAdditionals().front()->getPositionInView().x(), getParentAdditionals().front()->getPositionInView().y(), 0);
-        // rotate
-        glRotated((-1 * getParentAdditionals().front()->getAdditionalGeometry().getShapeRotations().front()) + 180, 0, 0, 1);
-        // draw rerouter interval as listed attribute
-        drawListedAdditional(s, Position(0, 0), 0.05, 1, s.additionalSettings.calibratorColor, RGBColor::BLACK, GUITexture::VARIABLESPEEDSIGN_STEP, "Flow: " + getID());
-        // pop rotation matrix
-        GLHelper::popMatrix();
-    }
+    // draw closing reroute as listed attribute
+    drawListedAdditional(s, s.additionalSettings.calibratorColor, RGBColor::BLACK, GUITexture::VARIABLESPEEDSIGN_STEP,
+                         "Flow: " + getID());
 }
 
 
@@ -292,7 +290,7 @@ GNECalibratorFlow::getAttribute(SumoXMLAttr key) const {
         case GNE_ATTR_PARENT:
             return getParentAdditionals().at(0)->getID();
         default:
-            return getCommonAttribute(this, key);
+            return getCommonAttribute(key);
     }
 }
 
@@ -323,14 +321,20 @@ GNECalibratorFlow::getAttributeDouble(SumoXMLAttr key) const {
         case SUMO_ATTR_MINGAP:
             return getParentDemandElements().at(0)->getAttributeDouble(key);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
+            return getCommonAttributeDouble(key);
     }
 }
 
 
-const Parameterised::Map&
-GNECalibratorFlow::getACParametersMap() const {
-    return getParametersMap();
+Position
+GNECalibratorFlow::getAttributePosition(SumoXMLAttr key) const {
+    return getCommonAttributePosition(key);
+}
+
+
+PositionVector
+GNECalibratorFlow::getAttributePositionVector(SumoXMLAttr key) const {
+    return getCommonAttributePositionVector(key);
 }
 
 
@@ -472,7 +476,7 @@ GNECalibratorFlow::isValid(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_INSERTIONCHECKS:
             return areInsertionChecksValid(value);
         default:
-            return isCommonValid(key, value);
+            return isCommonAttributeValid(key, value);
     }
 }
 
@@ -720,20 +724,9 @@ GNECalibratorFlow::setAttribute(SumoXMLAttr key, const std::string& value) {
             insertionChecks = parseInsertionChecks(value);
             break;
         default:
-            setCommonAttribute(this, key, value);
+            setCommonAttribute(key, value);
             break;
     }
-}
-
-
-void
-GNECalibratorFlow::setMoveShape(const GNEMoveResult& /*moveResult*/) {
-    // nothing to do
-}
-
-void
-GNECalibratorFlow::commitMoveShape(const GNEMoveResult& /*moveResult*/, GNEUndoList* /*undoList*/) {
-    // nothing to do
 }
 
 

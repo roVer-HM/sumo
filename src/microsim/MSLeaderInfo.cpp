@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -203,6 +203,19 @@ MSLeaderInfo::hasStoppedVehicle() const {
     return false;
 }
 
+
+bool
+MSLeaderInfo::hasVehicle(const MSVehicle* veh) const {
+    if (!myHasVehicles) {
+        return false;
+    }
+    for (int i = 0; i < (int)myVehicles.size(); ++i) {
+        if (myVehicles[i] == veh) {
+            return true;
+        }
+    }
+    return false;
+}
 
 void
 MSLeaderInfo::removeOpposite(const MSLane* lane) {

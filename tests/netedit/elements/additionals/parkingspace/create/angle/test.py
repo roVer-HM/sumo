@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,54 +19,51 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # go to additional mode
-netedit.additionalMode()
+netedit.changeMode("additional")
 
 # select parkingArea
-netedit.changeElement("parkingArea")
+netedit.changeElement("additionalFrame", "parkingArea")
 
 # create parkingArea in mode "Reference Left"
 netedit.leftClick(referencePosition, netedit.positions.elements.edgeCenter1)
 
 # select space
-netedit.changeElement("space")
+netedit.changeElement("additionalFrame", "space")
 
 # set invalid Angle (dummy)
 netedit.selectAdditionalChild(netedit.attrs.parkingSpace.create.parent, 0)
-netedit.changeDefaultValue(netedit.attrs.parkingSpace.create.angle, "dummyAngle")
+netedit.modifyAttribute(netedit.attrs.parkingSpace.create.angle, "dummyAngle")
 
 # try to create area
 netedit.leftClick(referencePosition, netedit.positions.elements.additionals.squaredA)
 
 # set invalid angle (empty)
-netedit.changeDefaultValue(netedit.attrs.parkingSpace.create.angle, "")
+netedit.modifyAttribute(netedit.attrs.parkingSpace.create.angle, "")
 
 # try to create area
 netedit.leftClick(referencePosition, netedit.positions.elements.additionals.squaredB)
 
 # set valid angle (negative)
-netedit.changeDefaultValue(netedit.attrs.parkingSpace.create.angle, "-4")
+netedit.modifyAttribute(netedit.attrs.parkingSpace.create.angle, "-4")
 
 # create area
 netedit.leftClick(referencePosition, netedit.positions.elements.additionals.squaredA)
 
 # set valid angle (>360)
-netedit.changeDefaultValue(netedit.attrs.parkingSpace.create.angle, "500")
+netedit.modifyAttribute(netedit.attrs.parkingSpace.create.angle, "500")
 
 # create area
 netedit.leftClick(referencePosition, netedit.positions.elements.additionals.squaredB)
 
 # set valid angle
-netedit.changeDefaultValue(netedit.attrs.parkingSpace.create.angle, "120")
+netedit.modifyAttribute(netedit.attrs.parkingSpace.create.angle, "120")
 
 # create area
 netedit.leftClick(referencePosition, netedit.positions.elements.additionals.squaredA)
@@ -75,7 +72,7 @@ netedit.leftClick(referencePosition, netedit.positions.elements.additionals.squa
 netedit.checkUndoRedo(referencePosition)
 
 # save netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

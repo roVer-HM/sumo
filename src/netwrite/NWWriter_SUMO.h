@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -80,7 +80,7 @@ public:
                                 bool includeInternal, ConnectionStyle style = SUMONET, bool geoAccuracy = false);
 
     /// @brief writes the given prohibitions
-    static void writeProhibitions(OutputDevice& into, const NBConnectionProhibits& prohibitions);
+    static void writeProhibitions(OutputDevice& into, const NBConnectionProhibits& prohibitions, const NBEdgeCont& ec);
 
     /// @brief writes the traffic light logics to the given device
     static void writeTrafficLights(OutputDevice& into, const NBTrafficLightLogicCont& tllCont);
@@ -129,7 +129,7 @@ private:
      * @param[in] noNames Whether names shall be ignored
      * @see writeLane()
      */
-    static void writeEdge(OutputDevice& into, const NBEdge& e, bool noNames);
+    static void writeEdge(OutputDevice& into, const NBEdge& e, bool noNames, LaneSpreadFunction defaultSpread);
 
 
     /** @brief Writes a lane (<lane ...) of an edge

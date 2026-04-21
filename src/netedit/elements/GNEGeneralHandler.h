@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -44,17 +44,16 @@ class GNEGeneralHandler : public GeneralHandler {
 public:
     /**@brief Constructor
      * @param[in] net GNENet
-     * @param[in] file Name of the parsed file
+     * @param[in] bucket fileBucket in which save the loaded
      * @param[in] allowUndoRedo enable or disable undoRedo
-     * @param[in] overwrite enable or disable overwrite elements
      */
-    GNEGeneralHandler(GNENet* net, const std::string& file, const bool allowUndoRedo, const bool overwrite);
+    GNEGeneralHandler(GNENet* net, FileBucket* bucket, const bool allowUndoRedo);
 
     /// @brief Destructor
     ~GNEGeneralHandler();
 
-    /// @brief run post parser tasks
-    bool postParserTasks();
+    /// @brief force overwritte elements (used if we're reloading elements)
+    void forceOverwriteElements();
 
     /// @brief get flag for check if a element wasn't created
     bool isErrorCreatingElement() const;

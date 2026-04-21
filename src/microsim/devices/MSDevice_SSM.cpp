@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2013-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -3801,7 +3801,7 @@ MSDevice_SSM::getVehiclesOnJunction(const MSJunction* junction, const MSLane* co
     };
 
     // stop condition
-    if (seenLanes.find(egoJunctionLane) != seenLanes.end() || egoJunctionLane->getEdge().isCrossing()) {
+    if (seenLanes.find(egoJunctionLane) != seenLanes.end() || egoJunctionLane->isCrossing()) {
         return;
     }
 
@@ -3884,6 +3884,7 @@ std::string
 MSDevice_SSM::getOutputFilename(const SUMOVehicle& v, std::string deviceID) {
     OptionsCont& oc = OptionsCont::getOptions();
     std::string file = deviceID + ".xml";
+    std::string basePath = "";
     if (v.getParameter().hasParameter("device.ssm.file")) {
         try {
             file = v.getParameter().getParameter("device.ssm.file", file);
@@ -3902,9 +3903,12 @@ MSDevice_SSM::getOutputFilename(const SUMOVehicle& v, std::string deviceID) {
             WRITE_MESSAGEF(TL("Vehicle '%' does not supply vehicle parameter 'device.ssm.file'. Using default of '%'."), v.getID(), file);
             myIssuedParameterWarnFlags |= SSM_WARN_FILE;
         }
+        if (OptionsCont::getOptions().isSet("configuration-file") && !oc.isDefault("device.ssm.file")) {
+            basePath = OptionsCont::getOptions().getString("configuration-file");
+        }
     }
-    if (OptionsCont::getOptions().isSet("configuration-file")) {
-        file = FileHelpers::checkForRelativity(file, OptionsCont::getOptions().getString("configuration-file"));
+    if (basePath != "") {
+        file = FileHelpers::checkForRelativity(file, basePath);
         try {
             file = StringUtils::urlDecode(file);
         } catch (NumberFormatException& e) {

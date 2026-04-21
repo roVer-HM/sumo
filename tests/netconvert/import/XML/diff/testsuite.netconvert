@@ -34,8 +34,14 @@ remove_tll_connection
 
 # remove connection and keep fewer than before
 remove_tll_connection2
+
+# deleting all connections from an edge should not trigger turn-around guessing
+remove_all_connections
 patch_crossing
 remove_crossing
+
+# remove the only crossing
+remove_crossing2
 rename_node
 remove_roundabout
 change_tlType
@@ -51,3 +57,6 @@ change_permissions_filtered
 
 # patching permissions should impact edge filtering by permissions
 change_permissions_filtered_postload
+
+# make an uncontrolled connection controlled 
+make_controlled

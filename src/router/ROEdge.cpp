@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -54,20 +54,21 @@ double ROEdge::myEdgePriorityRange(0);
 // ===========================================================================
 // method definitions
 // ===========================================================================
-ROEdge::ROEdge(const std::string& id, RONode* from, RONode* to, int index, const int priority, const std::string& type) :
+ROEdge::ROEdge(const std::string& id, RONode* from, RONode* to, int index, const int priority, const std::string& type, const std::string& routingType) :
     Named(id),
     myFromJunction(from),
     myToJunction(to),
     myIndex(index),
     myPriority(priority),
     myType(type),
+    myRoutingType(routingType),
     mySpeed(-1),
     myLength(0),
     myAmSink(false),
     myAmSource(false),
     myUsingTTTimeLine(false),
     myUsingETimeLine(false),
-    myRestrictions(nullptr),
+    mySpeedRestrictions(nullptr),
     myCombinedPermissions(0),
     myOtherTazConnector(nullptr),
     myTimePenalty(0) {
@@ -177,7 +178,7 @@ double
 ROEdge::getEffort(const ROVehicle* const veh, double time) const {
     double ret = 0;
     if (!getStoredEffort(time, ret)) {
-        return myLength / MIN2(veh->getMaxSpeed(), getVClassMaxSpeed(veh->getVClass())) + myTimePenalty;
+        return myLength / getMaxSpeed(veh);
     }
     return ret;
 }
@@ -229,7 +230,7 @@ ROEdge::getTravelTime(const ROVehicle* const veh, double time) const {
             }
         }
     }
-    const double speed = veh != nullptr ? MIN2(veh->getMaxSpeed(), veh->getType()->speedFactor.getParameter()[0] * getVClassMaxSpeed(veh->getVClass())) : mySpeed;
+    const double speed = veh != nullptr ? getMaxSpeed(veh) : mySpeed;
     return myLength / speed + myTimePenalty;
 }
 
@@ -238,8 +239,7 @@ double
 ROEdge::getNoiseEffort(const ROEdge* const edge, const ROVehicle* const veh, double time) {
     double ret = 0;
     if (!edge->getStoredEffort(time, ret)) {
-        const double v = MIN2(veh->getMaxSpeed(), edge->getVClassMaxSpeed(veh->getVClass()));
-        ret = HelpersHarmonoise::computeNoise(veh->getType()->emissionClass, v, 0);
+        ret = HelpersHarmonoise::computeNoise(veh->getType()->emissionClass, edge->getMaxSpeed(veh), 0);
     }
     return ret;
 }
@@ -458,7 +458,9 @@ ROEdge::getViaSuccessors(SUMOVehicleClass vClass, bool /*ignoreTransientPermissi
 
 
 bool
-ROEdge::isConnectedTo(const ROEdge& e, const SUMOVehicleClass vClass) const {
+ROEdge::isConnectedTo(const ROEdge& e, const SUMOVehicleClass vClass, bool ignoreTransientPermissions) const {
+    // @todo needs to be used with #12501
+    UNUSED_PARAMETER(ignoreTransientPermissions);
     const ROEdgeVector& followers = getSuccessors(vClass);
     return std::find(followers.begin(), followers.end(), &e) != followers.end();
 }

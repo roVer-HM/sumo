@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -28,11 +28,11 @@ from sumolib.options import ArgumentParser  # noqa
 from sumolib.miscutils import openz  # noqa
 
 SHORT_NAMES = {
-        'E1': 'inductionLoop',
-        'E1I': 'instantInductionLoop',
-        'E2': 'laneAreaDetector',
-        #  'E3': 'multiEntryExitDetector'
-        }
+    'E1': 'inductionLoop',
+    'E1I': 'instantInductionLoop',
+    'E2': 'laneAreaDetector',
+    #  'E3': 'multiEntryExitDetector'
+}
 
 NEED_EXTENT = ['laneAreaDetector',
                #  'multiEntryExitDetector'
@@ -54,7 +54,9 @@ def get_options(args=None):
     ap.add_option("--relpos", default=0.5,
                   help="relative detector position along the edge [0,1] or 'random'")
     ap.add_option("--probability", type=float, default=1,
-                  help="app detector with the given probability ]0, 1]")
+                  help="build detector with the given probability ]0, 1] (lanewise)")
+    ap.add_option("--edge-probability", type=float, default=1, dest="edgeProbability",
+                  help="build detector with the given probability ]0, 1] (edgewise)")
     ap.add_option("-t", "--detector-type", dest="dType", default="inductionLoop",
                   help="one of %s or the corresponding shortcut %s" % (
                       list(SHORT_NAMES.values()),
@@ -63,6 +65,8 @@ def get_options(args=None):
                   help="only place detectors on lanes that permit the given vehicle class")
     ap.add_option("--length", type=float,
                   help="Set length for detector types that support it")
+    ap.add_option("--next", action="store_true", default=False,
+                  help="generate nextEdges attribute and additional detectors for lanes with multiple targets")
     ap.add_option("-s", "--seed", type=int, default=42, help="random seed")
     ap.add_option("-v", "--verbose", action="store_true", default=False,
                   help="tell me what you are doing")
@@ -111,20 +115,31 @@ def main(options):
         elif options.dType in NEED_EXTENT:
             endPos = 'endPos="-1" '
 
+        def writeDet(options, lane, numWritten, nextEdge=None):
+            fout.write('    <%s id="%s%s%s" lane="%s" pos="%s" %s%s%s%s%sfile="%s"/>\n' % (
+                options.dType,
+                options.prefix, lane.getID(),
+                '_%s' % nextEdge.getID() if nextEdge else '',
+                lane.getID(),
+                "%.2f" % options.getRelpos(lane),
+                period, length, endPos, friendlyPos,
+                'nextEdges="%s" ' % nextEdge.getID() if nextEdge else "",
+                options.results))
+            numWritten += 1
+
         for edge in net.getEdges():
+            if options.edgeProbability < 1 and random.random() > options.edgeProbability:
+                continue
             for lane in edge.getLanes():
                 if not lane.allows(options.vclass):
                     continue
                 if options.probability < 1 and random.random() > options.probability:
                     continue
-                numWritten += 1
-                fout.write('    <%s id="%s%s" lane="%s" pos="%s" %s%s%s%sfile="%s"/>\n' % (
-                    options.dType,
-                    options.prefix, lane.getID(),
-                    lane.getID(),
-                    "%.2f" % options.getRelpos(lane),
-                    period, length, endPos, friendlyPos,
-                    options.results))
+                if options.next and len(lane.getOutgoing()) > 1:
+                    for edge in lane.getOutgoingEdges():
+                        writeDet(options, lane, numWritten, edge)
+                else:
+                    writeDet(options, lane, numWritten)
 
         fout.write('</additional>\n')
 

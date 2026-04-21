@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -143,7 +143,11 @@ NIImporter_ArcView::load() {
     poLayer->ResetReading();
 
     // build coordinate transformation
+#if GDAL_VERSION_MAJOR < 3
     OGRSpatialReference* origTransf = poLayer->GetSpatialRef();
+#else
+    const OGRSpatialReference* origTransf = poLayer->GetSpatialRef();
+#endif
     OGRSpatialReference destTransf;
     // use wgs84 as destination
     destTransf.SetWellKnownGeogCS("WGS84");
@@ -282,7 +286,10 @@ NIImporter_ArcView::load() {
         NBNode* from = myNodeCont.retrieve(from_node);
         if (from == nullptr) {
             Position from_pos = shape[0];
-            from = myNodeCont.retrieve(from_pos, nodeJoinDist);
+            std::vector<NBNode*> cands = myNodeCont.retrieveByPos(from_pos, nodeJoinDist);
+            if (!cands.empty()) {
+                from = cands.front();
+            }
             if (from == nullptr) {
                 from = new NBNode(from_node, from_pos);
                 if (!myNodeCont.insert(from)) {
@@ -296,7 +303,10 @@ NIImporter_ArcView::load() {
         NBNode* to = myNodeCont.retrieve(to_node);
         if (to == nullptr) {
             Position to_pos = shape[-1];
-            to = myNodeCont.retrieve(to_pos, nodeJoinDist);
+            std::vector<NBNode*> cands = myNodeCont.retrieveByPos(to_pos, nodeJoinDist);
+            if (!cands.empty()) {
+                to = cands.front();
+            }
             if (to == nullptr) {
                 to = new NBNode(to_node, to_pos);
                 if (!myNodeCont.insert(to)) {

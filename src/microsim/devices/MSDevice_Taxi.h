@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2013-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -163,8 +163,8 @@ public:
         return myState;
     }
 
-    /// @brief returns a taxi if any exist or nullptr
-    static SUMOVehicle* getTaxi();
+    /// @brief returns whether taxis have been loaded
+    static bool hasFleet();
 
     /// @brief service the given reservation
     void dispatch(const Reservation& res);
@@ -231,7 +231,7 @@ private:
 
     /// @brief prepare stop for the given action
     void prepareStop(ConstMSEdgeVector& edges,
-                     std::vector<SUMOVehicleParameter::Stop>& stops,
+                     StopParVector& stops,
                      double& lastPos, const MSEdge* stopEdge, double stopPos,
                      const MSStoppingPlace* stopPlace,
                      const std::string& action, const Reservation* res, const bool isPickup);

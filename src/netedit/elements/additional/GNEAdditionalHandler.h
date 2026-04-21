@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -40,13 +40,10 @@ class GNEAdditionalHandler : public AdditionalHandler {
 
 public:
     /// @brief Constructor
-    GNEAdditionalHandler(GNENet* net, const std::string& filename, const bool allowUndoRedo, const bool overwrite);
+    GNEAdditionalHandler(GNENet* net, FileBucket* fileBucket, const bool allowUndoRedo);
 
     /// @brief Destructor
     ~GNEAdditionalHandler();
-
-    /// @brief run post parser tasks
-    bool postParserTasks();
 
     /// @name build functions
     /// @{
@@ -62,12 +59,13 @@ public:
      * @param[in] parkingLength parking length
      * @param[in[ color busStop color
      * @param[in] friendlyPos enable or disable friendly position
+     * @param[in] angle busStop's angle
      * @param[in] parameters generic parameters
      */
     bool buildBusStop(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& laneID,
                       const double startPos, const double endPos, const std::string& name, const std::vector<std::string>& lines,
                       const int personCapacity, const double parkingLength, const RGBColor& color, const bool friendlyPosition,
-                      const Parameterised::Map& parameters);
+                      const double angle, const Parameterised::Map& parameters);
 
     /**@brief Builds a train stop
      * @param[in] sumoBaseObject sumo base object used for build
@@ -81,12 +79,13 @@ public:
      * @param[in] parkingLength parking length
      * @param[in[ color trainStop color
      * @param[in] friendlyPos enable or disable friendly position
+     * @param[in] angle trainStop's angle
      * @param[in] parameters generic parameters
      */
     bool buildTrainStop(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& laneID,
                         const double startPos, const double endPos, const std::string& name, const std::vector<std::string>& lines,
                         const int personCapacity, const double parkingLength, const RGBColor& color, const bool friendlyPosition,
-                        const Parameterised::Map& parameters);
+                        const double angle, const Parameterised::Map& parameters);
 
     /**@brief Builds an Access
      * @param[in] sumoBaseObject sumo base object used for build
@@ -112,12 +111,13 @@ public:
      * @param[in] parkingLength parking length
      * @param[in[ color containerStop color
      * @param[in] friendlyPos enable or disable friendly position
+     * @param[in] angle container stops's angle
      * @param[in] parameters generic parameters
      */
     bool buildContainerStop(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& laneID,
                             const double startPos, const double endPos, const std::string& name, const std::vector<std::string>& lines,
                             const int containerCapacity, const double parkingLength, const RGBColor& color, const bool friendlyPosition,
-                            const Parameterised::Map& parameters);
+                            const double angle, const Parameterised::Map& parameters);
 
     /**@brief Builds a charging Station
      * @param[in] sumoBaseObject sumo base object used for build
@@ -126,7 +126,8 @@ public:
      * @param[in] startPos Begin position of the charging Station on the lane
      * @param[in] endPos End position of the charging Station on the lane
      * @param[in] name Name of charging station
-     * @param[in] chargingPower power charged in every timeStep
+     * @param[in] chargingPower nominal power charged in every timeStep per vehicle
+     * @param[in] totalPower max. power charged in every timeStep by all vehicles
      * @param[in] efficiency efficiency of the charge
      * @param[in] chargeInTransit enable or disable charge in transit
      * @param[in] chargeDelay delay in the charge
@@ -136,7 +137,7 @@ public:
      * @param[in] parameters generic parameters
      */
     bool buildChargingStation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& laneID,
-                              const double startPos, const double endPos, const std::string& name, const double chargingPower,
+                              const double startPos, const double endPos, const std::string& name, const double chargingPower, const double totalPower,
                               const double efficiency, const bool chargeInTransit, const SUMOTime chargeDelay, const std::string& chargeType,
                               const SUMOTime waitingTime, const bool friendlyPosition, const std::string& parkingAreaID, const Parameterised::Map& parameters);
 
@@ -431,7 +432,7 @@ public:
      * @param[in] time step's time
      * @param[in] speed step's speed
      */
-    bool buildVariableSpeedSignStep(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const SUMOTime time, const std::string& speed);
+    bool buildVariableSpeedSignStep(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const SUMOTime time, const double speed);
 
     /**@brief Builds a vaporizer (lane speed additional)
      * @param[in] sumoBaseObject sumo base object used for build
@@ -620,11 +621,13 @@ public:
 
     /// @}
 
-    /// @brief check if a GNEAccess can be created in a certain Edge
-    static bool accessCanBeCreated(GNEAdditional* busStopParent, GNEEdge* edge);
+    /// @brief check if a GNEAccess can be created in the given edge
+    static bool accessExists(const GNEAdditional* stoppingPlaceParent, const GNEEdge* edge);
+
+protected:
 
     /// @brief check if an overlapping is produced in rerouter if a interval with certain begin and end is inserted
-    static bool checkOverlappingRerouterIntervals(GNEAdditional* rerouter, const SUMOTime newBegin, const SUMOTime newEnd);
+    bool checkOverlappingRerouterIntervals(GNEAdditional* rerouter, const SUMOTime newBegin, const SUMOTime newEnd);
 
     /**@brief check if the given position over a lane is valid
      * @param[in] pos pos position of element over lane
@@ -633,13 +636,7 @@ public:
      * @param[in] friendlyPos Attribute of element
      * @return true if the element position is valid, false in otherweise
      */
-    static bool checkLanePosition(double pos, const double length, const double laneLength, const bool friendlyPos);
-
-    /**@brief fix given position over lane
-     * @param[in] pos pos position of element over lane
-     * @param[in] laneLength Length of the lane
-     */
-    static void fixLanePosition(double& pos, double& length, const double laneLength);
+    bool checkLanePosition(double pos, const double length, const double laneLength, const bool friendlyPos);
 
     /**@brief check if enable friendly pos in small lanes
      * @param[in] pos pos position of element over lane
@@ -648,7 +645,7 @@ public:
      * @param[in] friendlyPos Attribute of element
      * @return true if the element position is valid, false in otherweise
      */
-    static bool checkFriendlyPosSmallLanes(double pos, const double length, const double laneLength, const bool friendlyPos);
+    bool checkFriendlyPosSmallLanes(double pos, const double length, const double laneLength, const bool friendlyPos);
 
     /**@brief check if the given positions over a lane is valid
      * @param[in] from begin position of element over lane
@@ -657,14 +654,14 @@ public:
      * @param[in] friendlyPos Attribute of element
      * @return true if the element positions is valid, false in otherwise
      */
-    static bool checkLaneDoublePosition(double from, const double to, const double laneLength, const bool friendlyPos);
+    bool checkLaneDoublePosition(double from, const double to, const double laneLength, const bool friendlyPos);
 
     /**@brief fix the given positions over lane
      * @param[in] from begin position of element over lane
      * @param[in] to end position of element over lane
      * @param[in] laneLength Length of the lane
      */
-    static void fixLaneDoublePosition(double& from, double& to, const double laneLengt);
+    void fixLaneDoublePosition(double& from, double& to, const double laneLengt);
 
     /**@brief check if the given positions over two lanes are valid
      * @param[in] fromPos position of element over first lane
@@ -674,17 +671,8 @@ public:
      * @param[in] friendlyPos flag for friendlyPos
      * @return true if the element positions is valid, false in otherwise
      */
-    static bool checkMultiLanePosition(double fromPos, const double fromLaneLength, const double toPos, const double tolaneLength, const bool friendlyPos);
+    bool checkMultiLanePosition(double fromPos, const double fromLaneLength, const double toPos, const double tolaneLength, const bool friendlyPos);
 
-    /**@brief fix the given positions over two lanes
-     * @param[in] fromPos position of element over first lane
-     * @param[in] fromLaneLength length of the first lane
-     * @param[in] toPos position of element over second lane
-     * @param[in] toLaneLength length of the second lane
-     */
-    static void fixMultiLanePosition(double fromPos, const double fromLaneLength, double toPos, const double tolaneLength);
-
-protected:
     /// @brief get additional parent
     GNEAdditional* getAdditionalParent(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, SumoXMLTag tag) const;
 
@@ -700,7 +688,7 @@ protected:
     /// @brief get element by ID
     GNEAdditional* retrieveAdditionalElement(const std::vector<SumoXMLTag> tags, const std::string& id);
 
-    /// @brief check if element exist, and if overwritte
+    /// @brief check if element exist, and if overwrite
     bool checkElement(const SumoXMLTag tag, GNEAdditional* additional);
 
 private:
@@ -709,9 +697,6 @@ private:
 
     /// @brief allow undo/redo
     const bool myAllowUndoRedo;
-
-    /// @brief check if overwrite
-    const bool myOverwrite;
 
     /// @brief invalidate default constructo
     GNEAdditionalHandler() = delete;

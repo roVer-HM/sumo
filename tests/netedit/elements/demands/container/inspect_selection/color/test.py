@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,50 +19,47 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # go to demand mode
-netedit.supermodeDemand()
+netedit.changeSupermode("demand")
 
 # go to select mode
-netedit.selectMode()
+netedit.changeMode("select")
 
 # select all using invert
-netedit.selectionInvert()
+netedit.selection("invert")
 
 # go to inspect mode
-netedit.inspectMode()
+netedit.changeMode("inspect")
 
 # inspect container
 netedit.leftClick(referencePosition, netedit.positions.elements.demands.container)
 
 # change color using dialog
-netedit.modifyColorAttribute(netedit.attrs.container.inspectSelection.colorButton, 5, False)
+netedit.modifyColorAttribute(netedit.attrs.container.inspectSelection.colorButton)
 
 # change color with an invalid value
-netedit.modifyAttribute(netedit.attrs.container.inspectSelection.color, "", False)
+netedit.modifyAttribute(netedit.attrs.container.inspectSelection.color, "")
 
 # change color with an invalid value
-netedit.modifyAttribute(netedit.attrs.container.inspectSelection.color, "dummyColor", False)
+netedit.modifyAttribute(netedit.attrs.container.inspectSelection.color, "dummyColor")
 
 # change color with an valid value
-netedit.modifyAttribute(netedit.attrs.container.inspectSelection.color, "cyan", False)
+netedit.modifyAttribute(netedit.attrs.container.inspectSelection.color, "cyan")
 
 # change color with a valid value
-netedit.modifyAttribute(netedit.attrs.container.inspectSelection.color, "12,13,14", False)
+netedit.modifyAttribute(netedit.attrs.container.inspectSelection.color, "12,13,14")
 
 # Check undo
 netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # save containers
 # quit netedit

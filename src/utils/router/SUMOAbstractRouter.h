@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2006-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2006-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -31,6 +31,7 @@
 #include <utils/common/MsgHandler.h>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/ToString.h>
+
 //#define ROUTER_DEBUG_HINT
 //#define ROUTER_DEBUG_COND (true)
 
@@ -38,6 +39,14 @@
 // ===========================================================================
 // class definitions
 // ===========================================================================
+
+/// Prohibitions and their estimated end time
+struct RouterProhibition {
+    double begin = 0;
+    double end = std::numeric_limits<double>::max();
+    SVCPermissions permissions = SVC_IGNORING;
+};
+
 /**
  * @class SUMOAbstractRouter
  * The interface for routing the vehicles over the network.
@@ -56,7 +65,7 @@ public:
         EdgeInfo(const E* const e)
             : edge(e), effort(std::numeric_limits<double>::max()),
               heuristicEffort(std::numeric_limits<double>::max()),
-              leaveTime(0.), prev(nullptr), visited(false), prohibited(false) {}
+              leaveTime(0.), prev(nullptr), visited(false), prohibitedPermissions(SVCAll), prohibitionBegin(-1), prohibitionEnd(-1) {}
 
         /// The current edge
         const E* const edge;
@@ -77,8 +86,14 @@ public:
         /// whether the edge was already evaluated
         bool visited;
 
-        /// whether the edge is currently not allowed
-        bool prohibited;
+        /// temporary permission change
+        SVCPermissions prohibitedPermissions;
+
+        /// the time at which a temporary prohibition begins
+        double prohibitionBegin;
+
+        /// the time at which a temporary prohibition ends
+        double prohibitionEnd;
 
         inline void reset() {
             effort = std::numeric_limits<double>::max();
@@ -91,6 +106,8 @@ public:
     /// Type of the function that is used to retrieve the edge effort.
     typedef double(* Operation)(const E* const, const V* const, double);
 
+    typedef std::map<const E*, RouterProhibition> Prohibitions;
+
     /// Constructor
     SUMOAbstractRouter(const std::string& type, bool unbuildIsWarning, Operation operation, Operation ttOperation,
                        const bool havePermissions, const bool haveRestrictions) :
@@ -98,6 +115,7 @@ public:
         myOperation(operation), myTTOperation(ttOperation),
         myBulkMode(false),
         myAutoBulkMode(false),
+        myAmClean(true),
         myHavePermissions(havePermissions),
         myHaveRestrictions(haveRestrictions),
         myType(type),
@@ -113,6 +131,7 @@ public:
         myOperation(other->myOperation), myTTOperation(other->myTTOperation),
         myBulkMode(false),
         myAutoBulkMode(false),
+        myAmClean(true),
         myHavePermissions(other->myHavePermissions),
         myHaveRestrictions(other->myHaveRestrictions),
         myType(other->myType),
@@ -160,6 +179,10 @@ public:
     /// reset internal caches, used by CHRouter
     virtual void reset(const V* const vehicle) {
         UNUSED_PARAMETER(vehicle);
+    }
+
+    void setMsgHandler(MsgHandler* const errorMsgHandler) {
+        myErrorMsgHandler = errorMsgHandler;
     }
 
     const std::string& getType() const {
@@ -224,8 +247,12 @@ public:
         return false;
     }
 
-    inline bool isProhibited(const E* const edge, const V* const vehicle) const {
-        return (myHavePermissions && edge->prohibits(vehicle)) || (myHaveRestrictions && edge->restricts(vehicle));
+    inline bool isProhibited(const E* const edge, const V* const vehicle, double t) const {
+        return (myProhibited.size() > 0
+                && (myEdgeInfos[edge->getNumericalID()].prohibitedPermissions & vehicle->getVClass()) != vehicle->getVClass()
+                && myEdgeInfos[edge->getNumericalID()].prohibitionBegin <= t
+                && myEdgeInfos[edge->getNumericalID()].prohibitionEnd == std::numeric_limits<double>::max())
+               || (myHavePermissions && edge->prohibits(vehicle)) || (myHaveRestrictions && edge->restricts(vehicle));
     }
 
     inline double getTravelTime(const E* const e, const V* const v, const double t, const double effort) const {
@@ -257,9 +284,9 @@ public:
         length += e->getLength();
     }
 
-    bool isValid(const std::vector<const E*>& edges, const V* const v) const {
+    bool isValid(const std::vector<const E*>& edges, const V* const v, double t) const {
         for (const E* const e : edges) {
-            if (isProhibited(e, v)) {
+            if (isProhibited(e, v, t)) {
                 return false;
             }
         }
@@ -287,10 +314,31 @@ public:
     inline double recomputeCostsPos(const std::vector<const E*>& edges, const V* const v, double fromPos, double toPos, SUMOTime msTime, double* lengthp = nullptr) const {
         double effort = recomputeCosts(edges, v, msTime, lengthp);
         if (!edges.empty()) {
-            double firstEffort = this->getEffort(edges.front(), v, STEPS2TIME(msTime));
-            double lastEffort = this->getEffort(edges.back(), v, STEPS2TIME(msTime));
-            effort -= firstEffort * fromPos / edges.front()->getLength();
-            effort -= lastEffort * (edges.back()->getLength() - toPos) / edges.back()->getLength();
+            const E* first = edges.front();
+            if (first->getLength() == 0) {
+                if (edges.size() > 1 && edges[1]->getLength() > 0) {
+                    first = edges[1];
+                } else {
+                    return effort;
+                }
+            }
+            const E* last = edges.back();
+            if (last->getLength() == 0) {
+                if (edges.size() > 1 && edges[edges.size() - 2]->getLength() > 0) {
+                    last = edges[edges.size() - 2];
+                } else {
+                    return effort;
+                }
+            }
+            assert(first->getLength() > 0);
+            assert(last->getLength() > 0);
+            double firstEffort = this->getEffort(first, v, STEPS2TIME(msTime));
+            double lastEffort = this->getEffort(last, v, STEPS2TIME(msTime));
+            effort -= firstEffort * fromPos / first->getLength();
+            effort -= lastEffort * (last->getLength() - toPos) / last->getLength();
+            if (lengthp != nullptr) {
+                (*lengthp) -= fromPos + last->getLength() - toPos;
+            }
         }
         return effort;
     }
@@ -328,7 +376,15 @@ public:
 
 
     inline double getEffort(const E* const e, const V* const v, double t) const {
-        return (*myOperation)(e, v, t);
+        if (this->myProhibited.size() > 0 && myEdgeInfos.size() > 0
+                && myEdgeInfos[e->getNumericalID()].prohibitionEnd > t
+                && myEdgeInfos[e->getNumericalID()].prohibitionBegin <= t
+                && (myEdgeInfos[e->getNumericalID()].prohibitedPermissions & v->getVClass()) != v->getVClass()) {
+            // pass edge after prohibition ends
+            return (myEdgeInfos[e->getNumericalID()].prohibitionEnd - t) + (*myOperation)(e, v, myEdgeInfos[e->getNumericalID()].prohibitionEnd);
+        } else {
+            return (*myOperation)(e, v, t);
+        }
     }
 
     inline void startQuery() {
@@ -349,16 +405,24 @@ public:
         myAutoBulkMode = mode;
     }
 
-    virtual void prohibit(const std::vector<E*>& toProhibit) {
-        for (E* const edge : this->myProhibited) {
-            myEdgeInfos[edge->getNumericalID()].prohibited = false;
+    virtual void prohibit(const Prohibitions& toProhibit) {
+        for (auto item : this->myProhibited) {
+            myEdgeInfos[item.first->getNumericalID()].prohibitedPermissions = SVCAll;
+            myEdgeInfos[item.first->getNumericalID()].prohibitionBegin = -1;
+            myEdgeInfos[item.first->getNumericalID()].prohibitionEnd = -1;
         }
-        for (E* const edge : toProhibit) {
-            myEdgeInfos[edge->getNumericalID()].prohibited = true;
+        for (auto item : toProhibit) {
+            myEdgeInfos[item.first->getNumericalID()].prohibitionBegin = item.second.begin;
+            myEdgeInfos[item.first->getNumericalID()].prohibitionEnd = item.second.end;
+            myEdgeInfos[item.first->getNumericalID()].prohibitedPermissions = item.second.permissions;
+            //std::cout << item.first->getID() << " " << item.second.begin << " " << item.second.end << " (" << getVehicleClassNames(item.second.permissions) << "\n";
         }
         this->myProhibited = toProhibit;
     }
 
+    bool hasProhibitions() const {
+        return this->myProhibited.size() > 0;
+    }
 
     /// Builds the path from marked edges
     void buildPathFrom(const typename SUMOAbstractRouter<E, V>::EdgeInfo* rbegin, std::vector<const E*>& edges) {
@@ -372,7 +436,7 @@ public:
 
 protected:
     /// @brief the handler for routing errors
-    MsgHandler* const myErrorMsgHandler;
+    MsgHandler* myErrorMsgHandler;
 
     /// @brief The object's operation to perform.
     Operation myOperation;
@@ -395,8 +459,8 @@ protected:
     /// @brief whether edge restrictions need to be considered
     const bool myHaveRestrictions;
 
-    /// The list of explicitly prohibited edges
-    std::vector<E*> myProhibited;
+    /// The list of explicitly prohibited edges and estimated end time of prohibition
+    Prohibitions myProhibited;
 
     /// The container of edge information
     std::vector<typename SUMOAbstractRouter<E, V>::EdgeInfo> myEdgeInfos;

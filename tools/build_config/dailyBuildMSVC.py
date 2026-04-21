@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2008-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -158,12 +158,12 @@ def main(options, platform="x64"):
             if options.suffix == "extra":
                 shutil.copy(os.path.join(SUMO_HOME, "build_config", "wix", "gpl-2.0.txt"),
                             os.path.join(installDir, "LICENSE"))
+                if os.path.exists(os.path.join(options.remoteDir, "cadyts.jar")):
+                    shutil.copy(os.path.join(options.remoteDir, "cadyts.jar"), os.path.join(SUMO_HOME, "bin"))
             for f in glob.glob(os.path.join(SUMO_HOME, "bin", "*.jar")):
                 shutil.copy(f, os.path.join(installDir, "bin"))
             for f in glob.glob(os.path.join(SUMO_HOME, "bin", "*-sources.zip")):
                 shutil.unpack_archive(f, os.path.join(installDir, "include"))
-            if options.suffix == "extra" and os.path.exists(os.path.join(options.remoteDir, "cadyts.jar")):
-                shutil.copy(os.path.join(options.remoteDir, "cadyts.jar"), os.path.join(installDir, "bin"))
             shutil.copytree(os.path.join(SUMO_HOME, "docs"), os.path.join(installDir, "docs"),
                             ignore=shutil.ignore_patterns('web'))
             for lib in ("libsumo", "libtraci"):
@@ -192,9 +192,12 @@ def main(options, platform="x64"):
         status.printLog("Warning: Could not create nightly sumo-game.zip! (%s)" % e)
 
     if options.suffix == "extra":
-        buildWindowsSUMOWheel.main()
-        f = glob.glob(os.path.join(SUMO_HOME, "dist", "eclipse_sumo-*"))[0]
-        shutil.copy(f, os.path.join(options.remoteDir, "wheels"))
+        try:
+            buildWindowsSUMOWheel.main()
+            f = glob.glob(os.path.join(SUMO_HOME, "dist", "*"))[0]
+            shutil.copy(f, os.path.join(options.remoteDir, "wheels"))
+        except Exception as e:
+            status.printLog("Warning: Could not create nightly sumo wheel! (%s)" % e)
 
     debug_handler = status.set_rotating_log(makeAllLog, log_handler)
     ret = status.log_subprocess(["cmake", "--build", ".", "--config", "Debug"], cwd=buildDir)

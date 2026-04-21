@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -63,6 +63,7 @@ enum class GUIIcon {
     HELP,
     HALL_OF_FAME,
     CLEARMESSAGEWINDOW,
+    GITHUB,
     /// @}
 
     /// @name netedit view icons
@@ -705,6 +706,18 @@ enum class GUIIcon {
     BACK,
     /// @}
 
+    /// @name icons for dialogs
+    /// @{
+    INFORMATION_LARGE,
+    INFORMATION_SMALL,
+    QUESTION_LARGE,
+    QUESTION_SMALL,
+    ERROR_LARGE,
+    ERROR_SMALL,
+    WARNING_LARGE,
+    WARNING_SMALL,
+    /// @}
+
     /// @name icons for grid
     /// @{
     GRID,
@@ -720,17 +733,39 @@ enum class GUIIcon {
     OSM,
     /// @}
 
+    /// @brief icons for file dialogs
+    /// @{
+    FILEDIALOG_BOOK_CLR,
+    FILEDIALOG_BOOK_SET,
+    FILEDIALOG_DIRUP_ICON,
+    FILEDIALOG_FILE_COPY,
+    FILEDIALOG_FILE_DELETE,
+    FILEDIALOG_FILE_HIDDEN,
+    FILEDIALOG_FILE_LINK,
+    FILEDIALOG_FILE_MOVE,
+    FILEDIALOG_FILE_SHOWN,
+    FILEDIALOG_FOLDER_BIG,
+    FILEDIALOG_FOLDER_NEW,
+    FILEDIALOG_GOTO_HOME,
+    FILEDIALOG_GOTO_WORK,
+    FILEDIALOG_SHOW_BIGICONS,
+    FILEDIALOG_SHOW_DETAILS,
+    FILEDIALOG_SHOW_SMALLICONS,
+    /// @}
+
     /// @brief icons for languages
     /// @{
     LANGUAGE_EN,
     LANGUAGE_DE,
     LANGUAGE_ES,
+    LANGUAGE_PT,
     LANGUAGE_FR,
     LANGUAGE_IT,
     LANGUAGE_HU,
     LANGUAGE_TR,
     LANGUAGE_ZH,
     LANGUAGE_ZHT,
-    LANGUAGE_JA
+    LANGUAGE_JA,
+    LANGUAGE_KO
     /// @}
 };

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -126,10 +126,13 @@ public:
         }
     }
 
-    void init(std::vector<_RailEdge*>& railEdges, int& numericalID, double maxTrainLength) {
+    void init(std::vector<_RailEdge*>& railEdges, int& numericalID, double maxTrainLength, bool permitReversal) {
         // replace turnaround-via with an explicit RailEdge that checks length
         for (const auto& viaPair : myOriginal->getViaSuccessors()) {
             if (viaPair.first == myOriginal->getBidiEdge()) {
+                if (!permitReversal) {
+                    continue;
+                }
                 // direction reversal
                 if (myTurnaround == nullptr) {
                     myTurnaround = new _RailEdge(myOriginal, viaPair.first, numericalID++);
@@ -234,7 +237,6 @@ public:
     }
 
     const ConstEdgePairVector& getViaSuccessors(SUMOVehicleClass vClass = SVC_IGNORING, bool ignoreTransientPermissions = false) const {
-        UNUSED_PARAMETER(ignoreTransientPermissions); // @todo this should be changed (somewhat hidden by #14756)
         if (vClass == SVC_IGNORING || myOriginal == nullptr || myOriginal->isTazConnector()) { // || !MSNet::getInstance()->hasPermissions()) {
             return myViaSuccessors;
         }
@@ -252,7 +254,7 @@ public:
         for (const auto& viaPair : myViaSuccessors) {
             if (viaPair.first->myOriginal == nullptr
                     || viaPair.first->myOriginal->isTazConnector()
-                    || myOriginal->isConnectedTo(*viaPair.first->myOriginal, vClass)) {
+                    || myOriginal->isConnectedTo(*viaPair.first->myOriginal, vClass, ignoreTransientPermissions)) {
                 result.push_back(viaPair);
             }
         }

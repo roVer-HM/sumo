@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,16 +18,18 @@
 // Row used for edit attributes in GNEAttributesEditorType
 /****************************************************************************/
 
+#include <netedit/dialogs/GNEVClassesDialog.h>
+#include <netedit/dialogs/GNEColorDialog.h>
+#include <netedit/frames/common/GNEInspectorFrame.h>
 #include <netedit/GNEApplicationWindow.h>
+#include <netedit/GNEInternalTest.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagProperties.h>
 #include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
-#include <netedit/dialogs/GNEAllowVClassesDialog.h>
-#include <netedit/frames/common/GNEInspectorFrame.h>
 #include <utils/common/Translation.h>
 #include <utils/foxtools/MFXLabelTooltip.h>
-#include <utils/foxtools/MFXTextFieldTooltip.h>
+#include <utils/foxtools/MFXTextFieldIcon.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/images/POIIcons.h>
 #include <utils/gui/images/VClassIcons.h>
@@ -42,7 +44,7 @@ FXDEFMAP(GNEAttributesEditorRow) GNEAttributeRowMap[] = {
     FXMAPFUNC(SEL_COMMAND,  MID_GNE_ATTRIBUTESEDITORROW_SETATTRIBUTE,           GNEAttributesEditorRow::onCmdSetAttribute),
     FXMAPFUNC(SEL_COMMAND,  MID_GNE_ATTRIBUTESEDITORROW_TOGGLEENABLEATTRIBUTE,  GNEAttributesEditorRow::onCmdToggleEnableAttribute),
     FXMAPFUNC(SEL_COMMAND,  MID_GNE_ATTRIBUTESEDITORROW_OPENDIALOG_COLOR,       GNEAttributesEditorRow::onCmdOpenColorDialog),
-    FXMAPFUNC(SEL_COMMAND,  MID_GNE_ATTRIBUTESEDITORROW_OPENDIALOG_ALLOW,       GNEAttributesEditorRow::onCmdOpenAllowDialog),
+    FXMAPFUNC(SEL_COMMAND,  MID_GNE_ATTRIBUTESEDITORROW_OPENDIALOG_ALLOW,       GNEAttributesEditorRow::onCmdOpenVClassDialog),
     FXMAPFUNC(SEL_COMMAND,  MID_GNE_ATTRIBUTESEDITORROW_OPENDIALOG_FILE,        GNEAttributesEditorRow::onCmdOpenFileDialog),
     FXMAPFUNC(SEL_COMMAND,  MID_GNE_ATTRIBUTESEDITORROW_REPARENT,               GNEAttributesEditorRow::onCmdReparent),
     FXMAPFUNC(SEL_COMMAND,  MID_GNE_ATTRIBUTESEDITORROW_INSPECTPARENT,          GNEAttributesEditorRow::onCmdInspectParent),
@@ -52,16 +54,6 @@ FXDEFMAP(GNEAttributesEditorRow) GNEAttributeRowMap[] = {
 
 // Object implementation
 FXIMPLEMENT(GNEAttributesEditorRow, FXHorizontalFrame, GNEAttributeRowMap, ARRAYNUMBER(GNEAttributeRowMap))
-
-// ===========================================================================
-// defines
-// ===========================================================================
-
-#define TEXTCOLOR_BLACK FXRGB(0, 0, 0)
-#define TEXTCOLOR_BLUE FXRGB(0, 0, 255)
-#define TEXTCOLOR_RED FXRGB(255, 0, 0)
-#define TEXTCOLOR_BACKGROUND_RED FXRGBA(255, 213, 213, 255)
-#define TEXTCOLOR_BACKGROUND_WHITE FXRGB(255, 255, 255)
 
 // ===========================================================================
 // method definitions
@@ -83,11 +75,10 @@ GNEAttributesEditorRow::GNEAttributesEditorRow(GNEAttributesEditorType* attribut
     myAttributeButton = new MFXButtonTooltip(this, tooltipMenu, "button", nullptr, this,
             MID_GNE_ATTRIBUTESEDITORROW_REPARENT, GUIDesignButtonAttribute);
     // create right text field for string attributes
-    myValueTextField = new MFXTextFieldTooltip(this, tooltipMenu, GUIDesignTextFieldNCol, this,
-            MID_GNE_ATTRIBUTESEDITORROW_SETATTRIBUTE, GUIDesignTextField);
+    myValueTextField = new MFXTextFieldIcon(this, tooltipMenu, GUIIcon::EMPTY, this, MID_GNE_ATTRIBUTESEDITORROW_SETATTRIBUTE, GUIDesignTextField);
     myValueTextField->hide();
     // create right combo box for discrete attributes
-    myValueComboBox = new MFXComboBoxIcon(this, GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItems, this,
+    myValueComboBox = new MFXComboBoxIcon(this, tooltipMenu, true, GUIDesignComboBoxVisibleItems, this,
                                           MID_GNE_ATTRIBUTESEDITORROW_SETATTRIBUTE, GUIDesignComboBoxAttribute);
     myValueComboBox->hide();
     // Create right check button
@@ -259,11 +250,11 @@ GNEAttributesEditorRow::isValueValid() const {
     if (myValueCheckButton->shown()) {
         return true;
     } else if (myValueComboBox->shown()) {
-        return (myValueComboBox->getTextColor() != TEXTCOLOR_RED) &&
-               (myValueComboBox->getBackColor() != TEXTCOLOR_BACKGROUND_RED);
+        return (myValueComboBox->getTextColor() != GUIDesignTextColorRed) &&
+               (myValueComboBox->getBackColor() != GUIDesignBackgroundColorRed);
     } else if (myValueTextField->shown()) {
-        return (myValueTextField->getTextColor() != TEXTCOLOR_RED) &&
-               (myValueTextField->getBackColor() != TEXTCOLOR_BACKGROUND_RED);
+        return (myValueTextField->getTextColor() != GUIDesignTextColorRed) &&
+               (myValueTextField->getBackColor() != GUIDesignBackgroundColorRed);
     } else {
         return true;
     }
@@ -293,14 +284,14 @@ GNEAttributesEditorRow::fillSumoBaseObject(CommonXMLStructure::SumoBaseObject* b
     if (myAttrProperty->isBool()) {
         baseObject->addBoolAttribute(attribute, myValueCheckButton->getCheck() == TRUE);
     } else if (myAttrProperty->isDiscrete()) {
-        if ((myValueComboBox->getTextColor() == TEXTCOLOR_RED) ||
-                (myValueComboBox->getBackColor() == TEXTCOLOR_BACKGROUND_RED)) {
+        if ((myValueComboBox->getTextColor() == GUIDesignTextColorRed) ||
+                (myValueComboBox->getBackColor() == GUIDesignBackgroundColorRed)) {
             return attribute;
         } else {
             baseObject->addStringAttribute(attribute, myValueComboBox->getText().text());
         }
-    } else if ((myValueTextField->getTextColor() == TEXTCOLOR_RED) ||
-               (myValueTextField->getBackColor() == TEXTCOLOR_BACKGROUND_RED)) {
+    } else if ((myValueTextField->getTextColor() == GUIDesignTextColorRed) ||
+               (myValueTextField->getBackColor() == GUIDesignBackgroundColorRed)) {
         return attribute;
     } else if (myAttrProperty->isInt()) {
         // int value
@@ -337,7 +328,7 @@ GNEAttributesEditorRow::fillSumoBaseObject(CommonXMLStructure::SumoBaseObject* b
             }
         } else if (GNEAttributeCarrier::canParse<double>(myValueTextField->getText().text())) {
             const auto doubleValue = GNEAttributeCarrier::parse<double>(myValueTextField->getText().text());
-            // check using default value for certain default values (for example, lenght = -1)
+            // check using default value for certain default values (for example, length = -1)
             if (!usingDefaultValue && myAttrProperty->isPositive() && (doubleValue < 0)) {
                 return attribute;
             } else if (!usingDefaultValue && myAttrProperty->isProbability() && ((doubleValue < 0) || (doubleValue > 1))) {
@@ -410,36 +401,32 @@ GNEAttributesEditorRow::fillSumoBaseObject(CommonXMLStructure::SumoBaseObject* b
 
 long
 GNEAttributesEditorRow::onCmdOpenColorDialog(FXObject*, FXSelector, void*) {
-    // create FXColorDialog
-    FXColorDialog colordialog(myAttributeTable->getFrameParent()->getViewNet(), TL("Color Dialog"));
-    colordialog.setIcon(GUIIconSubSys::getIcon(GUIIcon::COLORWHEEL));
+    auto GNEApp = myAttributeTable->getFrameParent()->getViewNet()->getViewParent()->getGNEAppWindows();
+    RGBColor color = RGBColor::BLACK;
     // If previous attribute wasn't correct, set black as default color
     if (GNEAttributeCarrier::canParse<RGBColor>(myValueTextField->getText().text())) {
-        colordialog.setRGBA(MFXUtils::getFXColor(GNEAttributeCarrier::parse<RGBColor>(myValueTextField->getText().text())));
+        color = GNEAttributeCarrier::parse<RGBColor>(myValueTextField->getText().text());
     } else if (myAttrProperty->hasDefaultValue()) {
-        colordialog.setRGBA(MFXUtils::getFXColor(myAttrProperty->getDefaultColorValue()));
-    } else {
-        colordialog.setRGBA(MFXUtils::getFXColor(RGBColor::BLACK));
+        color = myAttrProperty->getDefaultColorValue();
     }
-    // execute dialog to get a new color in the text field
-    if (colordialog.execute()) {
-        myValueTextField->setText(toString(MFXUtils::getRGBColor(colordialog.getRGBA())).c_str(), TRUE);
+    // declare colorDialog
+    const auto colorDialog = new GNEColorDialog(GNEApp, color);
+    // continue depending of result
+    if (colorDialog->getResult() == GNEDialog::Result::ACCEPT) {
+        myValueTextField->setText(toString(colorDialog->getColor()).c_str(), TRUE);
     }
     return 1;
 }
 
 
 long
-GNEAttributesEditorRow::onCmdOpenAllowDialog(FXObject*, FXSelector, void*) {
-    // declare values to be modified
-    std::string allowedVehicles = myValueTextField->getText().text();
-    // declare accept changes
-    bool acceptChanges = false;
-    // open GNEAllowVClassesDialog (also used to modify SUMO_ATTR_CHANGE_LEFT etc)
-    GNEAllowVClassesDialog(myAttributeTable->getFrameParent()->getViewNet(), myAttrProperty->getAttr(), &allowedVehicles, &acceptChanges).execute();
-    // continue depending of acceptChanges
-    if (acceptChanges) {
-        myValueTextField->setText(allowedVehicles.c_str(), TRUE);
+GNEAttributesEditorRow::onCmdOpenVClassDialog(FXObject*, FXSelector, void*) {
+    auto GNEApp = myAttributeTable->getFrameParent()->getViewNet()->getViewParent()->getGNEAppWindows();
+    // declare allowVClassesDialog
+    const auto allowVClassesDialog = new GNEVClassesDialog(GNEApp, myAttrProperty->getAttr(), myValueTextField->getText().text());
+    // continue depending of result
+    if (allowVClassesDialog->getResult() == GNEDialog::Result::ACCEPT) {
+        myValueTextField->setText(allowVClassesDialog->getModifiedVClasses().c_str(), TRUE);
     }
     return 1;
 }
@@ -447,18 +434,15 @@ GNEAttributesEditorRow::onCmdOpenAllowDialog(FXObject*, FXSelector, void*) {
 
 long
 GNEAttributesEditorRow::onCmdOpenFileDialog(FXObject*, FXSelector, void*) {
-    // set title depending if we're loading or saving
-    const std::string title = myAttrProperty->isFileSave() ?
-                              TLF("Select existent o create new file for % attribute", myAttrProperty->getAttrStr()) :
-                              TLF("Select existent file for % attribute", myAttrProperty->getAttrStr());
     // open dialog
-    const std::string value = GNEApplicationWindowHelper::openFileDialog(
-                                  myAttributeTable->getFrameParent()->getViewNet()->getViewParent()->getGNEAppWindows(),
-                                  title, myAttrProperty->getTagPropertyParent()->getGUIIcon(),
-                                  myAttrProperty->getFilenameExtensions(), myAttrProperty->isFileSave());
+    const GNEFileDialog fileDialog(myAttributeTable->getFrameParent()->getViewNet()->getViewParent()->getGNEAppWindows(),
+                                   myAttrProperty->getAttrStr(),
+                                   myAttrProperty->getFilenameExtensions(),
+                                   myAttrProperty->isFileSave() ? GNEFileDialog::OpenMode::SAVE : GNEFileDialog::OpenMode::LOAD_SINGLE,
+                                   GNEFileDialog::ConfigType::NETEDIT);
     // update text field
-    if (value.size() > 0) {
-        myValueTextField->setText(value.c_str(), TRUE);
+    if (fileDialog.getResult() == GNEDialog::Result::ACCEPT) {
+        myValueTextField->setText(fileDialog.getFilename().c_str(), TRUE);
     }
     return 1;
 }
@@ -512,15 +496,15 @@ GNEAttributesEditorRow::onCmdSetAttribute(FXObject* obj, FXSelector, void*) {
         const std::string newValue = myValueComboBox->getText().text();
         // check if the new comboBox value is valid
         if (editedAC->isValid(attribute, newValue)) {
-            myValueComboBox->setTextColor(TEXTCOLOR_BLACK);
-            myValueComboBox->setBackColor(TEXTCOLOR_BACKGROUND_WHITE);
+            myValueComboBox->setTextColor(GUIDesignTextColorBlack);
+            myValueComboBox->setBackColor(GUIDesignBackgroundColorWhite);
             myValueComboBox->killFocus();
             myAttributeTable->setAttribute(attribute, newValue);
         } else {
             // edit colors
-            myValueComboBox->setTextColor(TEXTCOLOR_RED);
+            myValueComboBox->setTextColor(GUIDesignTextColorRed);
             if (newValue.empty()) {
-                myValueComboBox->setBackColor(TEXTCOLOR_BACKGROUND_RED);
+                myValueComboBox->setBackColor(GUIDesignBackgroundColorRed);
             }
         }
     } else if (obj == myValueTextField) {
@@ -554,17 +538,17 @@ GNEAttributesEditorRow::onCmdSetAttribute(FXObject* obj, FXSelector, void*) {
         const std::string newValue = myValueTextField->getText().text();
         // check if the new textField value is valid
         if (editedAC->isValid(attribute, newValue)) {
-            myValueTextField->setTextColor(TEXTCOLOR_BLACK);
-            myValueTextField->setBackColor(TEXTCOLOR_BACKGROUND_WHITE);
+            myValueTextField->setTextColor(GUIDesignTextColorBlack);
+            myValueTextField->setBackColor(GUIDesignBackgroundColorWhite);
             myValueTextField->killFocus();
             if (myAttributeTable->isEditorTypeEditor() || newValue.empty() || (attribute != SUMO_ATTR_ID)) {
                 myAttributeTable->setAttribute(attribute, newValue);
             }
         } else {
             // edit colors
-            myValueTextField->setTextColor(TEXTCOLOR_RED);
+            myValueTextField->setTextColor(GUIDesignTextColorRed);
             if (newValue.empty()) {
-                myValueTextField->setBackColor(TEXTCOLOR_BACKGROUND_RED);
+                myValueTextField->setBackColor(GUIDesignBackgroundColorRed);
             }
         }
     }
@@ -727,9 +711,9 @@ GNEAttributesEditorRow::showAttributeFile(const GNEAttributeProperties* attrProp
     // update attribute button
     myAttributeButton->setText(attrProperty->getAttrStr().c_str());
     if (attrProperty->isFileOpen()) {
-        myAttributeButton->setHelpText(TL("Open dialog for select an existent file"));
+        myAttributeButton->setHelpText(TL("Open dialog to select an existent file"));
     } else {
-        myAttributeButton->setHelpText(TL("Open dialog for select or create an existent file"));
+        myAttributeButton->setHelpText(TL("Open dialog to select or create an existent file"));
     }
     myAttributeButton->setTipText(myAttributeButton->getHelpText());
     myAttributeButton->setIcon(GUIIconSubSys::getIcon(GUIIcon::OPEN));
@@ -749,6 +733,7 @@ GNEAttributesEditorRow::showAttributeFile(const GNEAttributeProperties* attrProp
 void
 GNEAttributesEditorRow::showAttributeLabel(const GNEAttributeProperties* attrProperty) {
     myAttributeLabel->setText(attrProperty->getAttrStr().c_str());
+    myAttributeLabel->setTipText(attrProperty->getDefinition().c_str());
     myAttributeLabel->show();
     // hide other elements
     myAttributeToggleEnableCheckButton->hide();
@@ -776,7 +761,7 @@ GNEAttributesEditorRow::showValueCheckButton(const std::string& value,
         booleanVector = GNEAttributeCarrier::parse<std::vector<bool> >(value);
     }
     // iterate over booleans comparing all element with the first
-    for (const auto& booleanValue : booleanVector) {
+    for (const auto booleanValue : booleanVector) {
         if (booleanValue != booleanVector.front()) {
             allValuesEqual = false;
         }
@@ -827,8 +812,8 @@ GNEAttributesEditorRow::showValueComboBox(const GNEAttributeProperties* attrProp
     if (allValuesEqual) {
         // clear and enable comboBox
         myValueComboBox->clearItems();
-        myValueComboBox->setTextColor(TEXTCOLOR_BLACK);
-        myValueComboBox->setBackColor(TEXTCOLOR_BACKGROUND_WHITE);
+        myValueComboBox->setTextColor(GUIDesignTextColorBlack);
+        myValueComboBox->setBackColor(GUIDesignBackgroundColorWhite);
         if (enabled) {
             myValueComboBox->enable();
         } else {
@@ -912,9 +897,9 @@ GNEAttributesEditorRow::showValueString(const std::string& value, const bool ena
     // clear and enable comboBox
     myValueTextField->setText(value.c_str());
     if (computed) {
-        myValueTextField->setTextColor(TEXTCOLOR_BLUE);
+        myValueTextField->setTextColor(GUIDesignTextColorBlue);
     } else {
-        myValueTextField->setTextColor(TEXTCOLOR_BLACK);
+        myValueTextField->setTextColor(GUIDesignTextColorBlack);
     }
     if (enabled) {
         myValueTextField->enable();

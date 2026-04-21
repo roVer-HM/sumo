@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -32,25 +32,6 @@
 // method definitions
 // ===========================================================================
 bool
-TraCIServerAPI_ChargingStation::processGet(TraCIServer& server, tcpip::Storage& inputStorage,
-        tcpip::Storage& outputStorage) {
-    const int variable = inputStorage.readUnsignedByte();
-    const std::string id = inputStorage.readString();
-    server.initWrapper(libsumo::RESPONSE_GET_CHARGINGSTATION_VARIABLE, variable, id);
-    try {
-        if (!libsumo::ChargingStation::handleVariable(id, variable, &server, &inputStorage)) {
-            return server.writeErrorStatusCmd(libsumo::CMD_GET_CHARGINGSTATION_VARIABLE, "Get ChargingStation Variable: unsupported variable " + toHex(variable, 2) + " specified", outputStorage);
-        }
-    } catch (libsumo::TraCIException& e) {
-        return server.writeErrorStatusCmd(libsumo::CMD_GET_CHARGINGSTATION_VARIABLE, e.what(), outputStorage);
-    }
-    server.writeStatusCmd(libsumo::CMD_GET_CHARGINGSTATION_VARIABLE, libsumo::RTYPE_OK, "", outputStorage);
-    server.writeResponseWithLength(outputStorage, server.getWrapperStorage());
-    return true;
-}
-
-
-bool
 TraCIServerAPI_ChargingStation::processSet(TraCIServer& server, tcpip::Storage& inputStorage,
         tcpip::Storage& outputStorage) {
     std::string warning = ""; // additional description for response
@@ -77,32 +58,19 @@ TraCIServerAPI_ChargingStation::processSet(TraCIServer& server, tcpip::Storage& 
             }
             break;
             case libsumo::VAR_CS_POWER: {
-                double value = 0;
-                if (!server.readTypeCheckingDouble(inputStorage, value)) {
-                    return server.writeErrorStatusCmd(libsumo::CMD_SET_CHARGINGSTATION_VARIABLE, "Setting chargingPower requires a double.", outputStorage);
-                }
-                libsumo::ChargingStation::setChargingPower(id, value);
+                libsumo::ChargingStation::setChargingPower(id, StoHelp::readTypedDouble(inputStorage, "Setting chargingPower requires a double."));
             }
             break;
             case libsumo::VAR_CS_EFFICIENCY: {
-                double value = 0;
-                if (!server.readTypeCheckingDouble(inputStorage, value)) {
-                    return server.writeErrorStatusCmd(libsumo::CMD_SET_CHARGINGSTATION_VARIABLE, "Setting efficiency requires a double.", outputStorage);
-                }
-                libsumo::ChargingStation::setEfficiency(id, value);
+                libsumo::ChargingStation::setEfficiency(id, StoHelp::readTypedDouble(inputStorage, "Setting efficiency requires a double."));
             }
             break;
             case libsumo::VAR_CS_CHARGE_DELAY: {
-                double value = 0;
-                if (!server.readTypeCheckingDouble(inputStorage, value)) {
-                    return server.writeErrorStatusCmd(libsumo::CMD_SET_CHARGINGSTATION_VARIABLE, "Setting charge delay requires a double.", outputStorage);
-                }
-                libsumo::ChargingStation::setChargeDelay(id, value);
+                libsumo::ChargingStation::setChargeDelay(id, StoHelp::readTypedDouble(inputStorage, "Setting charge delay requires a double."));
             }
             break;
             case libsumo::VAR_CS_CHARGE_IN_TRANSIT: {
-                const int value = StoHelp::readTypedInt(inputStorage, "Setting charge in transit requires an integer.");
-                libsumo::ChargingStation::setChargeInTransit(id, value != 0);
+                libsumo::ChargingStation::setChargeInTransit(id, StoHelp::readTypedInt(inputStorage, "Setting charge in transit requires an integer.") != 0);
             }
             break;
             default:

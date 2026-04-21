@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -60,23 +60,22 @@ NWWriter_XML::writeNetwork(const OptionsCont& oc, const std::string& prefix, NBN
         writeTrafficLights(prefix, nb.getTLLogicCont(), nb.getEdgeCont());
         writeConfig(oc, prefix, haveTypes);
     }
-    if (oc.isSet("junctions.join-output")) {
+    if (oc.isSet("junctions.join-output") && (oc.getString("junctions.join-output").size() > 0)) {
         writeJoinedJunctions(oc.getString("junctions.join-output"), nb.getNodeCont());
     }
-    if (oc.isSet("street-sign-output")) {
+    if (oc.isSet("street-sign-output") && (oc.getString("street-sign-output").size() > 0)) {
         writeStreetSigns(oc, nb.getEdgeCont());
     }
-    if (oc.exists("ptstop-output") && oc.isSet("ptstop-output")) {
+    if (oc.exists("ptstop-output") && oc.isSet("ptstop-output") && (oc.getString("ptstop-output").size() > 0)) {
         writePTStops(oc, nb.getPTStopCont());
     }
-    if (oc.exists("ptline-output") && oc.isSet("ptline-output")) {
+    if (oc.exists("ptline-output") && oc.isSet("ptline-output") && (oc.getString("ptline-output").size() > 0)) {
         writePTLines(oc, nb.getPTLineCont());
     }
-
-    if (oc.exists("parking-output") && oc.isSet("parking-output")) {
+    if (oc.exists("parking-output") && oc.isSet("parking-output") && (oc.getString("parking-output").size() > 0)) {
         writeParkingAreas(oc, nb.getParkingCont(), nb.getEdgeCont());
     }
-    if (oc.exists("taz-output") && oc.isSet("taz-output")) {
+    if (oc.exists("taz-output") && oc.isSet("taz-output") && (oc.getString("taz-output").size() > 0)) {
         writeDistricts(oc, nb.getDistrictCont());
     }
 }
@@ -192,6 +191,9 @@ NWWriter_XML::writeNodes(const OptionsCont& oc, const std::string& prefix, NBNod
         if (n->getFringeType() != FringeType::DEFAULT) {
             device.writeAttr<std::string>(SUMO_ATTR_FRINGE, toString(n->getFringeType()));
         }
+        if (n->getRoundaboutType() != RoundaboutType::DEFAULT) {
+            device.writeAttr<std::string>(SUMO_ATTR_ROUNDABOUT, toString(n->getRoundaboutType()));
+        }
         if (n->getName() != "") {
             device.writeAttr<std::string>(SUMO_ATTR_NAME, StringUtils::escapeXML(n->getName()));
         }
@@ -207,7 +209,7 @@ NWWriter_XML::writeTypes(const std::string& prefix, NBEdgeCont& ec, NBTypeCont& 
     OutputDevice& device = OutputDevice::getDevice(prefix + ".typ.xml");
     std::map<SumoXMLAttr, std::string> attrs;
     attrs[SUMO_ATTR_VERSION] = toString(NETWORK_VERSION);
-    device.writeXMLHeader("types", "types_file.xsd", attrs);
+    device.writeXMLHeader(toString(SUMO_TAG_TYPES), "types_file.xsd", attrs);
     std::set<std::string> usedTypes = ec.getUsedTypes();
     tc.writeEdgeTypes(device, usedTypes);
     device.close();
@@ -248,6 +250,9 @@ NWWriter_XML::writeEdgesAndConnections(const OptionsCont& oc, const std::string&
         // write the type if given
         if (e->getTypeID() != "") {
             edevice.writeAttr(SUMO_ATTR_TYPE, e->getTypeID());
+        }
+        if (e->getRoutingType() != "") {
+            edevice.writeAttr(SUMO_ATTR_ROUTINGTYPE, e->getRoutingType());
         }
         edevice.writeAttr(SUMO_ATTR_NUMLANES, e->getNumLanes());
         if (!e->hasLaneSpecificSpeed()) {
@@ -374,7 +379,7 @@ NWWriter_XML::writeEdgesAndConnections(const OptionsCont& oc, const std::string&
 
     // write loaded prohibitions to the connections-file
     for (std::map<std::string, NBNode*>::const_iterator i = nc.begin(); i != nc.end(); ++i) {
-        NWWriter_SUMO::writeProhibitions(cdevice, i->second->getProhibitions());
+        NWWriter_SUMO::writeProhibitions(cdevice, i->second->getProhibitions(), ec);
     }
     // write pedestrian crossings to the connections-file
     for (std::map<std::string, NBNode*>::const_iterator it_node = nc.begin(); it_node != nc.end(); ++it_node) {

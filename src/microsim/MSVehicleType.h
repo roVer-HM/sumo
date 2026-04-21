@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -476,6 +476,11 @@ public:
      */
     void setVClass(SUMOVehicleClass vclass);
 
+    /** @brief Set a new value for this type's gui shape
+     * @param[in] shapeClass The new shape class of this type
+     */
+    void setGUIShape(SUMOVehicleShape shape);
+
 
     /** @brief Set a new value for this type's default probability
      *
@@ -596,7 +601,7 @@ public:
      * @return The built vehicle type
      * @exception ProcessError on false values (not et used)
      */
-    static MSVehicleType* build(SUMOVTypeParameter& from);
+    static MSVehicleType* build(SUMOVTypeParameter& from, const std::string& fileName = "");
 
     /// @brief   Accessor function for parameter equivalent returning entry time for a specific manoeuver angle
     SUMOTime getEntryManoeuvreTime(const int angle) const;

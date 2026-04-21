@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -89,11 +89,13 @@ def readCompressed(options, conn, urlpath, query, roadTypesJSON, getShapes, file
 
     if queryStringNode and getShapes:
         unionQueryString = """
-    <union into="nodesBB">
-      %s
-    </union>
     <union into="waysBB">
        %s
+    </union>
+    <union into="nodesBB">
+       %s
+       <item from="waysBB"/>
+       <recurse type="way-node"/>
     </union>
     <union into="waysBB2">
        <item from="waysBB"/>
@@ -121,7 +123,7 @@ def readCompressed(options, conn, urlpath, query, roadTypesJSON, getShapes, file
      <item from="waysBB4"/>
      <item from="relsBB4"/>
    </union>
-    """ % (query, "\n".join(queryStringNode))
+    """ % ("\n".join(queryStringNode), query)
 
     elif queryStringNode:
         unionQueryString = """

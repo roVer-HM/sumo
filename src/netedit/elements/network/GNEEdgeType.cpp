@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -33,10 +33,19 @@
 // members methods
 // ===========================================================================
 
-GNEEdgeType::GNEEdgeType(GNECreateEdgeFrame* createEdgeFrame) :
-    GNENetworkElement(createEdgeFrame->getViewNet()->getNet(), "", SUMO_TAG_TYPE) {
+GNEEdgeType::GNEEdgeType(GNENet* net) :
+    GNENetworkElement(net, SUMO_TAG_TYPE) {
     // create laneType
-    myLaneTypes.push_back(new GNELaneType(this));
+    GNELaneType* laneType = new GNELaneType(this);
+    myLaneTypes.push_back(laneType);
+}
+
+
+GNEEdgeType::GNEEdgeType(GNENet* net, const std::string& ID) :
+    GNENetworkElement(net, ID, SUMO_TAG_TYPE) {
+    // create laneType
+    GNELaneType* laneType = new GNELaneType(this);
+    myLaneTypes.push_back(laneType);
 }
 
 
@@ -44,14 +53,6 @@ GNEEdgeType::GNEEdgeType(const GNEEdgeType* edgeType) :
     GNENetworkElement(edgeType->getNet(), edgeType->getID(), SUMO_TAG_TYPE),
     Parameterised(edgeType->getParametersMap()),
     NBTypeCont::EdgeTypeDefinition(edgeType) {
-}
-
-
-GNEEdgeType::GNEEdgeType(GNENet* net) :
-    GNENetworkElement(net, net->getAttributeCarriers()->generateEdgeTypeID(), SUMO_TAG_TYPE) {
-    // create laneType
-    GNELaneType* laneType = new GNELaneType(this);
-    myLaneTypes.push_back(laneType);
 }
 
 
@@ -79,6 +80,24 @@ GNEEdgeType::GNEEdgeType(GNENet* net, const std::string& ID, const NBTypeCont::E
     restrictions = edgeType->restrictions;
     attrs = edgeType->attrs;
     laneTypeDefinitions = edgeType->laneTypeDefinitions;
+}
+
+
+GNEMoveElement*
+GNEEdgeType::getMoveElement() const {
+    return nullptr;
+}
+
+
+Parameterised*
+GNEEdgeType::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNEEdgeType::getParameters() const {
+    return this;
 }
 
 
@@ -210,18 +229,6 @@ GNEEdgeType::checkDrawMoveContour() const {
 }
 
 
-GNEMoveOperation*
-GNEEdgeType::getMoveOperation() {
-    return nullptr;
-}
-
-
-void
-GNEEdgeType::removeGeometryPoint(const Position /*clickedPosition*/, GNEUndoList* /*undoList*/) {
-    // nothing to do
-}
-
-
 GUIGLObjectPopupMenu*
 GNEEdgeType::getPopUpMenu(GUIMainWindow& /*app*/, GUISUMOAbstractView& /*parent*/) {
     return nullptr;
@@ -248,7 +255,7 @@ GNEEdgeType::drawGL(const GUIVisualizationSettings& /*s*/) const {
 
 void
 GNEEdgeType::deleteGLObject() {
-    myNet->deleteNetworkElement(this, myNet->getViewNet()->getUndoList());
+    myNet->deleteNetworkElement(this, myNet->getUndoList());
 }
 
 
@@ -333,14 +340,26 @@ GNEEdgeType::getAttribute(SumoXMLAttr key) const {
                 return "default";
             }
         default:
-            return getCommonAttribute(this, key);
+            return getCommonAttribute(key);
     }
+}
+
+
+double
+GNEEdgeType::getAttributeDouble(SumoXMLAttr key) const {
+    return getCommonAttributeDouble(key);
+}
+
+
+Position
+GNEEdgeType::getAttributePosition(SumoXMLAttr key) const {
+    return getCommonAttributePosition(key);
 }
 
 
 PositionVector
 GNEEdgeType::getAttributePositionVector(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+    return getCommonAttributePositionVector(key);
 }
 
 
@@ -383,14 +402,14 @@ GNEEdgeType::isValid(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_PRIORITY:
             return canParse<int>(value);
         default:
-            return isCommonValid(key, value);
+            return isCommonAttributeValid(key, value);
     }
 }
 
 
 bool
 GNEEdgeType::isAttributeEnabled(SumoXMLAttr key) const {
-    const auto edgeTypeSelector = myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->getEdgeTypeSelector();
+    const auto edgeTypeSelector = myNet->getViewParent()->getCreateEdgeFrame()->getEdgeTypeSelector();
     switch (key) {
         case SUMO_ATTR_SIDEWALKWIDTH:
             if (edgeTypeSelector->useDefaultEdgeTypeShort() || edgeTypeSelector->useDefaultEdgeType()) {
@@ -409,12 +428,6 @@ GNEEdgeType::isAttributeEnabled(SumoXMLAttr key) const {
     }
 }
 
-
-const Parameterised::Map&
-GNEEdgeType::getACParametersMap() const {
-    return getParametersMap();
-}
-
 // ===========================================================================
 // private
 // ===========================================================================
@@ -424,7 +437,7 @@ GNEEdgeType::setAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_ID: {
             // update comboBox
-            myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->getEdgeTypeSelector()->updateIDinComboBox(getID(), value);
+            myNet->getViewParent()->getCreateEdgeFrame()->getEdgeTypeSelector()->updateIDinComboBox(getID(), value);
             // update ID
             myNet->getAttributeCarriers()->updateEdgeTypeID(this, value);
             break;
@@ -540,26 +553,14 @@ GNEEdgeType::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         default:
-            setCommonAttribute(this, key, value);
+            setCommonAttribute(key, value);
             break;
     }
     // update edge selector
-    if (myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->shown()) {
-        myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->getEdgeTypeAttributes()->refreshAttributesEditor();
-        myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->getLaneTypeSelector()->refreshLaneTypeSelector();
+    if (myNet->getViewNet() && myNet->getViewParent()->getCreateEdgeFrame()->shown()) {
+        myNet->getViewParent()->getCreateEdgeFrame()->getEdgeTypeAttributes()->refreshAttributesEditor();
+        myNet->getViewParent()->getCreateEdgeFrame()->getLaneTypeSelector()->refreshLaneTypeSelector();
     }
-}
-
-
-void
-GNEEdgeType::setMoveShape(const GNEMoveResult& /*moveResult*/) {
-    // nothing to do
-}
-
-
-void
-GNEEdgeType::commitMoveShape(const GNEMoveResult& /*moveResult*/, GNEUndoList* /*undoList*/) {
-    // nothing to do
 }
 
 /****************************************************************************/

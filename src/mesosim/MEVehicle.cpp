@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -127,10 +127,12 @@ MEVehicle::getSpeed() const {
 
 double
 MEVehicle::getAverageSpeed() const {
-    if (mySegment == nullptr || myQueIndex == MESegment::PARKING_QUEUE) {
+    // cache for thread safety
+    MESegment* s = mySegment;
+    if (s == nullptr || myQueIndex == MESegment::PARKING_QUEUE) {
         return 0;
     } else {
-        return MIN2(mySegment->getLength() / STEPS2TIME(myEventTime - myLastEntryTime),
+        return MIN2(s->getLength() / STEPS2TIME(myEventTime - myLastEntryTime),
                     getEdge()->getLanes()[myQueIndex]->getVehicleMaxSpeed(this));
     }
 }
@@ -198,7 +200,7 @@ MEVehicle::setApproaching(MSLink* link) {
         const double speed = getSpeed();
         link->setApproaching(this, getEventTime() + (link->getState() == LINKSTATE_ALLWAY_STOP ?
                              (SUMOTime)RandHelper::rand((int)2) : 0), // tie braker
-                             speed, speed, true,
+                             speed, link->getViaLaneOrLane()->getVehicleMaxSpeed(this), true,
                              speed, getWaitingTime(),
                              // @note: dist is not used by meso (getZipperSpeed is never called)
                              getSegment()->getLength(), 0);
@@ -459,14 +461,14 @@ MEVehicle::updateDetectorForWriting(MSMoveReminder* rem, SUMOTime currentTime, S
 
 
 void
-MEVehicle::updateDetectors(SUMOTime currentTime, const bool isLeave, const MSMoveReminder::Notification reason) {
+MEVehicle::updateDetectors(const SUMOTime currentTime, const SUMOTime exitTime, const bool isLeave, const MSMoveReminder::Notification reason) {
     // segments of the same edge have the same reminder so no cleaning up must take place
     const bool cleanUp = isLeave && (reason != MSMoveReminder::NOTIFICATION_SEGMENT);
     for (MoveReminderCont::iterator rem = myMoveReminders.begin(); rem != myMoveReminders.end();) {
-        if (currentTime != getLastEntryTime()) {
+        if (currentTime != getLastEntryTime() && reason < MSMoveReminder::NOTIFICATION_VAPORIZED_CALIBRATOR) {
             rem->first->updateDetector(*this, mySegment->getIndex() * mySegment->getLength(),
                                        (mySegment->getIndex() + 1) * mySegment->getLength(),
-                                       getLastEntryTime(), currentTime, getEventTime(), cleanUp);
+                                       getLastEntryTime(), currentTime, exitTime, cleanUp);
 #ifdef _DEBUG
             if (myTraceMoveReminders) {
                 traceMoveReminder("notifyMove", rem->first, rem->second, true);
@@ -583,6 +585,9 @@ MEVehicle::saveState(OutputDevice& out) {
     for (MSDevice* dev : myDevices) {
         dev->saveState(out);
     }
+    for (const auto& item : myMoveReminders) {
+        item.first->saveReminderState(out, *this);
+    }
     out.closeTag();
 }
 
@@ -625,7 +630,9 @@ MEVehicle::loadState(const SUMOSAXAttributes& attrs, const SUMOTime offset) {
             MESegment* seg = MSGlobals::gMesoNet->getSegmentForEdge(**myCurrEdge);
             while (seg->getIndex() != (int)segIndex) {
                 seg = seg->getNextSegment();
-                assert(seg != 0);
+                if (seg == nullptr) {
+                    throw ProcessError(TLF("Unknown segment '%:%' for vehicle '%' in loaded state.", (*myCurrEdge)->getID(), segIndex, getID()));
+                }
             }
             setSegment(seg, queIndex);
             if (queIndex == MESegment::PARKING_QUEUE) {

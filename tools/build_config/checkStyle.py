@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2010-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2010-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -27,7 +27,7 @@ import sys
 import subprocess
 import multiprocessing
 import xml.sax
-import codecs
+import io
 from optparse import OptionParser
 try:
     import flake8  # noqa
@@ -74,7 +74,7 @@ EPL_HEADER = """/***************************************************************
 """
 EPL_GPL_HEADER = """/****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -295,7 +295,7 @@ class PropertyReader(xml.sax.handler.ContentHandler):
             self._file = fileName
         ext = os.path.splitext(self._file)[1]
         try:
-            with codecs.open(self._file, 'r', 'utf8') as f:
+            with io.open(self._file, encoding='utf8') as f:
                 f.read()
         except UnicodeDecodeError as err:
             print(self._file, err)

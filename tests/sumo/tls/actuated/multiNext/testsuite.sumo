@@ -1,3 +1,6 @@
+# use custom switching rules to replicate the default behavior but permit skipping the exclusive left-turn-phase
+skip_left
+
 # test for approximating a dual-ring controller by using the actuated branching logic
 dualring_simple
 
@@ -28,3 +31,6 @@ request_or_skip_blocked_left_detLength
 
 # This test checks that the dynamic phase skipping feature works correctly relatively to detected traffic on a bicycle lane.
 bike_skip
+
+# a traffic light that is meant to delay traffic and nothing else
+default_red

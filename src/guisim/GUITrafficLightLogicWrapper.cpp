@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -210,7 +210,11 @@ GUITrafficLightLogicWrapper::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractVie
 
 
 void
-GUITrafficLightLogicWrapper::begin2TrackPhases() {
+GUITrafficLightLogicWrapper::begin2TrackPhases(GUIMainWindow* app) {
+    if (app != nullptr) {
+        myApp = app;
+    }
+    assert(myApp != nullptr);
     GUITLLogicPhasesTrackerWindow* window =
         new GUITLLogicPhasesTrackerWindow(*myApp, myTLLogic, *this,
                                           new FuncBinding_StringParam<MSTLLogicControl, std::pair<SUMOTime, MSPhaseDefinition> >
@@ -339,8 +343,11 @@ GUITrafficLightLogicWrapper::drawGL(const GUIVisualizationSettings& s) const {
                     glRotated(rot, 0, 0, 1);
                     GLHelper::setColor(s.getLinkColor(LINKSTATE_TL_RED));
                     GLHelper::drawFilledCircle(lane->getWidth() / 2., 8, -90, 90);
-                    GLHelper::setColor(s.getLinkColor(LINKSTATE_TL_YELLOW_MAJOR));
-                    GLHelper::drawFilledCircle(lane->getWidth() / 2., 8, 90, 270);
+                    if (!isRailway(lane->getPermissions())) {
+                        // no yellow half-cirlce in railway game
+                        GLHelper::setColor(s.getLinkColor(LINKSTATE_TL_YELLOW_MAJOR));
+                        GLHelper::drawFilledCircle(lane->getWidth() / 2., 8, 90, 270);
+                    }
                     GLHelper::popMatrix();
                 }
             }

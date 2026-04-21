@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,38 +19,36 @@
 /****************************************************************************/
 #include <config.h>
 
+#include <netedit/changes/GNEChange_Attribute.h>
+#include <netedit/elements/moving/GNEMoveElementLaneDouble.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNESegment.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/changes/GNEChange_Attribute.h>
-#include <netedit/changes/GNEChange_Connection.h>
-#include <netedit/elements/network/GNEConnection.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/gui/globjects/GLIncludes.h>
-#include <utils/gui/div/GUIGlobalViewObjectsHandler.h>
 
 #include "GNEOverheadWire.h"
-#include "GNEAdditionalHandler.h"
 
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 
 GNEOverheadWire::GNEOverheadWire(GNENet* net) :
-    GNEAdditional("", net, "", SUMO_TAG_OVERHEAD_WIRE_SECTION, "") {
+    GNEAdditional(net, SUMO_TAG_OVERHEAD_WIRE_SECTION),
+    myMoveElementLaneDouble(new GNEMoveElementLaneDouble(this, SUMO_ATTR_STARTPOS, myStartPosOverLane,
+                            SUMO_ATTR_ENDPOS, myEndPosPosOverLane, myFriendlyPosition)) {
 }
 
 
-GNEOverheadWire::GNEOverheadWire(const std::string& id, GNENet* net, const std::string& filename, std::vector<GNELane*> lanes, GNEAdditional* substation,
+GNEOverheadWire::GNEOverheadWire(const std::string& id, GNENet* net, FileBucket* fileBucket, std::vector<GNELane*> lanes, GNEAdditional* substation,
                                  const double startPos, const double endPos, const bool friendlyPos, const std::vector<std::string>& forbiddenInnerLanes,
                                  const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, filename, SUMO_TAG_OVERHEAD_WIRE_SECTION, ""),
+    GNEAdditional(id, net, SUMO_TAG_OVERHEAD_WIRE_SECTION, fileBucket, ""),
     Parameterised(parameters),
-    myStartPos(startPos),
-    myEndPos(endPos),
+    myStartPosOverLane(startPos),
+    myEndPosPosOverLane(endPos),
     myFriendlyPosition(friendlyPos),
-    myForbiddenInnerLanes(forbiddenInnerLanes) {
+    myForbiddenInnerLanes(forbiddenInnerLanes),
+    myMoveElementLaneDouble(new GNEMoveElementLaneDouble(this, SUMO_ATTR_STARTPOS, myStartPosOverLane,
+                            SUMO_ATTR_ENDPOS, myEndPosPosOverLane, myFriendlyPosition)) {
     // set parents
     setParents<GNELane*>(lanes);
     setParent<GNEAdditional*>(substation);
@@ -60,32 +58,37 @@ GNEOverheadWire::GNEOverheadWire(const std::string& id, GNENet* net, const std::
 
 
 GNEOverheadWire::~GNEOverheadWire() {
+    delete myMoveElementLaneDouble;
 }
 
 
-GNEMoveOperation*
-GNEOverheadWire::getMoveOperation() {
-    // check modes and detector type
-    if (myNet->getViewNet()->getEditModes().isCurrentSupermodeNetwork() &&
-            (myNet->getViewNet()->getEditModes().networkEditMode == NetworkEditMode::NETWORK_MOVE)) {
-        return getMoveOperationMultiLane(myStartPos, myEndPos);
-    } else {
-        return nullptr;
-    }
+GNEMoveElement*
+GNEOverheadWire::getMoveElement() const {
+    return myMoveElementLaneDouble;
+}
+
+
+Parameterised*
+GNEOverheadWire::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNEOverheadWire::getParameters() const {
+    return this;
 }
 
 
 void
 GNEOverheadWire::writeAdditional(OutputDevice& device) const {
     device.openTag(SUMO_TAG_OVERHEAD_WIRE_SECTION);
-    device.writeAttr(SUMO_ATTR_ID, getID());
+    // write common additional attributes
+    writeAdditionalAttributes(device);
+    // write move atributes
+    myMoveElementLaneDouble->writeMoveAttributes(device, false);
+    // write specific attributes
     device.writeAttr(SUMO_ATTR_SUBSTATIONID, getParentAdditionals().front()->getID());
-    device.writeAttr(SUMO_ATTR_LANES, getAttribute(SUMO_ATTR_LANES));
-    device.writeAttr(SUMO_ATTR_STARTPOS, myStartPos);
-    device.writeAttr(SUMO_ATTR_ENDPOS, myEndPos);
-    if (myFriendlyPosition) {
-        device.writeAttr(SUMO_ATTR_FRIENDLY_POS, myFriendlyPosition);
-    }
     if (!myForbiddenInnerLanes.empty()) {
         device.writeAttr(SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN, myForbiddenInnerLanes);
     }
@@ -97,96 +100,22 @@ GNEOverheadWire::writeAdditional(OutputDevice& device) const {
 
 bool
 GNEOverheadWire::isAdditionalValid() const {
-    // first check if there is connection between all consecutive lanes
-    if (areLaneConsecutives(getParentLanes())) {
-        // with friendly position enabled position are "always fixed"
-        if (myFriendlyPosition) {
-            return true;
-        } else {
-            return (myStartPos >= 0) &&
-                   (myEndPos >= 0) &&
-                   ((myStartPos) <= getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength()) &&
-                   ((myEndPos) <= getParentLanes().back()->getParentEdge()->getNBEdge()->getFinalLength());
-        }
-    } else {
-        return false;
-    }
+    // only movement problems
+    return myMoveElementLaneDouble->isMoveElementValid();
 }
 
 
 std::string
 GNEOverheadWire::getAdditionalProblem() const {
-    // declare variable for error position
-    std::string errorFirstLanePosition, separator, errorLastLanePosition;
-    // abort if lanes aren't consecutives
-    if (!areLaneConsecutives(getParentLanes())) {
-        return TL("lanes aren't consecutives");
-    }
-    // abort if lanes aren't connected
-    if (!areLaneConnected(getParentLanes())) {
-        return TL("lanes aren't connected");
-    }
-    // check positions over first lane
-    if (myStartPos < 0) {
-        errorFirstLanePosition = (toString(SUMO_ATTR_STARTPOS) + " < 0");
-    }
-    if (myStartPos > getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength()) {
-        errorFirstLanePosition = (toString(SUMO_ATTR_STARTPOS) + TL(" > lanes's length"));
-    }
-    // check positions over last lane
-    if (myEndPos < 0) {
-        errorLastLanePosition = (toString(SUMO_ATTR_ENDPOS) + " < 0");
-    }
-    if (myEndPos > getParentLanes().back()->getParentEdge()->getNBEdge()->getFinalLength()) {
-        errorLastLanePosition = (toString(SUMO_ATTR_ENDPOS) + TL(" > lanes's length"));
-    }
-    // check separator
-    if ((errorFirstLanePosition.size() > 0) && (errorLastLanePosition.size() > 0)) {
-        separator = TL(" and ");
-    }
-    // return error message
-    return errorFirstLanePosition + separator + errorLastLanePosition;
+    // only movement problems
+    return myMoveElementLaneDouble->getMovingProblem();
 }
 
 
 void
 GNEOverheadWire::fixAdditionalProblem() {
-    if (!areLaneConsecutives(getParentLanes())) {
-        // build connections between all consecutive lanes
-        bool foundConnection = true;
-        int i = 0;
-        // iterate over all lanes, and stop if myE2valid is false
-        while (i < ((int)getParentLanes().size() - 1)) {
-            // change foundConnection to false
-            foundConnection = false;
-            // if a connection between "from" lane and "to" lane of connection is found, change myE2valid to true again
-            for (const auto& connection : getParentLanes().at(i)->getParentEdge()->getGNEConnections()) {
-                if ((connection->getLaneFrom() == getParentLanes().at(i)) && (connection->getLaneTo() == getParentLanes().at(i + 1))) {
-                    foundConnection = true;
-                }
-            }
-            // if connection wasn't found
-            if (!foundConnection) {
-                // create new connection manually
-                NBEdge::Connection newCon(getParentLanes().at(i)->getIndex(), getParentLanes().at(i + 1)->getParentEdge()->getNBEdge(), getParentLanes().at(i + 1)->getIndex());
-                // allow to undo creation of new lane
-                myNet->getViewNet()->getUndoList()->add(new GNEChange_Connection(getParentLanes().at(i)->getParentEdge(), newCon, false, true), true);
-            }
-            // update lane iterator
-            i++;
-        }
-    } else {
-        // declare new positions
-        double newPositionOverLane = myStartPos;
-        double newEndPositionOverLane = myEndPos;
-        // fix pos and length checkAndFixDetectorPosition
-        GNEAdditionalHandler::fixMultiLanePosition(
-            newPositionOverLane, getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength(),
-            newEndPositionOverLane, getParentLanes().back()->getParentEdge()->getNBEdge()->getFinalLength());
-        // set new position and endPosition
-        setAttribute(SUMO_ATTR_STARTPOS, toString(newPositionOverLane), myNet->getViewNet()->getUndoList());
-        setAttribute(SUMO_ATTR_ENDPOS, toString(newEndPositionOverLane), myNet->getViewNet()->getUndoList());
-    }
+    // only movement problems
+    return myMoveElementLaneDouble->fixMovingProblem();
 }
 
 
@@ -383,17 +312,15 @@ GNEOverheadWire::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_LANES:
             return parseIDs(getParentLanes());
         case SUMO_ATTR_STARTPOS:
-            return toString(myStartPos);
+            return toString(myStartPosOverLane);
         case SUMO_ATTR_ENDPOS:
-            return toString(myEndPos);
-        case SUMO_ATTR_FRIENDLY_POS:
-            return toString(myFriendlyPosition);
+            return toString(myEndPosPosOverLane);
         case SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN:
             return toString(myForbiddenInnerLanes);
         case GNE_ATTR_SHIFTLANEINDEX:
             return "";
         default:
-            return getCommonAttribute(this, key);
+            return myMoveElementLaneDouble->getMovingAttribute(key);
     }
 }
 
@@ -402,30 +329,36 @@ double
 GNEOverheadWire::getAttributeDouble(SumoXMLAttr key) const {
     switch (key) {
         case SUMO_ATTR_STARTPOS:
-            if (myStartPos < 0) {
+            if (myStartPosOverLane < 0) {
                 return 0;
-            } else if (myStartPos > getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength()) {
+            } else if (myStartPosOverLane > getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength()) {
                 return getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength();
             } else {
-                return myStartPos;
+                return myStartPosOverLane;
             }
         case SUMO_ATTR_ENDPOS:
-            if (myEndPos < 0) {
+            if (myEndPosPosOverLane < 0) {
                 return 0;
-            } else if (myEndPos > getParentLanes().back()->getParentEdge()->getNBEdge()->getFinalLength()) {
+            } else if (myEndPosPosOverLane > getParentLanes().back()->getParentEdge()->getNBEdge()->getFinalLength()) {
                 return getParentLanes().back()->getParentEdge()->getNBEdge()->getFinalLength();
             } else {
-                return myEndPos;
+                return myEndPosPosOverLane;
             }
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return myMoveElementLaneDouble->getMovingAttributeDouble(key);
     }
 }
 
 
-const Parameterised::Map&
-GNEOverheadWire::getACParametersMap() const {
-    return getParametersMap();
+Position
+GNEOverheadWire::getAttributePosition(SumoXMLAttr key) const {
+    return myMoveElementLaneDouble->getMovingAttributePosition(key);
+}
+
+
+PositionVector
+GNEOverheadWire::getAttributePositionVector(SumoXMLAttr key) const {
+    return getCommonAttributePositionVector(key);
 }
 
 
@@ -437,12 +370,11 @@ GNEOverheadWire::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndo
         case SUMO_ATTR_LANES:
         case SUMO_ATTR_STARTPOS:
         case SUMO_ATTR_ENDPOS:
-        case SUMO_ATTR_FRIENDLY_POS:
         case SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            setCommonAttribute(key, value, undoList);
+            myMoveElementLaneDouble->setMovingAttribute(key, value, undoList);
             break;
     }
 }
@@ -459,24 +391,10 @@ GNEOverheadWire::isValid(SumoXMLAttr key, const std::string& value) {
             } else {
                 return (myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_TRACTION_SUBSTATION, value, false) != nullptr);
             }
-        case SUMO_ATTR_STARTPOS:
-            if (value.empty() || (value == TL("lane start"))) {
-                return true;
-            } else {
-                return canParse<double>(value);
-            }
-        case SUMO_ATTR_ENDPOS:
-            if (value.empty() || (value == TL("lane end"))) {
-                return true;
-            } else {
-                return canParse<double>(value);
-            }
-        case SUMO_ATTR_FRIENDLY_POS:
-            return canParse<bool>(value);
         case SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN:
             return true;
         default:
-            return isCommonValid(key, value);
+            return myMoveElementLaneDouble->isMovingAttributeValid(key, value);
     }
 }
 
@@ -509,31 +427,6 @@ GNEOverheadWire::setAttribute(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_LANES:
             replaceAdditionalParentLanes(value);
             break;
-        case SUMO_ATTR_STARTPOS:
-            if (value.empty() || (value == TL("lane start"))) {
-                myStartPos = INVALID_DOUBLE;
-            } else {
-                myStartPos = parse<double>(value);
-            }
-            // update geometry (except for template)
-            if (getParentLanes().size() > 0) {
-                updateGeometry();
-            }
-            break;
-        case SUMO_ATTR_ENDPOS:
-            if (value.empty() || (value == TL("lane end"))) {
-                myEndPos = INVALID_DOUBLE;
-            } else {
-                myEndPos = parse<double>(value);
-            }
-            // update geometry (except for template)
-            if (getParentLanes().size() > 0) {
-                updateGeometry();
-            }
-            break;
-        case SUMO_ATTR_FRIENDLY_POS:
-            myFriendlyPosition = parse<bool>(value);
-            break;
         case SUMO_ATTR_OVERHEAD_WIRE_FORBIDDEN:
             myForbiddenInnerLanes = parse<std::vector<std::string> >(value);
             break;
@@ -541,94 +434,12 @@ GNEOverheadWire::setAttribute(SumoXMLAttr key, const std::string& value) {
             shiftLaneIndex();
             break;
         default:
-            setCommonAttribute(this, key, value);
+            myMoveElementLaneDouble->setMovingAttribute(key, value);
             break;
     }
-}
-
-void
-GNEOverheadWire::setMoveShape(const GNEMoveResult& moveResult) {
-    if ((moveResult.operationType == GNEMoveOperation::OperationType::SINGLE_LANE_MOVE_FIRST) ||
-            (moveResult.operationType == GNEMoveOperation::OperationType::MULTIPLE_LANES_MOVE_FIRST)) {
-        // change only start position
-        myStartPos = moveResult.newFirstPos;
-    } else if ((moveResult.operationType == GNEMoveOperation::OperationType::SINGLE_LANE_MOVE_LAST) ||
-               (moveResult.operationType == GNEMoveOperation::OperationType::MULTIPLE_LANES_MOVE_LAST)) {
-        // change only end position
-        myEndPos = moveResult.newFirstPos;
-    } else {
-        // change both position
-        myStartPos = moveResult.newFirstPos;
-        myEndPos = moveResult.newLastPos;
-    }
-    // update geometry
-    updateGeometry();
-}
-
-
-void
-GNEOverheadWire::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
-    // begin change attribute
-    undoList->begin(this, "position of " + getTagStr());
-    // set attributes depending of operation type
-    if ((moveResult.operationType == GNEMoveOperation::OperationType::SINGLE_LANE_MOVE_FIRST) ||
-            (moveResult.operationType == GNEMoveOperation::OperationType::MULTIPLE_LANES_MOVE_FIRST)) {
-        // set only start position
-        setAttribute(SUMO_ATTR_STARTPOS, toString(moveResult.newFirstPos), undoList);
-    } else if ((moveResult.operationType == GNEMoveOperation::OperationType::SINGLE_LANE_MOVE_LAST) ||
-               (moveResult.operationType == GNEMoveOperation::OperationType::MULTIPLE_LANES_MOVE_LAST)) {
-        // set only end position
-        setAttribute(SUMO_ATTR_ENDPOS, toString(moveResult.newFirstPos), undoList);
-    } else {
-        // set both positions
-        setAttribute(SUMO_ATTR_STARTPOS, toString(moveResult.newFirstPos), undoList);
-        setAttribute(SUMO_ATTR_ENDPOS, toString(moveResult.newLastPos), undoList);
-    }
-    // end change attribute
-    undoList->end();
-}
-
-
-double
-GNEOverheadWire::getStartGeometryPositionOverLane() const {
-    // get lane final and shape length
-    const double laneLength = getParentLanes().front()->getParentEdge()->getNBEdge()->getFinalLength();
-    // get startPosition
-    double fixedPos = myStartPos;
-    // adjust fixedPos
-    if (fixedPos < 0) {
-        fixedPos += laneLength;
-    }
-    fixedPos *= getParentLanes().front()->getLengthGeometryFactor();
-    // return depending of fixedPos
-    if (fixedPos < 0) {
-        return 0;
-    } else if (fixedPos > (getParentLanes().front()->getLaneShapeLength() - POSITION_EPS)) {
-        return (getParentLanes().front()->getLaneShapeLength() - POSITION_EPS);
-    } else {
-        return fixedPos;
-    }
-}
-
-
-double
-GNEOverheadWire::getEndGeometryPositionOverLane() const {
-    // get lane final and shape length
-    const double laneLength = getParentLanes().back()->getParentEdge()->getNBEdge()->getFinalLength();
-    // get endPosition
-    double fixedPos = myEndPos;
-    // adjust fixedPos
-    if (fixedPos < 0) {
-        fixedPos += laneLength;
-    }
-    fixedPos *= getParentLanes().back()->getLengthGeometryFactor();
-    // return depending of fixedPos
-    if (fixedPos < POSITION_EPS) {
-        return POSITION_EPS;
-    } else if (fixedPos > getParentLanes().back()->getLaneShapeLength()) {
-        return getParentLanes().back()->getLaneShapeLength();
-    } else {
-        return fixedPos;
+    // update geometry (except for template)
+    if (getParentLanes().size() > 0) {
+        updateGeometry();
     }
 }
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2004-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2004-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -39,11 +39,10 @@ class OutputDevice_File : public OutputDevice {
 public:
     /** @brief Constructor
      * @param[in] fullName The name of the output file to use
-     * @param[in] compressed whether to apply gzip compression
+     * @param[in] binary whether the output steam needs to be opened in binary mode
      * @exception IOError Should not be thrown by this implementation
      */
-    OutputDevice_File(const std::string& fullName, const bool compressed = false);
-
+    OutputDevice_File(const std::string& fullName, const bool binary = false);
 
     /// @brief Destructor
     ~OutputDevice_File();
@@ -55,7 +54,6 @@ public:
         return myAmNull;
     }
 
-
 protected:
     /// @name Methods that override/implement OutputDevice-methods
     /// @{
@@ -63,9 +61,10 @@ protected:
     /** @brief Returns the associated ostream
      * @return The used stream
      */
-    std::ostream& getOStream() override;
+    inline std::ostream& getOStream() override {
+        return *myFileStream;
+    }
     /// @}
-
 
 private:
     /// The wrapped ofstream

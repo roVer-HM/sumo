@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -25,7 +25,7 @@
 #include <microsim/MSEdge.h>
 #include "MSTrainHelper.h"
 
-#define MIN_SCALED_CARRIAGE_LENGTH 5
+#define MIN_SCALED_CARRIAGE_LENGTH 5.
 
 const double MSTrainHelper::PEDESTRIAN_RADIUS_EXTRA_TOLERANCE = 0.01;
 
@@ -47,9 +47,10 @@ MSTrainHelper::computeTrainDimensions(double exaggeration, bool secondaryShape, 
         myLocomotiveLength = myDefaultLength;
     }
     const double minLength = MIN2(myLocomotiveLength, myDefaultLength);
+    const double minScaledLength = MIN2(MIN_SCALED_CARRIAGE_LENGTH, minLength);
     myUnscale = geometryScale == 1 && laneFactor != 1;
-    if (geometryScale < 1 && minLength * geometryScale < MIN_SCALED_CARRIAGE_LENGTH) {
-        const double rescaleSmall = MIN_SCALED_CARRIAGE_LENGTH / (minLength * geometryScale);
+    if (geometryScale < 1 && minLength * geometryScale < minScaledLength) {
+        const double rescaleSmall = minScaledLength / (minLength * geometryScale);
         myLocomotiveLength *= rescaleSmall;
         myDefaultLength *= rescaleSmall;
     }
@@ -148,6 +149,7 @@ MSTrainHelper::computeCarriages(bool reversed, bool secondaryShape) {
         carriage->back = backLane->getShape(secondaryShape).positionAtOffset2D(carriageBackOffset * backLane->getLengthGeometryFactor(secondaryShape), lateralOffset, true);
         myCarriages.push_back(carriage);
         lane = backLane;
+        furtherIndex = backFurtherIndex;
         carriageOffset = carriageBackOffset - myCarriageGap;
         carriageBackOffset -= myCarriageLengthWithGap * unscale;
     }

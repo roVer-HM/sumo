@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -22,6 +22,7 @@
 
 #include "MSLaneChangerSublane.h"
 #include "MSNet.h"
+#include "MSLink.h"
 #include "MSVehicle.h"
 #include "MSVehicleType.h"
 #include "MSVehicleTransfer.h"
@@ -178,7 +179,9 @@ MSLaneChangerSublane::change() {
         for (int offset : ce->siblings) {
             // treat sibling lanes (internal lanes with the same origin lane) as if they have the same geometry
             ChangerIt ceSib = ce + offset;
-            vehicle->getLaneChangeModel().updateExpectedSublaneSpeeds(ceSib->aheadNext, sublaneIndex, ceSib->lane->getIndex());
+            if (ceSib->lane->allowsVehicleClass(vehicle->getVClass())) {
+                vehicle->getLaneChangeModel().updateExpectedSublaneSpeeds(ceSib->aheadNext, sublaneIndex, ceSib->lane->getIndex());
+            }
         }
         sublaneIndex += ce->ahead.numSublanes();
     }
@@ -636,7 +639,8 @@ MSLaneChangerSublane::getLeaders(const ChangerIt& target, const MSVehicle* vehic
         std::cout << "   outsideBounds=" << toString(target->outsideBounds) << " result=" << result.toString() << "\n";
     }
 #endif
-    target->lane->addLeaders(vehicle, vehicle->getPositionOnLane(), result);
+    // @note use the exact same vehiclePos as in getLastVehicleInformation() to avoid missing vehicles
+    target->lane->addLeaders(vehicle, vehicle->getPositionOnLane(vehicle->getLane()), result);
     return result;
 }
 
@@ -719,15 +723,33 @@ MSLaneChangerSublane::checkChangeSublane(
                          neighLeaders, neighFollowers, neighBlockers,
                          neighLane, preb,
                          &(myCandi->lastBlocked), &(myCandi->firstBlocked), latDist, maneuverDist, blocked);
+
+
+    if (checkOpened && (blocked & LCA_BLOCKED) == 0 && (wish & LCA_WANTS_LANECHANGE) != 0
+            && vehicle->getLane()->isNormal()
+            && vehicle->getBestLanesContinuation().size() > 1) {
+        const MSLink* link = vehicle->getLane()->getLinkTo(vehicle->getBestLanesContinuation()[1]);
+        if (link != nullptr && link->isEntryLink()) {
+            const MSLink* link2 = link->getParallelLink(laneOffset);
+            if (link2 != nullptr) {
+                auto api = link->getApproachingPtr(vehicle);
+                if (api != nullptr) {
+                    if (!link2->opened(api->arrivalTime, api->arrivalSpeed, api->leaveSpeed, vehicle->getLength(),
+                                       vehicle->getImpatience(), vehicle->getCarFollowModel().getMaxDecel(), vehicle->getWaitingTime(), vehicle->getLateralPositionOnLane(),
+                                       nullptr, false, vehicle, api->dist)) {
+                        //std::cout << SIMTIME << " unsafeLC " << vehicle->getID() << "\n";
+                        blocked |= LCA_BLOCKED;
+                    }
+                }
+            }
+        }
+    }
+
     int state = blocked | wish;
 
     // XXX
     // do are more careful (but expensive) check to ensure that a
     // safety-critical leader is not being overlooked
-
-    // XXX
-    // ensure that a continuous lane change manoeuvre can be completed
-    // before the next turning movement
 
     // let TraCI influence the wish to change lanes and the security to take
     const int oldstate = state;
@@ -859,7 +881,17 @@ MSLaneChangerSublane::findClosestLeader(const MSLeaderDistanceInfo& leaders, con
     for (int i = 0; i < leaders.numSublanes(); ++i) {
         CLeaderDist cand = leaders[i];
         if (cand.first != nullptr) {
-            const double rightSide = cand.first->getRightSideOnLane();
+            double rightSide = cand.first->getRightSideOnLane();
+            if (cand.first->getLane() != vehicle->getLane()) {
+                // the candidate may be a parial (sideways) occupier so getRightSideOnLane() cannot be used
+                rightSide += (cand.first->getCenterOnEdge(cand.first->getLane())
+                              - vehicle->getCenterOnEdge(vehicle->getLane()));
+            }
+#ifdef DEBUG_CHANGE_OPPOSITE
+            if (vehicle->isSelected()) {
+                std::cout << SIMTIME << " cand=" << cand.first->getID() << " rightSide=" << rightSide << "\n";
+            }
+#endif
             if (cand.second < leader.second
                     && rightSide < egoWidth
                     && vehicle->getLane()->getWidth() - rightSide - cand.first->getVehicleType().getWidth() < egoWidth) {

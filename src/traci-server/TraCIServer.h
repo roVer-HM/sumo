@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -94,6 +94,14 @@ public:
     ///        (except the case that a load or close command is received)s
     int processCommands(const SUMOTime step, const bool afterMove = false);
 
+    /** @brief Processes a get value command
+     *
+     * @param[in] commandID The id of the command to process
+     * @param[in] inputStorage The storage to read the command parameters from
+     * @param[out] outputStorage The storage to write the result to
+     */
+    bool processGet(const int commandID, tcpip::Storage& inputStorage, tcpip::Storage& outputStorage);
+
     /// @brief clean up subscriptions
     void cleanup();
 
@@ -153,94 +161,6 @@ public:
     }
 
     void writeResponseWithLength(tcpip::Storage& outputStorage, tcpip::Storage& tempMsg);
-
-    void writePositionVector(tcpip::Storage& outputStorage, const libsumo::TraCIPositionVector& shape);
-
-
-    /// @name Helpers for reading and checking values
-    /// @{
-
-    /** @brief Reads the value type and a double, verifying the type
-     *
-     * @param[in, changed] inputStorage The storage to read from
-     * @param[out] into Holder of the read value
-     * @return Whether a double value was given (by data type)
-     */
-    bool readTypeCheckingDouble(tcpip::Storage& inputStorage, double& into);
-
-
-    /** @brief Reads the value type and a string, verifying the type
-     *
-     * @param[in, changed] inputStorage The storage to read from
-     * @param[out] into Holder of the read value
-     * @return Whether a string value was given (by data type)
-     */
-    bool readTypeCheckingString(tcpip::Storage& inputStorage, std::string& into);
-
-
-    /** @brief Reads the value type and a string list, verifying the type
-     *
-     * @param[in, changed] inputStorage The storage to read from
-     * @param[out] into Holder of the read value
-     * @return Whether a double value was given (by data type)
-     */
-    bool readTypeCheckingStringList(tcpip::Storage& inputStorage, std::vector<std::string>& into);
-
-
-    /** @brief Reads the value type and a double list, verifying the type
-     *
-     * @param[in, changed] inputStorage The storage to read from
-     * @param[out] into Holder of the read value
-     * @return Whether a double value was given (by data type)
-     */
-    bool readTypeCheckingDoubleList(tcpip::Storage& inputStorage, std::vector<double>& into);
-
-
-    /** @brief Reads the value type and a color, verifying the type
-     *
-     * @param[in, changed] inputStorage The storage to read from
-     * @param[out] into Holder of the read value
-     * @return Whether a color was given (by data type)
-     */
-    bool readTypeCheckingColor(tcpip::Storage& inputStorage, libsumo::TraCIColor& into);
-
-
-    /** @brief Reads the value type and a 2D position, verifying the type
-     *
-     * @param[in, changed] inputStorage The storage to read from
-     * @param[out] into Holder of the read value
-     * @return Whether a 2D position was given (by data type)
-     */
-    bool readTypeCheckingPosition2D(tcpip::Storage& inputStorage, libsumo::TraCIPosition& into);
-
-
-    /** @brief Reads the value type and a byte, verifying the type
-     *
-     * @param[in, changed] inputStorage The storage to read from
-     * @param[out] into Holder of the read value
-     * @return Whether a byte was given (by data type)
-     */
-    bool readTypeCheckingByte(tcpip::Storage& inputStorage, int& into);
-
-
-    /** @brief Reads the value type and an unsigned byte, verifying the type
-     *
-     * @param[in, changed] inputStorage The storage to read from
-     * @param[out] into Holder of the read value
-     * @return Whether an unsigned byte was given (by data type)
-     */
-    bool readTypeCheckingUnsignedByte(tcpip::Storage& inputStorage, int& into);
-
-
-    /** @brief Reads the value type and a polygon, verifying the type
-     *
-     * @param[in, changed] inputStorage The storage to read from
-     * @param[out] into Holder of the read value
-     * @return Whether an unsigned byte was given (by data type)
-     */
-    bool readTypeCheckingPolygon(tcpip::Storage& inputStorage, PositionVector& into);
-    /// @}
-
 
     /// @brief updates myTargetTime and resets vehicle state changes after loading a simulation state
     /// @note  Used in MSStateHandler to update the server's time after loading a state

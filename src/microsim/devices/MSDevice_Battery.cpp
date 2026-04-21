@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2013-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -78,6 +78,8 @@ MSDevice_Battery::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevic
         if (sf != nullptr) {
             sf->setBattery(device);
         }
+        // ensure that parameters are initialized
+        v.getEmissionParameters();
     }
 }
 
@@ -293,7 +295,7 @@ bool MSDevice_Battery::notifyMove(SUMOTrafficObject& tObject, double /* oldPos *
         myActChargingStation = nullptr;
 
         // Set energy charged to 0
-        myEnergyCharged = 0.00;
+        myEnergyCharged = 0;
 
         // Reset timer
         resetChargingStartTime();
@@ -422,6 +424,12 @@ MSDevice_Battery::resetVehicleStoppedTimer() {
 void
 MSDevice_Battery::increaseVehicleStoppedTimer() {
     myVehicleStopped++;
+}
+
+
+void
+MSDevice_Battery::setEnergyCharged(const double energyCharged) {
+    myEnergyCharged = energyCharged;
 }
 
 

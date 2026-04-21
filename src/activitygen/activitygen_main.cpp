@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // activitygen module
 // Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
 // This program and the accompanying materials are made available under the
@@ -44,7 +44,6 @@
 #include <utils/common/SystemFrame.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/iodevices/OutputDevice.h>
-#include <utils/iodevices/OutputDevice.h>
 //ActivityGen
 #include "AGFrame.h"
 #include "AGActivityGen.h"
@@ -87,7 +86,7 @@ main(int argc, char* argv[]) {
     OptionsCont& oc = OptionsCont::getOptions();
     oc.setApplicationDescription(
         TL("Generates trips of persons throughout a day for the microscopic, multi-modal traffic simulation SUMO."));
-    oc.setApplicationName("activitygen", "Eclipse SUMO activitygen Version " VERSION_STRING);
+    oc.setApplicationName("activitygen", "Eclipse SUMO activitygen " VERSION_STRING);
     oc.addCopyrightNotice("Copyright (C) 2010-2012 Technische Universitaet Muenchen");
     int ret = 0;
     RONet* net = nullptr;

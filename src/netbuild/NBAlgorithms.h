@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2012-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -229,7 +229,7 @@ private:
     static void setPriorityJunctionPriorities(NBNode& n, bool forceStraight = false);
 
     /// @brief score pair of edges for multi-criteria evaluatoin of angle, priority, laneNumber and speed
-    static double getScore(const NBEdge* e1, const NBEdge* e2, int minPrio, int maxPrio, int maxNumLanes, double maxSpeed);
+    static double getScore(const NBEdge* e1, const NBEdge* e2, int minPrio, int maxPrio, int maxNumLanes, double maxSpeed, SVCPermissions permissions);
 
     /// @brief set priority for edges that are parallel to the best edges
     static void markBestParallel(const NBNode& n, NBEdge* bestFirst, NBEdge* bestSecond);
@@ -247,7 +247,7 @@ private:
      * @param[in] e2 The second edge
      * Whether both edges have the same priority
      */
-    static bool samePriority(const NBEdge* const e1, const NBEdge* const e2);
+    static bool samePriority(const NBEdge* const e1, const NBEdge* const e2, SVCPermissions permissions);
 
     /// @brief return whether the priorite attribute can be used to distinguish the edges
     static bool hasDifferentPriorities(const EdgeVector& edges, const NBEdge* excluded);

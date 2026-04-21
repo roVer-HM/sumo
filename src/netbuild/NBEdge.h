@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -432,7 +432,7 @@ public:
      * @param[in] priority This edge's priority
      * @param[in] width This edge's lane width
      * @param[in] endOffset Additional offset to the destination node
-     * @param[in] geom The edge's geomatry
+     * @param[in] geom The edge's geometry
      * @param[in] spread How the lateral offset of the lanes shall be computed
      * @param[in] streetName The street name (need not be unique)
      * @param[in] origID The original ID in the source network (need not be unique)
@@ -479,7 +479,7 @@ public:
      * @param[in] speed The maximum velocity allowed on this edge
      * @param[in] nolanes The number of lanes this edge has
      * @param[in] priority This edge's priority
-     * @param[in] geom The edge's geomatry
+     * @param[in] geom The edge's geometry
      * @param[in] width This edge's lane width
      * @param[in] endOffset Additional offset to the destination node
      * @param[in] streetName The street name (need not be unique)
@@ -506,6 +506,12 @@ public:
      * @param[in] yoff The y-offset to apply
      */
     void reshiftPosition(double xoff, double yoff);
+
+    /// @brief ensure consistency between input and output geometries
+    void roundGeometry();
+
+    /// @brief ensure consistency between input and output speed
+    void roundSpeed();
 
     /// @brief mirror coordinates along the x-axis
     void mirrorX();
@@ -752,7 +758,7 @@ public:
      */
     int getFirstAllowedLaneIndex(int direction) const;
 
-    /// @brif get first non-pedestrian lane
+    /// @brief get first non-pedestrian lane
     NBEdge::Lane getFirstNonPedestrianLane(int direction) const;
 
     /// @brief return all permission variants within the specified lane range [iStart, iEnd[
@@ -812,7 +818,7 @@ public:
      *
      * Replaces the edge's prior geometry by the given. Then, computes
      *  the geometries of all lanes using computeLaneShapes.
-     * Definitely not the best way to have it accessable from outside...
+     * Definitely not the best way to have it accessible from outside...
      * @param[in] g The edge's new geometry
      * @param[in] inner whether g should be interpreted as inner points
      * @todo Recheck usage, disallow access
@@ -837,8 +843,8 @@ public:
     /// @brief linearly extend the geometry at the given node
     void shortenGeometryAtNode(const NBNode* node, double reduction);
 
-    /// @brief shift geometry at the given node to avoid overlap
-    void shiftPositionAtNode(NBNode* node, NBEdge* opposite);
+    /// @brief shift geometry at the given node to avoid overlap and return whether geometry was changed
+    bool shiftPositionAtNode(NBNode* node, NBEdge* opposite);
 
     /// @brief return position taking into account loaded length
     Position geometryPositionAtOffset(double offset) const;
@@ -1231,7 +1237,7 @@ public:
     bool recheckLanes();
 
     /// @brief recheck whether all opposite and bidi settings are consistent
-    void recheckOpposite(const NBEdgeCont& ec, bool fixOppositeLengths); 
+    void recheckOpposite(const NBEdgeCont& ec, bool fixOppositeLengths);
 
     /** @brief Add a connection to the previously computed turnaround, if wished
      * and a turning direction exists (myTurnDestination!=0)
@@ -1274,6 +1280,9 @@ public:
 
     /// @brief append another edge
     void append(NBEdge* continuation);
+
+    /// @brief update parameter with removed nodes
+    void updateRemovedNodes(const std::string& removed);
 
     /// @brief Check if edge has signalised connections
     bool hasSignalisedConnectionTo(const NBEdge* const e) const;
@@ -1423,8 +1432,19 @@ public:
     }
 
     /// @brief return whether this edge should be a bidi edge
-    bool isBidi() {
+    bool isBidi() const {
         return myIsBidi;
+    }
+
+
+    /// @brief mark this edge as a bidi edge
+    void setRoutingType(const std::string& routingType) {
+        myRoutingType = routingType;
+    }
+
+    /// @brief return whether this edge should be a bidi edge
+    const std::string& getRoutingType() const {
+        return myRoutingType;
     }
 
     // @brief returns a reference to the internal structure for the convenience of netedit
@@ -1688,12 +1708,12 @@ private:
 
     /// @name Setting and getting connections
     /// @{
-    /** @briefmoves a connection one place to the left;
+    /** @brief moves a connection one place to the left;
      * @note Attention! no checking for field validity
      */
     void moveConnectionToLeft(int lane);
 
-    /** @briefmoves a connection one place to the right;
+    /** @brief moves a connection one place to the right;
      * @noteAttention! no checking for field validity
      */
     void moveConnectionToRight(int lane);
@@ -1840,6 +1860,9 @@ private:
 
     /// @brief whether this edge is part of a non-rail bidi edge pair
     bool myIsBidi;
+
+    /// @brief The routing type of the edge
+    std::string myRoutingType;
 
     /// @brief the index of the edge in the list of all edges. Set by NBEdgeCont and requires re-set whenever the list of edges changes
     int myIndex;

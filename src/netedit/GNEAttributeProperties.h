@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -65,7 +65,8 @@ public:
         FLOW =              1 << 23,    // Attribute is part of a flow definition (Number, vehsPerHour...)
         COPYABLE =          1 << 24,    // Attribute can be copied over other element with the same tagProperty (used for edge/lane templates)
         ALWAYSENABLED =     1 << 25,    // Attribute cannot be disabled
-        NO_PROPERTY =       1 << 26,    // No property defined
+        SORTABLE =          1 << 26,    // Attribute can be used for sort elements in dialog
+        NO_PROPERTY =       1 << 27,    // No property defined
     };
 
     /// @brief enum class with all edit modes
@@ -76,7 +77,8 @@ public:
         EXTENDEDEDITOR =    1 << 3,    // Attribute cannot be edited in editor, but is editable in extended Dialog
         GEOEDITOR =         1 << 4,    // Attribute can be edited only in geo editor
         FLOWEDITOR =        1 << 5,    // Attribute can be edited only in flow editor
-        NO_EDIT =           1 << 6,    // No edit property defined
+        DIALOGEDITOR =      1 << 6,    // Attribute can be edited in dialog editor
+        NO_EDIT =           1 << 7,    // No edit property defined
     };
 
     /// @brief parameter constructor for attribute properties without default values
@@ -105,7 +107,7 @@ public:
     void setDiscreteValues(const std::vector<std::string>& discreteValues);
 
     /// @brief set discrete values
-    void setFilenameExtensions(const std::string& extensions);
+    void setFilenameExtensions(const std::vector<std::string>& extensions);
 
     /// @brief set default activated value
     void setDefaultActivated(const bool value);
@@ -171,7 +173,7 @@ public:
     const std::vector<std::string>& getDiscreteValues() const;
 
     /// @brief get filename extensions in string format used in open dialogs
-    const std::string& getFilenameExtensions() const;
+    const std::vector<std::string>& getFilenameExtensions() const;
 
     /// @brief get tag synonym
     SumoXMLAttr getAttrSynonym() const;
@@ -266,6 +268,9 @@ public:
     /// @brief return true if attribute is always enabled
     bool isAlwaysEnabled() const;
 
+    /// @brief return true if attribute can be used for sorting elements in dialogs
+    bool isSortable() const;
+
     /// @name edit modes
     /// @{
 
@@ -289,6 +294,9 @@ public:
 
     /// @brief return true if attribute can be modified in edit mode
     bool isEditMode() const;
+
+    /// @brief return true if attribute can be modified in dialog editor
+    bool isDialogEditor() const;
 
     /// @}
 
@@ -339,7 +347,7 @@ private:
     std::vector<std::string> myDiscreteValues;
 
     /// @brief filename extensions used in open dialogs (by default empty)
-    std::string myFilenameExtensions;
+    std::vector<std::string> myFilenameExtensions;
 
     /// @brief Attribute written in XML (If is SUMO_ATTR_NOTHING), original Attribute will be written)
     SumoXMLAttr myAttrSynonym = SUMO_ATTR_NOTHING;

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -17,10 +17,11 @@
 ///
 // A class for visualizing chargingStation geometry (adapted from GUILaneWrapper)
 /****************************************************************************/
+#include <config.h>
 
+#include <netedit/changes/GNEChange_Attribute.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagProperties.h>
-#include <netedit/changes/GNEChange_Attribute.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/options/OptionsCont.h>
 
@@ -35,16 +36,20 @@ GNEChargingStation::GNEChargingStation(GNENet* net) :
 }
 
 
-GNEChargingStation::GNEChargingStation(const std::string& id, GNENet* net, const std::string& filename, GNELane* lane, const double startPos, const double endPos,
-                                       const std::string& name, double chargingPower, double efficiency, bool chargeInTransit, SUMOTime chargeDelay,
-                                       const std::string& chargeType, const SUMOTime waitingTime, bool friendlyPosition, const Parameterised::Map& parameters) :
-    GNEStoppingPlace(id, net, filename, SUMO_TAG_CHARGING_STATION, lane, startPos, endPos, name, friendlyPosition, RGBColor::INVISIBLE, parameters),
+GNEChargingStation::GNEChargingStation(const std::string& id, GNENet* net, FileBucket* fileBucket, GNELane* lane,
+                                       const double startPos, const double endPos, const std::string& name, const double chargingPower,
+                                       const double totalPower, const double efficiency, const bool chargeInTransit, const SUMOTime chargeDelay,
+                                       const std::string& chargeType, const SUMOTime waitingTime, const std::string& parkingAreaID,
+                                       const bool friendlyPosition, const Parameterised::Map& parameters) :
+    GNEStoppingPlace(id, net, fileBucket, SUMO_TAG_CHARGING_STATION, lane, startPos, endPos, name, friendlyPosition, RGBColor::INVISIBLE, 0, parameters),
     myChargingPower(chargingPower),
+    myTotalPower(totalPower),
     myEfficiency(efficiency),
     myChargeInTransit(chargeInTransit),
     myChargeDelay(chargeDelay),
     myChargeType(chargeType),
-    myWaitingTime(waitingTime) {
+    myWaitingTime(waitingTime),
+    myParkingAreaID(parkingAreaID) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
 }
@@ -61,6 +66,9 @@ GNEChargingStation::writeAdditional(OutputDevice& device) const {
     // write specific attributes
     if (myChargingPower != myTagProperty->getDefaultDoubleValue(SUMO_ATTR_CHARGINGPOWER)) {
         device.writeAttr(SUMO_ATTR_CHARGINGPOWER, toString(myChargingPower));
+    }
+    if (myTotalPower != myTagProperty->getDefaultDoubleValue(SUMO_ATTR_TOTALPOWER)) {
+        device.writeAttr(SUMO_ATTR_TOTALPOWER, toString(myTotalPower));
     }
     if (myEfficiency != myTagProperty->getDefaultDoubleValue(SUMO_ATTR_EFFICIENCY)) {
         device.writeAttr(SUMO_ATTR_EFFICIENCY, myEfficiency);
@@ -112,7 +120,7 @@ GNEChargingStation::drawGL(const GUIVisualizationSettings& s) const {
         // Obtain exaggeration of the draw
         const double chargingStationExaggeration = getExaggeration(s);
         // check if draw moving geometry points
-        const bool movingGeometryPoints = drawMovingGeometryPoints(false);
+        const bool movingGeometryPoints = drawMovingGeometryPoints();
         // get detail level
         const auto d = s.getDetailLevel(chargingStationExaggeration);
         // draw geometry only if we'rent in drawForObjectUnderCursor mode
@@ -145,10 +153,10 @@ GNEChargingStation::drawGL(const GUIVisualizationSettings& s) const {
             // draw sign
             drawSign(s, d, chargingStationExaggeration, baseColor, signColor, "C");
             // draw geometry points
-            if (movingGeometryPoints && (myStartPosition != INVALID_DOUBLE)) {
+            if (movingGeometryPoints && (myStartPosOverLane != INVALID_DOUBLE)) {
                 drawLeftGeometryPoint(s, d, myAdditionalGeometry.getShape().front(), myAdditionalGeometry.getShapeRotations().front(), baseColor);
             }
-            if (movingGeometryPoints && (myEndPosition != INVALID_DOUBLE)) {
+            if (movingGeometryPoints && (myEndPosPosOverLane != INVALID_DOUBLE)) {
                 drawRightGeometryPoint(s, d, myAdditionalGeometry.getShape().back(), myAdditionalGeometry.getShapeRotations().back(), baseColor);
             }
             // pop layer matrix
@@ -181,6 +189,8 @@ GNEChargingStation::getAttribute(SumoXMLAttr key) const {
     switch (key) {
         case SUMO_ATTR_CHARGINGPOWER:
             return toString(myChargingPower);
+        case SUMO_ATTR_TOTALPOWER:
+            return toString(myTotalPower);
         case SUMO_ATTR_EFFICIENCY:
             return toString(myEfficiency);
         case SUMO_ATTR_CHARGEINTRANSIT:
@@ -194,7 +204,7 @@ GNEChargingStation::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_PARKING_AREA:
             return myParkingAreaID;
         default:
-            return getStoppingPlaceAttribute(this, key);
+            return getStoppingPlaceAttribute(key);
     }
 }
 
@@ -204,6 +214,8 @@ GNEChargingStation::getAttributeDouble(SumoXMLAttr key) const {
     switch (key) {
         case SUMO_ATTR_CHARGINGPOWER:
             return myChargingPower;
+        case SUMO_ATTR_TOTALPOWER:
+            return myTotalPower;
         case SUMO_ATTR_EFFICIENCY:
             return myEfficiency;
         default:
@@ -216,6 +228,7 @@ void
 GNEChargingStation::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList) {
     switch (key) {
         case SUMO_ATTR_CHARGINGPOWER:
+        case SUMO_ATTR_TOTALPOWER:
         case SUMO_ATTR_EFFICIENCY:
         case SUMO_ATTR_CHARGEINTRANSIT:
         case SUMO_ATTR_CHARGEDELAY:
@@ -235,6 +248,7 @@ bool
 GNEChargingStation::isValid(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_CHARGINGPOWER:
+        case SUMO_ATTR_TOTALPOWER:
             return (canParse<double>(value) && parse<double>(value) >= 0);
         case SUMO_ATTR_EFFICIENCY:
             if (canParse<double>(value)) {
@@ -269,6 +283,9 @@ GNEChargingStation::setAttribute(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_CHARGINGPOWER:
             myChargingPower = parse<double>(value);
             break;
+        case SUMO_ATTR_TOTALPOWER:
+            myTotalPower = parse<double>(value);
+            break;
         case SUMO_ATTR_EFFICIENCY:
             myEfficiency = parse<double>(value);
             break;
@@ -288,10 +305,9 @@ GNEChargingStation::setAttribute(SumoXMLAttr key, const std::string& value) {
             myParkingAreaID = value;
             break;
         default:
-            setStoppingPlaceAttribute(this, key, value);
+            setStoppingPlaceAttribute(key, value);
             break;
     }
 }
-
 
 /****************************************************************************/

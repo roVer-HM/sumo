@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,57 +19,54 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # Rebuild network
-netedit.rebuildNetwork()
+netedit.computeJunctions()
 
 # go to inspect mode
-netedit.inspectMode()
+netedit.changeMode("inspect")
 
 # select first left edge and change their junction
 netedit.leftClick(referencePosition, netedit.positions.network.edge.leftTop)
-netedit.modifyAttribute(netedit.attrs.edge.inspect.fromEdge, "J0", False)
-netedit.rebuildNetwork()
+netedit.modifyAttribute(netedit.attrs.edge.inspect.fromEdge, "J0")
+netedit.computeJunctions()
 
 # select second left edge and change their junction
 netedit.leftClick(referencePosition, netedit.positions.network.edge.leftBot)
-netedit.modifyAttribute(netedit.attrs.edge.inspect.toEdge, "J3", False)
-netedit.rebuildNetwork()
+netedit.modifyAttribute(netedit.attrs.edge.inspect.toEdge, "J3")
+netedit.computeJunctions()
 
 # select first right edge and change their junction
 netedit.leftClick(referencePosition, netedit.positions.network.edge.rightTop)
-netedit.modifyAttribute(netedit.attrs.edge.inspect.toEdge, "J0", False)
-netedit.rebuildNetwork()
+netedit.modifyAttribute(netedit.attrs.edge.inspect.toEdge, "J0")
+netedit.computeJunctions()
 
 # select second right edge and change their junction
 netedit.leftClick(referencePosition, netedit.positions.network.edge.rightBot)
-netedit.modifyAttribute(netedit.attrs.edge.inspect.fromEdge, "J3", False)
-netedit.rebuildNetwork()
+netedit.modifyAttribute(netedit.attrs.edge.inspect.fromEdge, "J3")
+netedit.computeJunctions()
 
 # Check undo redo
 netedit.undo(referencePosition, 4)
-netedit.rebuildNetwork()
+netedit.computeJunctions()
 
 # Check redo
 netedit.redo(referencePosition, 4)
-netedit.rebuildNetwork()
+netedit.computeJunctions()
 
 # save routes
-netedit.saveDemandElements(True, referencePosition)
+netedit.saveExistentFile("demands")
 
 # press space to fix crossings
-netedit.typeSpace()
+netedit.typeKey("space")
 
 # save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

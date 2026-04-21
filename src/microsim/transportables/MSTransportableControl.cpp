@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -156,14 +156,17 @@ MSTransportableControl::erase(MSTransportable* transportable) {
     }
     if (oc.isSet("vehroute-output") || oc.isSet("personroute-output")) {
         if (transportable->hasArrived() || oc.getBool("vehroute-output.write-unfinished")) {
-            if (oc.getBool("vehroute-output.sorted")) {
-                const SUMOTime departure = oc.getBool("vehroute-output.intended-depart") ? transportable->getParameter().depart : transportable->getDeparture();
-                OutputDevice_String od(1);
-                transportable->routeOutput(od, oc.getBool("vehroute-output.route-length"));
-                MSDevice_Vehroutes::writeSortedOutput(&myRouteInfos,
-                                                      departure, transportable->getID(), od.getString());
-            } else {
-                transportable->routeOutput(*myRouteInfos.routeOut, oc.getBool("vehroute-output.route-length"));
+            // @todo: adapt this if we ever introduce person-device.vehroute
+            if (transportable->getBoolParam("has.vehroute.person-device", false, true)) {
+                if (oc.getBool("vehroute-output.sorted")) {
+                    const SUMOTime departure = oc.getBool("vehroute-output.intended-depart") ? transportable->getParameter().depart : transportable->getDeparture();
+                    OutputDevice_String od(1);
+                    transportable->routeOutput(od, oc.getBool("vehroute-output.route-length"));
+                    MSDevice_Vehroutes::writeSortedOutput(&myRouteInfos,
+                                                          departure, transportable->getID(), od.getString());
+                } else {
+                    transportable->routeOutput(*myRouteInfos.routeOut, oc.getBool("vehroute-output.route-length"));
+                }
             }
         }
     }
@@ -206,6 +209,10 @@ MSTransportableControl::checkWaiting(MSNet* net, const SUMOTime time) {
                 nextStep.insert(nextStep.begin(), transportables.begin(), transportables.end());
                 transportables.clear();
                 break;
+            } else if (myMaxTransportableNumber == 0) {
+                erase(t);
+                it = transportables.erase(it);
+                continue;
             }
             it = transportables.erase(it);
             myWaitingForDepartureNumber--;

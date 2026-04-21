@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,20 +19,17 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # Rebuild network
-netedit.rebuildNetwork()
+netedit.computeJunctions()
 
 # set crossing mode
-netedit.crossingMode()
+netedit.changeMode("crossing")
 
 # select central node
 netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.center)
@@ -40,32 +37,32 @@ netedit.leftClick(referencePosition, netedit.positions.network.junction.cross.ce
 # select two left edges and create crossing in edges 3 and 7
 netedit.leftClick(referencePosition, netedit.positions.network.edge.leftTop)
 netedit.leftClick(referencePosition, netedit.positions.network.edge.leftBot)
-netedit.typeEnter()
-netedit.rebuildNetwork()
+netedit.typeKey("enter")
+netedit.computeJunctions()
 
 # select two left edges and create crossing in edges 3 and 7
 netedit.leftClick(referencePosition, netedit.positions.network.edge.rightTop)
 netedit.leftClick(referencePosition, netedit.positions.network.edge.rightBot)
-netedit.typeEnter()
-netedit.rebuildNetwork()
+netedit.typeKey("enter")
+netedit.computeJunctions()
 
 # Check undo
 netedit.undo(referencePosition, 2)
 
 # rebuild network trying to provoke the crash during redo
-netedit.rebuildNetwork()
+netedit.computeJunctions()
 
 # Check redo
 netedit.redo(referencePosition, 2)
 
 # save network
-netedit.saveNetwork(True, referencePosition)
+netedit.saveExistentFile("network")
 
 # press space to fix crossings
-netedit.typeSpace()
+netedit.typeKey("space")
 
 # save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

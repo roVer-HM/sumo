@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2012-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -42,10 +42,8 @@ public:
     /// @brief Constructor
     PlainXMLFormatter(const int defaultIndentation = 0);
 
-
     /// @brief Destructor
     virtual ~PlainXMLFormatter() { }
-
 
     /** @brief Writes an XML header with optional configuration
      *
@@ -55,23 +53,13 @@ public:
      * @param[in] into The output stream to use
      * @param[in] rootElement The root element to use
      * @param[in] attrs Additional attributes to save within the rootElement
+     * @param[in] includeConfig whether the current config should be included as XML comment
+     * @return whether something has been written
      * @todo Describe what is saved
      */
     bool writeXMLHeader(std::ostream& into, const std::string& rootElement,
-                        const std::map<SumoXMLAttr, std::string>& attrs,
-                        bool includeConfig = true);
-
-
-    /** @brief Writes an XML header with optional configuration
-     *
-     * If something has been written (myXMLStack is not empty), nothing
-     *  is written and false returned.
-     *
-     * @param[in] into The output stream to use
-     * @param[in] rootElement The root element to use
-     */
-    bool writeHeader(std::ostream& into, const SumoXMLTag& rootElement);
-
+                        const std::map<SumoXMLAttr, std::string>& attrs, bool writeMetadata,
+                        bool includeConfig);
 
     /** @brief Opens an XML tag
      *
@@ -85,7 +73,6 @@ public:
      */
     void openTag(std::ostream& into, const std::string& xmlElement);
 
-
     /** @brief Opens an XML tag
      *
      * Helper method which finds the correct string before calling openTag.
@@ -95,7 +82,6 @@ public:
      */
     void openTag(std::ostream& into, const SumoXMLTag& xmlElement);
 
-
     /** @brief Closes the most recently opened tag
      *
      * @param[in] into The output stream to use
@@ -103,7 +89,6 @@ public:
      * @todo it is not verified that the topmost element was closed
      */
     bool closeTag(std::ostream& into, const std::string& comment = "");
-
 
     /** @brief writes a preformatted tag to the device but ensures that any
      * pending tags are closed
@@ -116,7 +101,6 @@ public:
      */
     void writePadding(std::ostream& into, const std::string& val);
 
-
     /** @brief writes an arbitrary attribute
      *
      * @param[in] into The output stream to use
@@ -128,7 +112,6 @@ public:
         into << " " << attr << "=\"" << toString(val, into.precision()) << "\"";
     }
 
-
     /** @brief writes a named attribute
      *
      * @param[in] into The output stream to use
@@ -138,6 +121,10 @@ public:
     template <class T>
     static void writeAttr(std::ostream& into, const SumoXMLAttr attr, const T& val) {
         into << " " << toString(attr) << "=\"" << toString(val, into.precision()) << "\"";
+    }
+
+    void writeTime(std::ostream& into, const SumoXMLAttr attr, const SUMOTime val) {
+        into << " " << toString(attr) << "=\"" << time2string(val) << "\"";
     }
 
     bool wroteHeader() const {
@@ -164,7 +151,7 @@ inline void PlainXMLFormatter::writeAttr(std::ostream& into, const SumoXMLAttr a
 #ifdef HAVE_FMT
     fmt::print(into, " {}=\"{:.{}f}\"", toString(attr), val, into.precision());
 #else
-    into << " " << toString(attr) << "=\"" << val << "\"";
+    into << " " << toString(attr) << "=\"" << toString(val, into.precision()) << "\"";
 #endif
 }
 

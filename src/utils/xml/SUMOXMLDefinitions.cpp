@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -45,6 +45,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::tags[] = {
     { "poi",                                    SUMO_TAG_POI },
     { "junction",                               SUMO_TAG_JUNCTION },
     { "restriction",                            SUMO_TAG_RESTRICTION },
+    { "preference",                             SUMO_TAG_PREFERENCE },
     { "meso",                                   SUMO_TAG_MESO },
     { "busStop",                                SUMO_TAG_BUS_STOP },
     { "trainStop",                              SUMO_TAG_TRAIN_STOP },
@@ -82,6 +83,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::tags[] = {
     { "parkingAreaReroute",                     SUMO_TAG_PARKING_AREA_REROUTE },
     { "viaProbReroute",                         SUMO_TAG_VIA_PROB_REROUTE },
     { "overtakingReroute",                      SUMO_TAG_OVERTAKING_REROUTE },
+    { "stationReroute",                         SUMO_TAG_STATION_REROUTE },
     { "step",                                   SUMO_TAG_STEP },
     { "variableSpeedSign",                      SUMO_TAG_VSS },
     { "variableSpeedSignSymbol",                GNE_TAG_VSS_SYMBOL },
@@ -118,6 +120,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::tags[] = {
     { "assignment",                             SUMO_TAG_ASSIGNMENT },
     { "function",                               SUMO_TAG_FUNCTION },
     { "edgeControl",                            SUMO_TAG_EDGECONTROL },
+    { "routingEngine",                          SUMO_TAG_ROUTINGENGINE },
 
     { "edgeRelation",                           SUMO_TAG_EDGEREL },
     { "tazRelation",                            SUMO_TAG_TAZREL },
@@ -146,6 +149,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::tags[] = {
     { "split",                                  SUMO_TAG_SPLIT },
     { "node",                                   SUMO_TAG_NODE },
     { "type",                                   SUMO_TAG_TYPE },
+    { "types",                                  SUMO_TAG_TYPES },
     { "laneType",                               SUMO_TAG_LANETYPE },
     { "detectorDefinition",                     SUMO_TAG_DETECTOR_DEFINITION },
     { "routeDistribution",                      SUMO_TAG_ROUTE_DISTRIBUTION },
@@ -178,6 +182,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::tags[] = {
     { "viewsettings",                           SUMO_TAG_VIEWSETTINGS },
     { "view3D",                                 SUMO_TAG_VIEWSETTINGS_3D },
     { "decal",                                  SUMO_TAG_VIEWSETTINGS_DECAL },
+    { "tracker",                                SUMO_TAG_VIEWSETTINGS_TRACKER },
     { "light",                                  SUMO_TAG_VIEWSETTINGS_LIGHT },
     { "scheme",                                 SUMO_TAG_VIEWSETTINGS_SCHEME },
     { "opengl",                                 SUMO_TAG_VIEWSETTINGS_OPENGL },
@@ -190,6 +195,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::tags[] = {
     { "additionals",                            SUMO_TAG_VIEWSETTINGS_ADDITIONALS },
     { "pois",                                   SUMO_TAG_VIEWSETTINGS_POIS },
     { "polys",                                  SUMO_TAG_VIEWSETTINGS_POLYS },
+    { "dataSettings",                           SUMO_TAG_VIEWSETTINGS_DATA },
     { "legend",                                 SUMO_TAG_VIEWSETTINGS_LEGEND },
     { "event",                                  SUMO_TAG_VIEWSETTINGS_EVENT },
     { "jamTime",                                SUMO_TAG_VIEWSETTINGS_EVENT_JAM_TIME },
@@ -206,6 +212,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::tags[] = {
     { "rngLane",                                SUMO_TAG_RNGLANE },
     { "vehicleTransfer",                        SUMO_TAG_VEHICLETRANSFER },
     { "device",                                 SUMO_TAG_DEVICE },
+    { "rem",                                    SUMO_TAG_REMINDER },
     // Cars
     { "carFollowing-IDM",                       SUMO_TAG_CF_IDM },
     { "carFollowing-IDMM",                      SUMO_TAG_CF_IDMM },
@@ -416,64 +423,36 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::tags[] = {
     { "walk: route",                            GNE_TAG_WALK_ROUTE },
     // GNE Rides
     { "ride: edge->edge",                       GNE_TAG_RIDE_EDGE_EDGE },
-    { "ride: edge->taz",                        GNE_TAG_RIDE_EDGE_TAZ },
-    { "ride: edge->junction",                   GNE_TAG_RIDE_EDGE_JUNCTION },
     { "ride: edge->busstop",                    GNE_TAG_RIDE_EDGE_BUSSTOP },
     { "ride: edge->trainstop",                  GNE_TAG_RIDE_EDGE_TRAINSTOP },
     { "ride: edge->containerstop",              GNE_TAG_RIDE_EDGE_CONTAINERSTOP },
     { "ride: edge->chargingstation",            GNE_TAG_RIDE_EDGE_CHARGINGSTATION },
     { "ride: edge->parkingarea",                GNE_TAG_RIDE_EDGE_PARKINGAREA },
-    { "ride: taz->edge",                        GNE_TAG_RIDE_TAZ_EDGE },
-    { "ride: taz->taz",                         GNE_TAG_RIDE_TAZ_TAZ },
-    { "ride: taz->junction",                    GNE_TAG_RIDE_TAZ_JUNCTION },
-    { "ride: taz->busstop",                     GNE_TAG_RIDE_TAZ_BUSSTOP },
-    { "ride: taz->trainstop",                   GNE_TAG_RIDE_TAZ_TRAINSTOP },
-    { "ride: taz->containerstop",               GNE_TAG_RIDE_TAZ_CONTAINERSTOP },
-    { "ride: taz->chargingstation",             GNE_TAG_RIDE_TAZ_CHARGINGSTATION },
-    { "ride: taz->parkingarea",                 GNE_TAG_RIDE_TAZ_PARKINGAREA },
-    { "ride: junction->edge",                   GNE_TAG_RIDE_JUNCTION_EDGE },
-    { "ride: junction->taz",                    GNE_TAG_RIDE_JUNCTION_TAZ },
-    { "ride: junction->junction",               GNE_TAG_RIDE_JUNCTION_JUNCTION },
-    { "ride: junction->busstop",                GNE_TAG_RIDE_JUNCTION_BUSSTOP },
-    { "ride: junction->trainstop",              GNE_TAG_RIDE_JUNCTION_TRAINSTOP },
-    { "ride: junction->containerstop",          GNE_TAG_RIDE_JUNCTION_CONTAINERSTOP },
-    { "ride: junction->chargingstation",        GNE_TAG_RIDE_JUNCTION_CHARGINGSTATION },
-    { "ride: junction->parkingarea",            GNE_TAG_RIDE_JUNCTION_PARKINGAREA },
     { "ride: busstop->edge",                    GNE_TAG_RIDE_BUSSTOP_EDGE },
-    { "ride: busstop->taz",                     GNE_TAG_RIDE_BUSSTOP_TAZ },
-    { "ride: busstop->junction",                GNE_TAG_RIDE_BUSSTOP_JUNCTION },
     { "ride: busstop->busstop",                 GNE_TAG_RIDE_BUSSTOP_BUSSTOP },
     { "ride: busstop->trainstop",               GNE_TAG_RIDE_BUSSTOP_TRAINSTOP },
     { "ride: busstop->containerstop",           GNE_TAG_RIDE_BUSSTOP_CONTAINERSTOP },
     { "ride: busstop->chargingstation",         GNE_TAG_RIDE_BUSSTOP_CHARGINGSTATION },
     { "ride: busstop->parkingarea",             GNE_TAG_RIDE_BUSSTOP_PARKINGAREA },
     { "ride: trainstop->edge",                  GNE_TAG_RIDE_TRAINSTOP_EDGE },
-    { "ride: trainstop->taz",                   GNE_TAG_RIDE_TRAINSTOP_TAZ },
-    { "ride: trainstop->junction",              GNE_TAG_RIDE_TRAINSTOP_JUNCTION },
     { "ride: trainstop->busstop",               GNE_TAG_RIDE_TRAINSTOP_BUSSTOP },
     { "ride: trainstop->trainstop",             GNE_TAG_RIDE_TRAINSTOP_TRAINSTOP },
     { "ride: trainstop->containerstop",         GNE_TAG_RIDE_TRAINSTOP_CONTAINERSTOP },
     { "ride: trainstop->chargingstation",       GNE_TAG_RIDE_TRAINSTOP_CHARGINGSTATION },
     { "ride: trainstop->parkingarea",           GNE_TAG_RIDE_TRAINSTOP_PARKINGAREA },
     { "ride: containerstop->edge",              GNE_TAG_RIDE_CONTAINERSTOP_EDGE },
-    { "ride: containerstop->taz",               GNE_TAG_RIDE_CONTAINERSTOP_TAZ },
-    { "ride: containerstop->junction",          GNE_TAG_RIDE_CONTAINERSTOP_JUNCTION },
     { "ride: containerstop->busstop",           GNE_TAG_RIDE_CONTAINERSTOP_BUSSTOP },
     { "ride: containerstop->trainstop",         GNE_TAG_RIDE_CONTAINERSTOP_TRAINSTOP },
     { "ride: containerstop->containerstop",     GNE_TAG_RIDE_CONTAINERSTOP_CONTAINERSTOP },
     { "ride: containerstop->chargingstation",   GNE_TAG_RIDE_CONTAINERSTOP_CHARGINGSTATION },
     { "ride: containerstop->parkingarea",       GNE_TAG_RIDE_CONTAINERSTOP_PARKINGAREA },
     { "ride: chargingstation->edge",            GNE_TAG_RIDE_CHARGINGSTATION_EDGE },
-    { "ride: chargingstation->taz",             GNE_TAG_RIDE_CHARGINGSTATION_TAZ },
-    { "ride: chargingstation->junction",        GNE_TAG_RIDE_CHARGINGSTATION_JUNCTION },
     { "ride: chargingstation->busstop",         GNE_TAG_RIDE_CHARGINGSTATION_BUSSTOP },
     { "ride: chargingstation->trainstop",       GNE_TAG_RIDE_CHARGINGSTATION_TRAINSTOP },
     { "ride: chargingstation->containestop",    GNE_TAG_RIDE_CHARGINGSTATION_CONTAINERSTOP },
     { "ride: chargingstation->chargingstation", GNE_TAG_RIDE_CHARGINGSTATION_CHARGINGSTATION },
     { "ride: chargingstation->parkingarea",     GNE_TAG_RIDE_CHARGINGSTATION_PARKINGAREA },
     { "ride: parkingarea->edge",                GNE_TAG_RIDE_PARKINGAREA_EDGE },
-    { "ride: parkingarea->taz",                 GNE_TAG_RIDE_PARKINGAREA_TAZ },
-    { "ride: parkingarea->junction",            GNE_TAG_RIDE_PARKINGAREA_JUNCTION },
     { "ride: parkingarea->busstop",             GNE_TAG_RIDE_PARKINGAREA_BUSSTOP },
     { "ride: parkingarea->trainstop",           GNE_TAG_RIDE_PARKINGAREA_TRAINSTOP },
     { "ride: parkingarea->containerstop",       GNE_TAG_RIDE_PARKINGAREA_CONTAINERSTOP },
@@ -489,64 +468,36 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::tags[] = {
     { "stopPerson: parkingArea",                GNE_TAG_STOPPERSON_PARKINGAREA },
     // GNE Transports
     { "transport: edge->edge",                       GNE_TAG_TRANSPORT_EDGE_EDGE },
-    { "transport: edge->taz",                        GNE_TAG_TRANSPORT_EDGE_TAZ },
-    { "transport: edge->junction",                   GNE_TAG_TRANSPORT_EDGE_JUNCTION },
     { "transport: edge->busstop",                    GNE_TAG_TRANSPORT_EDGE_BUSSTOP },
     { "transport: edge->trainstop",                  GNE_TAG_TRANSPORT_EDGE_TRAINSTOP },
     { "transport: edge->containerstop",              GNE_TAG_TRANSPORT_EDGE_CONTAINERSTOP },
     { "transport: edge->chargingstation",            GNE_TAG_TRANSPORT_EDGE_CHARGINGSTATION },
     { "transport: edge->parkingarea",                GNE_TAG_TRANSPORT_EDGE_PARKINGAREA },
-    { "transport: taz->edge",                        GNE_TAG_TRANSPORT_TAZ_EDGE },
-    { "transport: taz->taz",                         GNE_TAG_TRANSPORT_TAZ_TAZ },
-    { "transport: taz->junction",                    GNE_TAG_TRANSPORT_TAZ_JUNCTION },
-    { "transport: taz->busstop",                     GNE_TAG_TRANSPORT_TAZ_BUSSTOP },
-    { "transport: taz->trainstop",                   GNE_TAG_TRANSPORT_TAZ_TRAINSTOP },
-    { "transport: taz->containerstop",               GNE_TAG_TRANSPORT_TAZ_CONTAINERSTOP },
-    { "transport: taz->chargingstation",             GNE_TAG_TRANSPORT_TAZ_CHARGINGSTATION },
-    { "transport: taz->parkingarea",                 GNE_TAG_TRANSPORT_TAZ_PARKINGAREA },
-    { "transport: junction->edge",                   GNE_TAG_TRANSPORT_JUNCTION_EDGE },
-    { "transport: junction->taz",                    GNE_TAG_TRANSPORT_JUNCTION_TAZ },
-    { "transport: junction->junction",               GNE_TAG_TRANSPORT_JUNCTION_JUNCTION },
-    { "transport: junction->busstop",                GNE_TAG_TRANSPORT_JUNCTION_BUSSTOP },
-    { "transport: junction->trainstop",              GNE_TAG_TRANSPORT_JUNCTION_TRAINSTOP },
-    { "transport: junction->containerstop",          GNE_TAG_TRANSPORT_JUNCTION_CONTAINERSTOP },
-    { "transport: junction->chargingstation",        GNE_TAG_TRANSPORT_JUNCTION_CHARGINGSTATION },
-    { "transport: junction->parkingarea",            GNE_TAG_TRANSPORT_JUNCTION_PARKINGAREA },
     { "transport: busstop->edge",                    GNE_TAG_TRANSPORT_BUSSTOP_EDGE },
-    { "transport: busstop->taz",                     GNE_TAG_TRANSPORT_BUSSTOP_TAZ },
-    { "transport: busstop->junction",                GNE_TAG_TRANSPORT_BUSSTOP_JUNCTION },
     { "transport: busstop->busstop",                 GNE_TAG_TRANSPORT_BUSSTOP_BUSSTOP },
     { "transport: busstop->trainstop",               GNE_TAG_TRANSPORT_BUSSTOP_TRAINSTOP },
     { "transport: busstop->containerstop",           GNE_TAG_TRANSPORT_BUSSTOP_CONTAINERSTOP },
     { "transport: busstop->chargingstation",         GNE_TAG_TRANSPORT_BUSSTOP_CHARGINGSTATION },
     { "transport: busstop->parkingarea",             GNE_TAG_TRANSPORT_BUSSTOP_PARKINGAREA },
     { "transport: trainstop->edge",                  GNE_TAG_TRANSPORT_TRAINSTOP_EDGE },
-    { "transport: trainstop->taz",                   GNE_TAG_TRANSPORT_TRAINSTOP_TAZ },
-    { "transport: trainstop->junction",              GNE_TAG_TRANSPORT_TRAINSTOP_JUNCTION },
     { "transport: trainstop->busstop",               GNE_TAG_TRANSPORT_TRAINSTOP_BUSSTOP },
     { "transport: trainstop->trainstop",             GNE_TAG_TRANSPORT_TRAINSTOP_TRAINSTOP },
     { "transport: trainstop->containerstop",         GNE_TAG_TRANSPORT_TRAINSTOP_CONTAINERSTOP },
     { "transport: trainstop->chargingstation",       GNE_TAG_TRANSPORT_TRAINSTOP_CHARGINGSTATION },
     { "transport: trainstop->parkingarea",           GNE_TAG_TRANSPORT_TRAINSTOP_PARKINGAREA },
     { "transport: containerstop->edge",              GNE_TAG_TRANSPORT_CONTAINERSTOP_EDGE },
-    { "transport: containerstop->taz",               GNE_TAG_TRANSPORT_CONTAINERSTOP_TAZ },
-    { "transport: containerstop->junction",          GNE_TAG_TRANSPORT_CONTAINERSTOP_JUNCTION },
     { "transport: containerstop->busstop",           GNE_TAG_TRANSPORT_CONTAINERSTOP_BUSSTOP },
     { "transport: containerstop->trainstop",         GNE_TAG_TRANSPORT_CONTAINERSTOP_TRAINSTOP },
     { "transport: containerstop->containerstop",     GNE_TAG_TRANSPORT_CONTAINERSTOP_CONTAINERSTOP },
     { "transport: containerstop->chargingstation",   GNE_TAG_TRANSPORT_CONTAINERSTOP_CHARGINGSTATION },
     { "transport: containerstop->parkingarea",       GNE_TAG_TRANSPORT_CONTAINERSTOP_PARKINGAREA },
     { "transport: chargingstation->edge",            GNE_TAG_TRANSPORT_CHARGINGSTATION_EDGE },
-    { "transport: chargingstation->taz",             GNE_TAG_TRANSPORT_CHARGINGSTATION_TAZ },
-    { "transport: chargingstation->junction",        GNE_TAG_TRANSPORT_CHARGINGSTATION_JUNCTION },
     { "transport: chargingstation->busstop",         GNE_TAG_TRANSPORT_CHARGINGSTATION_BUSSTOP },
     { "transport: chargingstation->trainstop",       GNE_TAG_TRANSPORT_CHARGINGSTATION_TRAINSTOP },
     { "transport: chargingstation->containestop",    GNE_TAG_TRANSPORT_CHARGINGSTATION_CONTAINERSTOP },
     { "transport: chargingstation->chargingstation", GNE_TAG_TRANSPORT_CHARGINGSTATION_CHARGINGSTATION },
     { "transport: chargingstation->parkingarea",     GNE_TAG_TRANSPORT_CHARGINGSTATION_PARKINGAREA },
     { "transport: parkingarea->edge",                GNE_TAG_TRANSPORT_PARKINGAREA_EDGE },
-    { "transport: parkingarea->taz",                 GNE_TAG_TRANSPORT_PARKINGAREA_TAZ },
-    { "transport: parkingarea->junction",            GNE_TAG_TRANSPORT_PARKINGAREA_JUNCTION },
     { "transport: parkingarea->busstop",             GNE_TAG_TRANSPORT_PARKINGAREA_BUSSTOP },
     { "transport: parkingarea->trainstop",           GNE_TAG_TRANSPORT_PARKINGAREA_TRAINSTOP },
     { "transport: parkingarea->containerstop",       GNE_TAG_TRANSPORT_PARKINGAREA_CONTAINERSTOP },
@@ -554,64 +505,36 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::tags[] = {
     { "transport: parkingarea->parkingarea",         GNE_TAG_TRANSPORT_PARKINGAREA_PARKINGAREA },
     // GNE Tranships
     { "tranship: edge->edge",                       GNE_TAG_TRANSHIP_EDGE_EDGE },
-    { "tranship: edge->taz",                        GNE_TAG_TRANSHIP_EDGE_TAZ },
-    { "tranship: edge->junction",                   GNE_TAG_TRANSHIP_EDGE_JUNCTION },
     { "tranship: edge->busstop",                    GNE_TAG_TRANSHIP_EDGE_BUSSTOP },
     { "tranship: edge->trainstop",                  GNE_TAG_TRANSHIP_EDGE_TRAINSTOP },
     { "tranship: edge->containerstop",              GNE_TAG_TRANSHIP_EDGE_CONTAINERSTOP },
     { "tranship: edge->chargingstation",            GNE_TAG_TRANSHIP_EDGE_CHARGINGSTATION },
     { "tranship: edge->parkingarea",                GNE_TAG_TRANSHIP_EDGE_PARKINGAREA },
-    { "tranship: taz->edge",                        GNE_TAG_TRANSHIP_TAZ_EDGE },
-    { "tranship: taz->taz",                         GNE_TAG_TRANSHIP_TAZ_TAZ },
-    { "tranship: taz->junction",                    GNE_TAG_TRANSHIP_TAZ_JUNCTION },
-    { "tranship: taz->busstop",                     GNE_TAG_TRANSHIP_TAZ_BUSSTOP },
-    { "tranship: taz->trainstop",                   GNE_TAG_TRANSHIP_TAZ_TRAINSTOP },
-    { "tranship: taz->containerstop",               GNE_TAG_TRANSHIP_TAZ_CONTAINERSTOP },
-    { "tranship: taz->chargingstation",             GNE_TAG_TRANSHIP_TAZ_CHARGINGSTATION },
-    { "tranship: taz->parkingarea",                 GNE_TAG_TRANSHIP_TAZ_PARKINGAREA },
-    { "tranship: junction->edge",                   GNE_TAG_TRANSHIP_JUNCTION_EDGE },
-    { "tranship: junction->taz",                    GNE_TAG_TRANSHIP_JUNCTION_TAZ },
-    { "tranship: junction->junction",               GNE_TAG_TRANSHIP_JUNCTION_JUNCTION },
-    { "tranship: junction->busstop",                GNE_TAG_TRANSHIP_JUNCTION_BUSSTOP },
-    { "tranship: junction->trainstop",              GNE_TAG_TRANSHIP_JUNCTION_TRAINSTOP },
-    { "tranship: junction->containerstop",          GNE_TAG_TRANSHIP_JUNCTION_CONTAINERSTOP },
-    { "tranship: junction->chargingstation",        GNE_TAG_TRANSHIP_JUNCTION_CHARGINGSTATION },
-    { "tranship: junction->parkingarea",            GNE_TAG_TRANSHIP_JUNCTION_PARKINGAREA },
     { "tranship: busstop->edge",                    GNE_TAG_TRANSHIP_BUSSTOP_EDGE },
-    { "tranship: busstop->taz",                     GNE_TAG_TRANSHIP_BUSSTOP_TAZ },
-    { "tranship: busstop->junction",                GNE_TAG_TRANSHIP_BUSSTOP_JUNCTION },
     { "tranship: busstop->busstop",                 GNE_TAG_TRANSHIP_BUSSTOP_BUSSTOP },
     { "tranship: busstop->trainstop",               GNE_TAG_TRANSHIP_BUSSTOP_TRAINSTOP },
     { "tranship: busstop->containerstop",           GNE_TAG_TRANSHIP_BUSSTOP_CONTAINERSTOP },
     { "tranship: busstop->chargingstation",         GNE_TAG_TRANSHIP_BUSSTOP_CHARGINGSTATION },
     { "tranship: busstop->parkingarea",             GNE_TAG_TRANSHIP_BUSSTOP_PARKINGAREA },
     { "tranship: trainstop->edge",                  GNE_TAG_TRANSHIP_TRAINSTOP_EDGE },
-    { "tranship: trainstop->taz",                   GNE_TAG_TRANSHIP_TRAINSTOP_TAZ },
-    { "tranship: trainstop->junction",              GNE_TAG_TRANSHIP_TRAINSTOP_JUNCTION },
     { "tranship: trainstop->busstop",               GNE_TAG_TRANSHIP_TRAINSTOP_BUSSTOP },
     { "tranship: trainstop->trainstop",             GNE_TAG_TRANSHIP_TRAINSTOP_TRAINSTOP },
     { "tranship: trainstop->containerstop",         GNE_TAG_TRANSHIP_TRAINSTOP_CONTAINERSTOP },
     { "tranship: trainstop->chargingstation",       GNE_TAG_TRANSHIP_TRAINSTOP_CHARGINGSTATION },
     { "tranship: trainstop->parkingarea",           GNE_TAG_TRANSHIP_TRAINSTOP_PARKINGAREA },
     { "tranship: containerstop->edge",              GNE_TAG_TRANSHIP_CONTAINERSTOP_EDGE },
-    { "tranship: containerstop->taz",               GNE_TAG_TRANSHIP_CONTAINERSTOP_TAZ },
-    { "tranship: containerstop->junction",          GNE_TAG_TRANSHIP_CONTAINERSTOP_JUNCTION },
     { "tranship: containerstop->busstop",           GNE_TAG_TRANSHIP_CONTAINERSTOP_BUSSTOP },
     { "tranship: containerstop->trainstop",         GNE_TAG_TRANSHIP_CONTAINERSTOP_TRAINSTOP },
     { "tranship: containerstop->containerstop",     GNE_TAG_TRANSHIP_CONTAINERSTOP_CONTAINERSTOP },
     { "tranship: containerstop->chargingstation",   GNE_TAG_TRANSHIP_CONTAINERSTOP_CHARGINGSTATION },
     { "tranship: containerstop->parkingarea",       GNE_TAG_TRANSHIP_CONTAINERSTOP_PARKINGAREA },
     { "tranship: chargingstation->edge",            GNE_TAG_TRANSHIP_CHARGINGSTATION_EDGE },
-    { "tranship: chargingstation->taz",             GNE_TAG_TRANSHIP_CHARGINGSTATION_TAZ },
-    { "tranship: chargingstation->junction",        GNE_TAG_TRANSHIP_CHARGINGSTATION_JUNCTION },
     { "tranship: chargingstation->busstop",         GNE_TAG_TRANSHIP_CHARGINGSTATION_BUSSTOP },
     { "tranship: chargingstation->trainstop",       GNE_TAG_TRANSHIP_CHARGINGSTATION_TRAINSTOP },
     { "tranship: chargingstation->containestop",    GNE_TAG_TRANSHIP_CHARGINGSTATION_CONTAINERSTOP },
     { "tranship: chargingstation->chargingstation", GNE_TAG_TRANSHIP_CHARGINGSTATION_CHARGINGSTATION },
     { "tranship: chargingstation->parkingarea",     GNE_TAG_TRANSHIP_CHARGINGSTATION_PARKINGAREA },
     { "tranship: parkingarea->edge",                GNE_TAG_TRANSHIP_PARKINGAREA_EDGE },
-    { "tranship: parkingarea->taz",                 GNE_TAG_TRANSHIP_PARKINGAREA_TAZ },
-    { "tranship: parkingarea->junction",            GNE_TAG_TRANSHIP_PARKINGAREA_JUNCTION },
     { "tranship: parkingarea->busstop",             GNE_TAG_TRANSHIP_PARKINGAREA_BUSSTOP },
     { "tranship: parkingarea->trainstop",           GNE_TAG_TRANSHIP_PARKINGAREA_TRAINSTOP },
     { "tranship: parkingarea->containerstop",       GNE_TAG_TRANSHIP_PARKINGAREA_CONTAINERSTOP },
@@ -745,6 +668,9 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::attrs[] = {
     { "entryTime",              SUMO_ATTR_ENTRYTIME },
     { "eventTime",              SUMO_ATTR_EVENTTIME },
     { "blockTime",              SUMO_ATTR_BLOCKTIME },
+    { "tag",                    SUMO_ATTR_TAG },
+    { "overlapDensity",         SUMO_ATTR_OVERLAPDENSITY },
+    { "flow",                   SUMO_ATTR_FLOW },
     // Edge
     { "id",                     SUMO_ATTR_ID },
     { "refId",                  SUMO_ATTR_REFID },
@@ -763,6 +689,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::attrs[] = {
     { "remove",                 SUMO_ATTR_REMOVE },
     { "length",                 SUMO_ATTR_LENGTH },
     { "bidi",                   SUMO_ATTR_BIDI },
+    { "routingType",            SUMO_ATTR_ROUTINGTYPE },
     // Split
     { "idBefore",               SUMO_ATTR_ID_BEFORE },
     { "idAfter",                SUMO_ATTR_ID_AFTER },
@@ -851,6 +778,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::attrs[] = {
     { "wireClampLaneEnd",       SUMO_ATTR_OVERHEAD_WIRECLAMP_LANEEND },
     // Charging Station
     { "power",                  SUMO_ATTR_CHARGINGPOWER },
+    { "totalPower",             SUMO_ATTR_TOTALPOWER },
     { "efficiency",             SUMO_ATTR_EFFICIENCY },
     { "chargeInTransit",        SUMO_ATTR_CHARGEINTRANSIT },
     { "chargeDelay",            SUMO_ATTR_CHARGEDELAY},
@@ -1009,6 +937,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::attrs[] = {
     { "lcSpeedGainUrgency",         SUMO_ATTR_LCA_SPEEDGAIN_URGENCY },
     { "lcCooperativeRoundabout",    SUMO_ATTR_LCA_COOPERATIVE_ROUNDABOUT },
     { "lcCooperativeSpeed",         SUMO_ATTR_LCA_COOPERATIVE_SPEED },
+    { "lcCooperativeHelpTime",      SUMO_ATTR_LCA_COOPERATIVE_HELPTIME },
     { "lcMaxSpeedLatStanding",      SUMO_ATTR_LCA_MAXSPEEDLATSTANDING },
     { "lcMaxSpeedLatFactor",        SUMO_ATTR_LCA_MAXSPEEDLATFACTOR },
     { "lcMaxDistLatStanding",       SUMO_ATTR_LCA_MAXDISTLATSTANDING },
@@ -1116,6 +1045,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::attrs[] = {
     { "indirect",               SUMO_ATTR_INDIRECT },
     { "rightOfWay",             SUMO_ATTR_RIGHT_OF_WAY },
     { "fringe",                 SUMO_ATTR_FRINGE },
+    { "roundabout",             SUMO_ATTR_ROUNDABOUT },
     { "color",                  SUMO_ATTR_COLOR },
     { "dir",                    SUMO_ATTR_DIR },
     { "state",                  SUMO_ATTR_STATE },
@@ -1327,6 +1257,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::attrs[] = {
     { "main",                   SUMO_ATTR_MAIN },
     { "siding",                 SUMO_ATTR_SIDING },
     { "minSaving",              SUMO_ATTR_MINSAVING },
+    { "defer",                  SUMO_ATTR_DEFER },
     { "limit",                  SUMO_ATTR_LIMIT },
     { "active",                 SUMO_ATTR_ACTIVE },
     { "arrivalTime",            SUMO_ATTR_ARRIVALTIME },
@@ -1392,13 +1323,12 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::attrs[] = {
     { "parameters",                         GNE_ATTR_PARAMETERS },
     { "flowParameter",                      GNE_ATTR_FLOWPARAMETERS },
     { "defaultVTypeModified",               GNE_ATTR_DEFAULT_VTYPE_MODIFIED },
+    { "defaultProbability",                 GNE_ATTR_DEFAULT_PROBABILITY },
     { "centerView",                         GNE_ATTR_CENTER_AFTER_CREATION },
     { "opposite",                           GNE_ATTR_OPPOSITE },
     { "shiftLaneIndex",                     GNE_ATTR_SHIFTLANEINDEX },
     { "stopOffset",                         GNE_ATTR_STOPOFFSET },
     { "stopOException",                     GNE_ATTR_STOPOEXCEPTION },
-    { "routeDist.",                         GNE_ATTR_ROUTE_DISTRIBUTION },
-    { "typeDist.",                          GNE_ATTR_VTYPE_DISTRIBUTION },
     { "poisson",                            GNE_ATTR_POISSON },
     { "stopIndex",                          GNE_ATTR_STOPINDEX },
     { "pathStopIndex",                      GNE_ATTR_PATHSTOPINDEX },
@@ -1413,10 +1343,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::attrs[] = {
     { "size",                               GNE_ATTR_SIZE },
     { "forceSize",                          GNE_ATTR_FORCESIZE },
     { "laneLength",                         GNE_ATTR_LANELENGTH },
-    { "additionalFile",                     GNE_ATTR_ADDITIONAL_FILE },
-    { "routeFile",                          GNE_ATTR_DEMAND_FILE },
-    { "dataFile",                           GNE_ATTR_DATA_FILE },
-    { "meanDataFile",                       GNE_ATTR_MEANDATA_FILE },
+    { "saveFile",                           GNE_ATTR_SAVEFILE },
     // mapped to additional elements on writing
     { "fromBusStop",                        GNE_ATTR_FROM_BUSSTOP },
     { "fromTrainStop",                      GNE_ATTR_FROM_TRAINSTOP },
@@ -1427,8 +1354,8 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::attrs[] = {
     { "isRoundabout",                       GNE_ATTR_IS_ROUNDABOUT },
     { "frontElement",                       GNE_ATTR_FRONTELEMENT },
     { "edgesWithin",                        GNE_ATTR_EDGES_WITHIN },
+    { "noCommonAttributes",                 GNE_ATTR_NOCOMMON },
     // 'all' is a reserved keyword when configuring attribute filters and must not occur as an attribute name
-    { "noCommonAttributes",                GNE_ATTR_NOCOMMON },
 
     { "carriageLength",     SUMO_ATTR_CARRIAGE_LENGTH },
     { "locomotiveLength",   SUMO_ATTR_LOCOMOTIVE_LENGTH },
@@ -1451,6 +1378,13 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::attrs[] = {
     { "driverState",       SUMO_ATTR_RNG_DRIVERSTATE },
     // @}
 
+    // @name further state saving attributes
+    // @{
+    { "bikeSpeed",         SUMO_ATTR_BIKESPEED },
+    { "pastSpeed",         SUMO_ATTR_PASTSPEED },
+    { "pastBikeSpeed",     SUMO_ATTR_PASTBIKESPEED },
+    // @}
+
     //@name meso edge type attributes
     // @{
     { "tauff",             SUMO_ATTR_MESO_TAUFF },
@@ -1470,6 +1404,7 @@ SequentialStringBijection::Entry SUMOXMLDefinitions::attrs[] = {
 
 
 const std::string SUMO_PARAM_ORIGID("origId");
+const std::string SUMO_PARAM_REMOVED_NODES("removedNodeIds");
 
 
 StringBijection<SumoXMLNodeType>::Entry SUMOXMLDefinitions::sumoNodeTypeValues[] = {
@@ -1512,7 +1447,7 @@ StringBijection<LaneSpreadFunction>::Entry SUMOXMLDefinitions::laneSpreadFunctio
 StringBijection<ParkingType>::Entry SUMOXMLDefinitions::parkingTypeValues[] = {
     {"0",              ParkingType::ONROAD },   // default: park on the street
     {"1",              ParkingType::OFFROAD },    // parking off the street
-    {"opportunistic",  ParkingType::OPPORTUNISTIC } // park of the street if there is an opportunity for it
+    {"opportunistic",  ParkingType::OPPORTUNISTIC } // park off the street if there is an opportunity for it
 };
 
 StringBijection<ChargeType>::Entry SUMOXMLDefinitions::chargeTypeValues[] = {
@@ -1532,6 +1467,12 @@ StringBijection<FringeType>::Entry SUMOXMLDefinitions::fringeTypeValuesInitializ
     {"outer",   FringeType::OUTER },
     {"inner",   FringeType::INNER },
     {"default", FringeType::DEFAULT } // default (must be the last one)
+};
+
+StringBijection<RoundaboutType>::Entry SUMOXMLDefinitions::roundaboutTypeValuesInitializer[] = {
+    {"1",       RoundaboutType::YES },
+    {"0",       RoundaboutType::NO },
+    {"default", RoundaboutType::DEFAULT } // default (must be the last one)
 };
 
 StringBijection<PersonMode>::Entry SUMOXMLDefinitions::personModeValuesInitializer[] = {
@@ -1715,165 +1656,173 @@ StringBijection<ReferencePosition>::Entry SUMOXMLDefinitions::referencePositionV
     {"center",  ReferencePosition::CENTER} //< must be the last one
 };
 
+StringBijection<MeanDataType>::Entry SUMOXMLDefinitions::meanDataTypeValues[] = {
+    {"traffic",     MeanDataType::TRAFFIC},
+    {"emissions",   MeanDataType::EMISSIONS},
+    {"harmonoise",  MeanDataType::HARMONOISE},
+    {"amitran",     MeanDataType::AMITRAN},
+    {"",            MeanDataType::DEFAULT} //< must be the last one
+};
+
 StringBijection<XMLFileExtension>::Entry SUMOXMLDefinitions::XMLFileExtensionValues[] = {
-    {TL("XML files (*.xml, *.xml.gz)"), XMLFileExtension::XML},
-    {TL("All files (*)"),               XMLFileExtension::ALL} //< must be the last one
+    {TL("XML files") + std::string(" (*.xml,*.xml.gz)"),    XMLFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                 XMLFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<TXTFileExtension>::Entry SUMOXMLDefinitions::TXTFileExtensionValues[] = {
-    {TL("Plain text files (*.txt)"),    TXTFileExtension::TXT},
-    {TL("All files (*)"),               TXTFileExtension::ALL} //< must be the last one
+    {TL("Plain text files") + std::string(" (*.txt)"),  TXTFileExtension::TXT},
+    {TL("All files") + std::string(" (*)"),             TXTFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<CSVFileExtension>::Entry SUMOXMLDefinitions::CSVFileExtensionValues[] = {
-    {TL("CSV files (*.txt)"),   CSVFileExtension::CSV},
-    {TL("All files (*)"),       CSVFileExtension::ALL} //< must be the last one
+    {TL("CSV files") + std::string(" (*.csv)"), CSVFileExtension::CSV},
+    {TL("All files") + std::string(" (*)"),     CSVFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<OSGFileExtension>::Entry SUMOXMLDefinitions::OSGFileExtensionValues[] = {
-    {TL("Open scene graph  files (*.osg)"), OSGFileExtension::OSG},
-    {TL("All files (*)"),                   OSGFileExtension::ALL} //< must be the last one
+    {TL("Open scene graph files") + std::string(" (*.osg)"),    OSGFileExtension::OSG},
+    {TL("All files") + std::string(" (*)"),                     OSGFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<ImageFileExtension>::Entry SUMOXMLDefinitions::imageFileExtensionValues[] = {
-    {TL("All Image Files (*.gif,*.bmp,*.xpm,*.pcx,*.ico,*.rgb,*.xbm,*.tga,*.png,*.jpg,*.jpeg,*.tif,*.tiff,*.ps,*.eps,*.pdf,*.svg,*.tex,*.pgf)"),    ImageFileExtension::IMG},
-    {TL("GIF Image (*.gif)"),                                                                                                                       ImageFileExtension::GIF},
-    {TL("BMP Image (*.bmp)"),                                                                                                                       ImageFileExtension::BMP},
-    {TL("XPM Image (*.xpm)"),                                                                                                                       ImageFileExtension::XPM},
-    {TL("PCX Image (*.pcx)"),                                                                                                                       ImageFileExtension::PCX},
-    {TL("ICO Image (*.ico)"),                                                                                                                       ImageFileExtension::ICO},
-    {TL("RGB Image (*.rgb)"),                                                                                                                       ImageFileExtension::RGB},
-    {TL("XBM Image (*.xbm)"),                                                                                                                       ImageFileExtension::XBM},
-    {TL("TARGA Image (*.tga)"),                                                                                                                     ImageFileExtension::TGA},
-    {TL("PNG Image (*.png)"),                                                                                                                       ImageFileExtension::PNG},
-    {TL("JPEG Image (*.jpg,*.jpeg)"),                                                                                                               ImageFileExtension::JPG},
-    {TL("TIFF Image (*.tif,*.tiff)"),                                                                                                               ImageFileExtension::TIF},
-    {TL("Postscript (*.ps)"),                                                                                                                       ImageFileExtension::PS},
-    {TL("Encapsulated Postscript (*.eps)"),                                                                                                         ImageFileExtension::EPS},
-    {TL("Portable Document Format (*.pdf)"),                                                                                                        ImageFileExtension::PDF},
-    {TL("Scalable Vector Graphics (*.svg)"),                                                                                                        ImageFileExtension::SVG},
-    {TL("LATEX text strings (*.tex)"),                                                                                                              ImageFileExtension::TEX},
-    {TL("Portable LaTeX Graphics (*.pgf)"),                                                                                                         ImageFileExtension::PGF},
-    {TL("All Files (*)"),                                                                                                                           ImageFileExtension::ALL} //< must be the last one
+    {TL("All Image Files") + std::string(" (*.gif,*.bmp,*.xpm,*.pcx,*.ico,*.rgb,*.xbm,*.tga,*.png,*.jpg,*.jpeg,*.tif,*.tiff,*.ps,*.eps,*.pdf,*.svg,*.tex,*.pgf)"),  ImageFileExtension::IMG},
+    {TL("GIF Image") + std::string(" (*.gif)"),                                                                                                                     ImageFileExtension::GIF},
+    {TL("BMP Image") + std::string(" (*.bmp)"),                                                                                                                     ImageFileExtension::BMP},
+    {TL("XPM Image") + std::string(" (*.xpm)"),                                                                                                                     ImageFileExtension::XPM},
+    {TL("PCX Image") + std::string(" (*.pcx)"),                                                                                                                     ImageFileExtension::PCX},
+    {TL("ICO Image") + std::string(" (*.ico)"),                                                                                                                     ImageFileExtension::ICO},
+    {TL("RGB Image") + std::string(" (*.rgb)"),                                                                                                                     ImageFileExtension::RGB},
+    {TL("XBM Image") + std::string(" (*.xbm)"),                                                                                                                     ImageFileExtension::XBM},
+    {TL("TARGA Image") + std::string(" (*.tga)"),                                                                                                                   ImageFileExtension::TGA},
+    {TL("PNG Image") + std::string(" (*.png)"),                                                                                                                     ImageFileExtension::PNG},
+    {TL("JPEG Image") + std::string(" (*.jpg,*.jpeg)"),                                                                                                             ImageFileExtension::JPG},
+    {TL("TIFF Image") + std::string(" (*.tif,*.tiff)"),                                                                                                             ImageFileExtension::TIF},
+    {TL("Postscript") + std::string(" (*.ps)"),                                                                                                                     ImageFileExtension::PS},
+    {TL("Encapsulated Postscript") + std::string(" (*.eps)"),                                                                                                       ImageFileExtension::EPS},
+    {TL("Portable Document Format") + std::string(" (*.pdf)"),                                                                                                      ImageFileExtension::PDF},
+    {TL("Scalable Vector Graphics") + std::string(" (*.svg)"),                                                                                                      ImageFileExtension::SVG},
+    {TL("LATEX text strings") + std::string(" (*.tex)"),                                                                                                            ImageFileExtension::TEX},
+    {TL("Portable LaTeX Graphics") + std::string(" (*.pgf)"),                                                                                                       ImageFileExtension::PGF},
+    {TL("All Files") + std::string(" (*)"),                                                                                                                         ImageFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<ImageVideoFileExtension>::Entry SUMOXMLDefinitions::imageVideoFileExtensionValues[] = {
-    {TL("All Image and Video Files (*.gif,*.bmp,*.xpm,*.pcx,*.ico,*.rgb,*.xbm,*.tga,*.png,*.jpg,*.jpeg,*.tif,*.tiff,*.ps,*.eps,*.pdf,*.svg,*.tex,*.pgf,*.h264,*.hevc,*.mp4)"),  ImageVideoFileExtension::IMG},
-    {TL("All Video Files (*.h264,*.hevc,*.mp4)"),                                                                                                                               ImageVideoFileExtension::VIDEO},
-    {TL("G264 Video (*.h264)"),                                                                                                                                                 ImageVideoFileExtension::H264},
-    {TL("HEVC Video (*.hevc)"),                                                                                                                                                 ImageVideoFileExtension::HEVC},
-    {TL("MP4 Video (*.mp4)"),                                                                                                                                                   ImageVideoFileExtension::MP4},
-    {TL("GIF Image (*.gif)"),                                                                                                                                                   ImageVideoFileExtension::GIF},
-    {TL("BMP Image (*.bmp)"),                                                                                                                                                   ImageVideoFileExtension::BMP},
-    {TL("XPM Image (*.xpm)"),                                                                                                                                                   ImageVideoFileExtension::XPM},
-    {TL("PCX Image (*.pcx)"),                                                                                                                                                   ImageVideoFileExtension::PCX},
-    {TL("ICO Image (*.ico)"),                                                                                                                                                   ImageVideoFileExtension::ICO},
-    {TL("RGB Image (*.rgb)"),                                                                                                                                                   ImageVideoFileExtension::RGB},
-    {TL("XBM Image (*.xbm)"),                                                                                                                                                   ImageVideoFileExtension::XBM},
-    {TL("TARGA Image (*.tga)"),                                                                                                                                                 ImageVideoFileExtension::TGA},
-    {TL("PNG Image (*.png)"),                                                                                                                                                   ImageVideoFileExtension::PNG},
-    {TL("JPEG Image (*.jpg,*.jpeg)"),                                                                                                                                           ImageVideoFileExtension::JPG},
-    {TL("TIFF Image (*.tif,*.tiff)"),                                                                                                                                           ImageVideoFileExtension::TIF},
-    {TL("Postscript (*.ps)"),                                                                                                                                                   ImageVideoFileExtension::PS},
-    {TL("Encapsulated Postscript (*.eps)"),                                                                                                                                     ImageVideoFileExtension::EPS},
-    {TL("Portable Document Format (*.pdf)"),                                                                                                                                    ImageVideoFileExtension::PDF},
-    {TL("Scalable Vector Graphics (*.svg)"),                                                                                                                                    ImageVideoFileExtension::SVG},
-    {TL("LATEX text strings (*.tex)"),                                                                                                                                          ImageVideoFileExtension::TEX},
-    {TL("Portable LaTeX Graphics (*.pgf)"),                                                                                                                                     ImageVideoFileExtension::PGF},
-    {TL("All Files (*)"),                                                                                                                                                       ImageVideoFileExtension::ALL} //< must be the last one
+    {TL("All Image and Video Files") + std::string(" (*.gif,*.bmp,*.xpm,*.pcx,*.ico,*.rgb,*.xbm,*.tga,*.png,*.jpg,*.jpeg,*.tif,*.tiff,*.ps,*.eps,*.pdf,*.svg,*.tex,*.pgf,*.h264,*.hevc,*.mp4)"),    ImageVideoFileExtension::IMG},
+    {TL("All Video Files") + std::string(" (*.h264,*.hevc,*.mp4)"),                                                                                                                                 ImageVideoFileExtension::VIDEO},
+    {TL("G264 Video") + std::string(" (*.h264)"),                                                                                                                                                   ImageVideoFileExtension::H264},
+    {TL("HEVC Video") + std::string(" (*.hevc)"),                                                                                                                                                   ImageVideoFileExtension::HEVC},
+    {TL("MP4 Video") + std::string(" (*.mp4)"),                                                                                                                                                     ImageVideoFileExtension::MP4},
+    {TL("GIF Image") + std::string(" (*.gif)"),                                                                                                                                                     ImageVideoFileExtension::GIF},
+    {TL("BMP Image") + std::string(" (*.bmp)"),                                                                                                                                                     ImageVideoFileExtension::BMP},
+    {TL("XPM Image") + std::string(" (*.xpm)"),                                                                                                                                                     ImageVideoFileExtension::XPM},
+    {TL("PCX Image") + std::string(" (*.pcx)"),                                                                                                                                                     ImageVideoFileExtension::PCX},
+    {TL("ICO Image") + std::string("") + std::string(" (*.ico)"),                                                                                                                                   ImageVideoFileExtension::ICO},
+    {TL("RGB Image") + std::string(" (*.rgb)"),                                                                                                                                                     ImageVideoFileExtension::RGB},
+    {TL("XBM Image") + std::string(" (*.xbm)"),                                                                                                                                                     ImageVideoFileExtension::XBM},
+    {TL("TARGA Image") + std::string(" (*.tga)"),                                                                                                                                                   ImageVideoFileExtension::TGA},
+    {TL("PNG Image") + std::string(" (*.png)"),                                                                                                                                                     ImageVideoFileExtension::PNG},
+    {TL("JPEG Image") + std::string(" (*.jpg,*.jpeg)"),                                                                                                                                             ImageVideoFileExtension::JPG},
+    {TL("TIFF Image") + std::string(" (*.tif,*.tiff)"),                                                                                                                                             ImageVideoFileExtension::TIF},
+    {TL("Postscript") + std::string(" (*.ps)"),                                                                                                                                                     ImageVideoFileExtension::PS},
+    {TL("Encapsulated Postscript") + std::string(" (*.eps)"),                                                                                                                                       ImageVideoFileExtension::EPS},
+    {TL("Portable Document Format") + std::string(" (*.pdf)"),                                                                                                                                      ImageVideoFileExtension::PDF},
+    {TL("Scalable Vector Graphics") + std::string(" (*.svg)"),                                                                                                                                      ImageVideoFileExtension::SVG},
+    {TL("LATEX text strings") + std::string(" (*.tex)"),                                                                                                                                            ImageVideoFileExtension::TEX},
+    {TL("Portable") + std::string(" LaTeX Graphics (*.pgf)"),                                                                                                                                       ImageVideoFileExtension::PGF},
+    {TL("All Files") + std::string(" (*)"),                                                                                                                                                         ImageVideoFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<OutputFileExtension>::Entry SUMOXMLDefinitions::outputFileExtensionValues[] = {
-    {TL("XML files (*.xml)"),           OutputFileExtension::XML},
-    {TL("Plain text files (*.txt)"),    OutputFileExtension::TXT},
-    {TL("All files (*)"),               OutputFileExtension::ALL} //< must be the last one
+    {TL("XML files") + std::string(" (*.xml,*.xml.gz)"),    OutputFileExtension::XML},
+    {TL("Plain text") + std::string(" files (*.txt)"),      OutputFileExtension::TXT},
+    {TL("All files") + std::string(" (*)"),                 OutputFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<ViewSettingsFileExtension>::Entry SUMOXMLDefinitions::viewSettingsFileExtensionValues[] = {
-    {TL("View settings files (*.xml, *.xml.gz)"),   ViewSettingsFileExtension::XML},
-    {TL("All files (*)"),                           ViewSettingsFileExtension::ALL} //< must be the last one
+    {TL("View settings files") + std::string(" (*.xml,*.xml.gz)"),  ViewSettingsFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                         ViewSettingsFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<StateFileExtension>::Entry SUMOXMLDefinitions::stateFileExtensionValues[] = {
-    {TL("State GZipped XML files (*.xml.gz)"),  StateFileExtension::XML_GZ},
-    {TL("XML files (*.xml)"),                   StateFileExtension::XML},
-    {TL("All files (*)"),                       StateFileExtension::ALL} //< must be the last one
+    {TL("State GZipped XML files") + std::string(" (*.xml.gz)"),    StateFileExtension::XML_GZ},
+    {TL("XML files") + std::string(" (*.xml)"),                     StateFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                         StateFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<SumoConfigFileExtension>::Entry SUMOXMLDefinitions::sumoConfigFileExtensionValues[] = {
-    {TL("Sumo config files (*.sumocfg)"),   SumoConfigFileExtension::SUMOCONF},
-    {TL("XML files (*.xml)"),               SumoConfigFileExtension::XML},
-    {TL("All files (*)"),                   SumoConfigFileExtension::ALL} //< must be the last one
+    {TL("Sumo config") + std::string(" files (*.sumocfg)"), SumoConfigFileExtension::SUMOCONF},
+    {TL("XML files") + std::string(" (*.xml)"),              SumoConfigFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                 SumoConfigFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<NeteditConfigFileExtension>::Entry SUMOXMLDefinitions::neteditConfigFileExtensionValues[] = {
-    {TL("Netedit config files (*.netecfg)"),    NeteditConfigFileExtension::NETECFG},
-    {TL("XML files (*.xml)"),                   NeteditConfigFileExtension::XML},
-    {TL("All files (*)"),                       NeteditConfigFileExtension::ALL} //< must be the last one
+    {TL("Netedit config files") + std::string(" (*.netecfg)"),  NeteditConfigFileExtension::NETECFG},
+    {TL("XML files") + std::string(" (*.xml)"),                  NeteditConfigFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                     NeteditConfigFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<NetconvertConfigFileExtension>::Entry SUMOXMLDefinitions::netconvertConfigFileExtensionValues[] = {
-    {TL("Netconvert config files (*.netccfg)"), NetconvertConfigFileExtension::NETCCFG},
-    {TL("XML files (*.xml)"),                   NetconvertConfigFileExtension::XML},
-    {TL("All files (*)"),                       NetconvertConfigFileExtension::ALL} //< must be the last one
+    {TL("Netconvert config files") + std::string(" (*.netccfg)"),   NetconvertConfigFileExtension::NETCCFG},
+    {TL("XML files") + std::string(" (*.xml"),                      NetconvertConfigFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                         NetconvertConfigFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<OSMFileExtension>::Entry SUMOXMLDefinitions::osmFileExtensionValues[] = {
-    {TL("OSM network files (*.osm, *.osm.gz)"), OSMFileExtension::OSM},
-    {TL("XML files (*.xml, *.xml.gz)"),         OSMFileExtension::XML},
-    {TL("All files (*)"),                       OSMFileExtension::ALL} //< must be the last one
+    {TL("OSM network files") + std::string(" (*.osm,*.osm.gz)"),    OSMFileExtension::OSM},
+    {TL("XML files") + std::string(" (*.xml,*.xml.gz)"),            OSMFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                         OSMFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<NetFileExtension>::Entry SUMOXMLDefinitions::netFileExtensionValues[] = {
-    {TL("SUMO network files (*.net.xml, *.net.xml.gz)"),    NetFileExtension::NET_XML},
-    {TL("XML files (*.xml, *.xml.gz)"),                     NetFileExtension::XML},
-    {TL("All files (*)"),                                   NetFileExtension::ALL} //< must be the last one
+    {TL("SUMO network files") + std::string(" (*.net.xml,*.net.xml.gz)"),   NetFileExtension::NET_XML},
+    {TL("XML files") + std::string(" (*.xml,*.xml.gz)"),                    NetFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                                 NetFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<TLSFileExtension>::Entry SUMOXMLDefinitions::TLSFileExtensionValues[] = {
-    {TL("TLS files (*.ttl.xml, *.ttl.xml.gz)"), TLSFileExtension::TTL_XML},
-    {TL("XML files (*.xml, *.xml.gz)"),         TLSFileExtension::XML},
-    {TL("All files (*)"),                       TLSFileExtension::ALL} //< must be the last one
+    {TL("TLS files") + std::string(" (*.tll.xml,*.tll.xml.gz)"),    TLSFileExtension::TTL_XML},
+    {TL("XML files") + std::string(" (*.xml,*.xml.gz)"),            TLSFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                         TLSFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<JunctionFileExtension>::Entry SUMOXMLDefinitions::junctionFileExtensionValues[] = {
-    {TL("Junction files (*.nod.xml, *.nod.xml.gz)"),    JunctionFileExtension::NOD_XML},
-    {TL("XML files (*.xml, *.xml.gz)"),                 JunctionFileExtension::XML},
-    {TL("All files (*)"),                               JunctionFileExtension::ALL} //< must be the last one
+    {TL("Junction files") + std::string(" (*.nod.xml,*.nod.xml.gz)"),   JunctionFileExtension::NOD_XML},
+    {TL("XML files") + std::string(" (*.xml,*.xml.gz)"),                JunctionFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                             JunctionFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<EdgeTypeFileExtension>::Entry SUMOXMLDefinitions::edgeTypeFileExtensionValues[] = {
-    {TL("Edge type files (*.ttl.xml, *.ttl.xml.gz)"),   EdgeTypeFileExtension::TYP_XML},
-    {TL("XML files (*.xml, *.xml.gz)"),                 EdgeTypeFileExtension::XML},
-    {TL("All files (*)"),                               EdgeTypeFileExtension::ALL} //< must be the last one
+    {TL("Edge type files") + std::string(" (*.typ.xml,*.typ.xml.gz)"),  EdgeTypeFileExtension::TYP_XML},
+    {TL("XML files") + std::string(" (*.xml,*.xml.gz)"),                EdgeTypeFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                             EdgeTypeFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<AdditionalFileExtension>::Entry SUMOXMLDefinitions::additionalFileExtensionValues[] = {
-    {TL("Additional files (*.add.xml, *.add.xml.gz)"),  AdditionalFileExtension::ADD_XML},
-    {TL("XML files (*.xml, *.xml.gz)"),                 AdditionalFileExtension::XML},
-    {TL("All files (*)"),                               AdditionalFileExtension::ALL} //< must be the last one
+    {TL("Additional files") + std::string(" (*.add.xml,*.add.xml.gz)"), AdditionalFileExtension::ADD_XML},
+    {TL("XML files") + std::string(" (*.xml,*.xml.gz)"),                AdditionalFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                             AdditionalFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<ShapesFileExtension>::Entry SUMOXMLDefinitions::shapesFileExtensionValues[] = {
-    {TL("XML files (*.xml, *.xml.gz)"),                 ShapesFileExtension::XML},
-    {TL("All files (*)"),                               ShapesFileExtension::ALL} //< must be the last one
+    {TL("XML files") + std::string(" (*.xml,*.xml.gz)"),    ShapesFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                 ShapesFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<RouteFileExtension>::Entry SUMOXMLDefinitions::routeFileExtensionsValues[] = {
-    {TL("Route files (*.rou.xml, *.rou.xml.gz)"),   RouteFileExtension::ROU_XML},
-    {TL("XML files (*.xml, *.xml.gz)"),             RouteFileExtension::XML},
-    {TL("All files (*)"),                           RouteFileExtension::ALL} //< must be the last one
+    {TL("Route files") + std::string(" (*.rou.xml,*.rou.xml.gz)"),  RouteFileExtension::ROU_XML},
+    {TL("XML files") + std::string(" (*.xml,*.xml.gz)"),            RouteFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                         RouteFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<EdgeDataFileExtension>::Entry SUMOXMLDefinitions::edgeDataFileExtensionsValues[] = {
-    {TL("Edge data files (*.xml, *.xml.gz)"),   EdgeDataFileExtension::XML},
-    {TL("All files (*)"),                       EdgeDataFileExtension::ALL} //< must be the last one
+    {TL("Edge data files") + std::string(" (*.xml,*.xml.gz)"),  EdgeDataFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                     EdgeDataFileExtension::ALL} //< must be the last one
 };
 
 StringBijection<MeanDataFileExtension>::Entry SUMOXMLDefinitions::meanDataFileExtensionsValues[] = {
-    {TL("Mean data files (*.add.xml, *.add.xml.gz)"),   MeanDataFileExtension::ADD},
-    {TL("XML files (*.xml, *.xml.gz)"),                 MeanDataFileExtension::XML},
-    {TL("All files (*)"),                               MeanDataFileExtension::ALL} //< must be the last one
+    {TL("Mean data files") + std::string(" (*.add.xml,*.add.xml.gz)"),  MeanDataFileExtension::ADD},
+    {TL("XML files") + std::string(" (*.xml,*.xml.gz)"),                MeanDataFileExtension::XML},
+    {TL("All files") + std::string(" (*)"),                             MeanDataFileExtension::ALL} //< must be the last one
 };
 
 SequentialStringBijection SUMOXMLDefinitions::Tags(
@@ -1902,6 +1851,9 @@ StringBijection<RightOfWay> SUMOXMLDefinitions::RightOfWayValues(
 
 StringBijection<FringeType> SUMOXMLDefinitions::FringeTypeValues(
     SUMOXMLDefinitions::fringeTypeValuesInitializer, FringeType::DEFAULT);
+
+StringBijection<RoundaboutType> SUMOXMLDefinitions::RoundaboutTypeValues(
+    SUMOXMLDefinitions::roundaboutTypeValuesInitializer, RoundaboutType::DEFAULT);
 
 StringBijection<PersonMode> SUMOXMLDefinitions::PersonModeValues(
     SUMOXMLDefinitions::personModeValuesInitializer, PersonMode::PUBLIC);
@@ -1941,6 +1893,9 @@ StringBijection<ExcludeEmpty> SUMOXMLDefinitions::ExcludeEmptys(
 
 StringBijection<ReferencePosition> SUMOXMLDefinitions::ReferencePositions(
     SUMOXMLDefinitions::referencePositionValues, ReferencePosition::CENTER, false);
+
+StringBijection<MeanDataType> SUMOXMLDefinitions::MeanDataTypes(
+    SUMOXMLDefinitions::meanDataTypeValues, MeanDataType::DEFAULT, false);
 
 StringBijection<XMLFileExtension> SUMOXMLDefinitions::XMLFileExtensions(
     SUMOXMLDefinitions::XMLFileExtensionValues, XMLFileExtension::ALL, false);

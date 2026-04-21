@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2015-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2015-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -336,7 +336,7 @@ def formatBinTemplate(templateStr):
     # replace " with \"
     templateStr = templateStr.replace('"', '\\"')
     # split lines
-    return templateStr.replace("\n", '"\n    "')
+    return templateStr.replace("\n", '"\n    "').replace('""', ') + std::string(')
 
 
 def formatToolTemplate(templateStr):
@@ -371,7 +371,7 @@ def generateTemplate(app, appBin):
         sys.stderr.write("Error when generating template for " + app + ": '%s'" % e)
         template = ""
     # join variable and formatted template
-    return u'const std::string %sTemplate = "%s";\n' % (app, template)
+    return u'const std::string %sTemplate = ("%s");\n' % (app, template)
 
 
 def _collectOutput(procs, toolPaths, failed, verbose, testFailure):
@@ -438,8 +438,8 @@ def checkMod(toolDir, reference):
 
 
 def main():
-    if len(sys.argv) != 3:
-        sys.exit("Arguments: <pathToSumo> <pathToNetgenerate>")
+    if len(sys.argv) != 4:
+        sys.exit("Arguments: <pathToSumo> <pathToNetconvert> <pathToNetgenerate>")
     # get tool dir path (SUMO/tools)
     toolDir = join(dirname(__file__), '..')
     if not os.path.exists("templates.h") or checkMod(toolDir, "templates.h"):
@@ -452,8 +452,10 @@ def main():
             print(u"};\n", file=templateHeaderFile)
             # generate sumo Template
             print(generateTemplate("sumo", sys.argv[1]), file=templateHeaderFile)
+            # generate netconvert Template
+            print(generateTemplate("netconvert", sys.argv[2]), file=templateHeaderFile)
             # generate netgenerate Template
-            print(generateTemplate("netgenerate", sys.argv[2]), file=templateHeaderFile)
+            print(generateTemplate("netgenerate", sys.argv[3]), file=templateHeaderFile)
 
 
 if __name__ == "__main__":

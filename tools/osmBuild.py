@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -31,9 +31,9 @@ vclassRemove = {"passenger": ["--keep-edges.by-vclass", "passenger"],
                 "all": []}
 possibleVClassOptions = '|'.join(vclassRemove.keys())
 
-DEFAULT_NETCONVERT_OPTS = ('--geometry.remove,--roundabouts.guess,--ramps.guess,--junctions.join,'
+DEFAULT_NETCONVERT_OPTS = ('--geometry.remove,--ramps.guess,--junctions.join,'
                            '--tls.guess-signals,--tls.discard-simple,--tls.join,--output.original-names,'
-                           '--junctions.corner-detail,5,--output.street-names')
+                           '--output.street-names')
 
 
 optParser = sumolib.options.ArgumentParser(description="Import a OpenStreetMap file into SUMO")

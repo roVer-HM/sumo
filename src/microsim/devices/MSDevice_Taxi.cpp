@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2013-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -93,6 +93,9 @@ MSDevice_Taxi::insertOptions(OptionsCont& oc) {
 
     oc.doRegister("device.taxi.dispatch-period", new Option_String("60", "TIME"));
     oc.addDescription("device.taxi.dispatch-period", "Taxi Device", TL("The period between successive calls to the dispatcher"));
+
+    oc.doRegister("device.taxi.dispatch-keep-unreachable", new Option_String("3600", "TIME"));
+    oc.addDescription("device.taxi.dispatch-keep-unreachable", "Taxi Device", TL("The time before aborting unreachable reservations"));
 
     oc.doRegister("device.taxi.idle-algorithm", new Option_String("stop"));
     oc.addDescription("device.taxi.idle-algorithm", "Taxi Device", TL("The behavior of idle taxis [stop|randomCircling|taxistand]"));
@@ -297,13 +300,9 @@ MSDevice_Taxi::~MSDevice_Taxi() {
 }
 
 
-SUMOVehicle*
-MSDevice_Taxi::getTaxi() {
-    if (myFleet.size() > 0) {
-        return &myFleet[0]->getHolder();
-    } else {
-        return nullptr;
-    }
+bool
+MSDevice_Taxi::hasFleet() {
+    return myFleet.size() > 0;;
 }
 
 
@@ -325,14 +324,14 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
 #endif
     myLastDispatch = reservations;
     ConstMSEdgeVector tmpEdges;
-    std::vector<SUMOVehicleParameter::Stop> stops;
+    StopParVector stops;
     double lastPos = myHolder.getPositionOnLane();
     const MSEdge* rerouteOrigin = *myHolder.getRerouteOrigin();
     if (isEmpty()) {
         // start fresh from the current edge
         if (myHolder.isStoppedParking()) {
             // parking stop must be ended normally
-            MSStop& stop = myHolder.getNextStop();
+            MSStop& stop = myHolder.getNextStopMutable();
             stop.duration = 0;
             lastPos = stop.pars.endPos;
             if (myHolder.isStoppedTriggered()) {
@@ -621,7 +620,7 @@ MSDevice_Taxi::cancelCustomer(const MSTransportable* t) {
 
 void
 MSDevice_Taxi::prepareStop(ConstMSEdgeVector& edges,
-                           std::vector<SUMOVehicleParameter::Stop>& stops,
+                           StopParVector& stops,
                            double& lastPos, const MSEdge* stopEdge, double stopPos,
                            const MSStoppingPlace* stopPlace,
                            const std::string& action, const Reservation* res, const bool isPickup) {
@@ -753,7 +752,7 @@ MSDevice_Taxi::updateMove(const SUMOTime traveltime, const double travelledDist)
     }
     if (myHolder.isStopped() && (isEmpty() || MSGlobals::gUseMesoSim) && myHolder.getNextStop().endBoarding > myServiceEnd) {
         // limit duration of stop (but only for idling-related stops)
-        myHolder.getNextStop().endBoarding = myServiceEnd;
+        myHolder.getNextStopMutable().endBoarding = myServiceEnd;
     }
 #ifdef DEBUG_DISPATCH
     if (DEBUG_COND && myIsStopped != myHolder.isStopped()) {

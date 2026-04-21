@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -220,6 +220,8 @@ enum {
     MID_HOTKEY_CTRL_SHIFT_O_OPENNETCONVERTFILE,
     /// @brief save SUMOConfig (SUMO AND netedit)
     MID_HOTKEY_CTRL_SHIFT_S_SAVESUMOCONFIG,
+    /// @brief load only the network in sumo-gui/netedit
+    MID_HOTKEY_CTRL_SHIFT_T_OPEN_NET,
 
     /// @}
 
@@ -344,7 +346,7 @@ enum {
 
     /// @brief The loading thread
     ID_LOADTHREAD_EVENT,
-    /// @brief The Simulation execution thread
+    /// @brief The testing thread
     ID_RUNTHREAD_EVENT,
     /// @brief ID for message passing between threads
     ID_THREAD_EVENT,
@@ -717,6 +719,8 @@ enum {
     MID_GNE_TOOLBARFILE_SAVESUMOCONFIG_AS,
     /// @brief save network as
     MID_GNE_TOOLBARFILE_SAVENETWORK_AS,
+    /// @brief save additionals element as
+    MID_GNE_TOOLBARFILE_SAVEADDITIONALELEMENTS_AS,
     /// @brief save additionals unified
     MID_GNE_TOOLBARFILE_SAVEADDITIONALELEMENTS_UNIFIED,
     /// @brief save JuPedSim as
@@ -731,16 +735,22 @@ enum {
     MID_GNE_TOOLBARFILE_SAVEEDGETYPES_AS,
     /// @brief reload edge types
     MID_GNE_TOOLBARFILE_RELOAD_EDGETYPES,
+    /// @brief save demand elements as
+    MID_GNE_TOOLBARFILE_SAVEDEMANDELEMENTS_AS,
     /// @brief save demand elements unified
     MID_GNE_TOOLBARFILE_SAVEDEMANDELEMENTS_UNIFIED,
     /// @brief reload demand elements
     MID_GNE_TOOLBARFILE_RELOAD_DEMANDELEMENTS,
+    /// @brief save data elements as
+    MID_GNE_TOOLBARFILE_SAVEDATAELEMENTS_AS,
     /// @brief save data elements unified
     MID_GNE_TOOLBARFILE_SAVEDATAELEMENTS_UNIFIED,
     /// @brief reload data elements
     MID_GNE_TOOLBARFILE_RELOAD_DATAELEMENTS,
     /// @brief open meanData file
     MID_GNE_TOOLBARFILE_OPENMEANDATAELEMENTS,
+    /// @brief save meanDatas as
+    MID_GNE_TOOLBARFILE_SAVEMEANDATAELEMENTS_AS,
     /// @brief save meanDatas unified
     MID_GNE_TOOLBARFILE_SAVEMEANDATAELEMENTS_UNIFIED,
     /// @brief reload meanDatas
@@ -849,8 +859,60 @@ enum {
     MID_GNE_ADDSELECT_EDGE,
     /// @brief Remove edge from selected items - Menu Entry
     MID_GNE_REMOVESELECT_EDGE,
-    /// @brief lock element
+    /// @brief lock element (general, used if we press directly the menuCommand in the toolbar)
     MID_GNE_LOCK_ELEMENT,
+    /// @brief lock junctions
+    MID_GNE_LOCK_JUNCTION,
+    /// @brief lock edges
+    MID_GNE_LOCK_EDGE,
+    /// @brief lock lanes
+    MID_GNE_LOCK_LANE,
+    /// @brief lock connections
+    MID_GNE_LOCK_CONNECTION,
+    /// @brief lock crossings
+    MID_GNE_LOCK_CROSSING,
+    /// @brief lock walkingareas
+    MID_GNE_LOCK_WALKINGAREA,
+    /// @brief lock additional elements
+    MID_GNE_LOCK_ADDITIONALELEMENT,
+    /// @brief lock wires
+    MID_GNE_LOCK_WIRE,
+    /// @brief lock TAZs
+    MID_GNE_LOCK_TAZ,
+    /// @brief lock polygons
+    MID_GNE_LOCK_POLYGON,
+    /// @brief lock POIs
+    MID_GNE_LOCK_POI,
+    /// @brief lock walkableAreas
+    MID_GNE_LOCK_JPS_WALKABLEAREA,
+    /// @brief lock obstacles
+    MID_GNE_LOCK_JPS_OBSTACLE,
+    /// @brief lock routes
+    MID_GNE_LOCK_ROUTE,
+    /// @brief lock vehicles
+    MID_GNE_LOCK_VEHICLE,
+    /// @brief lock persons
+    MID_GNE_LOCK_PERSON,
+    /// @brief lock personTrips
+    MID_GNE_LOCK_PERSONTRIP,
+    /// @brief lock walks
+    MID_GNE_LOCK_WALK,
+    /// @brief lock rides
+    MID_GNE_LOCK_RIDE,
+    /// @brief lock containers
+    MID_GNE_LOCK_CONTAINER,
+    /// @brief lock transports
+    MID_GNE_LOCK_TRANSPORT,
+    /// @brief lock tranships
+    MID_GNE_LOCK_TRANSHIP,
+    /// @brief lock stops
+    MID_GNE_LOCK_STOP,
+    /// @brief lock edgeDatas
+    MID_GNE_LOCK_EDGEDATA,
+    /// @brief lock edgeRelDatas
+    MID_GNE_LOCK_EDGERELDATA,
+    /// @brief lock TAZRelDatas
+    MID_GNE_LOCK_TAZRELDATA,
     /// @brief lock all element
     MID_GNE_LOCK_ALLELEMENTS,
     /// @brief unlock all element
@@ -1359,8 +1421,14 @@ enum {
     /// @name GNEPOI messages
     /// @{
 
-    /// @brief Transform POI to POILane, and viceversa
-    MID_GNE_POI_TRANSFORM,
+    /// @brief attach POI to lane
+    MID_GNE_POI_ATTACH,
+    /// @brief release POI from lane
+    MID_GNE_POI_RELEASE,
+    /// @brief Transform to POI
+    MID_GNE_POI_TRANSFORM_POI,
+    /// @brief Transform to POI Geo
+    MID_GNE_POI_TRANSFORM_POIGEO,
 
     /// @}
 
@@ -1474,6 +1542,33 @@ enum {
     MID_GNE_BUTTON_ADD,
     /// @brief remove button
     MID_GNE_BUTTON_REMOVE,
+    /// @brief config button (used in GNEFileDialog)
+    MID_GNE_BUTTON_CONFIG,
+    /// @brief copy
+    MID_GNE_BUTTON_COPY,
+    /// @brief report
+    MID_GNE_BUTTON_REPORT,
+
+    /// @}
+
+    /// @name ElementTable messages
+    /// @{
+    /// @brief edit row
+    MID_GNE_ELEMENTTABLE_EDIT,
+    /// @brief remove row
+    MID_GNE_ELEMENTTABLE_REMOVE,
+    /// @brief open dialog element
+    MID_GNE_ELEMENTTABLE_DIALOG_ELEMENT,
+    /// @brief open dialog vClass
+    MID_GNE_ELEMENTTABLE_DIALOG_VCLASS,
+
+    /// @name ElementList messages
+    /// @{
+
+    /// @brief add element in ElementList
+    MID_GNE_ELEMENTLIST_ADD,
+    /// @brief sort elements in ElementList
+    MID_GNE_ELEMENTLIST_SORT,
 
     /// @}
 
@@ -1494,30 +1589,10 @@ enum {
 
     /// @brief select table interval
     MID_GNE_REROUTEDIALOG_TABLE_INTERVAL,
-    /// @brief change table closing lane reroute reroute
-    MID_GNE_REROUTEDIALOG_TABLE_CLOSINGLANEREROUTE,
-    /// @brief change table route closing reroute
-    MID_GNE_REROUTEDIALOG_TABLE_CLOSINGREROUTE,
-    /// @brief change table destination probability reroute
-    MID_GNE_REROUTEDIALOG_TABLE_DESTPROBREROUTE,
-    /// @brief change table route probability reroute
-    MID_GNE_REROUTEDIALOG_TABLE_ROUTEPROBREROUTE,
-    /// @brief change table parkingAreaReroute
-    MID_GNE_REROUTEDIALOG_TABLE_PARKINGAREAREROUTE,
     /// @brief add interval
     MID_GNE_REROUTEDIALOG_ADD_INTERVAL,
     /// @brief sort rerouter intervals
     MID_GNE_REROUTEDIALOG_SORT_INTERVAL,
-    /// @brief add closing lane reroute
-    MID_GNE_REROUTEDIALOG_ADD_CLOSINGLANEREROUTE,
-    /// @brief add closing reroute
-    MID_GNE_REROUTEDIALOG_ADD_CLOSINGREROUTE,
-    /// @brief add destination probability route
-    MID_GNE_REROUTEDIALOG_ADD_DESTPROBREROUTE,
-    /// @brief add route probability route
-    MID_GNE_REROUTEDIALOG_ADD_ROUTEPROBREROUTE,
-    /// @brief add parkingAreaReroute
-    MID_GNE_REROUTEDIALOG_ADD_PARKINGAREAREROUTE,
     /// @brief edit interval
     MID_GNE_REROUTEDIALOG_EDIT_INTERVAL,
 
@@ -1540,19 +1615,19 @@ enum {
 
     /// @}
 
-    /// @name allowDisallow Dialog messages
+    /// @name allow vClasses Dialog messages
     /// @{
 
     /// @brief select/unselect single vehicle
-    MID_GNE_ALLOWDISALLOW_CHANGE,
+    MID_GNE_ALLOWVCLASSES_TOGGLE,
     /// @brief select all vehicles
-    MID_GNE_ALLOWDISALLOW_SELECTALL,
+    MID_GNE_ALLOWVCLASSES_SELECTALL,
     /// @brief unselect all vehicles
-    MID_GNE_ALLOWDISALLOW_UNSELECTALL,
+    MID_GNE_ALLOWVCLASSES_UNSELECTALL,
     /// @brief select only non road vehicles
-    MID_GNE_ALLOWDISALLOW_ONLY_ROAD,
+    MID_GNE_ALLOWVCLASSES_ONLY_ROAD,
     /// @brief select only rail vehicles
-    MID_GNE_ALLOWDISALLOW_ONLY_RAIL,
+    MID_GNE_ALLOWVCLASSES_ONLY_RAIL,
 
     /// @}
 
@@ -1616,6 +1691,11 @@ enum {
 
     /// @}
 
+    /// @brief copy exception
+    MID_GNE_CRASHDIALOG_COPYEXCEPTION,
+    /// @brief copy trace
+    MID_GNE_CRASHDIALOG_COPYTRACE,
+
     /// @name other
     /// @{
 
@@ -1629,8 +1709,6 @@ enum {
     MID_GNE_UNDOLIST_UPDATE,
     /// @brief check if recomputing is needed
     MID_GNE_RECOMPUTINGNEEDED,
-    /// @brief create automatic filename if it was not defined previously
-    MID_GNE_AUTOMATICFILENAME,
 
     /// @}
 
@@ -1638,6 +1716,16 @@ enum {
     /// @{
 
     MID_MTEXTFIELDSEARCH_UPDATED,
+
+    /// @}
+
+    /// @name Distribution reference dialog
+    /// @{
+
+    /// @brief change reference
+    MID_GNE_DISTRIBUTIONDIALOG_REFERENCE,
+    /// @brief change probability
+    MID_GNE_DISTRIBUTIONDIALOG_PROBABILITY,
 
     /// @}
 
@@ -1658,6 +1746,8 @@ enum {
     MID_LANGUAGE_DE,
     /// @brief change language to spanish
     MID_LANGUAGE_ES,
+    /// @brief change language to portuguese
+    MID_LANGUAGE_PT,
     /// @brief change language to french
     MID_LANGUAGE_FR,
     /// @brief change language to italian
@@ -1672,8 +1762,18 @@ enum {
     MID_LANGUAGE_HU,
     /// @brief change language to japanese
     MID_LANGUAGE_JA,
+    /// @brief change language to korean
+    MID_LANGUAGE_KO,
 
     /// @}
+
+    /// @name test
+    /// @{
+
+    /// @brief run tests
+    MID_RUNTESTS,
+
+    /// @{
 
     /// @brief last element of enum (not used)
     MID_LAST

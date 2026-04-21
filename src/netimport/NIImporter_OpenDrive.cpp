@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -100,6 +100,8 @@ SequentialStringBijection::Entry NIImporter_OpenDrive::openDriveTags[] = {
     { "controller",       NIImporter_OpenDrive::OPENDRIVE_TAG_CONTROLLER },
     { "control",          NIImporter_OpenDrive::OPENDRIVE_TAG_CONTROL },
     { "validity",         NIImporter_OpenDrive::OPENDRIVE_TAG_VALIDITY },
+    { "semantics",        NIImporter_OpenDrive::OPENDRIVE_TAG_SEMANTICS },
+    { "priority",         NIImporter_OpenDrive::OPENDRIVE_TAG_PRIORITY },
     { "junction",         NIImporter_OpenDrive::OPENDRIVE_TAG_JUNCTION },
     { "connection",       NIImporter_OpenDrive::OPENDRIVE_TAG_CONNECTION },
     { "laneLink",         NIImporter_OpenDrive::OPENDRIVE_TAG_LANELINK },
@@ -266,12 +268,38 @@ NIImporter_OpenDrive::loadNetwork(const OptionsCont& oc, NBNetBuilder& nb) {
         if (posMap.find(e->junction) == posMap.end()) {
             posMap[e->junction] = Boundary();
         }
-        posMap[e->junction].add(e->geom.getBoxBoundary());
+        // Check if geometry is valid before adding to boundary
+        if (e->geom.size() > 0) {
+            Boundary geomBoundary = e->geom.getBoxBoundary();
+            // Only add if the boundary doesn't contain NaN values
+            if (geomBoundary.isInitialised() &&
+                    !std::isnan(geomBoundary.xmin()) && !std::isnan(geomBoundary.xmax()) &&
+                    !std::isnan(geomBoundary.ymin()) && !std::isnan(geomBoundary.ymax())) {
+                posMap[e->junction].add(geomBoundary);
+            } else {
+                WRITE_WARNINGF(TL("Ignoring invalid geometry for inner edge '%' (xodr road '%') in junction '%'."),
+                               e->id, e->id, e->junction);
+            }
+        } else {
+            WRITE_WARNINGF(TL("Inner edge '%' (xodr road '%') in junction '%' has no geometry."),
+                           e->id, e->id, e->junction);
+        }
     }
     //   build nodes
     for (std::map<std::string, Boundary>::iterator i = posMap.begin(); i != posMap.end(); ++i) {
         //std::cout << " import node=" << (*i).first << " z=" << (*i).second.getCenter() << " boundary=" << (*i).second << "\n";
-        if (!nb.getNodeCont().insert((*i).first, (*i).second.getCenter())) {
+        // Check if the boundary was properly initialized
+        if (!(*i).second.isInitialised()) {
+            WRITE_ERRORF(TL("Junction '%' has no valid inner edges to determine its position."), (*i).first);
+            throw ProcessError(TLF("Could not determine position for junction '%'.", (*i).first));
+        }
+        Position center = (*i).second.getCenter();
+        // Double-check that the center position is valid
+        if (center.isNAN()) {
+            WRITE_ERRORF(TL("Junction '%' resulted in invalid (NaN) position."), (*i).first);
+            throw ProcessError(TLF("Could not compute valid position for junction '%'.", (*i).first));
+        }
+        if (!nb.getNodeCont().insert((*i).first, center)) {
             throw ProcessError(TLF("Could not add node '%'.", (*i).first));
         }
     }
@@ -2520,6 +2548,15 @@ NIImporter_OpenDrive::myStartElement(int element,
                                                || myElementStack.back() == OPENDRIVE_TAG_SIGNALREFERENCE)) {
                 myCurrentEdge.signals.back().minLane = fromLane;
                 myCurrentEdge.signals.back().maxLane = toLane;
+            }
+        }
+        break;
+        case OPENDRIVE_TAG_PRIORITY: {
+            if (myElementStack.size() >= 2
+                    && myElementStack.back() == OPENDRIVE_TAG_SEMANTICS
+                    && myElementStack[myElementStack.size() - 2] == OPENDRIVE_TAG_SIGNAL) {
+                auto& signal = myCurrentEdge.signals.back();
+                signal.priority = attrs.get<std::string>(OPENDRIVE_ATTR_TYPE, signal.id.c_str(), ok);
             }
         }
         break;

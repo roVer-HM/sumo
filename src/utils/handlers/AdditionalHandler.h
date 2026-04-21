@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -30,9 +30,9 @@ class AdditionalHandler : public CommonHandler {
 
 public:
     /**@brief Constructor
-     * @param[in] filename Name of the parsed file
+     * @param[in] bucket FileBucket in which place the element
      */
-    AdditionalHandler(const std::string& filename);
+    AdditionalHandler(FileBucket* fileBucket);
 
     /// @brief Destructor
     virtual ~AdditionalHandler();
@@ -45,9 +45,6 @@ public:
 
     /// @brief parse SumoBaseObject (it's called recursivelly)
     void parseSumoBaseObject(CommonXMLStructure::SumoBaseObject* obj);
-
-    /// @brief run post parser tasks
-    virtual bool postParserTasks() = 0;
 
     /// @name build functions
     /// @{
@@ -63,12 +60,13 @@ public:
      * @param[in] parkingLength parking length
      * @param[in[ color busStop color
      * @param[in] friendlyPos enable or disable friendly position
+     * @param[in] angle busStop's angle
      * @param[in] parameters generic parameters
      */
     virtual bool buildBusStop(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& laneID,
                               const double startPos, const double endPos, const std::string& name, const std::vector<std::string>& lines,
                               const int personCapacity, const double parkingLength, const RGBColor& color, const bool friendlyPosition,
-                              const Parameterised::Map& parameters) = 0;
+                              const double angle, const Parameterised::Map& parameters) = 0;
 
     /**@brief Builds a train stop
      * @param[in] sumoBaseObject sumo base object used for build
@@ -82,12 +80,13 @@ public:
      * @param[in] parkingLength parking length
      * @param[in[ color trainStop color
      * @param[in] friendlyPos enable or disable friendly position
+     * @param[in] angle trainStop's angle
      * @param[in] parameters generic parameters
      */
     virtual bool buildTrainStop(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& laneID,
                                 const double startPos, const double endPos, const std::string& name, const std::vector<std::string>& lines,
                                 const int personCapacity, const double parkingLength, const RGBColor& color, const bool friendlyPosition,
-                                const Parameterised::Map& parameters) = 0;
+                                const double angle, const Parameterised::Map& parameters) = 0;
 
     /**@brief Builds an Access
      * @param[in] sumoBaseObject sumo base object used for build
@@ -113,12 +112,13 @@ public:
      * @param[in] parkingLength parking length
      * @param[in[ color containerStop color
      * @param[in] friendlyPos enable or disable friendly position
+     * @param[in] angle containerStop's angle
      * @param[in] parameters generic parameters
      */
     virtual bool buildContainerStop(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& laneID,
                                     const double startPos, const double endPos, const std::string& name, const std::vector<std::string>& lines,
                                     const int containerCapacity, const double parkingLength, const RGBColor& color, const bool friendlyPosition,
-                                    const Parameterised::Map& parameters) = 0;
+                                    const double angle, const Parameterised::Map& parameters) = 0;
 
     /**@brief Builds a charging Station
      * @param[in] sumoBaseObject sumo base object used for build
@@ -128,17 +128,19 @@ public:
      * @param[in] endPos End position of the charging Station on the lane
      * @param[in] name Name of charging station
      * @param[in] chargingPower power charged in every timeStep
+     * @param[in] totalPower max. power charged in every timeStep by all vehicles
      * @param[in] efficiency efficiency of the charge
      * @param[in] chargeInTransit enable or disable charge in transit
      * @param[in] chargeDelay delay in the charge
      * @param[in] chargeType charge type (normal, electric or fuel)
      * @param[in] waitingTime waiting time until start charging
      * @param[in] friendlyPos enable or disable friendly position
+     * @param[in] parkingAreaID the parking area the charging sttaion is located on
      * @param[in] parameters generic parameters
      */
     virtual bool buildChargingStation(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& id, const std::string& laneID,
                                       const double startPos, const double endPos, const std::string& name, const double chargingPower,
-                                      const double efficiency, const bool chargeInTransit, const SUMOTime chargeDelay, const std::string& chargeType,
+                                      const double totalPower, const double efficiency, const bool chargeInTransit, const SUMOTime chargeDelay, const std::string& chargeType,
                                       const SUMOTime waitingTime, const bool friendlyPosition, const std::string& parkingAreaID,
                                       const Parameterised::Map& parameters) = 0;
 
@@ -433,7 +435,7 @@ public:
      * @param[in] time step's time
      * @param[in] speed new step's speed
      */
-    virtual bool buildVariableSpeedSignStep(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const SUMOTime time, const std::string& speed) = 0;
+    virtual bool buildVariableSpeedSignStep(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const SUMOTime time, const double speed) = 0;
 
     /**@brief Builds a vaporizer (lane speed additional)
      * @param[in] sumoBaseObject sumo base object used for build

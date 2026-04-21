@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -171,6 +171,10 @@ public:
         return mySubDriveWays;
     }
 
+    bool foundSignal() const {
+        return myFoundSignal;
+    }
+
     static void init();
 
     static bool hasRS(const MSEdge* cur, const MSEdge* next);
@@ -293,7 +297,7 @@ protected:
     void addParallelFoes(const MSLink* link, const MSEdge* first);
 
     /// @brief derive foe driveways that enter the bidi section by reversing
-    void addReversalFoes();
+    void addReversalFoes(bool movingBlock);
 
     /* @brief build shortened driveway that ends where the foe train leaves the conflict zone of this driveway
      * @return whether the foe has received a new entry in myFoes
@@ -313,6 +317,9 @@ protected:
     void addSwitchFoes(MSLink* link);
 
     bool haveSubTrains() const;
+
+    /// @brief compute distance along the forward section up to lastIndex
+    double getForwardDistance(int lastIndex) const;
 
     /* @brief whether the train would have matched this driveway in it's past
      * @return If matching, returns the number of edges the vehicle has gone past the start of the driveway,
@@ -350,7 +357,7 @@ private:
         double length;
     };
 
-    std::set<SUMOVehicle*> myTrains;
+    std::set<SUMOVehicle*, ComparatorNumericalIdLess> myTrains;
 
     std::vector<VehicleEvent> myVehicleEvents;
     std::vector<MSDriveWay*> myFoes;
@@ -370,6 +377,7 @@ private:
 
     static int myGlobalDriveWayIndex;
     static bool myWriteVehicles;
+    static double myMovingBlockMaxDist;
     static std::set<const MSEdge*> myBlockLengthWarnings;
 
     /// @brief all driveways passing the given switch (used to look up flank foes)

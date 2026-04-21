@@ -25,22 +25,30 @@ jobs:
     env:
       CC: cl
       CXX: cl
+      SUMO_LIBRARIES: D:\a\sumo\sumo\SUMOLibraries
+      TEXTTEST_TMP: D:/texttest
 
     steps:
     - name: Cloning SUMO
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
-        path: sumo
         fetch-depth: 0
         filter: tree:0
         # to work around actions/checkout#1467
         ref: ${{ github.ref }}
 
     - name: Cloning SUMO Libraries
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: DLR-TS/SUMOLibraries
-        path: sumolibraries
+        path: SUMOLibraries
+
+    - name: Setup fail-fast PowerShell
+      run: |
+        if (-not (Test-Path $PROFILE.CurrentUserAllHosts)) {
+          New-Item -ItemType File -Path $PROFILE.CurrentUserAllHosts -Force | Out-Null
+        }
+        Add-Content -Path $PROFILE.CurrentUserAllHosts -Value '$ErrorActionPreference = "Stop"'
 
     - name: ccache
       # do a clean build once a day
@@ -55,75 +63,95 @@ jobs:
       # uses: seanmiddleditch/gha-setup-vsdevenv@v4  # disabled until it gets an update for node.js
       uses: compnerd/gha-setup-vsdevenv@main
 
+    - name: Setup Python dependencies
+      # the pipdeptree below is just for debugging but often comes handy so keep it enabled
+      run: |
+        python -m pip install -r tools/req_ci.txt -r tools/requirements.txt texttest pipdeptree
+        pipdeptree
+
     - name: Building SUMO plain
       if: matrix.build_type == 'plain'
       run: |
         python -m pip install build wheel
-        cd sumo
         cmake -Bbuild_msvc -GNinja -DCHECK_OPTIONAL_LIBS=false -DENABLE_JAVA_BINDINGS=false
         cmake --build build_msvc
 
     - name: Building SUMO extra
       if: matrix.build_type == 'extra'
       run: |
-        cd sumo
         cmake -Bbuild_msvc -GNinja -DENABLE_JAVA_BINDINGS=false
         cmake --build build_msvc
 
     - name: Building SUMO debug
       if: github.event_name == 'workflow_dispatch'
       run: |
-        cd sumo
         cmake -Bbuild_msvc_debug -GNinja -DCMAKE_BUILD_TYPE=Debug
         cmake --build build_msvc_debug
 
     - name: Building TraaS
-      run: |
-        cd sumo/build_msvc
-        cmake --build . --config Release --target traas
+      run: cmake --build build_msvc --config Release --target traas
 
     - name: Uploading artifacts (SUMO binaries)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: windows-${{ matrix.build_type }}-binaries
-        path: sumo/bin
+        path: bin
         retention-days: 30
 
-    - name: Plain examples and tests
+    - name: Running examples and unit tests
+      run: |
+        cmake --build build_msvc --config Release --target examples
+        ctest --test-dir build_msvc --output-on-failure
+
+    # The following tests need to be split because of resource constraints. If they are not in separate steps
+    # a failing texttest run will not let the step fail because only the final exit code counts.
+    - name: activitygen and router tests
       if: matrix.build_type == 'plain'
       run: |
-        cd sumo/build_msvc
-        $env:TEXTTEST_TMP = "D:/texttest"
-        $env:TEXTTEST_CI_APPS = "-a activitygen,dfrouter,duarouter,jtrrouter"
-        ctest -R texttest --output-on-failure
-        $env:TEXTTEST_CI_APPS = "-a marouter,netgen,od2trips,polyconvert,netconvert"
-        ctest -R texttest --output-on-failure
-        $env:TEXTTEST_CI_APPS = "-a sumo"
-        ctest -R texttest --output-on-failure
+        $env:TEXTTEST_CI_APPS = "-a activitygen,dfrouter,duarouter,jtrrouter,marouter"
+        tests\runCiTests.bat texttest.exe
 
-    - name: Examples and extra tests
+    - name: network building, od2trips and polyconvert tests
+      if: matrix.build_type == 'plain'
+      run: |
+        $env:TEXTTEST_CI_APPS = "-a netgen,od2trips,polyconvert,netconvert"
+        tests\runCiTests.bat texttest.exe
+
+    - name: sumo tests
+      if: matrix.build_type == 'plain'
+      run: |
+        $env:TEXTTEST_CI_APPS = "-a sumo"
+        tests\runCiTests.bat texttest.exe
+
+    - name: Running dependency checker
       if: matrix.build_type == 'extra'
       run: |
-        python -m pip install -r sumo/tools/req_ci.txt -r sumo/tools/requirements.txt
-        cd sumo/build_msvc
-        cmake --build . --config Release --target examples
-        ctest -E texttest --output-on-failure
-        $env:TEXTTEST_TMP = "D:/texttest"
-        $env:TEXTTEST_CI_APPS = "-a complex,tools,traci"
-        ctest -R texttest --output-on-failure
+          Invoke-WebRequest -Uri https://github.com/lucasg/Dependencies/releases/download/v1.11.1/Dependencies_x64_Release_.without.peview.exe.zip -OutFile Dependencies.zip
+          7z x -oDependencies Dependencies.zip
+          $env:PATH += ";$pwd\bin"
+          dir tools\libsumo
+          Dependencies\Dependencies.exe -modules -depth 2 tools\libsumo\_libsumo.pyd
+
+    - name: complex, traci and tools tests
+      if: matrix.build_type == 'extra'
+      run: |
+        $env:PATH += ";$pwd\bin"
+        $env:TEXTTEST_CI_APPS = "-a complex,traci,tools"
+        tests\runCiTests.bat texttest.exe
+
+    - name: meso, extra and gdal tests
+      if: matrix.build_type == 'extra'
+      run: |
         $env:TEXTTEST_CI_APPS = "-a sumo.meso,sumo.extra,netconvert.gdal,polyconvert.gdal"
-        ctest -R texttest --output-on-failure
+        tests\runCiTests.bat texttest.exe
 
     - name: Compressing test results
       if: failure()
-      run: |
-        dir d:\texttest
-        Compress-Archive -Path D:/texttest -DestinationPath D:/texttest/tt.zip
-        dir d:\texttest
+      run: Compress-Archive -Path D:/texttest -DestinationPath D:/texttest/tt.zip
 
     - name: Uploading test results
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: texttesttmp-${{ matrix.build_type }}
         path: D:/texttest/tt.zip

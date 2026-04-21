@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -246,7 +246,7 @@ int
 main(int argc, char** argv) {
     OptionsCont& oc = OptionsCont::getOptions();
     oc.setApplicationDescription(TL("Builds vehicle routes for SUMO using detector values."));
-    oc.setApplicationName("dfrouter", "Eclipse SUMO dfrouter Version " VERSION_STRING);
+    oc.setApplicationName("dfrouter", "Eclipse SUMO dfrouter " VERSION_STRING);
     int ret = 0;
     RODFNet* net = nullptr;
     RODFDetectorCon* detectors = nullptr;

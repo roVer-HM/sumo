@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,30 +19,8 @@
 /****************************************************************************/
 
 #include <netedit/GNENet.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/GNEViewParent.h>
-#include <netedit/changes/GNEChange_DemandElement.h>
-#include <netedit/frames/demand/GNEVehicleFrame.h>
-#include <netedit/frames/common/GNEInspectorFrame.h>
-#include <netedit/elements/additional/GNETAZ.h>
-#include <utils/common/StringTokenizer.h>
 
-#include "GNEContainer.h"
-#include "GNEPerson.h"
-#include "GNEPersonTrip.h"
-#include "GNERide.h"
-#include "GNERoute.h"
-#include "GNERouteDistribution.h"
 #include "GNEPlanParents.h"
-#include "GNEStop.h"
-#include "GNETranship.h"
-#include "GNETransport.h"
-#include "GNEVehicle.h"
-#include "GNEVType.h"
-#include "GNEVTypeDistribution.h"
-#include "GNEWalk.h"
-#include "GNEStopPlan.h"
 
 // ===========================================================================
 // member method definitions

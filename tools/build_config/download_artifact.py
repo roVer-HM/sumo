@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2008-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -17,6 +17,8 @@
 
 import argparse
 import io
+import os
+import sys
 import zipfile
 
 import requests
@@ -30,12 +32,13 @@ def request(url, token):
 
 def get_latest_artifact_url(options):
     prefix = "%s/repos/%s/%s/actions/" % (options.api_url, options.owner, options.repository)
-    workflow_id = None
+    workflow_id = 0
     response = request(prefix + "workflows", options.token)
     for workflow in response.json()['workflows']:
-        if workflow['name'] == options.workflow:
+        # for several workflows with the same name we take the one most recently created (highest id)
+        if workflow['name'] == options.workflow and workflow['id'] > workflow_id:
             workflow_id = workflow['id']
-    if workflow_id is None:
+    if workflow_id == 0:
         raise RuntimeError("Workflow '%s' not found." % options.workflow)
 
     workflow_run_ids = []
@@ -65,15 +68,23 @@ if __name__ == "__main__":
     ap.add_argument("--api-url", default="https://api.github.com")
     ap.add_argument("--owner", default="eclipse-sumo")
     ap.add_argument("--repository", default="sumo")
-    ap.add_argument("--workflow", default="windows-wheels")
+    ap.add_argument("--workflow", default="cibuildwheel")
     ap.add_argument("--branch", default="main")
     ap.add_argument("--token", help="GitHub authentication token")
     ap.add_argument("--directory", help="output directory")
-    ap.add_argument("--prefix", default="libsumo-python-3.", help="prefix of the artifact zip file")
+    ap.add_argument("--prefix", default="cibw", help="prefix of the artifact zip file")
     ap.add_argument("--allow-failed", action="store_true", default=False, help="download even if the build failed")
     ap.add_argument("-v", "--verbose", action="store_true", default=False, help="tell me more")
     options = ap.parse_args()
 
+    if not options.token:
+        for cred_path in (".", os.path.dirname(__file__), os.path.expanduser("~")):
+            if os.path.exists(os.path.join(cred_path, ".git-credentials")):
+                with open(os.path.join(cred_path, ".git-credentials")) as f:
+                    options.token = f.read().split(":")[-1].split("@")[0]
+                    break
+    if not options.token:
+        sys.exit("no authentication token found, please use the option --token or provide a .git-credentials file")
     for artifact_url in get_latest_artifact_url(options):
         response = request(artifact_url, options.token)
         if response.status_code == 200:

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -54,6 +54,7 @@ OptionsLoader::~OptionsLoader() {}
 
 
 void OptionsLoader::startElement(const XMLCh* const name, XERCES_CPP_NAMESPACE::AttributeList& attributes) {
+    myFoundValue = false;
     myItem = StringUtils::transcode(name);
     if (!myRootOnly) {
         for (int i = 0; i < (int)attributes.getLength(); i++) {
@@ -61,8 +62,17 @@ void OptionsLoader::startElement(const XMLCh* const name, XERCES_CPP_NAMESPACE::
             const std::string& value = StringUtils::transcode(attributes.getValue(i));
             if (key == "value" || key == "v") {
                 setValue(myItem, value);
+                myFoundValue = true;
+            } else if (key != "xmlns:xsi"
+                       && key != "xsi:noNamespaceSchemaLocation"
+                       && key != "synonymes"
+                       && key != "deprecated"
+                       && key != "type"
+                       && key != "help"
+                       // parsing a network file as single argument
+                       && (key != "version" && myItem != "net")) {
+                WRITE_WARNINGF(TL("Ignoring attribute '%' for option '%'"), key, myItem);
             }
-            // could give a hint here about unsupported attributes in configuration files
         }
         myValue = "";
     }
@@ -103,6 +113,9 @@ OptionsLoader::setSecure(OptionsCont& options, const std::string& name, const st
 void
 OptionsLoader::endElement(const XMLCh* const /*name*/) {
     if (myItem.length() == 0 || myValue.length() == 0) {
+        if (!myFoundValue) {
+            WRITE_ERRORF(TL("Could not set option '%' because attribute 'value' is missing."), myItem);
+        }
         return;
     }
     if (myValue.find_first_not_of("\n\t \a") == std::string::npos) {

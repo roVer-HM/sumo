@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -168,6 +168,9 @@ protected:
                             const double travelledDistanceVehicleOnLane,
                             const double meanLengthOnLane);
 
+    /// @brief modifiy vehicle properties when loading/unloading (optional)
+    void changeAttached();
+
 private:
     /** @brief Constructor
      *
@@ -192,6 +195,11 @@ private:
     /// @brief unboarding positions of passengers if vehicle is a train
     std::vector<Position> myUnboardingPositions;
 
+    /// @brief the original type to set when nothing is being transported
+    const MSVehicleType* myOriginalType;
+
+    /// @brief the type to consult if loading/unloading changes vehicle properties
+    MSVehicleType* myLoadedType;
 
 private:
     /// @brief Invalidated copy constructor.

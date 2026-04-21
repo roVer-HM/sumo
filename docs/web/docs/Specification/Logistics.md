@@ -36,6 +36,8 @@ on a lane. The parameters have the following meanings:
 | name           | string      | simple String                                                                                |             | Container stop name. This is only used for visualization purposes.                                                          |
 | color           | color      | see [color definition](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#colors)                                                                                | "83,89,172"            | Container stop color. This is only used for visualization purposes.                                                               |
 | lines          | string list | A list of names separated by spaces (' ')                                                    |             | meant to be the names of the logistic lines that stop at this container stop. This is only used for visualization purposes. |
+| angle          | float (degrees) | The angle at which containers are drawn. This is only used for visualization purposes. |
+
 
 !!! caution
     Please note that container stops must be added to a config via the *--additional-files* parameter
@@ -73,3 +75,49 @@ This means you can either use a
 container stop or a lane position to define where a vehicle has to stop.
 For a complete list of attributes for the "stop"-element of a vehicle
 see [Specification\#Stops](index.md#stops).
+
+## Access Lanes
+
+Each containerStop may have additional child elements to model access from
+other parts of the network (e.g. road access to a stop on the rail
+network). This takes the following form:
+
+```xml
+<containerStop id="myStop" lane="A_0" startPos="230" endPos="250">
+   <access lane="B_0" pos="150"/>
+</containerStop>
+```
+
+## Spacing of waiting containers
+
+The spacing between waiting containers defaults to 2.5. This is appropriate when standard shipping containers of 2.44m width are stacked next to each other in paralle..
+When containers are stacked at a different angle, the distance along the stop must be increased. This can be done with params:
+
+```xml
+<containerStop id="ct_5" angle="0" lane="324040749#0_0" startPos="0.00" endPos="630.00">
+        <param key="waitingWidth" value="13"/>
+        <param key="waitingDepth" value="2.44"/>
+ </containerStop>
+```
+
+# Trailers and Rail Cars
+
+Containers can be used to model trailers and marshalling/switching by changing the length of the vehicle dynamically upon being loaded/unloaded.
+This is done by setting [Generic Parameter](../Simulation/GenericParameters.md) `<param key="device.container.loadedType" value="TYPE_ID"/>`.
+
+The `<vType>` with `id="TYPE_ID"` must be defined and the following of its values will be used by the simulation:
+
+- containerCapacity
+- length
+- mass
+- vClass
+- guiShape
+- param with key 'locomotiveLength'
+- param with key 'carriageLength'
+- param with key 'carriageGap'
+
+Whenever the number of containers changes due to loading/unloading, the number of attached railcars/trailers is computed as `ceil(containerNumber / containerCapacity)`.
+Then **mass** and **length** will multiplied by the number of attached units and added to the length and mass of the original type of the vehicle.
+The **vClass**, **guiShape** and visualization params will also be applied to the vehicle until the containerNumber drops to zero again.
+
+If the vClass changes due to loading/unloading, the vehicle will re-compute its route according to the current travel times in the network. This may be used to model changes in required turning radius by disallowing some connections for the **vClass** of the loadedType `TYPE_ID` but permitting them for the original (empty) type of the vehicle.

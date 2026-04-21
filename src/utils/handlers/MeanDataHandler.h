@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -25,19 +25,14 @@
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class MeanDataHandler
- * @brief The XML-Handler for network loading
- *
- * The SAX2-handler responsible for parsing networks and routes to load.
- * This is an extension of the MSRouteHandler as routes and vehicles may also
- *  be loaded from network descriptions.
- */
+
 class MeanDataHandler : public CommonHandler {
 
 public:
-    /// @brief Constructor
-    MeanDataHandler(const std::string& filename);
+    /**@brief Constructor
+     * @param[in] bucket FileBucket in which place the element
+     */
+    MeanDataHandler(FileBucket* fileBucket);
 
     /// @brief Destructor
     virtual ~MeanDataHandler();
@@ -51,32 +46,33 @@ public:
     /// @brief parse SumoBaseObject (it's called recursivelly)
     void parseSumoBaseObject(CommonXMLStructure::SumoBaseObject* obj);
 
-    /// @brief run post parser tasks
-    virtual bool postParserTasks() = 0;
-
     /// @name build functions
     /// @{
+
     /// @brief Builds edgeMeanData
     virtual bool buildEdgeMeanData(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& ID,
-                                   const std::string& file, SUMOTime period, SUMOTime begin, SUMOTime end, const bool trackVehicles,
-                                   const std::vector<std::string>& writtenAttributes, const bool aggregate, const std::vector<std::string>& edges,
-                                   const std::string& edgeFile, std::string excludeEmpty, const bool withInternal,
-                                   const std::vector<std::string>& detectPersons, const double minSamples, const double maxTravelTime,
-                                   const std::vector<std::string>& vTypes, const double speedThreshold) = 0;
+                                   const std::string& file, const std::string& type, const SUMOTime period, const SUMOTime begin,
+                                   const SUMOTime end, const bool trackVehicles, const std::vector<std::string>& writtenAttributes,
+                                   const bool aggregate, const std::vector<std::string>& edges, const std::string& edgeFile,
+                                   const std::string& excludeEmpty, const bool withInternal, const std::vector<std::string>& detectPersons,
+                                   const double minSamples, const double maxTravelTime, const std::vector<std::string>& vTypes,
+                                   const double speedThreshold) = 0;
 
     /// @brief Builds laneMeanData
     virtual bool buildLaneMeanData(const CommonXMLStructure::SumoBaseObject* sumoBaseObject, const std::string& ID,
-                                   const std::string& file, SUMOTime period, SUMOTime begin, SUMOTime end, const bool trackVehicles,
-                                   const std::vector<std::string>& writtenAttributes, const bool aggregate, const std::vector<std::string>& edges,
-                                   const std::string& edgeFile, std::string excludeEmpty, const bool withInternal,
-                                   const std::vector<std::string>& detectPersons, const double minSamples, const double maxTravelTime,
-                                   const std::vector<std::string>& vTypes, const double speedThreshold) = 0;
+                                   const std::string& file, const std::string& type, const SUMOTime period, const SUMOTime begin,
+                                   const SUMOTime end, const bool trackVehicles, const std::vector<std::string>& writtenAttributes,
+                                   const bool aggregate, const std::vector<std::string>& edges, const std::string& edgeFile,
+                                   const std::string& excludeEmpty, const bool withInternal, const std::vector<std::string>& detectPersons,
+                                   const double minSamples, const double maxTravelTime, const std::vector<std::string>& vTypes,
+                                   const double speedThreshold) = 0;
 
     /// @}
 
 private:
     /// @name parse meanMeanData attributes
     /// @{
+
     /// @brief parse edgeMeanData attributes
     void parseEdgeMeanData(const SUMOSAXAttributes& attrs);
 
@@ -84,6 +80,9 @@ private:
     void parseLaneMeanData(const SUMOSAXAttributes& attrs);
 
     /// @}
+
+    /// @brief check mean data type
+    bool checkType(const SumoXMLTag currentTag, const std::string& id, const std::string& type);
 
     /// @brief invalidate default onstructor
     MeanDataHandler() = delete;

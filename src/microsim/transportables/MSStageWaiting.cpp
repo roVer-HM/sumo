@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -88,7 +88,8 @@ MSStageWaiting::getPosition(SUMOTime /* now */) const {
 
 double
 MSStageWaiting::getAngle(SUMOTime /* now */) const {
-    return getEdgeAngle(myDestination, myArrivalPos) + M_PI / 2 * (MSGlobals::gLefthand ? -1 : 1);
+    const double offset = myDestinationStop == nullptr ? M_PI / 2 : myDestinationStop->getAngle();
+    return getEdgeAngle(myDestination, myArrivalPos) + offset * (MSGlobals::gLefthand ? -1 : 1);
 }
 
 
@@ -104,7 +105,7 @@ MSStageWaiting::proceed(MSNet* net, MSTransportable* transportable, SUMOTime now
         myStopWaitPos = myDestinationStop->getWaitPosition(transportable);
     }
 
-    previous->getEdge()->addTransportable(transportable);
+    myDestination->addTransportable(transportable);
     if (transportable->isPerson()) {
         net->getPersonControl().setWaitEnd(myStopEndTime, transportable);
     } else {

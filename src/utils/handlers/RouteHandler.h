@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -30,10 +30,10 @@ class RouteHandler : public CommonHandler {
 
 public:
     /**@brief Constructor
-     * @param[in] filename Name of the parsed file
+     * @param[in] bucket FileBucket in which place the element
      * @param[in] hardFail enable or disable hardFails (continue handling demand elements if there is an error)
      */
-    RouteHandler(const std::string& filename, const bool hardFail);
+    RouteHandler(FileBucket* fileBucket, const bool hardFail);
 
     /// @brief Destructor
     virtual ~RouteHandler();
@@ -46,9 +46,6 @@ public:
 
     /// @brief parse SumoBaseObject (it's called recursivelly)
     void parseSumoBaseObject(CommonXMLStructure::SumoBaseObject* obj);
-
-    /// @brief run post parser tasks
-    virtual bool postParserTasks() = 0;
 
     /// @name build functions
     /// @{
@@ -249,6 +246,9 @@ private:
     bool isOverFromToTAZs(const CommonXMLStructure::SumoBaseObject* sumoBaseObject) const;
 
     /// @}
+
+    /// @brief adjust types and probabilities
+    void adjustTypesAndProbabilities(std::vector<std::string>& vTypes, std::vector<double>& probabilities);
 
     /// @brief invalidate default onstructor
     RouteHandler() = delete;

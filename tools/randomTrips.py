@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2010-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2010-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -168,8 +168,10 @@ def get_options(args=None):
                     "by a random factor drawn uniformly from [1,FLOAT)")
     op.add_argument("--marouter", default=False, action="store_true",
                     help="Compute routes with marouter instead of duarouter")
-    op.add_argument("--validate", default=False, action="store_true",
+    op.add_argument("--validate", action="store_true",
                     help="Whether to produce trip output that is already checked for connectivity")
+    op.add_argument("--no-validate", dest="validate", action="store_false")
+    op.set_defaults(validate=True)
     op.add_argument("--min-success-rate", dest="minSuccessRate", default=0.1, type=float,
                     help="Minimum ratio of valid trips to retry sampling if some trips are invalid")
     op.add_argument("-v", "--verbose", action="store_true", default=False,
@@ -537,7 +539,7 @@ def get_prob_fun(options, fringe_bonus, fringe_forbidden, max_length):
                 prob *= (angleDiff * (options.angle_weight - 1) + 1)
             else:
                 prob *= ((180 - angleDiff) * (options.angle_weight - 1) + 1)
-        prob *= options.typeFactors[edge.getType()]
+        prob *= options.typeFactors[edge.getRoutingType()]
 
         return prob
     return edge_probability
@@ -960,6 +962,7 @@ def createTrips(options, trip_generator, rerunFactor=None, skipValidation=False)
                                         print(exc, file=sys.stderr)
                             time += 1.0
             else:
+                # generate flows
                 try:
                     origins_destinations = [generate_origin_destination(
                         trip_generator, options) for _ in range(options.flows)]
@@ -974,6 +977,7 @@ def createTrips(options, trip_generator, rerunFactor=None, skipValidation=False)
                                 continue
                             origin, destination, intermediate = origins_destinations[j]
                             generate_one(j, departureTime, arrivalTime, period, origin, destination, intermediate, i)
+                            idx += 1
                 except Exception as exc:
                     print(exc, file=sys.stderr)
 
@@ -1008,6 +1012,8 @@ def createTrips(options, trip_generator, rerunFactor=None, skipValidation=False)
         duargs += ['--persontrip.walk-opposite-factor', str(options.walkoppositefactor)]
     if options.randomRoutingFactor != 1:
         duargs += ['--weights.random-factor', str(options.randomRoutingFactor)]
+    if options.flows > 0:
+        duargs += ['--keep-flows']
 
     options_to_forward = sumolib.options.get_prefixed_options(options)
     for router, routerargs in [('duarouter', duargs), ('marouter', maargs)]:
@@ -1021,13 +1027,15 @@ def createTrips(options, trip_generator, rerunFactor=None, skipValidation=False)
                     raise ValueError("The argument '%s' has already been passed without the %s prefix." % (
                                      option[0], router))
 
+    redirect = None if options.verbose else subprocess.DEVNULL
+
     if options.routefile and rerunFactor is None:
         args2 = (maargs if options.marouter else duargs)[:]
         args2 += ['-o', options.routefile]
         if options.verbose:
             print("calling", " ".join(args2))
             sys.stdout.flush()
-        subprocess.call(args2)
+        subprocess.call(args2, stdout=redirect)
         sys.stdout.flush()
         sumolib.xml.insertOptionsHeader(options.routefile, options)
 
@@ -1040,17 +1048,15 @@ def createTrips(options, trip_generator, rerunFactor=None, skipValidation=False)
         if options.verbose:
             print("calling", " ".join(args2))
             sys.stdout.flush()
-        subprocess.call(args2)
+        subprocess.call(args2, stdout=redirect)
         sys.stdout.flush()
-        os.remove(options.tripfile)  # on windows, rename does not overwrite
-        os.rename(tmpTrips, options.tripfile)
-        sumolib.xml.insertOptionsHeader(options.tripfile, options)
 
-        validLabels = set([t.id for t in sumolib.xml.parse_fast(options.tripfile, getElement(options), ['id'])])
+        validLabels = set([t.id for t in sumolib.xml.parse_fast(tmpTrips, getElement(options), ['id'])])
         validatedTrips = [(o, d, i) for (label, o, d, i) in generatedTrips if label in validLabels]
+        replaceWithTmp = False
 
         if rerunFactor is None:
-            nRequested = idx - 1
+            nRequested = idx
             nValid = len(validLabels)
             if nRequested > 0 and nValid < nRequested:
                 successRate = nValid / nRequested
@@ -1059,7 +1065,9 @@ def createTrips(options, trip_generator, rerunFactor=None, skipValidation=False)
                           "Set option --error-log for more details on the failure. "
                           "Set option --min-success-rate to find more valid trips." %
                           (nValid, nRequested, getElement(options)), file=sys.stderr)
+                    replaceWithTmp = True
                 else:
+                    os.remove(tmpTrips)
                     if options.verbose:
                         print("Only %s out of %s requested %ss passed validation. Sampling again to find more." % (
                             nValid, nRequested, getElement(options)))
@@ -1070,6 +1078,12 @@ def createTrips(options, trip_generator, rerunFactor=None, skipValidation=False)
                     trip_generator2 = CachedTripGenerator(validatedTrips + validatedTrips2)
                     # 3. call trip_generator again to output the desired number of trips
                     return createTrips(options, trip_generator2, skipValidation=True)
+
+        if replaceWithTmp:
+            os.remove(options.tripfile)
+            os.rename(tmpTrips, options.tripfile)
+        else:
+            os.remove(tmpTrips)
 
     return validatedTrips
 

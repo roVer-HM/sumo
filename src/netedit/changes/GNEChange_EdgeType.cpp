@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -48,7 +48,7 @@ GNEChange_EdgeType::GNEChange_EdgeType(GNEEdgeType* edgeType, bool forward):
 
 GNEChange_EdgeType::~GNEChange_EdgeType() {
     // only continue we have undo-redo mode enabled
-    if (myEdgeType->getNet()->getViewNet()->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed()) {
+    if (myEdgeType->getNet()->getGNEApplicationWindow()->isUndoRedoAllowed()) {
         myEdgeType->decRef("GNEChange_EdgeType");
         if (myEdgeType->unreferenced()) {
             // make sure that edgeType isn't in net before removing
@@ -73,8 +73,8 @@ GNEChange_EdgeType::undo() {
         myEdgeType->getNet()->getAttributeCarriers()->insertEdgeType(myEdgeType);
     }
     // refresh create edge frame
-    if (myEdgeType->getNet()->getViewNet()->getViewParent()->getCreateEdgeFrame()->shown()) {
-        myEdgeType->getNet()->getViewNet()->getViewParent()->getCreateEdgeFrame()->getEdgeTypeSelector()->refreshEdgeTypeSelector();
+    if (myEdgeType->getNet()->getViewParent()->getCreateEdgeFrame()->shown()) {
+        myEdgeType->getNet()->getViewParent()->getCreateEdgeFrame()->getEdgeTypeSelector()->refreshEdgeTypeSelector();
     }
     // enable save networkElements
     myEdgeType->getNet()->getSavingStatus()->requireSaveNetwork();
@@ -91,8 +91,8 @@ GNEChange_EdgeType::redo() {
         myEdgeType->getNet()->getAttributeCarriers()->deleteEdgeType(myEdgeType);
     }
     // refresh create edge frame
-    if (myEdgeType->getNet()->getViewNet()->getViewParent()->getCreateEdgeFrame()->shown()) {
-        myEdgeType->getNet()->getViewNet()->getViewParent()->getCreateEdgeFrame()->getEdgeTypeSelector()->refreshEdgeTypeSelector();
+    if (myEdgeType->getNet()->getViewParent()->getCreateEdgeFrame()->shown()) {
+        myEdgeType->getNet()->getViewParent()->getCreateEdgeFrame()->getEdgeTypeSelector()->refreshEdgeTypeSelector();
     }
     // enable save networkElements
     myEdgeType->getNet()->getSavingStatus()->requireSaveNetwork();

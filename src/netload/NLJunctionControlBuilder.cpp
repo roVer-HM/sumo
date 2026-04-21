@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -256,6 +256,10 @@ NLJunctionControlBuilder::closeTrafficLightLogic(const std::string& basePath) {
                 // effect but parameters that are checked at runtime can be used
                 // here (i.e. device.glosa.range)
                 myLogicParams[existing] = myAdditionalParameter;
+                if (myAdditionalParameter.count(MESegment::OVERRIDE_TLS_PENALTIES) != 0) {
+                    // value must be available when calling setMesoTypes and before setting the rest in postLoadInitialization
+                    existing->setParameter(MESegment::OVERRIDE_TLS_PENALTIES, myAdditionalParameter[MESegment::OVERRIDE_TLS_PENALTIES]);
+                }
                 return;
             }
         }

@@ -79,9 +79,9 @@ A vehicle may be defined using the following attributes:
 | route           | id                                                                            | The id of the route the vehicle shall drive along               |
 | color           | [color](#colors)                                                   | This vehicle's color       |
 | **depart**      | float (s) or [human-readable-time](Other/Glossary.md#t) or one of *triggered*, *containerTriggered*, *begin*                | The time step at which the vehicle shall enter the network; see [\#depart](#depart). Alternatively the vehicle departs once a [person enters](Specification/Persons.md#rides) or a [container is loaded](Specification/Containers.md) |
-| departLane      | int/string (≥0, "random", "free", "allowed", "best", "first", "best_prob")                 | The lane on which the vehicle shall be inserted; see [\#departLane](#departlane). *default: "first"*                                                                                                                                                  |
+| departLane      | int/string (≥0, "random", "free", "allowed", "best", "first", "best_prob")                 | The lane on which the vehicle shall be inserted; see [\#departLane](#departlane). *default: "first"*, default can be set with option **--default.departlane**                                                                                                                                                 |
 | departPos       | float(m)/string ("random", "free", "random_free", "base", "last", "stop", "splitFront")            | The position at which the vehicle shall enter the net; see [\#departPos](#departpos). *default: "base"*                                                                                                                                               |
-| departSpeed     | float(m/s)/string (≥0, "random", "max", "desired", "speedLimit", "last", "avg")              | The speed with which the vehicle shall enter the network; see [\#departSpeed](#departspeed). *default: 0*                                                                                                                                             |
+| departSpeed     | float(m/s)/string (≥0, "random", "max", "desired", "speedLimit", "last", "avg")              | The speed with which the vehicle shall enter the network; see [\#departSpeed](#departspeed). *default: 0*,  default can be set with option **--default.departlane**                                                                                                                                            |
 | departEdge     | int (index from \[0, routeLength\[ or "random"    | The initial edge along the route where the vehicle should enter the network (only supported if a complete route is defined); see [\#departEdge](#departedge). *default: 0*                                                                                                                                             |
 | arrivalLane     | int/string (≥0,"current")                                                     | The lane at which the vehicle shall leave the network; see [\#arrivalLane](#arrivallane). *default: "current"*                                                                                                                                        |
 | arrivalPos      | float(m)/string (≥0<sup>(1)</sup>, "random", "max")                           | The position at which the vehicle shall leave the network; see [\#arrivalPos](#arrivalpos). *default: "max"*                                                                                                                                          |
@@ -756,7 +756,7 @@ length look quite odd, buses with 2m length, too.
 !!! caution
     Not all of these named shapes have a distinct visualization.
 
-## Carriages
+## Carriages, custom visualization 
 
 Further parameters can be used to achieve visualization of [individual rail carriages](Simulation/Railways.md#trains) and configure exiting behavior at stations.
 ```xml
@@ -768,6 +768,7 @@ Further parameters can be used to achieve visualization of [individual rail carr
     <param key="frontSeatPos" value="1.7"/>
     <param key="seatingWidth" value="2.0"/>
     <param key="carriageDoors" value="2"/>
+    <param key="scaleVisual" value="1.5"/>
 </vType>
 ```
 
@@ -942,6 +943,7 @@ lists which parameter are used by which model(s).
 | lcSpeedGainRight        | Factor for configuring the threshold asymmetry when changing to the left or to the right for speed gain. By default the decision for changing to the right takes more deliberation. Symmetry is achieved when set to 1.0. *default: 0.1, range \[0-inf)* | LC2013, SL2015 |
 | lcSpeedGainLookahead    | Lookahead time in seconds for anticipating slow down. *default: 0 (LC2013), 5 (SL2015), range \[0-inf)* | LC2013, SL2015 |
 | lcSpeedGainRemainTime   | Minimum duration (s) that can be driven on the new lane after changing for speed gain. *default: 20 (LC2013), 20 (SL2015), range \[0-inf)* | LC2013, SL2015 |
+| lcSpeedGainUrgency      | A threshold value for the internal speedGain-motivation that classifies the lane change as urgent and triggers speed adaptation in neighboring (obstructing) vehicles. *default: 50 , range \[0-inf)* | LC2013 |
 | lcOvertakeDeltaSpeedFactor | Speed difference factor for the eagerness of overtaking a neighbor vehicle before changing lanes. If the actual speed difference between ego and neighbor is higher than factor\*speedlimit, this vehicle will try to overtake the leading vehicle on the neighboring lane before performing the lane change. *default: 0 range \[-1-1]* | LC2013, SL2015 |
 | lcKeepRightAcceptanceTime | Time threshold for changing the willingness to change right. The value is compared against the anticipated time of unobstructed driving on the right. Lower values will encourage keepRight changes. If the value is changed from its default, fast approaching follower vehicles will also impact willingness to move to the right lane. *default: -1 (legacy behavior where acceptance time ~ 7 \* currentSpeed) range \[0-inf)* | LC2013, SL2015 |
 | lcCooperativeRoundabout | Factor that increases willingness to move to the inside lane in a multi-lane roundabout. *default: lcCooperative, range \[0-1\]* | LC2013, SL2015 |
@@ -1305,25 +1307,25 @@ as output (device.fcd) or behavior (device.rerouting).
 The following device names are supported and can be used for the
 placeholder `<DEVICENAME>` below
 
-- [emission](Models/Emissions.md)
-- [battery](Models/Electric.md)
-- [stationfinder](Simulation/Stationfinder.md)
-- [elechybrid](Models/ElectricHybrid.md)
-- [btreiver](Simulation/Bluetooth.md)
-- [btsender](Simulation/Bluetooth.md)
-- [bluelight](Simulation/Emergency.md)
-- [rerouting](Demand/Automatic_Routing.md)
-- [ssm](Simulation/Output/SSM_Device.md)
-- [toc](ToC_Device.md)
-- [driverstate](Driver_State.md)
-- [fcd](Simulation/Output/FCDOutput.md)
-- [fcdreplay](Simulation/FCDReplay.md)
-- [tripinfo](Simulation/Output/TripInfo.md)
-- [vehroute](Simulation/Output/VehRoutes.md)
-- [taxi](Simulation/Taxi.md)
-- [glosa](Simulation/GLOSA.md)
-- [friction](Simulation/Friction.md)  
-- [example](Developer/How_To/Device.md)
+- [emission](Models/Emissions.md): extends tripinfo-output with emissions
+- [battery](Models/Electric.md): electricity consumption and battery state for electric vehicles, or fuel tank state for combustion vehicles
+- [stationfinder](Simulation/Stationfinder.md): automated charging at chargingStations
+- [elechybrid](Models/ElectricHybrid.md): electric vehicles driving under overhead wires
+- [btreiver](Simulation/Bluetooth.md): wireless connectivity (receiver side)
+- [btsender](Simulation/Bluetooth.md): wireless connectivity (sender side)
+- [bluelight](Simulation/Emergency.md): emergency vehicle behavior
+- [rerouting](Demand/Automatic_Routing.md): dynamic route changes
+- [ssm](Simulation/Output/SSM_Device.md): surrogate safety measures
+- [toc](ToC_Device.md): transition of control between automated and manual driving
+- [driverstate](Driver_State.md): randomized driver perception errors 
+- [fcd](Simulation/Output/FCDOutput.md): recording of vehicle positions and other attributes per step
+- [fcdreplay](Simulation/FCDReplay.md): replaying vehicle positions
+- [tripinfo](Simulation/Output/TripInfo.md): vehicle-based traffic data aggregation
+- [vehroute](Simulation/Output/VehRoutes.md): recording of driven route and route changes
+- [taxi](Simulation/Taxi.md): demand responsive transport
+- [glosa](Simulation/GLOSA.md): green light optiomal speed advisory at traffic lights
+- [friction](Simulation/Friction.md): wheather and road surface specific speed changes
+- [example](Developer/How_To/Device.md): implementation example
 
 ## Automatic assignment
 

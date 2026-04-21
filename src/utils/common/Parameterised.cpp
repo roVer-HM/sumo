@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -145,6 +145,15 @@ Parameterised::getParametersStr(const std::string kvsep, const std::string sep) 
 void
 Parameterised::setParameters(const Parameterised& params) {
     myMap = params.getParametersMap();
+}
+
+
+void
+Parameterised::setParameters(const std::vector<std::pair<std::string, std::string> >& params) {
+    myMap.clear();
+    for (const auto& keyValue : params) {
+        myMap[keyValue.first] = keyValue.second;
+    }
 }
 
 

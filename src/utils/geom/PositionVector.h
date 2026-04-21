@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -401,6 +401,12 @@ public:
 
     /// @brief check if PositionVector is NAN
     bool isNAN() const;
+
+    /// @brief round all coordinates to the given precision
+    void round(int precision, bool avoidDegeneration = true);
+
+    /// @brief ensure minimum length so that the geometry will not degenerate to 0-length on writing with the given precision
+    void ensureMinLength(int precision);
 
     /** @brief Removes positions if too near
      * @param[in] minDist The minimum accepted distance; default: POSITION_EPS

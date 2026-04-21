@@ -17,15 +17,15 @@ on:
 
 jobs:
   build:
-    # runs-on: ubuntu-latest
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     strategy:
       # Allow all other matrix-jobs to continue running, even if one of the jobs fails
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm]
         build_type: [full, minimal]
         compiler: [gcc, clang]
-        jps_version: ['v1.3.0']
+        jps_version: ['v1.3.1']
         # include:
         #   - build_type: full
         #     jps_version: master
@@ -33,7 +33,7 @@ jobs:
 
     steps:
     - name: Cloning SUMO
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         path: sumo
         fetch-depth: 0
@@ -46,18 +46,18 @@ jobs:
         sudo apt-get update
         sudo apt-get install libunwind-dev  # to work around https://bugs.launchpad.net/ubuntu/+source/google-glog/+bug/1991919
         sudo apt-get install $(cat sumo/build_config/build_req_deb.txt)
-        pipx install texttest
 
-    - name: Validate CITATION.cff
-      if: matrix.build_type == 'full' && github.event_name == 'schedule' && matrix.compiler == 'gcc'
-      uses: dieghernan/cff-validator@v4
-      with:
-        install-r: true
-        citation-path: sumo/CITATION.cff
+    - name: Installing Parquet
+      if: matrix.build_type == 'full'
+      run: |
+        wget https://packages.apache.org/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+        sudo apt install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+        sudo apt update
+        sudo apt install -y -V libarrow-dev libparquet-dev
 
     - name: Cloning jupedsim
       if: matrix.build_type == 'full' && matrix.compiler == 'gcc'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: PedestrianDynamics/jupedsim
         ref: ${{ matrix.jps_version }}
@@ -68,7 +68,7 @@ jobs:
       if: github.event_name != 'schedule'
       uses: hendrikmuhs/ccache-action@v1.2
       with:
-        key: ${{ matrix.build_type }}-${{ matrix.compiler }}
+        key: ${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.compiler }}
 
     - name: Building libjupedsim
       if: matrix.build_type == 'full' && matrix.compiler == 'gcc'
@@ -92,13 +92,13 @@ jobs:
         make traas
 
     - name: Setting up SonarQube
-      if: matrix.build_type == 'full' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && matrix.compiler == 'gcc'
-      uses: warchant/setup-sonar-scanner@v8
+      if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'full' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && matrix.compiler == 'gcc'
+      uses: warchant/setup-sonar-scanner@v9
       # with:
         # version: 6.0.0.4432
 
     - name: Building SUMO with SonarQube wrapper
-      if: matrix.build_type == 'full' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && matrix.compiler == 'gcc'
+      if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'full' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && matrix.compiler == 'gcc'
       run: |
         cd sumo/cmake-build
         curl -L -O https://sonarcloud.io/static/cpp/build-wrapper-linux-x86.zip
@@ -115,21 +115,31 @@ jobs:
         make -j4
         sudo make install
 
-    - name: Building Examples and Tests
+    - name: Installing Test Environment
       if: matrix.build_type == 'full'
-      # the pipdeptree below is also just for debugging but often comes handy so keep it enabled
+      # the pipdeptree below is just for debugging but often comes handy so keep it enabled
       run: |
         sudo apt-get install $(cat sumo/build_config/tools_req_deb.txt)
         python3 -m venv testenv --system-site-packages
         source testenv/bin/activate
-        python3 -m pip install -r sumo/tools/req_ci.txt -r sumo/tools/requirements.txt
-        python3 -m pip install pipdeptree
+        python3 -m pip install -r sumo/tools/req_ci.txt -r sumo/tools/requirements.txt texttest pipdeptree
         pipdeptree
+
+    - name: Building Examples and Unit Tests
+      if: matrix.build_type == 'full'
+      run: |
         cd sumo/cmake-build
         make CTEST_OUTPUT_ON_FAILURE=1 examples test
 
+    - name: Plain tests
+      if: matrix.build_type == 'full'
+      run: |
+        source testenv/bin/activate
+        if [[ "${{ matrix.os }}" == "ubuntu-24.04-arm" ]]; then TEXTTEST_FILTER="-finverse $PWD/sumo/tests/filter_files/linux_arm_failures.txt"; fi
+        sumo/tests/runTests.sh -b ci -v ci $TEXTTEST_FILTER
+
     - name: Extra tests
-      if: matrix.build_type == 'full' && matrix.compiler == 'gcc'
+      if: matrix.os == 'ubuntu-latest' && matrix.build_type == 'full' && matrix.compiler == 'gcc'
       run: |
         source testenv/bin/activate
         sumo/tests/runTests.sh -b ci -a sumo.meso.ci,sumo.extra.ci
@@ -141,14 +151,14 @@ jobs:
 
     - name: Uploading test results
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
-        name: texttesttmp-${{ matrix.compiler }}-${{ matrix.build_type }}
+        name: texttesttmp-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}
         path: texttesttmp.zip
         if-no-files-found: warn
 
     - name: Uploading artifacts (SUMO binaries)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
-        name: linux-${{ matrix.compiler }}-${{ matrix.build_type }}-binaries
+        name: ${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}-binaries
         path: sumo/bin

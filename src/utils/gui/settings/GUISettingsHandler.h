@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -135,6 +135,10 @@ public:
         return myJamSoundTime;
     }
 
+    std::vector<std::string> getTrackers() {
+        return myTrackers;
+    }
+
     const std::string& getSettingName() const {
         return mySettings.name;
     }
@@ -188,6 +192,9 @@ private:
     /// @brief The parsed event distributions
     std::map<std::string, RandomDistributor<std::string> > myEventDistributions;
     double myJamSoundTime;
+
+    /// @brief list of tlsIDs to open trackers for
+    std::vector<std::string> myTrackers;
 
 private:
     /// @brief parse color attribute

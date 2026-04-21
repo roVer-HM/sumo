@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -21,28 +21,27 @@
 #include <config.h>
 
 #include <netedit/GNEReferenceCounter.h>
+#include <utils/common/FileBucket.h>
 #include <utils/foxtools/fxheader.h>
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
 
+class FileBucket;
 class GNEHierarchicalElement;
 class GNELane;
+class GNEMoveElement;
 class GNENet;
 class GNETagProperties;
 class GNEUndoList;
 class GUIGlObject;
+class Parameterised;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNEAttributeCarrier
- *
- * Abstract Base class for gui objects which carry attributes
- * inherits from GNEReferenceCounter for convenience
- */
+
 class GNEAttributeCarrier : public GNEReferenceCounter {
 
     /// @brief declare friend class
@@ -51,30 +50,59 @@ class GNEAttributeCarrier : public GNEReferenceCounter {
     friend class GNEAttributesEditorType;
 
 public:
+    /**@brief Constructor for templates
+     * @param[in] tag SUMO Tag assigned to this type of object
+     * @param[in] net GNENet in which this AttributeCarrier is stored
+     */
+    GNEAttributeCarrier(const SumoXMLTag tag, GNENet* net);
 
     /**@brief Constructor
      * @param[in] tag SUMO Tag assigned to this type of object
      * @param[in] net GNENet in which this AttributeCarrier is stored
-     * @param[in] filename file in which this AttributeCarrier is stored
-     * @param[in] isTemplate flag to mark this AttributeCarrier as template
+     * @param[in] fileBucket bucket in which this AttributeCarrier is stored
      */
-    GNEAttributeCarrier(const SumoXMLTag tag, GNENet* net, const std::string& filename, const bool isTemplate);
+    GNEAttributeCarrier(const SumoXMLTag tag, GNENet* net, FileBucket* fileBucket);
 
     /// @brief Destructor
     virtual ~GNEAttributeCarrier();
 
+    /// @brief methods to retrieve the elements linked to this AttributeCarrier
+    /// @{
+
+    /// @brief get GNEHierarchicalElement associated with this AttributeCarrier
+    virtual GNEHierarchicalElement* getHierarchicalElement() = 0;
+
+    /// @brief get GNEMoveElement associated with this AttributeCarrier
+    virtual GNEMoveElement* getMoveElement() const = 0;
+
+    /// @brief get parameters associated with this AttributeCarrier
+    virtual Parameterised* getParameters() = 0;
+
+    /// @brief get parameters associated with this AttributeCarrier (constant)
+    virtual const Parameterised* getParameters() const = 0;
+
+    /// @brief get GUIGlObject associated with this AttributeCarrier
+    virtual GUIGlObject* getGUIGlObject() = 0;
+
+    /// @brief get GUIGlObject associated with this AttributeCarrier (constant)
+    virtual const GUIGlObject* getGUIGlObject() const = 0;
+
+    /// @}
+
     /// @brief get ID (all Attribute Carriers have one)
-    const std::string getID() const;
+    const std::string getID() const override;
 
     /// @brief get pointer to net
     GNENet* getNet() const;
 
-    /// @brief get filename in which save this AC
-    const std::string& getFilename() const;
+    /// @brief get reference to fileBucket in which save this AC
+    virtual FileBucket* getFileBucket() const = 0;
 
-    /// @brief change defaultFilename (only used in SavingFilesHandler)
-    void changeDefaultFilename(const std::string& file);
+    /// @brief update pre-computed geometry information
+    virtual void updateGeometry() = 0;
 
+    /// @name Function related with selection
+    /// @{
     /// @brief select attribute carrier using GUIGlobalSelection
     void selectAttributeCarrier();
 
@@ -84,13 +112,20 @@ public:
     /// @brief check if attribute carrier is selected
     bool isAttributeCarrierSelected() const;
 
+    /// @}
+
+    /// @name Function related with drawing
+    /// @{
+
     /// @brief check if attribute carrier must be drawn using selecting color.
     bool drawUsingSelectColor() const;
 
-    /// @brief get GNEHierarchicalElement associated with this AttributeCarrier
-    virtual GNEHierarchicalElement* getHierarchicalElement() = 0;
+    /// @brief check if draw moving geometry points
+    bool drawMovingGeometryPoints() const;
 
-    /// @name Function related front elements
+    /// @}
+
+    /// @name Function related with front elements
     /// @{
 
     /// @brief mark for drawing front
@@ -109,6 +144,7 @@ public:
 
     /// @name Function related with grid (needed for elements that aren't always in grid)
     /// @{
+
     /// @brief mark if this AC was inserted in grid or not
     void setInGrid(bool value);
 
@@ -117,20 +153,7 @@ public:
 
     /// @}
 
-    /// @name Function related with graphics (must be implemented in all children)
-    /// @{
-    /// @brief get GUIGlObject associated with this AttributeCarrier
-    virtual GUIGlObject* getGUIGlObject() = 0;
-
-    /// @brief get GUIGlObject associated with this AttributeCarrier (constant)
-    virtual const GUIGlObject* getGUIGlObject() const = 0;
-
-    /// @brief update pre-computed geometry information
-    virtual void updateGeometry() = 0;
-
-    /// @}
-
-    /// @name Function related with contourdrawing (can be implemented in children)
+    /// @name Function related with contour drawing
     /// @{
 
     /// @brief check if draw inspect contour (black/white)
@@ -170,11 +193,30 @@ public:
 
     /// @name Functions related with attributes (must be implemented in all children)
     /// @{
+
     /* @brief method for getting the Attribute of an XML key
      * @param[in] key The attribute key
      * @return string with the value associated to key
      */
     virtual std::string getAttribute(SumoXMLAttr key) const = 0;
+
+    /* @brief method for getting the Attribute of an XML key in double format
+     * @param[in] key The attribute key
+     * @return double with the value associated to key
+     */
+    virtual double getAttributeDouble(SumoXMLAttr key) const = 0;
+
+    /* @brief method for getting the Attribute of an XML key in position format
+     * @param[in] key The attribute key
+     * @return position with the value associated to key
+     */
+    virtual Position getAttributePosition(SumoXMLAttr key) const = 0;
+
+    /* @brief method for getting the Attribute of an XML key in positionVector format
+     * @param[in] key The attribute key
+     * @return positionVector with the value associated to key
+     */
+    virtual PositionVector getAttributePositionVector(SumoXMLAttr key) const = 0;
 
     /* @brief method for setting the attribute and letting the object perform additional changes
      * @param[in] key The attribute key
@@ -228,27 +270,15 @@ public:
 
     /// @name Function related with parameters
     /// @{
-    /// @brief get parameters map
-    virtual const Parameterised::Map& getACParametersMap() const = 0;
-
-    /// @brief get parameters
-    template<typename T>
-    T getACParameters() const;
-
-    /// @brief set parameters (string)
-    void setACParameters(const std::string& parameters, GNEUndoList* undoList);
-
-    /// @brief set parameters (map)
-    void setACParameters(const std::vector<std::pair<std::string, std::string> >& parameters, GNEUndoList* undoList);
 
     /// @brief set parameters (string vector)
+    void setACParameters(const std::vector<std::pair<std::string, std::string> >& parameters);
+
+    /// @brief set parameters (string vector, undoList)
+    void setACParameters(const std::vector<std::pair<std::string, std::string> >& parameters, GNEUndoList* undoList);
+
+    /// @brief set parameters (map, undoList)
     void setACParameters(const Parameterised::Map& parameters, GNEUndoList* undoList);
-
-    /// @brief add (or update attribute) key and attribute
-    void addACParameters(const std::string& key, const std::string& attribute, GNEUndoList* undoList);
-
-    /// @brief remove keys
-    void removeACParametersKeys(const std::vector<std::string>& keepKeys, GNEUndoList* undoList);
 
     /// @}
 
@@ -299,6 +329,50 @@ public:
 
     /// @}
 
+    /// @name Functions related with common attributes
+    /// @{
+    /* @brief method for getting the common attribute of an XML key
+     * @param[in] key The attribute key
+     * @return string with the value associated to key
+     */
+    std::string getCommonAttribute(SumoXMLAttr key) const;
+
+    /* @brief method for getting the common attribute of an XML key in double format
+     * @param[in] key The attribute key
+     * @return double with the value associated to key
+     */
+    double getCommonAttributeDouble(SumoXMLAttr key) const;
+
+    /* @brief method for getting the common attribute of an XML key in position format
+     * @param[in] key The attribute key
+     * @return double with the value associated to key
+     */
+    Position getCommonAttributePosition(SumoXMLAttr key) const;
+
+    /* @brief method for getting the common attribute of an XML key in positionVector format
+     * @param[in] key The attribute key
+     * @return double with the value associated to key
+     */
+    PositionVector getCommonAttributePositionVector(SumoXMLAttr key) const;
+
+    /* @brief method for setting the common attribute and letting the object perform additional changes
+     * @param[in] key The attribute key
+     * @param[in] value The new value
+     * @param[in] undoList The undoList on which to register changes
+     */
+    void setCommonAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList);
+
+    /* @brief method for check if new value for certain common attribute is valid
+     * @param[in] key The attribute key
+     * @param[in] value The new value
+     */
+    bool isCommonAttributeValid(SumoXMLAttr key, const std::string& value) const;
+
+    /// @brief method for setting the common attribute and nothing else (used in GNEChange_Attribute)
+    void setCommonAttribute(SumoXMLAttr key, const std::string& value);
+
+    /// @}
+
     /// @name Certain attributes and ACs (for example, connections) can be either loaded or guessed. The following static variables are used to remark it.
     /// @{
 
@@ -317,10 +391,10 @@ public:
     /// @}
 
     /// @brief true value in string format (used for comparing boolean values in getAttribute(...))
-    static const std::string True;
+    static const std::string TRUE_STR;
 
     /// @brief true value in string format(used for comparing boolean values in getAttribute(...))
-    static const std::string False;
+    static const std::string FALSE_STR;
 
 protected:
     /// @brief reference to tagProperty associated with this attribute carrier
@@ -338,8 +412,8 @@ protected:
     /// @brief boolean to check if this AC is in grid
     bool myInGrid = false;
 
-    /// @brief filename in which save this AC
-    std::string myFilename;
+    /// @brief filebucket vinculated whith this AC
+    FileBucket* myFileBucket = nullptr;
 
     /// @brief boolean to check if center this element after creation
     bool myCenterAfterCreation = true;
@@ -349,32 +423,6 @@ protected:
 
     /// @brief method for enable or disable the attribute and nothing else (used in GNEChange_ToggleAttribute)
     virtual void toggleAttribute(SumoXMLAttr key, const bool value);
-
-    /// @name Functions related with common attributes
-    /// @{
-    /* @brief method for getting the common attribute of an XML key
-     * @param[in] key The attribute key
-     * @return string with the value associated to key
-     */
-    std::string getCommonAttribute(const Parameterised* parameterised, SumoXMLAttr key) const;
-
-    /* @brief method for setting the common attribute and letting the object perform additional changes
-     * @param[in] key The attribute key
-     * @param[in] value The new value
-     * @param[in] undoList The undoList on which to register changes
-     */
-    void setCommonAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList);
-
-    /* @brief method for check if new value for certain common attribute is valid
-     * @param[in] key The attribute key
-     * @param[in] value The new value
-     */
-    bool isCommonValid(SumoXMLAttr key, const std::string& value) const;
-
-    /// @brief method for setting the common attribute and nothing else (used in GNEChange_Attribute)
-    void setCommonAttribute(Parameterised* parameterised, SumoXMLAttr key, const std::string& value);
-
-    /// @}
 
 private:
     /// @brief method for setting the attribute and nothing else (used in GNEChange_Attribute)

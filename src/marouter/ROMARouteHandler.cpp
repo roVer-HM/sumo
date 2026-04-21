@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -91,16 +91,16 @@ ROMARouteHandler::myEndElement(int element) {
             int quota = 1;
             SUMOTime departOffset = 0;
             if (element == SUMO_TAG_FLOW) {
-                int flowSize = 1;
+                long long int flowSize = 1;
                 double flowDur = STEPS2TIME(myVehicleParameter->repetitionEnd - myVehicleParameter->depart);
-                if (myVehicleParameter->repetitionNumber != std::numeric_limits<int>::max()) {
+                if (myVehicleParameter->repetitionNumber != std::numeric_limits<long long int>::max()) {
                     flowSize = myVehicleParameter->repetitionNumber;
                 } else if (myVehicleParameter->poissonRate > 0) {
-                    flowSize = (int)(flowDur * myVehicleParameter->poissonRate);
+                    flowSize = (long long int)(flowDur * myVehicleParameter->poissonRate);
                 } else if (myVehicleParameter->repetitionProbability > 0) {
-                    flowSize = (int)(flowDur * myVehicleParameter->repetitionProbability);
+                    flowSize = (long long int)(flowDur * myVehicleParameter->repetitionProbability);
                 }
-                quota = (int)(flowSize * myScale + 0.5);
+                quota = (int)((double)flowSize * myScale + 0.5);
                 myNumLoaded += flowSize;
                 departOffset = TIME2STEPS(flowDur) / quota;
             } else {

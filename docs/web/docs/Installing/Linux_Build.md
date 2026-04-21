@@ -34,7 +34,9 @@ alternatives below.
 ## Installing required tools and libraries
 
 - For the build infrastructure you will need cmake together with a moderately
-  recent g++ (4.8 will do) or clang++ (or any other C++11 enabled compiler).
+  recent g++ (7 will do) or clang++ (or any other C++17 enabled compiler).
+- It is possible to build SUMO with older compilers too (at least gcc 4.8) but
+  it is not recommended since some features will be disabled.
 - The library Xerces-C is always needed. To use
   [sumo-gui](../sumo-gui.md) you also need Fox Toolkit in version
   1.6.x. It is highly recommended to also install Proj to have support
@@ -69,6 +71,16 @@ python3 -m pip install texttest
 
 For the Python tools there are some more requirements depending on which tools you want to use. If you want to install
 everything using pip do `python3 -m pip install -r tools/requirements.txt -r tools/req_dev.txt`.
+
+### Parquet support
+
+see https://arrow.apache.org/install/
+```
+wget https://packages.apache.org/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+sudo apt install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+sudo apt update
+sudo apt install -y -V libarrow-dev libparquet-dev
+```
 
 ## Getting the source code
 
@@ -222,11 +234,11 @@ the stdlib option has to be set. The blacklist filters out a known bug
 in the cstdlib. For details see the clang documentation.
 
 The current CMake configuration already contains this for the debug
-build, so for building with CMake and clang just change to your build
-dir and use
+build, so for building with CMake and clang just change to your repository base dir and use
 
 ```
-CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Debug --build build -j $(nproc)
+CXX=clang++ cmake -D CMAKE_BUILD_TYPE=Debug -B build .
+cmake --build build -j $(nproc)
 ```
 
 The clang-debug-build will detect memory leaks (among other things)
@@ -244,6 +256,14 @@ Please note that the undefined behavior checker is very sensitive and will repor
 some false negatives also in system libraries. It is recommended to use
 `export UBSAN_OPTIONS=suppressions=$SUMO_HOME/build_config/clang_ubsan_suppressions.txt`
 before calling the executable.
+
+## Building a minimal feature set
+
+Many of the project features are optional. To test a minimal setup, the following build configuration can be used:
+
+```
+cmake -DFOX_CONFIG= -DPROJ_LIBRARY= -DCHECK_OPTIONAL_LIBS=OFF -DFMI=OFF -B build. 
+```
 
 ## Installing the SUMO binaries
 
@@ -324,11 +344,11 @@ In this section, you will learn how to build the latest version of the pedestria
 ``` bash
 git clone https://github.com/PedestrianDynamics/jupedsim
 ```
-Note that this will clone the full repository, including the latest version of JuPedSim. **We strongly recommend to build the latest release of JuPedSim (not the master branch), which is officially supported by SUMO.** You can consult the [JuPedSim build procedure](https://github.com/PedestrianDynamics/jupedsim#readme); hereafter we propose a similar procedure. First check which is the [latest release](https://github.com/PedestrianDynamics/jupedsim/releases) then in the cloned directory checkout to the latest release and do a regular cmake build. For example, for JuPedSim release v1.2.1, you would need to type:
+Note that this will clone the full repository, including the latest version of JuPedSim. **We strongly recommend to build the latest release of JuPedSim (not the master branch), which is officially supported by SUMO.** You can consult the [JuPedSim build procedure](https://github.com/PedestrianDynamics/jupedsim#readme); hereafter we propose a similar procedure. First check which is the [latest release](https://github.com/PedestrianDynamics/jupedsim/releases) then in the cloned directory checkout to the latest release and do a regular cmake build. For example, for JuPedSim release v1.3.1, you would need to type:
 
 ``` bash
 cd jupedsim
-git checkout v1.2.1
+git checkout v1.3.1
 cmake -B build .
 cmake --build build
 sudo cmake --install build

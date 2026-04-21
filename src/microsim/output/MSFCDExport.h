@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2012-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -52,16 +52,16 @@ public:
      *
      * @param[in] of The output device to use
      * @param[in] timestep The current time step
-     * @param[in] elevation Whether elevation data shall be written
+     * @param[in] tag Which tags to write
      * @exception IOError If an error on writing occurs (!!! not yet implemented)
      */
-    static void write(OutputDevice& of, SUMOTime timestep, bool elevation);
+    static void write(OutputDevice& of, const SUMOTime timestep, const SumoXMLTag tag = SUMO_TAG_NOTHING);
 
 private:
     /// @brief write transportable
-    static void writeTransportable(OutputDevice& of, const MSEdge* e, MSTransportable* p, const SUMOVehicle* v,
-                                   bool filter, bool shapeFilter, bool inRadius,
-                                   SumoXMLTag tag, bool useGeo, bool elevation, SumoXMLAttrMask mask);
+    static void writeTransportable(OutputDevice& of, const MSEdge* const e, const MSTransportable* const p, const SUMOVehicle* const v,
+                                   const bool filter, const bool shapeFilter, const bool inRadius,
+                                   const SumoXMLTag tag, const bool useGeo, const SumoXMLAttrMask mask);
 
     static bool isVisible(const SUMOVehicle* veh);
     static bool hasOwnOutput(const SUMOVehicle* veh, bool filter, bool shapeFilter, bool isInRadius = false);

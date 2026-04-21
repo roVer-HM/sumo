@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,15 +20,11 @@
 
 #include <netedit/GNENet.h>
 #include <netedit/GNETagProperties.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
 #include <netedit/changes/GNEChange_Attribute.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/gui/globjects/GLIncludes.h>
 #include <utils/gui/globjects/GUIGLObjectPopupMenu.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 #include <utils/gui/div/GUIDesigns.h>
-#include <utils/gui/div/GUIGlobalViewObjectsHandler.h>
 
 #include "GNEWalkingArea.h"
 
@@ -45,6 +41,24 @@ GNEWalkingArea::GNEWalkingArea(GNEJunction* junction, const std::string& ID) :
 
 
 GNEWalkingArea::~GNEWalkingArea() {
+}
+
+
+GNEMoveElement*
+GNEWalkingArea::getMoveElement() const {
+    return nullptr;
+}
+
+
+Parameterised*
+GNEWalkingArea::getParameters() {
+    return nullptr;
+}
+
+
+const Parameterised*
+GNEWalkingArea::getParameters() const {
+    return nullptr;
 }
 
 
@@ -123,24 +137,6 @@ GNEWalkingArea::checkDrawSelectContour() const {
 bool
 GNEWalkingArea::checkDrawMoveContour() const {
     return false;
-}
-
-
-GNEMoveOperation*
-GNEWalkingArea::getMoveOperation() {
-    // edit depending if shape is being edited
-    if (isShapeEdited()) {
-        // calculate move shape operation
-        return calculateMoveShapeOperation(this, getNBWalkingArea().shape, false);
-    } else {
-        return nullptr;
-    }
-}
-
-
-void
-GNEWalkingArea::removeGeometryPoint(const Position /*clickedPosition*/, GNEUndoList* /*undoList*/) {
-    // nothing to do
 }
 
 
@@ -251,8 +247,20 @@ GNEWalkingArea::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_SHAPE:
             return toString(walkingArea.shape);
         default:
-            return getCommonAttribute(nullptr, key);
+            return getCommonAttribute(key);
     }
+}
+
+
+double
+GNEWalkingArea::getAttributeDouble(SumoXMLAttr key) const {
+    return getCommonAttributeDouble(key);
+}
+
+
+Position
+GNEWalkingArea::getAttributePosition(SumoXMLAttr key) const {
+    return getCommonAttributePosition(key);
 }
 
 
@@ -262,7 +270,7 @@ GNEWalkingArea::getAttributePositionVector(SumoXMLAttr key) const {
         case SUMO_ATTR_SHAPE:
             return getNBWalkingArea().shape;
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            return getCommonAttributePositionVector(key);
     }
 }
 
@@ -313,14 +321,8 @@ GNEWalkingArea::isValid(SumoXMLAttr key, const std::string& value) {
                 return false;
             }
         default:
-            return isCommonValid(key, value);
+            return isCommonAttributeValid(key, value);
     }
-}
-
-
-const Parameterised::Map&
-GNEWalkingArea::getACParametersMap() const {
-    return getParametersMap();
 }
 
 // ===========================================================================
@@ -416,25 +418,9 @@ GNEWalkingArea::setAttribute(SumoXMLAttr key, const std::string& value) {
             walkingArea.hasCustomShape = true;
             break;
         default:
-            setCommonAttribute(nullptr, key, value);
+            setCommonAttribute(key, value);
             break;
     }
-}
-
-
-void
-GNEWalkingArea::setMoveShape(const GNEMoveResult& moveResult) {
-    // set custom shape
-    getNBWalkingArea().shape = moveResult.shapeToUpdate;
-}
-
-
-void
-GNEWalkingArea::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
-    // commit new shape
-    undoList->begin(this, "moving " + toString(SUMO_ATTR_SHAPE) + " of " + getTagStr());
-    GNEChange_Attribute::changeAttribute(this, SUMO_ATTR_SHAPE, toString(moveResult.shapeToUpdate), undoList);
-    undoList->end();
 }
 
 /****************************************************************************/

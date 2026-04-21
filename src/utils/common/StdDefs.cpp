@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2014-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2014-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -15,6 +15,7 @@
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
 /// @author  Laura Bieker
+/// @author  Mirko Barthauer
 /// @date    2014-01-07
 ///
 /****************************************************************************/
@@ -24,15 +25,20 @@
 
 // set by option --precision (see SystemFrame.cpp)
 int gPrecision = 2;
+int gPrecisionEmissions = 2;
 int gPrecisionGeo = 6;
 int gPrecisionRandom = 4;
 bool gHumanReadableTime = false;
 bool gSimulation = false;
 bool gIgnoreUnknownVClass = false;
+bool gLocaleInitialized = false;
 double gWeightsRandomFactor = 1;
 double gWeightsWalkOppositeFactor = 1;
+bool gRoutingPreferences = false;
 std::string gLanguage = "C";
+
 int GUIDesignHeight = 23;
+int GUIDesignDialogButtonsHeight = 32;
 
 bool gDebugFlag1 = false;
 bool gDebugFlag2 = false;
@@ -57,8 +63,13 @@ double roundDecimal(double x, int precision) {
     return (x2 < 0 ? ceil(x2 - 0.5) : floor(x2 + 0.5)) / p;
 }
 
+double roundDecimalToEven(double x, int precision) {
+    const int p = (int)pow(10, precision);
+    return std::nearbyint(x * p) / p;
+}
+
 int
-getScalingQuota(double frac, int loaded) {
+getScalingQuota(double frac, long long int loaded) {
     if (frac < 0 || frac == 1.) {
         return 1;
     }

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -22,14 +22,12 @@
 
 #include <netbuild/NBEdge.h>
 #include <netedit/frames/GNEFrame.h>
+#include <netedit/frames/common/GNEGroupBoxModule.h>
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNEConnectorFrame
- * The Widget for modifying selections of network-elements
- */
+
 class GNEConnectorFrame : public GNEFrame {
 
 public:
@@ -38,7 +36,7 @@ public:
     // class CurrentLane
     // ===========================================================================
 
-    class CurrentLane : public MFXGroupBoxModule {
+    class CurrentLane : public GNEGroupBoxModule {
 
     public:
         /// @brief constructor
@@ -59,7 +57,7 @@ public:
     // class ConnectionModifications
     // ===========================================================================
 
-    class ConnectionModifications : public MFXGroupBoxModule {
+    class ConnectionModifications : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNEConnectorFrame::ConnectionModifications)
 
@@ -101,7 +99,7 @@ public:
     // class ConnectionOperations
     // ===========================================================================
 
-    class ConnectionOperations : public MFXGroupBoxModule {
+    class ConnectionOperations : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNEConnectorFrame::ConnectionOperations)
 
@@ -164,7 +162,7 @@ public:
     // class ConnectionSelection
     // ===========================================================================
 
-    class ConnectionSelection : public MFXGroupBoxModule {
+    class ConnectionSelection : public GNEGroupBoxModule {
 
     public:
         /// @brief constructor
@@ -178,7 +176,7 @@ public:
     // class Legend
     // ===========================================================================
 
-    class Legend : public MFXGroupBoxModule {
+    class Legend : public GNEGroupBoxModule {
 
     public:
         /// @brief constructor

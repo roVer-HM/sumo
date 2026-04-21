@@ -52,8 +52,13 @@ is given in the table below.
 | meanWaitingTime   | s                    | The mean time all vehicles up to now and within the reported time step had to wait for being inserted; -1 if no vehicle has been inserted, yet                          |
 | meanTravelTime    | s                    | The mean travel time of all vehicles that have left the simulation within the previous and the reported time;-1 if no vehicle has been removed from the simulation, yet |
 | meanSpeed         | m/s                  | The mean speed over all vehicles in the network (which are not waiting at a `<stop>`).                                                                                          |
-| meanSpeedRelative |                      | The mean speed over all vehicles in the network relative to the speed limit (which are not waiting at a `<stop>`).                                                              |
+| meanSpeedRelative |                      | The mean speed over all vehicles in the network relative to the speed limit (which are not waiting at a `<stop>`).                                              |
+| discarded         | \#                   | Number of vehicles that were discarded up to this time step (i.e. due to option **--scale** or invalid departSpeed).                                              |
 | duration          | ms                   | The computation time for that simulation step (in milliseconds).                                                                                                         |
+
+### Reducing output
+
+Option **--summary-output.period {{DT_TIME}}** can be used to reduce the number of steps in which output is generated. When this option is set to FLOAT, only simulation steps were time is divisible by FLOAT will generate output. The final simulation step will always generate output even if it doesn't match the period.
 
 ## Visualization examples
 

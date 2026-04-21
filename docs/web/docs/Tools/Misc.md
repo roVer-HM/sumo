@@ -282,6 +282,9 @@ ptlines-file will be used, rather than creating new shortest path routes between
 A *ptlines-file* is typically created by [netconvert](../netconvert.md) option **--ptline-output** when importing OSM data.
 However it can also be customized or created from scratch for a non OSM network.
 
+!!! note
+    A [tutorial](../Tutorials/PT_from_OpenStreetMap.md) for using this tool with OSM data is also availabe
+
 ## Example Input
 
 A minimal description for a bus line looks like this:
@@ -376,6 +379,17 @@ The generated setting file can be loaded in sumo-gui with:
 ```
 sumo-gui -n test.net.xml -g settings.xml
 ```
+
+## Projection Mismatch
+
+!!! caution
+    Many tile providers use the common [web-mercator projection](https://en.wikipedia.org/wiki/Web_Mercator_projection). In contrast, netconvert uses the [UTM projection](https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system) which is a lot more accurate for typical network sizes. This creates an incompatibility between the network and the tiles. See below for details.
+
+There are several ways to deal with the incompatibility:
+
+- use [gdalwarp](https://gdal.org/en/stable/programs/gdalwarp.html) to convert the web-mercator tiles to UTM-tiles (recommended)
+- build your network in web-mercator projection (not recommended because this is a lousy projection and roads will have the wrong lengths!)
+- accept some gaps in your tiles
 
 # stateReplay.py
 

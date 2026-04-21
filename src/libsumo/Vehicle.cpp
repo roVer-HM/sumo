@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2012-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -651,7 +651,7 @@ Vehicle::getStops(const std::string& vehID, int limit) {
     MSBaseVehicle* vehicle = Helper::getVehicle(vehID);
     if (limit < 0) {
         // return past stops up to the given limit
-        const std::vector<SUMOVehicleParameter::Stop>& pastStops = vehicle->getPastStops();
+        const StopParVector& pastStops = vehicle->getPastStops();
         const int n = (int)pastStops.size();
         for (int i = MAX2(0, n + limit); i < n; i++) {
             result.push_back(Helper::buildStopData(pastStops[i]));
@@ -1062,7 +1062,7 @@ Vehicle::getImperfection(const std::string& vehID) {
 
 double
 Vehicle::getSpeedDeviation(const std::string& vehID) {
-    return Helper::getVehicleType(vehID).getSpeedFactor().getParameter()[1];
+    return Helper::getVehicleType(vehID).getSpeedFactor().getParameter(1);
 }
 
 
@@ -1458,7 +1458,7 @@ Vehicle::resume(const std::string& vehID) {
         throw TraCIException("Failed to resume vehicle '" + veh->getID() + "', it has no stops.");
     }
     if (!veh->resumeFromStopping()) {
-        MSStop& sto = veh->getNextStop();
+        const MSStop& sto = veh->getNextStop();
         std::ostringstream strs;
         strs << "reached: " << sto.reached;
         strs << ", duration:" << sto.duration;

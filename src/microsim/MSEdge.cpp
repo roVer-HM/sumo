@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -59,7 +59,8 @@
 MSEdge::DictType MSEdge::myDict;
 MSEdgeVector MSEdge::myEdges;
 SVCPermissions MSEdge::myMesoIgnoredVClasses(0);
-
+DepartLaneDefinition MSEdge::myDefaultDepartLaneDefinition(DepartLaneDefinition::DEFAULT);
+int MSEdge::myDefaultDepartLane(0);
 
 // ===========================================================================
 // member method definitions
@@ -68,6 +69,7 @@ MSEdge::MSEdge(const std::string& id, int numericalID,
                const SumoXMLEdgeFunc function,
                const std::string& streetName,
                const std::string& edgeType,
+               const std::string& routingType,
                int priority,
                double distance) :
     Named(id), myNumericalID(numericalID), myLanes(nullptr),
@@ -78,6 +80,7 @@ MSEdge::MSEdge(const std::string& id, int numericalID,
     myOtherTazConnector(nullptr),
     myStreetName(streetName),
     myEdgeType(edgeType),
+    myRoutingType(routingType),
     myPriority(priority),
     myDistance(distance),
     myWidth(0.),
@@ -253,6 +256,12 @@ MSEdge::updateMesoType() {
     }
 }
 
+void
+MSEdge::postLoadInitLaneChanger() {
+    if (myLaneChanger != nullptr) {
+        myLaneChanger->postloadInitLC();
+    }
+}
 
 void
 MSEdge::buildLaneChanger() {
@@ -319,7 +328,7 @@ MSEdge::getMesoPermissions(SVCPermissions p, SVCPermissions ignoreIgnored) {
 
 
 void
-MSEdge::rebuildAllowedLanes(const bool onInit) {
+MSEdge::rebuildAllowedLanes(const bool onInit, bool updateVehicles) {
     // rebuild myMinimumPermissions and myCombinedPermissions
     myMinimumPermissions = SVCAll;
     myCombinedPermissions = 0;
@@ -360,7 +369,7 @@ MSEdge::rebuildAllowedLanes(const bool onInit) {
         myOriginalMinimumPermissions = myMinimumPermissions;
         myOriginalCombinedPermissions = myCombinedPermissions;
     } else {
-        rebuildAllowedTargets(false);
+        rebuildAllowedTargets(updateVehicles);
         for (MSEdge* pred : myPredecessors) {
             if (myHaveTransientPermissions && !pred->myHaveTransientPermissions) {
                 pred->myOrigAllowed = pred->myAllowed;
@@ -368,7 +377,7 @@ MSEdge::rebuildAllowedLanes(const bool onInit) {
                 pred->myOrigClassesViaSuccessorMap = pred->myClassesViaSuccessorMap;
                 pred->myHaveTransientPermissions = true;
             }
-            pred->rebuildAllowedTargets(false);
+            pred->rebuildAllowedTargets(updateVehicles);
         }
         if (MSGlobals::gUseMesoSim) {
             for (MESegment* s = MSGlobals::gMesoNet->getSegmentForEdge(*this); s != nullptr; s = s->getNextSegment()) {
@@ -497,6 +506,26 @@ MSEdge::allowedLanes(SUMOVehicleClass vclass) const {
     } else {
         if ((myCombinedPermissions & vclass) == vclass) {
             for (const auto& allowed : myAllowed) {
+                if ((allowed.first & vclass) == vclass) {
+                    return allowed.second.get();
+                }
+            }
+        }
+        return nullptr;
+    }
+}
+
+
+const std::vector<MSLane*>*
+MSEdge::allowedLanes(SUMOVehicleClass vclass, bool ignoreTransientPermissions) const {
+    const SVCPermissions& minP = ignoreTransientPermissions ? myOriginalMinimumPermissions : myMinimumPermissions;
+    if ((minP & vclass) == vclass) {
+        return myLanes.get();
+    } else {
+        const SVCPermissions comP = ignoreTransientPermissions ? myOriginalCombinedPermissions : myCombinedPermissions;
+        if ((comP & vclass) == vclass) {
+            const AllowedLanesCont& allowedCont = ignoreTransientPermissions ? myOrigAllowed : myAllowed;
+            for (const auto& allowed : allowedCont) {
                 if ((allowed.first & vclass) == vclass) {
                     return allowed.second.get();
                 }
@@ -652,12 +681,18 @@ MSEdge::getDepartLaneMeso(SUMOVehicle& veh) const {
 
 MSLane*
 MSEdge::getDepartLane(MSVehicle& veh) const {
-    switch (veh.getParameter().departLaneProcedure) {
+    DepartLaneDefinition dld = veh.getParameter().departLaneProcedure;
+    int departLane = veh.getParameter().departLane;
+    if (dld == DepartLaneDefinition::DEFAULT) {
+        dld = myDefaultDepartLaneDefinition;
+        departLane = myDefaultDepartLane;
+    }
+    switch (dld) {
         case DepartLaneDefinition::GIVEN:
-            if ((int) myLanes->size() <= veh.getParameter().departLane || !(*myLanes)[veh.getParameter().departLane]->allowsVehicleClass(veh.getVehicleType().getVehicleClass())) {
+            if ((int) myLanes->size() <= departLane || !(*myLanes)[departLane]->allowsVehicleClass(veh.getVehicleType().getVehicleClass())) {
                 return nullptr;
             }
-            return (*myLanes)[veh.getParameter().departLane];
+            return (*myLanes)[departLane];
         case DepartLaneDefinition::RANDOM:
             return RandHelper::getRandomFrom(*allowedLanes(veh.getVehicleType().getVehicleClass()));
         case DepartLaneDefinition::FREE:
@@ -723,9 +758,9 @@ MSEdge::getDepartLane(MSVehicle& veh) const {
 
 
 MSLane*
-MSEdge::getFirstAllowed(SUMOVehicleClass vClass, bool defaultFirst) const {
+MSEdge::getFirstAllowed(SUMOVehicleClass vClass, bool defaultFirst, int routingMode) const {
     for (std::vector<MSLane*>::const_iterator i = myLanes->begin(); i != myLanes->end(); ++i) {
-        if ((*i)->allowsVehicleClass(vClass)) {
+        if ((*i)->allowsVehicleClass(vClass, routingMode)) {
             return *i;
         }
     }
@@ -752,10 +787,9 @@ MSEdge::validateDepartSpeed(SUMOVehicle& v) const {
                 // additive term must come after multiplication!
                 vMax += SPEED_EPS;
                 if (pars.departSpeed > vMax) {
-                    const std::vector<double>& speedFactorParams = type.getSpeedFactor().getParameter();
-                    if (speedFactorParams[1] > 0.) {
+                    if (type.getSpeedFactor().getParameter(1) > 0.) {
                         v.setChosenSpeedFactor(type.computeChosenSpeedDeviation(nullptr, pars.departSpeed / MIN2(getSpeedLimit(), type.getDesiredMaxSpeed() - SPEED_EPS)));
-                        if (v.getChosenSpeedFactor() > speedFactorParams[0] + 2 * speedFactorParams[1]) {
+                        if (v.getChosenSpeedFactor() > type.getSpeedFactor().getParameter(0) + 2 * type.getSpeedFactor().getParameter(1)) {
                             // only warn for significant deviation
                             WRITE_WARNINGF(TL("Choosing new speed factor % for vehicle '%' to match departure speed % (max %)."),
                                            toString(v.getChosenSpeedFactor()), pars.id, pars.departSpeed, vMax);
@@ -780,11 +814,12 @@ MSEdge::insertVehicle(SUMOVehicle& v, SUMOTime time, const bool checkOnly, const
     }
     const SUMOVehicleParameter& pars = v.getParameter();
     if (!validateDepartSpeed(v)) {
-        const std::string errorMsg = "Departure speed for vehicle '" + pars.id + "' is too high for the departure edge '" + getID() + "'.";
         if (MSGlobals::gCheckRoutes) {
-            throw ProcessError(errorMsg);
+            throw ProcessError(TLF("Departure speed for vehicle '%' is too high for the departure edge '%', time=%.",
+                                   pars.id, getID(), time2string(time)));
         } else {
-            WRITE_WARNING(errorMsg);
+            WRITE_WARNINGF(TL("Departure speed for vehicle '%' is too high for the departure edge '%', time=%."),
+                           pars.id, getID(), time2string(time));
         }
     }
     if (MSGlobals::gUseMesoSim) {
@@ -800,8 +835,8 @@ MSEdge::insertVehicle(SUMOVehicle& v, SUMOTime time, const bool checkOnly, const
                     pos = pars.departPos + getLength();
                 }
                 if (pos < 0 || pos > getLength()) {
-                    WRITE_WARNING("Invalid departPos " + toString(pos) + " given for vehicle '" +
-                                  v.getID() + "'. Inserting at lane end instead.");
+                    WRITE_WARNINGF(TL("Invalid departPos % given for vehicle '%', time=%. Inserting at lane end instead."),
+                                   pos, v.getID(), time2string(time));
                     pos = getLength();
                 }
                 break;
@@ -841,7 +876,8 @@ MSEdge::insertVehicle(SUMOVehicle& v, SUMOTime time, const bool checkOnly, const
             case DepartLaneDefinition::FIRST_ALLOWED: {
                 MSLane* insertionLane = getDepartLane(static_cast<MSVehicle&>(v));
                 if (insertionLane == nullptr) {
-                    WRITE_WARNING("could not insert vehicle '" + v.getID() + "' on any lane of edge '" + getID() + "', time=" + time2string(MSNet::getInstance()->getCurrentTimeStep()));
+                    WRITE_WARNINGF(TL("Could not insert vehicle '%' on any lane of edge '%', time=%."),
+                                   v.getID(), getID(), time2string(time));
                     return false;
                 }
                 const double occupancy = insertionLane->getBruttoOccupancy();
@@ -1672,6 +1708,20 @@ MSEdge::hasTransientPermissions() const {
     return myHaveTransientPermissions;
 }
 
+
+std::pair<double, SUMOTime>
+MSEdge::getLastBlocked(int index) const {
+    if (myLaneChanger != nullptr) {
+        return myLaneChanger->getLastBlocked(index);
+    }
+    return std::make_pair(-1, -1);
+}
+
+
+double
+MSEdge::getPreference(const SUMOVTypeParameter& pars) const {
+    return MSNet::getInstance()->getPreference(getRoutingType(), pars);
+}
 
 void
 MSEdge::clearState() {

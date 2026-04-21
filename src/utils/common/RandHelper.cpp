@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -76,9 +76,9 @@ RandHelper::initRand(SumoRNG* which, const bool random, const int seed) {
         which = &myRandomNumberGenerator;
     }
     if (random) {
-        which->seed((unsigned long)time(nullptr));
+        which->setSeed((unsigned long)time(nullptr));
     } else {
-        which->seed(seed);
+        which->setSeed(seed);
     }
 }
 
@@ -89,6 +89,13 @@ RandHelper::initRandGlobal(SumoRNG* which) {
     initRand(which, oc.getBool("random"), oc.getInt("seed"));
 }
 
+int
+RandHelper::getSeed(SumoRNG* which) {
+    if (which == nullptr) {
+        which = &myRandomNumberGenerator;
+    }
+    return which->origSeed;
+}
 
 double
 RandHelper::rand(SumoRNG* rng) {
@@ -148,7 +155,11 @@ RandHelper::randNorm(double mean, double variance, SumoRNG* rng) {
 
 double
 RandHelper::randExp(double rate, SumoRNG* rng) {
-    return -log(rand(rng)) / rate;
+    double r = rand(rng);
+    while (r == 0) {
+        r = rand(rng);
+    }
+    return -log(r) / rate;
 }
 
 // template<class T>

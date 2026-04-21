@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2013-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -109,9 +109,13 @@ MSLCHelper::getRoundaboutDistBonus(const MSVehicle& veh,
     }
     // no bonus if we want to take the next exit
     if (roundaboutJunctionsAhead < 2) {
+#ifdef DEBUG_WANTS_CHANGE
+        if (debugVehicle) {
+            std::cout << "   noBonus: roundaboutJunctionsAhead=" << roundaboutJunctionsAhead << "\n";
+        }
+#endif
         return 0;
     }
-
     // compute bonus value based on jamming and exact distances (taking into
     // account internal lanes)
     double occupancyOuter = 0;
@@ -196,12 +200,21 @@ MSLCHelper::getRoundaboutDistBonus(const MSVehicle& veh,
                   << "\n";
     }
 #endif
+    if (abs(curr.bestLaneOffset) > 1 && enteredRoundabout) {
+        const double bGap = veh.getCarFollowModel().brakeGap(veh.getSpeed() + ACCEL2SPEED(veh.getCarFollowModel().getMaxAccel()), veh.getCarFollowModel().getMaxDecel(), veh.getActionStepLengthSecs());
+        const double reservation = veh.getLaneChangeModel().getExtraReservation(curr.bestLaneOffset);
+        const double leftSpace = distanceInRoundabout - reservation - veh.getPositionOnLane();
+#ifdef DEBUG_WANTS_CHANGE
+        if (debugVehicle) {
+            std::cout << "   bGap=" << bGap << " reserving=" << reservation << " leftover=" << (leftSpace - bGap) << "\n";
+        }
+#endif
+        if (bGap > leftSpace) {
+            return 0;
+        }
+    }
 
     const double maxOccupancy = MAX2(occupancyInner, occupancyOuter);
-    if (maxOccupancy == 0) {
-        // no bonues if the roundabout is empty
-        return 0;
-    }
     // give some bonus for using the inside lane at equal occupancy
     const double bonus = roundaboutJunctionsAhead * 7.5;
     const double relativeJam = (occupancyOuter - occupancyInner + bonus) / (maxOccupancy + bonus);
@@ -238,15 +251,18 @@ MSLCHelper::updateBlockerLength(const MSVehicle& veh,  MSVehicle* blocker, int l
 #endif
     if (blocker != nullptr && (blocker->getLaneChangeModel().getOwnState() & lcaCounter) != 0) {
         // is there enough space in front of us for the blocker?
+        const double required = blocker->getVehicleType().getLengthWithGap() + veh.getVehicleType().getMinGap();
         const double potential = leftSpace - veh.getCarFollowModel().brakeGap(
                                      veh.getSpeed(), veh.getCarFollowModel().getMaxDecel(), 0);
-        if (blocker->getVehicleType().getLengthWithGap() <= potential) {
+        if (required <= potential) {
             // save at least his length in myLeadingBlockerLength
-            leadingBlockerLength = MAX2(blocker->getVehicleType().getLengthWithGap(), leadingBlockerLength);
+            leadingBlockerLength = MAX2(required, leadingBlockerLength);
 #ifdef DEBUG_SAVE_BLOCKER_LENGTH
             if (DEBUG_COND) {
                 std::cout << SIMTIME
                           << " veh=" << veh.getID()
+                          << " required=" << required
+                          << " potential=" << potential
                           << " blocker=" << Named::getIDSecure(blocker)
                           << " saving myLeadingBlockerLength=" << leadingBlockerLength
                           << "\n";
@@ -255,17 +271,20 @@ MSLCHelper::updateBlockerLength(const MSVehicle& veh,  MSVehicle* blocker, int l
         } else {
             // we cannot save enough space for the blocker. It needs to save
             // space for ego instead
-            const bool canReserve = blocker->getLaneChangeModel().saveBlockerLength(veh.getVehicleType().getLengthWithGap(), leftSpace);
+            const double required2 = veh.getVehicleType().getLengthWithGap() + blocker->getVehicleType().getMinGap();
+            const double foeLeftSpace = leftSpace - veh.getPositionOnLane() + blocker->getPositionOnLane() - POSITION_EPS;
+            const bool canReserve = blocker->getLaneChangeModel().saveBlockerLength(required2, foeLeftSpace);
             //reliefConnection ? std::numeric_limits<double>::max() : leftSpace);
 #ifdef DEBUG_SAVE_BLOCKER_LENGTH
             if (DEBUG_COND) {
                 std::cout << SIMTIME
                           << " veh=" << veh.getID()
-                          << " blocker=" << Named::getIDSecure(blocker)
-                          << " cannot save space=" << blocker->getVehicleType().getLengthWithGap()
+                          << " required=" << required
                           << " potential=" << potential
+                          << " blocker=" << Named::getIDSecure(blocker)
+                          << " required2=" << required2
+                          << " foeCanReserve=" << canReserve
                           << " myReserved=" << leadingBlockerLength
-                          << " canReserve=" << canReserve
                           << " reliefConnection=" << reliefConnection
                           << "\n";
             }
@@ -275,7 +294,7 @@ MSLCHelper::updateBlockerLength(const MSVehicle& veh,  MSVehicle* blocker, int l
                 if ((blockerState & LCA_STRATEGIC) != 0
                         && (blockerState & LCA_URGENT) != 0) {
                     // reserve anyway and try to avoid deadlock with emergency deceleration
-                    leadingBlockerLength = MAX2(blocker->getVehicleType().getLengthWithGap(), leadingBlockerLength);
+                    leadingBlockerLength = MAX2(required, leadingBlockerLength);
 #ifdef DEBUG_SAVE_BLOCKER_LENGTH
                     if (DEBUG_COND) {
                         std::cout << "   reserving anyway to avoid deadlock (will cause emergency braking)\n";

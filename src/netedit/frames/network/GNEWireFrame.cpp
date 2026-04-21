@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2021-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2021-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -21,6 +21,7 @@
 #include <netedit/GNEApplicationWindow.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNEViewParent.h>
+#include <netedit/dialogs/basic/GNEWarningBasicDialog.h>
 #include <netedit/elements/additional/GNEAdditionalHandler.h>
 #include <netedit/frames/GNEAttributesEditor.h>
 #include <netedit/frames/GNEConsecutiveSelector.h>
@@ -65,7 +66,10 @@ GNEWireFrame::show() {
     // show frame
     GNEFrame::show();
     if (!myWarnedExperimental) {
-        FXMessageBox::warning(getApp(), MBOX_OK, TL("Experimental Part"), "%s", TL("Warning: The netedit overhead editor is still in experimental state."));
+        // show warning dialogbox about experimental state (only once)
+        GNEWarningBasicDialog(myViewNet->getViewParent()->getGNEAppWindows(),
+                              TL("Experimental Part"),
+                              TL("Warning: The netedit overhead editor is still in experimental state."));
         myWarnedExperimental = true;
     }
 }
@@ -128,9 +132,8 @@ GNEWireFrame::createPath(const bool /* useLastRoute */) {
             // show warning dialogbox and stop check if input parameters are valid
             if (myWireAttributesEditor->checkAttributes(true)) {
                 // declare additional handler
-                GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myBaseWire->hasStringAttribute(GNE_ATTR_ADDITIONAL_FILE) ?
-                                                       myBaseWire->getStringAttribute(GNE_ATTR_ADDITIONAL_FILE) : "",
-                                                       myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
+                GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myViewNet->getNet()->getACTemplates()->getTemplateAC(tagProperty->getTag())->getFileBucket(),
+                                                       myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed());
                 // build additional
                 additionalHandler.parseSumoBaseObject(myBaseWire);
                 // Refresh wire Parent Selector (For additionals that have a limited number of children)
@@ -245,9 +248,8 @@ GNEWireFrame::buildWireOverView(const GNETagProperties* tagProperty) {
         return false;
     } else {
         // declare additional handler
-        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myBaseWire->hasStringAttribute(GNE_ATTR_ADDITIONAL_FILE) ?
-                                               myBaseWire->getStringAttribute(GNE_ATTR_ADDITIONAL_FILE) : "",
-                                               myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
+        GNEAdditionalHandler additionalHandler(myViewNet->getNet(), myViewNet->getNet()->getACTemplates()->getTemplateAC(tagProperty->getTag())->getFileBucket(),
+                                               myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed());
         // build wire
         additionalHandler.parseSumoBaseObject(myBaseWire);
         // Refresh wire Parent Selector (For wires that have a limited number of children)

@@ -28,3 +28,5 @@ remap_renamed
 
 # map ids between networks
 remap_network
+netduplicate
+patchRailConflicts

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -31,6 +31,7 @@
 // ===========================================================================
 // FOX-declarations
 // ===========================================================================
+
 FXIMPLEMENT_ABSTRACT(GNEChange_Attribute, GNEChange, nullptr, 0)
 
 // ===========================================================================
@@ -39,7 +40,7 @@ FXIMPLEMENT_ABSTRACT(GNEChange_Attribute, GNEChange, nullptr, 0)
 
 void
 GNEChange_Attribute::changeAttribute(GNEAttributeCarrier* AC, SumoXMLAttr key, const std::string& value, GNEUndoList* undoList, const bool force) {
-    if (AC->getNet()->getViewNet()->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed()) {
+    if (AC->getNet()->getGNEApplicationWindow()->isUndoRedoAllowed()) {
         // create change
         auto change = new GNEChange_Attribute(AC, key, value);
         // set force
@@ -60,7 +61,7 @@ GNEChange_Attribute::changeAttribute(GNEAttributeCarrier* AC, SumoXMLAttr key, c
 
 void
 GNEChange_Attribute::changeAttribute(GNEAttributeCarrier* AC, SumoXMLAttr key, const std::string& value, const std::string& originalValue, GNEUndoList* undoList, const bool force) {
-    if (AC->getNet()->getViewNet()->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed()) {
+    if (AC->getNet()->getGNEApplicationWindow()->isUndoRedoAllowed()) {
         // create change
         auto change = new GNEChange_Attribute(AC, key, value, originalValue);
         // set force
@@ -81,7 +82,7 @@ GNEChange_Attribute::changeAttribute(GNEAttributeCarrier* AC, SumoXMLAttr key, c
 
 GNEChange_Attribute::~GNEChange_Attribute() {
     // only continue we have undo-redo mode enabled
-    if (myAC->getNet()->getViewNet()->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed()) {
+    if (myAC->getNet()->getGNEApplicationWindow()->isUndoRedoAllowed()) {
         // decrease reference
         myAC->decRef("GNEChange_Attribute " + toString(myKey));
         // remove if is unreferenced

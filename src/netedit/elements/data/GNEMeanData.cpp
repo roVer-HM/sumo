@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,9 +18,10 @@
 // Class for representing MeanData
 /****************************************************************************/
 
+#include <netedit/changes/GNEChange_Attribute.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagProperties.h>
-#include <netedit/changes/GNEChange_Attribute.h>
 
 #include "GNEMeanData.h"
 
@@ -28,22 +29,24 @@
 // member method definitions
 // ===========================================================================
 
-GNEMeanData::GNEMeanData(SumoXMLTag tag, std::string ID, GNENet* net, const std::string& filename) :
-    GNEAttributeCarrier(tag, net, filename, true),
+GNEMeanData::GNEMeanData(SumoXMLTag tag, std::string ID, GNENet* net, FileBucket* fileBucket) :
+    GNEAttributeCarrier(tag, net, fileBucket),
     myID(ID) {
     // reset default values
     resetDefaultValues(false);
 }
 
 
-GNEMeanData::GNEMeanData(SumoXMLTag tag, std::string ID, GNENet* net, const std::string& filename, const std::string& file, const SUMOTime period,
-                         const SUMOTime begin, const SUMOTime end, const bool trackVehicles, const std::vector<SumoXMLAttr>& writtenAttributes,
-                         const bool aggregate, const std::vector<std::string>& edges, const std::string& edgeFile, const std::string& excludeEmpty,
-                         const bool withInternal, const std::vector<std::string>& detectPersons, const double minSamples, const double maxTravelTime,
-                         const std::vector<std::string>& vTypes, const double speedThreshold) :
-    GNEAttributeCarrier(tag, net, filename, false),
+GNEMeanData::GNEMeanData(SumoXMLTag tag, std::string ID, GNENet* net, FileBucket* fileBucket, const std::string& file,
+                         const std::string& type, const SUMOTime period, const SUMOTime begin, const SUMOTime end,
+                         const bool trackVehicles, const std::vector<SumoXMLAttr>& writtenAttributes, const bool aggregate,
+                         const std::vector<std::string>& edges, const std::string& edgeFile, const std::string& excludeEmpty,
+                         const bool withInternal, const std::vector<std::string>& detectPersons, const double minSamples,
+                         const double maxTravelTime, const std::vector<std::string>& vTypes, const double speedThreshold) :
+    GNEAttributeCarrier(tag, net, fileBucket),
     myID(ID),
     myFile(file),
+    myType(type),
     myPeriod(period),
     myBegin(begin),
     myEnd(end),
@@ -75,6 +78,42 @@ GNEMeanData::getHierarchicalElement() {
 }
 
 
+GNEMoveElement*
+GNEMeanData::getMoveElement() const {
+    return nullptr;
+}
+
+
+Parameterised*
+GNEMeanData::getParameters() {
+    return nullptr;
+}
+
+
+const Parameterised*
+GNEMeanData::getParameters() const {
+    return nullptr;
+}
+
+
+GUIGlObject*
+GNEMeanData::getGUIGlObject() {
+    return nullptr;
+}
+
+
+const GUIGlObject*
+GNEMeanData::getGUIGlObject() const {
+    return nullptr;
+}
+
+
+FileBucket*
+GNEMeanData::getFileBucket() const {
+    return myFileBucket;
+}
+
+
 void
 GNEMeanData::writeMeanData(OutputDevice& device) const {
     device.openTag(getTagProperty()->getTag());
@@ -86,8 +125,11 @@ GNEMeanData::writeMeanData(OutputDevice& device) const {
         device.writeAttr(SUMO_ATTR_FILE, myFile);
     }
     // write optional attributes
+    if (myType != myTagProperty->getDefaultStringValue(SUMO_ATTR_TYPE) &&
+            (myType != SUMOXMLDefinitions::MeanDataTypes.getString(MeanDataType::TRAFFIC))) {
+        device.writeAttr(SUMO_ATTR_TYPE, myType);
+    }
     if (myPeriod != myTagProperty->getDefaultTimeValue(SUMO_ATTR_PERIOD)) {
-        std::cout << myPeriod << std::endl;
         device.writeAttr(SUMO_ATTR_PERIOD, time2string(myPeriod));
     }
     if (myBegin != myTagProperty->getDefaultTimeValue(SUMO_ATTR_BEGIN)) {
@@ -133,18 +175,6 @@ GNEMeanData::writeMeanData(OutputDevice& device) const {
         device.writeAttr(SUMO_ATTR_AGGREGATE, true);
     }
     device.closeTag();
-}
-
-
-GUIGlObject*
-GNEMeanData::getGUIGlObject() {
-    return nullptr;
-}
-
-
-const GUIGlObject*
-GNEMeanData::getGUIGlObject() const {
-    return nullptr;
 }
 
 
@@ -215,6 +245,8 @@ GNEMeanData::getAttribute(SumoXMLAttr key) const {
             return myID;
         case SUMO_ATTR_FILE:
             return myFile;
+        case SUMO_ATTR_TYPE:
+            return myType;
         case SUMO_ATTR_PERIOD:
             if (myPeriod == myTagProperty->getDefaultTimeValue(key)) {
                 return "";
@@ -258,14 +290,26 @@ GNEMeanData::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_AGGREGATE:
             return toString(myAggregate);
         default:
-            return getCommonAttribute(this, key);
+            return getCommonAttribute(key);
     }
 }
 
 
 double
 GNEMeanData::getAttributeDouble(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
+    return getCommonAttributeDouble(key);
+}
+
+
+Position
+GNEMeanData::getAttributePosition(SumoXMLAttr key) const {
+    return getCommonAttributePosition(key);
+}
+
+
+PositionVector
+GNEMeanData::getAttributePositionVector(SumoXMLAttr key) const {
+    return getCommonAttributePositionVector(key);
 }
 
 
@@ -277,6 +321,7 @@ GNEMeanData::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList
     switch (key) {
         case SUMO_ATTR_ID:
         case SUMO_ATTR_FILE:
+        case SUMO_ATTR_TYPE:
         case SUMO_ATTR_PERIOD:
         case SUMO_ATTR_BEGIN:
         case SUMO_ATTR_END:
@@ -308,6 +353,8 @@ GNEMeanData::isValid(SumoXMLAttr key, const std::string& value) {
             return SUMOXMLDefinitions::isValidNetID(value) && (myNet->getAttributeCarriers()->retrieveMeanData(myTagProperty->getTag(), value, false) == nullptr);
         case SUMO_ATTR_FILE:
             return SUMOXMLDefinitions::isValidFilename(value);
+        case SUMO_ATTR_TYPE:
+            return SUMOXMLDefinitions::MeanDataTypes.hasString(value);
         case SUMO_ATTR_PERIOD:
         case SUMO_ATTR_BEGIN:
         case SUMO_ATTR_END:
@@ -353,7 +400,7 @@ GNEMeanData::isValid(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_AGGREGATE:
             return (canParse<bool>(value));
         default:
-            return isCommonValid(key, value);
+            return isCommonAttributeValid(key, value);
     }
 }
 
@@ -370,12 +417,6 @@ GNEMeanData::getHierarchyName() const {
 }
 
 
-const Parameterised::Map&
-GNEMeanData::getACParametersMap() const {
-    return getParametersMap();
-}
-
-
 void
 GNEMeanData::setAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
@@ -389,6 +430,9 @@ GNEMeanData::setAttribute(SumoXMLAttr key, const std::string& value) {
             } else {
                 myFile = value;
             }
+            break;
+        case SUMO_ATTR_TYPE:
+            myType = value;
             break;
         case SUMO_ATTR_PERIOD:
             if (value.empty()) {
@@ -471,7 +515,7 @@ GNEMeanData::setAttribute(SumoXMLAttr key, const std::string& value) {
             myAggregate = parse<bool>(value);
             break;
         default:
-            setCommonAttribute(this, key, value);
+            setCommonAttribute(key, value);
             break;
     }
 }

@@ -1,19 +1,31 @@
 set(netconvertlibs
-        netwrite netimport netbuild foreign_eulerspiral ${GDAL_LIBRARY} netimport_vissim netimport_vissim_typeloader netimport_vissim_tempstructs ${commonlibs} ${TCMALLOC_LIBRARY})
+    netwrite netimport netbuild foreign_eulerspiral ${GDAL_LIBRARY}
+    netimport_vissim netimport_vissim_typeloader netimport_vissim_tempstructs
+    ${commonlibs} ${TCMALLOC_LIBRARY})
 
 set(sumolibs
-        traciserver netload microsim_cfmodels microsim_engine microsim_lcmodels microsim_devices microsim_trigger microsim_output microsim_transportables microsim_actions
-        microsim_traffic_lights microsim mesosim ${commonvehiclelibs} ${GEOS_LIBRARY})
+    traciserver netload microsim_cfmodels microsim_engine microsim_lcmodels
+    microsim_devices microsim_trigger microsim_output microsim_transportables
+    microsim_actions microsim_traffic_lights microsim mesosim ${commonvehiclelibs}
+    ${GEOS_LIBRARY} ${BOOST_LIBRARIES})
+
 if (OPENSCENEGRAPH_FOUND)
     set(osgviewlib osgview)
 endif ()
+
 set(sumoguilibs
-        gui guinetload guisim gui gui_dialogs utils_gui_windows utils_gui_globjects utils_gui_div utils_gui_settings
-        utils_gui_images utils_gui_cursors utils_gui_shortcuts utils_gui_tracker utils_foxtools utils_traction_wire ${osgviewlib} microsim traciserver libsumoguistatic ${sumolibs} mesogui
-        ${GDAL_LIBRARY} ${FFMPEG_LIBRARIES} ${OPENSCENEGRAPH_LIBRARIES} ${GL2PS_LIBRARIES})
+    guinetload guisim gui gui_dialogs utils_gui_windows utils_gui_globjects
+    utils_gui_div utils_gui_settings utils_gui_images utils_gui_cursors
+    utils_gui_shortcuts utils_tests utils_gui_tracker utils_foxtools
+    ${osgviewlib} ${sumolibs} mesogui
+    ${GDAL_LIBRARY} ${FFMPEG_LIBRARIES} ${OPENSCENEGRAPH_LIBRARIES} ${GL2PS_LIBRARIES})
 if (MSVC)
     set(sumoguilibs ${sumoguilibs} opengl32 glu32)
 endif ()
+if ((GNU_COMPILER OR CLANG_COMPILER) AND NOT APPLE)
+    set(sumolibs -Wl,--whole-archive ${sumolibs} -Wl,--no-whole-archive)
+    set(sumoguilibs -Wl,--whole-archive ${sumoguilibs} -Wl,--no-whole-archive)
+endif()
 
 add_subdirectory(activitygen)
 add_subdirectory(dfrouter)
@@ -56,14 +68,14 @@ endif ()
 add_executable(sumo sumo_main.cpp)
 set_target_properties(sumo PROPERTIES OUTPUT_NAME sumo${BINARY_SUFFIX})
 set_target_properties(sumo PROPERTIES OUTPUT_NAME_DEBUG sumo${BINARY_SUFFIX}D)
-target_link_libraries(sumo microsim traciserver libsumostatic ${sumolibs} ${TCMALLOC_LIBRARY})
+target_link_libraries(sumo ${sumolibs} libsumostatic ${TCMALLOC_LIBRARY})
 add_dependencies(sumo generate-version-h install_dll)
 
 if (FOX_FOUND)
     add_executable(sumo-gui guisim_main.cpp sumo-gui.rc)
     set_target_properties(sumo-gui PROPERTIES OUTPUT_NAME sumo-gui${BINARY_SUFFIX})
     set_target_properties(sumo-gui PROPERTIES OUTPUT_NAME_DEBUG sumo-gui${BINARY_SUFFIX}D)
-    target_link_libraries(sumo-gui ${sumoguilibs} ${TCMALLOC_LIBRARY})
+    target_link_libraries(sumo-gui ${sumoguilibs} libsumoguistatic ${TCMALLOC_LIBRARY})
     if (MSVC)
         if (CONSOLE_RELEASE)
             set_target_properties(sumo-gui PROPERTIES LINK_FLAGS_RELEASE "/ENTRY:mainCRTStartup")
@@ -80,7 +92,7 @@ if (FOX_FOUND)
         endif ()
     endif ()
     add_dependencies(sumo-gui generate-version-h install_dll install_mo)
-    install(TARGETS sumo-gui RUNTIME DESTINATION bin)
+    install(TARGETS sumo-gui RUNTIME DESTINATION bin COMPONENT runtime)
 endif ()
 
 add_executable(netconvert netconvert_main.cpp)
@@ -95,19 +107,22 @@ set_target_properties(od2trips PROPERTIES OUTPUT_NAME_DEBUG od2trips${BINARY_SUF
 target_link_libraries(od2trips od router ${commonvehiclelibs} ${TCMALLOC_LIBRARY})
 add_dependencies(od2trips generate-version-h install_dll)
 
-install(TARGETS sumo netconvert od2trips RUNTIME DESTINATION bin)
-install(DIRECTORY libsumo DESTINATION include
+install(TARGETS sumo netconvert od2trips RUNTIME DESTINATION bin COMPONENT runtime)
+install(DIRECTORY libsumo DESTINATION include COMPONENT runtime
         FILES_MATCHING PATTERN "*.h"
         PATTERN "*Helper.h" EXCLUDE
         PATTERN "Subscription.h" EXCLUDE)
 
 configure_file(config.h.cmake config.h)
 
+# obtain version from git folder
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../.git/index")
     set(VERSION_DEP "${CMAKE_CURRENT_SOURCE_DIR}/../.git/index")
 endif()
+
+# define version.h dependency
 add_custom_command(OUTPUT version.h
-                   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../tools/build_config/version.py ${CMAKE_CURRENT_BINARY_DIR}
+                   COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../tools/build_config/version.py ${CMAKE_CURRENT_BINARY_DIR}
                    DEPENDS ${VERSION_DEP}
                   )
 add_custom_target(generate-version-h DEPENDS version.h)

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,11 +18,13 @@
 // Abstract Base class for gui objects which carry attributes
 /****************************************************************************/
 
+#include <netedit/changes/GNEChange_Attribute.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagPropertiesDatabase.h>
 #include <netedit/GNEUndoList.h>
 #include <netedit/GNEViewNet.h>
-#include <netedit/changes/GNEChange_Attribute.h>
+#include <netedit/GNEViewParent.h>
 #include <utils/common/StringTokenizer.h>
 #include <utils/common/ToString.h>
 #include <utils/emissions/PollutantsInterface.h>
@@ -43,46 +45,50 @@ const std::string GNEAttributeCarrier::FEATURE_LOADED = "loaded";
 const std::string GNEAttributeCarrier::FEATURE_GUESSED = "guessed";
 const std::string GNEAttributeCarrier::FEATURE_MODIFIED = "modified";
 const std::string GNEAttributeCarrier::FEATURE_APPROVED = "approved";
-const std::string GNEAttributeCarrier::True = toString(true);
-const std::string GNEAttributeCarrier::False = toString(false);
+const std::string GNEAttributeCarrier::TRUE_STR = toString(true);
+const std::string GNEAttributeCarrier::FALSE_STR = toString(false);
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
 
-GNEAttributeCarrier::GNEAttributeCarrier(const SumoXMLTag tag, GNENet* net, const std::string& filename, const bool isTemplate) :
+GNEAttributeCarrier::GNEAttributeCarrier(const SumoXMLTag tag, GNENet* net) :
     myTagProperty(net->getTagPropertiesDatabase()->getTagProperty(tag, true)),
     myNet(net),
-    myFilename(filename),
-    myIsTemplate(isTemplate) {
-    // check if add this AC to saving file handler
-    if (myFilename.size() > 0) {
-        // add filename to saving files handler
-        if (myTagProperty->isAdditionalElement()) {
-            net->getSavingFilesHandler()->addAdditionalFilename(this);
-        } else if (myTagProperty->isDemandElement()) {
-            net->getSavingFilesHandler()->addDemandFilename(this);
-        } else if (myTagProperty->isDataElement()) {
-            net->getSavingFilesHandler()->addDataFilename(this);
-        } else if (myTagProperty->isMeanData()) {
-            net->getSavingFilesHandler()->addMeanDataFilename(this);
-        }
-    } else {
-        // always avoid empty files
-        if (myTagProperty->isAdditionalElement() && (net->getSavingFilesHandler()->getAdditionalFilenames().size() > 0)) {
-            myFilename = net->getSavingFilesHandler()->getAdditionalFilenames().front();
-        } else if (myTagProperty->isDemandElement() && (net->getSavingFilesHandler()->getDemandFilenames().size() > 0)) {
-            myFilename = net->getSavingFilesHandler()->getDemandFilenames().front();
-        } else if (myTagProperty->isDataElement() && (net->getSavingFilesHandler()->getDataFilenames().size() > 0)) {
-            myFilename = net->getSavingFilesHandler()->getDataFilenames().front();
-        } else if (myTagProperty->isMeanData() && (net->getSavingFilesHandler()->getMeanDataFilenames().size() > 0)) {
-            myFilename = net->getSavingFilesHandler()->getMeanDataFilenames().front();
-        }
+    myIsTemplate(true) {
+    // set default bucket for template elements
+    auto savingFilesHandler = net->getGNEApplicationWindow()->getFileBucketHandler();
+    if (myTagProperty->saveInNetworkFile()) {
+        myFileBucket = savingFilesHandler->getDefaultBucket(FileBucket::Type::NETWORK);
+    } else if (myTagProperty->saveInDataFile()) {
+        myFileBucket = savingFilesHandler->getDefaultBucket(FileBucket::Type::DATA);
+    } else if (myTagProperty->saveInDemandFile()) {
+        myFileBucket = savingFilesHandler->getDefaultBucket(FileBucket::Type::DEMAND);
+    } else if (myTagProperty->saveInMeanDataFile()) {
+        myFileBucket = savingFilesHandler->getDefaultBucket(FileBucket::Type::MEANDATA);
+    } else if (myTagProperty->saveInAdditionalFile()) {
+        // additional MUST be the last, because demand and data elements can be saved in additional files
+        myFileBucket = savingFilesHandler->getDefaultBucket(FileBucket::Type::ADDITIONAL);
+    }
+    // update counter in filebucket
+    if (myFileBucket) {
+        myFileBucket->addElement(true);
     }
 }
 
+GNEAttributeCarrier::GNEAttributeCarrier(const SumoXMLTag tag, GNENet* net, FileBucket* fileBucket) :
+    myTagProperty(net->getTagPropertiesDatabase()->getTagProperty(tag, true)),
+    myNet(net),
+    myFileBucket(fileBucket) {
+}
 
-GNEAttributeCarrier::~GNEAttributeCarrier() {}
+
+GNEAttributeCarrier::~GNEAttributeCarrier() {
+    // update counter in filebucket
+    if (myIsTemplate && myFileBucket) {
+        myFileBucket->removeElement(true);
+    }
+}
 
 
 const std::string
@@ -94,20 +100,6 @@ GNEAttributeCarrier::getID() const {
 GNENet*
 GNEAttributeCarrier::getNet() const {
     return myNet;
-}
-
-
-const std::string&
-GNEAttributeCarrier::getFilename() const {
-    return myFilename;
-}
-
-
-void
-GNEAttributeCarrier::changeDefaultFilename(const std::string& file) {
-    if (myFilename.empty()) {
-        myFilename = file;
-    }
 }
 
 
@@ -157,6 +149,24 @@ GNEAttributeCarrier::drawUsingSelectColor() const {
         return false;
     }
 }
+
+
+bool
+GNEAttributeCarrier::drawMovingGeometryPoints() const {
+    // get modes
+    const auto& modes = myNet->getViewNet()->getEditModes();
+    // check conditions
+    if (!myNet->getViewNet()->getMouseButtonKeyPressed().shiftKeyPressed()) {
+        return false;
+    } else if (modes.isCurrentSupermodeNetwork() && (modes.networkEditMode == NetworkEditMode::NETWORK_MOVE)) {
+        return true;
+    } else if (modes.isCurrentSupermodeDemand() && (modes.demandEditMode == DemandEditMode::DEMAND_MOVE)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 
 void
 GNEAttributeCarrier::markForDrawingFront() {
@@ -216,10 +226,10 @@ void
 GNEAttributeCarrier::resetDefaultValues(const bool allowUndoRedo) {
     if (allowUndoRedo) {
         // reset within undo-redo
-        const auto undoList = myNet->getViewNet()->getUndoList();
+        const auto undoList = myNet->getUndoList();
         undoList->begin(myTagProperty->getGUIIcon(), TLF("reset %", myTagProperty->getTagStr()));
         for (const auto& attrProperty : myTagProperty->getAttributeProperties()) {
-            if (!attrProperty->isUnique() && attrProperty->hasDefaultValue()) {
+            if ((attrProperty->getAttr() != GNE_ATTR_SAVEFILE) && !attrProperty->isUnique() && attrProperty->hasDefaultValue()) {
                 setAttribute(attrProperty->getAttr(), attrProperty->getDefaultStringValue(), undoList);
                 if (attrProperty->isActivatable()) {
                     if (attrProperty->getDefaultActivated()) {
@@ -234,7 +244,7 @@ GNEAttributeCarrier::resetDefaultValues(const bool allowUndoRedo) {
     } else {
         // simply reset every
         for (const auto& attrProperty : myTagProperty->getAttributeProperties()) {
-            if (attrProperty->hasDefaultValue()) {
+            if ((attrProperty->getAttr() != GNE_ATTR_SAVEFILE) && attrProperty->hasDefaultValue()) {
                 setAttribute(attrProperty->getAttr(), attrProperty->getDefaultStringValue());
                 if (attrProperty->isActivatable()) {
                     toggleAttribute(attrProperty->getAttr(), attrProperty->getDefaultActivated());
@@ -259,9 +269,17 @@ GNEAttributeCarrier::disableAttribute(SumoXMLAttr /*key*/, GNEUndoList* /*undoLi
 
 
 bool
-GNEAttributeCarrier::isAttributeEnabled(SumoXMLAttr /*key*/) const {
-    // by default, all attributes are enabled
-    return true;
+GNEAttributeCarrier::isAttributeEnabled(SumoXMLAttr key) const {
+    switch (key) {
+        case GNE_ATTR_SAVEFILE:
+            if (myTagProperty->saveInNetworkFile() || myTagProperty->saveInParentFile()) {
+                return false;
+            } else {
+                return (myFileBucket != nullptr);
+            }
+        default:
+            return true;
+    }
 }
 
 
@@ -677,49 +695,20 @@ GNEAttributeCarrier::parseIDs(const std::vector<GNELane*>& ACs) {
     return joinToString(laneIDs, " ");
 }
 
-
-template<> std::string
-GNEAttributeCarrier::getACParameters() const {
-    std::string result;
+void
+GNEAttributeCarrier::setACParameters(const std::vector<std::pair<std::string, std::string> >& parameters) {
+    // declare result string
+    std::string paramsStr;
     // Generate an string using the following structure: "key1=value1|key2=value2|...
-    for (const auto& parameter : getACParametersMap()) {
-        result += parameter.first + "=" + parameter.second + "|";
+    for (const auto& parameter : parameters) {
+        paramsStr += parameter.first + "=" + parameter.second + "|";
     }
     // remove the last "|"
-    if (!result.empty()) {
-        result.pop_back();
+    if (!paramsStr.empty()) {
+        paramsStr.pop_back();
     }
-    return result;
-}
-
-
-template<> std::vector<std::pair<std::string, std::string> >
-GNEAttributeCarrier::getACParameters() const {
-    std::vector<std::pair<std::string, std::string> > result;
-    // Generate a vector string using the following structure: "<key1,value1>, <key2, value2>,...
-    for (const auto& parameter : getACParametersMap()) {
-        result.push_back(std::make_pair(parameter.first, parameter.second));
-    }
-    return result;
-}
-
-
-void
-GNEAttributeCarrier::setACParameters(const std::string& parameters, GNEUndoList* undoList) {
-    // declare map
-    Parameterised::Map parametersMap;
-    // separate value in a vector of string using | as separator
-    StringTokenizer parametersTokenizer(parameters, "|", true);
-    // iterate over all values
-    while (parametersTokenizer.hasNext()) {
-        // obtain key and value and save it in myParameters
-        const std::vector<std::string> keyValue = StringTokenizer(parametersTokenizer.next(), "=", true).getVector();
-        if (keyValue.size() == 2) {
-            parametersMap[keyValue.front()] = keyValue.back();
-        }
-    }
-    // set setACParameters map
-    setACParameters(parametersMap, undoList);
+    // set parameters
+    setAttribute(GNE_ATTR_PARAMETERS, paramsStr);
 }
 
 
@@ -750,33 +739,6 @@ GNEAttributeCarrier::setACParameters(const Parameterised::Map& parameters, GNEUn
     }
     // set parameters
     setAttribute(GNE_ATTR_PARAMETERS, paramsStr, undoList);
-}
-
-
-void
-GNEAttributeCarrier::addACParameters(const std::string& key, const std::string& attribute, GNEUndoList* undoList) {
-    // get parametersMap
-    Parameterised::Map parametersMap = getACParametersMap();
-    // add (or update) attribute
-    parametersMap[key] = attribute;
-    // set attribute
-    setACParameters(parametersMap, undoList);
-}
-
-
-void
-GNEAttributeCarrier::removeACParametersKeys(const std::vector<std::string>& keepKeys, GNEUndoList* undoList) {
-    // declare parametersMap
-    Parameterised::Map newParametersMap;
-    // iterate over parameters map
-    for (const auto& parameter : getACParametersMap()) {
-        // copy to newParametersMap if key is in keepKeys
-        if (std::find(keepKeys.begin(), keepKeys.end(), parameter.first) != keepKeys.end()) {
-            newParametersMap.insert(parameter);
-        }
-    }
-    // set newParametersMap map
-    setACParameters(newParametersMap, undoList);
 }
 
 
@@ -880,65 +842,64 @@ GNEAttributeCarrier::getTagProperty() const {
     return myTagProperty;
 }
 
-// ===========================================================================
-// private
-// ===========================================================================
-
-void
-GNEAttributeCarrier::toggleAttribute(SumoXMLAttr /*key*/, const bool /*value*/) {
-    throw ProcessError(TL("Nothing to toggle, implement in Children"));
-}
-
 
 std::string
-GNEAttributeCarrier::getCommonAttribute(const Parameterised* parameterised, SumoXMLAttr key) const {
+GNEAttributeCarrier::getCommonAttribute(SumoXMLAttr key) const {
     switch (key) {
-        case GNE_ATTR_ADDITIONAL_FILE:
-        case GNE_ATTR_DEMAND_FILE:
-        case GNE_ATTR_DATA_FILE:
-        case GNE_ATTR_MEANDATA_FILE:
-            return myFilename;
+        case GNE_ATTR_SAVEFILE:
+            if (myFileBucket) {
+                return getFileBucket()->getFilename();
+            } else {
+                return TL("Parent filename");
+            }
         case GNE_ATTR_CENTER_AFTER_CREATION:
             return toString(myCenterAfterCreation);
         case GNE_ATTR_SELECTED:
             if (mySelected) {
-                return True;
+                return TRUE_STR;
             } else {
-                return False;
+                return FALSE_STR;
             }
         case GNE_ATTR_FRONTELEMENT:
             if (myDrawInFront) {
-                return True;
+                return TRUE_STR;
             } else {
-                return False;
+                return FALSE_STR;
             }
         case GNE_ATTR_PARAMETERS:
-            return parameterised->getParametersStr();
+            if (getParameters()) {
+                return getParameters()->getParametersStr();
+            } else {
+                throw InvalidArgument(getTagStr() + " doesn't support parameters");
+            }
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+            throw InvalidArgument(getTagStr() + " doesn't have a common attribute of type '" + toString(key) + "'");
     }
+}
+
+
+double
+GNEAttributeCarrier::getCommonAttributeDouble(SumoXMLAttr key) const {
+    throw InvalidArgument(getTagStr() + " doesn't have a common double attribute of type '" + toString(key) + "'");
+}
+
+
+Position
+GNEAttributeCarrier::getCommonAttributePosition(SumoXMLAttr key) const {
+    throw InvalidArgument(getTagStr() + " doesn't have a common position attribute of type '" + toString(key) + "'");
+}
+
+
+PositionVector
+GNEAttributeCarrier::getCommonAttributePositionVector(SumoXMLAttr key) const {
+    throw InvalidArgument(getTagStr() + " doesn't have a common positionVector attribute of type '" + toString(key) + "'");
 }
 
 
 void
 GNEAttributeCarrier::setCommonAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList) {
     switch (key) {
-        case GNE_ATTR_ADDITIONAL_FILE:
-            GNEChange_Attribute::changeAttribute(this, key, value, undoList);
-            // update filenames of all additional childrens
-            for (auto additionalChild : getHierarchicalElement()->getChildAdditionals()) {
-                additionalChild->setAttribute(key, value, undoList);
-            }
-            break;
-        case GNE_ATTR_DEMAND_FILE:
-            GNEChange_Attribute::changeAttribute(this, key, value, undoList);
-            // update filenames of all demand childrens
-            for (auto demandChild : getHierarchicalElement()->getChildDemandElements()) {
-                demandChild->setAttribute(key, myFilename, undoList);
-            }
-            break;
-        case GNE_ATTR_DATA_FILE:
-        case GNE_ATTR_MEANDATA_FILE:
+        case GNE_ATTR_SAVEFILE:
         case GNE_ATTR_CENTER_AFTER_CREATION:
         case GNE_ATTR_SELECTED:
         case GNE_ATTR_PARAMETERS:
@@ -951,13 +912,14 @@ GNEAttributeCarrier::setCommonAttribute(SumoXMLAttr key, const std::string& valu
 
 
 bool
-GNEAttributeCarrier::isCommonValid(SumoXMLAttr key, const std::string& value) const {
+GNEAttributeCarrier::isCommonAttributeValid(SumoXMLAttr key, const std::string& value) const {
     switch (key) {
-        case GNE_ATTR_ADDITIONAL_FILE:
-        case GNE_ATTR_DEMAND_FILE:
-        case GNE_ATTR_DATA_FILE:
-        case GNE_ATTR_MEANDATA_FILE:
-            return SUMOXMLDefinitions::isValidFilename(value);
+        case GNE_ATTR_SAVEFILE:
+            if (SUMOXMLDefinitions::isValidFilename(value)) {
+                return myNet->getGNEApplicationWindow()->getFileBucketHandler()->checkFilename(this, value);
+            } else {
+                return false;
+            }
         case GNE_ATTR_CENTER_AFTER_CREATION:
         case GNE_ATTR_SELECTED:
             return canParse<bool>(value);
@@ -970,51 +932,10 @@ GNEAttributeCarrier::isCommonValid(SumoXMLAttr key, const std::string& value) co
 
 
 void
-GNEAttributeCarrier::setCommonAttribute(Parameterised* parameterised, SumoXMLAttr key, const std::string& value) {
+GNEAttributeCarrier::setCommonAttribute(SumoXMLAttr key, const std::string& value) {
     switch (key) {
-        case GNE_ATTR_ADDITIONAL_FILE:
-            myFilename = value;
-            if (value.empty()) {
-                // try to avoid empty files
-                if (myNet->getSavingFilesHandler()->getAdditionalFilenames().size() > 0) {
-                    myFilename = myNet->getSavingFilesHandler()->getAdditionalFilenames().front();
-                }
-            } else {
-                myNet->getSavingFilesHandler()->addAdditionalFilename(this);
-            }
-            break;
-        case GNE_ATTR_DEMAND_FILE:
-            myFilename = value;
-            if (value.empty()) {
-                // try to avoid empty files
-                if (myNet->getSavingFilesHandler()->getDemandFilenames().size() > 0) {
-                    myFilename = myNet->getSavingFilesHandler()->getDemandFilenames().front();
-                }
-            } else {
-                myNet->getSavingFilesHandler()->addDemandFilename(this);
-            }
-            break;
-        case GNE_ATTR_DATA_FILE:
-            myFilename = value;
-            if (value.empty()) {
-                // try to avoid empty files
-                if (myNet->getSavingFilesHandler()->getDataFilenames().size() > 0) {
-                    myFilename = myNet->getSavingFilesHandler()->getDataFilenames().front();
-                }
-            } else {
-                myNet->getSavingFilesHandler()->addDataFilename(this);
-            }
-            break;
-        case GNE_ATTR_MEANDATA_FILE:
-            myFilename = value;
-            if (value.empty()) {
-                // try to avoid empty files
-                if (myNet->getSavingFilesHandler()->getMeanDataFilenames().size() > 0) {
-                    myFilename = myNet->getSavingFilesHandler()->getMeanDataFilenames().front();
-                }
-            } else {
-                myNet->getSavingFilesHandler()->addMeanDataFilename(this);
-            }
+        case GNE_ATTR_SAVEFILE:
+            myFileBucket = myNet->getGNEApplicationWindow()->getFileBucketHandler()->updateAC(this, value);
             break;
         case GNE_ATTR_CENTER_AFTER_CREATION:
             myCenterAfterCreation = parse<bool>(value);
@@ -1027,11 +948,24 @@ GNEAttributeCarrier::setCommonAttribute(Parameterised* parameterised, SumoXMLAtt
             }
             break;
         case GNE_ATTR_PARAMETERS:
-            parameterised->setParametersStr(value);
+            if (getParameters()) {
+                getParameters()->setParametersStr(value);
+            } else {
+                throw InvalidArgument(getTagStr() + " doesn't support parameters");
+            }
             break;
         default:
             throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
     }
+}
+
+// ===========================================================================
+// private
+// ===========================================================================
+
+void
+GNEAttributeCarrier::toggleAttribute(SumoXMLAttr /*key*/, const bool /*value*/) {
+    throw ProcessError(TL("Nothing to toggle, implement in Children"));
 }
 
 /****************************************************************************/

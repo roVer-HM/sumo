@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -51,6 +51,7 @@ class MESegment : public Named {
 public:
     static const double DO_NOT_PATCH_JAM_THRESHOLD;
     static const int PARKING_QUEUE = -1;
+    static const std::string OVERRIDE_TLS_PENALTIES;
 
     /// @brief edge type specific meso parameters
     struct MesoEdgeType {
@@ -291,6 +292,9 @@ public:
      */
     double getMeanSpeed(bool useCache) const;
 
+    /// @brief reset myLastMeanSpeedUpdate
+    void resetCachedSpeeds();
+
     /// @brief wrapper to satisfy the FunctionBinding signature
     inline double getMeanSpeed() const {
         return getMeanSpeed(true);
@@ -426,7 +430,7 @@ public:
      * @todo What about throwing an IOError?
      * @todo What about throwing an error if something else fails (a vehicle can not be referenced)?
      */
-    void loadState(const std::vector<SUMOVehicle*>& vehs, const SUMOTime blockTime, const int queIdx);
+    void loadState(const std::vector<SUMOVehicle*>& vehs, const SUMOTime blockTime, const SUMOTime entryBlockTime, const int queIdx);
     /// @}
 
 
@@ -509,6 +513,9 @@ private:
     }
 
     SUMOTime getTauJJ(double nextQueueSize, double nextQueueCapacity, double nextJamThreshold) const;
+
+    /// @brief whether the traffic light should use normal junction control despite penalty options
+    bool tlsPenaltyOverride() const;
 
 private:
     /// @brief The microsim edge this segment belongs to

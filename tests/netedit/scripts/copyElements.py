@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2024-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2024-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -25,7 +25,7 @@ import shutil
 def copy_file_if_reference_exists(source_file, base_folder, reference_file):
     # Check if the source file exists
     if not os.path.isfile(source_file):
-        print(f"The source file '{source_file}' does not exist.")
+        print(source_file + " doesn't exist")
         return
 
     # Traverse all folders and subfolders in the base folder
@@ -40,8 +40,8 @@ def copy_file_if_reference_exists(source_file, base_folder, reference_file):
                     # Copy the file to the current folder
                     shutil.copy(source_file, destination_folder)
                     print(f"File copied to: {destination_folder}")
-                except Exception as e:
-                    print(f"Could not copy the file to '{destination_folder}': {e}")
+                except Exception:
+                    print("File " + source_file + " cannnot be copied to " + destination_folder)
 
 
 # Main block

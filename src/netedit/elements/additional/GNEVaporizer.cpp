@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -17,16 +17,12 @@
 ///
 //
 /****************************************************************************/
-#include <config.h>
 
+#include <netedit/changes/GNEChange_Attribute.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagProperties.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/changes/GNEChange_Attribute.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/gui/div/GUIGlobalViewObjectsHandler.h>
-#include <utils/gui/globjects/GLIncludes.h>
+#include <utils/gui/images/GUITextureSubSys.h>
 
 #include "GNEVaporizer.h"
 
@@ -35,13 +31,13 @@
 // ===========================================================================
 
 GNEVaporizer::GNEVaporizer(GNENet* net) :
-    GNEAdditional("", net, "", SUMO_TAG_VAPORIZER, "") {
+    GNEAdditional(net, SUMO_TAG_VAPORIZER) {
 }
 
 
-GNEVaporizer::GNEVaporizer(GNENet* net, const std::string& filename, GNEEdge* edge, SUMOTime from, SUMOTime end,
+GNEVaporizer::GNEVaporizer(GNENet* net, FileBucket* fileBucket, GNEEdge* edge, SUMOTime from, SUMOTime end,
                            const std::string& name, const Parameterised::Map& parameters) :
-    GNEAdditional(edge->getID(), net, filename, SUMO_TAG_VAPORIZER, name),
+    GNEAdditional(edge->getID(), net, SUMO_TAG_VAPORIZER, fileBucket, name),
     Parameterised(parameters),
     myBegin(from),
     myEnd(end) {
@@ -56,20 +52,32 @@ GNEVaporizer::~GNEVaporizer() {
 }
 
 
-GNEMoveOperation*
-GNEVaporizer::getMoveOperation() {
-    // vaporizers cannot be moved
+GNEMoveElement*
+GNEVaporizer::getMoveElement() const {
     return nullptr;
+}
+
+
+Parameterised*
+GNEVaporizer::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNEVaporizer::getParameters() const {
+    return this;
 }
 
 
 void
 GNEVaporizer::writeAdditional(OutputDevice& device) const {
     device.openTag(getTagProperty()->getTag());
+    // special case for vaporizer IDs
     device.writeAttr(SUMO_ATTR_ID, getID());
-    if (!myAdditionalName.empty()) {
-        device.writeAttr(SUMO_ATTR_NAME, StringUtils::escapeXML(myAdditionalName));
-    }
+    // write common additional attributes
+    writeAdditionalAttributes(device);
+    // write specific attributes
     device.writeAttr(SUMO_ATTR_BEGIN, time2string(myBegin));
     device.writeAttr(SUMO_ATTR_END, time2string(myEnd));
     // write parameters (Always after children to avoid problems with additionals.xsd)
@@ -201,7 +209,7 @@ GNEVaporizer::drawGL(const GUIVisualizationSettings& s) const {
         }
         // calculate contours
         myAdditionalContour.calculateContourRectangleShape(s, d, this, myAdditionalGeometry.getShape().front(), s.additionalSettings.vaporizerSize,
-                s.additionalSettings.vaporizerSize, getType(), 0, 0, 0, vaporizerExaggeration, getParentEdges().front());
+                s.additionalSettings.vaporizerSize, getType(), 0, 0, (myAdditionalGeometry.getShapeRotations().front() * -1), vaporizerExaggeration, getParentEdges().front());
         mySymbolBaseContour.calculateContourExtrudedShape(s, d, this, myAdditionalGeometry.getShape(), getType(), 0.3, vaporizerExaggeration,
                 true, true, 0, nullptr, getParentEdges().front());
     }
@@ -221,7 +229,7 @@ GNEVaporizer::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_NAME:
             return myAdditionalName;
         default:
-            return getCommonAttribute(this, key);
+            return getCommonAttribute(key);
     }
 }
 
@@ -234,14 +242,20 @@ GNEVaporizer::getAttributeDouble(SumoXMLAttr key) const {
         case SUMO_ATTR_END:
             return STEPS2TIME(myEnd);
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
+            return getCommonAttributeDouble(key);
     }
 }
 
 
-const Parameterised::Map&
-GNEVaporizer::getACParametersMap() const {
-    return getParametersMap();
+Position
+GNEVaporizer::getAttributePosition(SumoXMLAttr key) const {
+    return getCommonAttributePosition(key);
+}
+
+
+PositionVector
+GNEVaporizer::getAttributePositionVector(SumoXMLAttr key) const {
+    return getCommonAttributePositionVector(key);
 }
 
 
@@ -292,7 +306,7 @@ GNEVaporizer::isValid(SumoXMLAttr key, const std::string& value) {
         case SUMO_ATTR_NAME:
             return SUMOXMLDefinitions::isValidAttribute(value);
         default:
-            return isCommonValid(key, value);
+            return isCommonAttributeValid(key, value);
     }
 }
 
@@ -331,21 +345,9 @@ GNEVaporizer::setAttribute(SumoXMLAttr key, const std::string& value) {
             myAdditionalName = value;
             break;
         default:
-            setCommonAttribute(this, key, value);
+            setCommonAttribute(key, value);
             break;
     }
-}
-
-
-void
-GNEVaporizer::setMoveShape(const GNEMoveResult& /*moveResult*/) {
-    // nothing to do
-}
-
-
-void
-GNEVaporizer::commitMoveShape(const GNEMoveResult& /*moveResult*/, GNEUndoList* /*undoList*/) {
-    // nothing to do
 }
 
 /****************************************************************************/

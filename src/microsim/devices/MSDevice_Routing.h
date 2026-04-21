@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2007-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2007-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -171,6 +171,9 @@ public:
         myActive = active;
     }
 
+    /// @brief whether the change in saving is enough to trigger rerouting
+    bool sufficientSaving(double oldCost, double newCost);
+
 private:
 
     /** @brief Constructor
@@ -212,7 +215,7 @@ private:
     SUMOTime wrappedRerouteCommandExecute(SUMOTime currentTime);
 
     /// @brief rebuild reroute command according to period
-    void rebuildRerouteCommand();
+    void rebuildRerouteCommand(SUMOTime start);
 
 private:
     /// @brief The period with which a vehicle shall be rerouted
@@ -238,6 +241,12 @@ private:
 
     /// @brief Whether the equipped vehicle missed a reroute while stopping and should do so after the stop has ended
     bool myRerouteAfterStop;
+
+    // Only reroute if the new route is faster than the current route by factor
+    double myThresholdFactor;
+
+    // Only reroute if the new route is faster than the current route by seconds
+    double myThresholdTime;
 
     /// @brief Whether the equipped vehicle may perform rerouting
     bool myActive;

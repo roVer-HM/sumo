@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,16 +18,19 @@
 // Builds data objects for netedit
 /****************************************************************************/
 
-#include <netedit/changes/GNEChange_DataSet.h>
 #include <netedit/changes/GNEChange_DataInterval.h>
+#include <netedit/changes/GNEChange_DataSet.h>
 #include <netedit/changes/GNEChange_GenericData.h>
-#include <netedit/elements/data/GNEEdgeRelData.h>
-#include <netedit/elements/data/GNEEdgeData.h>
-#include <netedit/elements/data/GNETAZRelData.h>
+#include <netedit/dialogs/basic/GNEOverwriteElement.h>
 #include <netedit/elements/data/GNEDataInterval.h>
-#include <netedit/GNEViewNet.h>
+#include <netedit/elements/data/GNEEdgeData.h>
+#include <netedit/elements/data/GNEEdgeRelData.h>
+#include <netedit/elements/data/GNETAZRelData.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <netedit/GNENet.h>
+#include <netedit/GNETagProperties.h>
 #include <netedit/GNEUndoList.h>
+#include <netedit/GNEViewNet.h>
 #include <utils/gui/div/GUIDesigns.h>
 
 #include "GNEDataHandler.h"
@@ -36,21 +39,16 @@
 // member method definitions
 // ===========================================================================
 
-GNEDataHandler::GNEDataHandler(GNENet* net, const std::string& file, const bool allowUndoRedo, const bool overwrite) :
-    DataHandler(file),
+GNEDataHandler::GNEDataHandler(GNENet* net, FileBucket* fileBucket, const bool allowUndoRedo) :
+    DataHandler(fileBucket),
     myNet(net),
-    myAllowUndoRedo(allowUndoRedo),
-    myOverwrite(overwrite) {
+    myAllowUndoRedo(allowUndoRedo) {
 }
 
 
-GNEDataHandler::~GNEDataHandler() {}
-
-
-bool
-GNEDataHandler::postParserTasks() {
-    // nothing to do
-    return true;
+GNEDataHandler::~GNEDataHandler() {
+    // update options based in current buckets
+    myNet->getGNEApplicationWindow()->getFileBucketHandler()->updateOptions();
 }
 
 
@@ -62,11 +60,11 @@ GNEDataHandler::buildDataSet(const std::string& id) {
     } else if (!checkDuplicatedDataSet(id)) {
         return false;
     } else {
-        GNEDataSet* dataSet = new GNEDataSet(id, myNet, myFilename);
+        GNEDataSet* dataSet = new GNEDataSet(id, myNet, myFileBucket);
         if (myAllowUndoRedo) {
-            myNet->getViewNet()->getUndoList()->begin(dataSet, TL("add data set"));
-            myNet->getViewNet()->getUndoList()->add(new GNEChange_DataSet(dataSet, true), true);
-            myNet->getViewNet()->getUndoList()->end();
+            myNet->getUndoList()->begin(dataSet, TL("add data set"));
+            myNet->getUndoList()->add(new GNEChange_DataSet(dataSet, true), true);
+            myNet->getUndoList()->end();
         } else {
             // insert dataSet without allowing undo/redo
             myNet->getAttributeCarriers()->insertDataSet(dataSet);
@@ -85,13 +83,13 @@ GNEDataHandler::buildDataInterval(const CommonXMLStructure::SumoBaseObject* /* s
     // first check if dataSet exist
     if (dataSet == nullptr) {
         // create dataset AND data interval
-        dataSet = new GNEDataSet(dataSetID, myNet, myFilename);
+        dataSet = new GNEDataSet(dataSetID, myNet, myFileBucket);
         GNEDataInterval* dataInterval = new GNEDataInterval(dataSet, begin, end);
         if (myAllowUndoRedo) {
-            myNet->getViewNet()->getUndoList()->begin(dataInterval, TL("add data set and data interval"));
-            myNet->getViewNet()->getUndoList()->add(new GNEChange_DataSet(dataSet, true), true);
-            myNet->getViewNet()->getUndoList()->add(new GNEChange_DataInterval(dataInterval, true), true);
-            myNet->getViewNet()->getUndoList()->end();
+            myNet->getUndoList()->begin(dataInterval, TL("add data set and data interval"));
+            myNet->getUndoList()->add(new GNEChange_DataSet(dataSet, true), true);
+            myNet->getUndoList()->add(new GNEChange_DataInterval(dataInterval, true), true);
+            myNet->getUndoList()->end();
         } else {
             // insert dataSet allowing undo/redo
             myNet->getAttributeCarriers()->insertDataSet(dataSet);
@@ -104,9 +102,9 @@ GNEDataHandler::buildDataInterval(const CommonXMLStructure::SumoBaseObject* /* s
     } else if (dataSet->retrieveInterval(begin, end) == nullptr) {
         GNEDataInterval* dataInterval = new GNEDataInterval(dataSet, begin, end);
         if (myAllowUndoRedo) {
-            myNet->getViewNet()->getUndoList()->begin(dataInterval, TL("add data interval"));
-            myNet->getViewNet()->getUndoList()->add(new GNEChange_DataInterval(dataInterval, true), true);
-            myNet->getViewNet()->getUndoList()->end();
+            myNet->getUndoList()->begin(dataInterval, TL("add data interval"));
+            myNet->getUndoList()->add(new GNEChange_DataInterval(dataInterval, true), true);
+            myNet->getUndoList()->end();
         } else {
             // insert dataInterval without allowing undo/redo
             dataSet->addDataIntervalChild(dataInterval);
@@ -124,34 +122,37 @@ GNEDataHandler::buildEdgeData(const CommonXMLStructure::SumoBaseObject* sumoBase
                               const Parameterised::Map& parameters) {
     // get dataSet
     GNEDataSet* dataSet = myNet->getAttributeCarriers()->retrieveDataSet(sumoBaseObject->getParentSumoBaseObject()->getStringAttribute(SUMO_ATTR_ID), false);
-    if (dataSet != nullptr) {
+    if (dataSet) {
         // get interval
         GNEDataInterval* dataInterval = dataSet->retrieveInterval(
                                             sumoBaseObject->getParentSumoBaseObject()->getDoubleAttribute(SUMO_ATTR_BEGIN),
                                             sumoBaseObject->getParentSumoBaseObject()->getDoubleAttribute(SUMO_ATTR_END));
-        if (dataInterval != nullptr) {
+        if (dataInterval) {
             // get data
             GNEEdge* edge = myNet->getAttributeCarriers()->retrieveEdge(edgeID, false);
-            if (edge) {
+            if (edge == nullptr) {
+                return writeErrorInvalidParent(GNE_TAG_EDGEREL_SINGLE, {SUMO_TAG_EDGE});
+            } else if (dataInterval->edgeRelSingleExists(edge)) {
+                return writeError(TLF("There is already a edgeRel defined in edge '%'.", edge));
+            } else {
+                // create edge data
                 GNEGenericData* edgeData = new GNEEdgeData(dataInterval, edge, parameters);
                 if (myAllowUndoRedo) {
-                    myNet->getViewNet()->getUndoList()->begin(edgeData, TL("add edge rel"));
-                    myNet->getViewNet()->getUndoList()->add(new GNEChange_GenericData(edgeData, true), true);
-                    myNet->getViewNet()->getUndoList()->end();
+                    myNet->getUndoList()->begin(edgeData, TL("add edge rel"));
+                    myNet->getUndoList()->add(new GNEChange_GenericData(edgeData, true), true);
+                    myNet->getUndoList()->end();
                 } else {
                     dataInterval->addGenericDataChild(edgeData);
                     edge->addChildElement(edgeData);
                     edgeData->incRef("buildEdgeData");
                 }
                 return true;
-            } else {
-                return writeErrorInvalidParent(GNE_TAG_EDGEREL_SINGLE, SUMO_TAG_EDGE);
             }
         } else {
-            return writeErrorInvalidParent(GNE_TAG_EDGEREL_SINGLE, SUMO_TAG_DATAINTERVAL);
+            return writeErrorInvalidParent(GNE_TAG_EDGEREL_SINGLE, {SUMO_TAG_DATAINTERVAL});
         }
     } else {
-        return writeErrorInvalidParent(GNE_TAG_EDGEREL_SINGLE, SUMO_TAG_DATASET);
+        return writeErrorInvalidParent(GNE_TAG_EDGEREL_SINGLE, {SUMO_TAG_DATASET});
     }
 }
 
@@ -171,33 +172,30 @@ GNEDataHandler::buildEdgeRelationData(const CommonXMLStructure::SumoBaseObject* 
             GNEEdge* const fromEdge = myNet->getAttributeCarriers()->retrieveEdge(fromEdgeID, false);
             GNEEdge* const toEdge = myNet->getAttributeCarriers()->retrieveEdge(toEdgeID, false);
             if (fromEdge == nullptr) {
-                return writeErrorInvalidParent(SUMO_TAG_EDGEREL, SUMO_TAG_EDGE, fromEdgeID);
+                return writeErrorInvalidParent(SUMO_TAG_EDGEREL, {SUMO_TAG_EDGE}, fromEdgeID);
             } else if (toEdge == nullptr) {
-                return writeErrorInvalidParent(SUMO_TAG_EDGEREL, SUMO_TAG_EDGE, toEdgeID);
+                return writeErrorInvalidParent(SUMO_TAG_EDGEREL, {SUMO_TAG_EDGE}, toEdgeID);
+            } else if (dataInterval->edgeRelExists(fromEdge, toEdge)) {
+                return writeError(TLF("There is already a edgeRel defined between '%' and '%'.", fromEdgeID, toEdgeID));
             } else {
-                // avoid duplicated edgeRel in the same interval
-                if (dataInterval->edgeRelExists(fromEdge, toEdge)) {
-                    return writeError(TLF("There is already a edgeRel defined between '%' and '%'.", fromEdgeID, toEdgeID));
+                GNEGenericData* edgeData = new GNEEdgeRelData(dataInterval, fromEdge, toEdge, parameters);
+                if (myAllowUndoRedo) {
+                    myNet->getUndoList()->begin(edgeData, TL("add edge rel"));
+                    myNet->getUndoList()->add(new GNEChange_GenericData(edgeData, true), true);
+                    myNet->getUndoList()->end();
                 } else {
-                    GNEGenericData* edgeData = new GNEEdgeRelData(dataInterval, fromEdge, toEdge, parameters);
-                    if (myAllowUndoRedo) {
-                        myNet->getViewNet()->getUndoList()->begin(edgeData, TL("add edge rel"));
-                        myNet->getViewNet()->getUndoList()->add(new GNEChange_GenericData(edgeData, true), true);
-                        myNet->getViewNet()->getUndoList()->end();
-                    } else {
-                        dataInterval->addGenericDataChild(edgeData);
-                        fromEdge->addChildElement(edgeData);
-                        toEdge->addChildElement(edgeData);
-                        edgeData->incRef("buildEdgeRelationData");
-                    }
-                    return true;
+                    dataInterval->addGenericDataChild(edgeData);
+                    fromEdge->addChildElement(edgeData);
+                    toEdge->addChildElement(edgeData);
+                    edgeData->incRef("buildEdgeRelationData");
                 }
+                return true;
             }
         } else {
-            return writeErrorInvalidParent(SUMO_TAG_EDGEREL, SUMO_TAG_DATAINTERVAL);
+            return writeErrorInvalidParent(SUMO_TAG_EDGEREL, {SUMO_TAG_DATAINTERVAL});
         }
     } else {
-        return writeErrorInvalidParent(SUMO_TAG_EDGEREL, SUMO_TAG_DATASET);
+        return writeErrorInvalidParent(SUMO_TAG_EDGEREL, {SUMO_TAG_DATASET});
     }
 }
 
@@ -217,9 +215,9 @@ GNEDataHandler::buildTAZRelationData(const CommonXMLStructure::SumoBaseObject* s
             GNEAdditional* fromTAZ = myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_TAZ, fromTAZID, false);
             GNEAdditional* toTAZ = myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_TAZ, toTAZID, false);
             if (fromTAZ == nullptr) {
-                return writeErrorInvalidParent(SUMO_TAG_TAZREL, SUMO_TAG_TAZ, fromTAZID);
+                return writeErrorInvalidParent(SUMO_TAG_TAZREL, {SUMO_TAG_TAZ}, fromTAZID);
             } else if (toTAZ == nullptr) {
-                return writeErrorInvalidParent(SUMO_TAG_TAZREL, SUMO_TAG_TAZ, toTAZID);
+                return writeErrorInvalidParent(SUMO_TAG_TAZREL, {SUMO_TAG_TAZ}, toTAZID);
             } else if ((fromTAZ != toTAZ) && dataInterval->TAZRelExists(fromTAZ, toTAZ)) {
                 return writeError(TLF("There is already a TAZ rel defined between '%' and '%'.", fromTAZID, toTAZID));
             } else if ((fromTAZ == toTAZ) && dataInterval->TAZRelExists(fromTAZ)) {
@@ -227,9 +225,9 @@ GNEDataHandler::buildTAZRelationData(const CommonXMLStructure::SumoBaseObject* s
             } else if (fromTAZ == toTAZ) {
                 GNEGenericData* edgeData = new GNETAZRelData(dataInterval, fromTAZ, parameters);
                 if (myAllowUndoRedo) {
-                    myNet->getViewNet()->getUndoList()->begin(edgeData, TL("add TAZ rel"));
-                    myNet->getViewNet()->getUndoList()->add(new GNEChange_GenericData(edgeData, true), true);
-                    myNet->getViewNet()->getUndoList()->end();
+                    myNet->getUndoList()->begin(edgeData, TL("add TAZ rel"));
+                    myNet->getUndoList()->add(new GNEChange_GenericData(edgeData, true), true);
+                    myNet->getUndoList()->end();
                 } else {
                     dataInterval->addGenericDataChild(edgeData);
                     fromTAZ->addChildElement(edgeData);
@@ -239,9 +237,9 @@ GNEDataHandler::buildTAZRelationData(const CommonXMLStructure::SumoBaseObject* s
             } else {
                 GNEGenericData* edgeData = new GNETAZRelData(dataInterval, fromTAZ, toTAZ, parameters);
                 if (myAllowUndoRedo) {
-                    myNet->getViewNet()->getUndoList()->begin(edgeData, TL("add TAZ rel"));
-                    myNet->getViewNet()->getUndoList()->add(new GNEChange_GenericData(edgeData, true), true);
-                    myNet->getViewNet()->getUndoList()->end();
+                    myNet->getUndoList()->begin(edgeData, TL("add TAZ rel"));
+                    myNet->getUndoList()->add(new GNEChange_GenericData(edgeData, true), true);
+                    myNet->getUndoList()->end();
                 } else {
                     dataInterval->addGenericDataChild(edgeData);
                     fromTAZ->addChildElement(edgeData);
@@ -251,10 +249,10 @@ GNEDataHandler::buildTAZRelationData(const CommonXMLStructure::SumoBaseObject* s
                 return true;
             }
         } else {
-            return writeErrorInvalidParent(SUMO_TAG_TAZREL, SUMO_TAG_DATAINTERVAL);
+            return writeErrorInvalidParent(SUMO_TAG_TAZREL, {SUMO_TAG_DATAINTERVAL});
         }
     } else {
-        return writeErrorInvalidParent(SUMO_TAG_TAZREL, SUMO_TAG_DATASET);
+        return writeErrorInvalidParent(SUMO_TAG_TAZREL, {SUMO_TAG_DATASET});
     }
 }
 
@@ -265,15 +263,25 @@ GNEDataHandler::checkDuplicatedDataSet(const std::string& id) {
     auto dataSet = myNet->getAttributeCarriers()->retrieveDataSet(id, false);
     // if demand exist, check if overwrite (delete)
     if (dataSet) {
-        if (!myAllowUndoRedo) {
-            // only overwrite if allow undo-redo
+        if (myOverwriteElements) {
+            // delete data element (and all of their childrens)
+            myNet->deleteDataSet(dataSet, myNet->getUndoList());
+        } else if (myRemainElements) {
+            // duplicated dataset
             return writeWarningDuplicated(SUMO_TAG_DATASET, id, SUMO_TAG_DATASET);
-        } else if (myOverwrite) {
-            // delete demand element (and all of their childrens)
-            myNet->deleteDataSet(dataSet, myNet->getViewNet()->getUndoList());
         } else {
-            // duplicated dataSet
-            return writeWarningDuplicated(SUMO_TAG_DATASET, id, SUMO_TAG_DATASET);
+            // open overwrite dialog
+            GNEOverwriteElement overwriteElementDialog(this, dataSet);
+            // continue depending of result
+            if (overwriteElementDialog.getResult() == GNEOverwriteElement::Result::ACCEPT) {
+                // delete data element (and all of their childrens)
+                myNet->deleteDataSet(dataSet, myNet->getUndoList());
+            } else if (overwriteElementDialog.getResult() == GNEOverwriteElement::Result::CANCEL) {
+                // duplicated dataset
+                return writeWarningDuplicated(SUMO_TAG_DATASET, id, SUMO_TAG_DATASET);
+            } else {
+                return false;
+            }
         }
     }
     return true;

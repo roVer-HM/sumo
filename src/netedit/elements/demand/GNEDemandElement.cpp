@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,18 +18,18 @@
 // A abstract class for demand elements
 /****************************************************************************/
 
-#include <netedit/GNENet.h>
-#include <netedit/GNESegment.h>
-#include <netedit/GNETagPropertiesDatabase.h>
-#include <netedit/GNEViewParent.h>
-#include <netedit/frames/GNEPathCreator.h>
-#include <netedit/frames/GNEPlanSelector.h>
 #include <netedit/frames/common/GNESelectorFrame.h>
 #include <netedit/frames/demand/GNEContainerFrame.h>
 #include <netedit/frames/demand/GNEContainerPlanFrame.h>
 #include <netedit/frames/demand/GNEPersonFrame.h>
 #include <netedit/frames/demand/GNEPersonPlanFrame.h>
 #include <netedit/frames/demand/GNEVehicleFrame.h>
+#include <netedit/frames/GNEPlanSelector.h>
+#include <netedit/GNEApplicationWindow.h>
+#include <netedit/GNENet.h>
+#include <netedit/GNESegment.h>
+#include <netedit/GNETagPropertiesDatabase.h>
+#include <netedit/GNEViewParent.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/div/GUIParameterTableWindow.h>
@@ -45,23 +45,28 @@
 #pragma warning(push)
 #pragma warning(disable: 4355) // mask warning about "this" in initializers
 #endif
-GNEDemandElement::GNEDemandElement(const std::string& id, GNENet* net, const std::string& filename,
-                                   SumoXMLTag tag, const GNEPathElement::Options pathOptions) :
-    GNEAttributeCarrier(tag, net, filename, id.empty()),
-    GUIGlObject(net->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGLType(), id,
-                GUIIconSubSys::getIcon(net->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGUIIcon())),
-    GNEPathElement(pathOptions),
-    myStackedLabelNumber(0) {
+
+GNEDemandElement::GNEDemandElement(GNENet* net, SumoXMLTag tag) :
+    GNEAttributeCarrier(tag, net),
+    GUIGlObject(myTagProperty->getGLType(), "", GUIIconSubSys::getIcon(myTagProperty->getGUIIcon())),
+    GNEPathElement(myTagProperty->isRoute() ? GNEPathElement::Options::DEMAND_ELEMENT | GNEPathElement::Options::ROUTE :
+                   GNEPathElement::Options::DEMAND_ELEMENT) {
 }
 
 
-GNEDemandElement::GNEDemandElement(GNEDemandElement* demandElementParent, SumoXMLTag tag,
-                                   const GNEPathElement::Options pathOptions) :
-    GNEAttributeCarrier(tag, demandElementParent->getNet(), demandElementParent->getFilename(), false),
-    GUIGlObject(demandElementParent->getNet()->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGLType(), demandElementParent->getID(),
-                GUIIconSubSys::getIcon(demandElementParent->getNet()->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGUIIcon())),
-    GNEPathElement(pathOptions),
-    myStackedLabelNumber(0) {
+GNEDemandElement::GNEDemandElement(const std::string& id, GNENet* net, SumoXMLTag tag, FileBucket* fileBucket) :
+    GNEAttributeCarrier(tag, net, fileBucket),
+    GUIGlObject(myTagProperty->getGLType(), id, GUIIconSubSys::getIcon(myTagProperty->getGUIIcon())),
+    GNEPathElement(myTagProperty->isRoute() ? GNEPathElement::Options::DEMAND_ELEMENT | GNEPathElement::Options::ROUTE :
+                   GNEPathElement::Options::DEMAND_ELEMENT) {
+}
+
+
+GNEDemandElement::GNEDemandElement(GNEDemandElement* demandElementParent, SumoXMLTag tag) :
+    GNEAttributeCarrier(tag, demandElementParent->getNet(), demandElementParent->getFileBucket()),
+    GUIGlObject(myTagProperty->getGLType(), demandElementParent->getID(), GUIIconSubSys::getIcon(myTagProperty->getGUIIcon())),
+    GNEPathElement(myTagProperty->isRoute() ? GNEPathElement::Options::DEMAND_ELEMENT | GNEPathElement::Options::ROUTE :
+                   GNEPathElement::Options::DEMAND_ELEMENT) {
 }
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -76,12 +81,6 @@ GNEDemandElement::getHierarchicalElement() {
 }
 
 
-void
-GNEDemandElement::removeGeometryPoint(const Position /*clickedPosition*/, GNEUndoList* /*undoList*/) {
-    // currently there isn't demand elements with removable geometry points
-}
-
-
 GUIGlObject*
 GNEDemandElement::getGUIGlObject() {
     return this;
@@ -91,6 +90,33 @@ GNEDemandElement::getGUIGlObject() {
 const GUIGlObject*
 GNEDemandElement::getGUIGlObject() const {
     return this;
+}
+
+
+FileBucket*
+GNEDemandElement::getFileBucket() const {
+    if (myTagProperty->saveInParentFile()) {
+        if (isTemplate()) {
+            return nullptr;
+        } else {
+            return getParentDemandElements().front()->getFileBucket();
+        }
+    } else {
+        return myFileBucket;
+    }
+}
+
+
+void
+GNEDemandElement::changeFileBucket(FileBucket* fileBucket) {
+    myFileBucket->removeElement(false);
+    myFileBucket = fileBucket;
+    myFileBucket->addElement(false);
+    // update options
+    myNet->getGNEApplicationWindow()->getFileBucketHandler()->updateOptions();
+    // mark demand elements to save
+    myNet->getSavingStatus()->requireSaveAdditionals();
+    myNet->getSavingStatus()->requireSaveDemandElements();
 }
 
 
@@ -138,7 +164,7 @@ GNEDemandElement::getNextChildDemandElement(const GNEDemandElement* demandElemen
 
 void
 GNEDemandElement::updateDemandElementGeometry(const GNELane* lane, const double posOverLane) {
-    myDemandElementGeometry.updateGeometry(lane->getLaneShape(), posOverLane, myMoveElementLateralOffset);
+    myDemandElementGeometry.updateGeometry(lane->getLaneShape(), posOverLane, /*myMovingLateralOffset*/ 0);
 }
 
 
@@ -150,7 +176,7 @@ GNEDemandElement::updateDemandElementStackLabel(const int stack) {
 
 void
 GNEDemandElement::updateDemandElementSpreadGeometry(const GNELane* lane, const double posOverLane) {
-    mySpreadGeometry.updateGeometry(lane->getLaneShape(), posOverLane, myMoveElementLateralOffset);
+    mySpreadGeometry.updateGeometry(lane->getLaneShape(), posOverLane, /*myMovingLateralOffset*/ 0);
 }
 
 
@@ -199,14 +225,14 @@ GNEDemandElement::checkDrawOverContour() const {
     // get modes
     const auto& modes = myNet->getViewNet()->getEditModes();
     // get frames
-    const auto& personFramePlanSelector = myNet->getViewNet()->getViewParent()->getPersonFrame()->getPlanSelector();
-    const auto& personPlanFramePlanSelector = myNet->getViewNet()->getViewParent()->getPersonPlanFrame()->getPlanSelector();
-    const auto& containerFramePlanSelector = myNet->getViewNet()->getViewParent()->getContainerFrame()->getPlanSelector();
-    const auto& containerPlanFramePlanSelector = myNet->getViewNet()->getViewParent()->getContainerPlanFrame()->getPlanSelector();
+    const auto& personFramePlanSelector = myNet->getViewParent()->getPersonFrame()->getPlanSelector();
+    const auto& personPlanFramePlanSelector = myNet->getViewParent()->getPersonPlanFrame()->getPlanSelector();
+    const auto& containerFramePlanSelector = myNet->getViewParent()->getContainerFrame()->getPlanSelector();
+    const auto& containerPlanFramePlanSelector = myNet->getViewParent()->getContainerPlanFrame()->getPlanSelector();
     // special case for Route
     if (myTagProperty->getTag() == SUMO_TAG_ROUTE) {
         // get vehicle frame
-        const auto& vehicleFrame = myNet->getViewNet()->getViewParent()->getVehicleFrame();
+        const auto& vehicleFrame = myNet->getViewParent()->getVehicleFrame();
         // check if we're in vehicle mode
         if (vehicleFrame->shown()) {
             // get current vehicle template
@@ -369,13 +395,13 @@ GNEDemandElement::deleteGLObject() {
         if (planParent->getChildDemandElements().size() == 1) {
             planParent->deleteGLObject();
         } else {
-            myNet->deleteDemandElement(this, myNet->getViewNet()->getUndoList());
+            myNet->deleteDemandElement(this, myNet->getUndoList());
         }
     } else if (myTagProperty->getTag() == GNE_TAG_ROUTE_EMBEDDED) {
         // remove parent demand element
         getParentDemandElements().front()->deleteGLObject();
     } else {
-        myNet->deleteDemandElement(this, myNet->getViewNet()->getUndoList());
+        myNet->deleteDemandElement(this, myNet->getUndoList());
     }
 }
 
@@ -388,13 +414,25 @@ GNEDemandElement::selectGLObject() {
         selectAttributeCarrier();
     }
     // update information label
-    myNet->getViewNet()->getViewParent()->getSelectorFrame()->getSelectionInformation()->updateInformationLabel();
+    myNet->getViewParent()->getSelectorFrame()->getSelectionInformation()->updateInformationLabel();
 }
 
 
 void
 GNEDemandElement::updateGLObject() {
     updateGeometry();
+}
+
+
+Position
+GNEDemandElement::getAttributePosition(SumoXMLAttr key) const {
+    return getCommonAttributePosition(key);
+}
+
+
+PositionVector
+GNEDemandElement::getAttributePositionVector(SumoXMLAttr key) const {
+    return getCommonAttributePositionVector(key);
 }
 
 
@@ -455,11 +493,11 @@ GNEDemandElement*
 GNEDemandElement::getTypeParent() const {
     if (getParentDemandElements().size() < 1) {
         throw InvalidArgument("This demand element doesn't have a type parent");
-    } else if (!getParentDemandElements().at(0)->getTagProperty()->isType()
-               && !getParentDemandElements().at(0)->getTagProperty()->isTypeDist()) {
-        throw InvalidArgument("The first parent isn't a type");
-    } else {
+    } else if ((getParentDemandElements().at(0)->getTagProperty()->isType()) ||
+               (getParentDemandElements().at(0)->getTagProperty()->isTypeDistribution())) {
         return getParentDemandElements().at(0);
+    } else {
+        throw InvalidArgument("The first parent isn't a type");
     }
 }
 
@@ -467,11 +505,12 @@ GNEDemandElement::getTypeParent() const {
 GNEDemandElement*
 GNEDemandElement::getRouteParent() const {
     if (getParentDemandElements().size() < 2) {
-        throw InvalidArgument("This demand element doesn't have two parent");
-    } else if (getParentDemandElements().at(1)->getTagProperty()->getTag() != SUMO_TAG_ROUTE) {
         throw InvalidArgument("This demand element doesn't have a route parent");
-    } else {
+    } else if ((getParentDemandElements().at(1)->getTagProperty()->isRoute()) ||
+               (getParentDemandElements().at(1)->getTagProperty()->isRouteDistribution())) {
         return getParentDemandElements().at(1);
+    } else {
+        throw InvalidArgument("The second parent isn't a route");
     }
 }
 
@@ -600,9 +639,17 @@ GNEDemandElement::replaceLastParentAdditional(SumoXMLTag tag, const std::string&
 
 
 void
-GNEDemandElement::replaceDemandElementParent(SumoXMLTag tag, const std::string& value, const int parentIndex) {
-    auto newDemandElement = myNet->getAttributeCarriers()->retrieveDemandElement(tag, value);
-    GNEHierarchicalElement::updateParent(this, parentIndex, newDemandElement);
+GNEDemandElement::replaceDemandElementParent(const std::vector<SumoXMLTag> tags, const std::string& value, const int parentIndex) {
+    GNEDemandElement* newDemandElement = nullptr;
+    // search demand element
+    for (auto it = tags.begin(); (it != tags.end()) && (newDemandElement == nullptr); it++) {
+        newDemandElement = myNet->getAttributeCarriers()->retrieveDemandElement(*it, value, false);
+    }
+    if (newDemandElement) {
+        GNEHierarchicalElement::updateParent(this, parentIndex, newDemandElement);
+    } else {
+        throw ProcessError("Attempted to replace with non-existant demand element " + value);
+    }
 }
 
 
@@ -753,7 +800,6 @@ GNEDemandElement::getColorByScheme(const GUIColorer& c, const SUMOVehicleParamet
             } else {
                 return c.getScheme().getColor(0);
             }
-            break;
         }
         case 4: {
             if (getRouteParent()->getColor() != RGBColor::DEFAULT_COLOR) {

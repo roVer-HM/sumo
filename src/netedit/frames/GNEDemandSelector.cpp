@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,10 +18,12 @@
 // Frame for select demand elements
 /****************************************************************************/
 
+#include <netedit/frames/common/GNEInspectorFrame.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagPropertiesDatabase.h>
 #include <netedit/GNEViewNet.h>
-#include <netedit/frames/common/GNEInspectorFrame.h>
+#include <netedit/GNEViewParent.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 
@@ -36,7 +38,7 @@ FXDEFMAP(GNEDemandElementSelector) DemandElementSelectorMap[] = {
 };
 
 // Object implementation
-FXIMPLEMENT(GNEDemandElementSelector,      MFXGroupBoxModule,     DemandElementSelectorMap,       ARRAYNUMBER(DemandElementSelectorMap))
+FXIMPLEMENT(GNEDemandElementSelector,      GNEGroupBoxModule,     DemandElementSelectorMap,       ARRAYNUMBER(DemandElementSelectorMap))
 
 
 // ===========================================================================
@@ -44,15 +46,15 @@ FXIMPLEMENT(GNEDemandElementSelector,      MFXGroupBoxModule,     DemandElementS
 // ===========================================================================
 
 GNEDemandElementSelector::GNEDemandElementSelector(GNEFrame* frameParent, SumoXMLTag demandElementTag, const GNETagProperties::Type tagType) :
-    MFXGroupBoxModule(frameParent, (TL("Parent ") + toString(demandElementTag)).c_str()),
+    GNEGroupBoxModule(frameParent, TLF("Parent %", toString(demandElementTag)).c_str()),
     myFrameParent(frameParent),
     myCurrentDemandElement(nullptr),
     myDemandElementTags({demandElementTag}),
                     myTagType(tagType),
 mySelectingMultipleElements(false) {
     // Create MFXComboBoxIcon
-    myDemandElementsComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItems,
-            this, MID_GNE_SET_TYPE, GUIDesignComboBox);
+    myDemandElementsComboBox = new MFXComboBoxIcon(getCollapsableFrame(), frameParent->getViewNet()->getViewParent()->getGNEAppWindows()->getStaticTooltipMenu(),
+            true, GUIDesignComboBoxVisibleItems, this, MID_GNE_SET_TYPE, GUIDesignComboBox);
     // refresh demand element MatchBox
     refreshDemandElementSelector();
     // shown after creation
@@ -60,8 +62,9 @@ mySelectingMultipleElements(false) {
 }
 
 
-GNEDemandElementSelector::GNEDemandElementSelector(GNEFrame* frameParent, const std::vector<GNETagProperties::Type>& tagTypes) :
-    MFXGroupBoxModule(frameParent, TL("Parent element")),
+GNEDemandElementSelector::GNEDemandElementSelector(GNEFrame* frameParent, const std::vector<GNETagProperties::Type> tagTypes,
+        const std::vector<SumoXMLTag> exceptions) :
+    GNEGroupBoxModule(frameParent, TL("Parent element")),
     myFrameParent(frameParent),
     myCurrentDemandElement(nullptr),
     myTagType(GNETagProperties::Type::OTHER),
@@ -70,12 +73,14 @@ GNEDemandElementSelector::GNEDemandElementSelector(GNEFrame* frameParent, const 
     for (const auto& tagType : tagTypes) {
         const auto tagPropertiesByType = frameParent->getViewNet()->getNet()->getTagPropertiesDatabase()->getTagPropertiesByType(tagType);
         for (const auto tagProperty : tagPropertiesByType) {
-            myDemandElementTags.push_back(tagProperty->getTag());
+            if (std::find(exceptions.begin(), exceptions.end(), tagProperty->getTag()) == exceptions.end()) {
+                myDemandElementTags.push_back(tagProperty->getTag());
+            }
         }
     }
     // Create MFXComboBoxIcon
-    myDemandElementsComboBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItems,
-            this, MID_GNE_SET_TYPE, GUIDesignComboBox);
+    myDemandElementsComboBox = new MFXComboBoxIcon(getCollapsableFrame(), frameParent->getViewNet()->getViewParent()->getGNEAppWindows()->getStaticTooltipMenu(),
+            true, GUIDesignComboBoxVisibleItems, this, MID_GNE_SET_TYPE, GUIDesignComboBox);
     // refresh demand element MatchBox
     refreshDemandElementSelector();
     // shown after creation
@@ -259,7 +264,7 @@ GNEDemandElementSelector::onCmdSelectDemandElement(FXObject*, FXSelector, void*)
         for (const auto& demandElement : myFrameParent->getViewNet()->getNet()->getAttributeCarriers()->getDemandElements().at(demandElementTag)) {
             if (demandElement.second->getID() == myDemandElementsComboBox->getText().text()) {
                 // set color of myTypeMatchBox to black (valid)
-                myDemandElementsComboBox->setTextColor(FXRGB(0, 0, 0));
+                myDemandElementsComboBox->setTextColor(GUIDesignTextColorBlack);
                 myDemandElementsComboBox->killFocus();
                 // Set new current demand element
                 myCurrentDemandElement = demandElement.second;
@@ -274,7 +279,7 @@ GNEDemandElementSelector::onCmdSelectDemandElement(FXObject*, FXSelector, void*)
     // call demandElementSelected function
     myFrameParent->demandElementSelected();
     // change color of myDemandElementsComboBox to red (invalid)
-    myDemandElementsComboBox->setTextColor(FXRGB(255, 0, 0));
+    myDemandElementsComboBox->setTextColor(GUIDesignTextColorRed);
     return 1;
 }
 

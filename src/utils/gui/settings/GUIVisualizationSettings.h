@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -78,7 +78,7 @@ struct GUIVisualizationTextSettings {
     /// @brief background text color
     RGBColor bgColor;
 
-    /// @brif flag to avoid size changes
+    /// @brief flag to avoid size changes
     bool constSize;
 
     /// @brief whether only selected objects shall have text drawn
@@ -90,7 +90,7 @@ struct GUIVisualizationRainbowSettings {
 
     /// @brief constructor
     GUIVisualizationRainbowSettings(bool _hideMin, double _minThreshold, bool _hideMax, double _maxThreshold, bool _setNeutral,
-            double _neutralThreshold, bool _fixRange, int _rainboScheme);
+                                    double _neutralThreshold, bool _fixRange, int _rainboScheme);
 
     /// @brief equality comparator
     bool operator==(const GUIVisualizationRainbowSettings& other);
@@ -665,22 +665,22 @@ public:
      */
     void save(OutputDevice& dev) const;
 
-    /** @brief Returns the number of the active lane (edge) coloring schme
+    /** @brief Returns the number of the active lane (edge) coloring scheme
      * @return number of the active scheme
      */
     int getLaneEdgeMode() const;
 
-    /** @brief Returns the number of the active lane (edge) scaling schme
+    /** @brief Returns the number of the active lane (edge) scaling scheme
      * @return number of the active scheme
      */
     int getLaneEdgeScaleMode() const;
 
-    /** @brief Returns the current lane (edge) coloring schme
+    /** @brief Returns the current lane (edge) coloring scheme
      * @return current scheme
      */
     GUIColorScheme& getLaneEdgeScheme();
 
-    /** @brief Returns the current lane (edge) scaling schme
+    /** @brief Returns the current lane (edge) scaling scheme
      * @return current scheme
      */
     GUIScaleScheme& getLaneEdgeScaleScheme();
@@ -700,7 +700,7 @@ public:
     /// @brief return the detail level
     Detail getDetailLevel(const double exaggeration) const;
 
-    /// @brief check if details can be drawn for the given GUIVisualizationDetailSettings and current scale and exxageration
+    /// @brief check if details can be drawn for the given GUIVisualizationDetailSettings and current scale and exaggeration
     bool drawDetail(const double detail, const double exaggeration) const;
 
     /// @brief check if moving geometry point can be draw
@@ -922,7 +922,7 @@ public:
     bool showLane2Lane;
     /// @brief whether the shape of the junction should be drawn
     bool drawJunctionShape;
-    /// @brief whether crosings and walkingareas shall be drawn
+    /// @brief whether crossings and walkingareas shall be drawn
     bool drawCrossingsAndWalkingareas;
     // Setting bundles for controling the size of the drawn junction
     GUIVisualizationSizeSettings junctionSize;
@@ -935,7 +935,7 @@ public:
     /// @{
 
     /// @brief The additional structures visualization scheme
-    // @todo decouple addExageration for POIs, Polygons, Triggers etc
+    // @todo decouple addExaggeration for POIs, Polygons, Triggers etc
     int addMode;
     // Setting bundles for controling the size of additional items
     GUIVisualizationSizeSettings addSize;
@@ -1000,6 +1000,10 @@ public:
     /// @{
     /// @brief the edgeRelation / tazRelation colorer
     GUIColorer dataColorer;
+
+    /// @brief The size scaling settings for data elements
+    GUIScaler dataScaler;
+
     GUIVisualizationTextSettings dataValue;
 
     /// @brief The tazRelation exaggeration (upscale thickness)
@@ -1011,6 +1015,9 @@ public:
     /// @brief key for coloring by edgeRelation / tazRelation attribute
     std::string relDataAttr;
 
+    /// @brief key for scaling by edgeRelation / tazRelation attribute
+    std::string relDataScaleAttr;
+
     /// @brief value below which edgeData and edgeRelation data value should not be rendered
     GUIVisualizationRainbowSettings dataValueRainBow;
     /// @}
@@ -1018,6 +1025,9 @@ public:
 
     /// @name 3D visualization settings
     /// @{
+    /// @brief whether the coloring schemes of vehicles should be ignored
+    bool ignoreColorSchemeFor3DVehicles;
+
     /// @brief whether the TLS link markers should be drawn
     bool show3DTLSLinkMarkers;
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -203,6 +203,9 @@ GUISettingsHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) 
             if (myCurrentColorer == SUMO_TAG_VIEWSETTINGS_POLYS) {
                 myCurrentScheme = mySettings.polyColorer.getSchemeByName(name);
             }
+            if (myCurrentColorer == SUMO_TAG_VIEWSETTINGS_DATA) {
+                myCurrentScheme = mySettings.dataColorer.getSchemeByName(name);
+            }
             if (myCurrentScheme && !myCurrentScheme->isFixed()) {
                 myCurrentScheme->setInterpolated(attrs.getOpt<bool>(SUMO_ATTR_INTERPOLATED, nullptr, ok, false));
                 myCurrentScheme->clear();
@@ -227,6 +230,9 @@ GUISettingsHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) 
             }
             if (myCurrentColorer == SUMO_TAG_VIEWSETTINGS_VEHICLES) {
                 myCurrentScaleScheme = mySettings.vehicleScaler.getSchemeByName(name);
+            }
+            if (myCurrentColorer == SUMO_TAG_VIEWSETTINGS_DATA) {
+                myCurrentScaleScheme = mySettings.dataScaler.getSchemeByName(name);
             }
             if (myCurrentScaleScheme && !myCurrentScaleScheme->isFixed()) {
                 myCurrentScaleScheme->setInterpolated(attrs.getOpt<bool>(SUMO_ATTR_INTERPOLATED, nullptr, ok, false));
@@ -276,7 +282,7 @@ GUISettingsHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) 
             mySettings.vehicleParam = attrs.getStringSecure("vehicleParam", mySettings.vehicleParam);
             mySettings.vehicleScaleParam = attrs.getStringSecure("vehicleScaleParam", mySettings.vehicleScaleParam);
             mySettings.vehicleTextParam = attrs.getStringSecure("vehicleTextParam", mySettings.vehicleTextParam);
-            mySettings.vehicleValueRainBow = parseRainbowSettings("vehicleValue", attrs, mySettings.vehicleValueRainBow);
+            mySettings.vehicleValueRainBow = parseRainbowSettings("vehicleValueRainbow", attrs, mySettings.vehicleValueRainBow);
             myCurrentColorer = element;
             break;
         case SUMO_TAG_VIEWSETTINGS_PERSONS:
@@ -384,6 +390,17 @@ GUISettingsHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) 
             mySettings.polyCustomLayer = StringUtils::toDouble(attrs.getStringSecure("polyCustomLayer", toString(mySettings.polyCustomLayer)));
             myCurrentColorer = element;
             break;
+        case SUMO_TAG_VIEWSETTINGS_DATA:
+            mySettings.dataColorer.setActive(StringUtils::toInt(attrs.getStringSecure("dataMode", "0")));
+            mySettings.dataScaler.setActive(StringUtils::toInt(attrs.getStringSecure("dataScaleMode", "0")));
+            mySettings.dataValueRainBow = parseRainbowSettings("dataValueRainbow", attrs, mySettings.dataValueRainBow);
+            mySettings.dataValue = parseTextSettings("dataValue", attrs, mySettings.dataValue);
+            mySettings.tazRelWidthExaggeration = StringUtils::toDouble(attrs.getStringSecure("tazRelExaggeration", toString(mySettings.tazRelWidthExaggeration)));
+            mySettings.edgeRelWidthExaggeration = StringUtils::toDouble(attrs.getStringSecure("edgeRelExaggeration", toString(mySettings.edgeRelWidthExaggeration)));
+            mySettings.relDataAttr = attrs.getStringSecure("relDataAttr", mySettings.relDataAttr);
+            mySettings.relDataScaleAttr = attrs.getStringSecure("relDataScaleAttr", mySettings.relDataScaleAttr);
+            myCurrentColorer = element;
+            break;
         case SUMO_TAG_VIEWSETTINGS_LEGEND:
             mySettings.showSizeLegend = StringUtils::toBool(attrs.getStringSecure("showSizeLegend", toString(mySettings.showSizeLegend)));
             mySettings.showColorLegend = StringUtils::toBool(attrs.getStringSecure("showColorLegend", toString(mySettings.showColorLegend)));
@@ -413,6 +430,10 @@ GUISettingsHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) 
             d.screenRelative = StringUtils::toBool(attrs.getStringSecure("screenRelative", toString(d.screenRelative)));
             d.initialised = false;
             myDecals.push_back(d);
+        }
+        break;
+        case SUMO_TAG_VIEWSETTINGS_TRACKER: {
+            myTrackers.push_back(attrs.get<std::string>(SUMO_ATTR_TLID, nullptr, ok));
         }
         break;
         case SUMO_TAG_VIEWSETTINGS_LIGHT: {

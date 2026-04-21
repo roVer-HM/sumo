@@ -38,6 +38,8 @@ stop is an area on a lane. The parameters have the following meanings:
 !!! note
     The alias `<trainStop>` may be used anywhere instead of `<busStop>` and has the exact same functionality.
 
+The [generic parameters](GenericParameters.md) `<param key="waitingWidth" value="FLOAT"/>` and `<param key="waitingDepth" value="FLOAT"/>` can be used to define the visual spacing of waiting persons at the busStop. 
+
 ## Access Lanes
 
 Each bus or train stop may have additional child elements to model access from
@@ -64,7 +66,7 @@ OSM](../Tutorials/PT_from_OpenStreetMap.md#initial_network_and_public_transit_in
 The value `doors` is currently only used when exiting a train or bus. The starting position for a
 subsequent walk of the exiting passengers will be randomly chosen among the door positions of the train or bus.
 The door positions themselves cannot be defined but they are derived from the number of carriages
-and the number of doors per carriage of the vehicle, see [carriage definition](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#carriages).
+and the number of doors per carriage of the vehicle, see [carriage definition](../Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#carriages_custom_visualization).
 
 ## Virtual Stops
 

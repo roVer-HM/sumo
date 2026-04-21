@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,54 +19,51 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # go to demand mode
-netedit.supermodeDemand()
+netedit.changeSupermode("demand")
 
 # go to route mode
-netedit.routeMode()
+netedit.changeMode("route")
 
 # create route using three edges
 netedit.leftClick(referencePosition, netedit.positions.elements.edge0)
 netedit.leftClick(referencePosition, netedit.positions.elements.edge1)
 
 # press enter to create route
-netedit.typeEnter()
+netedit.typeKey("enter")
 
 # go to inspect mode
-netedit.inspectMode()
+netedit.changeMode("inspect")
 
 # inspect route
 netedit.leftClick(referencePosition, netedit.positions.elements.edge0)
 
 # Change parameter edges with a non valid value (empty)
-netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "", False)
+netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "")
 
 # Change parameter edges with a non valid value (dummy)
-netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "dummyEdges", False)
+netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "dummyEdges")
 
 # Change parameter edges with a NON consecutive edges
-netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "Edge0 Edge2", False)
+netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "Edge0 Edge2")
 
 # Change parameter edges with a consecutive NON connected edges
-netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "Edge5 Edge0", False)
+netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "Edge5 Edge0")
 
 # Change parameter edges with valid a single edge
-netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "Edge0", False)
+netedit.modifyAttribute(netedit.attrs.route.inspect.edges, "Edge0")
 
 # Check undo redo
 netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

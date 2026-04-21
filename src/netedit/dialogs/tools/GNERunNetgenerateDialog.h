@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,44 +20,35 @@
 #pragma once
 #include <config.h>
 
-#include <utils/foxtools/fxheader.h>
+#include <netedit/dialogs/GNEDialog.h>
 #include <utils/foxtools/MFXSynchQue.h>
 #include <utils/foxtools/MFXThreadEvent.h>
-#include <utils/options/OptionsCont.h>
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
 
-class GNEApplicationWindow;
 class GNERunNetgenerate;
-class OptionsCont;
 class GUIEvent;
+class OptionsCont;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
 
-/**
- * @class GNERunNetgenerateDialog
- * @brief Abstract dialog for tools
- */
-class GNERunNetgenerateDialog : protected FXDialogBox {
+class GNERunNetgenerateDialog : public GNEDialog {
     /// @brief FOX-declaration
     FXDECLARE(GNERunNetgenerateDialog)
 
 public:
     /// @brief Constructor
-    GNERunNetgenerateDialog(GNEApplicationWindow* GNEApp);
+    GNERunNetgenerateDialog(GNEApplicationWindow* applicationWindow, const OptionsCont* netgenerateOptions);
 
     /// @brief destructor
     ~GNERunNetgenerateDialog();
 
-    /// @brief get to GNEApplicationWindow
-    GNEApplicationWindow* getGNEApp() const;
-
-    /// @brief run tool (this open windows)
-    void run(const OptionsCont* netgenerateOptions);
+    /// @brief run internal test
+    void runInternalTest(const InternalTestStep::DialogArgument* dialogArgument);
 
     /// @name FOX-callbacks
     /// @{
@@ -75,43 +66,29 @@ public:
     long onCmdBack(FXObject*, FXSelector, void*);
 
     /// @brief event after press close button
-    long onCmdClose(FXObject*, FXSelector, void*);
+    long onCmdAccept(FXObject*, FXSelector, void*);
 
     /// @brief event after press cancel button
     long onCmdCancel(FXObject*, FXSelector, void*);
 
     /// @brief called when the thread signals an event
     long onThreadEvent(FXObject*, FXSelector, void*);
+
     /// @}
 
 protected:
     /// @brief FOX needs this
-    GNERunNetgenerateDialog();
+    FOX_CONSTRUCTOR(GNERunNetgenerateDialog);
 
     /// @brief update toolDialog
     void updateDialog();
 
 private:
-    /// @brief pointer to GNEApplicationWindow
-    GNEApplicationWindow* myGNEApp;
-
     /// @brief thread for running tool
     GNERunNetgenerate* myRunNetgenerate = nullptr;
 
     /// @brief text
     FXText* myText = nullptr;
-
-    /// @brief abort button
-    FXButton* myAbortButton = nullptr;
-
-    /// @brief rerun button
-    FXButton* myRerunButton = nullptr;
-
-    /// @brief back button
-    FXButton* myBackButton = nullptr;
-
-    /// @brief close button
-    FXButton* myCloseButton = nullptr;
 
     /// @brief netgenerate options
     const OptionsCont* myNetgenerateOptions;

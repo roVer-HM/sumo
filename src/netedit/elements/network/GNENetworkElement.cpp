@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,10 +18,11 @@
 // A abstract class for networkElements
 /****************************************************************************/
 
+#include <netedit/frames/common/GNESelectorFrame.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagPropertiesDatabase.h>
 #include <netedit/GNEViewParent.h>
-#include <netedit/frames/common/GNESelectorFrame.h>
 #include <utils/foxtools/MFXMenuHeader.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/div/GUIParameterTableWindow.h>
@@ -35,10 +36,17 @@
 // method definitions
 // ===========================================================================
 
+GNENetworkElement::GNENetworkElement(GNENet* net, SumoXMLTag tag) :
+    GNEAttributeCarrier(tag, net, net->getGNEApplicationWindow()->getFileBucketHandler()->getDefaultBucket(FileBucket::Type::NETWORK)),
+    GUIGlObject(myTagProperty->getGLType(), "", GUIIconSubSys::getIcon(myTagProperty->getGUIIcon())),
+    myShapeEdited(false) {
+}
+
+
 GNENetworkElement::GNENetworkElement(GNENet* net, const std::string& id, SumoXMLTag tag) :
-    GNEAttributeCarrier(tag, net, "", false),
-    GUIGlObject(net->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGLType(), id,
-                GUIIconSubSys::getIcon(net->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGUIIcon())),
+    GNEAttributeCarrier(tag, net, net->getGNEApplicationWindow()->getFileBucketHandler()->getDefaultBucket(FileBucket::Type::NETWORK)),
+    GUIGlObject(myTagProperty->getGLType(), id,
+                GUIIconSubSys::getIcon(myTagProperty->getGUIIcon())),
     myShapeEdited(false) {
 }
 
@@ -61,6 +69,12 @@ GNENetworkElement::getGUIGlObject() {
 const GUIGlObject*
 GNENetworkElement::getGUIGlObject() const {
     return this;
+}
+
+
+FileBucket*
+GNENetworkElement::getFileBucket() const {
+    return myFileBucket;
 }
 
 
@@ -121,7 +135,7 @@ GNENetworkElement::selectGLObject() {
         selectAttributeCarrier();
     }
     // update information label
-    myNet->getViewNet()->getViewParent()->getSelectorFrame()->getSelectionInformation()->updateInformationLabel();
+    myNet->getViewParent()->getSelectorFrame()->getSelectionInformation()->updateInformationLabel();
 }
 
 

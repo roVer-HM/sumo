@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,47 +19,41 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # go to select mode
-netedit.selectMode()
+netedit.changeMode("select")
 
 # select all using invert
-netedit.selectionInvert()
+netedit.selection("invert")
 
 # go to inspect mode
-netedit.inspectMode()
+netedit.changeMode("inspect")
 
 # inspect chargingStations
 netedit.leftClick(referencePosition, netedit.positions.elements.additionals.chargingStation)
 
 # disable friendlyPos
-netedit.modifyAttribute(netedit.attrs.busStop.inspectSelection.friendlyPos, "false", True)
+netedit.modifyAttributeOverlapped(netedit.attrs.busStop.inspectSelection.friendlyPos, "false")
 
 # go to select mode
-netedit.selectMode()
+netedit.changeMode("select")
 
 # clear selection
-netedit.selectionClear()
-
-# save netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.selection("clear")
 
 # select invalids
-netedit.fixStoppingPlace("selectInvalids")
+netedit.fixStoppingPlace("selectPositionInvalids")
 
 # remove it using DEL key
-netedit.deleteUsingSuprKey()
+netedit.delete()
 
 # save netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

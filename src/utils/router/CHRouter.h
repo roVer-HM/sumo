@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -267,7 +267,7 @@ public:
     }
 
 
-    virtual void prohibit(const std::vector<E*>& toProhibit) {
+    virtual void prohibit(const std::map<const E*, RouterProhibition>& toProhibit) {
         if (toProhibit.size() > 0) {
             WRITE_WARNINGF(TL("Routing algorithm CH does not support dynamic closing of edges%"), "");
         }

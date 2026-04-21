@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2012-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -26,17 +26,13 @@ from __future__ import print_function
 
 import os
 import sys
-import codecs
 
 from collections import defaultdict
 import sort_routes
 
 if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(os.path.join(tools))
-    import sumolib  # noqa
-else:
-    sys.exit("please declare environment variable 'SUMO_HOME'")
+    sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
+import sumolib  # noqa
 
 
 def get_options(args=None):
@@ -168,7 +164,7 @@ def main(options):
     if options.big:
         # write output unsorted
         tmpname = options.output + ".unsorted"
-        with codecs.open(tmpname, 'w', encoding='utf8') as f:
+        with sumolib.openz(tmpname, 'w') as f:
             write_to_file(
                 cut_trips(edges, options, validTaz), f)
         # sort out of memory
@@ -176,7 +172,7 @@ def main(options):
     else:
         routes = list(cut_trips(edges, options, validTaz))
         routes.sort(key=lambda v: v[0])
-        with codecs.open(options.output, 'w', encoding='utf8') as f:
+        with sumolib.openz(options.output, 'w') as f:
             write_to_file(routes, f)
 
 

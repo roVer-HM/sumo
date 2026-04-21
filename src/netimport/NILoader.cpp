@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -79,9 +79,9 @@ NILoader::load(OptionsCont& oc) {
         if (oc.isSet("opendrive-files")) {
             files.push_back(opendriveTypemap);
         }
-        ok &= NITypeLoader::load(handler, files, "types", true);
+        ok &= NITypeLoader::load(handler, files, toString(SUMO_TAG_TYPES), true);
     } else {
-        ok &= NITypeLoader::load(handler, oc.getStringVector("type-files"), "types");
+        ok &= NITypeLoader::load(handler, oc.getStringVector("type-files"), toString(SUMO_TAG_TYPES));
     }
     // try to load height data so it is ready for use by other importers
     NBHeightMapper::loadIfSet(oc);

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2014-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2014-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -289,7 +289,9 @@ MSPModel_JuPedSim::add(MSTransportable* person, MSStageMoving* stage, SUMOTime n
             }
             if (dir != UNDEFINED_DIRECTION) {
                 ConstMSEdgeVector crossingRoute;
-                MSNet::getInstance()->getPedestrianRouter(0).compute(prev, e, 0, 0, stage->getMaxSpeed(person), 0, dir == FORWARD ? prev->getToJunction() : prev->getFromJunction(), crossingRoute, true);
+                MSNet::getInstance()->getPedestrianRouter(0).compute(prev, e, 0, 0, stage->getMaxSpeed(person), 0,
+                        dir == FORWARD ? prev->getToJunction() : prev->getFromJunction(),
+                        person->getVTypeParameter(), crossingRoute, true);
                 const MSEdge* wa = nullptr;
                 for (const MSEdge* const ce : crossingRoute) {
                     if (ce->isCrossing()) {
@@ -930,7 +932,8 @@ GEOSCoordSequence*
 MSPModel_JuPedSim::convertToGEOSPoints(PositionVector shape) {
     GEOSCoordSequence* coordinateSequence = GEOSCoordSeq_create((unsigned int)shape.size(), 2);
     for (int i = 0; i < (int)shape.size(); i++) {
-        GEOSCoordSeq_setXY(coordinateSequence, i, shape[i].x(), shape[i].y());
+        GEOSCoordSeq_setX(coordinateSequence, i, shape[i].x());
+        GEOSCoordSeq_setY(coordinateSequence, i, shape[i].y());
     }
     return coordinateSequence;
 }
@@ -1135,7 +1138,10 @@ MSPModel_JuPedSim::addWaitingSet(const MSLane* const crossing, const bool entry)
     }
     std::vector<JPS_Point> points;
     for (const Position& p : pv) {
-        GEOSGeometry* point = GEOSGeom_createPointFromXY(p.x(), p.y());
+        GEOSCoordSequence* seq = GEOSCoordSeq_create(1, 2); // 1 point, 2 dimensions
+        GEOSCoordSeq_setX(seq, 0, p.x());
+        GEOSCoordSeq_setY(seq, 0, p.y());
+        GEOSGeometry* point = GEOSGeom_createPoint(seq);
         if (GEOSContains(myGEOSPedestrianNetworkLargestComponent, point)) {
             points.push_back({p.x(), p.y()});
         }

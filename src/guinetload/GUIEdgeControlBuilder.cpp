@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -64,8 +64,9 @@ GUIEdgeControlBuilder::addLane(const std::string& id,
 
 MSEdge*
 GUIEdgeControlBuilder::buildEdge(const std::string& id, const SumoXMLEdgeFunc function,
-                                 const std::string& streetName, const std::string& edgeType, const int priority, const double distance) {
-    return new GUIEdge(id, myCurrentNumericalEdgeID++, function, streetName, edgeType, priority, distance);
+                                 const std::string& streetName, const std::string& edgeType,
+                                 const std::string& routingType, const int priority, const double distance) {
+    return new GUIEdge(id, myCurrentNumericalEdgeID++, function, streetName, edgeType, routingType, priority, distance);
 }
 
 

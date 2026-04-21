@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -40,6 +40,7 @@
 #include "ROLane.h"
 #include "ROPerson.h"
 
+bool ROPerson::myHaveWarnedPTMissing(false);
 const std::string ROPerson::PlanItem::UNDEFINED_STOPPING_PLACE;
 
 // ===========================================================================
@@ -352,9 +353,11 @@ ROPerson::computeIntermodal(SUMOTime time, const RORouterProvider& provider,
     provider.getIntermodalRouter().compute(trip->getOrigin(), trip->getDestination(),
                                            trip->getDepartPos(), trip->getStopOrigin(),
                                            trip->getArrivalPos(), trip->getStopDest(),
-                                           speed, veh, trip->getModes(), time, result);
+                                           speed, veh, *getType(), trip->getModes(), time, result);
     bool carUsed = false;
     SUMOTime start = time;
+    int index = 0;
+    const int lastIndex = (int)result.size() - 1;
     for (const ROIntermodalRouter::TripItem& item : result) {
         if (!item.edges.empty()) {
             if (item.line == "") {
@@ -395,7 +398,8 @@ ROPerson::computeIntermodal(SUMOTime time, const RORouterProvider& provider,
                     const double taxiWait = STEPS2TIME(string2time(OptionsCont::getOptions().getString("persontrip.taxi.waiting-time")));
                     cost += taxiWait;
                 }
-                resultItems.push_back(new Ride(start, item.edges.front(), item.edges.back(), veh->getID(), trip->getGroup(), cost, item.arrivalPos, item.length, item.destStop));
+                double arrPos = index == lastIndex ? trip->getArrivalPos(false) : item.arrivalPos;
+                resultItems.push_back(new Ride(start, item.edges.front(), item.edges.back(), veh->getID(), trip->getGroup(), cost, arrPos, item.length, item.destStop));
             } else {
                 // write origin for first element of the plan
                 const ROEdge* origin = trip == myPlan.front() && resultItems.empty() ? trip->getOrigin() : nullptr;
@@ -404,6 +408,7 @@ ROPerson::computeIntermodal(SUMOTime time, const RORouterProvider& provider,
             }
         }
         start += TIME2STEPS(item.cost);
+        index++;
     }
     if (result.empty()) {
         errorHandler->inform("No route for trip in person '" + getID() + "'.");
@@ -447,8 +452,24 @@ ROPerson::computeRoute(const RORouterProvider& provider,
                 }
             }
             trip->setItems(best, bestVeh);
+
+            // test after routing to ensuer network was initialized
+            if (!myHaveWarnedPTMissing && (trip->getModes() & SVC_BUS) != 0) {
+                myHaveWarnedPTMissing = true;
+                if (!provider.getIntermodalRouter().getNetwork()->hasPTSchedules()) {
+                    WRITE_WARNINGF("Person '%' is configured to use public transport but no schedules are loaded.", getID());
+                }
+            }
         }
         time += it->getDuration();
+    }
+    if (RONet::getInstance()->getMaxTraveltime() > 0) {
+        double costs = STEPS2TIME(time - getParameter().depart);
+        if (costs > RONet::getInstance()->getMaxTraveltime()) {
+            errorHandler->inform("Person '" + getID() + "' has no valid route (traveltime " + time2string(TIME2STEPS(costs)) + " exceeds max-traveltime)");
+            myRoutingSuccess = false;
+            return;
+        }
     }
 }
 
@@ -457,6 +478,7 @@ void
 ROPerson::saveAsXML(OutputDevice& os, OutputDevice* const typeos, bool asAlternatives, OptionsCont& options, int cloneIndex) const {
     // write the person's vehicles
     const bool writeTrip = options.exists("write-trips") && options.getBool("write-trips");
+    const bool writeFlow = options.exists("keep-flows") && options.getBool("keep-flows") && isPartOfFlow();
     if (!writeTrip) {
         for (const PlanItem* const it : myPlan) {
             it->saveVehicles(os, typeos, asAlternatives, options);
@@ -471,15 +493,15 @@ ROPerson::saveAsXML(OutputDevice& os, OutputDevice* const typeos, bool asAlterna
         getType()->write(os);
         getType()->saved = asAlternatives;
     }
-
+    const SumoXMLTag tag = writeFlow ? SUMO_TAG_PERSONFLOW : SUMO_TAG_PERSON;
     // write the person
     if (cloneIndex == 0) {
-        getParameter().write(os, options, SUMO_TAG_PERSON);
+        getParameter().write(os, options, tag);
     } else {
         SUMOVehicleParameter p = getParameter();
         // @note id collisions may occur if scale-suffic occurs in other vehicle ids
         p.id += options.getString("scale-suffix") + toString(cloneIndex);
-        p.write(os, options, SUMO_TAG_PERSON);
+        p.write(os, options, tag);
     }
 
     for (const PlanItem* const it : myPlan) {

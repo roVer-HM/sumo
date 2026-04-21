@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -176,7 +176,7 @@ public:
      */
     void writeConfiguration(std::ostream& os, const bool filled,
                             const bool complete, const bool addComments, const std::string& relativeTo = "",
-                            const bool forceRelative = false, const bool inComment = false) const;
+                            const bool forceRelative = false, const bool inComment = false, const std::string& indent = "") const;
 
     /** @brief Writes the xml schema for the configuration
      *
@@ -273,20 +273,17 @@ public:
      */
     void setFurtherAttributes(const std::string& name, const std::string& subtopic, bool required, bool positional, const std::string& listSep);
 
-    /** @brief Adds a category for an option
+    /** @brief set option editable
      *
-     * Tries to retrieve the named option and to set the given category. Adds
-     *  the name to the list of option names to be located in the named subtopic.
+     * Tries to change the flag editable in the given option
      *
-     * Throws an InvalidArgument if the option is not known or already has
-     *  a category set.
+     * Throws an InvalidArgument if the option is not known
      *
      * @param[in] name The option's name
-     * @param[in] subtopic The subtopic to locate the category within
-     * @param[in] category The category
-     * @exception InvalidArgument If none of the synonymes or both synonymes with different options were registered before
+     * @param[in] value editable value (true/false)
+     * @exception InvalidArgument If option doesn't exist
      */
-    void addCategory(const std::string& name, const std::string& subtopic, const std::string& category);
+    void setOptionEditable(const std::string& name, const bool value);
 
     /// @}
 
@@ -344,10 +341,10 @@ public:
     /** @brief Checks whether the named option is usable as a file list (with at least a single file)
      *
      * The method returns true, if the named option is set with entries containing
-     *  names of accessable files.
+     *  names of accessible files.
      *
      * Throw an InvalidArgument exception if the option is not known. If the option
-     *  is not set, false is returned. Also, if the list is empty (conatins delimiters only)
+     *  is not set, false is returned. Also, if the list is empty (contains delimiters only)
      *  or if one of the named files (obtained using getStringVector) does not exist,
      *  false is returned. Additionally, an error is sent to MsgHandler in both cases.
      *
@@ -362,7 +359,7 @@ public:
 
     /** @brief Checks whether an option is set, which has options with a prefix depending on it.
      *
-     * The method returns true, if the named option is set or no option dependoing on it is set.
+     * The method returns true, if the named option is set or no option depending on it is set.
      * Throws an InvalidArgument exception if the option is not known.
      *
      * @param[in] name The name of the option to check
@@ -420,6 +417,14 @@ public:
      * @exception InvalidArgument If the option does not exist
      */
     bool isWriteable(const std::string& name);
+
+    /** @brief Returns the information whether the named option is editable
+     *
+     * @param[in] name The name of the option to check
+     * @return Whether the value is editable
+     * @exception InvalidArgument If the option does not exist
+     */
+    bool isEditable(const std::string& name);
 
     /// @}
 
@@ -634,13 +639,15 @@ public:
      *  template or the current configuration shall be written.
      *
      * This method throws a ProcessError if the configuration should be saved,
-     *  but the file is not accessable. An error message is supplied.
+     *  but the file is not accessible. An error message is supplied.
      *
      * @param[in] missingOptions Whether no options have been given
      * @return Whether the application shall stop
      * @exception ProcessError If the configuration file could not be saved
      */
     bool processMetaOptions(bool missingOptions);
+
+    void localizeDescriptions();
 
     /// @brief return the list of subtopics
     const std::vector<std::string>& getSubTopics() const;
@@ -657,10 +664,10 @@ public:
     /// @brief check if options container is empty
     bool isEmpty() const;
 
-    /// @brief get begin adresses iterator
+    /// @brief get begin addresses iterator
     std::vector<std::pair<std::string, Option*> >::const_iterator begin() const;
 
-    /// @brief get begin adresses iterator
+    /// @brief get begin addresses iterator
     std::vector<std::pair<std::string, Option*> >::const_iterator end() const;
 
     /// @brief make a copy of this OptionsCont instance
@@ -707,13 +714,16 @@ private:
      */
     void splitLines(std::ostream& os, std::string what, int offset, int nextOffset);
 
+    /// @brief Whether the descriptino has already been translated to the locale language
+    bool myAmLocalized = false;
+
     /// @brief The static options container used
     static OptionsCont myOptions;
 
-    /// @brief option-adresses
+    /// @brief option-addresses
     std::vector<std::pair<std::string, Option*> > myAddresses;
 
-    /// @brief option maps sorted by name (for adresses AND their synonyms)
+    /// @brief option maps sorted by name (for addresses AND their synonyms)
     std::map<std::string, Option*> myValues;
 
     /// @brief some information on the application

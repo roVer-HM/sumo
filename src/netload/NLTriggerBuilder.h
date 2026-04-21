@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -316,7 +316,7 @@ protected:
      */
     virtual void buildStoppingPlace(MSNet& net, std::string id, std::vector<std::string> lines, MSLane* lane,
                                     double frompos, double topos, const SumoXMLTag element, std::string string,
-                                    int personCapacity, double parkingLength, RGBColor& color);
+                                    int personCapacity, double parkingLength, RGBColor& color, double angle);
 
     /** @brief Builds a charging station
      *
@@ -327,7 +327,8 @@ protected:
      * @param[in] lane The lane the charging station is placed on
      * @param[in] frompos Begin position of the charging station on the lane
      * @param[in] topos End position of the charging station on the lane
-     * @param[in] chargingPower energy charged in every timeStep
+     * @param[in] chargingPower nominal energy charged in every timeStep per vehicle
+     * @param[in] totalPower max energy charged in every timestep by all vehicles together
      * @param[in] efficiency efficiency of the charge
      * @param[in] chargeInTransit enable or disable charge in transit
      * @param[in] chargeDelay delay in the charge
@@ -337,8 +338,8 @@ protected:
      * @exception InvalidArgument If the charging station can not be added to the net (is duplicate)
      */
     virtual void buildChargingStation(MSNet& net, const std::string& id, MSLane* lane, double frompos, double topos, const std::string& name,
-                                      double chargingPower, double efficiency, bool chargeInTransit, SUMOTime chargeDelay, std::string chargeType,
-                                      SUMOTime waitingTime, MSParkingArea* parkingArea);
+                                      double chargingPower, double totalPower, double efficiency, bool chargeInTransit, SUMOTime chargeDelay,
+                                      std::string chargeType, SUMOTime waitingTime, MSParkingArea* parkingArea);
 
     /** @brief Builds an overhead wire segment
     *

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -264,6 +264,8 @@ private:
         std::string streetName;
         /// @brief This edge's type
         std::string type;
+        /// @brief This edge's routing type
+        std::string routingType;
         /// @brief This edge's function
         SumoXMLEdgeFunc func;
         /// @brief The node this edge starts at
@@ -338,8 +340,6 @@ private:
      */
     struct JunctionAttrs {
         NBNode* node;
-        // @the list of internal lanes corresponding to each link
-        std::vector<std::string> intLanes;
         // @brief the complete response definition for all links
         std::vector<std::string> response;
     };

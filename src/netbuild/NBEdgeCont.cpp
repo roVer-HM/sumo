@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -532,7 +532,7 @@ NBEdgeCont::processSplits(NBEdge* e, std::vector<Split> splits,
             //  we can assume that this split was attached to an
             //  existing node. Reset all connections to let the default
             //  algorithm recompute them
-            if (exp.node->getIncomingEdges().size() > 1 || exp.node->getOutgoingEdges().size() > 1) {
+            if (exp.node->getIncomingEdges().size() > 1 || exp.node->getOutgoingEdges().size() > 1 || exp.node->getType() == SumoXMLNodeType::ZIPPER) {
                 for (NBEdge* in : exp.node->getIncomingEdges()) {
                     in->invalidateConnections(true);
                 }
@@ -652,7 +652,10 @@ NBEdgeCont::splitAt(NBDistrictCont& dc,
     // build the new edges' geometries
     double geomPos = pos;
     if (edge->hasLoadedLength()) {
-        geomPos *= edge->getGeometry().length() / edge->getLoadedLength();
+        geomPos = edge->getGeometry().nearest_offset_to_point2D(node->getPosition());
+        if (geomPos <= 0) {
+            geomPos = pos * edge->getGeometry().length() / edge->getLoadedLength();
+        }
     }
     std::pair<PositionVector, PositionVector> geoms = edge->getGeometry().splitAt(geomPos);
     // reduce inaccuracies and preserve bidi
@@ -763,6 +766,19 @@ NBEdgeCont::getAllNames() const {
     return ret;
 }
 
+
+NBEdge*
+NBEdgeCont::getSplitBase(const std::string& edgeID) const {
+    NBEdge* longest = nullptr;
+    for (auto item : myEdgesSplit) {
+        if (item.first->getID() == edgeID) {
+            if (longest == nullptr || longest->getLoadedLength() < item.first->getLoadedLength()) {
+                longest = const_cast<NBEdge*>(item.first);
+            }
+        }
+    }
+    return longest;
+}
 
 // ----- Adapting the input
 int
@@ -1046,6 +1062,12 @@ NBEdgeCont::joinSameNodeConnectingEdges(NBDistrictCont& dc,
 void
 NBEdgeCont::guessOpposites() {
     //@todo magic values
+    const bool fixOppositeLengths = OptionsCont::getOptions().getBool("opposites.guess.fix-lengths");
+    // ensure consistency of loaded values before starting to guess
+    for (const auto& edgeIt : myEdges) {
+        NBEdge* const edge = edgeIt.second;
+        edge->recheckOpposite(*this, fixOppositeLengths);
+    }
     for (EdgeCont::iterator i = myEdges.begin(); i != myEdges.end(); ++i) {
         NBEdge* edge = i->second;
         edge->guessOpposite();
@@ -1249,6 +1271,16 @@ NBEdgeCont::guessRoundabouts() {
 #endif
                 break;
             }
+            if (e->getToNode()->getRoundaboutType() == RoundaboutType::NO) {
+                doLoop = false;
+#ifdef DEBUG_GUESS_ROUNDABOUT
+                if (gDebugFlag1) {
+                    std::cout << " disabled\n";
+                }
+                gDebugFlag1 = false;
+#endif
+                break;
+            }
             if (edges.size() < 2) {
                 doLoop = false;
 #ifdef DEBUG_GUESS_ROUNDABOUT
@@ -1259,7 +1291,7 @@ NBEdgeCont::guessRoundabouts() {
 #endif
                 break;
             }
-            if (e->getTurnDestination() != nullptr || e->getToNode()->getConnectionTo(e->getFromNode()) != nullptr) {
+            if (e->getTurnDestination(true) != nullptr || e->getToNode()->getConnectionTo(e->getFromNode()) != nullptr) {
                 // do not follow turn-arounds while in a (tentative) loop
                 doLoop = false;
 #ifdef DEBUG_GUESS_ROUNDABOUT
@@ -1297,25 +1329,39 @@ NBEdgeCont::guessRoundabouts() {
                 std::cout << "   e=" << e->getID() << " left=" << left->getID() << " nextLeft=" << nextLeft->getID() << " angle=" << angle << " nextAngle=" << nextAngle << " eLength=" << e->getLength() << " lLength=" << left->getLength() << " dist=" << e->getLaneShape(0).back().distanceTo2D(left->getLaneShape(0).front()) << "\n";
             }
 #endif
-            if (angle >= 120
-                    || (angle >= 90 &&
-                        // if the edges are long or the junction shape is small we should expect roundness (low angles)
-                        (MAX2(e->getLength(), left->getLength()) > 5
-                         || e->getLaneShape(0).back().distanceTo2D(left->getLaneShape(0).front()) < 10
-                         // there should be no straigher edge further left
-                         || (nextAngle < 45)
-                        ))) {
-                // roundabouts do not have sharp turns (or they wouldn't be called 'round')
-                // however, if the roundabout is very small then most of the roundness may be in the junction so the angle may be as high as 120
+            // there should be no straigher edge further left
+            if (angle >= 90 && nextAngle < 45) {
                 doLoop = false;
 #ifdef DEBUG_GUESS_ROUNDABOUT
                 if (gDebugFlag1) {
-                    std::cout << "     failed angle=" << angle << "\n";
+                    std::cout << "     failed nextAngle=" << nextAngle << "\n";
                 }
                 gDebugFlag1 = false;
 #endif
                 break;
             }
+            // roundabouts do not have sharp turns (or they wouldn't be called 'round')
+            // however, if the roundabout is very small then most of the roundness may be in the junction so the angle may be as high as 180 (for smooth attachments at a joined junction)
+            if (angle >= 90) {
+                double edgeAngle = fabs(NBHelpers::relAngle(e->getStartAngle(), e->getEndAngle()));
+                double edgeAngle2 = fabs(NBHelpers::relAngle(left->getStartAngle(), left->getEndAngle()));
+                double edgeRadius = e->getGeometry().length2D() / DEG2RAD(edgeAngle);
+                double edgeRadius2 = left->getGeometry().length2D() / DEG2RAD(edgeAngle2);
+                const double avgRadius = 0.5 * (edgeRadius + edgeRadius2);
+                double junctionRadius = e->getLaneShape(0).back().distanceTo2D(left->getLaneShape(0).front()) / DEG2RAD(angle);
+                //std::cout << "     junction=" << e->getToNode()->getID() << " e=" << e->getID() << " left=" << left->getID() << " angle=" << angle << " eRadius=" << edgeRadius << " eRadius2=" << edgeRadius2 << " jRadius3=" << junctionRadius << "\n";
+                if (junctionRadius < 0.8 * avgRadius) {
+                    doLoop = false;
+#ifdef DEBUG_GUESS_ROUNDABOUT
+                    if (gDebugFlag1) {
+                        std::cout << "     failed angle=" << angle << " eRadius=" << edgeRadius << " eRadius2=" << edgeRadius2 << " jRadius3=" << junctionRadius << "\n";
+                    }
+                    gDebugFlag1 = false;
+#endif
+                    break;
+                }
+            }
+
             EdgeVector::const_iterator loopClosed = std::find(loopEdges.begin(), loopEdges.end(), left);
             const int loopSize = (int)(loopEdges.end() - loopClosed);
             if (loopSize > 0) {
@@ -1680,7 +1726,7 @@ NBEdgeCont::addPrefix(const std::string& prefix) {
 
 
 int
-NBEdgeCont::remapIDs(bool numericaIDs, bool reservedIDs, const std::string& prefix, NBPTStopCont& sc) {
+NBEdgeCont::remapIDs(bool numericaIDs, bool reservedIDs, bool keptIDs, const std::string& prefix, NBPTStopCont& sc) {
     bool startGiven = !OptionsCont::getOptions().isDefault("numerical-ids.edge-start");
     if (!numericaIDs && !reservedIDs && prefix == "" && !startGiven) {
         return 0;
@@ -1714,6 +1760,17 @@ NBEdgeCont::remapIDs(bool numericaIDs, bool reservedIDs, const std::string& pref
             toChange.insert(it->second);
         }
     }
+    std::set<std::string> keep;
+    if (keptIDs) {
+        NBHelpers::loadPrefixedIDsFomFile(OptionsCont::getOptions().getString("kept-ids"), "edge:", keep);
+        for (auto it = toChange.begin(); it != toChange.end();) {
+            if (keep.count((*it)->getID()) != 0) {
+                toChange.erase(it++);
+            } else {
+                it++;
+            }
+        }
+    }
 
     std::map<std::string, std::vector<std::shared_ptr<NBPTStop> > > stopsOnEdge;
     for (const auto& item : sc.getStops()) {
@@ -1742,7 +1799,7 @@ NBEdgeCont::remapIDs(bool numericaIDs, bool reservedIDs, const std::string& pref
         // make a copy because we will modify the map
         auto oldEdges = myEdges;
         for (auto item : oldEdges) {
-            if (!StringUtils::startsWith(item.first, prefix)) {
+            if (!StringUtils::startsWith(item.first, prefix) && keep.count(item.first) == 0) {
                 rename(item.second, prefix + item.first);
                 renamed++;
             }
@@ -2213,5 +2270,59 @@ NBEdgeCont::removeLanesByWidth(NBDistrictCont& dc, const double minWidth) {
     return numRemoved;
 }
 
+
+int
+NBEdgeCont::attachRemoved(NBNodeCont& nc, NBDistrictCont& dc, const double maxDist) {
+    int numSplit = 0;
+    std::map<std::string, std::vector<std::string> > node2edge;
+    for (auto item : myEdges) {
+        if (item.second->hasParameter(SUMO_PARAM_REMOVED_NODES)) {
+            for (std::string& nodeID : StringTokenizer(item.second->getParameter(SUMO_PARAM_REMOVED_NODES)).getVector()) {
+                node2edge[nodeID].push_back(item.first);
+            }
+        }
+    }
+    for (auto item : nc) {
+        NBNode* n = item.second;
+        auto itRN = node2edge.find(n->getID());
+        if (itRN != node2edge.end()) {
+            bool rebuildConnections = false;
+            // make a copy because we modify the original
+            std::vector<std::string> edgeIDs = itRN->second;
+            for (const std::string& eID : edgeIDs) {
+                NBEdge* edge = retrieve(eID);
+                assert(edge != nullptr);
+                const double dist = edge->getGeometry().distance2D(n->getPosition(), true);
+                if (dist != GeomHelper::INVALID_OFFSET && dist <= maxDist) {
+                    std::string idAfter = edge->getID();
+                    int index = 1;
+                    size_t spos = idAfter.find("#");
+                    if (spos != std::string::npos && spos > 1) {
+                        idAfter = idAfter.substr(0, spos);
+                    }
+                    while (retrieve(idAfter + "#" + toString(index), true) != nullptr) {
+                        index++;
+                    }
+                    idAfter += "#" + toString(index);
+                    const bool ok = splitAt(dc, edge, n, edge->getID(), idAfter, edge->getNumLanes(), edge->getNumLanes());
+                    if (ok) {
+                        rebuildConnections = true;
+                        numSplit++;
+                        NBEdge* secondEdge = retrieve(eID); // original was extracted on splitting
+                        for (std::string& nodeID : StringTokenizer(secondEdge->getParameter(SUMO_PARAM_REMOVED_NODES)).getVector()) {
+                            node2edge[nodeID].push_back(idAfter);
+                        }
+                    }
+                }
+            }
+            if (rebuildConnections) {
+                for (NBEdge* e : n->getIncomingEdges()) {
+                    e->invalidateConnections(true);
+                }
+            }
+        }
+    }
+    return numSplit;
+}
 
 /****************************************************************************/

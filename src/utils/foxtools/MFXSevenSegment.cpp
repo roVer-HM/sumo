@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2004-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2004-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,6 +20,8 @@
 //
 /****************************************************************************/
 #include <config.h>
+
+#include <utils/gui/div/GUIDesigns.h>
 
 #include "MFXSevenSegment.h"
 
@@ -54,7 +56,7 @@ MFXSevenSegment::MFXSevenSegment(FXComposite* p, FXObject* tgt, FXSelector sel, 
     FXFrame(p, opts, 0, 0, 0, 0, pl, pr, pt, pb),
     myValue(' '),
     myLCDTextColor(FXRGB(0, 255, 0)),
-    myBackGroundColor(FXRGB(0, 0, 0)),
+    myBackGroundColor(GUIDesignTextColorBlack),
     myHorizontalSegmentLength(8),
     myVerticalSegmentLength(8),
     mySegmentThickness(3),

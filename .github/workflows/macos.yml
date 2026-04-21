@@ -19,15 +19,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-13, macos-14, macos-15]
-        jps_version: ['v1.3.0']
+        os: [macos-14, macos-15]
+        jps_version: ['v1.3.1']
     runs-on: ${{ matrix.os }}
     env:
       CCACHE_COMPILERTYPE: clang
 
     steps:
     - name: Cloning SUMO
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         path: sumo
         fetch-depth: 0
@@ -38,13 +38,11 @@ jobs:
     - name: Preparing Build System
       run: |
         brew update
-        brew upgrade || brew link --overwrite python@3.12
         brew install --cask xquartz
-        brew install xerces-c fox proj gdal gl2ps ccache googletest fmt swig eigen
+        brew install xerces-c fox proj gdal gl2ps ccache googletest fmt swig eigen apache-arrow
 
     - name: Cloning jupedsim
-      if: matrix.os != 'macos-13'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: PedestrianDynamics/jupedsim
         ref: ${{ matrix.jps_version }}
@@ -57,7 +55,6 @@ jobs:
         key: ${{ matrix.os }}
 
     - name: Building libjupedsim
-      if: matrix.os != 'macos-13'
       run: |
         cmake -B jupedsim-build -D CMAKE_C_COMPILER_LAUNCHER=ccache -D CMAKE_CXX_COMPILER_LAUNCHER=ccache jupedsim
         cmake --build jupedsim-build -j4 --config Release
@@ -80,20 +77,28 @@ jobs:
         cd sumo/cmake-build
         make CTEST_OUTPUT_ON_FAILURE=1 examples test
 
+    - name: Uploading artifacts (SUMO examples with outputs)
+      uses: actions/upload-artifact@v6
+      with:
+        name: ${{ matrix.os }}-examples
+        path: sumo/docs/examples
+
     - name: Running texttest
       run: |
         export DYLD_FALLBACK_LIBRARY_PATH=/usr/local/lib:$DYLD_FALLBACK_LIBRARY_PATH
         brew install texttest
-        sumo/tests/runTests.sh -b ci -v ci -ts meta
+        python3 -m venv testenv
+        source testenv/bin/activate
+        python -m pip install -r sumo/tools/req_ci.txt -r sumo/tools/requirements.txt
+        sumo/tests/runTests.sh -b ci -v ci -finverse $PWD/sumo/tests/filter_files/macos_failures.txt
 
     - name: Uploading artifacts (SUMO binaries and FMU)
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: ${{ matrix.os }}-binaries
         path: sumo/bin
 
     - name: Creating macOS installer pkg
-      if: matrix.os != 'macos-13'
       run: |
         python3 -m venv dmgenv
         dmgenv/bin/python3 -m pip install dmgbuild delocate
@@ -101,8 +106,7 @@ jobs:
         dmgenv/bin/python3 sumo/tools/build_config/buildMacOSInstaller.py --create-framework-pkg
 
     - name: Uploading macOS installer pkg
-      if: matrix.os != 'macos-13'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: ${{ matrix.os }}-installer-unsigned
         path: framework-pkg/*.pkg

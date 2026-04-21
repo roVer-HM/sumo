@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -130,10 +130,19 @@ public:
     /// @brief struct for OSG movable elements
     struct OSGMovable {
         osg::ref_ptr<osg::PositionAttitudeTransform> pos;
-        osg::ref_ptr<osg::ShapeDrawable> geom;
+        osg::ref_ptr<osg::PositionAttitudeTransform> body;
         osg::ref_ptr<osg::Material> mat;
         osg::ref_ptr<osg::Switch> lights;
         bool active;
+
+        void activateMaterial(bool state = true) {
+            osg::ref_ptr<osg::StateSet> ss = body->getOrCreateStateSet();
+            if (state) {
+                ss->setAttribute(mat, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE | osg::StateAttribute::PROTECTED);
+            } else {
+                ss->setAttribute(mat, osg::StateAttribute::OFF);
+            }
+        }
     };
 
     /// @brief constructor

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -140,6 +140,13 @@ GUISelectedStorage::deselect(GUIGlID id) {
     if (myUpdateTarget) {
         myUpdateTarget->selectionUpdated();
     }
+}
+
+
+void
+GUISelectedStorage::deselect(GUIGlObjectType type, GUIGlID id) {
+    mySelections[type].deselect(id);
+    myAllSelected.erase(id);
 }
 
 
@@ -293,7 +300,7 @@ GUISelectedStorage::remove2Update() {
 
 void
 GUISelectedStorage::save(const std::string& filename, const std::unordered_set<GUIGlID>& ids) {
-    OutputDevice& dev = OutputDevice::getDevice(filename);
+    OutputDevice& dev = OutputDevice::getDevice(filename, false);
     for (const auto glID : ids) {
         GUIGlObject* object = GUIGlObjectStorage::gIDStorage.getObjectBlocking(glID);
         if (object != nullptr) {

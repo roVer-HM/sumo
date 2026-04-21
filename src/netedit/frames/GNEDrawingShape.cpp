@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -37,7 +37,7 @@ FXDEFMAP(GNEDrawingShape) DrawingShapeMap[] = {
 };
 
 // Object implementation
-FXIMPLEMENT(GNEDrawingShape,               MFXGroupBoxModule,     DrawingShapeMap,                ARRAYNUMBER(DrawingShapeMap))
+FXIMPLEMENT(GNEDrawingShape,               GNEGroupBoxModule,     DrawingShapeMap,                ARRAYNUMBER(DrawingShapeMap))
 
 
 // ===========================================================================
@@ -45,7 +45,7 @@ FXIMPLEMENT(GNEDrawingShape,               MFXGroupBoxModule,     DrawingShapeMa
 // ===========================================================================
 
 GNEDrawingShape::GNEDrawingShape(GNEFrame* frameParent) :
-    MFXGroupBoxModule(frameParent, TL("Drawing")),
+    GNEGroupBoxModule(frameParent, TL("Drawing")),
     myFrameParent(frameParent),
     myDeleteLastCreatedPoint(false) {
     // create start and stop buttons
@@ -72,16 +72,16 @@ GNEDrawingShape::~GNEDrawingShape() {}
 void GNEDrawingShape::showDrawingShape() {
     // abort current drawing before show
     abortDrawing();
-    // show MFXGroupBoxModule
-    MFXGroupBoxModule::show();
+    // show GNEGroupBoxModule
+    GNEGroupBoxModule::show();
 }
 
 
 void GNEDrawingShape::hideDrawingShape() {
     // abort current drawing before hide
     abortDrawing();
-    // show MFXGroupBoxModule
-    MFXGroupBoxModule::hide();
+    // show GNEGroupBoxModule
+    GNEGroupBoxModule::hide();
 }
 
 

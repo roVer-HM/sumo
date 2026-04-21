@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,14 +19,14 @@
 /****************************************************************************/
 
 #include <microsim/devices/MSDevice_BTreceiver.h>
+#include <netedit/changes/GNEChange_Attribute.h>
+#include <netedit/elements/moving/GNEMoveElementPlanParent.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagProperties.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/changes/GNEChange_Attribute.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/gui/windows/GUIAppEnum.h>
 #include <utils/gui/div/GUIDesigns.h>
+#include <utils/gui/images/GUITextureSubSys.h>
+#include <utils/gui/windows/GUIAppEnum.h>
 #include <utils/xml/NamespaceIDs.h>
 
 #include "GNEContainer.h"
@@ -135,26 +135,29 @@ GNEContainer::GNESelectedContainersPopupMenu::onCmdTransform(FXObject* obj, FXSe
     return 1;
 }
 
-
 // ===========================================================================
 // member method definitions
 // ===========================================================================
+
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4355) // mask warning about "this" in initializers
 #endif
 GNEContainer::GNEContainer(SumoXMLTag tag, GNENet* net) :
-    GNEDemandElement("", net, "", tag, GNEPathElement::Options::DEMAND_ELEMENT),
-    GNEDemandElementFlow(this) {
+    GNEDemandElement(net, tag),
+    GNEDemandElementFlow(this),
+    myMoveElementPlanParent(new GNEMoveElementPlanParent(this, departPos, departPosProcedure)) {
     // set end and container per hours as default flow values
     toggleAttribute(SUMO_ATTR_END, 1);
     toggleAttribute(SUMO_ATTR_CONTAINERSPERHOUR, 1);
 }
 
 
-GNEContainer::GNEContainer(SumoXMLTag tag, GNENet* net, const std::string& filename, GNEDemandElement* pType, const SUMOVehicleParameter& containerparameters) :
-    GNEDemandElement(containerparameters.id, net, filename, tag, GNEPathElement::Options::DEMAND_ELEMENT),
-    GNEDemandElementFlow(this, containerparameters) {
+GNEContainer::GNEContainer(SumoXMLTag tag, GNENet* net, FileBucket* fileBucket,
+                           GNEDemandElement* pType, const SUMOVehicleParameter& containerparameters) :
+    GNEDemandElement(containerparameters.id, net, tag, fileBucket),
+    GNEDemandElementFlow(this, containerparameters),
+    myMoveElementPlanParent(new GNEMoveElementPlanParent(this, departPos, departPosProcedure)) {
     // set parents
     setParent<GNEDemandElement*>(pType);
     // set manually vtypeID (needed for saving)
@@ -167,25 +170,21 @@ GNEContainer::GNEContainer(SumoXMLTag tag, GNENet* net, const std::string& filen
 GNEContainer::~GNEContainer() {}
 
 
-GNEMoveOperation*
-GNEContainer::getMoveOperation() {
-    const auto firstContainerPlan = getChildDemandElements().front();
-    // check first container plan
-    if (firstContainerPlan->getTagProperty()->isPlanStopContainer()) {
-        return nullptr;
-    } else if (firstContainerPlan->getParentEdges().size() > 0) {
-        // get lane
-        const GNELane* lane = firstContainerPlan->getParentEdges().front()->getLaneByAllowedVClass(getVClass());
-        // declare departPos
-        double posOverLane = 0;
-        if (canParse<double>(getDepartPos())) {
-            posOverLane = parse<double>(getDepartPos());
-        }
-        // return move operation
-        return new GNEMoveOperation(this, lane, posOverLane, false);
-    } else {
-        return nullptr;
-    }
+GNEMoveElement*
+GNEContainer::getMoveElement() const {
+    return myMoveElementPlanParent;
+}
+
+
+Parameterised*
+GNEContainer::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNEContainer::getParameters() const {
+    return this;
 }
 
 
@@ -203,8 +202,6 @@ GNEContainer::writeDemandElement(OutputDevice& device) const {
         // write container attributes, including VType
         write(device, OptionsCont::getOptions(), myTagProperty->getXMLTag(), getTypeParent()->getID());
     }
-    // write flow attributes
-    writeFlowAttributes(this, device);
     // write parameters
     writeParams(device);
     // write child demand elements associated to this container (Rides, Walks...)
@@ -520,7 +517,7 @@ GNEContainer::getAttributePosition(SumoXMLAttr key) const {
             }
         }
         default:
-            throw InvalidArgument(getTagStr() + " doesn't have a Position attribute of type '" + toString(key) + "'");
+            return getCommonAttributePosition(key);
     }
 }
 
@@ -612,12 +609,6 @@ GNEContainer::getHierarchyName() const {
         }
     }
     return getTagStr() + ": " + getAttribute(SUMO_ATTR_ID);
-}
-
-
-const Parameterised::Map&
-GNEContainer::getACParametersMap() const {
-    return getParametersMap();
 }
 
 // ===========================================================================
@@ -714,7 +705,7 @@ GNEContainer::setAttribute(SumoXMLAttr key, const std::string& value) {
             break;
         case SUMO_ATTR_TYPE:
             if (getID().size() > 0) {
-                replaceDemandElementParent(SUMO_TAG_VTYPE, value, 0);
+                replaceDemandElementParent(NamespaceIDs::types, value, 0);
                 // set manually vtypeID (needed for saving)
                 vtypeid = value;
             }
@@ -751,30 +742,10 @@ GNEContainer::setAttribute(SumoXMLAttr key, const std::string& value) {
     }
 }
 
-
 void
 GNEContainer::toggleAttribute(SumoXMLAttr key, const bool value) {
     // toggle flow attributes
     toggleFlowAttribute(key, value);
-}
-
-
-void
-GNEContainer::setMoveShape(const GNEMoveResult& moveResult) {
-    // change departPos
-    departPosProcedure = DepartPosDefinition::GIVEN;
-    departPos = moveResult.newFirstPos;
-    // update geometry
-    updateGeometry();
-}
-
-
-void
-GNEContainer::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
-    undoList->begin(this, "departPos of " + getTagStr());
-    // now set departPos
-    setAttribute(SUMO_ATTR_DEPARTPOS, toString(moveResult.newFirstPos), undoList);
-    undoList->end();
 }
 
 /****************************************************************************/

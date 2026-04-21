@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -45,13 +45,11 @@ FXDEFMAP(GNEPlanCreator) PathCreatorMap[] = {
 };
 
 // Object implementation
-FXIMPLEMENT(GNEPlanCreator,                MFXGroupBoxModule,     PathCreatorMap,                 ARRAYNUMBER(PathCreatorMap))
-
+FXIMPLEMENT(GNEPlanCreator,                GNEGroupBoxModule,     PathCreatorMap,                 ARRAYNUMBER(PathCreatorMap))
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
-
 
 GNEPlanCreator::PlanPath::PlanPath(GNEPathManager* pathManager, const SUMOVehicleClass vClass, GNEEdge* fromEdge, GNEEdge* toEdge) :
     myConflictVClass(false),
@@ -151,7 +149,7 @@ GNEPlanCreator::PlanPath::PlanPath() :
 
 
 GNEPlanCreator::GNEPlanCreator(GNEFrame* frameParent, GNEPathManager* pathManager) :
-    MFXGroupBoxModule(frameParent, TL("Route creator")),
+    GNEGroupBoxModule(frameParent, TL("Route creator")),
     myFrameParent(frameParent),
     myPathManager(pathManager),
     myVClass(SVC_PASSENGER),

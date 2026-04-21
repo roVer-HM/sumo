@@ -2,6 +2,11 @@ name: docker
 
 on:
   push:
+    paths:
+      - '.github/workflows/docker.yml'
+      - 'build_config/docker/Dockerfile.ubuntu.git'
+    branches:
+      - '**'
     tags:
       - '*'
   workflow_dispatch:
@@ -21,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3

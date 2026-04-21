@@ -1,5 +1,5 @@
-Eclipse SUMO netgenerate Version v1_22_0+0456-7818e10d3bc
- Copyright (C) 2001-2025 German Aerospace Center (DLR) and others; https://sumo.dlr.de
+Eclipse SUMO netgenerate v1_25_0+0045-28a3daf62ee
+ Copyright (C) 2001-2026 German Aerospace Center (DLR) and others; https://sumo.dlr.de
 Synthetic network generator for the microscopic, multi-modal traffic simulation
  SUMO.
 
@@ -85,13 +85,28 @@ Input Options:
 Output Options:
   --write-license                      Include license info into every output
                                         file
+  --write-metadata                     Write parsable metadata (configuration
+                                        etc.) instead of comments
   --output-prefix STR                  Prefix which is applied to all output
+                                        files. The special string 'TIME' is
+                                        replaced by the current time.
+  --output-suffix STR                  Suffix which is applied to all output
                                         files. The special string 'TIME' is
                                         replaced by the current time.
   --precision INT                      Defines the number of digits after the
                                         comma for floating point output
   --precision.geo INT                  Defines the number of digits after the
                                         comma for lon,lat output
+  --output.compression STR             Defines the standard compression
+                                        algorithm (currently only for parquet
+                                        output)
+  --output.format STR                  Defines the standard output format if
+                                        not derivable from the file name ('xml',
+                                        'csv', 'parquet')
+  --output.column-header STR           How to derive column headers from
+                                        attribute names ('none', 'tag', 'auto',
+                                        'plain')
+  --output.column-separator STR        Separator in CSV output
   -H, --human-readable-time            Write time values as hour:minute:second
                                         or day:hour:minute:second rather than
                                         seconds
@@ -108,7 +123,9 @@ Output Options:
                                         junctions to FILE (can be loaded as
                                         additional node-file to reproduce joins
   --prefix STR                         Defines a prefix for edge and junction
-                                        names
+                                        IDs
+  --prefix.junction STR                Defines a prefix for junction IDs
+  --prefix.edge STR                    Defines a prefix for edge IDs
   --amitran-output FILE                The generated net will be written to
                                         FILE using Amitran format
   --matsim-output FILE                 The generated net will be written to
@@ -125,6 +142,8 @@ Output Options:
                                         output (if available)
   --output.original-names              Writes original names, if given, as
                                         parameter
+  --output.removed-nodes               Writes IDs of nodes remove with
+                                        --geometry.remove into edge param
   --street-sign-output FILE            Writes street signs as POIs to FILE
   --opendrive-output.straight-threshold FLOAT  Builds parameterized curves
                                         whenever the angular change between
@@ -161,6 +180,9 @@ Processing Options:
   --reserved-ids FILE                  Ensures that generated ids do not
                                         included any of the typed IDs from FILE
                                         (sumo-gui selection file format)
+  --kept-ids FILE                      Ensures that objects with typed IDs from
+                                        FILE (sumo-gui selection file format)
+                                        are not renamed
   --geometry.split                     Splits edges across geometry nodes
   -R, --geometry.remove                Replace nodes which only define edge
                                         geometry by geometry points (joins
@@ -386,7 +408,7 @@ Junctions Options:
   --junctions.join.parallel-threshold FLOAT  The angular threshold in degress
                                         for rejection of parallel edges when
                                         joining junctions
-  --junctions.join-same                Joins junctions that have the same
+  --junctions.join-same FLOAT          Joins junctions that have similar
                                         coordinates even if not connected
   --max-join-ids INT                   Abbreviate junction or TLS id if it
                                         joins more than INT junctions

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -187,7 +187,8 @@ public:
         CONFLICT_DEFAULT,
         CONFLICT_DUMMY_MERGE,
         CONFLICT_NO_INTERSECTION,
-        CONFLICT_STOP_AT_INTERNAL_JUNCTION
+        CONFLICT_STOP_AT_INTERNAL_JUNCTION,
+        CONFLICT_SIBLING_CONTINUATION
     };
 
     /// @brief pre-computed information for conflict points
@@ -617,7 +618,7 @@ public:
     /// @brief write information about all approaching vehicles to the given output device
     void writeApproaching(OutputDevice& od, const std::string fromLaneID) const;
 
-    /// @brief return the link that is parallel to this lane or 0
+    /// @brief return the link that is parallel to this link or 0
     MSLink* getParallelLink(int direction) const;
 
     /// @brief return the link that is the opposite entry link to this one
@@ -704,6 +705,9 @@ public:
         return myHavePedestrianCrossingFoe;
     }
 
+    /// @brief whether this link is for a railsignal that was passed in this step
+    bool railSignalWasPassed() const;
+
     /// @brief post-processing for legacy networks
     static void recheckSetRequestInformation();
 
@@ -747,7 +751,7 @@ private:
     bool contIntersect(const MSLane* lane, const MSLane* foe);
 
     /// @brief compute point of divergence for geomatries with a common start or end
-    double computeDistToDivergence(const MSLane* lane, const MSLane* sibling, double minDist, bool sameSource) const;
+    double computeDistToDivergence(const MSLane* lane, const MSLane* sibling, double minDist, bool sameSource, double siblingPredLength = 0) const;
 
     /// @brief compute arrival time if foe vehicle is braking for ego
     static SUMOTime computeFoeArrivalTimeBraking(SUMOTime arrivalTime, const SUMOVehicle* foe, SUMOTime foeArrivalTime, double impatience, double dist, double& fasb);

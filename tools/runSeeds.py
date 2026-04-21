@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2008-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -48,7 +48,7 @@ def get_options(args=None):
                   help="output prefix",)
     ap.add_option("--no-folders", action="store_true", category="output", default=False, dest="noFolders",
                   help=("do not create folders to distinguish multiple configurations or applications" +
-                        "but use prefixes instead"))
+                        " but use prefixes instead"))
     ap.add_option("--seeds", default="0:10",
                   help="which seeds to run")
     ap.add_option("--threads", type=int, default=1,

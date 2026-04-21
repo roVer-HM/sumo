@@ -115,6 +115,12 @@ numerical values are supported for option **--meso-jam-threshold** {{DT_FLOAT}}:
   jammed)
 - value = 1: Jamming is disabled
 
+### Speeds
+
+Meso vehicles do not model their current speed. Therefore vehicle attributes concerning acceleration, departSpeed or arrivalSpeed take no effect.
+The only relevant attributes are those that concern the [maximum possible speed](VehicleSpeed.md#edgelane_speed_and_speedfactor): `maxSpeed`, `desiredMaxSpeed`,`speedFactor`, `speedDev`.
+The maximum speed is used to computed a lower bound on travel time along an edge. When the meso model computes a vehicle speed, it gives an estimated average speed along the current segment based on the earliest computed time for leaving the segment (which may include jam effects). If a vehicle is known to be blocked from leaving a segment it's speed is defined as 0.
+
 ### Further Congestion Effects
 
 Another mechanism which creates a negative correlation between density
@@ -184,9 +190,22 @@ headway = defaultHeadway / greenFraction
 
 Note, that the maximum flow cannot exceed the value at permanent green light regardless of penalty value.
 
+### Partial TLS Penalties
+
+The above two options apply to all traffic lights in the network by default.
+By adding the [generic parameter](GenericParameters.md) key `<param key="meso.tls.control" value="true"/>` to a `<tlLogic>` definition, individual traffic lights can be made exempt from the penalties and instead by treated in full detail (when option **--meso-junction-control** is also set).
+
+It is also possible to load an additional file where only this option is set:
+
+```
+    <tlLogic id="C" programID="0">
+        <param key="meso.tls.control" value="true"/>
+    </tlLogic>
+```
+
 ### Penalty at uncontrolled intersections
 
-**--meso-minor-penalty** {{DT_TIME}} can be used to apply a fixed time penalty when passing an unprioritzed
+**--meso-minor-penalty** {{DT_TIME}} can be used to apply a fixed time penalty when passing an unprioritized
 link (this is disabled when --meso-junction-control.limited is set and
 junction control is active for that link)
 

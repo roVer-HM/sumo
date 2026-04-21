@@ -1,5 +1,5 @@
-Eclipse SUMO duarouter Version v1_22_0+1676-989a5715aeb
- Copyright (C) 2001-2025 German Aerospace Center (DLR) and others; https://sumo.dlr.de
+Eclipse SUMO duarouter v1_25_0+0458-86552fc0338
+ Copyright (C) 2001-2026 German Aerospace Center (DLR) and others; https://sumo.dlr.de
 Shortest path router and DUE computer for the microscopic, multi-modal traffic
  simulation SUMO.
 
@@ -48,13 +48,28 @@ Output Options:
                                        their id
   --write-license                     Include license info into every output
                                        file
+  --write-metadata                    Write parsable metadata (configuration
+                                       etc.) instead of comments
   --output-prefix STR                 Prefix which is applied to all output
+                                       files. The special string 'TIME' is
+                                       replaced by the current time.
+  --output-suffix STR                 Suffix which is applied to all output
                                        files. The special string 'TIME' is
                                        replaced by the current time.
   --precision INT                     Defines the number of digits after the
                                        comma for floating point output
   --precision.geo INT                 Defines the number of digits after the
                                        comma for lon,lat output
+  --output.compression STR            Defines the standard compression
+                                       algorithm (currently only for parquet
+                                       output)
+  --output.format STR                 Defines the standard output format if not
+                                       derivable from the file name ('xml',
+                                       'csv', 'parquet')
+  --output.column-header STR          How to derive column headers from
+                                       attribute names ('none', 'tag', 'auto',
+                                       'plain')
+  --output.column-separator STR       Separator in CSV output
   -H, --human-readable-time           Write time values as hour:minute:second
                                        or day:hour:minute:second rather than
                                        seconds
@@ -93,6 +108,8 @@ Processing Options:
   --repair.to                         Tries to correct an invalid destination
                                        edge by using the last usable edge
                                        instead
+  --repair.max-detour-factor FLOAT    Backtrack on route if the detour is
+                                       longer than the gap by FACTOR
   --mapmatch.distance FLOAT           Maximum distance when mapping input
                                        coordinates (fromXY etc.) to the road
                                        network
@@ -120,6 +137,10 @@ Processing Options:
   --weights.turnaround-penalty FLOAT  Apply the given time penalty when
                                        computing routing costs for turnaround
                                        internal lanes
+  --weights.reversal-penalty FLOAT    Apply the given time penalty when
+                                       computing routing costs for train
+                                       reversal. Negative values disable
+                                       reversal
   --weights.random-factor FLOAT       Edge weights for routing are dynamically
                                        disturbed by a random factor drawn
                                        uniformly from [1,FLOAT)
@@ -147,6 +168,8 @@ Processing Options:
                                        calculate new ones
   --keep-route-probability FLOAT      The probability of keeping the old route
   --ptline-routing                    Route all public transport input
+  --keep-flows                        Write flows instead of expanding them
+                                       into vehicles
   --route-choice-method STR           Choose a route choice method: gawron,
                                        logit, or lohse
   --logit                             Use c-logit model (deprecated in favor of
@@ -173,6 +196,8 @@ Processing Options:
                                        that stops at the destination
   --railway.max-train-length FLOAT    Use FLOAT as a maximum train length when
                                        initializing the railway router
+  --max-traveltime TIME               Declare routing failure if traveltime
+                                       exceeds the given positive TIME
 
 Defaults Options:
   --departlane STR                    Assigns a default depart lane

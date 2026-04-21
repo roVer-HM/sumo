@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -117,6 +117,10 @@ GNEAttributeProperties::checkAttributeIntegrity() const {
     if ((isFileOpen() || isFileSave()) && myFilenameExtensions.empty()) {
         throw FormatException("Files requieres at least one extension");
     }
+    // check that attribute sortables appears always in dialog
+    if (isSortable() && !isDialogEditor()) {
+        throw FormatException("Sortable attributes must be a dialog editor attribute");
+    }
     // check that ranges are valid
     if (hasAttrRange()) {
         if (myMinimumRange == myMaximumRange) {
@@ -146,7 +150,7 @@ GNEAttributeProperties::setDiscreteValues(const std::vector<std::string>& discre
 
 
 void
-GNEAttributeProperties::setFilenameExtensions(const std::string& extensions) {
+GNEAttributeProperties::setFilenameExtensions(const std::vector<std::string>& extensions) {
     if (isFileOpen() || isFileSave()) {
         myFilenameExtensions = extensions;
     } else {
@@ -379,7 +383,7 @@ GNEAttributeProperties::getDiscreteValues() const {
 }
 
 
-const std::string&
+const std::vector<std::string>&
 GNEAttributeProperties::getFilenameExtensions() const {
     return myFilenameExtensions;
 }
@@ -581,6 +585,11 @@ GNEAttributeProperties::isAlwaysEnabled() const {
     return myAttributeProperty & Property::ALWAYSENABLED;
 }
 
+bool
+GNEAttributeProperties::isSortable() const {
+    return myAttributeProperty & Property::SORTABLE;
+}
+
 
 bool
 GNEAttributeProperties::isBasicEditor() const {
@@ -621,6 +630,12 @@ GNEAttributeProperties::isCreateMode() const {
 bool
 GNEAttributeProperties::isEditMode() const {
     return myEditProperty & Edit::EDITMODE;
+}
+
+
+bool
+GNEAttributeProperties::isDialogEditor() const {
+    return myEditProperty & Edit::DIALOGEDITOR;
 }
 
 
@@ -671,7 +686,7 @@ GNEAttributeProperties::parseDefaultValues(const std::string& defaultValue, cons
     } else if (isBool()) {
         myDefaultBoolValue = GNEAttributeCarrier::parse<bool>(defaultValue);
         if (overWritteDefaultString) {
-            myDefaultStringValue = myDefaultBoolValue ? GNEAttributeCarrier::True : GNEAttributeCarrier::False;
+            myDefaultStringValue = myDefaultBoolValue ? GNEAttributeCarrier::TRUE_STR : GNEAttributeCarrier::FALSE_STR;
         }
     } else if (isColor()) {
         myDefaultColorValue = GNEAttributeCarrier::parse<RGBColor>(defaultValue);

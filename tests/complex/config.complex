@@ -76,6 +76,7 @@ log:log.txt
 log2:log2.txt
 cadytslog:cadySumo-log.txt
 detector:detector.xml
+detector2:detector2.xml
 tocs:tocs.xml
 stops:stops.xml
 stopinfos:stopinfos.xml
@@ -124,6 +125,9 @@ output:Cannot read local schema .*,{REPLACE Cannot read local schema <schema>,}
 output:version .* started via libsumo {REPLACE started }
 output:{INTERNAL writedir}{REPLACE <TEXTTEST_SANDBOX>}
 output:Building scenario in .*{REPLACE Building scenario in <DIR>}
+output:vm3dgl: Unable to acquire VMware SVGA 3D display device.
+output:vm3dgl: Failed to initialize svga driver.
+output:vm3dgl: Falling back to LLVMPipe.
 log:Simulation.*started with{REPLACE Simulation started with}
 log:Starting server on port [0-9]*{REPLACE Starting server on port <PORT>}
 log:^Performance:{->}^Vehicles:
@@ -158,6 +162,7 @@ tls_state2:<!--{[->]}-->
 state:<snapshot (.*) version="[^"]*"{REPLACE <snapshot \1 version="<version>"}
 state2:<snapshot (.*) version="[^"]*"{REPLACE <snapshot \1 version="<version>"}
 detector:<!--{[->]}-->
+detector2:<!--{[->]}-->
 toc:<!--{[->]}-->
 toc2:<!--{[->]}-->
 tocs:<!--{[->]}-->
@@ -190,6 +195,8 @@ errors:MESA: error: ZINK: {LINES 2}
 errors:\\{REPLACE /}
 errors:Fontconfig warning:
 errors:Unable to revert mtime:
+errors:DeprecationWarning: builtin type .*wig.* has no __module__ attribute
+errors:Error: tcpip::Socket::accept() Unable to create listening socket: Address already in use{LINES 4}
 ps:%%CreationDate
 gtfs_additional:<!-- generated on{[->]}-->
 gtfs_routes:<!-- generated on{[->]}-->
@@ -224,5 +231,5 @@ fcd:0.0101
 log:0.0101
 
 [batch_extra_version]
-gcc4_64:perf
+gcc:perf
 msvc16x64:perf

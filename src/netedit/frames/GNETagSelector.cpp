@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,10 +18,12 @@
 // Frame for select tags
 /****************************************************************************/
 
+#include <netedit/frames/common/GNEInspectorFrame.h>
+#include <netedit/GNEApplicationWindow.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagPropertiesDatabase.h>
 #include <netedit/GNEViewNet.h>
-#include <netedit/frames/common/GNEInspectorFrame.h>
+#include <netedit/GNEViewParent.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 
@@ -36,19 +38,19 @@ FXDEFMAP(GNETagSelector) TagSelectorMap[] = {
 };
 
 // Object implementation
-FXIMPLEMENT(GNETagSelector, MFXGroupBoxModule,  TagSelectorMap, ARRAYNUMBER(TagSelectorMap))
+FXIMPLEMENT(GNETagSelector, GNEGroupBoxModule,  TagSelectorMap, ARRAYNUMBER(TagSelectorMap))
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
 
 GNETagSelector::GNETagSelector(GNEFrame* frameParent, const GNETagProperties::Type type, const SumoXMLTag tag) :
-    MFXGroupBoxModule(frameParent, TL("Element")),
+    GNEGroupBoxModule(frameParent, TL("Element")),
     myFrameParent(frameParent),
     myCurrentTemplateAC(nullptr) {
     // Create MFXComboBoxIcon
-    myTagsMatchBox = new MFXComboBoxIcon(getCollapsableFrame(), GUIDesignComboBoxNCol, true, GUIDesignComboBoxVisibleItems,
-                                         this, MID_GNE_TAG_SELECTED, GUIDesignComboBox);
+    myTagsMatchBox = new MFXComboBoxIcon(getCollapsableFrame(), frameParent->getViewNet()->getViewParent()->getGNEAppWindows()->getStaticTooltipMenu(),
+                                         true, GUIDesignComboBoxVisibleItems, this, MID_GNE_TAG_SELECTED, GUIDesignComboBox);
     // update tag types without informing parent (because we're in the creator
     updateTagTypes(type, tag, false);
     // GNETagSelector is always shown
@@ -78,7 +80,7 @@ GNETagSelector::getCurrentTemplateAC() const {
 
 
 void
-GNETagSelector::updateTagTypes(const GNETagProperties::Type type, const SumoXMLTag tag, const bool informParent) {
+GNETagSelector::updateTagTypes(const GNETagProperties::Type type, const SumoXMLTag newTag, const bool informParent) {
     // check if net has proj
     const bool proj = (GeoConvHelper::getFinal().getProjString() != "!");
     // change GNETagSelector text
@@ -136,13 +138,13 @@ GNETagSelector::updateTagTypes(const GNETagProperties::Type type, const SumoXMLT
     const auto tagPropertiesByType = myFrameParent->getViewNet()->getNet()->getTagPropertiesDatabase()->getTagPropertiesByType(type);
     // fill myACTemplates and myTagsMatchBox
     for (const auto tagProperty : tagPropertiesByType) {
-        if (!tagProperty->requireProj() || proj) {
+        if ((!tagProperty->requireProj() || proj) && !tagProperty->isListedElement() && !tagProperty->isSymbol()) {
             myTagsMatchBox->appendIconItem(tagProperty->getSelectorText().c_str(), GUIIconSubSys::getIcon(tagProperty->getGUIIcon()), tagProperty->getBackGroundColor());
         }
     }
     if (myTagsMatchBox->getNumItems() > 0) {
         myTagsMatchBox->enable();
-        setCurrentTag(tag, informParent);
+        setCurrentTag(newTag, informParent);
     } else {
         myTagsMatchBox->disable();
     }
@@ -158,7 +160,7 @@ GNETagSelector::setCurrentTag(SumoXMLTag newTag, const bool informParent) {
         if (myTagsMatchBox->getItemText(i) == myCurrentTemplateAC->getTagProperty()->getTagStr()) {
             myTagsMatchBox->setCurrentItem(i);
             // set color of myTypeMatchBox to black (valid)
-            myTagsMatchBox->setTextColor(FXRGB(0, 0, 0));
+            myTagsMatchBox->setTextColor(GUIDesignTextColorBlack);
             myTagsMatchBox->killFocus();
         }
     }
@@ -181,11 +183,11 @@ GNETagSelector::onCmdSelectTag(FXObject*, FXSelector, void*) {
     myCurrentTemplateAC = myFrameParent->getViewNet()->getNet()->getACTemplates()->getTemplateAC(myTagsMatchBox->getText().text());
     if (myCurrentTemplateAC) {
         // set color of myTypeMatchBox to black (valid)
-        myTagsMatchBox->setTextColor(FXRGB(0, 0, 0));
+        myTagsMatchBox->setTextColor(GUIDesignTextColorBlack);
         myTagsMatchBox->killFocus();
     } else {
         // set color of myTypeMatchBox to red (invalid)
-        myTagsMatchBox->setTextColor(FXRGB(255, 0, 0));
+        myTagsMatchBox->setTextColor(GUIDesignTextColorRed);
     }
     // inform to frame parent that a tag was selected
     myFrameParent->tagSelected();

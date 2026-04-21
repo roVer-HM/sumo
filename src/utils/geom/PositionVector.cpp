@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -409,6 +409,9 @@ PositionVector::positionAtOffset2D(const Position& p1, const Position& p2, doubl
     const double dist = p1.distanceTo2D(p2);
     if ((pos < 0 || dist < pos) && !extrapolateBeyond) {
         return Position::INVALID;
+    }
+    if (dist == 0) {
+        return p1;
     }
     if (lateralOffset != 0) {
         const Position offset = sideOffset(p1, p2, -lateralOffset); // move in the same direction as Position::move2side
@@ -1475,6 +1478,24 @@ PositionVector::isNAN() const {
     }
     // all ok, then return false
     return false;
+}
+
+void
+PositionVector::ensureMinLength(int precision) {
+    const double limit = 2 * pow(10, -precision);
+    if (length2D() < limit) {
+        extrapolate2D(limit);
+    }
+}
+
+void
+PositionVector::round(int precision, bool avoidDegeneration) {
+    if (avoidDegeneration && size() > 1) {
+        ensureMinLength(precision);
+    }
+    for (int i = 0; i < (int)size(); i++) {
+        (*this)[i].round(precision);
+    }
 }
 
 

@@ -21,26 +21,30 @@ title: Tutorials
 The SUMO User Conference is an annual event organized by the German Aerospace Center (DLR) in Berlin. Since 2015, each conference begins with a SUMO tutorial session. Below you can find the tutorial material (slide deck and input files). Since 2019, the tutorials have also been recorded on video.
 
 ## Files
-* [SUMO 2015](https://sumo.dlr.de/daily/sumo2015_tutorial.zip): network editing with xml patch, persons,
-* [SUMO 2016](https://sumo.dlr.de/daily/sumo2016_tutorial.zip): network editing, meso, containers, [New Features 2016 (Slides)](https://sumo.dlr.de/daily/SUMO2016_new_features.pdf)
-* [SUMO 2017](https://sumo.dlr.de/daily/sumo2017_tutorial.zip): network editing, randomTrips, calibrators (xml only), public transport (obsolete)
-* [SUMO 2018](https://sumo.dlr.de/daily/sumo2018_tutorial.zip): fixing intermodal junctions, calibrators in netedit, junction model parameters, editing shapes
-* [SUMO 2019](https://sumo.dlr.de/daily/sumo2019_tutorial.zip): network editing, visualizing traffic data, public transport from OSM, parking, netgenerate
-* [SUMO 2020](https://sumo.dlr.de/daily/sumo2020_tutorial.zip): turn lanes, routeSampler.py, defining counting data in netedit, taxi/DRT
-* [SUMO 2021](https://sumo.dlr.de/daily/sumo2021_tutorial.zip): traffic light layout, indirect left turn, TAZ, OD-traffic, GTFS
-* [SUMO 2022](https://sumo.dlr.de/daily/sumo2022_tutorial.zip): network editing, flows, opposite driving, pedestrian crossings, parking search
-* [SUMO 2023](https://sumo.dlr.de/daily/sumo2023_tutorial.zip): graphical diff, personFlow, plotting tools, analyzing repeated runs
-* [SUMO 2024](https://sumo.dlr.de/daily/sumo2024_tutorial.zip): debugging simulation warnings, pedestrian models, flying taxis (a transcription is available [here](2024.md#transcription))
+* [SUMO 2015](https://sumo.dlr.de/daily/sumo2015_tutorial.zip): Network editing with xml patch, persons
+* [SUMO 2016](https://sumo.dlr.de/daily/sumo2016_tutorial.zip): Network editing, meso, containers, [New Features 2016 (Slides)](https://sumo.dlr.de/daily/SUMO2016_new_features.pdf)
+* [SUMO 2017](https://sumo.dlr.de/daily/sumo2017_tutorial.zip): Network editing, randomTrips, calibrators (xml only), public transport (obsolete)
+* [SUMO 2018](https://sumo.dlr.de/daily/sumo2018_tutorial.zip): Fixing intermodal junctions, calibrators in netedit, junction model parameters, editing shapes
+* [SUMO 2019](https://sumo.dlr.de/daily/sumo2019_tutorial.zip): Network editing, visualizing traffic data, public transport from OSM, parking, netgenerate
+* [SUMO 2020](https://sumo.dlr.de/daily/sumo2020_tutorial.zip): Turn lanes, routeSampler.py, defining counting data in netedit, taxi/DRT
+* [SUMO 2021](https://sumo.dlr.de/daily/sumo2021_tutorial.zip): Traffic light layout, indirect left turn, TAZ, OD-traffic, GTFS
+* [SUMO 2022](https://sumo.dlr.de/daily/sumo2022_tutorial.zip): Network editing, flows, opposite driving, pedestrian crossings, parking search
+* [SUMO 2023](https://sumo.dlr.de/daily/sumo2023_tutorial.zip): Graphical diff, personFlow, plotting tools, analyzing repeated runs
+* [SUMO 2024](https://sumo.dlr.de/daily/sumo2024_tutorial.zip): Debugging simulation warnings, pedestrian models, flying taxis
+* [SUMO 2025](https://sumo.dlr.de/daily/sumo2025_tutorial.zip): Railway simulation, GTFS, detector count import, electric vehicles, automated charging
 
 ## Videos
 
 <a class="no-arrow-link" data-youtube href="https://www.youtube.com/watch?v=UeaeCdLt_1o">Watch the 2019 Tutorial</a>
+(a transcription is available [here](2019.md#transcription))
 <br>
 
 <a class="no-arrow-link" data-youtube href="https://www.youtube.com/watch?v=aiOQbaB-pWo">Watch the 2020 Tutorial</a>
+(a transcription is available [here](2020.md#transcription))
 <br>
 
 <a class="no-arrow-link" data-youtube href="https://www.youtube.com/watch?v=tlshWdzFWpY">Watch the 2021 Tutorial</a>
+(a transcription is available [here](2021.md#transcription))
 <br>
 
 <a class="no-arrow-link" data-youtube href="https://www.youtube.com/watch?v=urKtJj87X5M">Watch the 2022 Tutorial</a>
@@ -53,6 +57,13 @@ The SUMO User Conference is an annual event organized by the German Aerospace Ce
 
 <a class="no-arrow-link" data-youtube href="https://www.youtube.com/watch?v=9WCGxJDdY9s">Watch the 2024 Tutorial</a>
 (a transcription is available [here](2024.md#transcription))
+<br>
+
+<a class="no-arrow-link" data-youtube href="https://www.youtube.com/watch?v=ccc2mnGX_Mg">Watch the 2025 Tutorial</a>
+(a transcription is available [here](2025.md#transcription))
+
+# JuPedSim Tutorials
+* [Crossing Simulation](Jupedsim/crossing-simulation.md)
 
 # Advanced Tutorials
 * [Hello SUMO](Hello_SUMO.md) - The simplest net and a single car set up "by hand"

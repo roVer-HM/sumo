@@ -145,7 +145,7 @@ next stops (0x73).
 <tr class="odd">
 <td><p>signal states (0x5b)</p></td>
 <td><p>int</p></td>
-<td><p>An integer encoding the state of a vehicle's signals, see <a href="../TraCI/Vehicle_Signalling.md">TraCI/Vehicle Signalling</a> for more information.</p></td>
+<td><p>An integer encoding the state of a vehicle's signals, see <a href="Vehicle_Signalling.html">TraCI/Vehicle Signalling</a> for more information.</p></td>
 <td><p><a href="https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-getSignals">getSignals</a></p></td>
 </tr>
 <tr class="even">
@@ -872,7 +872,15 @@ call](../TraCI/GenericParameters.md#get_parameter).
 
 Some carFollowModels permit access to further vehicle-specific parameters.
 
+- [carFollowModel.ignoreIDs](../Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#transient_carfollowmodel_parameters)
+- [carFollowModel.ignoreTypes](../Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#transient_carfollowmodel_parameters)
 - carFollowModel.caccCommunicationsOverride (only CACC)
+- carFollowModel.caccVehicleMode (only CACC)
+
+### Supported junctionModel Parameters
+
+- [junctionModel.ignoreIDs](../Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#transient_parameters)
+- [junctionModel.ignoreTypes](../Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#transient_parameters)
 
 ### Supported further Parameters
 

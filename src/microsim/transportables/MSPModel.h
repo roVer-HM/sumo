@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2014-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2014-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -167,8 +167,12 @@ public:
     /// @brief return the direction in which the transportable faces in degrees
     virtual double getAngle(const MSStageMoving& stage, SUMOTime now) const = 0;
 
-    /// @brief return the time the transportable spent standing
+    /// @brief return the time the transportable spent standing consecutively
     virtual SUMOTime getWaitingTime() const = 0;
+
+    virtual SUMOTime getTotalWaitingTime() const {
+        return 0;
+    }
 
     /// @brief return the current speed of the transportable
     virtual double getSpeed(const MSStageMoving& stage) const = 0;

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -46,7 +46,7 @@ GNEChange_Edge::GNEChange_Edge(GNEEdge* edge, bool forward):
 
 GNEChange_Edge::~GNEChange_Edge() {
     // only continue we have undo-redo mode enabled
-    if (myEdge->getNet()->getViewNet()->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed()) {
+    if (myEdge->getNet()->getGNEApplicationWindow()->isUndoRedoAllowed()) {
         myEdge->decRef("GNEChange_Edge");
         if (myEdge->unreferenced()) {
             // delete edge

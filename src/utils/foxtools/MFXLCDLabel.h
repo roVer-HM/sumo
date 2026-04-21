@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2004-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2004-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -24,13 +24,17 @@
 #include <config.h>
 
 #include "fxheader.h"
-#include "MFXStaticToolTip.h"
 
+// ===========================================================================
+// class declaration
+// ===========================================================================
 
-/** @brief A widget which has the seven-segment display used as the drawing object for each letter
- * in the label.  Supports display of leading zeros, such as when you need to display a
- * number.  Also supports the 'JUSTIFY_RIGHT' option, for right alignment.
- */
+class MFXStaticToolTip;
+
+// ===========================================================================
+// class definitions
+// ===========================================================================
+
 class MFXLCDLabel : public FXHorizontalFrame {
     /// @brief FOX-declaration
     FXDECLARE(MFXLCDLabel)

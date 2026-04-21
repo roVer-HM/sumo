@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2012-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -24,6 +24,7 @@ from collections import defaultdict
 from xml.sax import make_parser, handler
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+from sumolib import openz  # noqa
 from sumolib.net import readNet  # noqa
 
 
@@ -121,7 +122,7 @@ class CostMemory(handler.ContentHandler):
         self.num_loaded = 0
         parser = make_parser()
         parser.setContentHandler(self)
-        parser.parse(dumpfile)
+        parser.parse(openz(dumpfile))
         # decay costs of unseen edges
         self.num_decayed = 0
         for edges in self.intervals.values():

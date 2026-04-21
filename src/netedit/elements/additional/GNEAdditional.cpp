@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,13 +20,6 @@
 #include <config.h>
 
 #include <foreign/fontstash/fontstash.h>
-#include <netedit/GNENet.h>
-#include <netedit/GNESegment.h>
-#include <netedit/GNETagPropertiesDatabase.h>
-#include <netedit/GNEViewParent.h>
-#include <netedit/frames/GNEAttributesEditor.h>
-#include <netedit/frames/GNEPathCreator.h>
-#include <netedit/frames/GNEPlanCreator.h>
 #include <netedit/frames/common/GNEInspectorFrame.h>
 #include <netedit/frames/common/GNEMoveFrame.h>
 #include <netedit/frames/common/GNESelectorFrame.h>
@@ -36,6 +29,13 @@
 #include <netedit/frames/demand/GNEPersonFrame.h>
 #include <netedit/frames/demand/GNEPersonPlanFrame.h>
 #include <netedit/frames/demand/GNEVehicleFrame.h>
+#include <netedit/frames/GNEAttributesEditor.h>
+#include <netedit/frames/GNEPathCreator.h>
+#include <netedit/frames/GNEPlanCreator.h>
+#include <netedit/GNEApplicationWindow.h>
+#include <netedit/GNENet.h>
+#include <netedit/GNETagPropertiesDatabase.h>
+#include <netedit/GNEViewParent.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/div/GUIParameterTableWindow.h>
@@ -48,22 +48,26 @@
 // member method definitions
 // ===========================================================================
 
-GNEAdditional::GNEAdditional(const std::string& id, GNENet* net, const std::string& filename,
-                             SumoXMLTag tag, const std::string& additionalName) :
-    GNEAttributeCarrier(tag, net, filename, id.empty()),
-    GUIGlObject(net->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGLType(), id,
-                GUIIconSubSys::getIcon(net->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGUIIcon())),
-    GNEPathElement(GNEPathElement::Options::ADDITIONAL_ELEMENT),
-    myAdditionalName(additionalName) {
+GNEAdditional::GNEAdditional(GNENet* net, SumoXMLTag tag) :
+    GNEAttributeCarrier(tag, net),
+    GUIGlObject(myTagProperty->getGLType(), "", GUIIconSubSys::getIcon(myTagProperty->getGUIIcon())),
+    GNEPathElement(GNEPathElement::Options::ADDITIONAL_ELEMENT) {
 }
 
 
-GNEAdditional::GNEAdditional(GNEAdditional* additionalParent, SumoXMLTag tag, const std::string& additionalName) :
-    GNEAttributeCarrier(tag, additionalParent->getNet(), additionalParent->getFilename(), false),
-    GUIGlObject(additionalParent->getNet()->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGLType(), additionalParent->getID(),
-                GUIIconSubSys::getIcon(additionalParent->getNet()->getTagPropertiesDatabase()->getTagProperty(tag, true)->getGUIIcon())),
+GNEAdditional::GNEAdditional(const std::string& id, GNENet* net, SumoXMLTag tag, FileBucket* fileBucket, const std::string& name) :
+    GNEAttributeCarrier(tag, net, fileBucket),
+    GUIGlObject(myTagProperty->getGLType(), id, GUIIconSubSys::getIcon(myTagProperty->getGUIIcon())),
     GNEPathElement(GNEPathElement::Options::ADDITIONAL_ELEMENT),
-    myAdditionalName(additionalName) {
+    myAdditionalName(name) {
+}
+
+
+GNEAdditional::GNEAdditional(GNEAdditional* additionalParent, SumoXMLTag tag, const std::string& name) :
+    GNEAttributeCarrier(tag, additionalParent->getNet(), additionalParent->getFileBucket()),
+    GUIGlObject(myTagProperty->getGLType(), "", GUIIconSubSys::getIcon(myTagProperty->getGUIIcon())),
+    GNEPathElement(GNEPathElement::Options::ADDITIONAL_ELEMENT),
+    myAdditionalName(name) {
 }
 
 
@@ -76,12 +80,6 @@ GNEAdditional::getHierarchicalElement() {
 }
 
 
-void
-GNEAdditional::removeGeometryPoint(const Position /*clickedPosition*/, GNEUndoList* /*undoList*/) {
-    // currently there isn't additionals with removable geometry points
-}
-
-
 GUIGlObject*
 GNEAdditional::getGUIGlObject() {
     return this;
@@ -91,6 +89,20 @@ GNEAdditional::getGUIGlObject() {
 const GUIGlObject*
 GNEAdditional::getGUIGlObject() const {
     return this;
+}
+
+
+FileBucket*
+GNEAdditional::getFileBucket() const {
+    if (myTagProperty->saveInParentFile()) {
+        if (isTemplate()) {
+            return nullptr;
+        } else {
+            return getParentAdditionals().front()->getFileBucket();
+        }
+    } else {
+        return myFileBucket;
+    }
 }
 
 
@@ -141,7 +153,7 @@ GNEAdditional::fixAdditionalProblem() {
 
 
 void
-GNEAdditional::openAdditionalDialog() {
+GNEAdditional::openAdditionalDialog(FXWindow* /* restoringFocusWindow */) {
     throw InvalidArgument(getTagStr() + " doesn't have an additional dialog");
 }
 
@@ -180,7 +192,7 @@ bool
 GNEAdditional::checkDrawFromContour() const {
     // get modes and viewParent (for code legibility)
     const auto& modes = myNet->getViewNet()->getEditModes();
-    const auto& viewParent = myNet->getViewNet()->getViewParent();
+    const auto& viewParent = myNet->getViewParent();
     const auto& inspectedElements = myNet->getViewNet()->getInspectedElements();
     // continue depending of current status
     if (inspectedElements.isInspectingSingleElement()) {
@@ -239,10 +251,10 @@ bool
 GNEAdditional::checkDrawToContour() const {
     // get modes and viewParent (for code legibility)
     const auto& modes = myNet->getViewNet()->getEditModes();
-    const auto& viewParent = myNet->getViewNet()->getViewParent();
+    const auto& viewParent = myNet->getViewParent();
     const auto& inspectedElements = myNet->getViewNet()->getInspectedElements();
     // check conditions
-    if (myNet->getViewNet()->getViewParent()->getInspectorFrame()->getAttributesEditor()->isReparenting()) {
+    if (myNet->getViewParent()->getInspectorFrame()->getAttributesEditor()->isReparenting()) {
         return false;
     } else if (inspectedElements.isInspectingSingleElement()) {
         const auto inspectedAC = inspectedElements.getFirstAC();
@@ -304,7 +316,7 @@ GNEAdditional::checkDrawToContour() const {
 
 bool
 GNEAdditional::checkDrawRelatedContour() const {
-    const auto& neteditAttributesEditor = myNet->getViewNet()->getViewParent()->getInspectorFrame()->getAttributesEditor();
+    const auto& neteditAttributesEditor = myNet->getViewParent()->getInspectorFrame()->getAttributesEditor();
     if (neteditAttributesEditor->isReparenting()) {
         return neteditAttributesEditor->checkNewParent(this);
     }
@@ -322,7 +334,7 @@ GNEAdditional::checkDrawOverContour() const {
     if (myNet->getViewNet()->getViewObjectsSelector().getGUIGlObjectFront() != this) {
         return false;
     } else {
-        const auto& viewParent = myNet->getViewNet()->getViewParent();
+        const auto& viewParent = myNet->getViewParent();
         if (modes.isCurrentSupermodeDemand()) {
             // get current plan selector
             GNEPlanSelector* planSelector = nullptr;
@@ -493,7 +505,7 @@ GNEAdditional::markAsFrontElement() {
 
 void
 GNEAdditional::deleteGLObject() {
-    myNet->deleteAdditional(this, myNet->getViewNet()->getUndoList());
+    myNet->deleteAdditional(this, myNet->getUndoList());
 }
 
 
@@ -505,7 +517,7 @@ GNEAdditional::selectGLObject() {
         selectAttributeCarrier();
     }
     // update information label
-    myNet->getViewNet()->getViewParent()->getSelectorFrame()->getSelectionInformation()->updateInformationLabel();
+    myNet->getViewParent()->getSelectorFrame()->getSelectionInformation()->updateInformationLabel();
 }
 
 
@@ -540,6 +552,19 @@ GNEAdditional::drawJunctionPartialGL(const GUIVisualizationSettings& /*s*/, cons
 // ---------------------------------------------------------------------------
 // GNEAdditional - protected methods
 // ---------------------------------------------------------------------------
+
+void
+GNEAdditional::writeAdditionalAttributes(OutputDevice& device) const {
+    // ID (if defined)
+    if (myTagProperty->hasAttribute(SUMO_ATTR_ID)) {
+        device.writeAttr(SUMO_ATTR_ID, StringUtils::escapeXML(getID()));
+    }
+    // name
+    if (myAdditionalName.size() > 0) {
+        device.writeAttr(SUMO_ATTR_NAME, myAdditionalName);
+    }
+}
+
 
 bool
 GNEAdditional::isValidAdditionalID(const std::string& value) const {
@@ -740,165 +765,6 @@ GNEAdditional::calculatePerpendicularLine(const double endLaneposition) {
 
 
 void
-GNEAdditional::drawSquaredAdditional(const GUIVisualizationSettings& s, const Position& pos, const double size, GUITexture texture, GUITexture selectedTexture) const {
-    // draw boundaries
-    GLHelper::drawBoundary(s, getCenteringBoundary());
-    // Obtain drawing exaggeration
-    const double exaggeration = getExaggeration(s);
-    // get detail level
-    const auto d = s.getDetailLevel(exaggeration);
-    // draw geometry only if we'rent in drawForObjectUnderCursor mode
-    if (s.checkDrawAdditional(d, isAttributeCarrierSelected())) {
-        // Add layer matrix
-        GLHelper::pushMatrix();
-        // translate to front
-        drawInLayer(getType());
-        // translate to position
-        glTranslated(pos.x(), pos.y(), 0);
-        // scale
-        glScaled(exaggeration, exaggeration, 1);
-        // set White color
-        glColor3d(1, 1, 1);
-        // rotate
-        glRotated(180, 0, 0, 1);
-        // draw texture
-        if (drawUsingSelectColor()) {
-            GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(selectedTexture), size);
-        } else {
-            GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(texture), size);
-        }
-        // Pop layer matrix
-        GLHelper::popMatrix();
-        // draw lock icon
-        GNEViewNetHelper::LockIcon::drawLockIcon(d, this, getType(), pos, exaggeration, 0.4, 0.5, 0.5);
-        // Draw additional ID
-        drawAdditionalID(s);
-        // draw additional name
-        drawAdditionalName(s);
-        // draw dotted contour
-        myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
-    }
-    // calculate contour
-    myAdditionalContour.calculateContourRectangleShape(s, d, this, pos, size, size, getType(), 0, 0, 0, exaggeration, nullptr);
-}
-
-
-void
-GNEAdditional::drawListedAdditional(const GUIVisualizationSettings& s, const Position& parentPosition, const double offsetX,
-                                    const double extraOffsetY, const RGBColor baseCol, const RGBColor textCol, GUITexture texture,
-                                    const std::string text) const {
-    // check if additional has to be drawn
-    if (myNet->getViewNet()->getDataViewOptions().showAdditionals()) {
-        // draw boundaries
-        GLHelper::drawBoundary(s, getCenteringBoundary());
-        // get detail level
-        const auto d = s.getDetailLevel(1);
-        // declare offsets
-        const double lineOffset = 0.1875;
-        const double baseOffsetX = 6.25;
-        const double baseOffsetY = 0.6;
-        // get draw position index
-        const int drawPositionIndex = getDrawPositionIndex();
-        // calculate lineA position (from parent to middle)
-        Position positionLineA = parentPosition;
-        const double positionLineA_Y = (0 - extraOffsetY + baseOffsetY);
-        // set position depending of indexes
-        positionLineA.add(1 + lineOffset + (baseOffsetX * offsetX), positionLineA_Y, 0);
-        // calculate lineC position (From middle until current listenAdditional
-        Position positionLineB = parentPosition;
-        const double positionLineB_Y = ((drawPositionIndex * -1) - extraOffsetY + baseOffsetY);
-        // set position depending of indexes
-        positionLineB.add(1 + lineOffset + (baseOffsetX * offsetX) + (2 * lineOffset), positionLineB_Y, 0);
-        // calculate signPosition position
-        Position signPosition = parentPosition;
-        // draw geometry only if we'rent in drawForObjectUnderCursor mode
-        if (s.checkDrawAdditional(d, isAttributeCarrierSelected())) {
-            // set position depending of indexes
-            signPosition.add(4.5 + (baseOffsetX * offsetX), (drawPositionIndex * -1) - extraOffsetY + 1, 0);
-            // calculate colors
-            const RGBColor baseColor = isAttributeCarrierSelected() ? s.colorSettings.selectedAdditionalColor : baseCol;
-            const RGBColor secondColor = baseColor.changedBrightness(-30);
-            const RGBColor textColor = isAttributeCarrierSelected() ? s.colorSettings.selectedAdditionalColor.changedBrightness(30) : textCol;
-            // Add layer matrix
-            GLHelper::pushMatrix();
-            // translate to front
-            drawInLayer(getType());
-            // set line color
-            GLHelper::setColor(s.additionalSettings.connectionColor);
-            // draw both lines
-            GLHelper::drawBoxLine(positionLineA, 0, 0.1, lineOffset);
-            GLHelper::drawBoxLine(positionLineB, 0, 0.1, lineOffset);
-            // check if draw middle lane
-            if (drawPositionIndex != 0) {
-                // calculate length
-                const double length = std::abs(positionLineA_Y - positionLineB_Y);
-                // push middle lane matrix
-                GLHelper::pushMatrix();
-                //move and rotate
-                glTranslated(positionLineA.x() + lineOffset, positionLineA.y(), 0);
-                glRotated(90, 0, 0, 1);
-                glTranslated((length * -0.5), 0, 0);
-                // draw line
-                GLHelper::drawBoxLine(Position(0, 0), 0, 0.1, length * 0.5);
-                // pop middle lane matrix
-                GLHelper::popMatrix();
-            }
-            // draw extern rectangle
-            GLHelper::setColor(secondColor);
-            GLHelper::drawBoxLine(signPosition, 0, 0.96, 2.75);
-            // move to front
-            glTranslated(0, -0.06, 0.1);
-            // draw intern rectangle
-            GLHelper::setColor(baseColor);
-            GLHelper::drawBoxLine(signPosition, 0, 0.84, 2.69);
-            // move position down
-            signPosition.add(-2, -0.43, 0);
-            // draw interval
-            GLHelper::drawText(adjustListedAdditionalText(text), signPosition, .1, 0.5, textColor, 0, (FONS_ALIGN_LEFT | FONS_ALIGN_MIDDLE));
-            // move to icon position
-            signPosition.add(-0.3, 0);
-            // check if draw lock icon or rerouter interval icon
-            if (GNEViewNetHelper::LockIcon::checkDrawing(d, this, getType(), 1)) {
-                // pop layer matrix
-                GLHelper::popMatrix();
-                // draw lock icon
-                GNEViewNetHelper::LockIcon::drawLockIcon(d, this, getType(), signPosition, 1, 0.4, 0.0, -0.05);
-            } else {
-                // translate to front
-                glTranslated(signPosition.x(), signPosition.y(), 0.1);
-                // set White color
-                glColor3d(1, 1, 1);
-                // rotate
-                glRotated(180, 0, 0, 1);
-                // draw texture
-                GUITexturesHelper::drawTexturedBox(GUITextureSubSys::getTexture(texture), 0.25);
-                // pop layer matrix
-                GLHelper::popMatrix();
-            }
-            // draw dotted contour
-            myAdditionalContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
-        }
-        // calculate contour
-        myAdditionalContour.calculateContourRectangleShape(s, d, this, signPosition, 0.56, 2.75, getType(), 0, -2.3, 0, 1, nullptr);
-    }
-}
-
-
-bool
-GNEAdditional::drawMovingGeometryPoints(const bool ignoreShift) const {
-    // get modes
-    const auto& modes = myNet->getViewNet()->getEditModes();
-    // check conditions
-    if (modes.isCurrentSupermodeNetwork() && (modes.networkEditMode == NetworkEditMode::NETWORK_MOVE) &&
-            (ignoreShift || myNet->getViewNet()->getMouseButtonKeyPressed().shiftKeyPressed())) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-void
 GNEAdditional::drawDemandElementChildren(const GUIVisualizationSettings& s) const {
     // draw child demand elements
     for (const auto& demandElement : getChildDemandElements()) {
@@ -906,73 +772,6 @@ GNEAdditional::drawDemandElementChildren(const GUIVisualizationSettings& s) cons
             demandElement->drawGL(s);
         }
     }
-}
-
-
-GNEMoveOperation*
-GNEAdditional::getMoveOperationSingleLane(const double startPos, const double endPos) {
-    // get allow change lane
-    const bool allowChangeLane = myNet->getViewNet()->getViewParent()->getMoveFrame()->getCommonMoveOptions()->getAllowChangeLane();
-    // fist check if we're moving only extremes
-    if (myNet->getViewNet()->getMouseButtonKeyPressed().shiftKeyPressed()) {
-        // get snap radius
-        const double snap_radius = myNet->getViewNet()->getVisualisationSettings().neteditSizeSettings.additionalGeometryPointRadius;
-        // get mouse position
-        const Position mousePosition = myNet->getViewNet()->getPositionInformation();
-        // check if we clicked over start or end position
-        if (myAdditionalGeometry.getShape().front().distanceSquaredTo2D(mousePosition) <= (snap_radius * snap_radius)) {
-            // move only start position
-            return new GNEMoveOperation(this, getParentLanes().front(), startPos, endPos,
-                                        allowChangeLane, GNEMoveOperation::OperationType::SINGLE_LANE_MOVE_FIRST);
-        } else if (myAdditionalGeometry.getShape().back().distanceSquaredTo2D(mousePosition) <= (snap_radius * snap_radius)) {
-            // move only end position
-            return new GNEMoveOperation(this, getParentLanes().front(), startPos, endPos,
-                                        allowChangeLane, GNEMoveOperation::OperationType::SINGLE_LANE_MOVE_LAST);
-        } else {
-            return nullptr;
-        }
-    } else {
-        // move both start and end positions
-        return new GNEMoveOperation(this, getParentLanes().front(), startPos, endPos,
-                                    allowChangeLane, GNEMoveOperation::OperationType::SINGLE_LANE_MOVE_BOTH);
-    }
-}
-
-
-GNEMoveOperation*
-GNEAdditional::getMoveOperationMultiLane(const double startPos, const double endPos) {
-    // get snap radius
-    const double snap_radius = myNet->getViewNet()->getVisualisationSettings().neteditSizeSettings.additionalGeometryPointRadius;
-    // get mouse position
-    const Position mousePosition = myNet->getViewNet()->getPositionInformation();
-    // calculate both geometries
-    GUIGeometry fromGeometry, toGeometry;
-    fromGeometry.updateGeometry(getParentLanes().front()->getLaneGeometry().getShape(), startPos, 0);
-    toGeometry.updateGeometry(getParentLanes().back()->getLaneGeometry().getShape(), endPos, 0);
-    // check if we clicked over start or end position
-    if (myNet->getViewNet()->getMouseButtonKeyPressed().shiftKeyPressed()) {
-        if (fromGeometry.getShape().front().distanceSquaredTo2D(mousePosition) <= (snap_radius * snap_radius)) {
-            // move first position
-            return new GNEMoveOperation(this, getParentLanes().front(), startPos, getParentLanes().back(), endPos,
-                                        false, GNEMoveOperation::OperationType::MULTIPLE_LANES_MOVE_FIRST);
-        } else if (toGeometry.getShape().back().distanceSquaredTo2D(mousePosition) <= (snap_radius * snap_radius)) {
-            // move last position
-            return new GNEMoveOperation(this, getParentLanes().front(), startPos, getParentLanes().back(), endPos,
-                                        false, GNEMoveOperation::OperationType::MULTIPLE_LANES_MOVE_LAST);
-        }
-    } else {
-        auto segment = gViewObjectsHandler.getSelectedSegment(this);
-        if (segment) {
-            if (segment->getLaneIndex() == 0) {
-                return new GNEMoveOperation(this, getParentLanes().front(), startPos, getParentLanes().back(), endPos,
-                                            false, GNEMoveOperation::OperationType::MULTIPLE_LANES_MOVE_BOTH_FIRST);
-            } else if (segment->getLaneIndex() == ((int)getParentLanes().size() - 1)) {
-                return new GNEMoveOperation(this, getParentLanes().front(), startPos, getParentLanes().back(), endPos,
-                                            false, GNEMoveOperation::OperationType::MULTIPLE_LANES_MOVE_BOTH_LAST);
-            }
-        }
-    }
-    return nullptr;
 }
 
 
@@ -1044,7 +843,7 @@ GNEAdditional::calculateContourPolygons(const GUIVisualizationSettings& s, const
     // get edit modes
     const auto& editModes = myNet->getViewNet()->getEditModes();
     // check if draw geometry points
-    if (editModes.isCurrentSupermodeNetwork() && !myNet->getViewNet()->getViewParent()->getMoveFrame()->getNetworkMoveOptions()->getMoveWholePolygons()) {
+    if (editModes.isCurrentSupermodeNetwork() && !myNet->getViewParent()->getMoveFrame()->getNetworkMoveOptions()->getMoveWholePolygons()) {
         // check if we're in move mode
         const bool moveMode = (editModes.networkEditMode == NetworkEditMode::NETWORK_MOVE);
         // get geometry point radius (size depends if we're in move mode)
@@ -1064,12 +863,6 @@ GNEAdditional::getFirstPathLane() const {
 GNELane*
 GNEAdditional::getLastPathLane() const {
     return getParentLanes().back();
-}
-
-
-Position
-GNEAdditional::getAttributePosition(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
 }
 
 
@@ -1154,25 +947,6 @@ void
 GNEAdditional::drawRightGeometryPoint(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d, const Position& pos,
                                       const double rot, const RGBColor& baseColor, const bool ignoreShift) const {
     drawSemiCircleGeometryPoint(s, d, pos, rot, baseColor, 270, 90, ignoreShift);
-}
-
-
-int
-GNEAdditional::getDrawPositionIndex() const {
-    // filter symbols
-    std::vector<GNEAdditional*> children;
-    for (const auto& child : getParentAdditionals().front()->getChildAdditionals()) {
-        if (!child->getTagProperty()->isSymbol()) {
-            children.push_back(child);
-        }
-    }
-    // now get index
-    for (int i = 0; i < (int)children.size(); i++) {
-        if (children.at(i) == this) {
-            return i;
-        }
-    }
-    return 0;
 }
 
 
@@ -1268,30 +1042,6 @@ GNEAdditional::drawSemiCircleGeometryPoint(const GUIVisualizationSettings& s, co
         GLHelper::drawFilledCircleDetailled(d, s.neteditSizeSettings.additionalGeometryPointRadius, fromAngle, toAngle);
         // pop geometry point matrix
         GLHelper::popMatrix();
-    }
-}
-
-
-std::string
-GNEAdditional::adjustListedAdditionalText(const std::string& text) const {
-    // 10 + 3 + 10
-    if (text.size() <= 23) {
-        return text;
-    } else {
-        // get text size
-        const int textPosition = (int)text.size() - 10;
-        // declare strings
-        std::string partA, partB;
-        // resize
-        partA.reserve(10);
-        partB.reserve(10);
-        // fill both
-        for (int i = 0; i < 10; i++) {
-            partA.push_back(text.at(i));
-            partB.push_back(text.at(textPosition + i));
-        }
-        // return composition
-        return (partA + "..." + partB);
     }
 }
 

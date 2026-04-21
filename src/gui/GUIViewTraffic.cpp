@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -40,6 +40,7 @@
 #include <guisim/GUIVehicle.h>
 #include <guisim/GUIVehicleControl.h>
 #include <mesogui/GUIMEVehicle.h>
+#include <mesogui/GUIMEVehicleControl.h>
 #include <microsim/MSEdge.h>
 #include <microsim/MSGlobals.h>
 #include <microsim/MSJunctionControl.h>
@@ -307,7 +308,12 @@ GUIViewTraffic::getEdgeLaneParamKeys(bool edgeKeys) const {
 std::vector<std::string>
 GUIViewTraffic::getVehicleParamKeys(bool /*vTypeKeys*/) const {
     std::set<std::string> keys;
-    GUIVehicleControl* vc = GUINet::getGUIInstance()->getGUIVehicleControl();
+    MSVehicleControl* vc = nullptr;
+    if (MSGlobals::gUseMesoSim) {
+        vc = GUINet::getGUIInstance()->getGUIMEVehicleControl();
+    } else {
+        vc = GUINet::getGUIInstance()->getGUIVehicleControl();
+    }
     vc->secureVehicles();
     for (auto vehIt = vc->loadedVehBegin(); vehIt != vc->loadedVehEnd(); ++vehIt) {
         for (auto kv : vehIt->second->getParameter().getParametersMap()) {
@@ -328,6 +334,14 @@ GUIViewTraffic::getPOIParamKeys() const {
         }
     }
     return std::vector<std::string>(keys.begin(), keys.end());
+}
+
+
+void
+GUIViewTraffic::centerTo(GUIGlID id, bool applyZoom, double zoomDist) {
+    GUIGlobals::gSecondaryShape = myVisualizationSettings->secondaryShape;
+    GUISUMOAbstractView::centerTo(id, applyZoom, zoomDist);
+    GUIGlobals::gSecondaryShape = false;
 }
 
 int
@@ -411,7 +425,9 @@ GUIViewTraffic::onGamingClick(Position pos) {
     if (myTLSGame) {
         MSTLLogicControl& tlsControl = MSNet::getInstance()->getTLSControl();
         MSTrafficLightLogic* minTll = nullptr;
+        GUIGlObject* minRR = nullptr;
         double minDist = std::numeric_limits<double>::infinity();
+        double minDistRR = std::numeric_limits<double>::infinity();
         for (MSTrafficLightLogic* const tll : tlsControl.getAllLogics()) {
             if (tlsControl.isActive(tll) && tll->getProgramID() != "off") {
                 // get the links
@@ -425,6 +441,24 @@ GUIViewTraffic::onGamingClick(Position pos) {
                 }
             }
         }
+        if (makeCurrent()) {
+            for (GUIGlObject* o : getGUIGlObjectsAtPosition(getPositionInformation(), MIN2(minDist, 20.0))) {
+                if (o->getType() == GLO_REROUTER_EDGE) {
+                    const double dist = o->getCenter().distanceTo2D(pos);
+                    if (dist < minDistRR) {
+                        minDistRR = dist;
+                        minRR = o;
+                    }
+                }
+            }
+            makeNonCurrent();
+        }
+        if (minDistRR < minDist && minRR != nullptr) {
+            minRR->onLeftBtnPress(nullptr);
+            update();
+            return;
+        }
+
         if (minTll != nullptr) {
             if (minTll->getPhaseNumber() == 0) {
                 // MSRailSignal

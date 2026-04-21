@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2013-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -56,8 +56,10 @@
 // ===========================================================================
 // static member variables
 // ===========================================================================
+const std::string MSDevice::LOADSTATE_DEVICENAMES("LOADSTATE_DEVICENAMES");
 std::map<std::string, std::set<std::string> > MSDevice::myExplicitIDs;
 SumoRNG MSDevice::myEquipmentRNG("deviceEquipment");
+
 
 // ===========================================================================
 // debug flags
@@ -164,6 +166,20 @@ MSDevice::insertDefaultAssignmentOptions(const std::string& deviceName, const st
 
     oc.doRegister(prefix + ".deterministic", new Option_Bool(false));
     oc.addDescription(prefix + ".deterministic", optionsTopic, "The '" + deviceName + "' devices are set deterministic using a fraction of 1000");
+}
+
+
+std::string
+MSDevice::getDeviceName(const std::string& id) {
+    if (StringUtils::startsWith(id, "routing_")) {
+        // special case: renamed in output
+        return "rerouting";
+    } else if (StringUtils::startsWith(id, "driverstate")) {
+        // special case: no underscore
+        return "driverstate";
+    } else {
+        return id.substr(0, id.find('_'));
+    }
 }
 
 

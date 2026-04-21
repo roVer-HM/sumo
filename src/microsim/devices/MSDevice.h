@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2007-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2007-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -86,6 +86,9 @@ public:
     */
     static void buildTransportableDevices(MSTransportable& p, std::vector<MSTransportableDevice*>& into);
 
+    /// @brief extracts the deviceName from the id (which includes holder id) and is subject to special cases
+    static std::string getDeviceName(const std::string& id);
+
     static SumoRNG* getEquipmentRNG() {
         return &myEquipmentRNG;
     }
@@ -95,6 +98,8 @@ public:
 
     /// @brief perform cleanup for all devices
     static void cleanupAll();
+
+    static const std::string LOADSTATE_DEVICENAMES;
 
 public:
     /** @brief Constructor
@@ -195,17 +200,9 @@ template<class DEVICEHOLDER> bool
 MSDevice::equippedByDefaultAssignmentOptions(const OptionsCont& oc, const std::string& deviceName, DEVICEHOLDER& v, bool outputOptionSet, const bool isPerson) {
     const std::string prefix = (isPerson ? "person-device." : "device.") + deviceName;
     // assignment by number
-    bool haveByNumber = false;
-    bool numberGiven = false;
-    if (oc.exists(prefix + ".deterministic") && oc.getBool(prefix + ".deterministic")) {
-        numberGiven = true;
-        haveByNumber = MSNet::getInstance()->getVehicleControl().getQuota(oc.getFloat(prefix + ".probability")) == 1;
-    } else {
-        if (oc.exists(prefix + ".probability") && oc.getFloat(prefix + ".probability") >= 0.) {
-            numberGiven = true;
-            haveByNumber = RandHelper::rand(&myEquipmentRNG) < oc.getFloat(prefix + ".probability");
-        }
-    }
+    bool numberGiven = ((oc.exists(prefix + ".deterministic") && oc.getBool(prefix + ".deterministic"))
+                        || (oc.exists(prefix + ".probability") && oc.getFloat(prefix + ".probability") >= 0.));
+    double probability = numberGiven ? oc.getFloat(prefix + ".probability") : 0;
     // assignment by name
     bool haveByName = false;
     bool nameGiven = false;
@@ -231,7 +228,7 @@ MSDevice::equippedByDefaultAssignmentOptions(const OptionsCont& oc, const std::s
     } else if (v.getVehicleType().getParameter().hasParameter(prefix + ".probability")) {
         // override global options
         numberGiven = true;
-        haveByNumber = RandHelper::rand(&myEquipmentRNG) < StringUtils::toDouble(v.getVehicleType().getParameter().getParameter(prefix + ".probability", "0"));
+        probability = StringUtils::toDouble(v.getVehicleType().getParameter().getParameter(prefix + ".probability", "0"));
     }
     //std::cout << " deviceName=" << deviceName << " holder=" << v.getID()
     //    << " nameGiven=" << nameGiven << " haveByName=" << haveByName
@@ -243,7 +240,19 @@ MSDevice::equippedByDefaultAssignmentOptions(const OptionsCont& oc, const std::s
     } else if (parameterGiven) {
         return haveByParameter;
     } else if (numberGiven) {
-        return haveByNumber;
+        if (oc.exists(prefix + ".deterministic") && oc.getBool(prefix + ".deterministic")) {
+            return MSNet::getInstance()->getVehicleControl().getQuota(probability) == 1;
+        } else if (probability > 0) {
+            if (v.getParameter().hasParameter(LOADSTATE_DEVICENAMES)) {
+                // replicate probabilistic assignment
+                const std::vector<std::string> lsdn = StringTokenizer(v.getParameter().getParameter(LOADSTATE_DEVICENAMES)).getVector();
+                return std::find(lsdn.begin(), lsdn.end(), deviceName) != lsdn.end();
+            } else {
+                return RandHelper::rand(&myEquipmentRNG) < probability;
+            }
+        } else {
+            return false;
+        }
     } else {
         return !nameGiven && outputOptionSet;
     }

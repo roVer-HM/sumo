@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -155,9 +155,10 @@ GNEContour::calculateContourEdges(const GUIVisualizationSettings& s, const GUIVi
 
 void
 GNEContour::calculateContourFirstGeometryPoint(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
-        const GUIGlObject* glObject, const PositionVector& shape, const double layer, double radius, const double scale) const {
+        const GUIGlObject* glObject, const PositionVector& shape, const double layer, double radius, const double scale,
+        const bool forceCalculation) const {
     // check if we're in drawForObjectUnderCursor
-    if (s.drawForViewObjectsHandler && (shape.size() > 0)) {
+    if ((s.drawForViewObjectsHandler || forceCalculation) && (shape.size() > 0)) {
         // check position within geometry of first geometry point
         gViewObjectsHandler.checkGeometryPoint(d, glObject, shape, 0, layer, (radius * scale));
     }
@@ -166,9 +167,10 @@ GNEContour::calculateContourFirstGeometryPoint(const GUIVisualizationSettings& s
 
 void
 GNEContour::calculateContourLastGeometryPoint(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,
-        const GUIGlObject* glObject, const PositionVector& shape, const double layer, double radius, const double scale) const {
+        const GUIGlObject* glObject, const PositionVector& shape, const double layer, double radius, const double scale,
+        const bool forceCalculation) const {
     // check if we're in drawForObjectUnderCursor
-    if (s.drawForViewObjectsHandler && (shape.size() > 0)) {
+    if ((s.drawForViewObjectsHandler || forceCalculation) && (shape.size() > 0)) {
         // check position within geometry of last geometry point
         gViewObjectsHandler.checkGeometryPoint(d, glObject, shape, (int)shape.size() - 1, layer, (radius * scale));
     }
@@ -330,7 +332,11 @@ GNEContour::drawDottedContours(const GUIVisualizationSettings& s, const GUIVisua
         }
         // inspect contour
         if (AC->checkDrawInspectContour()) {
-            return drawDottedContour(s, GUIDottedGeometry::DottedContourType::INSPECT, lineWidth, addOffset);
+            drawDottedContour(s, GUIDottedGeometry::DottedContourType::INSPECT, lineWidth, addOffset);
+            if (AC->checkDrawFrontContour()) {
+                drawDottedContour(s, GUIDottedGeometry::DottedContourType::FRONT, s.dottedContourSettings.segmentWidthSmall * 0.5, addOffset, 0.1);
+            }
+            return true;
         }
         // front contour
         if (AC->checkDrawFrontContour()) {
@@ -434,13 +440,13 @@ GNEContour::drawInnenContourClosed(const GUIVisualizationSettings& s, const GUIV
 
 bool
 GNEContour::drawDottedContour(const GUIVisualizationSettings& s, GUIDottedGeometry::DottedContourType type,
-                              const double lineWidth, const bool addOffset) const {
+                              const double lineWidth, const bool addOffset,  double extraZOffset) const {
     // reset dotted geometry color
     myDottedGeometryColor.reset();
     // Push draw matrix
     GLHelper::pushMatrix();
     // translate to front
-    glTranslated(0, 0, GLO_DOTTEDCONTOUR);
+    glTranslated(0, 0, GLO_DOTTEDCONTOUR + extraZOffset);
     // draw dotted geometries
     for (const auto& dottedGeometry : *myDottedGeometries) {
         dottedGeometry.drawDottedGeometry(s, type, myDottedGeometryColor, lineWidth, addOffset);

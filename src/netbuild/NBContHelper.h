@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -118,6 +118,7 @@ public:
      */
     class edge_by_priority_sorter {
     public:
+        edge_by_priority_sorter(SVCPermissions permissions) : myPermissions(permissions) {}
         /// comparing operator
         int operator()(NBEdge* e1, NBEdge* e2) const {
             if (e1->getPriority() != e2->getPriority()) {
@@ -126,8 +127,11 @@ public:
             if (e1->getSpeed() != e2->getSpeed()) {
                 return e1->getSpeed() > e2->getSpeed();
             }
-            return e1->getNumLanes() > e2->getNumLanes();
+            return e1->getNumLanesThatAllow(myPermissions, false) > e2->getNumLanesThatAllow(myPermissions, false);
         }
+
+    private:
+        SVCPermissions myPermissions;
     };
 
     // ---------------------------

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2017-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2017-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -152,7 +152,7 @@ Person::getWalkingDistance(const std::string& personID, const std::string& edgeI
         edges.erase(it + 1, edges.end());
         double distance = 0;
         MSPedestrianRouter& router = MSNet::getInstance()->getPedestrianRouter(0);
-        router.recomputeWalkCosts(edges, p->getMaxSpeed(), p->getEdgePos(), pos, SIMSTEP, distance);
+        router.recomputeWalkCosts(edges, p->getMaxSpeed(), p->getEdgePos(), pos, SIMSTEP, p->getVTypeParameter(), distance);
         if (distance == std::numeric_limits<double>::max()) {
             return INVALID_DOUBLE_VALUE;
         }
@@ -454,7 +454,7 @@ Person::getImperfection(const std::string& personID) {
 
 double
 Person::getSpeedDeviation(const std::string& personID) {
-    return getPerson(personID)->getVehicleType().getSpeedFactor().getParameter()[1];
+    return getPerson(personID)->getVehicleType().getSpeedFactor().getParameter(1);
 }
 
 
@@ -872,7 +872,7 @@ Person::rerouteTraveltime(const std::string& personID) {
     double arrivalPos = destStage->getArrivalPos();
     double speed = p->getMaxSpeed();
     ConstMSEdgeVector newEdges;
-    MSNet::getInstance()->getPedestrianRouter(0).compute(from, to, departPos, arrivalPos, speed, 0, nullptr, newEdges);
+    MSNet::getInstance()->getPedestrianRouter(0).compute(from, to, departPos, arrivalPos, speed, 0, nullptr, p->getVTypeParameter(), newEdges);
     if (newEdges.empty()) {
         throw TraCIException("Could not find new route for person '" + personID + "'.");
     }
@@ -1063,7 +1063,7 @@ Person::moveToXY(const std::string& personID, const std::string& edgeID, const d
                 p->removeStage(0);
                 assert(p->getStageType(0) == MSStageType::WALKING);
                 if (angle == INVALID_DOUBLE_VALUE) {
-                    if (lane != nullptr && !lane->getEdge().isWalkingArea()) {
+                    if (lane != nullptr && !lane->isWalkingArea()) {
                         angle = GeomHelper::naviDegree(lane->getShape().rotationAtOffset(lanePos));
                     } else {
                         // compute angle outside road network or on walkingarea from old and new position

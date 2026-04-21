@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -26,20 +26,18 @@
 #include <utils/foxtools/MFXSynchQue.h>
 #include <utils/foxtools/MFXInterThreadEventClient.h>
 
+#include "GNEEvent_FileLoaded.h"
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
-class GNENet;
-class GUIEvent;
+
 class GNEApplicationWindow;
 
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNELoadThread
- */
+
 class GNELoadThread : protected MFXSingleEventThread {
 
 public:
@@ -77,7 +75,8 @@ private:
      * All message callbacks to this instance are removed and the parent
      * application is informed about the loading
      */
-    void submitEndAndCleanup(GNENet* net, const std::string& loadedFile, const std::string& guiSettingsFile = "", const bool viewportFromRegistry = false);
+    FXint submitEndAndCleanup(GNEEvent_FileLoaded::Type type, GNENet* net, const std::string& loadedFile,
+                              const std::string& guiSettingsFile = "", const bool viewportFromRegistry = false);
 
     /// @brief netedit application windows
     GNEApplicationWindow* myApplicationWindow;

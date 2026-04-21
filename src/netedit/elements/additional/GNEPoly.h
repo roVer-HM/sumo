@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,6 +20,7 @@
 /****************************************************************************/
 #pragma once
 #include <config.h>
+
 #include <utils/gui/globjects/GUIPolygon.h>
 #include <utils/xml/CommonXMLStructure.h>
 
@@ -30,6 +31,7 @@
 // ===========================================================================
 
 class GeoConvHelper;
+class GNEMoveElementShape;
 class GNENetworkElement;
 
 // ===========================================================================
@@ -48,7 +50,7 @@ public:
     /** @brief Constructor for polygons
      * @param[in] id The name of the polygon
      * @param[in] net net in which this polygon is placed
-     * @param[in] filename file in which this element is stored
+     * @param[in] fileBucket file in which this element is stored
      * @param[in] type The (abstract) type of the polygon
      * @param[in] shape The shape of the polygon
      * @param[in] geo specify if shape was loaded as GEO
@@ -61,32 +63,38 @@ public:
      * @param[in] name Poly's name
      * @param[in] parameters generic parameters
      */
-    GNEPoly(const std::string& id, GNENet* net, const std::string& filename, const std::string& type, const PositionVector& shape,
+    GNEPoly(const std::string& id, GNENet* net, FileBucket* fileBucket, const std::string& type, const PositionVector& shape,
             bool geo, bool fill, double lineWidth, const RGBColor& color, double layer, double angle, const std::string& imgFile,
             const std::string& name, const Parameterised::Map& parameters);
 
     /** @brief Constructor for JuPedSim elements
      * @param[in] id The name of the polygon
      * @param[in] net net in which this polygon is placed
-     * @param[in] filename file in which this element is stored
+     * @param[in] fileBucket file in which this element is stored
      * @param[in] shape The shape of the polygon
      * @param[in] geo specify if shape was loaded as GEO
      * @param[in] name Poly's name
      * @param[in] parameters generic parameters
      */
-    GNEPoly(SumoXMLTag tag, const std::string& id, GNENet* net, const std::string& filename, const PositionVector& shape,
+    GNEPoly(SumoXMLTag tag, const std::string& id, GNENet* net, FileBucket* fileBucket, const PositionVector& shape,
             bool geo, const std::string& name, const Parameterised::Map& parameters);
 
     /// @brief Destructor
     ~GNEPoly();
 
-    /**@brief get move operation
-    * @note returned GNEMoveOperation can be nullptr
-    */
-    GNEMoveOperation* getMoveOperation() override;
+    /// @brief methods to retrieve the elements linked to this poly
+    /// @{
 
-    /// @brief remove geometry point in the clicked position
-    void removeGeometryPoint(const Position clickedPosition, GNEUndoList* undoList) override;
+    /// @brief get GNEMoveElement associated with this poly
+    GNEMoveElement* getMoveElement() const override;
+
+    /// @brief get parameters associated with this poly
+    Parameterised* getParameters() override;
+
+    /// @brief get parameters associated with this poly (constant)
+    const Parameterised* getParameters() const override;
+
+    /// @}
 
     /// @brief gererate a new ID for an element child
     std::string generateChildID(SumoXMLTag childTag);
@@ -168,14 +176,23 @@ public:
      */
     std::string getAttribute(SumoXMLAttr key) const override;
 
-    /* @brief method for getting the Attribute of an XML key in double format (to avoid unnecessary parse<double>(...) for certain attributes)
+    /* @brief method for getting the Attribute of an XML key in double format
      * @param[in] key The attribute key
      * @return double with the value associated to key
      */
     double getAttributeDouble(SumoXMLAttr key) const override;
 
-    /// @brief get parameters map
-    const Parameterised::Map& getACParametersMap() const override;
+    /* @brief method for getting the Attribute of an XML key in position format
+     * @param[in] key The attribute key
+     * @return position with the value associated to key
+     */
+    Position getAttributePosition(SumoXMLAttr key) const override;
+
+    /* @brief method for getting the Attribute of an XML key in positionVector format
+     * @param[in] key The attribute key
+     * @return positionVector with the value associated to key
+     */
+    PositionVector getAttributePositionVector(SumoXMLAttr key) const override;
 
     /**@brief method for setting the attribute and letting the object perform additional changes
      * @param[in] key The attribute key
@@ -232,6 +249,9 @@ public:
     CommonXMLStructure::SumoBaseObject* getSumoBaseObject() const;
 
 protected:
+    /// @brief move element shape
+    GNEMoveElementShape* myMoveElementShape = nullptr;
+
     /// @brief Latitude of Polygon
     PositionVector myGeoShape;
 
@@ -244,12 +264,6 @@ protected:
 private:
     /// @brief set attribute after validation
     void setAttribute(SumoXMLAttr key, const std::string& value) override;
-
-    /// @brief set move shape
-    void setMoveShape(const GNEMoveResult& moveResult) override;
-
-    /// @brief commit move shape
-    void commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) override;
 
     /// @brief draw polygon
     void drawPolygon(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d,

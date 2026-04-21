@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -84,8 +84,8 @@ GUIMEVehicle::getParameterWindow(GUIMainWindow& app,
     ret->mkItem("depart delay [s]", false, time2string(getDepartDelay()));
     ret->mkItem("odometer [m]", true,
                 new FunctionBinding<GUIMEVehicle, double>(this, &MSBaseVehicle::getOdometer));
-    if (getParameter().repetitionNumber < std::numeric_limits<int>::max()) {
-        ret->mkItem("remaining [#]", false, (int) getParameter().repetitionNumber - getParameter().repetitionsDone);
+    if (getParameter().repetitionNumber < std::numeric_limits<long long int>::max()) {
+        ret->mkItem("remaining [#]", false, (long long int) getParameter().repetitionNumber - getParameter().repetitionsDone);
     }
     if (getParameter().repetitionOffset > 0) {
         ret->mkItem("insertion period [s]", false, time2string(getParameter().repetitionOffset));
@@ -132,6 +132,7 @@ GUIMEVehicle::getParameterWindow(GUIMainWindow& app,
 GUIParameterTableWindow*
 GUIMEVehicle::getTypeParameterWindow(GUIMainWindow& app, GUISUMOAbstractView&) {
     GUIParameterTableWindow* ret = new GUIParameterTableWindow(app, *this, "vType:" + myType->getID());
+    ret->mkItem("type", false, myType->getID());
     ret->mkItem("length [m]", false, myType->getLength());
     ret->mkItem("width [m]", false, myType->getWidth());
     ret->mkItem("height [m]", false, myType->getHeight());
@@ -141,9 +142,13 @@ GUIMEVehicle::getTypeParameterWindow(GUIMainWindow& app, GUISUMOAbstractView&) {
     ret->mkItem("mass [kg]", false, myType->getMass());
     ret->mkItem("guiShape", false, getVehicleShapeName(myType->getGuiShape()));
     ret->mkItem("maximum speed [m/s]", false, getMaxSpeed());
+    ret->mkItem("desired maximum speed [m/s]", false, getVehicleType().getDesiredMaxSpeed());
+    ret->mkItem("desired headway (tau) [s]", false, getVehicleType().getCarFollowModel().getHeadwayTime());
     ret->mkItem("speedFactor", false, myType->getParameter().speedFactor.toStr(gPrecision));
     ret->mkItem("person capacity", false, myType->getPersonCapacity());
+    ret->mkItem(TL("boarding time [s]"), false, STEPS2TIME(myType->getLoadingDuration(true)));
     ret->mkItem("container capacity", false, myType->getContainerCapacity());
+    ret->mkItem(TL("loading time [s]"), false, STEPS2TIME(myType->getLoadingDuration(false)));
     ret->closeBuilding(&(myType->getParameter()));
     return ret;
 }

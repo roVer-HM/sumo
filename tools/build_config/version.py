@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2008-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -44,6 +44,9 @@ def get_version(padZero=True):
 
 def get_pep440_version():
     v = get_version(padZero=False).replace("_", ".").replace("+", ".post")
+    if v.endswith("-" + (10 * "0")):
+        # this is a fake version number since we could only determine the last release number, see #14228
+        return v[:-11] + ".post0"
     v = v[1:v.rfind("-")]
     vs = v.split(".")
     if len(vs) == 4 and vs[3] == "post0":
@@ -54,6 +57,13 @@ def get_pep440_version():
 def create_version_file(versionFile, revision):
     with open(versionFile, 'w') as f:
         print('#define VERSION_STRING "%s"' % revision, file=f)
+
+
+def filter_pep440(input_name, output_name):
+    with open(input_name) as inf:
+        inp = inf.read()
+    with open(output_name, "w") as outf:
+        outf.write(inp.replace('0.0.0', get_pep440_version()))
 
 
 def filter_setup_py(in_file, out_file):
@@ -69,7 +79,10 @@ def filter_setup_py(in_file, out_file):
 
 def main():
     if len(sys.argv) > 2:
-        filter_setup_py(sys.argv[1], sys.argv[2])
+        if sys.argv[1] == "--pep440":
+            filter_pep440(sys.argv[2], sys.argv[3 if len(sys.argv) > 3 else 2])
+        else:
+            filter_setup_py(sys.argv[1], sys.argv[2])
         return
     # determine output file
     if len(sys.argv) > 1:

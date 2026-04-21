@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -341,7 +341,7 @@ public:
             return dep == std::numeric_limits<double>::infinity() && replaceDefault ? 0 : dep;
         }
         double getArrivalPos(bool replaceDefault = true) const {
-            return arr == std::numeric_limits<double>::infinity() && replaceDefault ? 0 : arr;
+            return arr == std::numeric_limits<double>::infinity() && replaceDefault ? to->getLength() / 2 : arr;
         }
         SVCPermissions getModes() const {
             return modes;
@@ -452,6 +452,7 @@ private:
      */
     std::vector<PlanItem*> myPlan;
 
+    static bool myHaveWarnedPTMissing;
 
 private:
     /// @brief Invalidated copy constructor

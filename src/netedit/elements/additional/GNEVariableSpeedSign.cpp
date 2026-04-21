@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -17,15 +17,12 @@
 ///
 //
 /****************************************************************************/
-#include <config.h>
 
-#include <netedit/GNENet.h>
-#include <netedit/GNETagProperties.h>
-#include <netedit/GNEUndoList.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/changes/GNEChange_Additional.h>
 #include <netedit/changes/GNEChange_Attribute.h>
-#include <netedit/dialogs/GNEVariableSpeedSignDialog.h>
+#include <netedit/dialogs/elements/GNEVariableSpeedSignDialog.h>
+#include <netedit/elements/moving/GNEMoveElementView.h>
+#include <netedit/GNENet.h>
+#include <netedit/GNEUndoList.h>
 
 #include "GNEVariableSpeedSign.h"
 #include "GNEVariableSpeedSignSymbol.h"
@@ -35,16 +32,17 @@
 // ===========================================================================
 
 GNEVariableSpeedSign::GNEVariableSpeedSign(GNENet* net) :
-    GNEAdditional("", net, "", SUMO_TAG_VSS, "") {
+    GNEAdditional(net, SUMO_TAG_VSS),
+    GNEAdditionalSquared(this) {
 }
 
 
-GNEVariableSpeedSign::GNEVariableSpeedSign(const std::string& id, GNENet* net, const std::string& filename,
+GNEVariableSpeedSign::GNEVariableSpeedSign(const std::string& id, GNENet* net, FileBucket* fileBucket,
         const Position& pos, const std::string& name, const std::vector<std::string>& vTypes,
         const Parameterised::Map& parameters) :
-    GNEAdditional(id, net, filename, SUMO_TAG_VSS, name),
+    GNEAdditional(id, net, SUMO_TAG_VSS, fileBucket, name),
+    GNEAdditionalSquared(this, pos),
     Parameterised(parameters),
-    myPosition(pos),
     myVehicleTypes(vTypes) {
     // update centering boundary without updating grid
     updateCenteringBoundary(false);
@@ -55,17 +53,35 @@ GNEVariableSpeedSign::~GNEVariableSpeedSign() {
 }
 
 
+GNEMoveElement*
+GNEVariableSpeedSign::getMoveElement() const {
+    return myMoveElementView;
+}
+
+
+Parameterised*
+GNEVariableSpeedSign::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNEVariableSpeedSign::getParameters() const {
+    return this;
+}
+
+
 void
 GNEVariableSpeedSign::writeAdditional(OutputDevice& device) const {
     // avoid write rerouters without edges
     if (getAttribute(SUMO_ATTR_LANES).size() > 0) {
         device.openTag(SUMO_TAG_VSS);
-        device.writeAttr(SUMO_ATTR_ID, getID());
+        // write common additional attributes
+        writeAdditionalAttributes(device);
+        // write move atributes
+        myMoveElementView->writeMoveAttributes(device);
+        // write specific attributes
         device.writeAttr(SUMO_ATTR_LANES, getAttribute(SUMO_ATTR_LANES));
-        device.writeAttr(SUMO_ATTR_POSITION, myPosition);
-        if (!myAdditionalName.empty()) {
-            device.writeAttr(SUMO_ATTR_NAME, StringUtils::escapeXML(myAdditionalName));
-        }
         if (!myVehicleTypes.empty()) {
             device.writeAttr(SUMO_ATTR_VTYPES, myVehicleTypes);
         }
@@ -102,50 +118,21 @@ GNEVariableSpeedSign::GNEVariableSpeedSign::fixAdditionalProblem() {
 }
 
 
-GNEMoveOperation*
-GNEVariableSpeedSign::getMoveOperation() {
-    // return move operation for additional placed in view
-    return new GNEMoveOperation(this, myPosition);
-}
-
-
 void
 GNEVariableSpeedSign::updateGeometry() {
-    // update additional geometry
-    myAdditionalGeometry.updateSinglePosGeometry(myPosition, 0);
-    // update geometries (boundaries of all children)
-    for (const auto& additionalChildren : getChildAdditionals()) {
-        additionalChildren->updateGeometry();
-    }
+    updatedSquaredGeometry();
 }
 
 
 Position
 GNEVariableSpeedSign::getPositionInView() const {
-    return myPosition;
+    return myPosOverView;
 }
 
 
 void
 GNEVariableSpeedSign::updateCenteringBoundary(const bool updateGrid) {
-    // remove additional from grid
-    if (updateGrid) {
-        myNet->removeGLObjectFromGrid(this);
-    }
-    // update geometry
-    updateGeometry();
-    // add shape boundary
-    myAdditionalBoundary = myAdditionalGeometry.getShape().getBoxBoundary();
-    // add positions of all childrens (symbols and steps)
-    for (const auto& additionalChildren : getChildAdditionals()) {
-        myAdditionalBoundary.add(additionalChildren->getPositionInView());
-    }
-    // grow
-    myAdditionalBoundary.grow(5);
-    // add additional into RTREE again
-    if (updateGrid) {
-        myNet->addGLObjectIntoGrid(this);
-    }
+    updatedSquaredCenteringBoundary(updateGrid);
 }
 
 
@@ -172,8 +159,9 @@ GNEVariableSpeedSign::checkDrawMoveContour() const {
 
 
 void
-GNEVariableSpeedSign::openAdditionalDialog() {
+GNEVariableSpeedSign::openAdditionalDialog(FXWindow* restoringFocusWindow) {
     // Open VSS dialog
+    UNUSED_PARAMETER(restoringFocusWindow);
     GNEVariableSpeedSignDialog(this);
 }
 
@@ -187,18 +175,21 @@ GNEVariableSpeedSign::getParentName() const {
 void
 GNEVariableSpeedSign::drawGL(const GUIVisualizationSettings& s) const {
     const auto& inspectedElements = myNet->getViewNet()->getInspectedElements();
-    // draw parent and child lines
-    drawParentChildLines(s, s.additionalSettings.connectionColor, true);
-    // draw VSS
-    drawSquaredAdditional(s, myPosition, s.additionalSettings.VSSSize, GUITexture::VARIABLESPEEDSIGN, GUITexture::VARIABLESPEEDSIGN_SELECTED);
-    // iterate over additionals and check if drawn
-    for (const auto& step : getChildAdditionals()) {
-        // if rerouter or their intevals are selected, then draw
-        if (myNet->getViewNet()->getNetworkViewOptions().showSubAdditionals() ||
-                isAttributeCarrierSelected() || inspectedElements.isACInspected(this) ||
-                step->isAttributeCarrierSelected() || inspectedElements.isACInspected(step) ||
-                step->isMarkedForDrawingFront()) {
-            step->drawGL(s);
+    // first check if additional has to be drawn
+    if (myNet->getViewNet()->getDataViewOptions().showAdditionals()) {
+        // draw parent and child lines
+        drawParentChildLines(s, s.additionalSettings.connectionColor, true);
+        // draw VSS
+        drawSquaredAdditional(s, s.additionalSettings.VSSSize, GUITexture::VARIABLESPEEDSIGN, GUITexture::VARIABLESPEEDSIGN_SELECTED);
+        // iterate over additionals and check if drawn
+        for (const auto& step : getChildAdditionals()) {
+            // if rerouter or their intevals are selected, then draw
+            if (myNet->getViewNet()->getNetworkViewOptions().showSubAdditionals() ||
+                    isAttributeCarrierSelected() || inspectedElements.isACInspected(this) ||
+                    step->isAttributeCarrierSelected() || inspectedElements.isACInspected(step) ||
+                    step->isMarkedForDrawingFront()) {
+                step->drawGL(s);
+            }
         }
     }
 }
@@ -218,27 +209,31 @@ GNEVariableSpeedSign::getAttribute(SumoXMLAttr key) const {
             }
             return toString(lanes);
         }
-        case SUMO_ATTR_POSITION:
-            return toString(myPosition);
         case SUMO_ATTR_NAME:
             return myAdditionalName;
         case SUMO_ATTR_VTYPES:
             return toString(myVehicleTypes);
         default:
-            return getCommonAttribute(this, key);
+            return myMoveElementView->getMovingAttribute(key);
     }
 }
 
 
 double
 GNEVariableSpeedSign::getAttributeDouble(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
+    return myMoveElementView->getMovingAttributeDouble(key);
 }
 
 
-const Parameterised::Map&
-GNEVariableSpeedSign::getACParametersMap() const {
-    return getParametersMap();
+Position
+GNEVariableSpeedSign::getAttributePosition(SumoXMLAttr key) const {
+    return myMoveElementView->getMovingAttributePosition(key);
+}
+
+
+PositionVector
+GNEVariableSpeedSign::getAttributePositionVector(SumoXMLAttr key) const {
+    return myMoveElementView->getMovingAttributePositionVector(key);
 }
 
 
@@ -254,13 +249,12 @@ GNEVariableSpeedSign::setAttribute(SumoXMLAttr key, const std::string& value, GN
             rebuildVSSSymbols(value, undoList);
             break;
         case SUMO_ATTR_ID:
-        case SUMO_ATTR_POSITION:
         case SUMO_ATTR_NAME:
         case SUMO_ATTR_VTYPES:
             GNEChange_Attribute::changeAttribute(this, key, value, undoList);
             break;
         default:
-            setCommonAttribute(key, value, undoList);
+            myMoveElementView->setMovingAttribute(key, value, undoList);
             break;
     }
 }
@@ -271,8 +265,6 @@ GNEVariableSpeedSign::isValid(SumoXMLAttr key, const std::string& value) {
     switch (key) {
         case SUMO_ATTR_ID:
             return isValidAdditionalID(value);
-        case SUMO_ATTR_POSITION:
-            return canParse<Position>(value);
         case SUMO_ATTR_LANES:
             return canParse<std::vector<GNELane*> >(myNet, value, false);
         case SUMO_ATTR_NAME:
@@ -284,7 +276,7 @@ GNEVariableSpeedSign::isValid(SumoXMLAttr key, const std::string& value) {
                 return SUMOXMLDefinitions::isValidListOfTypeID(value);
             }
         default:
-            return isCommonValid(key, value);
+            return myMoveElementView->isMovingAttributeValid(key, value);
     }
 }
 
@@ -313,13 +305,6 @@ GNEVariableSpeedSign::setAttribute(SumoXMLAttr key, const std::string& value) {
             // update microsimID
             setAdditionalID(value);
             break;
-        case SUMO_ATTR_POSITION:
-            myPosition = parse<Position>(value);
-            // update boundary (except for template)
-            if (getID().size() > 0) {
-                updateCenteringBoundary(true);
-            }
-            break;
         case SUMO_ATTR_NAME:
             myAdditionalName = value;
             break;
@@ -327,26 +312,13 @@ GNEVariableSpeedSign::setAttribute(SumoXMLAttr key, const std::string& value) {
             myVehicleTypes = parse<std::vector<std::string> >(value);
             break;
         default:
-            setCommonAttribute(this, key, value);
+            myMoveElementView->setMovingAttribute(key, value);
             break;
     }
-}
-
-
-void
-GNEVariableSpeedSign::setMoveShape(const GNEMoveResult& moveResult) {
-    // update position
-    myPosition = moveResult.shapeToUpdate.front();
-    // update geometry
-    updateGeometry();
-}
-
-
-void
-GNEVariableSpeedSign::commitMoveShape(const GNEMoveResult& moveResult, GNEUndoList* undoList) {
-    undoList->begin(this, "position of " + getTagStr());
-    GNEChange_Attribute::changeAttribute(this, SUMO_ATTR_POSITION, toString(moveResult.shapeToUpdate.front()), undoList);
-    undoList->end();
+    // update boundary (except for template)
+    if (getID().size() > 0) {
+        updateCenteringBoundary(true);
+    }
 }
 
 
@@ -364,7 +336,7 @@ GNEVariableSpeedSign::rebuildVSSSymbols(const std::string& value, GNEUndoList* u
         // create VSS Symbol
         GNEAdditional* VSSSymbol = new GNEVariableSpeedSignSymbol(this, lane);
         // add it using GNEChange_Additional
-        myNet->getViewNet()->getUndoList()->add(new GNEChange_Additional(VSSSymbol, true), true);
+        myNet->getUndoList()->add(new GNEChange_Additional(VSSSymbol, true), true);
     }
     undoList->end();
 }

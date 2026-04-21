@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -35,30 +35,39 @@
 // ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class GNENet
- * @brief A NBNetBuilder extended by visualisation and editing capabilities
- */
+
 class GNENet : public GUIGlObject {
 
 public:
     /// @brief constructor
-    GNENet(NBNetBuilder* netBuilder, const GNETagPropertiesDatabase* tagPropertiesDatabase);
+    GNENet(GNEApplicationWindow* applicationWindow, NBNetBuilder* netBuilder);
 
     /// @brief Destructor
     ~GNENet();
 
     /// @brief get tag properties database
+    GNEApplicationWindow* getGNEApplicationWindow() const;
+
+    /// @brief get view net (used for simplify code)
+    GNEViewNet* getViewNet() const;
+
+    /// @brief get view parent (used for simplify code)
+    GNEViewParent* getViewParent() const;
+
+    /// @brief get undo list(used for simplify code)
+    GNEUndoList* getUndoList() const;
+
+    /// @brief get tag properties database (used for simplify code)
     const GNETagPropertiesDatabase* getTagPropertiesDatabase() const;
+
+    /// @brief get net builder
+    NBNetBuilder* getNetBuilder() const;
 
     /// @brief get all attribute carriers used in this net
     GNENetHelper::AttributeCarriers* getAttributeCarriers() const;
 
     /// @brief get all attribute carriers templates used in this net
     GNENetHelper::ACTemplate* getACTemplates() const;
-
-    /// @brief get saving files handler
-    GNENetHelper::SavingFilesHandler* getSavingFilesHandler() const;
 
     /// @brief get saving status
     GNENetHelper::SavingStatus* getSavingStatus() const;
@@ -81,7 +90,7 @@ public:
      * @return The built popup-menu
      * @see GUIGlObject::getPopUpMenu
      */
-    GUIGLObjectPopupMenu* getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent);
+    GUIGLObjectPopupMenu* getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) override;
 
     /**@brief Returns an own parameter window
      *
@@ -90,14 +99,14 @@ public:
      * @return The built parameter window
      * @see GUIGlObject::getParameterWindow
      */
-    GUIParameterTableWindow* getParameterWindow(GUIMainWindow& app, GUISUMOAbstractView& parent);
+    GUIParameterTableWindow* getParameterWindow(GUIMainWindow& app, GUISUMOAbstractView& parent) override;
 
     /**@brief Returns the boundary to which the view shall be centered in order to show the object
      *
      * @return The boundary the object is within
      * @see GUIGlObject::getCenteringBoundary
      */
-    Boundary getCenteringBoundary() const;
+    Boundary getCenteringBoundary() const override;
 
     /// @brief expand boundary
     void expandBoundary(const Boundary& newBoundary);
@@ -112,7 +121,7 @@ public:
      * @param[in] s The settings for the current view (may influence drawing)
      * @see GUIGlObject::drawGL
      */
-    void drawGL(const GUIVisualizationSettings& s) const;
+    void drawGL(const GUIVisualizationSettings& s) const override;
 
     /// @}
 
@@ -315,13 +324,10 @@ public:
     void saveNetwork();
 
     /// @brief save plain xml representation of the network (and nothing else)
-    void savePlain(const std::string& prefix);
+    void savePlain(const std::string& prefix, const OptionsCont& netconvertOptions);
 
     /// @brief save log of joined junctions (and nothing else)
     void saveJoined(const std::string& filename);
-
-    /// @brief Set the net to be notified of network changes
-    void setViewNet(GNEViewNet* viewNet);
 
     /// @brief add GL Object into net
     void addGLObjectIntoGrid(GNEAttributeCarrier* AC);
@@ -332,8 +338,6 @@ public:
     /// @brief modifies endpoins of the given edge
     void changeEdgeEndpoints(GNEEdge* edge, const std::string& newSourceID, const std::string& newDestID);
 
-    /// @brief get view net
-    GNEViewNet* getViewNet() const;
 
     /// @brief returns the tllcont of the underlying netbuilder
     NBTrafficLightLogicCont& getTLLogicCont();
@@ -425,12 +429,6 @@ public:
     /// @brief check if net require recomputing
     bool isNetRecomputed() const;
 
-    /// @brief get pointer to the main App
-    FXApp* getApp();
-
-    /// @brief get net builder
-    NBNetBuilder* getNetBuilder() const;
-
     /// @brief add edge id to the list of explicit turnarounds
     void addExplicitTurnaround(std::string id);
 
@@ -441,7 +439,7 @@ public:
     bool saveAdditionals();
 
     /// @brief save JuPedSim elements
-    bool saveJuPedSimElements(const std::unordered_set<const GNEAttributeCarrier*>& ACs, const std::string& file);
+    bool saveJuPedSimElements(const std::string& filename);
 
     /// @brief save demand element elements of the network
     bool saveDemandElements();
@@ -510,23 +508,17 @@ protected:
     /// @brief the rtree which contains all GUIGlObjects (so named for historical reasons)
     SUMORTree myGrid;
 
+    /// @brief pointer to application window
+    GNEApplicationWindow* myApplicationWindow = nullptr;
+
     /// @brief The internal netbuilder
-    NBNetBuilder* myNetBuilder;
-
-    /// @brief The net to be notified of about changes
-    GNEViewNet* myViewNet = nullptr;
-
-    /// @brief pointer to tagProperties database
-    const GNETagPropertiesDatabase* myTagPropertiesDatabase = nullptr;
+    NBNetBuilder* myNetBuilder = nullptr;
 
     /// @brief attributeCarriers module
     GNENetHelper::AttributeCarriers* myAttributeCarriers = nullptr;
 
     /// @brief attributeCarriers templates
     GNENetHelper::ACTemplate* myACTemplates = nullptr;
-
-    /// @brief saving files handler module
-    GNENetHelper::SavingFilesHandler* mySavingFilesHandler = nullptr;
 
     /// @brief saving status module
     GNENetHelper::SavingStatus* mySavingStatus = nullptr;
@@ -565,78 +557,74 @@ private:
     /// @brief return true if there are already a Junction in the given position, false in other case
     bool checkJunctionPosition(const Position& pos);
 
-    /// @brief save additionals after confirming invalid objects
-    void saveAdditionalsConfirmed();
-
-    /// @brief save demand elements after confirming invalid objects
-    void saveDemandElementsConfirmed();
-
-    /// @brief save data elements after confirming invalid objects
-    void saveDataElementsConfirmed();
-
-    /// @brief save meanDatas
-    void saveMeanDatasConfirmed();
+    /// @brief write additionals demand elements and meanData in output device
+    void writeAdditionalFileElements(OutputDevice& device, const FileBucket* fileBucket);
 
     /// @brief write additional element by type and sorted by ID
-    void writeAdditionalByType(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs,
-                               const std::vector<SumoXMLTag> tags) const;
+    void writeAdditionalByType(OutputDevice& device, const FileBucket* fileBucket, const std::vector<SumoXMLTag> tags) const;
 
     /// @brief write demand element by type and sorted by ID
-    void writeDemandByType(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs, SumoXMLTag tag) const;
+    void writeDemandByType(OutputDevice& device, const FileBucket* fileBucket, SumoXMLTag tag) const;
 
     /// @brief write route distributions sorted by ID
-    void writeRouteDistributions(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
+    void writeRouteDistributions(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write route sorted by ID
-    void writeRoutes(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs, const bool additionalFile) const;
+    void writeRoutes(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write vTypeDistributions sorted by ID
-    void writeVTypeDistributions(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
+    void writeVTypeDistributions(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write vTypes sorted by ID
-    void writeVTypes(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs, const bool additionalFile) const;
+    void writeVTypes(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write meanData element by type and sorted by ID
-    void writeMeanDatas(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs, SumoXMLTag tag) const;
+    void writeMeanDatas(OutputDevice& device, const FileBucket* fileBucket, SumoXMLTag tag) const;
 
     /// @brief write vType comment
-    bool writeVTypeComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs, const bool additionalFile) const;
+    bool writeVTypeComment(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write route comment
-    bool writeRouteComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs, const bool additionalFile) const;
+    bool writeRouteComment(OutputDevice& device, const FileBucket* fileBucket) const;
+
+    /// @brief write rerouter comment
+    bool writeRerouterComment(OutputDevice& device, const FileBucket* fileBucket) const;
+
+    /// @brief write variable speed sign comment
+    bool writeVariableSpeedSignComment(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write routeProbe comment
-    bool writeRouteProbeComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
+    bool writeRouteProbeComment(OutputDevice& device, const FileBucket* fileBucket) const;
+
+    /// @brief write vaporizer comment
+    bool writeVaporizerComment(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write calibrator comment
-    bool writeCalibratorComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
+    bool writeCalibratorComment(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write stoppingPlace comment
-    bool writeStoppingPlaceComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
+    bool writeStoppingPlaceComment(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write detector comment
-    bool writeDetectorComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
-
-    /// @brief write other additional comment
-    bool writeOtherAdditionalsComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
+    bool writeDetectorComment(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write shape comment
-    bool writeShapesComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
+    bool writeShapesComment(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write JuPedSim comment
-    bool writeJuPedSimComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
+    bool writeJuPedSimComment(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write TAZ comment
-    bool writeTAZComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
+    bool writeTAZComment(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write Wire comment
-    bool writeWireComment(OutputDevice& device, const std::unordered_set<const GNEAttributeCarrier*>& ACs) const;
+    bool writeWireComment(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write meanDataEdge comment
-    bool writeMeanDataEdgeComment(OutputDevice& device) const;
+    bool writeMeanDataEdgeComment(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief write Wire comment
-    bool writeMeanDataLaneComment(OutputDevice& device) const;
+    bool writeMeanDataLaneComment(OutputDevice& device, const FileBucket* fileBucket) const;
 
     /// @brief replace in list attribute
     static void replaceInListAttribute(GNEAttributeCarrier* ac, SumoXMLAttr key, const std::string& which, const std::string& by, GNEUndoList* undoList);

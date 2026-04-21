@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -26,6 +26,7 @@
 
 #include <gtest/gtest.h>
 #include <utils/common/StdDefs.h>
+#include <utils/common/StopWatch.h>
 #include <utils/common/RandHelper.h>
 
 
@@ -127,3 +128,13 @@ TEST(RandHelper, test_sequence) {
         EXPECT_EQ(expect[i], RandHelper::rand(100));
     }
 }
+
+/* Test the performance of the method 'rand' without parameters.*/
+// TEST(RandHelper, test_perf) {
+//     StopWatch sw;
+//     sw.start();
+//     for (int i = 0; i < 100000000; i++) {
+//         const double rand = RandHelper::rand();
+//     }
+//     std::cout << sw.stop();
+// }

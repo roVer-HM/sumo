@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -306,6 +306,11 @@ public:
         return myFringeType;
     }
 
+    /// @brief Returns roundabout type
+    inline RoundaboutType getRoundaboutType() const {
+        return myRoundaboutType;
+    }
+
     /// @brief Returns intersection name
     inline const std::string& getName() const {
         return myName;
@@ -372,6 +377,9 @@ public:
      * @param[in] yoff The y-offset to apply
      */
     void reshiftPosition(double xoff, double yoff);
+
+    /// @brief ensure consistency between input and output geometries
+    void roundGeometry();
 
     /// @brief mirror coordinates along the x-axis
     void mirrorX();
@@ -574,9 +582,14 @@ public:
         myRightOfWay = rightOfWay;
     }
 
-    /// @brief set method for computing right-of-way
+    /// @brief set fringe type
     void setFringeType(FringeType fringeType) {
         myFringeType = fringeType;
+    }
+
+    /// @brief set roundabout type
+    void setRoundaboutType(RoundaboutType roundaboutType) {
+        myRoundaboutType = roundaboutType;
     }
 
     /// @brief set intersection name
@@ -609,8 +622,8 @@ public:
                    const NBEdge::Connection& c, const NBEdge::Connection& otherC, bool checkOnlyTLS = false) const;
 
     /// @brief whether the connection must yield if the foe remains on the intersection after its phase ends
-    bool tlsContConflict(const NBEdge* from, const NBEdge::Connection& c,
-                         const NBEdge* foeFrom, const NBEdge::Connection& foe) const;
+    bool tlsStrandedConflict(const NBEdge* from, const NBEdge::Connection& c,
+                             const NBEdge* foeFrom, const NBEdge::Connection& foe) const;
 
 
     /**@brief Compute the shape for an internal lane
@@ -768,7 +781,7 @@ public:
     /* @brief set tl indices of this nodes crossing starting at the given index
      * @return Whether a custom index was used
      */
-    bool setCrossingTLIndices(const std::string& tlID, int startIndex);
+    bool setCrossingTLIndices(const std::string& tlID, int startIndex, bool ignoreCustom = false);
 
     /// @brief return the number of lane-to-lane connections at this junction (excluding crossings)
     int numNormalConnections() const;
@@ -978,6 +991,9 @@ private:
 
     /// @brief fringe type of this node
     FringeType myFringeType;
+
+    /// @brief roundabout type of this node
+    RoundaboutType myRoundaboutType;
 
     /// @brief The intersection name (or whatever arbitrary string you wish to attach)
     std::string myName;

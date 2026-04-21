@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,6 +19,7 @@
 /****************************************************************************/
 #include <config.h>
 
+#include <utils/common/FileBucket.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/StringUtils.h>
 #include <utils/xml/XMLSubSys.h>
@@ -30,9 +31,9 @@
 // method definitions
 // ===========================================================================
 
-DataHandler::DataHandler(const std::string& filename) :
-    CommonHandler(filename),
-    SUMOSAXHandler(filename) {
+DataHandler::DataHandler(FileBucket* fileBucket) :
+    CommonHandler(fileBucket),
+    SUMOSAXHandler(fileBucket->getFilename()) {
 }
 
 
@@ -48,47 +49,50 @@ DataHandler::parse() {
 
 void
 DataHandler::parseSumoBaseObject(CommonXMLStructure::SumoBaseObject* obj) {
-    // switch tag
-    switch (obj->getTag()) {
-        // Stopping Places
-        case SUMO_TAG_INTERVAL:
-            if (buildDataInterval(obj,
+    // check if loading was aborted
+    if (!myAbortLoading) {
+        // switch tag
+        switch (obj->getTag()) {
+            // Stopping Places
+            case SUMO_TAG_INTERVAL:
+                if (buildDataInterval(obj,
+                                      obj->getStringAttribute(SUMO_ATTR_ID),
+                                      obj->getDoubleAttribute(SUMO_ATTR_BEGIN),
+                                      obj->getDoubleAttribute(SUMO_ATTR_END))) {
+                    obj->markAsCreated();
+                }
+                break;
+            case SUMO_TAG_EDGE:
+                if (buildEdgeData(obj,
                                   obj->getStringAttribute(SUMO_ATTR_ID),
-                                  obj->getDoubleAttribute(SUMO_ATTR_BEGIN),
-                                  obj->getDoubleAttribute(SUMO_ATTR_END))) {
-                obj->markAsCreated();
-            }
-            break;
-        case SUMO_TAG_EDGE:
-            if (buildEdgeData(obj,
-                              obj->getStringAttribute(SUMO_ATTR_ID),
-                              obj->getParameters())) {
-                obj->markAsCreated();
-            }
-            break;
-        case SUMO_TAG_EDGEREL:
-            if (buildEdgeRelationData(obj,
-                                      obj->getStringAttribute(SUMO_ATTR_FROM),
-                                      obj->getStringAttribute(SUMO_ATTR_TO),
-                                      obj->getParameters())) {
-                obj->markAsCreated();
-            }
-            break;
-        case SUMO_TAG_TAZREL:
-            if (buildTAZRelationData(obj,
-                                     obj->getStringAttribute(SUMO_ATTR_FROM),
-                                     obj->getStringAttribute(SUMO_ATTR_TO),
-                                     obj->getParameters())) {
-                obj->markAsCreated();
-            }
-            break;
-        default:
-            break;
-    }
-    // now iterate over childrens
-    for (const auto& child : obj->getSumoBaseObjectChildren()) {
-        // call this function recursively
-        parseSumoBaseObject(child);
+                                  obj->getParameters())) {
+                    obj->markAsCreated();
+                }
+                break;
+            case SUMO_TAG_EDGEREL:
+                if (buildEdgeRelationData(obj,
+                                          obj->getStringAttribute(SUMO_ATTR_FROM),
+                                          obj->getStringAttribute(SUMO_ATTR_TO),
+                                          obj->getParameters())) {
+                    obj->markAsCreated();
+                }
+                break;
+            case SUMO_TAG_TAZREL:
+                if (buildTAZRelationData(obj,
+                                         obj->getStringAttribute(SUMO_ATTR_FROM),
+                                         obj->getStringAttribute(SUMO_ATTR_TO),
+                                         obj->getParameters())) {
+                    obj->markAsCreated();
+                }
+                break;
+            default:
+                break;
+        }
+        // now iterate over childrens
+        for (const auto& child : obj->getSumoBaseObjectChildren()) {
+            // call this function recursively
+            parseSumoBaseObject(child);
+        }
     }
 }
 
@@ -162,8 +166,8 @@ DataHandler::parseInterval(const SUMOSAXAttributes& attrs) {
     bool parsedOk = true;
     // needed attributes
     const std::string id = attrs.get<std::string>(SUMO_ATTR_ID, "", parsedOk);
-    const double begin = attrs.get<double>(SUMO_ATTR_BEGIN, "", parsedOk);
-    const double end = attrs.get<double>(SUMO_ATTR_END, "", parsedOk);
+    const double begin = STEPS2TIME(attrs.getSUMOTimeReporting(SUMO_ATTR_BEGIN, "", parsedOk));
+    const double end = STEPS2TIME(attrs.getSUMOTimeReporting(SUMO_ATTR_END, "", parsedOk));
     // continue if flag is ok
     if (parsedOk) {
         // set tag

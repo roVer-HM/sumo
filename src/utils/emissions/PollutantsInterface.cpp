@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2013-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -245,11 +245,11 @@ PollutantsInterface::getClassByName(const std::string& eClass, const SUMOVehicle
         if (eClass == "zero") {
             return myZeroHelper.getClassByName("default", vc);
         }
-        WRITE_WARNINGF("Emission classes should always use the model as a prefix, please recheck '%'. Starting with SUMO 1.24 this will be an error.", eClass)
+        WRITE_WARNINGF("Emission classes should always use the model as a prefix, please recheck '%'. In later SUMO versions this might become an error.", eClass)
         // default HBEFA2
         return myHBEFA2Helper.getClassByName(eClass, vc);
     }
-    throw InvalidArgument("Unknown emission class '" + eClass + "'.");
+    throw InvalidArgument(TLF("Unknown emission class '%'.", eClass));
 }
 
 

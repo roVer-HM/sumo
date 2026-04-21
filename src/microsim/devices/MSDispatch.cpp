@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2007-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2007-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -54,6 +54,7 @@ MSDispatch::MSDispatch(const Parameterised::Map& params) :
         OutputDevice::createDeviceByOption(opt, "DispatchInfo");
         myOutput = &OutputDevice::getDeviceByOption(opt);
     }
+    myKeepUnreachableResTime = string2time(OptionsCont::getOptions().getString("device.taxi.dispatch-keep-unreachable"));
 }
 
 MSDispatch::~MSDispatch() {
@@ -306,7 +307,19 @@ MSDispatch::computePickupTime(SUMOTime t, const MSDevice_Taxi* taxi, const Reser
     ConstMSEdgeVector edges;
     router.compute(taxi->getHolder().getEdge(), taxi->getHolder().getPositionOnLane() - NUMERICAL_EPS,
                    res.from, res.fromPos, &taxi->getHolder(), t, edges, true);
-    return TIME2STEPS(router.recomputeCosts(edges, &taxi->getHolder(), t));
+    if (edges.empty()) {
+        return SUMOTime_MAX;
+    } else {
+        return TIME2STEPS(router.recomputeCosts(edges, &taxi->getHolder(), t));
+    }
+}
+
+
+bool
+MSDispatch::isReachable(SUMOTime t, const MSDevice_Taxi* taxi, const Reservation& res, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router) {
+    ConstMSEdgeVector edges;
+    router.compute(res.from, res.fromPos, res.to, res.toPos, &taxi->getHolder(), t, edges, true);
+    return !edges.empty();
 }
 
 

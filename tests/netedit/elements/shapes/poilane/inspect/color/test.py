@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,50 +19,47 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # go to shape mode
-netedit.shapeMode()
+netedit.changeMode("shape")
 
 # select POILane in list of shapes
-netedit.changeElement("poiLane")
+netedit.changeElement("shapeFrame", "poiLane")
 
 # create POILane
 netedit.leftClick(referencePosition, netedit.positions.elements.edge0)
 
 # go to inspect mode
-netedit.inspectMode()
+netedit.changeMode("inspect")
 
 # inspect first POILane
 netedit.leftClick(referencePosition, netedit.positions.elements.edge0)
 
 # change color using dialog
-netedit.modifyColorAttribute(netedit.attrs.poiLane.inspect.colorButton, 5, True)
+netedit.modifyColorAttributeOverlapped(netedit.attrs.poiLane.inspect.colorButton)
 
 # Change parameter color with a non valid value (dummy)
-netedit.modifyAttribute(netedit.attrs.poiLane.inspect.color, "dummyColor", True)
+netedit.modifyAttributeOverlapped(netedit.attrs.poiLane.inspect.color, "dummyColor")
 
 # Change parameter color with a non valid value (invalid format)
-netedit.modifyAttribute(netedit.attrs.poiLane.inspect.color, "255,255,500", True)
+netedit.modifyAttributeOverlapped(netedit.attrs.poiLane.inspect.color, "255,255,500")
 
 # Change parameter color with a valid value (valid format)
-netedit.modifyAttribute(netedit.attrs.poiLane.inspect.color, "blue", True)
+netedit.modifyAttributeOverlapped(netedit.attrs.poiLane.inspect.color, "blue")
 
 # Change parameter color with a valid value (valid format)
-netedit.modifyAttribute(netedit.attrs.poiLane.inspect.color, "125,60,200", True)
+netedit.modifyAttributeOverlapped(netedit.attrs.poiLane.inspect.color, "125,60,200")
 
 # Check undos and redos
 netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

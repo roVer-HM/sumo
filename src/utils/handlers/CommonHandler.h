@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -24,39 +24,65 @@
 #include <utils/xml/SUMOSAXHandler.h>
 
 // ===========================================================================
+// class declaration
+// ===========================================================================
+
+class FileBucket;
+
+// ===========================================================================
 // class definitions
 // ===========================================================================
-/**
- * @class CommonHandler
- * @brief The XML-Handler for network loading
- *
- * The SAX2-handler responsible for parsing networks and routes to load.
- * This is an extension of the MSRouteHandler as routes and vehicles may also
- *  be loaded from network descriptions.
- */
+
 class CommonHandler {
 
 public:
     /**@brief Constructor
-     * @param[in] filename Name of the parsed file
+     * @param[in] bucket FileBucket in which place the element
      */
-    CommonHandler(const std::string& filename);
+    CommonHandler(FileBucket* fileBucket);
 
     /// @brief Destructor
     virtual ~CommonHandler();
 
+    /// @brief force overwritte elements (used if we're reloading elements)
+    void forceOverwriteElements();
+
+    /// @brief force remain elements (used if we're reloading elements)
+    void forceRemainElements();
+
+    /// @brief abort loading
+    void abortLoading();
+
     /// @brief get flag for mark if a element wasn't created
     bool isErrorCreatingElement() const;
 
+    /// @brief force overwritte elements (used if we're reloading elements)
+    bool isForceOverwriteElements() const;
+
+    /// @brief force remain elements (used if we're reloading elements)
+    bool isForceRemainElements() const;
+
+    /// @brief abort loading
+    bool isAbortLoading() const;
+
 protected:
-    /// @brief filename
-    const std::string myFilename;
+    /// @brief fileBucket
+    FileBucket* myFileBucket = nullptr;
 
     /// @brief common XML Structure
     CommonXMLStructure myCommonXMLStructure;
 
     /// @brief flag for mark if a element wasn't created
     bool myErrorCreatingElement = false;
+
+    /// @brief overwrite elements
+    bool myOverwriteElements = false;
+
+    /// @brief remain elements
+    bool myRemainElements = false;
+
+    /// @brief abort loading
+    bool myAbortLoading = false;
 
     /// @brief parse generic parameters
     void parseParameters(const SUMOSAXAttributes& attrs);
@@ -112,7 +138,7 @@ protected:
     /// @}
 
     /// @brief write warning overwritting element
-    void writeWarningOverwritting(const SumoXMLTag tag, const std::string& id);
+    void writeWarningOverwriting(const SumoXMLTag tag, const std::string& id);
 
     /// @brief write warning duplicated element
     bool writeWarningDuplicated(const SumoXMLTag tag, const std::string& id, const SumoXMLTag checkedTag);
@@ -123,22 +149,22 @@ protected:
     /// @brief write error "invalid position"
     bool writeErrorInvalidPosition(const SumoXMLTag tag, const std::string& id);
 
-    /// @brief write error "empty edges"
-    bool writeErrorEmptyEdges(const SumoXMLTag tag, const std::string& id);
-
     /// @brief write error "invalid list of lanes"
     bool writeErrorInvalidLanes(const SumoXMLTag tag, const std::string& id);
 
     /// @brief write error "invalid parent element" giving ids of current and parent element
-    bool writeErrorInvalidParent(const SumoXMLTag tag, const std::string& id, const SumoXMLTag parentTag, const std::string& parentID);
+    bool writeErrorInvalidParent(const SumoXMLTag tag, const std::string& id, const std::vector<SumoXMLTag> parentTags, const std::string& parentID);
 
     /// @brief write error "invalid parent element" giving only the id of parent element
-    bool writeErrorInvalidParent(const SumoXMLTag tag, const SumoXMLTag parentTag, const std::string& parentID);
+    bool writeErrorInvalidParent(const SumoXMLTag tag, const std::vector<SumoXMLTag> parentTags, const std::string& parentID);
 
     /// @brief write error "invalid parent element" without giving IDs
-    bool writeErrorInvalidParent(const SumoXMLTag tag, const SumoXMLTag parentTag);
+    bool writeErrorInvalidParent(const SumoXMLTag tag, const std::vector<SumoXMLTag> parentTags);
 
 private:
+    /// @brief parse list of parent tags
+    std::string parseParentTags(std::vector<SumoXMLTag> parentTags) const;
+
     /// @brief invalidate default onstructor
     CommonHandler() = delete;
 

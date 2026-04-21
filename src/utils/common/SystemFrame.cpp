@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -121,14 +121,32 @@ SystemFrame::addReportOptions(OptionsCont& oc) {
     oc.doRegister("write-license", new Option_Bool(false));
     oc.addDescription("write-license", "Output", TL("Include license info into every output file"));
 
+    oc.doRegister("write-metadata", new Option_Bool(false));
+    oc.addDescription("write-metadata", "Output", TL("Write parsable metadata (configuration etc.) instead of comments"));
+
     oc.doRegister("output-prefix", new Option_String());
     oc.addDescription("output-prefix", "Output", TL("Prefix which is applied to all output files. The special string 'TIME' is replaced by the current time."));
+
+    oc.doRegister("output-suffix", new Option_String());
+    oc.addDescription("output-suffix", "Output", TL("Suffix which is applied to all output files. The special string 'TIME' is replaced by the current time."));
 
     oc.doRegister("precision", new Option_Integer(2));
     oc.addDescription("precision", "Output", TL("Defines the number of digits after the comma for floating point output"));
 
     oc.doRegister("precision.geo", new Option_Integer(6));
     oc.addDescription("precision.geo", "Output", TL("Defines the number of digits after the comma for lon,lat output"));
+
+    oc.doRegister("output.compression", new Option_String());
+    oc.addDescription("output.compression", "Output", TL("Defines the standard compression algorithm (currently only for parquet output)"));
+
+    oc.doRegister("output.format", new Option_String("xml"));
+    oc.addDescription("output.format", "Output", TL("Defines the standard output format if not derivable from the file name ('xml', 'csv', 'parquet')"));
+
+    oc.doRegister("output.column-header", new Option_String("tag"));
+    oc.addDescription("output.column-header", "Output", TL("How to derive column headers from attribute names ('none', 'tag', 'auto', 'plain')"));
+
+    oc.doRegister("output.column-separator", new Option_String(";"));
+    oc.addDescription("output.column-separator", "Output", TL("Separator in CSV output"));
 
     oc.doRegister("human-readable-time", 'H', new Option_Bool(false));
     oc.addDescription("human-readable-time", "Output", TL("Write time values as hour:minute:second or day:hour:minute:second rather than seconds"));
@@ -138,6 +156,9 @@ SystemFrame::addReportOptions(OptionsCont& oc) {
 bool
 SystemFrame::checkOptions(OptionsCont& oc) {
     gPrecision = oc.getInt("precision");
+    if (oc.exists("emission-output.precision")) {
+        gPrecisionEmissions = oc.getInt("emission-output.precision");
+    }
     gPrecisionGeo = oc.getInt("precision.geo");
     gHumanReadableTime = oc.getBool("human-readable-time");
     if (oc.exists("weights.random-factor")) {

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,68 +19,69 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # go to demand mode
-netedit.supermodeDemand()
+netedit.changeSupermode("demand")
 
 # go to vehicle mode
-netedit.vehicleMode()
-
-# disable select trip due this is the first vehicle in the list
-# netedit.changeElement("trip")
+netedit.changeMode("vehicle")
 
 # set invalid arrival lane
-netedit.changeDefaultValue(netedit.attrs.trip.create.arrivalSpeed, "dummySpeed")
+netedit.modifyAttribute(netedit.attrs.trip.create.arrivalPosLat, "dummyArrivalSpeed")
 
 # try to create trip
 netedit.leftClick(referencePosition, netedit.positions.elements.edge0)
 netedit.leftClick(referencePosition, netedit.positions.elements.edge2)
 
 # press enter to create trip
-netedit.typeEnter()
+netedit.typeKey("enter")
 
 # set invalid arrival speed
-netedit.changeDefaultValue(netedit.attrs.trip.create.arrivalSpeed, "-12")
-
-# create trip
-netedit.leftClick(referencePosition, netedit.positions.elements.edge0)
-netedit.leftClick(referencePosition, netedit.positions.elements.edge2)
+netedit.modifyAttribute(netedit.attrs.trip.create.arrivalPosLat, "-12")
 
 # press enter to create trip
-netedit.typeEnter()
+netedit.typeKey("enter")
 
 # set valid arrival speed
-netedit.changeDefaultValue(netedit.attrs.trip.create.arrivalSpeed, "max")
+netedit.modifyAttribute(netedit.attrs.trip.create.arrivalPosLat, "center")
 
-# create trip
+# try to create trip
 netedit.leftClick(referencePosition, netedit.positions.elements.edge0)
 netedit.leftClick(referencePosition, netedit.positions.elements.edge2)
 
 # press enter to create trip
-netedit.typeEnter()
+netedit.typeKey("enter")
 
 # set valid arrival speed
-netedit.changeDefaultValue(netedit.attrs.trip.create.arrivalSpeed, "20")
+netedit.modifyAttribute(netedit.attrs.trip.create.arrivalPosLat, "left")
+
+# try to create trip
+netedit.leftClick(referencePosition, netedit.positions.elements.edge0)
+netedit.leftClick(referencePosition, netedit.positions.elements.edge2)
+
+# press enter to create trip
+netedit.typeKey("enter")
+
+# set valid arrival speed
+netedit.modifyAttribute(netedit.attrs.trip.create.arrivalPosLat, "20.15")
 
 # create trip
 netedit.leftClick(referencePosition, netedit.positions.elements.edge0)
 netedit.leftClick(referencePosition, netedit.positions.elements.edge2)
 
 # press enter to create trip
-netedit.typeEnter()
+netedit.typeKey("enter")
+
 # Check undo redo
 netedit.checkUndoRedo(referencePosition)
 
 # save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

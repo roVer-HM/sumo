@@ -1,5 +1,5 @@
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2008-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -103,7 +103,7 @@ class TLS:
 
 class Phase:
 
-    def __init__(self, duration, state, minDur=None, maxDur=None, next=tuple(), name=""):
+    def __init__(self, duration, state, minDur=None, maxDur=None, next=tuple(), name="", earlyTarget=""):
         """
         Constructs a traffic light phase
         duration (float): the duration of the phase in seconds
@@ -112,6 +112,7 @@ class Phase:
         maxDur (float): the maximum duration (ignored by static tls)
         next (intList): possible succesor phase (optional)
         name (string): the name of the phase
+        earlyTarget (string): early switching to phase with the given index(es)
         """
         self.duration = duration
         self.state = state
@@ -120,12 +121,14 @@ class Phase:
         self.maxDur = maxDur if maxDur is not None else duration
         self.next = next
         self.name = name
+        self.earlyTarget = earlyTarget
 
     def __repr__(self):
         name = (", name='%s'" % self.name) if self.name else ""
         next = (", next='%s'" % str(self.next)) if self.next else ""
-        return ("Phase(duration=%s, state='%s', minDur=%s, maxDur=%s%s%s)" %
-                (self.duration, self.state, self.minDur, self.maxDur, name, next))
+        earlyTarget = (", earlyTarget='%s'" % self.earlyTarget) if self.earlyTarget else ""
+        return ("Phase(duration=%s, state='%s', minDur=%s, maxDur=%s%s%s%s)"
+                % (self.duration, self.state, self.minDur, self.maxDur, name, next, earlyTarget))
 
 
 class TLSProgram:
@@ -136,9 +139,13 @@ class TLSProgram:
         self._offset = offset
         self._phases = []
         self._params = {}
+        self._conditions = {}
 
-    def addPhase(self, state, duration, minDur=-1, maxDur=-1, next=None, name=""):
-        self._phases.append(Phase(duration, state, minDur, maxDur, next, name))
+    def addPhase(self, state, duration, minDur=-1, maxDur=-1, next=None, name="", earlyTarget=""):
+        self._phases.append(Phase(duration, state, minDur, maxDur, next, name, earlyTarget))
+
+    def addCondition(self, id, value):
+        self._conditions[id] = value
 
     def toXML(self, tlsID):
         ret = '  <tlLogic id="%s" type="%s" programID="%s" offset="%s">\n' % (
@@ -148,10 +155,13 @@ class TLSProgram:
             maxDur = '' if p.maxDur < 0 else ' maxDur="%s"' % p.maxDur
             name = '' if p.name == '' else ' name="%s"' % p.name
             next = '' if len(p.next) == 0 else ' next="%s"' % ' '.join(map(str, p.next))
-            ret += '    <phase duration="%s" state="%s"%s%s%s%s/>\n' % (
-                p.duration, p.state, minDur, maxDur, name, next)
+            earlyTarget = '' if p.earlyTarget == '' else ' earlyTarget="%s"' % p.earlyTarget
+            ret += '    <phase duration="%s" state="%s"%s%s%s%s%s/>\n' % (
+                p.duration, p.state, minDur, maxDur, name, next, earlyTarget)
         for k, v in self._params.items():
             ret += '    <param key="%s" value="%s"/>\n' % (k, v)
+        for i, v in self._conditions.items():
+            ret += '    <condition id="%s" value="%s"/>\n' % (i, v)
         ret += '  </tlLogic>\n'
         return ret
 
@@ -169,6 +179,17 @@ class TLSProgram:
 
     def getParams(self):
         return self._params
+
+    def getStages(self):
+        stages = dict()
+        for idx, phase in enumerate(self.getPhases()):
+            if phase not in stages.values():
+                if 'G' in phase.state and 'y' not in phase.state and phase.name:
+                    stages[idx] = phase
+        return stages
+
+    def getOffset(self):
+        return self._offset
 
 
 class EdgeType:
@@ -263,11 +284,11 @@ class Net:
         if type is not None and node._type is None:
             node._type = type
 
-    def addEdge(self, id, fromID, toID, prio, function, name, edgeType=''):
+    def addEdge(self, id, fromID, toID, prio, function, name, edgeType='', routingType=''):
         if id not in self._id2edge:
             fromN = self.addNode(fromID)
             toN = self.addNode(toID)
-            e = edge.Edge(id, fromN, toN, prio, function, name, edgeType)
+            e = edge.Edge(id, fromN, toN, prio, function, name, edgeType, routingType)
             self._edges.append(e)
             self._id2edge[id] = e
             if function:
@@ -284,9 +305,11 @@ class Net:
         self._roundabouts.append(r)
         return r
 
-    def addConnection(self, fromEdge, toEdge, fromlane, tolane, direction, tls, tllink, state, viaLaneID=None):
+    def addConnection(self, fromEdge, toEdge, fromlane, tolane, direction,
+                      tls, tllink, tllink2, allow, disallow, state, viaLaneID=None):
         conn = connection.Connection(
-            fromEdge, toEdge, fromlane, tolane, direction, tls, tllink, state, viaLaneID)
+            fromEdge, toEdge, fromlane, tolane, direction,
+            tls, tllink, tllink2, allow, disallow, state, viaLaneID)
         fromEdge.addOutgoing(conn)
         fromlane.addOutgoing(conn)
         toEdge._addIncoming(conn)
@@ -297,7 +320,7 @@ class Net:
                 viaEdge = viaLane.getEdge()
                 viaEdge._addIncoming(connection.Connection(
                     fromEdge, viaEdge, fromlane, viaLane, direction, tls,
-                    tllink, state, ''))
+                    tllink, tllink2, allow, disallow, state, ''))
             except Exception:
                 pass
         return conn
@@ -417,12 +440,12 @@ class Net:
     def forbids(self, possProhibitor, possProhibited):
         return possProhibitor.getFrom().getToNode().forbids(possProhibitor, possProhibited)
 
-    def getDownstreamEdges(self, edge, distance, stopOnTLS, stopOnTurnaround):
+    def getUpstreamEdges(self, edge, distance, stopOnTLS, stopOnTurnaround):
         """return a list of lists of the form
            [[firstEdge, pos, [edge_0, edge_1, ..., edge_k], aborted], ...]
            where
-             firstEdge: is the downstream edge furthest away from the intersection,
-             [edge_0, ..., edge_k]: is the list of edges from the intersection downstream to firstEdge
+             firstEdge: is the upstream edge furthest away from the intersection,
+             [edge_0, ..., edge_k]: is the list of edges from the intersection upstream to firstEdge
              pos: is the position on firstEdge with distance to the end of the input edge
              aborted: a flag indicating whether the downstream
                  search stopped at a TLS or a node without incoming edges before reaching the distance threshold
@@ -686,7 +709,7 @@ class Net:
         return self.getOptimalPath(fromEdge, toEdge, True, maxCost, vClass, reversalPenalty,
                                    includeFromToCost, withInternal, ignoreDirection, fromPos, toPos)
 
-    def getReachable(self, source, vclass=None, useIncoming=False):
+    def getReachable(self, source, vclass=None, useIncoming=False, cache=None):
         if vclass is not None and not source.allows(vclass):
             raise RuntimeError("'{}' does not allow {}".format(source.getID(), vclass))
         fringe = [source]
@@ -707,9 +730,14 @@ class Net:
                         for reachable in [conn.getTo(), conn.getFrom()]:
                             if reachable not in found:
                                 # print("added %s via %s" % (reachable, conn))
-                                found.add(reachable)
-                                new_fringe.append(reachable)
+                                if cache and reachable in cache:
+                                    found.update(cache[reachable])
+                                else:
+                                    found.add(reachable)
+                                    new_fringe.append(reachable)
             fringe = new_fringe
+        if cache is not None:
+            cache[source] = tuple(found)
         return found
 
 
@@ -770,7 +798,8 @@ class NetReader(handler.ContentHandler):
                     self._crossingID2edgeIDs[edgeID] = attrs.get('crossingEdges').split(' ')
 
                 self._currentEdge = self._net.addEdge(edgeID, fromNodeID, toNodeID, prio, function,
-                                                      attrs.get('name', ''), attrs.get('type', ''))
+                                                      attrs.get('name', ''), attrs.get('type', ''),
+                                                      attrs.get('routingType', ''))
 
                 self._currentEdge.setRawShape(convertShape(attrs.get('shape', '')))
 
@@ -840,7 +869,8 @@ class NetReader(handler.ContentHandler):
                 viaLaneID = attrs['via']
                 self._net.addConnection(self._currentEdge, connected, self._currentEdge._lanes[
                                         self._currentLane], tolane,
-                                        attrs['dir'], tl, tllink, attrs['state'], viaLaneID)
+                                        attrs['dir'], tl, tllink, -1,
+                                        attrs.get('allow'), attrs.get('disallow'), attrs['state'], viaLaneID)
         elif name == 'connection' and self._withConnections and (attrs['from'][0] != ":" or self._withInternal):
             fromEdgeID = attrs['from']
             toEdgeID = attrs['to']
@@ -855,11 +885,13 @@ class NetReader(handler.ContentHandler):
                 if 'tl' in attrs and attrs['tl'] != "":
                     tl = attrs['tl']
                     tllink = int(attrs['linkIndex'])
+                    tllink2 = int(attrs.get('linkIndex2', -1))
                     tls = self._net.addTLS(tl, fromLane, toLane, tllink)
                     fromEdge.setTLS(tls)
                 else:
                     tl = ""
                     tllink = -1
+                    tllink2 = -1
                 try:
                     viaLaneID = attrs['via']
                 except KeyError:
@@ -867,7 +899,7 @@ class NetReader(handler.ContentHandler):
 
                 self._currentConnection = self._net.addConnection(
                     fromEdge, toEdge, fromLane, toLane, attrs['dir'], tl,
-                    tllink, attrs['state'], viaLaneID)
+                    tllink, tllink2, attrs.get('allow'), attrs.get('disallow'), attrs['state'], viaLaneID)
 
         # 'row-logic' is deprecated!!!
         elif self._withFoes and name == 'ROWLogic':

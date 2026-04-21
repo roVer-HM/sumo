@@ -21,19 +21,18 @@ import glob
 import os
 import shutil
 import subprocess
+import sys
 
 block_cipher = None
 subprocess.call(["python", os.path.join(SPECPATH, "minwait.py")])
 
-datas=[('../../bin/sumo.exe', '.'), ('../../bin/sumo-gui.exe', '.'), ('../../bin/*.dll', '.'),
-       ('A10KW', 'A10KW'), ('bs3d', 'bs3d'), ('corridor', 'corridor'), ('cross', 'cross'), ('DRT', 'DRT'),
-       ('fkk_in', 'fkk_in'), ('grid6', 'grid6'), ('highway', 'highway'), ('ramp', 'ramp'),
-       ('sounds', 'sounds'), ('square', 'square'),
-       ('refscores.pkl', '.'), ('*.sumocfg', '.'), ('*.gif', '.'), ('*.xml', '.')]
+datas=[('../../bin/sumo.exe', 'bin'), ('../../bin/sumo-gui.exe', 'bin'), ('../../bin/*.dll', 'bin'),
+       ('../../data', 'data'), ('images', 'images'), ('sounds', 'sounds'),
+       ('refscores.pkl', '.'), ('*.gif', '.'), ('*.xml', '.')]
 a = Analysis(['runner.py'],
              pathex=[SPECPATH + '/..'],
              binaries=[],
-             datas=[('../../data/locale', 'locale')],
+             datas=[],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
@@ -63,6 +62,17 @@ coll = COLLECT(exe,
                upx_exclude=[],
                name='runner')
 
+skip3d = len(sys.argv) < 2 or sys.argv[1] != "osg"
+for f in glob.glob(os.path.join(SPECPATH, "*.sumocfg")):
+    if skip3d and "bs3d" in f.lower():
+        continue
+    shutil.copy(f, os.path.join(DISTPATH, 'runner'))
+    if os.path.exists(f[:-8]):
+        shutil.copytree(f[:-8], os.path.join(DISTPATH, 'runner', os.path.basename(f[:-8])))
+bs3d = os.path.join(DISTPATH, 'runner', 'bs3d')
+if os.path.exists(bs3d) and os.path.exists(r"c:\Program Files\7-Zip\7z.exe") and os.path.exists(r"s:\3D_Modell_Forschungskreuzung_BS.7z"):
+    subprocess.call(r'"c:\Program Files\7-Zip\7z.exe" x s:\3D_Modell_Forschungskreuzung_BS.7z', cwd=bs3d)
+os.mkdir(os.path.join(DISTPATH, 'runner', 'bin'))
 for o, d in datas:
     for f in glob.glob(os.path.join(SPECPATH, o)):
         if os.path.isfile(f):

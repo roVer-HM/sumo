@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,6 +20,7 @@
 #pragma once
 #include <config.h>
 
+#include <netedit/dialogs/GNEDialog.h>
 #include <utils/options/OptionsCont.h>
 
 #include "GNEPythonToolDialogElements.h"
@@ -28,7 +29,6 @@
 // class declarations
 // ===========================================================================
 
-class GNEApplicationWindow;
 class GNEPythonTool;
 class MFXCheckableButton;
 
@@ -36,11 +36,7 @@ class MFXCheckableButton;
 // class definitions
 // ===========================================================================
 
-/**
- * @class GNEPythonToolDialog
- * @brief Dialog for python tool dialog
- */
-class GNEPythonToolDialog : protected FXDialogBox {
+class GNEPythonToolDialog : protected GNEDialog {
     /// @brief FOX-declaration
     FXDECLARE(GNEPythonToolDialog)
 
@@ -49,16 +45,13 @@ class GNEPythonToolDialog : protected FXDialogBox {
 
 public:
     /// @brief Constructor
-    GNEPythonToolDialog(GNEApplicationWindow* GNEApp);
+    GNEPythonToolDialog(GNEApplicationWindow* applicationWindow, GNEPythonTool* tool);
 
     /// @brief destructor
     ~GNEPythonToolDialog();
 
-    /// @brief open dialog
-    void openDialog(GNEPythonTool* tool);
-
-    /// @brief get pointer to GNEApplicationWindow
-    GNEApplicationWindow* getGNEApplicationWindow() const;
+    /// @brief run internal test
+    void runInternalTest(const InternalTestStep::DialogArgument* dialogArgument);
 
     /// @brief get python tool
     const GNEPythonTool* getPythonTool() const;
@@ -80,9 +73,6 @@ public:
 
     /// @brief event after press run button
     long onCmdRun(FXObject*, FXSelector, void*);
-
-    /// @brief event after press cancel button
-    long onCmdCancel(FXObject*, FXSelector, void*);
 
     /// @brief event after press reset button
     long onCmdReset(FXObject*, FXSelector, void*);
@@ -118,7 +108,7 @@ protected:
     };
 
     /// @brief FOX needs this
-    GNEPythonToolDialog();
+    FOX_CONSTRUCTOR(GNEPythonToolDialog);
 
     /// @brief build arguments
     void buildArguments(bool sortByName, bool groupedByCategories);
@@ -151,9 +141,6 @@ protected:
     std::vector<GNEPythonToolDialogElements::Category*> myCategories;
 
 private:
-    /// @brief pointer to GNEApplicationWindow
-    GNEApplicationWindow* myGNEApp;
-
     /// @brief menu for tooltips menu
     MFXCheckableButton* myShowToolTipsMenu = nullptr;
 

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -37,13 +37,14 @@
 #include <utils/common/RandHelper.h>
 #include <utils/emissions/PollutantsInterface.h>
 #include <utils/geom/Boundary.h>
+#include <utils/router/FlippedEdge.h>
 #ifdef HAVE_FOX
 #include <utils/foxtools/fxheader.h>
 #endif
 #include <utils/vehicle/SUMOVTypeParameter.h>
+#include "RONet.h"
 #include "RONode.h"
 #include "ROVehicle.h"
-#include <utils/router/FlippedEdge.h>
 
 
 // ===========================================================================
@@ -78,7 +79,7 @@ public:
      * @param[in] to The node the edge ends at
      * @param[in] index The numeric id of the edge
      */
-    ROEdge(const std::string& id, RONode* from, RONode* to, int index, const int priority, const std::string& type);
+    ROEdge(const std::string& id, RONode* from, RONode* to, int index, const int priority, const std::string& type, const std::string& routingType);
 
     /** @brief Constructor for dummy edge, only used when building the connectivity graph **/
     ROEdge(const std::string& id, const RONode* from, const RONode* to, SVCPermissions p);
@@ -138,8 +139,8 @@ public:
     /** @brief Sets the vehicle class specific speed limits of the edge
      * @param[in] restrictions The restrictions for the edge
      */
-    inline void setRestrictions(const std::map<SUMOVehicleClass, double>* restrictions) {
-        myRestrictions = restrictions;
+    inline void setSpeedRestrictions(const std::map<SUMOVehicleClass, double>* restrictions) {
+        mySpeedRestrictions = restrictions;
     }
 
     inline void setTimePenalty(double value) {
@@ -244,21 +245,6 @@ public:
     // sufficient for the astar air-distance heuristic
     double getLengthGeometryFactor() const;
 
-    /** @brief Returns the lane's maximum speed, given a vehicle's speed limit adaptation
-     * @param[in] The vehicle to return the adapted speed limit for
-     * @return This lane's resulting max. speed
-     */
-    inline double getVClassMaxSpeed(SUMOVehicleClass vclass) const {
-        if (myRestrictions != 0) {
-            std::map<SUMOVehicleClass, double>::const_iterator r = myRestrictions->find(vclass);
-            if (r != myRestrictions->end()) {
-                return r->second;
-            }
-        }
-        return mySpeed;
-    }
-
-
     /** @brief Returns the number of lanes this edge has
      * @return This edge's number of lanes
      */
@@ -273,16 +259,16 @@ public:
      * @param[in] vClass The vehicle class for which the connectivity is checked
      * @return Whether the given edge is a direct successor to this one
      */
-    bool isConnectedTo(const ROEdge& e, const SUMOVehicleClass vClass) const;
+    bool isConnectedTo(const ROEdge& e, const SUMOVehicleClass vClass, bool ignoreTransientPermissions = false) const;
 
 
     /** @brief Returns whether this edge prohibits the given vehicle to pass it
      * @param[in] vehicle The vehicle for which the information has to be returned
      * @return Whether the vehicle must not enter this edge
      */
-    inline bool prohibits(const ROVehicle* const vehicle) const {
+    inline bool prohibits(const ROVehicle* const vehicle, bool checkRestrictions = false) const {
         const SUMOVehicleClass vclass = vehicle->getVClass();
-        return (myCombinedPermissions & vclass) != vclass;
+        return (myCombinedPermissions & vclass) != vclass || (checkRestrictions && restricts(vehicle));
     }
 
     inline SVCPermissions getPermissions() const {
@@ -357,6 +343,11 @@ public:
     */
     const ROConstEdgePairVector& getViaSuccessors(SUMOVehicleClass vClass = SVC_IGNORING, bool ignoreTransientPermissions = false) const;
 
+    /// @brief reset after lane permissions changes
+    void resetSuccessors() {
+        myClassesSuccessorMap.clear();
+        myClassesViaSuccessorMap.clear();
+    }
 
     /** @brief Returns the number of edges connected to this edge
      *
@@ -430,16 +421,18 @@ public:
      * @return The traveltime needed by the given vehicle to pass the edge at the given time
      */
     static inline double getTravelTimeStatic(const ROEdge* const edge, const ROVehicle* const veh, double time) {
-        return edge->getTravelTime(veh, time);
+        return edge->getTravelTime(veh, time) * getRoutingFactor(edge, veh);
     }
 
     static inline double getTravelTimeStaticRandomized(const ROEdge* const edge, const ROVehicle* const veh, double time) {
-        return edge->getTravelTime(veh, time) * RandHelper::rand(1., gWeightsRandomFactor);
+        return edge->getTravelTime(veh, time)
+               * (1 + RandHelper::randHash(veh->getRandomSeed() ^ edge->getNumericalID()) * (gWeightsRandomFactor - 1))
+               * getRoutingFactor(edge, veh);
     }
 
     /// @brief Alias for getTravelTimeStatic (there is no routing device to provide aggregated travel times)
     static inline double getTravelTimeAggregated(const ROEdge* const edge, const ROVehicle* const veh, double time) {
-        return edge->getTravelTime(veh, time);
+        return edge->getTravelTime(veh, time) * getRoutingFactor(edge, veh);
     }
 
     /// @brief Return traveltime weighted by edge priority (scaled penalty for low-priority edges)
@@ -449,8 +442,13 @@ public:
         // minimum priority receives a factor of myPriorityFactor
         const double relativeInversePrio = 1 - ((edge->getPriority() - myMinEdgePriority) / myEdgePriorityRange);
         result *= 1 + relativeInversePrio * myPriorityFactor;
-        return result;
+        return result * getRoutingFactor(edge, veh);
     }
+
+    static inline double getRoutingFactor(const ROEdge* const edge, const ROVehicle* const veh) {
+        return gRoutingPreferences ?  1 / edge->getPreference(veh->getVTypeParameter()) : 1;
+    }
+
 
     /** @brief Returns a lower bound for the travel time on this edge without using any stored timeLine
      *
@@ -461,19 +459,36 @@ public:
         if (isTazConnector()) {
             return 0;
         } else if (veh != 0) {
-            return myLength / MIN2(veh->getType()->maxSpeed, veh->getChosenSpeedFactor() * getVClassMaxSpeed(veh->getVClass()));
+            return myLength / getMaxSpeed(veh);
         } else {
             return myLength / mySpeed;
         }
     }
 
+    inline double getMaxSpeed(const RORoutable* const veh) const {
+        return MIN2(veh->getMaxSpeed(), veh->getChosenSpeedFactor() * getVClassMaxSpeed(veh->getVClass()));
+    }
+
+    /** @brief Returns the lane's maximum speed, given a vehicle's speed limit adaptation
+     * @param[in] The vehicle to return the adapted speed limit for
+     * @return This lane's resulting max. speed
+     */
+    inline double getVClassMaxSpeed(SUMOVehicleClass vclass) const {
+        if (mySpeedRestrictions != 0) {
+            std::map<SUMOVehicleClass, double>::const_iterator r = mySpeedRestrictions->find(vclass);
+            if (r != mySpeedRestrictions->end()) {
+                return r->second;
+            }
+        }
+        return mySpeed;
+    }
 
     template<PollutantsInterface::EmissionType ET>
     static double getEmissionEffort(const ROEdge* const edge, const ROVehicle* const veh, double time) {
         double ret = 0;
         if (!edge->getStoredEffort(time, ret)) {
             const SUMOVTypeParameter* const type = veh->getType();
-            const double vMax = MIN2(type->maxSpeed, edge->getVClassMaxSpeed(veh->getVClass()));
+            const double vMax = edge->getMaxSpeed(veh);
             const double accel = type->getCFParam(SUMO_ATTR_ACCEL, SUMOVTypeParameter::getDefaultAccel(type->vehicleClass)) * type->getCFParam(SUMO_ATTR_SIGMA, SUMOVTypeParameter::getDefaultImperfection(type->vehicleClass)) / 2.;
             ret = PollutantsInterface::computeDefault(type->emissionClass, ET, vMax, accel, 0, edge->getTravelTime(veh, time), nullptr); // @todo: give correct slope
         }
@@ -509,6 +524,11 @@ public:
     /// @brief return the coordinates of the center of the given stop
     static const Position getStopPosition(const SUMOVehicleParameter::Stop& stop);
 
+    /// @brief return loaded edge preference based on routingType
+    inline double getPreference(const SUMOVTypeParameter& pars) const {
+        return RONet::getInstance()->getPreference(getRoutingType(), pars);
+    }
+
     /// @brief get edge priority (road class)
     int getPriority() const {
         return myPriority;
@@ -517,6 +537,10 @@ public:
     /// @brief get edge type
     const std::string& getType() const {
         return myType;
+    }
+
+    const std::string& getRoutingType() const {
+        return myRoutingType.empty() ? myType : myRoutingType;
     }
 
     const RONode* getFromJunction() const {
@@ -585,8 +609,6 @@ protected:
      */
     bool getStoredEffort(double time, double& ret) const;
 
-
-
 protected:
     /// @brief the junctions for this edge
     RONode* myFromJunction;
@@ -600,6 +622,9 @@ protected:
 
     /// @brief the type of this edge
     const std::string myType;
+
+    /// @brief the routing type of the edge (used to look up vType and vClass specific routing preferences)
+    const std::string myRoutingType;
 
     /// @brief The maximum speed allowed on this edge
     double mySpeed;
@@ -639,7 +664,7 @@ protected:
     SumoXMLEdgeFunc myFunction;
 
     /// The vClass speed restrictions for this edge
-    const std::map<SUMOVehicleClass, double>* myRestrictions;
+    const std::map<SUMOVehicleClass, double>* mySpeedRestrictions;
 
     /// @brief This edge's lanes
     std::vector<ROLane*> myLanes;

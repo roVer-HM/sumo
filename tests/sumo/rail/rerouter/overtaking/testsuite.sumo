@@ -37,6 +37,7 @@ follower_delay_low
 
 # no detour needed
 leader_high_prio
+leader_shortRoute
 
 # no detour needed if the fast train has already entered the main section
 fast_entered
@@ -46,3 +47,15 @@ fast_past
 
 # no detour needed if the fast train has already left the simulation
 fast_past_gone
+
+# use the second siding if it can be reached before the overtaking train arrives
+secondSiding
+
+# use the third siding if it can be reached before the overtaking train arrives
+thirdSiding
+
+# use the second siding if it can be reached before the overtaking train arrives
+secondSiding_defer
+
+# use the third siding if it can be reached before the overtaking train arrives
+thirdSiding_defer

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2020-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2020-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -32,7 +32,7 @@
 #include "sumo2fmi_bridge.h"
 
 /* Explicit definition of unused parameters to avoid compiler warnings */
-#define UNREFERENCED_PARAMETER(P) (P)
+#define UNUSED_PARAMETER(x)  ((void)(x))
 
 #define BUFFER_SIZE 256
 
@@ -105,7 +105,7 @@ sumo2fmi_logMessage(ModelInstance* comp, int status, const char* category, const
 // Retrieve the integer value for a single variable
 fmi2Status
 sumo2fmi_getInteger(ModelInstance* comp, const fmi2ValueReference vr, int* value) {
-    UNREFERENCED_PARAMETER(comp);
+    UNUSED_PARAMETER(comp);
 
     switch (vr) {
         case 2:
@@ -162,7 +162,7 @@ sumo2fmi_setString(ModelInstance* comp, fmi2ValueReference vr, fmi2String value)
 
 fmi2Status
 sumo2fmi_step(ModelInstance* comp, double tNext) {
-    UNREFERENCED_PARAMETER(comp);
+    UNUSED_PARAMETER(comp);
 
     libsumo_step(tNext);
     return fmi2OK;

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -18,13 +18,9 @@
 // Helper for GNENet
 /****************************************************************************/
 
-
 #include <netbuild/NBNetBuilder.h>
-#include <netedit/GNEApplicationWindow.h>
-#include <netedit/GNENet.h>
-#include <netedit/GNETagPropertiesDatabase.h>
-#include <netedit/GNEViewNet.h>
-#include <netedit/GNEViewParent.h>
+#include <netedit/dialogs/basic/GNEQuestionBasicDialog.h>
+#include <netedit/dialogs/GNESaveDialog.h>
 #include <netedit/elements/additional/GNEAccess.h>
 #include <netedit/elements/additional/GNEBusStop.h>
 #include <netedit/elements/additional/GNECalibrator.h>
@@ -40,16 +36,16 @@
 #include <netedit/elements/additional/GNELaneAreaDetector.h>
 #include <netedit/elements/additional/GNEMultiEntryExitDetector.h>
 #include <netedit/elements/additional/GNEOverheadWire.h>
-#include <netedit/elements/additional/GNEPOI.h>
 #include <netedit/elements/additional/GNEParkingArea.h>
 #include <netedit/elements/additional/GNEParkingAreaReroute.h>
 #include <netedit/elements/additional/GNEParkingSpace.h>
+#include <netedit/elements/additional/GNEPOI.h>
 #include <netedit/elements/additional/GNEPoly.h>
 #include <netedit/elements/additional/GNERerouter.h>
 #include <netedit/elements/additional/GNERerouterInterval.h>
 #include <netedit/elements/additional/GNERerouterSymbol.h>
-#include <netedit/elements/additional/GNERouteProbReroute.h>
 #include <netedit/elements/additional/GNERouteProbe.h>
+#include <netedit/elements/additional/GNERouteProbReroute.h>
 #include <netedit/elements/additional/GNETAZ.h>
 #include <netedit/elements/additional/GNETAZSourceSink.h>
 #include <netedit/elements/additional/GNETractionSubstation.h>
@@ -58,22 +54,25 @@
 #include <netedit/elements/additional/GNEVariableSpeedSignStep.h>
 #include <netedit/elements/additional/GNEVariableSpeedSignSymbol.h>
 #include <netedit/elements/data/GNEDataInterval.h>
+#include <netedit/elements/data/GNEEdgeData.h>
+#include <netedit/elements/data/GNEEdgeRelData.h>
 #include <netedit/elements/data/GNEMeanData.h>
+#include <netedit/elements/data/GNETAZRelData.h>
 #include <netedit/elements/demand/GNEContainer.h>
 #include <netedit/elements/demand/GNEPerson.h>
 #include <netedit/elements/demand/GNEPersonTrip.h>
 #include <netedit/elements/demand/GNERide.h>
 #include <netedit/elements/demand/GNERoute.h>
+#include <netedit/elements/demand/GNERouteDistribution.h>
 #include <netedit/elements/demand/GNERouteRef.h>
-#include <netedit/elements/demand/GNEVTypeRef.h>
 #include <netedit/elements/demand/GNEStop.h>
 #include <netedit/elements/demand/GNEStopPlan.h>
 #include <netedit/elements/demand/GNETranship.h>
 #include <netedit/elements/demand/GNETransport.h>
+#include <netedit/elements/demand/GNEVehicle.h>
 #include <netedit/elements/demand/GNEVType.h>
 #include <netedit/elements/demand/GNEVTypeDistribution.h>
-#include <netedit/elements/demand/GNERouteDistribution.h>
-#include <netedit/elements/demand/GNEVehicle.h>
+#include <netedit/elements/demand/GNEVTypeRef.h>
 #include <netedit/elements/demand/GNEWalk.h>
 #include <netedit/elements/network/GNEConnection.h>
 #include <netedit/elements/network/GNECrossing.h>
@@ -81,8 +80,6 @@
 #include <netedit/elements/network/GNEEdgeType.h>
 #include <netedit/elements/network/GNEInternalLane.h>
 #include <netedit/elements/network/GNEWalkingArea.h>
-#include <netedit/frames/GNEDemandSelector.h>
-#include <netedit/frames/GNEElementTree.h>
 #include <netedit/frames/common/GNEInspectorFrame.h>
 #include <netedit/frames/demand/GNEContainerFrame.h>
 #include <netedit/frames/demand/GNEContainerPlanFrame.h>
@@ -93,10 +90,16 @@
 #include <netedit/frames/demand/GNETypeDistributionFrame.h>
 #include <netedit/frames/demand/GNETypeFrame.h>
 #include <netedit/frames/demand/GNEVehicleFrame.h>
+#include <netedit/frames/GNEDemandSelector.h>
+#include <netedit/frames/GNEElementTree.h>
 #include <netedit/frames/network/GNECreateEdgeFrame.h>
+#include <netedit/GNEApplicationWindow.h>
+#include <netedit/GNENet.h>
+#include <netedit/GNETagPropertiesDatabase.h>
+#include <netedit/GNEViewNet.h>
+#include <netedit/GNEViewParent.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
 #include <utils/gui/globjects/GUIGlObjectStorage.h>
-#include <utils/gui/globjects/GUISaveDialog.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/xml/NamespaceIDs.h>
 
@@ -1312,6 +1315,28 @@ GNENetHelper::AttributeCarriers::getNumberOfSelectedPOIs() const {
 }
 
 
+std::vector<std::string>
+GNENetHelper::AttributeCarriers::getPOIParamKeys() const {
+    std::set<std::string> keys;
+    for (const auto& POI : myAdditionals.at(SUMO_TAG_POI)) {
+        for (const auto& parameter : POI.second->getParameters()->getParametersMap()) {
+            keys.insert(parameter.first);
+        }
+    }
+    for (const auto& POILane : myAdditionals.at(GNE_TAG_POILANE)) {
+        for (const auto& parameter : POILane.second->getParameters()->getParametersMap()) {
+            keys.insert(parameter.first);
+        }
+    }
+    for (const auto& POIGEO : myAdditionals.at(GNE_TAG_POIGEO)) {
+        for (const auto& parameter : POIGEO.second->getParameters()->getParametersMap()) {
+            keys.insert(parameter.first);
+        }
+    }
+    return std::vector<std::string>(keys.begin(), keys.end());
+}
+
+
 int
 GNENetHelper::AttributeCarriers::getNumberOfSelectedTAZs() const {
     int counter = 0;
@@ -1562,46 +1587,73 @@ GNENetHelper::AttributeCarriers::updateDemandElementID(GNEDemandElement* demandE
 
 void
 GNENetHelper::AttributeCarriers::addDefaultVTypes() {
+    // get default bucket
+    auto bucket = myNet->getGNEApplicationWindow()->getFileBucketHandler()->getDefaultBucket(FileBucket::Type::DEMAND);
     // Create default vehicle Type (it has to be created here due myViewNet was previously nullptr)
-    GNEVType* defaultVehicleType = new GNEVType(DEFAULT_VTYPE_ID, myNet, SVC_PASSENGER);
+    GNEVType* defaultVehicleType = new GNEVType(DEFAULT_VTYPE_ID, myNet, bucket, SVC_PASSENGER);
     myDemandElements.at(defaultVehicleType->getTagProperty()->getTag()).insert(std::make_pair(defaultVehicleType->getGUIGlObject(), defaultVehicleType));
     myDemandElementIDs.at(defaultVehicleType->getTagProperty()->getTag()).insert(std::make_pair(defaultVehicleType->getID(), defaultVehicleType));
     defaultVehicleType->incRef("GNENet::DEFAULT_VEHTYPE");
+    bucket->addDefaultVType();
 
     // Create default Bike Type (it has to be created here due myViewNet was previously nullptr)
-    GNEVType* defaultBikeType = new GNEVType(DEFAULT_BIKETYPE_ID, myNet, SVC_BICYCLE);
+    GNEVType* defaultBikeType = new GNEVType(DEFAULT_BIKETYPE_ID, myNet, bucket, SVC_BICYCLE);
     myDemandElements.at(defaultBikeType->getTagProperty()->getTag()).insert(std::make_pair(defaultBikeType->getGUIGlObject(), defaultBikeType));
     myDemandElementIDs.at(defaultBikeType->getTagProperty()->getTag()).insert(std::make_pair(defaultBikeType->getID(), defaultBikeType));
     defaultBikeType->parametersSet |= VTYPEPARS_VEHICLECLASS_SET;
     defaultBikeType->incRef("GNENet::DEFAULT_BIKETYPE_ID");
+    bucket->addDefaultVType();
 
     // Create default taxi Type (it has to be created here due myViewNet was previously nullptr)
-    GNEVType* defaultTaxiType = new GNEVType(DEFAULT_TAXITYPE_ID, myNet, SVC_TAXI);
+    GNEVType* defaultTaxiType = new GNEVType(DEFAULT_TAXITYPE_ID, myNet, bucket, SVC_TAXI);
     myDemandElements.at(defaultTaxiType->getTagProperty()->getTag()).insert(std::make_pair(defaultTaxiType->getGUIGlObject(), defaultTaxiType));
     myDemandElementIDs.at(defaultTaxiType->getTagProperty()->getTag()).insert(std::make_pair(defaultTaxiType->getID(), defaultTaxiType));
     defaultTaxiType->parametersSet |= VTYPEPARS_VEHICLECLASS_SET;
     defaultTaxiType->incRef("GNENet::DEFAULT_TAXITYPE_ID");
+    bucket->addDefaultVType();
 
     // Create default rail Type (it has to be created here due myViewNet was previously nullptr)
-    GNEVType* defaultRailType = new GNEVType(DEFAULT_RAILTYPE_ID, myNet, SVC_RAIL);
+    GNEVType* defaultRailType = new GNEVType(DEFAULT_RAILTYPE_ID, myNet, bucket, SVC_RAIL);
     myDemandElements.at(defaultRailType->getTagProperty()->getTag()).insert(std::make_pair(defaultRailType->getGUIGlObject(), defaultRailType));
     myDemandElementIDs.at(defaultRailType->getTagProperty()->getTag()).insert(std::make_pair(defaultRailType->getID(), defaultRailType));
     defaultRailType->parametersSet |= VTYPEPARS_VEHICLECLASS_SET;
     defaultRailType->incRef("GNENet::DEFAULT_RAILTYPE_ID");
+    bucket->addDefaultVType();
 
     // Create default person Type (it has to be created here due myViewNet was previously nullptr)
-    GNEVType* defaultPersonType = new GNEVType(DEFAULT_PEDTYPE_ID, myNet, SVC_PEDESTRIAN);
+    GNEVType* defaultPersonType = new GNEVType(DEFAULT_PEDTYPE_ID, myNet, bucket, SVC_PEDESTRIAN);
     myDemandElements.at(defaultPersonType->getTagProperty()->getTag()).insert(std::make_pair(defaultPersonType->getGUIGlObject(), defaultPersonType));
     myDemandElementIDs.at(defaultPersonType->getTagProperty()->getTag()).insert(std::make_pair(defaultPersonType->getID(), defaultPersonType));
     defaultPersonType->parametersSet |= VTYPEPARS_VEHICLECLASS_SET;
     defaultPersonType->incRef("GNENet::DEFAULT_PEDTYPE_ID");
+    bucket->addDefaultVType();
 
     // Create default container Type (it has to be created here due myViewNet was previously nullptr)
-    GNEVType* defaultContainerType = new GNEVType(DEFAULT_CONTAINERTYPE_ID, myNet, SVC_IGNORING);
+    GNEVType* defaultContainerType = new GNEVType(DEFAULT_CONTAINERTYPE_ID, myNet, bucket, SVC_IGNORING);
     myDemandElements.at(defaultContainerType->getTagProperty()->getTag()).insert(std::make_pair(defaultContainerType->getGUIGlObject(), defaultContainerType));
     myDemandElementIDs.at(defaultContainerType->getTagProperty()->getTag()).insert(std::make_pair(defaultContainerType->getID(), defaultContainerType));
     defaultContainerType->parametersSet |= VTYPEPARS_VEHICLECLASS_SET;
     defaultContainerType->incRef("GNENet::DEFAULT_CONTAINERTYPE_ID");
+    bucket->addDefaultVType();
+}
+
+
+bool
+GNENetHelper::AttributeCarriers::requireJunctionTazOption() const {
+    if (myDemandElements.at(GNE_TAG_TRIP_JUNCTIONS).size() > 0) {
+        return true;
+    } else if (myDemandElements.at(GNE_TAG_FLOW_JUNCTIONS).size() > 0) {
+        return true;
+    } else {
+        // iterate over all tags and check if start or ends in junctions
+        for (const auto& mapValue : myDemandElements) {
+            const auto tagProperty = myNet->getTagPropertiesDatabase()->getTagProperty(mapValue.first, true);
+            if ((tagProperty->planFromJunction() || tagProperty->planToJunction()) && (myDemandElements.at(tagProperty->getTag()).size() > 0)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 
@@ -1979,7 +2031,7 @@ GNENetHelper::AttributeCarriers::deleteDataInterval(GNEDataInterval* dataInterva
     // remove it from inspected elements and GNEElementTree
     myNet->getViewNet()->getInspectedElements().uninspectAC(dataInterval);
     dataInterval->unmarkForDrawingFront();
-    myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(dataInterval);
+    myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(dataInterval);
     // mark interval toolbar for update
     myNet->getViewNet()->getIntervalBar().markForUpdate();
 }
@@ -2112,7 +2164,7 @@ GNENetHelper::AttributeCarriers::deleteGenericData(GNEGenericData* genericData) 
     // remove it from inspected elements and GNEElementTree
     myNet->getViewNet()->getInspectedElements().uninspectAC(genericData);
     genericData->unmarkForDrawingFront();
-    myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(genericData);
+    myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(genericData);
     // delete path element
     myNet->getDataPathManager()->removePath(genericData);
     // mark interval toolbar for update
@@ -2302,7 +2354,7 @@ GNENetHelper::AttributeCarriers::deleteSingleJunction(GNEJunction* junction) {
     // remove it from inspected elements and GNEElementTree
     myNet->getViewNet()->getInspectedElements().uninspectAC(junction);
     junction->unmarkForDrawingFront();
-    myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(junction);
+    myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(junction);
     // Remove from grid and container
     myNet->removeGLObjectFromGrid(junction);
     myJunctions.erase(junction->getMicrosimID());
@@ -2316,13 +2368,13 @@ GNENetHelper::AttributeCarriers::deleteSingleJunction(GNEJunction* junction) {
 void
 GNENetHelper::AttributeCarriers::insertEdgeType(GNEEdgeType* edgeType) {
     // get pointer to create edge frame
-    const auto& createEdgeFrame = myNet->getViewNet()->getViewParent()->getCreateEdgeFrame();
+    const auto& createEdgeFrame = myNet->getViewParent()->getCreateEdgeFrame();
     // insert in myEdgeTypes
     myEdgeTypes[edgeType->getMicrosimID()] = edgeType;
     myNumberOfNetworkElements++;
     // update edge selector
-    if (myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->shown()) {
-        myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->getEdgeTypeSelector()->refreshEdgeTypeSelector();
+    if (myNet->getViewParent()->getCreateEdgeFrame()->shown()) {
+        myNet->getViewParent()->getCreateEdgeFrame()->getEdgeTypeSelector()->refreshEdgeTypeSelector();
     }
     // set current edge type inspected
     createEdgeFrame->getEdgeTypeSelector()->setCurrentEdgeType(edgeType);
@@ -2332,11 +2384,11 @@ GNENetHelper::AttributeCarriers::insertEdgeType(GNEEdgeType* edgeType) {
 void
 GNENetHelper::AttributeCarriers::deleteEdgeType(GNEEdgeType* edgeType) {
     // get pointer to create edge frame
-    const auto& createEdgeFrame = myNet->getViewNet()->getViewParent()->getCreateEdgeFrame();
+    const auto& createEdgeFrame = myNet->getViewParent()->getCreateEdgeFrame();
     // remove it from inspected elements and GNEElementTree
     myNet->getViewNet()->getInspectedElements().uninspectAC(edgeType);
     edgeType->unmarkForDrawingFront();
-    myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(edgeType);
+    myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(edgeType);
     // remove from edge types
     myEdgeTypes.erase(edgeType->getMicrosimID());
     myNumberOfNetworkElements--;
@@ -2366,7 +2418,7 @@ GNENetHelper::AttributeCarriers::deleteSingleEdge(GNEEdge* edge) {
     // remove it from inspected elements and GNEElementTree
     myNet->getViewNet()->getInspectedElements().uninspectAC(edge);
     edge->unmarkForDrawingFront();
-    myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(edge);
+    myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(edge);
     // remove edge from visual grid and container
     myNet->removeGLObjectFromGrid(edge);
     myEdges.erase(edge->getMicrosimID());
@@ -2386,7 +2438,7 @@ GNENetHelper::AttributeCarriers::deleteSingleEdge(GNEEdge* edge) {
     edge->getFromJunction()->updateCenteringBoundary(true);
     edge->getToJunction()->updateCenteringBoundary(true);
     // get template editor
-    GNEInspectorFrame::TemplateEditor* templateEditor = myNet->getViewNet()->getViewParent()->getInspectorFrame()->getTemplateEditor();
+    GNEInspectorFrame::TemplateEditor* templateEditor = myNet->getViewParent()->getInspectorFrame()->getTemplateEditor();
     // check if we have to remove template
     if (templateEditor->getEdgeTemplate() && (templateEditor->getEdgeTemplate()->getID() == edge->getID())) {
         templateEditor->setEdgeTemplate(nullptr);
@@ -2416,7 +2468,7 @@ GNENetHelper::AttributeCarriers::deleteLane(GNELane* lane) {
         // remove it from inspected elements and GNEElementTree
         myNet->getViewNet()->getInspectedElements().uninspectAC(lane);
         lane->unmarkForDrawingFront();
-        myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(lane);
+        myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(lane);
     }
 }
 
@@ -2444,7 +2496,7 @@ GNENetHelper::AttributeCarriers::deleteCrossing(GNECrossing* crossing) {
         if (myNet->getViewNet()) {
             myNet->getViewNet()->getInspectedElements().uninspectAC(crossing);
             crossing->unmarkForDrawingFront();
-            myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(crossing);
+            myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(crossing);
         }
     }
 }
@@ -2472,7 +2524,7 @@ GNENetHelper::AttributeCarriers::deleteWalkingArea(GNEWalkingArea* walkingArea) 
         // remove it from inspected elements and GNEElementTree
         myNet->getViewNet()->getInspectedElements().uninspectAC(walkingArea);
         walkingArea->unmarkForDrawingFront();
-        myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(walkingArea);
+        myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(walkingArea);
     }
 }
 
@@ -2499,7 +2551,7 @@ GNENetHelper::AttributeCarriers::deleteConnection(GNEConnection* connection) {
         // remove it from inspected elements and GNEElementTree
         myNet->getViewNet()->getInspectedElements().uninspectAC(connection);
         connection->unmarkForDrawingFront();
-        myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(connection);
+        myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(connection);
     }
 }
 
@@ -2539,10 +2591,10 @@ GNENetHelper::AttributeCarriers::insertAdditional(GNEAdditional* additional) {
             myAdditionalIDs.at(tag)[additional->getID()] = additional;
         }
         myNumberOfNetworkElements++;
+        // insert AC in fileBucket (use this function ton maintain integrity in options)
+        myNet->getGNEApplicationWindow()->getFileBucketHandler()->registerAC(additional);
         // add element in grid
-        if (additional->getTagProperty()->isPlacedInRTree()) {
-            myNet->addGLObjectIntoGrid(additional);
-        }
+        myNet->addGLObjectIntoGrid(additional);
         // update geometry after insertion of additionals if myUpdateGeometryEnabled is enabled
         if (myNet->isUpdateGeometryEnabled()) {
             additional->updateGeometry();
@@ -2568,14 +2620,14 @@ GNENetHelper::AttributeCarriers::deleteAdditional(GNEAdditional* additional) {
             myAdditionalIDs.at(tag).erase(myAdditionalIDs.at(tag).find(additional->getID()));
         }
         myNumberOfNetworkElements--;
+        // remove AC from fileBucket (use this function ton maintain integrity in options)
+        myNet->getGNEApplicationWindow()->getFileBucketHandler()->unregisterAC(additional);
         // remove it from inspected elements and GNEElementTree
         myNet->getViewNet()->getInspectedElements().uninspectAC(additional);
         additional->unmarkForDrawingFront();
-        myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(additional);
+        myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(additional);
         // remove element from grid
-        if (additional->getTagProperty()->isPlacedInRTree()) {
-            myNet->removeGLObjectFromGrid(additional);
-        }
+        myNet->removeGLObjectFromGrid(additional);
         // delete path element
         myNet->getNetworkPathManager()->removePath(additional);
         // additionals has to be saved
@@ -2594,6 +2646,8 @@ GNENetHelper::AttributeCarriers::insertTAZSourceSink(GNETAZSourceSink* sourceSin
     } else {
         myTAZSourceSinks.at(sourceSinkTag)[sourceSink] = sourceSink;
         myNumberOfNetworkElements++;
+        // insert AC in fileBucket (use this function ton maintain integrity in options)
+        myNet->getGNEApplicationWindow()->getFileBucketHandler()->registerAC(sourceSink);
         // additionals has to be saved
         myNet->getSavingStatus()->requireSaveAdditionals();
     }
@@ -2612,10 +2666,12 @@ GNENetHelper::AttributeCarriers::deleteTAZSourceSink(GNETAZSourceSink* sourceSin
         // remove from both container
         myTAZSourceSinks.at(tag).erase(itFind);
         myNumberOfNetworkElements--;
+        // remove AC from fileBucket (use this function ton maintain integrity in options)
+        myNet->getGNEApplicationWindow()->getFileBucketHandler()->unregisterAC(sourceSink);
         // remove it from inspected elements and GNEElementTree
         myNet->getViewNet()->getInspectedElements().uninspectAC(sourceSink);
         sourceSink->unmarkForDrawingFront();
-        myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(sourceSink);
+        myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(sourceSink);
         // additionals has to be saved
         myNet->getSavingStatus()->requireSaveAdditionals();
     }
@@ -2629,10 +2685,12 @@ GNENetHelper::AttributeCarriers::insertDemandElement(GNEDemandElement* demandEle
         throw ProcessError(demandElement->getTagStr() + " with ID='" + demandElement->getID() + "' already exist");
     } else {
         myDemandElements.at(tag)[demandElement->getGUIGlObject()] = demandElement;
-        myNumberOfDemandElements++;
         if (demandElement->getTagProperty()->hasAttribute(SUMO_ATTR_ID)) {
             myDemandElementIDs.at(tag)[demandElement->getID()] = demandElement;
         }
+        myNumberOfDemandElements++;
+        // insert AC in fileBucket (use this function ton maintain integrity in options)
+        myNet->getGNEApplicationWindow()->getFileBucketHandler()->registerAC(demandElement);
         // add element in grid
         myNet->addGLObjectIntoGrid(demandElement);
         // update geometry after insertion of demandElements if myUpdateGeometryEnabled is enabled
@@ -2654,7 +2712,7 @@ GNENetHelper::AttributeCarriers::insertDemandElement(GNEDemandElement* demandEle
 void
 GNENetHelper::AttributeCarriers::deleteDemandElement(GNEDemandElement* demandElement, const bool updateFrames) {
     const auto tag = demandElement->getTagProperty()->getTag();
-    auto viewParent = myNet->getViewNet()->getViewParent();
+    auto viewParent = myNet->getViewParent();
     // find demanElement in demandElementTag
     auto itFind = myDemandElements.at(tag).find(demandElement->getGUIGlObject());
     // check if demandElement was previously inserted
@@ -2667,20 +2725,13 @@ GNENetHelper::AttributeCarriers::deleteDemandElement(GNEDemandElement* demandEle
             myDemandElementIDs.at(tag).erase(myDemandElementIDs.at(tag).find(demandElement->getID()));
         }
         myNumberOfDemandElements--;
+        // remove AC from fileBucket (use this function ton maintain integrity in options)
+        myNet->getGNEApplicationWindow()->getFileBucketHandler()->unregisterAC(demandElement);
         // remove element from grid
         myNet->removeGLObjectFromGrid(demandElement);
         // remove it from inspected elements and GNEElementTree
         myNet->getViewNet()->getInspectedElements().uninspectAC(demandElement);
         demandElement->unmarkForDrawingFront();
-        viewParent->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(demandElement);
-        viewParent->getPersonPlanFrame()->getPersonHierarchy()->removeCurrentEditedAttributeCarrier(demandElement);
-        viewParent->getContainerPlanFrame()->getContainerHierarchy()->removeCurrentEditedAttributeCarrier(demandElement);
-        if (viewParent->getRouteDistributionFrame()->getDistributionSelector()->getCurrentDistribution() == demandElement) {
-            viewParent->getRouteDistributionFrame()->getDistributionSelector()->setDistribution(nullptr);
-        }
-        if (viewParent->getTypeDistributionFrame()->getDistributionSelector()->getCurrentDistribution() == demandElement) {
-            viewParent->getTypeDistributionFrame()->getDistributionSelector()->setDistribution(nullptr);
-        }
         // if is the last inserted route, remove it from GNEViewNet
         if (myNet->getViewNet()->getLastCreatedRoute() == demandElement) {
             myNet->getViewNet()->setLastCreatedRoute(nullptr);
@@ -2690,6 +2741,23 @@ GNENetHelper::AttributeCarriers::deleteDemandElement(GNEDemandElement* demandEle
         // check if update demand elements frames
         if (updateFrames) {
             updateDemandElementFrames(demandElement->getTagProperty());
+            viewParent->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(demandElement);
+            viewParent->getPersonPlanFrame()->getPersonHierarchy()->removeCurrentEditedAttributeCarrier(demandElement);
+            viewParent->getContainerPlanFrame()->getContainerHierarchy()->removeCurrentEditedAttributeCarrier(demandElement);
+            // update distribution frames
+            if (viewParent->getRouteDistributionFrame()->getDistributionSelector()->getCurrentDistribution() == demandElement) {
+                viewParent->getRouteDistributionFrame()->getDistributionSelector()->setDistribution(nullptr);
+            }
+            if (viewParent->getTypeDistributionFrame()->getDistributionSelector()->getCurrentDistribution() == demandElement) {
+                viewParent->getTypeDistributionFrame()->getDistributionSelector()->setDistribution(nullptr);
+            }
+            // special case for distribution references
+            if (demandElement->getTagProperty()->getTag() == GNE_TAG_VTYPEREF) {
+                viewParent->getTypeDistributionFrame()->getDistributionValuesEditor()->refreshRows();
+            }
+            if (demandElement->getTagProperty()->getTag() == GNE_TAG_ROUTEREF) {
+                viewParent->getRouteDistributionFrame()->getDistributionValuesEditor()->refreshRows();
+            }
         }
         // demandElements has to be saved
         myNet->getSavingStatus()->requireSaveDemandElements();
@@ -2704,6 +2772,8 @@ GNENetHelper::AttributeCarriers::insertDataSet(GNEDataSet* dataSet) {
     } else {
         myDataSets[dataSet->getID()] = dataSet;
         myNumberOfDataElements++;
+        // insert AC in fileBucket (use this function ton maintain integrity in options)
+        myNet->getGNEApplicationWindow()->getFileBucketHandler()->registerAC(dataSet);
         // dataSets has to be saved
         myNet->getSavingStatus()->requireSaveDataElements();
         // mark interval toolbar for update
@@ -2720,10 +2790,12 @@ GNENetHelper::AttributeCarriers::deleteDataSet(GNEDataSet* dataSet) {
     } else {
         myDataSets.erase(finder);
         myNumberOfDataElements--;
+        // remove AC from fileBucket (use this function ton maintain integrity in options)
+        myNet->getGNEApplicationWindow()->getFileBucketHandler()->unregisterAC(dataSet);
         // remove it from inspected elements and GNEElementTree
         myNet->getViewNet()->getInspectedElements().uninspectAC(dataSet);
         dataSet->unmarkForDrawingFront();
-        myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(dataSet);
+        myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(dataSet);
         // dataSets has to be saved
         myNet->getSavingStatus()->requireSaveDataElements();
         // mark interval toolbar for update
@@ -2739,6 +2811,8 @@ GNENetHelper::AttributeCarriers::insertMeanData(GNEMeanData* meanData) {
     } else {
         myMeanDatas.at(meanData->getTagProperty()->getTag()).insert(std::make_pair(meanData->getID(), meanData));
         myNumberOfMeanDataElements++;
+        // insert AC in fileBucket (use this function ton maintain integrity in options)
+        myNet->getGNEApplicationWindow()->getFileBucketHandler()->registerAC(meanData);
         // meanDatas has to be saved
         myNet->getSavingStatus()->requireSaveMeanDatas();
     }
@@ -2756,14 +2830,14 @@ GNENetHelper::AttributeCarriers::deleteMeanData(GNEMeanData* meanData) {
         // remove from container
         myMeanDatas.at(meanData->getTagProperty()->getTag()).erase(itFind);
         myNumberOfMeanDataElements--;
+        // remove AC from fileBucket (use this function ton maintain integrity in options)
+        myNet->getGNEApplicationWindow()->getFileBucketHandler()->unregisterAC(meanData);
         // remove it from inspected elements and GNEElementTree
         myNet->getViewNet()->getInspectedElements().uninspectAC(meanData);
         meanData->unmarkForDrawingFront();
-        myNet->getViewNet()->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(meanData);
+        myNet->getViewParent()->getInspectorFrame()->getHierarchicalElementTree()->removeCurrentEditedAttributeCarrier(meanData);
         // remove element from grid
-        if (meanData->getTagProperty()->isPlacedInRTree()) {
-            myNet->removeGLObjectFromGrid(meanData);
-        }
+        myNet->removeGLObjectFromGrid(meanData);
         // meanDatas has to be saved
         myNet->getSavingStatus()->requireSaveMeanDatas();
     }
@@ -2777,46 +2851,46 @@ GNENetHelper::AttributeCarriers::updateDemandElementFrames(const GNETagPropertie
         switch (myNet->getViewNet()->getEditModes().demandEditMode) {
             case DemandEditMode::DEMAND_VEHICLE:
                 if (tagProperty->isType()) {
-                    myNet->getViewNet()->getViewParent()->getVehicleFrame()->getTypeSelector()->refreshDemandElementSelector();
+                    myNet->getViewParent()->getVehicleFrame()->getTypeSelector()->refreshDemandElementSelector();
                 }
                 break;
             case DemandEditMode::DEMAND_TYPE:
                 if (tagProperty->isType()) {
-                    myNet->getViewNet()->getViewParent()->getTypeFrame()->getTypeSelector()->refreshTypeSelector(true);
+                    myNet->getViewParent()->getTypeFrame()->getTypeSelector()->refreshTypeSelector(true);
                 }
                 break;
             case DemandEditMode::DEMAND_TYPEDISTRIBUTION:
                 if (tagProperty->isType()) {
-                    myNet->getViewNet()->getViewParent()->getTypeDistributionFrame()->getDistributionSelector()->refreshDistributionSelector();
+                    myNet->getViewParent()->getTypeDistributionFrame()->getDistributionSelector()->refreshDistributionSelector();
                 }
                 break;
             case DemandEditMode::DEMAND_ROUTEDISTRIBUTION:
                 if (tagProperty->isRoute()) {
-                    myNet->getViewNet()->getViewParent()->getRouteDistributionFrame()->getDistributionSelector()->refreshDistributionSelector();
+                    myNet->getViewParent()->getRouteDistributionFrame()->getDistributionSelector()->refreshDistributionSelector();
                 }
                 break;
             case DemandEditMode::DEMAND_PERSON:
                 if (tagProperty->isType()) {
-                    myNet->getViewNet()->getViewParent()->getPersonFrame()->getTypeSelector()->refreshDemandElementSelector();
+                    myNet->getViewParent()->getPersonFrame()->getTypeSelector()->refreshDemandElementSelector();
                 }
                 break;
             case DemandEditMode::DEMAND_PERSONPLAN:
                 if (tagProperty->isPerson()) {
-                    myNet->getViewNet()->getViewParent()->getPersonPlanFrame()->getPersonSelector()->refreshDemandElementSelector();
+                    myNet->getViewParent()->getPersonPlanFrame()->getPersonSelector()->refreshDemandElementSelector();
                 }
                 break;
             case DemandEditMode::DEMAND_CONTAINER:
                 if (tagProperty->isType()) {
-                    myNet->getViewNet()->getViewParent()->getContainerFrame()->getTypeSelector()->refreshDemandElementSelector();
+                    myNet->getViewParent()->getContainerFrame()->getTypeSelector()->refreshDemandElementSelector();
                 }
                 break;
             case DemandEditMode::DEMAND_CONTAINERPLAN:
                 if (tagProperty->isContainer()) {
-                    myNet->getViewNet()->getViewParent()->getContainerPlanFrame()->getContainerSelector()->refreshDemandElementSelector();
+                    myNet->getViewParent()->getContainerPlanFrame()->getContainerSelector()->refreshDemandElementSelector();
                 }
                 break;
             case DemandEditMode::DEMAND_STOP:
-                myNet->getViewNet()->getViewParent()->getStopFrame()->getStopParentSelector()->refreshDemandElementSelector();
+                myNet->getViewParent()->getStopFrame()->getStopParentSelector()->refreshDemandElementSelector();
                 break;
             default:
                 // nothing to update
@@ -2925,6 +2999,9 @@ void
 GNENetHelper::ACTemplate::buildTemplates() {
     // network
     myTemplates[SUMO_TAG_CROSSING] = new GNECrossing(myNet);
+    // special case for edge type
+    myEdgeType = new GNEEdgeType(myNet);
+    myTemplates[SUMO_TAG_TYPE] = myEdgeType;
     // additionals
     myTemplates[SUMO_TAG_BUS_STOP] = GNEBusStop::buildBusStop(myNet);
     myTemplates[SUMO_TAG_TRAIN_STOP] = GNEBusStop::buildTrainStop(myNet);
@@ -2974,18 +3051,13 @@ GNENetHelper::ACTemplate::buildTemplates() {
     myTemplates[GNE_TAG_JPS_WALKABLEAREA] = new GNEPoly(GNE_TAG_JPS_WALKABLEAREA, myNet);
     myTemplates[GNE_TAG_JPS_OBSTACLE] = new GNEPoly(GNE_TAG_JPS_OBSTACLE, myNet);
     // vTypes
-    const auto vTypes = myNet->getTagPropertiesDatabase()->getTagPropertiesByType(GNETagProperties::Type::VTYPE);
-    for (const auto vType : vTypes) {
-        myTemplates[vType->getTag()] = new GNEVType(vType->getTag(), myNet);
-    }
+    myTemplates[SUMO_TAG_VTYPE] = new GNEVType(SUMO_TAG_VTYPE, myNet);
     // vType distributions
     myTemplates[SUMO_TAG_VTYPE_DISTRIBUTION] = new GNEVTypeDistribution(myNet);
     myTemplates[GNE_TAG_VTYPEREF] = new GNEVTypeRef(myNet);
-    // routes (basic and embedded)
-    const auto routes = myNet->getTagPropertiesDatabase()->getTagPropertiesByType(GNETagProperties::Type::ROUTE);
-    for (const auto route : routes) {
-        myTemplates[route->getTag()] = new GNERoute(route->getTag(), myNet);
-    }
+    // routes
+    myTemplates[SUMO_TAG_ROUTE] = new GNERoute(SUMO_TAG_ROUTE, myNet);
+    myTemplates[GNE_TAG_ROUTE_EMBEDDED] = new GNERoute(GNE_TAG_ROUTE_EMBEDDED, myNet);
     // route distribution
     myTemplates[SUMO_TAG_ROUTE_DISTRIBUTION] = new GNERouteDistribution(myNet);
     myTemplates[GNE_TAG_ROUTEREF] = new GNERouteRef(myNet);
@@ -3044,10 +3116,18 @@ GNENetHelper::ACTemplate::buildTemplates() {
     for (const auto stopContainer : stopContainers) {
         myTemplates[stopContainer->getTag()] = new GNEStopPlan(stopContainer->getTag(), myNet);
     }
+    // dataSet
+    myTemplates[SUMO_TAG_DATASET] = new GNEDataSet(myNet);
+    // generic datas
+    myTemplates[GNE_TAG_EDGEREL_SINGLE] = new GNEEdgeData(myNet);
+    myTemplates[SUMO_TAG_EDGEREL] = new GNEEdgeRelData(myNet);
+    myTemplates[SUMO_TAG_TAZREL] = new GNETAZRelData(myNet);
     // reset all to their default values
     for (const auto& AC : myTemplates) {
         AC.second->resetDefaultValues(false);
     }
+    // fill plan templates
+    fillPlanTemplates();
 }
 
 
@@ -3084,330 +3164,151 @@ GNENetHelper::ACTemplate::getTemplateAC(const std::string& selectorText) const {
     return nullptr;
 }
 
-// ---------------------------------------------------------------------------
-// GNENetHelper::SavingFilesHandler - methods
-// ---------------------------------------------------------------------------
 
-GNENetHelper::SavingFilesHandler::SavingFilesHandler(GNENet* net) :
-    myNet(net) {
+GNEEdgeType*
+GNENetHelper::ACTemplate::getDefaultEdgeType() const {
+    return myEdgeType;
+}
+
+
+const std::vector<std::pair<GNETagProperties*, GNEDemandElement*>>&
+GNENetHelper::ACTemplate::getPlanTemplates(SumoXMLTag tag) const {
+    return myPlanTemplates.at(tag);
 }
 
 
 void
-GNENetHelper::SavingFilesHandler::updateNeteditConfig() {
-    auto& neteditOptions = OptionsCont::getOptions();
-    // get files
-    const auto additionalFiles = parsingSavingFiles(myAdditionalElementsSavingFiles);
-    const auto demandElementFiles = parsingSavingFiles(myDemandElementsSavingFiles);
-    const auto dataElementFiles = parsingSavingFiles(myDataElementsSavingFiles);
-    const auto meanDataElementFiles = parsingSavingFiles(myMeanDataElementsSavingFiles);
-    // additionals
-    neteditOptions.resetWritable();
-    if (additionalFiles.size() > 0) {
-        neteditOptions.set("additional-files", additionalFiles);
-    } else {
-        neteditOptions.resetDefault("additional-files");
-    }
-    // route files
-    neteditOptions.resetWritable();
-    if (demandElementFiles.size() > 0) {
-        neteditOptions.set("route-files", demandElementFiles);
-    } else {
-        neteditOptions.resetDefault("route-files");
-    }
-    // data files
-    neteditOptions.resetWritable();
-    if (dataElementFiles.size() > 0) {
-        neteditOptions.set("data-files", dataElementFiles);
-    } else {
-        neteditOptions.resetDefault("data-files");
-    }
-    // meanData files
-    neteditOptions.resetWritable();
-    if (meanDataElementFiles.size() > 0) {
-        neteditOptions.set("meandata-files", meanDataElementFiles);
-    } else {
-        neteditOptions.resetDefault("meandata-files");
-    }
-}
-
-
-void
-GNENetHelper::SavingFilesHandler::addAdditionalFilename(const GNEAttributeCarrier* additionalElement) {
-    if ((additionalElement->getFilename().size() > 0) && !existAdditionalFilename(additionalElement->getFilename())) {
-        if (myAdditionalElementsSavingFiles.empty()) {
-            updateAdditionalEmptyFilenames(additionalElement->getFilename());
-        } else {
-            myAdditionalElementsSavingFiles.push_back(additionalElement->getFilename());
-        }
-    }
-}
-
-
-void
-GNENetHelper::SavingFilesHandler::updateAdditionalEmptyFilenames(const std::string& file) {
-    for (const auto& additionalTag : myNet->getAttributeCarriers()->getAdditionals()) {
-        for (const auto& additional : additionalTag.second) {
-            additional.second->changeDefaultFilename(file);
-        }
-    }
-    // update all templates
-    for (auto& templateAC : myNet->getACTemplates()->getACTemplates()) {
-        if (templateAC.second->getTagProperty()->isAdditionalElement() && templateAC.second->getFilename().empty()) {
-            templateAC.second->changeDefaultFilename(file);
-        }
-    }
-    // add it to current files
-    if (!existAdditionalFilename(file)) {
-        myAdditionalElementsSavingFiles.push_back(file);
-    }
-}
-
-
-const std::vector<std::string>&
-GNENetHelper::SavingFilesHandler::getAdditionalFilenames() const {
-    return myAdditionalElementsSavingFiles;
-}
-
-
-GNENetHelper::SavingFilesHandler::ACsbyFilename
-GNENetHelper::SavingFilesHandler::getAdditionalsByFilename() {
-    ACsbyFilename additionalsbyFilenames;
-    for (const auto& additionalTag : myNet->getAttributeCarriers()->getAdditionals()) {
-        for (const auto& additional : additionalTag.second) {
-            additionalsbyFilenames[additional.second->getFilename()].insert(additional.second);
-        }
-    }
-    // special case for routes (due calibrators)
-    for (const auto& route : myNet->getAttributeCarriers()->getDemandElements().at(SUMO_TAG_ROUTE)) {
-        if (std::find(myAdditionalElementsSavingFiles.begin(), myAdditionalElementsSavingFiles.end(), route.second->getFilename()) != myAdditionalElementsSavingFiles.end()) {
-            additionalsbyFilenames[route.second->getFilename()].insert(route.second);
-        }
-    }
-    // clear empty saving files
-    auto it = myAdditionalElementsSavingFiles.begin();
-    while (it != myAdditionalElementsSavingFiles.end()) {
-        if (it->empty() || (additionalsbyFilenames.find(*it) == additionalsbyFilenames.end())) {
-            it = myAdditionalElementsSavingFiles.erase(it);
-        } else {
-            it++;
-        }
-    }
-    return additionalsbyFilenames;
-}
-
-
-bool
-GNENetHelper::SavingFilesHandler::existAdditionalFilename(const std::string& file) const {
-    const auto it = std::find(myAdditionalElementsSavingFiles.begin(), myAdditionalElementsSavingFiles.end(), file);
-    return it != myAdditionalElementsSavingFiles.end();
-}
-
-
-void
-GNENetHelper::SavingFilesHandler::addDemandFilename(const GNEAttributeCarrier* demandElement) {
-    if ((demandElement->getFilename().size() > 0) && !existDemandFilename(demandElement->getFilename())) {
-        if (myDemandElementsSavingFiles.empty()) {
-            updateDemandEmptyFilenames(demandElement->getFilename());
-        } else {
-            myDemandElementsSavingFiles.push_back(demandElement->getFilename());
-        }
-    }
-}
-
-
-void
-GNENetHelper::SavingFilesHandler::updateDemandEmptyFilenames(const std::string& file) {
-    for (const auto& demandTag : myNet->getAttributeCarriers()->getDemandElements()) {
-        for (const auto& demand : demandTag.second) {
-            demand.second->changeDefaultFilename(file);
-        }
-    }
-    // update all templates
-    for (auto& templateAC : myNet->getACTemplates()->getACTemplates()) {
-        if (templateAC.second->getTagProperty()->isDemandElement() && templateAC.second->getFilename().empty()) {
-            templateAC.second->changeDefaultFilename(file);
-        }
-    }
-    // add it to current files
-    if (!existDemandFilename(file)) {
-        myDemandElementsSavingFiles.push_back(file);
-    }
-}
-
-
-const std::vector<std::string>&
-GNENetHelper::SavingFilesHandler::getDemandFilenames() const {
-    return myDemandElementsSavingFiles;
-}
-
-
-GNENetHelper::SavingFilesHandler::ACsbyFilename
-GNENetHelper::SavingFilesHandler::getDemandsByFilename() {
-    ACsbyFilename demandsbyFilenames;
-    for (const auto& demandTag : myNet->getAttributeCarriers()->getDemandElements()) {
-        for (const auto& demand : demandTag.second) {
-            if (std::find(myAdditionalElementsSavingFiles.begin(), myAdditionalElementsSavingFiles.end(), demand.second->getFilename()) == myAdditionalElementsSavingFiles.end()) {
-                demandsbyFilenames[demand.second->getFilename()].insert(demand.second);
-            }
-        }
-    }
-    // clear empty saving files
-    auto it = myDemandElementsSavingFiles.begin();
-    while (it != myDemandElementsSavingFiles.end()) {
-        if (it->empty() || (demandsbyFilenames.find(*it) == demandsbyFilenames.end())) {
-            it = myDemandElementsSavingFiles.erase(it);
-        } else {
-            it++;
-        }
-    }
-    return demandsbyFilenames;
-}
-
-
-bool
-GNENetHelper::SavingFilesHandler::existDemandFilename(const std::string& file) const {
-    const auto it = std::find(myDemandElementsSavingFiles.begin(), myDemandElementsSavingFiles.end(), file);
-    return it != myDemandElementsSavingFiles.end();
-}
-
-
-void
-GNENetHelper::SavingFilesHandler::addDataFilename(const GNEAttributeCarrier* dataElement) {
-    if ((dataElement->getFilename().size() > 0) && !existDataFilename(dataElement->getFilename())) {
-        if (myDataElementsSavingFiles.empty()) {
-            updateDataEmptyFilenames(dataElement->getFilename());
-        } else {
-            myDataElementsSavingFiles.push_back(dataElement->getFilename());
-        }
-    }
-}
-
-
-void
-GNENetHelper::SavingFilesHandler::updateDataEmptyFilenames(const std::string& file) {
-    if (file.size() > 0) {
-        for (const auto& dataSet : myNet->getAttributeCarriers()->getDataSets()) {
-            dataSet.second->changeDefaultFilename(file);
-        }
-        // add it to current files
-        if (!existDataFilename(file)) {
-            myDataElementsSavingFiles.push_back(file);
-        }
-    }
-}
-
-
-const std::vector<std::string>&
-GNENetHelper::SavingFilesHandler::getDataFilenames() const {
-    return myDataElementsSavingFiles;
-}
-
-
-GNENetHelper::SavingFilesHandler::ACsbyFilename
-GNENetHelper::SavingFilesHandler::getDatasByFilename() {
-    ACsbyFilename datasbyFilenames;
-    for (const auto& dataSet : myNet->getAttributeCarriers()->getDataSets()) {
-        datasbyFilenames[dataSet.second->getFilename()].insert(dataSet.second);
-    }
-    // clear empty saving files
-    auto it = myDataElementsSavingFiles.begin();
-    while (it != myDataElementsSavingFiles.end()) {
-        if (it->empty() || (datasbyFilenames.find(*it) == datasbyFilenames.end())) {
-            it = myDataElementsSavingFiles.erase(it);
-        } else {
-            it++;
-        }
-    }
-    return datasbyFilenames;
-}
-
-
-bool
-GNENetHelper::SavingFilesHandler::existDataFilename(const std::string& file) const {
-    const auto it = std::find(myDataElementsSavingFiles.begin(), myDataElementsSavingFiles.end(), file);
-    return it != myDataElementsSavingFiles.end();
-}
-
-
-void
-GNENetHelper::SavingFilesHandler::addMeanDataFilename(const GNEAttributeCarrier* meanDataElement) {
-    if ((meanDataElement->getFilename().size() > 0) && !existMeanDataFilename(meanDataElement->getFilename())) {
-        if (myMeanDataElementsSavingFiles.empty()) {
-            updateMeanDataEmptyFilenames(meanDataElement->getFilename());
-        } else {
-            myMeanDataElementsSavingFiles.push_back(meanDataElement->getFilename());
-        }
-    }
-}
-
-
-void
-GNENetHelper::SavingFilesHandler::updateMeanDataEmptyFilenames(const std::string& file) {
-    for (const auto& meanDataTag : myNet->getAttributeCarriers()->getMeanDatas()) {
-        for (const auto& meanData : meanDataTag.second) {
-            meanData.second->changeDefaultFilename(file);
-        }
-    }
-    // update all templates
-    for (auto& templateAC : myNet->getACTemplates()->getACTemplates()) {
-        if (templateAC.second->getTagProperty()->isMeanData() && templateAC.second->getFilename().empty()) {
-            templateAC.second->changeDefaultFilename(file);
-        }
-    }
-    // add it to current files
-    if (!existMeanDataFilename(file)) {
-        myMeanDataElementsSavingFiles.push_back(file);
-    }
-}
-
-
-const std::vector<std::string>&
-GNENetHelper::SavingFilesHandler::getMeanDataFilenames() const {
-    return myMeanDataElementsSavingFiles;
-}
-
-
-GNENetHelper::SavingFilesHandler::ACsbyFilename
-GNENetHelper::SavingFilesHandler::getMeanDatasByFilename() {
-    ACsbyFilename meanDatasbyFilenames;
-    for (const auto& meanDataTag : myNet->getAttributeCarriers()->getMeanDatas()) {
-        for (const auto& meanData : meanDataTag.second) {
-            meanDatasbyFilenames[meanData.second->getFilename()].insert(meanData.second);
-        }
-    }
-    // clear empty saving files
-    auto it = myMeanDataElementsSavingFiles.begin();
-    while (it != myMeanDataElementsSavingFiles.end()) {
-        if (it->empty() || (meanDatasbyFilenames.find(*it) == meanDatasbyFilenames.end())) {
-            it = myMeanDataElementsSavingFiles.erase(it);
-        } else {
-            it++;
-        }
-    }
-    return meanDatasbyFilenames;
-}
-
-
-bool
-GNENetHelper::SavingFilesHandler::existMeanDataFilename(const std::string& file) const {
-    const auto it = std::find(myMeanDataElementsSavingFiles.begin(), myMeanDataElementsSavingFiles.end(), file);
-    return it != myMeanDataElementsSavingFiles.end();
-}
-
-
-std::string
-GNENetHelper::SavingFilesHandler::parsingSavingFiles(const std::vector<std::string>& savingFiles) const {
-    std::string savingFileNames;
-    // group all saving files in a single string separated with comma
-    for (const auto& savingFile : savingFiles) {
-        savingFileNames.append(savingFile + ",");
-    }
-    // remove last ','
-    if (savingFileNames.size() > 0) {
-        savingFileNames.pop_back();
-    }
-    return savingFileNames;
+GNENetHelper::ACTemplate::fillPlanTemplates() {
+    GNETagProperties* tagProperty = nullptr;
+    // person trip
+    tagProperty = new GNETagProperties(SUMO_TAG_PERSONTRIP, nullptr,
+                                       GNETagProperties::Type::PERSONPLAN,
+                                       GNETagProperties::Property::NO_PROPERTY,
+                                       GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE |
+                                       GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ |
+                                       GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_JUNCTION |
+                                       GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_BUSSTOP |
+                                       GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TRAINSTOP |
+                                       GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CONTAINERSTOP |
+                                       GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CHARGINGSTATION |
+                                       GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_PARKINGAREA,
+                                       FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
+                                       GNETagProperties::Conflicts::NO_CONFLICTS,
+                                       GUIIcon::EMPTY, GUIGlObjectType::GLO_PERSONTRIP, SUMO_TAG_PERSONTRIP, "PersonTrip");
+    myPlanTemplates[SUMO_TAG_PERSON].push_back(std::make_pair(tagProperty, new GNEPersonTrip(GNE_TAG_PERSONTRIP_EDGE_EDGE, myNet)));
+    // ride
+    tagProperty = new GNETagProperties(SUMO_TAG_RIDE, nullptr,
+                                       GNETagProperties::Type::PERSONPLAN,
+                                       GNETagProperties::Property::NO_PROPERTY,
+                                       GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE |
+                                       GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ |
+                                       GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_JUNCTION |
+                                       GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_BUSSTOP |
+                                       GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TRAINSTOP |
+                                       GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CONTAINERSTOP |
+                                       GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CHARGINGSTATION |
+                                       GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_PARKINGAREA,
+                                       FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
+                                       GNETagProperties::Conflicts::NO_CONFLICTS,
+                                       GUIIcon::EMPTY, GUIGlObjectType::GLO_RIDE, SUMO_TAG_RIDE, "Ride");
+    myPlanTemplates[SUMO_TAG_PERSON].push_back(std::make_pair(tagProperty, new GNERide(GNE_TAG_RIDE_EDGE_EDGE, myNet)));
+    // walk
+    tagProperty = new GNETagProperties(SUMO_TAG_WALK, nullptr,
+                                       GNETagProperties::Type::PERSONPLAN,
+                                       GNETagProperties::Property::NO_PROPERTY,
+                                       GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE |
+                                       GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ |
+                                       GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_JUNCTION |
+                                       GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_BUSSTOP |
+                                       GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TRAINSTOP |
+                                       GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CONTAINERSTOP |
+                                       GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CHARGINGSTATION |
+                                       GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_PARKINGAREA,
+                                       FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
+                                       GNETagProperties::Conflicts::NO_CONFLICTS,
+                                       GUIIcon::EMPTY, GUIGlObjectType::GLO_WALK, SUMO_TAG_WALK, "Walk");
+    myPlanTemplates[SUMO_TAG_PERSON].push_back(std::make_pair(tagProperty, new GNEWalk(GNE_TAG_WALK_EDGE_EDGE, myNet)));
+    // walk (edges)
+    tagProperty = new GNETagProperties(GNE_TAG_WALK_EDGES, nullptr,
+                                       GNETagProperties::Type::PERSONPLAN,
+                                       GNETagProperties::Property::NO_PROPERTY,
+                                       GNETagProperties::Over::CONSECUTIVE_EDGES,
+                                       FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
+                                       GNETagProperties::Conflicts::NO_CONFLICTS,
+                                       GUIIcon::EMPTY, GUIGlObjectType::GLO_WALK, SUMO_TAG_WALK, "Walk (edges)");
+    myPlanTemplates[SUMO_TAG_PERSON].push_back(std::make_pair(tagProperty, new GNEWalk(GNE_TAG_WALK_EDGES, myNet)));
+    // walk (route)
+    tagProperty = new GNETagProperties(GNE_TAG_WALK_ROUTE, nullptr,
+                                       GNETagProperties::Type::PERSONPLAN,
+                                       GNETagProperties::Property::NO_PROPERTY,
+                                       GNETagProperties::Over::ROUTE,
+                                       FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
+                                       GNETagProperties::Conflicts::NO_CONFLICTS,
+                                       GUIIcon::EMPTY, GUIGlObjectType::GLO_WALK, SUMO_TAG_WALK, "Walk (route)");
+    myPlanTemplates[SUMO_TAG_PERSON].push_back(std::make_pair(tagProperty, new GNEWalk(GNE_TAG_WALK_ROUTE, myNet)));
+    // stop
+    tagProperty = new GNETagProperties(GNE_TAG_PERSONSTOPS, nullptr,
+                                       GNETagProperties::Type::PERSONPLAN,
+                                       GNETagProperties::Property::NO_PROPERTY,
+                                       GNETagProperties::Over::EDGE | GNETagProperties::Over::BUSSTOP |
+                                       GNETagProperties::Over::TRAINSTOP | GNETagProperties::Over::CONTAINERSTOP |
+                                       GNETagProperties::Over::CHARGINGSTATION | GNETagProperties::Over::PARKINGAREA,
+                                       FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
+                                       GNETagProperties::Conflicts::NO_CONFLICTS,
+                                       GUIIcon::EMPTY, GUIGlObjectType::GLO_STOP, SUMO_TAG_STOP, "Person Stop");
+    myPlanTemplates[SUMO_TAG_PERSON].push_back(std::make_pair(tagProperty, new GNEStopPlan(GNE_TAG_STOPPERSON_EDGE, myNet)));
+    // transport
+    tagProperty = new GNETagProperties(SUMO_TAG_TRANSPORT, nullptr,
+                                       GNETagProperties::Type::CONTAINERPLAN,
+                                       GNETagProperties::Property::NO_PROPERTY,
+                                       GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE |
+                                       //GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ |
+                                       //GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_JUNCTION |
+                                       //GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_BUSSTOP |
+                                       //GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TRAINSTOP |
+                                       GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
+                                       //GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CHARGINGSTATION |
+                                       //GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_PARKINGAREA,
+                                       FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
+                                       GNETagProperties::Conflicts::NO_CONFLICTS,
+                                       GUIIcon::EMPTY, GUIGlObjectType::GLO_TRANSPORT, SUMO_TAG_PERSONTRIP, "Transport");
+    myPlanTemplates[SUMO_TAG_CONTAINER].push_back(std::make_pair(tagProperty, new GNETransport(GNE_TAG_TRANSPORT_EDGE_EDGE, myNet)));
+    // tranship
+    tagProperty = new GNETagProperties(SUMO_TAG_TRANSHIP, nullptr,
+                                       GNETagProperties::Type::CONTAINERPLAN,
+                                       GNETagProperties::Property::NO_PROPERTY,
+                                       GNETagProperties::Over::FROM_EDGE | GNETagProperties::Over::TO_EDGE |
+                                       //GNETagProperties::Over::FROM_TAZ | GNETagProperties::Over::TO_TAZ |
+                                       //GNETagProperties::Over::FROM_JUNCTION | GNETagProperties::Over::TO_JUNCTION |
+                                       //GNETagProperties::Over::FROM_BUSSTOP | GNETagProperties::Over::TO_BUSSTOP |
+                                       //GNETagProperties::Over::FROM_TRAINSTOP | GNETagProperties::Over::TO_TRAINSTOP |
+                                       GNETagProperties::Over::FROM_CONTAINERSTOP | GNETagProperties::Over::TO_CONTAINERSTOP,
+                                       //GNETagProperties::Over::FROM_CHARGINGSTATION | GNETagProperties::Over::TO_CHARGINGSTATION |
+                                       //GNETagProperties::Over::FROM_PARKINGAREA | GNETagProperties::Over::TO_PARKINGAREA,
+                                       FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
+                                       GNETagProperties::Conflicts::NO_CONFLICTS,
+                                       GUIIcon::EMPTY, GUIGlObjectType::GLO_TRANSHIP, SUMO_TAG_PERSONTRIP, "Tranship");
+    myPlanTemplates[SUMO_TAG_CONTAINER].push_back(std::make_pair(tagProperty, new GNETranship(GNE_TAG_TRANSHIP_EDGE_EDGE, myNet)));
+    // tranship (edges)
+    tagProperty = new GNETagProperties(GNE_TAG_TRANSHIP_EDGES, nullptr,
+                                       GNETagProperties::Type::CONTAINERPLAN,
+                                       GNETagProperties::Property::NO_PROPERTY,
+                                       GNETagProperties::Over::CONSECUTIVE_EDGES,
+                                       FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
+                                       GNETagProperties::Conflicts::NO_CONFLICTS,
+                                       GUIIcon::EMPTY, GUIGlObjectType::GLO_TRANSPORT, SUMO_TAG_PERSONTRIP, "Tranship (edges)");
+    myPlanTemplates[SUMO_TAG_CONTAINER].push_back(std::make_pair(tagProperty, new GNETranship(GNE_TAG_TRANSHIP_EDGES, myNet)));
+    // stop
+    tagProperty = new GNETagProperties(GNE_TAG_CONTAINERSTOPS, nullptr,
+                                       GNETagProperties::Type::CONTAINERPLAN,
+                                       GNETagProperties::Property::NO_PROPERTY,
+                                       GNETagProperties::Over::EDGE | GNETagProperties::Over::BUSSTOP |
+                                       GNETagProperties::Over::TRAINSTOP | GNETagProperties::Over::CONTAINERSTOP |
+                                       GNETagProperties::Over::CHARGINGSTATION | GNETagProperties::Over::PARKINGAREA,
+                                       FileBucket::Type::DEMAND | FileBucket::Type::ADDITIONAL,
+                                       GNETagProperties::Conflicts::NO_CONFLICTS,
+                                       GUIIcon::EMPTY, GUIGlObjectType::GLO_CONTAINER_STOP, SUMO_TAG_STOP, "Container Stop");
+    myPlanTemplates[SUMO_TAG_CONTAINER].push_back(std::make_pair(tagProperty, new GNEStopPlan(GNE_TAG_STOPCONTAINER_EDGE, myNet)));
 }
 
 // ---------------------------------------------------------------------------
@@ -3435,7 +3336,6 @@ bool
 GNENetHelper::SavingStatus::isSumoConfigSaved() const {
     return mySumoConfigSaved;
 }
-
 
 
 void
@@ -3597,116 +3497,161 @@ GNENetHelper::SavingStatus::isMeanDatasSaved() const {
 }
 
 
-GNENetHelper::SavingStatus::AskSaving
-GNENetHelper::SavingStatus::askSaveNetwork() const {
+GNEDialog::Result
+GNENetHelper::SavingStatus::askSaveNetwork(GNEDialog::Result& commonResult) const {
+    auto GNEApp = myNet->getGNEApplicationWindow();
     // Check if there are non saved network elements
-    if (myNetworkSaved) {
-        return AskSaving::CONTINUE;
+    if (commonResult == GNEDialog::Result::ABORT) {
+        return GNEDialog::Result::ABORT;
+    } else if (commonResult == GNEDialog::Result::ACCEPT_ALL) {
+        return GNEDialog::Result::ACCEPT;
+    } else if (commonResult == GNEDialog::Result::CANCEL_ALL) {
+        return GNEDialog::Result::CANCEL;
+    } else if (myNetworkSaved) {
+        return GNEDialog::Result::CANCEL;
     } else {
-        // open question box
-        const std::string header = TL("Confirm close Network");
-        const std::string contentsA = TL("You have unsaved changes in the network.");
-        const std::string contentsB = TL("Do you wish to close and discard all changes?");
-        const auto answer = GUISaveDialog::question(myNet->getApp(), header.c_str(), "%s", (contentsA + "\n" + contentsB).c_str());
-        // continue depending of answer
-        if (answer == GUISaveDialog::CLICKED_DISCARD) {
-            return AskSaving::DISCARD;
-        } else if (answer == GUISaveDialog::CLICKED_SAVE) {
-            return AskSaving::SAVE;
+        // open save dialog
+        const GNESaveDialog saveDialog(GNEApp, TL("network"));
+        // continue depending of result
+        if (saveDialog.getResult() == GNEDialog::Result::ABORT) {
+            commonResult = GNEDialog::Result::ABORT;
+            return GNEDialog::Result::ABORT;
+        } else if (saveDialog.getResult() == GNEDialog::Result::ACCEPT_ALL) {
+            commonResult = GNEDialog::Result::ACCEPT_ALL;
+            return GNEDialog::Result::ACCEPT;
+        } else if (saveDialog.getResult() == GNEDialog::Result::CANCEL_ALL) {
+            commonResult = GNEDialog::Result::CANCEL_ALL;
+            return GNEDialog::Result::CANCEL;
         } else {
-            return AskSaving::ABORT;
+            return saveDialog.getResult();
         }
     }
 }
 
 
-GNENetHelper::SavingStatus::AskSaving
-GNENetHelper::SavingStatus::askSaveAdditionalElements() const {
+GNEDialog::Result
+GNENetHelper::SavingStatus::askSaveAdditionalElements(GNEDialog::Result& commonResult) const {
+    auto GNEApp = myNet->getGNEApplicationWindow();
     // Check if there are non saved additional elements
-    if (myAdditionalSaved) {
-        return AskSaving::CONTINUE;
+    if (commonResult == GNEDialog::Result::ABORT) {
+        return GNEDialog::Result::ABORT;
+    } else if (commonResult == GNEDialog::Result::ACCEPT_ALL) {
+        return GNEDialog::Result::ACCEPT;
+    } else if (commonResult == GNEDialog::Result::CANCEL_ALL) {
+        return GNEDialog::Result::CANCEL;
+    } else if (myAdditionalSaved) {
+        return GNEDialog::Result::CANCEL;
     } else {
-        // open question box
-        const std::string header = TL("Save additional elements before close");
-        const std::string contentsA = TL("You have unsaved additional elements.");
-        const std::string contentsB = TL("Do you wish to close and discard all changes?");
-        const auto answer = GUISaveDialog::question(myNet->getApp(), header.c_str(), "%s", (contentsA + "\n" + contentsB).c_str());
-        // continue depending of answer
-        if (answer == GUISaveDialog::CLICKED_DISCARD) {
-            return AskSaving::DISCARD;
-        } else if (answer == GUISaveDialog::CLICKED_SAVE) {
-            return AskSaving::SAVE;
+        // open save dialog
+        const GNESaveDialog saveDialog(GNEApp, TL("additional elements"));
+        // continue depending of result
+        if (saveDialog.getResult() == GNEDialog::Result::ABORT) {
+            commonResult = GNEDialog::Result::ABORT;
+            return GNEDialog::Result::ABORT;
+        } else if (saveDialog.getResult() == GNEDialog::Result::ACCEPT_ALL) {
+            commonResult = GNEDialog::Result::ACCEPT_ALL;
+            return GNEDialog::Result::ACCEPT;
+        } else if (saveDialog.getResult() == GNEDialog::Result::CANCEL_ALL) {
+            commonResult = GNEDialog::Result::CANCEL_ALL;
+            return GNEDialog::Result::CANCEL;
         } else {
-            return AskSaving::ABORT;
+            return saveDialog.getResult();
         }
     }
 }
 
 
-GNENetHelper::SavingStatus::AskSaving
-GNENetHelper::SavingStatus::askSaveDemandElements() const {
+GNEDialog::Result
+GNENetHelper::SavingStatus::askSaveDemandElements(GNEDialog::Result& commonResult) const {
+    auto GNEApp = myNet->getGNEApplicationWindow();
     // Check if there are non saved demand elements
-    if (myDemandElementSaved) {
-        return AskSaving::CONTINUE;
+    if (commonResult == GNEDialog::Result::ABORT) {
+        return GNEDialog::Result::ABORT;
+    } else if (commonResult == GNEDialog::Result::ACCEPT_ALL) {
+        return GNEDialog::Result::ACCEPT;
+    } else if (commonResult == GNEDialog::Result::CANCEL_ALL) {
+        return GNEDialog::Result::CANCEL;
+    } else if (myDemandElementSaved) {
+        return GNEDialog::Result::CANCEL;
     } else {
-        // open question box
-        const std::string header = TL("Save demand elements before close");
-        const std::string contentsA = TL("You have unsaved demand elements.");
-        const std::string contentsB = TL("Do you wish to close and discard all changes?");
-        const auto answer = GUISaveDialog::question(myNet->getApp(), header.c_str(), "%s", (contentsA + "\n" + contentsB).c_str());
-        // continue depending of answer
-        if (answer == GUISaveDialog::CLICKED_DISCARD) {
-            return AskSaving::DISCARD;
-        } else if (answer == GUISaveDialog::CLICKED_SAVE) {
-            return AskSaving::SAVE;
+        // open save dialog
+        const GNESaveDialog saveDialog(GNEApp, TL("demand elements"));
+        // continue depending of result
+        if (saveDialog.getResult() == GNEDialog::Result::ABORT) {
+            commonResult = GNEDialog::Result::ABORT;
+            return GNEDialog::Result::ABORT;
+        } else if (saveDialog.getResult() == GNEDialog::Result::ACCEPT_ALL) {
+            commonResult = GNEDialog::Result::ACCEPT_ALL;
+            return GNEDialog::Result::ACCEPT;
+        } else if (saveDialog.getResult() == GNEDialog::Result::CANCEL_ALL) {
+            commonResult = GNEDialog::Result::CANCEL_ALL;
+            return GNEDialog::Result::CANCEL;
         } else {
-            return AskSaving::ABORT;
+            return saveDialog.getResult();
         }
     }
 }
 
 
-GNENetHelper::SavingStatus::AskSaving
-GNENetHelper::SavingStatus::askSaveDataElements() const {
+GNEDialog::Result
+GNENetHelper::SavingStatus::askSaveDataElements(GNEDialog::Result& commonResult) const {
+    auto GNEApp = myNet->getGNEApplicationWindow();
     // Check if there are non saved data elements
-    if (myDataElementSaved) {
-        return AskSaving::CONTINUE;
+    if (commonResult == GNEDialog::Result::ABORT) {
+        return GNEDialog::Result::ABORT;
+    } else if (commonResult == GNEDialog::Result::ACCEPT_ALL) {
+        return GNEDialog::Result::ACCEPT;
+    } else if (commonResult == GNEDialog::Result::CANCEL_ALL) {
+        return GNEDialog::Result::CANCEL;
+    } else if (myDataElementSaved) {
+        return GNEDialog::Result::CANCEL;
     } else {
-        // open question box
-        const std::string header = TL("Save data elements before close");
-        const std::string contentsA = TL("You have unsaved data elements.");
-        const std::string contentsB = TL("Do you wish to close and discard all changes?");
-        const auto answer = GUISaveDialog::question(myNet->getApp(), header.c_str(), "%s", (contentsA + "\n" + contentsB).c_str());
-        // continue depending of answer
-        if (answer == GUISaveDialog::CLICKED_DISCARD) {
-            return AskSaving::DISCARD;
-        } else if (answer == GUISaveDialog::CLICKED_SAVE) {
-            return AskSaving::SAVE;
+        // open save dialog
+        const GNESaveDialog saveDialog(GNEApp, TL("data elements"));
+        // continue depending of result
+        if (saveDialog.getResult() == GNEDialog::Result::ABORT) {
+            commonResult = GNEDialog::Result::ABORT;
+            return GNEDialog::Result::ABORT;
+        } else if (saveDialog.getResult() == GNEDialog::Result::ACCEPT_ALL) {
+            commonResult = GNEDialog::Result::ACCEPT_ALL;
+            return GNEDialog::Result::ACCEPT;
+        } else if (saveDialog.getResult() == GNEDialog::Result::CANCEL_ALL) {
+            commonResult = GNEDialog::Result::CANCEL_ALL;
+            return GNEDialog::Result::CANCEL;
         } else {
-            return AskSaving::ABORT;
+            return saveDialog.getResult();
         }
     }
 }
 
 
-GNENetHelper::SavingStatus::AskSaving
-GNENetHelper::SavingStatus::askSaveMeanDataElements() const {
+GNEDialog::Result
+GNENetHelper::SavingStatus::askSaveMeanDataElements(GNEDialog::Result& commonResult) const {
+    auto GNEApp = myNet->getGNEApplicationWindow();
     // Check if there are non saved mean data elements
-    if (myMeanDataElementSaved) {
-        return AskSaving::CONTINUE;
+    if (commonResult == GNEDialog::Result::ABORT) {
+        return GNEDialog::Result::ABORT;
+    } else if (commonResult == GNEDialog::Result::ACCEPT_ALL) {
+        return GNEDialog::Result::ACCEPT;
+    } else if (commonResult == GNEDialog::Result::CANCEL_ALL) {
+        return GNEDialog::Result::CANCEL;
+    } else if (myMeanDataElementSaved) {
+        return GNEDialog::Result::CANCEL;
     } else {
-        // open question box
-        const std::string header = TL("Save meanData elements before close");
-        const std::string contentsA = TL("You have unsaved meanData elements.");
-        const std::string contentsB = TL("Do you wish to close and discard all changes?");
-        const auto answer = GUISaveDialog::question(myNet->getApp(), header.c_str(), "%s", (contentsA + "\n" + contentsB).c_str());
-        // continue depending of answer
-        if (answer == GUISaveDialog::CLICKED_DISCARD) {
-            return AskSaving::DISCARD;
-        } else if (answer == GUISaveDialog::CLICKED_SAVE) {
-            return AskSaving::SAVE;
+        // open save dialog
+        const GNESaveDialog saveDialog(GNEApp, TL("meanData elements"));
+        // continue depending of result
+        if (saveDialog.getResult() == GNEDialog::Result::ABORT) {
+            commonResult = GNEDialog::Result::ABORT;
+            return GNEDialog::Result::ABORT;
+        } else if (saveDialog.getResult() == GNEDialog::Result::ACCEPT_ALL) {
+            commonResult = GNEDialog::Result::ACCEPT_ALL;
+            return GNEDialog::Result::ACCEPT;
+        } else if (saveDialog.getResult() == GNEDialog::Result::CANCEL_ALL) {
+            commonResult = GNEDialog::Result::CANCEL_ALL;
+            return GNEDialog::Result::CANCEL;
         } else {
-            return AskSaving::ABORT;
+            return saveDialog.getResult();
         }
     }
 }

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -151,14 +151,15 @@ ROLoader::loadNet(RONet& toFill, ROAbstractEdgeBuilder& eb) {
     }
     toFill.setBidiEdges(handler.getBidiMap());
     if (myOptions.exists("restriction-params") && myOptions.isSet("restriction-params")) {
+        toFill.setParamRestrictions();
         const std::vector<std::string> paramKeys = myOptions.getStringVector("restriction-params");
         for (auto& edgeIt : toFill.getEdgeMap()) {
             edgeIt.second->cacheParamRestrictions(paramKeys);
         }
     }
-    if (toFill.hasRestrictions()) {
+    if (toFill.hasSpeedRestrictions()) {
         for (auto& edgeIt : toFill.getEdgeMap()) {
-            edgeIt.second->setRestrictions(toFill.getRestrictions(edgeIt.second->getType()));
+            edgeIt.second->setSpeedRestrictions(toFill.getRestrictions(edgeIt.second->getType()));
         }
     }
 }

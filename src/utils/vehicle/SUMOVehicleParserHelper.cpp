@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2008-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -277,7 +277,7 @@ SUMOVehicleParserHelper::parseFlowAttributes(SumoXMLTag tag, const SUMOSAXAttrib
         // parse number
         if (hasNumber) {
             bool ok = true;
-            flowParameter->repetitionNumber = attrs.get<int>(SUMO_ATTR_NUMBER, id.c_str(), ok);
+            flowParameter->repetitionNumber = attrs.get<long long int>(SUMO_ATTR_NUMBER, id.c_str(), ok);
             if (!ok) {
                 return handleVehicleError(hardFail, flowParameter);
             } else {
@@ -303,21 +303,21 @@ SUMOVehicleParserHelper::parseFlowAttributes(SumoXMLTag tag, const SUMOSAXAttrib
         } else {
             // interpret repetitionNumber
             if (flowParameter->repetitionProbability > 0) {
-                flowParameter->repetitionNumber = std::numeric_limits<int>::max();
+                flowParameter->repetitionNumber = std::numeric_limits<long long int>::max();
             } else {
                 if (flowParameter->repetitionOffset <= 0) {
                     if (poissonFlow) {
                         // number is random but flow has a fixed end time
-                        flowParameter->repetitionNumber = std::numeric_limits<int>::max();
+                        flowParameter->repetitionNumber = std::numeric_limits<long long int>::max();
                     } else {
                         return handleVehicleError(hardFail, flowParameter, "Invalid repetition rate in the definition of " + toString(tag) + " '" + id + "'.");
                     }
                 } else {
                     if (flowParameter->repetitionEnd == SUMOTime_MAX) {
-                        flowParameter->repetitionNumber = std::numeric_limits<int>::max();
+                        flowParameter->repetitionNumber = std::numeric_limits<long long int>::max();
                     } else {
                         const SUMOTime repLength = flowParameter->repetitionEnd - flowParameter->depart;
-                        flowParameter->repetitionNumber = (int)ceil((double)repLength / (double)flowParameter->repetitionOffset);
+                        flowParameter->repetitionNumber = (long long int)ceil((double)repLength / (double)flowParameter->repetitionOffset);
                     }
                 }
             }
@@ -843,7 +843,7 @@ SUMOVehicleParserHelper::beginVTypeParsing(const SUMOSAXAttributes& attrs, const
             } else if (speedDev < 0) {
                 return handleVehicleTypeError(hardFail, vType, toString(SUMO_ATTR_SPEEDDEV) + " must be equal or greater than 0");
             } else {
-                vType->speedFactor.getParameter()[1] = speedDev;
+                vType->speedFactor.setParameter(1, speedDev);
                 vType->parametersSet |= VTYPEPARS_SPEEDFACTOR_SET;
             }
         }
@@ -1682,13 +1682,13 @@ SUMOVehicleParserHelper::parseJMParams(SUMOVTypeParameter* into, const SUMOSAXAt
                         return false;
                     }
                 } else if (JMAttribute < 0
-                        && it != SUMO_ATTR_JM_TIMEGAP_MINOR
-                        && it != SUMO_ATTR_JM_EXTRA_GAP) {
+                           && it != SUMO_ATTR_JM_TIMEGAP_MINOR
+                           && it != SUMO_ATTR_JM_EXTRA_GAP) {
                     // attributes with error value
                     if (JMAttribute != -1 || (it != SUMO_ATTR_JM_DRIVE_AFTER_YELLOW_TIME
-                                           && it != SUMO_ATTR_JM_DRIVE_AFTER_RED_TIME
-                                           && it != SUMO_ATTR_JM_IGNORE_KEEPCLEAR_TIME)) {
-                    // check attributes of type "nonNegativeFloatType" (>= 0)
+                                              && it != SUMO_ATTR_JM_DRIVE_AFTER_RED_TIME
+                                              && it != SUMO_ATTR_JM_IGNORE_KEEPCLEAR_TIME)) {
+                        // check attributes of type "nonNegativeFloatType" (>= 0)
                         WRITE_ERRORF(TL("Invalid Junction-Model Attribute %. Must be equal or greater than 0"), toString(it));
                         return false;
                     }
@@ -1772,7 +1772,7 @@ SUMOVehicleParserHelper::processActionStepLength(double given) {
             WRITE_WARNING(defaultError + "Ignoring given value (=" + toString(STEPS2TIME(result)) + " s.)");
         }
         result = DELTA_T;
-    } else if (result % DELTA_T != 0) {
+    } else if (result % DELTA_T != 0 && OptionsCont::getOptions().exists("step-length")) {
         result = (SUMOTime)((double)DELTA_T * floor(double(result) / double(DELTA_T)));
         result = MAX2(DELTA_T, result);
         if (fabs(given * 1000. - double(result)) > NUMERICAL_EPS) {

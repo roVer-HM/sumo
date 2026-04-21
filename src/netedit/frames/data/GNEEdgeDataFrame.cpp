@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -46,18 +46,17 @@ bool
 GNEEdgeDataFrame::addEdgeData(const GNEViewNetHelper::ViewObjectsSelector& viewObjects, const GNEViewNetHelper::MouseButtonKeyPressed& /*mouseButtonKeyPressed*/) {
     // first check if we clicked over an edge
     if (viewObjects.getEdgeFront() && myDataSetSelector->getDataSet() && myIntervalSelector->getDataInterval()) {
-        // first check if the given interval there is already a EdgeData for the given ID
-        for (const auto& genericData : myIntervalSelector->getDataInterval()->getGenericDataChildren()) {
-            if ((genericData->getTagProperty()->getTag() == GNE_TAG_EDGEREL_SINGLE) && (genericData->getParentEdges().front() == viewObjects.getEdgeFront())) {
-                // write warning
-                WRITE_WARNINGF(TL("There is already a % in edge '%'"), genericData->getTagStr(), viewObjects.getEdgeFront()->getID());
-                // abort edge data creation
-                return false;
-            }
+        // check if exist already a edge rel single in the given edge
+        if (myIntervalSelector->getDataInterval()->edgeRelSingleExists(viewObjects.getEdgeFront())) {
+            // write warning
+            WRITE_WARNINGF(TL("There is already a % in edge '%'"), toString(GNE_TAG_EDGEREL_SINGLE), viewObjects.getEdgeFront()->getID());
+            // abort edge data creation
+            return false;
         }
         // check if parameters are valid
         if (myGenericDataAttributesEditor->checkAttributes(true)) {
-            GNEDataHandler dataHandler(myViewNet->getNet(), "", myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed(), false);
+            GNEDataHandler dataHandler(myViewNet->getNet(), myDataSetSelector->getDataSet()->getFileBucket(),
+                                       myViewNet->getViewParent()->getGNEAppWindows()->isUndoRedoAllowed());
             // create interval base object
             CommonXMLStructure::SumoBaseObject* intervalBaseObject = new CommonXMLStructure::SumoBaseObject(nullptr);
             intervalBaseObject->addStringAttribute(SUMO_ATTR_ID, myIntervalSelector->getDataInterval()->getID());

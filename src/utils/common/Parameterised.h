@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -105,8 +105,11 @@ public:
     /// @brief Returns the inner key/value map in string format "key1=value1|key2=value2|...|keyN=valueN"
     std::string getParametersStr(const std::string kvsep = "=", const std::string sep = "|") const;
 
-    /// @brief set the inner key/value map in map<string, string> format
+    /// @brief set the given key/value map in map<string, string> format
     void setParameters(const Parameterised& params);
+
+    /// @brief set the given key/value vector in map<string, string> format
+    void setParameters(const std::vector<std::pair<std::string, std::string> >& params);
 
     /**@brief set the inner key/value map in string format "key1=value1|key2=value2|...|keyN=valueN"
      * @param[in] paramsString A serialized key-value map

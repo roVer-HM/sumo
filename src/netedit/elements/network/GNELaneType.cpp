@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,7 +19,6 @@
 /****************************************************************************/
 
 #include <netedit/GNENet.h>
-#include <netedit/GNEViewNet.h>
 #include <netedit/GNEViewParent.h>
 #include <netedit/frames/GNEAttributesEditor.h>
 #include <netedit/frames/network/GNECreateEdgeFrame.h>
@@ -46,6 +45,24 @@ GNELaneType::GNELaneType(GNEEdgeType* edgeTypeParent, const NBTypeCont::LaneType
 
 
 GNELaneType::~GNELaneType() {
+}
+
+
+GNEMoveElement*
+GNELaneType::getMoveElement() const {
+    return nullptr;
+}
+
+
+Parameterised*
+GNELaneType::getParameters() {
+    return this;
+}
+
+
+const Parameterised*
+GNELaneType::getParameters() const {
+    return this;
 }
 
 
@@ -128,18 +145,6 @@ GNELaneType::checkDrawMoveContour() const {
 }
 
 
-GNEMoveOperation*
-GNELaneType::getMoveOperation() {
-    return nullptr;
-}
-
-
-void
-GNELaneType::removeGeometryPoint(const Position /*clickedPosition*/, GNEUndoList* /*undoList*/) {
-    // nothing to do
-}
-
-
 GUIGLObjectPopupMenu*
 GNELaneType::getPopUpMenu(GUIMainWindow& /*app*/, GUISUMOAbstractView& /*parent*/) {
     return nullptr;
@@ -166,7 +171,7 @@ GNELaneType::drawGL(const GUIVisualizationSettings& /*s*/) const {
 
 void
 GNELaneType::deleteGLObject() {
-    myNet->deleteNetworkElement(this, myNet->getViewNet()->getUndoList());
+    myNet->deleteNetworkElement(this, myNet->getUndoList());
 }
 
 
@@ -216,14 +221,26 @@ GNELaneType::getAttribute(SumoXMLAttr key) const {
                 return toString(width);
             }
         default:
-            return getCommonAttribute(this, key);
+            return getCommonAttribute(key);
     }
+}
+
+
+double
+GNELaneType::getAttributeDouble(SumoXMLAttr key) const {
+    return getCommonAttributeDouble(key);
+}
+
+
+Position
+GNELaneType::getAttributePosition(SumoXMLAttr key) const {
+    return getCommonAttributePosition(key);
 }
 
 
 PositionVector
 GNELaneType::getAttributePositionVector(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+    return getCommonAttributePositionVector(key);
 }
 
 
@@ -254,14 +271,8 @@ GNELaneType::isValid(SumoXMLAttr key, const std::string& value) {
                 return canParse<double>(value);
             }
         default:
-            return isCommonValid(key, value);
+            return isCommonAttributeValid(key, value);
     }
-}
-
-
-const Parameterised::Map&
-GNELaneType::getACParametersMap() const {
-    return getParametersMap();
 }
 
 // ===========================================================================
@@ -320,25 +331,13 @@ GNELaneType::setAttribute(SumoXMLAttr key, const std::string& value) {
             }
             break;
         default:
-            setCommonAttribute(this, key, value);
+            setCommonAttribute(key, value);
             break;
     }
     // update edge selector
-    if (myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->shown()) {
-        myNet->getViewNet()->getViewParent()->getCreateEdgeFrame()->getLaneTypeAttributes()->refreshAttributesEditor();
+    if (myNet->getViewNet() && myNet->getViewParent()->getCreateEdgeFrame()->shown()) {
+        myNet->getViewParent()->getCreateEdgeFrame()->getLaneTypeAttributes()->refreshAttributesEditor();
     }
-}
-
-
-void
-GNELaneType::setMoveShape(const GNEMoveResult& /*moveResult*/) {
-    // nothing to do
-}
-
-
-void
-GNELaneType::commitMoveShape(const GNEMoveResult& /*moveResult*/, GNEUndoList* /*undoList*/) {
-    // nothing to do
 }
 
 /****************************************************************************/

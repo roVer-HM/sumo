@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -258,6 +258,9 @@ public:
     /// @brief removes a person or container
     virtual void removeTransportable(MSTransportable* t) = 0;
 
+    /// @brief removes a person or containers mass
+    virtual void removeTransportableMass(MSTransportable* t) = 0;
+
     /// @brief retrieve riding persons
     virtual const std::vector<MSTransportable*>& getPersons() const = 0;
 
@@ -297,6 +300,8 @@ public:
       */
     virtual bool replaceParkingArea(MSParkingArea* parkingArea, std::string& errorMsg) = 0;
 
+    virtual const std::vector<std::string>& getParkingBadges() const = 0;
+
     /// @brief Returns the remaining stop duration for a stopped vehicle or 0
     virtual SUMOTime remainingStopDuration() const = 0;
 
@@ -335,13 +340,22 @@ public:
     * returns the next imminent stop in the stop queue
     * @return the upcoming stop
     */
-    virtual MSStop& getNextStop() = 0;
+    virtual const MSStop& getNextStop() const = 0;
+
+    /**
+    * returns the next imminent stop in the stop queue
+    * @return the upcoming stop
+    */
+    virtual MSStop& getNextStopMutable() = 0;
 
     /// @brief mark vehicle as active
     virtual void unregisterWaiting() = 0;
 
     /** @brief Returns parameters of the next stop or nullptr **/
     virtual const SUMOVehicleParameter::Stop* getNextStopParameter() const = 0;
+
+    /// @brief get remaining stop duration or 0 if the vehicle isn't stopped
+    virtual SUMOTime getStopDuration() const = 0;
 
     /**
      * schedule a new stop for the vehicle; each time a stop is reached, the vehicle

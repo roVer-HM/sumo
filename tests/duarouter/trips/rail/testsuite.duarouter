@@ -21,3 +21,7 @@ reversal_cost
 
 # estimated traveltime should take reversal into account (shorcut on long reversal edge)
 reversal_detour
+reversal_penalty
+
+# forbid reversal by setting negative penalty
+reversal_penalty_disable

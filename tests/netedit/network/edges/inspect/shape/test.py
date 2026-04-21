@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,35 +19,30 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # go to inspect mode
-netedit.inspectMode()
+netedit.changeMode("inspect")
 
 # inspect edge
 netedit.leftClick(referencePosition, netedit.positions.network.edge.leftBot)
 
 # Change parameter 11 with an non valid value (dummy)
-netedit.modifyAttribute(netedit.attrs.edge.inspect.shape, "dummyShape", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.shape, "dummyShape")
 
 # Change parameter 11 with a valid value (empty)
-netedit.modifyAttribute(netedit.attrs.edge.inspect.shape, "", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.shape, "")
 
 # inspect edge again after recomputing
 netedit.leftClick(referencePosition, netedit.positions.network.edge.leftBot)
 
 # Change parameter 11 with a valid value
 netedit.modifyAttribute(netedit.attrs.edge.inspect.shape,
-                        "-25.00,0.00 -25.00,-5.00 -20.00,-5.00 -20.00,0.00 -10.00,0.00 -10.00,-5.00 -5.00,0.00 "
-                        "0.00,-5.00 5.00,0.00 10.00,-5.00 10.00,0.00 20.00,0.00 20.00,-5.00 25.00,-5.00 25.00,0.00",
-                        False)
+                        "-25.00,0.00 -25.00,-5.00 25.00,-5.00 25.00,0.00")
 
 # Check undos
 netedit.undo(referencePosition, 1)
@@ -56,7 +51,7 @@ netedit.undo(referencePosition, 1)
 netedit.redo(referencePosition, 1)
 
 # save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

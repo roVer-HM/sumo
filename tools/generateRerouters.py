@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2010-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2010-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -37,6 +37,8 @@ def get_options(args=None):
                   help="define the output rerouter filename", default="rerouters.xml")
     op.add_option("-x", "--closed-edges", category="input", dest="closedEdges", type=op.edge_list,
                   help="provide a comma-separated list of edges to close")
+    op.add_option("-f", "--closed-edges.input-file", category="input", dest="closedEdgesFile", type=op.file,
+                  help="provide a selection file with edges to close")
     op.add_option("-i", "--id-prefix", category="processing", dest="idPrefix", default="rr",
                   help="id prefix for generated rerouters")
     op.add_option("--vclass", category="processing", default="passenger",
@@ -50,11 +52,19 @@ def get_options(args=None):
     op.add_option("-e", "--end", category="time", default=86400, type=float,
                   help="end time for the closing (default 86400)")
     options = op.parse_args(args=args)
-    if not options.netfile or not options.closedEdges:
+    if not options.netfile or (not options.closedEdges and not options.closedEdgesFile):
         op.print_help()
         sys.exit(1)
 
-    options.closedEdges = options.closedEdges.split(',')
+    options.closedEdges = options.closedEdges.split(',') if options.closedEdges else []
+    if options.closedEdgesFile:
+        with sumolib.miscutils.openz(options.closedEdgesFile, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("edge:"):
+                    edgeID = line[5:]
+                    options.closedEdges.append(edgeID)
+
     return options
 
 
@@ -68,30 +78,35 @@ def findNotifcationEdges(options, net, closedEdges):
             p.remove(options.vclass)
             lane.setPermissions(p)
 
+    reachable = set()
     for e in closedEdges:
-        reachable = set()
         for succ in e.getOutgoing().keys():
             if succ.allows(options.vclass):
                 reachable.update(net.getReachable(succ, options.vclass))
 
-        upstream = []
-        seen = set()
+    upstream = []
+    for e in closedEdges:
         for pred in e.getIncoming().keys():
             if pred.allows(options.vclass):
                 upstream.append(pred)
 
-        while upstream and reachable:
-            cand = upstream.pop(0)
-            seen.add(cand)
-            reachable2 = net.getReachable(cand, options.vclass)
-            found = reachable2.intersection(reachable)
-            if found:
-                result.add(cand)
-                reachable.difference_update(found)
-            for pred in cand.getIncoming().keys():
-                if pred.allows(options.vclass):
-                    if pred not in seen:
-                        upstream.append(pred)
+    seen = set()
+    cache = {}
+    while upstream and reachable:
+        cand = upstream.pop(0)
+        if cand in seen:
+            continue
+        seen.add(cand)
+        reachable2 = net.getReachable(cand, options.vclass, cache=cache)
+        found = reachable2.intersection(reachable)
+        if found:
+            result.add(cand)
+            reachable.difference_update(found)
+        for pred in cand.getIncoming().keys():
+            if pred.allows(options.vclass):
+                if pred not in seen:
+                    upstream.append(pred)
+
     return result
 
 
@@ -101,8 +116,13 @@ def main(options):
     closedEdges = []
     for closedID in options.closedEdges:
         if not net.hasEdge(closedID):
-            sys.exit("Unknown closed edge '%s'" % closedID)
+            print("Error: Unknown closed edge '%s'" % closedID, file=sys.stderr)
+            sys.exit(1)
         closedEdges.append(net.getEdge(closedID))
+
+    if not closedEdges:
+        print("Error: found no edges to close.", file=sys.stderr)
+        sys.exit(1)
 
     allowDisallow = ""
     if options.disallow is not None:
@@ -114,6 +134,9 @@ def main(options):
         sumolib.writeXMLHeader(outf, "$Id$", "additional", options=options)
 
         rerouterEdges = findNotifcationEdges(options, net, closedEdges)
+        if not rerouterEdges:
+            print("Warning: No detours found. Rerouter will only close edges.", file=sys.stderr)
+            rerouterEdges = closedEdges
         rerouterEdgeIDs = sorted([e.getID() for e in rerouterEdges])
 
         outf.write('   <rerouter id="%s" edges="%s">\n' % (
@@ -121,7 +144,7 @@ def main(options):
                    ' '.join(rerouterEdgeIDs)))
         outf.write('      <interval begin="%s" end="%s">\n' % (options.begin, options.end))
         for e in closedEdges:
-            outf.write('          <closingReroute id="%s"%s>\n' % (e.getID(), allowDisallow))
+            outf.write('          <closingReroute id="%s"%s/>\n' % (e.getID(), allowDisallow))
 
         outf.write('       </interval>\n')
         outf.write('   </rerouter>\n')

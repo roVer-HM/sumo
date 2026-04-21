@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,19 +19,17 @@
 /****************************************************************************/
 
 #include <netedit/GNENet.h>
-#include <netedit/GNEViewNet.h>
 #include <netedit/frames/network/GNETLSEditorFrame.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/div/GUIParameterTableWindow.h>
-#include <utils/gui/globjects/GLIncludes.h>
 #include <utils/gui/globjects/GUIGLObjectPopupMenu.h>
 
 #include "GNEInternalLane.h"
-#include "GNEJunction.h"
 
 // ===========================================================================
 // FOX callback mapping
 // ===========================================================================
+
 FXIMPLEMENT(GNEInternalLane, FXDelegator, 0, 0)
 
 // ===========================================================================
@@ -88,6 +86,24 @@ GNEInternalLane::GNEInternalLane() :
 GNEInternalLane::~GNEInternalLane() {
     // remove this internal lane from junction parent
     myJunctionParent->removeInternalLane(this);
+}
+
+
+GNEMoveElement*
+GNEInternalLane::getMoveElement() const {
+    return nullptr;
+}
+
+
+Parameterised*
+GNEInternalLane::getParameters() {
+    return nullptr;
+}
+
+
+const Parameterised*
+GNEInternalLane::getParameters() const {
+    return nullptr;
 }
 
 
@@ -155,19 +171,6 @@ GNEInternalLane::checkDrawMoveContour() const {
 }
 
 
-GNEMoveOperation*
-GNEInternalLane::getMoveOperation() {
-    // internal lanes cannot be moved
-    return nullptr;
-}
-
-
-void
-GNEInternalLane::removeGeometryPoint(const Position /*clickedPosition*/, GNEUndoList* /*undolist*/) {
-    // geometry points of internal lanes cannot be removed
-}
-
-
 long
 GNEInternalLane::onDefault(FXObject* obj, FXSelector sel, void* data) {
     if (myEditor != nullptr) {
@@ -211,11 +214,6 @@ GNEInternalLane::drawGL(const GUIVisualizationSettings& s) const {
                                       s.connectionSettings.connectionWidth);
             // pop layer matrix
             GLHelper::popMatrix();
-            // draw edge name
-            if (s.internalEdgeName.show(this)) {
-                GLHelper::drawTextSettings(s.internalEdgeName, getMicrosimID(), myInternalLaneGeometry.getShape().getLineCenter(),
-                                           s.scale, s.angle);
-            }
             // draw dotted contour
             myNetworkElementContour.drawDottedContours(s, d, this, s.dottedContourSettings.segmentWidth, true);
         }
@@ -310,55 +308,43 @@ GNEInternalLane::colorForLinksState(FXuint state) {
 
 std::string
 GNEInternalLane::getAttribute(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+    return getCommonAttribute(key);
+}
+
+
+double
+GNEInternalLane::getAttributeDouble(SumoXMLAttr key) const {
+    return getCommonAttributeDouble(key);
+}
+
+
+Position
+GNEInternalLane::getAttributePosition(SumoXMLAttr key) const {
+    return getCommonAttributePosition(key);
 }
 
 
 PositionVector
 GNEInternalLane::getAttributePositionVector(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+    return getCommonAttributePositionVector(key);
 }
 
 
 void
-GNEInternalLane::setAttribute(SumoXMLAttr key, const std::string& /*value*/, GNEUndoList* /*undoList*/) {
-    throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
+GNEInternalLane::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList) {
+    setCommonAttribute(key, value, undoList);
 }
 
 
 bool
-GNEInternalLane::isValid(SumoXMLAttr key, const std::string& /*value*/) {
-    throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
-}
-
-
-bool
-GNEInternalLane::isAttributeEnabled(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
-}
-
-
-const Parameterised::Map&
-GNEInternalLane::getACParametersMap() const {
-    throw InvalidArgument(getTagStr() + " doesn't have parameters");
+GNEInternalLane::isValid(SumoXMLAttr key, const std::string& value) {
+    return isCommonAttributeValid(key, value);
 }
 
 
 void
-GNEInternalLane::setAttribute(SumoXMLAttr key, const std::string& /*value*/) {
-    throw InvalidArgument(getTagStr() + " doesn't have an attribute of type '" + toString(key) + "'");
-}
-
-
-void
-GNEInternalLane::setMoveShape(const GNEMoveResult& /*moveResult*/) {
-    // internal lanes cannot be moved
-}
-
-
-void
-GNEInternalLane::commitMoveShape(const GNEMoveResult& /*moveResult*/, GNEUndoList* /*undoList*/) {
-    // internal lanes cannot be moved
+GNEInternalLane::setAttribute(SumoXMLAttr key, const std::string& value) {
+    setCommonAttribute(key, value);
 }
 
 /****************************************************************************/

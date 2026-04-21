@@ -91,3 +91,23 @@ ticket15797b
 
 # crash
 ticket15807
+ticket16819
+
+# crash in railway simulation
+ticket17154
+
+# crash when non-rail edges enter a rail signal
+ticket17183
+
+# crash when using rail signal on "normal" edges
+ticket17258
+ticket17323
+
+# unsafe insertion
+ticket17367
+
+# unsafe insertion
+ticket17453
+
+# crash
+ticket17516

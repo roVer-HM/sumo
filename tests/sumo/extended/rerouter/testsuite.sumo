@@ -6,6 +6,7 @@
 # - rerouter edge (detour sign) encountered before alternative route branches off  vs not encountered
 # - ignore-route-errors on/off
 closingReroute
+optimizeStops
 closingLaneReroute
 routeProb
 
@@ -39,6 +40,13 @@ closing_with_disallow
 
 # multiple rerouters that close the same edge with modifying permissions
 closing_with_disallow2
+
+# closing an edge with modifying permissions, vehicles with unaffected permissions should not reroute
+closing_with_disallow_unaffected
+
+# closing an edge with modifying permissions, 
+# edges where permissions are still compatible must remain usable
+closing_with_disallow_detour_unaffected
 
 # closing an edge with modifying permissions
 closing_with_disallow_teleport

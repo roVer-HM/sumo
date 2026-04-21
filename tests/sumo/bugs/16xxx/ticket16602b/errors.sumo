@@ -1,1 +1,1 @@
-Warning: Missing green phase in tlLogic 'gneJ500', program 'real_tl_4140_1' for tl-index 0.
+Warning: Unsafe green phase 0 in tlLogic 'gneJ500', program '0'. Lane 'gneE381_0' is targeted by 2 'G'-links. (use 'g' instead)

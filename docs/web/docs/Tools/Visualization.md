@@ -77,6 +77,16 @@ The following attribute values have a special meaning. Instead of using an attri
 - `@BOX`: one or more [box plots](https://en.wikipedia.org/wiki/Box_plot) of the *other* value are drawn. The **--idattr** is used for grouping and there will be one box plot per id
 - `@NONE`: can be used with option **--idattr** to explicitly avoid grouping
 
+### Interactive Plot
+
+When clicking on a line or plot point, the data point ids near the click position are printed in the console.
+
+### Filtering
+
+Option **--filter-ids ID1,ID2,...** allows restricting the plot to the given data ids.
+
+It is permitted to use the wildcars *\**, *?*, *[* and *]* when specifying filters. This workings according to [file name globbing rules](https://en.wikipedia.org/wiki/Glob_(programming)).
+
 ### Multi-line plots
 
 - By default, every distinct ID (as defined by **--idattr**) will generated a new line for all the data points associated with that ID.
@@ -240,6 +250,9 @@ where -x is the attribute for the x axis; -y is the attribute for the y axis; -o
 
 ### Public transport schedule
 
+!!! note
+    The tool [plotStops.py](Railways.md#plotstopspy) simplifies plotting such schedules
+
 In this type of plot time is on the y-axis running from top to bottom. Input is route file of a [public transport schedule](../Simulation/Public_Transport.md#public_transport_schedules) where each vehicle is modelled individually.
 A similar plot could also be generated from [stop-output](../Simulation/Output/StopOutput.md) by using attribute `started` or `ended` (or `started,ended`) instead of `until`.
 
@@ -261,6 +274,9 @@ In order to group busStops that belong to different tracks of the same train sta
 *KX
 *LHG
 ```
+
+!!! note
+    The main advantage of [plotStops.py](Railways.md#plotstopspy) is creating a stoplist.txt file automatically.
 
 !!! note
     When plotting stops from a route file that also defines `<vType>` elements, then the option **--idelem** must be used to declare where the id attribute must be loaded from (i.e. **--idelem trip**).
@@ -836,7 +852,7 @@ the figure (once known it is as it should be). In such cases, the option
 
 ## Coloring and scaling edges in [sumo-gui](../sumo-gui.md) according to arbitrary data
 
-[sumo-gui](../sumo-gui.md) can load [edgeData files](../sumo-gui.md#visualizing_edge-related_data) and user the contained values of any attribute for coloring edges (roads) as well as for modifying the visual width of the edges. This serves a similar use case as #plot_net_dumppy but allows all dynamic zooming and panning features of of sumo-gui.
+[sumo-gui](../sumo-gui.md) can load [edgeData files](../sumo-gui.md#visualizing_edge-related_data) and use the contained values of any attribute for coloring edges (roads) as well as for modifying the visual width of the edges. This serves a similar use case as [plot_net_dump.py](#plot_net_dumppy) but allows all dynamic zooming and panning features of of sumo-gui.
 
 When stepping through the simulation, different time intervals contained in
 the weight file can be shown. It can be useful to adapt the simulation step length to the data period for easier stepping:
@@ -844,6 +860,21 @@ the weight file can be shown. It can be useful to adapt the simulation step leng
 ```
 sumo-gui -n NET --edgedata-files FILE --step-length 3600 --end 24:0:0
 ```
+After that, you need to do the following settings:
+
+* Choose "edgeData" for coloring:
+
+<img width="332" height="453" alt="1" src="https://github.com/user-attachments/assets/e6ebd7f2-5edd-4bb5-ac8a-71be7c53f8c5" />
+
+* Choose the data type and recalibrate the interval thresholds for coloring:
+   
+<img width="492" height="327" alt="2" src="https://github.com/user-attachments/assets/73372922-2c11-4722-bed2-51c9501ea17a" />
+
+* Set color edge legend (optional):
+
+<img width="188" height="262" alt="3" src="https://github.com/user-attachments/assets/ba57342b-6b2c-432f-a8a9-41631bf6dafe" />
+
+Regarding "Recalibrate Rainbow" it is done with use of the data read in the current step. So, it may be needed to run some steps to get data sometimes before klicking "Recalibrate Rainbow". Moreover, the result may be different if data in another step are used. Alternatively, you can (1) set min and max next to the icon "Recalibrate Rainbow" directly or (2) set the interval threshold for each interval manuelly.
 
 ## Intersection Flow Diagram
 

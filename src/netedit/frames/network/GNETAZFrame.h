@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -42,7 +42,7 @@ public:
     // class CurrentTAZ
     // ===========================================================================
 
-    class CurrentTAZ : public MFXGroupBoxModule {
+    class CurrentTAZ : public GNEGroupBoxModule {
 
     public:
         /// @brief struct for edges and the source/sink colors
@@ -64,7 +64,7 @@ public:
             /// @brief source TAZ
             GNETAZSourceSink* source;
 
-            /// @brif sink TAZ
+            /// @brief sink TAZ
             GNETAZSourceSink* sink;
 
             /// @brief color by source [0-9]
@@ -148,7 +148,7 @@ public:
     // class TAZCommonStatistics
     // ===========================================================================
 
-    class TAZCommonStatistics : public MFXGroupBoxModule {
+    class TAZCommonStatistics : public GNEGroupBoxModule {
 
     public:
         /// @brief constructor
@@ -178,7 +178,7 @@ public:
     // class TAZSaveChanges
     // ===========================================================================
 
-    class TAZSaveChanges : public MFXGroupBoxModule {
+    class TAZSaveChanges : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNETAZFrame::TAZSaveChanges)
 
@@ -228,7 +228,7 @@ public:
     // class TAZChildDefaultParameters
     // ===========================================================================
 
-    class TAZChildDefaultParameters : public MFXGroupBoxModule {
+    class TAZChildDefaultParameters : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNETAZFrame::TAZChildDefaultParameters)
 
@@ -315,7 +315,7 @@ public:
     // class TAZSelectionStatistics
     // ===========================================================================
 
-    class TAZSelectionStatistics : public MFXGroupBoxModule {
+    class TAZSelectionStatistics : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNETAZFrame::TAZSelectionStatistics)
 
@@ -389,7 +389,7 @@ public:
     // class TAZEdgesGraphic
     // ===========================================================================
 
-    class TAZEdgesGraphic : public MFXGroupBoxModule {
+    class TAZEdgesGraphic : public GNEGroupBoxModule {
         /// @brief FOX-declaration
         FXDECLARE(GNETAZFrame::TAZEdgesGraphic)
 
@@ -459,23 +459,23 @@ public:
     /**@brief process click over Viewnet
      * @param[in] clickedPosition clicked position over ViewNet
      * @param[in] viewObjects objects under cursors
-     * @return true if something (select TAZ or add edge) was sucefully done
+     * @return true if something (select TAZ or add edge) was successfully done
      */
     bool processClick(const Position& clickedPosition, const GNEViewNetHelper::ViewObjectsSelector& viewObjects);
 
     /// @brief process selection of edges in view net
     void processEdgeSelection(const std::vector<GNEEdge*>& edges);
 
-    /// @brief get drawing mode modul
+    /// @brief get drawing mode module
     GNEDrawingShape* getDrawingShapeModule() const;
 
-    /// @brief get Current TAZ modul
+    /// @brief get Current TAZ module
     CurrentTAZ* getCurrentTAZModule() const;
 
-    /// @brief get TAZ Selection Statistics modul
+    /// @brief get TAZ Selection Statistics module
     TAZSelectionStatistics* getTAZSelectionStatisticsModule() const;
 
-    /// @brief get TAZ Save Changes modul
+    /// @brief get TAZ Save Changes module
     TAZSaveChanges* getTAZSaveChangesModule() const;
 
 protected:

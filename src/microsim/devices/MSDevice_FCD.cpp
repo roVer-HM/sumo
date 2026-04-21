@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2013-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2013-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -38,12 +38,19 @@
 // ===========================================================================
 // static members
 // ===========================================================================
+SUMOTime MSDevice_FCD::myBegin = SUMOTime_MAX;
+SUMOTime MSDevice_FCD::myPeriod = 0;
+bool MSDevice_FCD::myUseGeo;
+double MSDevice_FCD::myMaxLeaderDistance;
+std::vector<std::string> MSDevice_FCD::myParamsToWrite;
+double MSDevice_FCD::myRadius;
 std::set<const MSEdge*> MSDevice_FCD::myEdgeFilter;
 std::vector<PositionVector> MSDevice_FCD::myShape4Filters;
 bool MSDevice_FCD::myEdgeFilterInitialized(false);
 bool MSDevice_FCD::myShapeFilterInitialized(false);
 bool MSDevice_FCD::myShapeFilterDesired(false);
-SumoXMLAttrMask MSDevice_FCD::myWrittenAttributes(getDefaultMask());
+SumoXMLAttrMask MSDevice_FCD::myWrittenAttributes;
+
 
 // ===========================================================================
 // method definitions
@@ -73,7 +80,6 @@ MSDevice_FCD::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>&
     if (equippedByDefaultAssignmentOptions(oc, "fcd", v, oc.isSet("fcd-output"))) {
         MSDevice_FCD* device = new MSDevice_FCD(v, "fcd_" + v.getID());
         into.push_back(device);
-        initOnce();
     }
 }
 
@@ -93,20 +99,23 @@ MSDevice_FCD::~MSDevice_FCD() {
 SumoXMLAttrMask
 MSDevice_FCD::getDefaultMask() {
     SumoXMLAttrMask mask;
-    // set all bits to 1
-    mask.set();
-    // some attributes are not written by default and must be enabled via option fcd-output.attributes
-    // (or with an explicit attribute list)
-    mask.reset(SUMO_ATTR_VEHICLE);
-    mask.reset(SUMO_ATTR_ODOMETER);
-    mask.reset(SUMO_ATTR_SPEED_LAT);
-    mask.reset(SUMO_ATTR_POSITION_LAT);
-    mask.reset(SUMO_ATTR_ARRIVALDELAY);
-    mask.reset(SUMO_ATTR_SEGMENT);
-    mask.reset(SUMO_ATTR_QUEUE);
-    mask.reset(SUMO_ATTR_ENTRYTIME);
-    mask.reset(SUMO_ATTR_EVENTTIME);
-    mask.reset(SUMO_ATTR_BLOCKTIME);
+    mask.set(SUMO_ATTR_X);
+    mask.set(SUMO_ATTR_Y);
+    if (MSNet::getInstance()->hasElevation()) {
+        mask.set(SUMO_ATTR_Z);
+    }
+    mask.set(SUMO_ATTR_ANGLE);
+    mask.set(SUMO_ATTR_TYPE);
+    mask.set(SUMO_ATTR_SPEED);
+    mask.set(SUMO_ATTR_POSITION);
+    mask.set(SUMO_ATTR_LANE); // for micro vehicles only
+    mask.set(SUMO_ATTR_EDGE); // for persons and meso vehicles
+    mask.set(SUMO_ATTR_SLOPE);
+    if (!MSGlobals::gUseMesoSim && OptionsCont::getOptions().getFloat("fcd-output.max-leader-distance") > 0.) {
+        mask.set(SUMO_ATTR_LEADER_ID);
+        mask.set(SUMO_ATTR_LEADER_SPEED);
+        mask.set(SUMO_ATTR_LEADER_GAP);
+    }
     return mask;
 }
 
@@ -156,6 +165,12 @@ MSDevice_FCD::initOnce() {
     }
     myEdgeFilterInitialized = true;
     const OptionsCont& oc = OptionsCont::getOptions();
+    myPeriod = string2time(oc.getString("device.fcd.period"));
+    myBegin = string2time(oc.getString("device.fcd.begin"));
+    myUseGeo = oc.getBool("fcd-output.geo");
+    myMaxLeaderDistance = oc.getFloat("fcd-output.max-leader-distance");
+    myParamsToWrite = oc.getStringVector("fcd-output.params");
+    myRadius = oc.getFloat("device.fcd.radius");
     if (oc.isSet("fcd-output.filter-edges.input-file")) {
         const std::string file = oc.getString("fcd-output.filter-edges.input-file");
         std::ifstream strm(file.c_str());
@@ -172,20 +187,53 @@ MSDevice_FCD::initOnce() {
             myEdgeFilter.insert(MSEdge::dictionary(name));
         }
     }
+    SumoXMLAttrMask emissions;
+    emissions.set(SUMO_ATTR_ECLASS);
+    emissions.set(SUMO_ATTR_CO2);
+    emissions.set(SUMO_ATTR_CO);
+    emissions.set(SUMO_ATTR_HC);
+    emissions.set(SUMO_ATTR_NOX);
+    emissions.set(SUMO_ATTR_PMX);
+    emissions.set(SUMO_ATTR_FUEL);
+    emissions.set(SUMO_ATTR_ELECTRICITY);
+    emissions.set(SUMO_ATTR_NOISE);
+    SumoXMLAttrMask misc;
+    misc.set(SUMO_ATTR_SIGNALS);
+    misc.set(SUMO_ATTR_ACCELERATION);
+    misc.set(SUMO_ATTR_ACCELERATION_LAT);
+    misc.set(SUMO_ATTR_DISTANCE);
+    misc.set(SUMO_ATTR_ODOMETER);
+    misc.set(SUMO_ATTR_POSITION_LAT);
+    misc.set(SUMO_ATTR_SPEED_LAT);
+    misc.set(SUMO_ATTR_LEADER_ID);
+    misc.set(SUMO_ATTR_LEADER_SPEED);
+    misc.set(SUMO_ATTR_ARRIVALDELAY);
+    misc.set(SUMO_ATTR_SEGMENT);
+    misc.set(SUMO_ATTR_QUEUE);
+    misc.set(SUMO_ATTR_ENTRYTIME);
+    misc.set(SUMO_ATTR_EVENTTIME);
+    misc.set(SUMO_ATTR_BLOCKTIME);
+    const std::map<std::string, SumoXMLAttrMask> special = {{"location", getDefaultMask()}, {"emissions", emissions}, {"misc", misc}};
     if (oc.isSet("fcd-output.attributes")) {
-        myWrittenAttributes.reset();
-        for (std::string attrName : oc.getStringVector("fcd-output.attributes")) {
-            if (!SUMOXMLDefinitions::Attrs.hasString(attrName)) {
-                if (attrName == "all") {
-                    myWrittenAttributes.set();
-                } else {
-                    WRITE_ERRORF(TL("Unknown attribute '%' to write in fcd output."), attrName);
-                }
-                continue;
-            }
-            int attr = SUMOXMLDefinitions::Attrs.get(attrName);
-            myWrittenAttributes.set(attr);
-        }
+        myWrittenAttributes = OutputDevice::parseWrittenAttributes(oc.getStringVector("fcd-output.attributes"), "fcd output", special);
+    } else {
+        myWrittenAttributes = getDefaultMask();
+    }
+    // need to store this because some attributes are reset later
+    const bool all = myWrittenAttributes.all();
+    myWrittenAttributes.set(SUMO_ATTR_ID);
+    if (!MSNet::getInstance()->hasElevation()) {
+        myWrittenAttributes.reset(SUMO_ATTR_Z);
+    }
+    if (oc.getBool("fcd-output.signals")) {
+        myWrittenAttributes.set(SUMO_ATTR_SIGNALS);
+    }
+    if (oc.getBool("fcd-output.acceleration")) {
+        myWrittenAttributes.set(SUMO_ATTR_ACCELERATION);
+    }
+    myWrittenAttributes.set(SUMO_ATTR_ACCELERATION_LAT, myWrittenAttributes.test(SUMO_ATTR_ACCELERATION) && MSGlobals::gSublane);
+    if (oc.getBool("fcd-output.distance")) {
+        myWrittenAttributes.set(SUMO_ATTR_DISTANCE);
     }
 
     if (oc.isSet("fcd-output.filter-shapes")) {
@@ -193,7 +241,7 @@ MSDevice_FCD::initOnce() {
         myShapeFilterDesired = true;
         buildShapeFilter();
     }
-    //std::cout << "mask=" << myWrittenAttributes << " binary=" << std::bitset<64>(myWrittenAttributes) << "\n";
+    OutputDevice::getDeviceByOption("fcd-output").setExpectedAttributes(all ? 0 : myWrittenAttributes);
 }
 
 
@@ -204,7 +252,7 @@ MSDevice_FCD::cleanup() {
     myEdgeFilterInitialized = false;
     myShapeFilterInitialized = false;
     myShapeFilterDesired = false;
-    myWrittenAttributes = getDefaultMask();
+    myWrittenAttributes.reset();
 }
 
 

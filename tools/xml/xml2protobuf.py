@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2014-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2014-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -35,8 +35,6 @@ try:
 except ImportError:
     haveLxml = False
 
-import xml2csv
-
 if 'SUMO_HOME' in os.environ:
     sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
 import sumolib  # noqa
@@ -57,7 +55,7 @@ class ProtoWriter(xml.sax.handler.ContentHandler):
     def __init__(self, module, attrFinder, output):
         self.module = module
         self.attrFinder = attrFinder
-        self.out = xml2csv.getOutStream(output)
+        self.out = sumolib.openz(output, "wb", trySocket=True)
         self.msgStack = []
         self.emptyRootMsg = None
 
@@ -123,7 +121,7 @@ def get_options():
         print("lxml not available, skipping validation", file=sys.stderr)
         options.validation = False
     if options.source.isdigit():
-        options.source = xml2csv.getSocketStream(int(options.source))
+        options.source = sumolib.miscutils.getSocketStream(int(options.source))
     if not options.output:
         options.output = os.path.splitext(options.source)[0] + ".protomsg"
     return options
@@ -188,7 +186,7 @@ def generateProto(tagAttrs, depthTags, enums, protodir, base):
 def main():
     options = get_options()
     # get attributes
-    attrFinder = xml2csv.AttrFinder(options.xsd, options.source, False)
+    attrFinder = sumolib.xml.AttrFinder(options.xsd, options.source, False)
     base = os.path.basename(options.xsd).split('.')[0]
     # generate proto format description
     module = generateProto(attrFinder.tagAttrs, attrFinder.depthTags,

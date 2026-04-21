@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -19,7 +19,6 @@
 /****************************************************************************/
 
 #include <netedit/frames/GNEAttributesEditor.h>
-#include <utils/gui/images/GUIIconSubSys.h>
 
 #include "GNETypeDistributionFrame.h"
 
@@ -40,7 +39,7 @@ GNETypeDistributionFrame::GNETypeDistributionFrame(GNEViewParent* viewParent, GN
     myAttributesEditor = new GNEAttributesEditor(this, GNEAttributesEditorType::EditorType::EDITOR);
 
     // Create type distribution attributes editor
-    myDistributionValuesEditor = new GNEDistributionFrame::DistributionValuesEditor(this, myDistributionEditor, myDistributionSelector, myAttributesEditor, SUMO_TAG_VTYPE);
+    myDistributionValuesEditor = new GNEDistributionFrame::DistributionValuesEditor(this, myDistributionEditor, myDistributionSelector, myAttributesEditor);
 }
 
 
@@ -59,6 +58,12 @@ GNETypeDistributionFrame::show() {
 GNEDistributionFrame::DistributionSelector*
 GNETypeDistributionFrame::getDistributionSelector() const {
     return myDistributionSelector;
+}
+
+
+GNEDistributionFrame::DistributionValuesEditor*
+GNETypeDistributionFrame::getDistributionValuesEditor() const {
+    return myDistributionValuesEditor;
 }
 
 

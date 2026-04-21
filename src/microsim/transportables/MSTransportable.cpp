@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -52,7 +52,8 @@ MSTransportable::MSTransportable(const SUMOVehicleParameter* pars, MSVehicleType
     SUMOTrafficObject(pars->id),
     myParameter(pars), myVType(vtype), myPlan(plan),
     myAmPerson(isPerson),
-    myNumericalID(myCurrentNumericalIndex++) {
+    myNumericalID(myCurrentNumericalIndex++),
+    myRandomSeed(RandHelper::murmur3_32(pars->id, RandHelper::getSeed())) {
     myStep = myPlan->begin();
     // init devices
     MSDevice::buildTransportableDevices(*this, myDevices);
@@ -234,7 +235,7 @@ MSTransportable::tripInfoOutput(OutputDevice& os) const {
         } else {
             durationOK = false;
         }
-        t = i->getWaitingTime();
+        t = i->getTotalWaitingTime();
         if (t != SUMOTime_MAX) {
             waitingTime += t;
         } else {
@@ -437,7 +438,7 @@ MSTransportable::reroute(SUMOTime t, const std::string& /* info */, MSTransporta
 
 
 void
-MSTransportable::replaceVehicleType(MSVehicleType* type) {
+MSTransportable::replaceVehicleType(const MSVehicleType* type) {
     const SUMOVehicleClass oldVClass = myVType->getVehicleClass();
     if (myVType->isVehicleSpecific()) {
         MSNet::getInstance()->getVehicleControl().removeVType(myVType);
@@ -455,7 +456,7 @@ MSTransportable::replaceVehicleType(MSVehicleType* type) {
 MSVehicleType&
 MSTransportable::getSingularType() {
     if (myVType->isVehicleSpecific()) {
-        return *myVType;
+        return *const_cast<MSVehicleType*>(myVType);
     }
     MSVehicleType* type = myVType->buildSingularType(myVType->getID() + "@" + getID());
     replaceVehicleType(type);

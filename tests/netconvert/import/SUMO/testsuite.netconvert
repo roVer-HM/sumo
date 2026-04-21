@@ -24,6 +24,9 @@ traffic_lights-discard
 # re-import network with right_on_red logic
 traffic_light_right_on_red
 
+# re-import network with right_on_red logic where the turn also has an internal junction. The network is from import/XML/tl_types/right_on_red/ror_cont
+traffic_light_right_on_red_cont
+
 # demonstrate the ability to import actuated traffic lights
 traffic_light_actuated
 
@@ -104,6 +107,12 @@ merge_geo_overlap
 # see #12824
 merge_geo_overlap2
 
+# see #16968
+merge_geo_removedNodeIDs
+
+# see #16969
+merge_geo_split_join_same
+
 # load geo-encoded patch into geo network
 patch_geo
 
@@ -137,3 +146,6 @@ no_internal_lanes_add_crossings
 
 # network has a NEMA junction
 NEMA
+
+# Copy of routingType
+routingType

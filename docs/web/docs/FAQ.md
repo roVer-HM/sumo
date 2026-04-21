@@ -941,10 +941,10 @@ There are several reasons why a counter-lane-change-deadlock can happen:
   The main reason is usually that only the lanes they use allow them to continue their route. You should check the downstream junction
   whether the connections are correct. If the number of lanes is reduced without further streets being involved
   (not a proper junction) make sure to use the [zipper type](Networks/PlainXML.md#node_types). If you want to change the way vehicles behave
-  for the whole scenario, lower their [lcStrategic](Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#lane_changing_models) value.
+  for the whole scenario, lower their [lcStrategic](Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#lane-changing_models) value.
 
   In cases where one lane has multiple target lanes on the next edge, vehicles will prefer the rightmost continuation lane by default.
-  This can be changed with vType-attribute [lcContRight](Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#lane_changing_models).
+  This can be changed with vType-attribute [lcContRight](Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#lane-changing_models).
   Also the eagerness to use the rightmost lane can be configured using the vType-attribute lcKeepRight.
 
 ### How do I get high flows/vehicle densities?
@@ -1225,10 +1225,17 @@ SUMO uses the fox-toolkit which permits [system-wide and per-application setting
 Under windows these settings must be configured using `regedit` i.e. at the registry location `Computer\HKEY_CURRENT_USER\SOFTWARE\sumo-gui\SUMO GUI\SETTINGS`
 
 - Supported color entries are: bordercolor, basecolor, hilitecolor, shadowcolor, backcolor, forecolor, selforecolor, selbackcolor, tipforecolor, tipbackcolor, selmenutextcolor, selmenubackcolor
-  - supported color values are RGB hex codes (#aea395) as well as symbolic names (red). A full list of colornames can be found in [`FXColorNames.cpp`](https://github.com/DLR-TS/SUMOLibraries/blob/main/fox-1.6.58/src/FXColorNames.cpp).
+  - supported color values are RGB hex codes (#aea395) as well as symbolic names (red). A full list of colornames can be found in [`FXColorNames.cpp`](https://github.com/DLR-TS/SUMOLibraries/blob/main/fox-1.6.59/src/FXColorNames.cpp).
 - The font is configured with: normalfont (i.e. normalfont="Times,100")
 - Further config entries are: typingspeed, clickspeed, scrollspeed, scrolldelay, blinkspeed, animspeed, menupause, tippause, tiptime, dragdelta, wheellines, scrollbarsize, displaygamma
 
+### How can I change font and icon size in sumo-gui or netedit?
+
+Starting with version 1.26.0 (specifically v1_25_0-454), it is possible to scale fonts and icons sizes in the gui-settings ('UI Scaling' in the openGL tab). The application must be restarted for the setting to take effect.
+
+In older versions the fox-registry (see above) must be used to change the 'normalfont'. On Linux and MaCOS this can be accomplished by creating the file *~/.foxrc/Desktop* with the following line:
+`normalfont="Arial,200"` 
+(with any desired font or size)
 
 ## Upgrading
 

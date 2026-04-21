@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2015-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2015-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -34,6 +34,7 @@
 #include <microsim/transportables/MSTransportable.h>
 #include "MSParkingArea.h"
 #include "MSGlobals.h"
+#include <utils/common/MsgHandler.h>
 
 //#define DEBUG_RESERVATIONS
 //#define DEBUG_GET_LAST_FREE_POS
@@ -82,9 +83,9 @@ MSParkingArea::MSParkingArea(const std::string& id, const std::vector<std::strin
         }
         if (myDepartPosDefinition != DepartPosDefinition::GIVEN) {
             // maybe allow other methods at a later time
-            throw ProcessError("Only a numerical departPos is supported for " + toString(myElement) + " '" + getID() + "'");
+            throw ProcessError(TLF("Only a numerical departPos is supported for % '%'", toString(myElement), getID()));
         } else if (myDepartPos < 0 || myDepartPos > lane.getLength()) {
-            throw ProcessError("Invalid departPos for " + toString(myElement) + " '" + getID() + "'");
+            throw ProcessError(TLF("Invalid departPos for % '%'", toString(myElement), getID()));
         }
     }
 
@@ -312,7 +313,7 @@ MSParkingArea::getLotIndex(const SUMOVehicle* veh) const {
 }
 
 void
-MSParkingArea::enter(SUMOVehicle* veh) {
+MSParkingArea::enter(SUMOVehicle* veh, const bool /* parking */) {
     double beg = veh->getPositionOnLane() + veh->getVehicleType().getMinGap();
     double end = veh->getPositionOnLane() - veh->getVehicleType().getLength();
     if (myUpdateEvent == nullptr) {
@@ -441,9 +442,9 @@ MSParkingArea::getLastFreePosWithReservation(SUMOTime t, const SUMOVehicle& forV
             if (mySpaceOccupancies.size() > 0) {
                 assert(mySpaceOccupancies[0].vehicle != nullptr);
                 const double waitPos = (mySpaceOccupancies[0].endPos
-                        - mySpaceOccupancies[0].vehicle->getLength()
-                        - forVehicle.getVehicleType().getMinGap()
-                        - NUMERICAL_EPS);
+                                        - mySpaceOccupancies[0].vehicle->getLength()
+                                        - forVehicle.getVehicleType().getMinGap()
+                                        - NUMERICAL_EPS);
                 return MAX2(waitPos, MIN2(POSITION_EPS, myEndPos));
             } else {
                 return MAX2(myBegPos, MIN2(POSITION_EPS, myEndPos));
@@ -452,14 +453,16 @@ MSParkingArea::getLastFreePosWithReservation(SUMOTime t, const SUMOVehicle& forV
             // check if there is a reservation from the last time step
             // (this could also be in myReserations, if myLane wasn't processed before the forVehicle-lane)
             const SUMOTime last = t - DELTA_T;
-            if (DEBUG_COND2(forVehicle)) std::cout << SIMTIME << " last=" << time2string(last) << " lastRes=" << time2string(myLastReservationTime) << " resTime=" << toString(myReservationTime) << "\n";
+            if (DEBUG_COND2(forVehicle)) {
+                std::cout << SIMTIME << " last=" << time2string(last) << " lastRes=" << time2string(myLastReservationTime) << " resTime=" << toString(myReservationTime) << "\n";
+            }
             if (myLastReservationTime == last || myReservationTime == last) {
                 int res = myLastReservationTime == last ? myLastReservations : myReservations;
                 if (myCapacity <= getOccupancy() + res) {
                     double maxLen = myLastReservationTime == last ? myLastReservationMaxLength : myReservationMaxLength;
 #ifdef DEBUG_RESERVATIONS
                     if (DEBUG_COND2(forVehicle)) std::cout << SIMTIME << " pa=" << getID() << " freePosRes veh=" << forVehicle.getID()
-                        << " lastRes=" << res << " resTime=" << myReservationTime << " reserved full, maxLen=" << maxLen << " endPos=" << mySpaceOccupancies[0].endPos << "\n";
+                                                               << " lastRes=" << res << " resTime=" << myReservationTime << " reserved full, maxLen=" << maxLen << " endPos=" << mySpaceOccupancies[0].endPos << "\n";
 #endif
                     return (mySpaceOccupancies[0].endPos
                             - maxLen
@@ -594,7 +597,7 @@ MSParkingArea::refuse(std::string badge) {
 
 
 bool
-MSParkingArea::accepts(MSBaseVehicle* veh) const {
+MSParkingArea::accepts(SUMOVehicle* veh) const {
     if (myAcceptedBadges.size() == 0) {
         return true;
     } else {
@@ -638,6 +641,18 @@ void
 MSParkingArea::setAcceptedBadges(const std::vector<std::string>& badges) {
     myAcceptedBadges.clear();
     myAcceptedBadges.insert(badges.begin(), badges.end());
+}
+
+
+const std::vector<MSParkingArea::LotSpaceDefinition>&
+MSParkingArea::getSpaceOccupancies() const {
+    return mySpaceOccupancies;
+}
+
+
+const PositionVector&
+MSParkingArea::getShape() const {
+    return myShape;
 }
 
 

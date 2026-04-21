@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -82,7 +82,7 @@ public:
     /** @brief Builds the route between the given edges using the minimum effort at the given time
         The definition of the effort depends on the wished routing scheme */
     double compute(const E* from, const E* to, double departPos, double arrivalPos, double speed,
-                   SUMOTime msTime, const N* onlyNode, std::vector<const E*>& into, bool allEdges = false) const {
+                   SUMOTime msTime, const N* onlyNode, const SUMOVTypeParameter& pars, std::vector<const E*>& into, bool allEdges = false) const {
         if (getSidewalk<E, L>(from) == 0) {
             WRITE_WARNINGF(TL("Departure edge '%' does not allow pedestrians."), from->getID());
             return false;
@@ -91,7 +91,7 @@ public:
             WRITE_WARNINGF(TL("Destination edge '%' does not allow pedestrians."), to->getID());
             return false;
         }
-        _IntermodalTrip trip(from, to, departPos, arrivalPos, speed, msTime, onlyNode);
+        _IntermodalTrip trip(from, to, departPos, arrivalPos, speed, msTime, onlyNode, pars);
         std::vector<const _IntermodalEdge*> intoPed;
         const bool silent = allEdges; // no warning is needed when called from MSPModel_Striping
         const bool success = myInternalRouter->compute(myPedNet->getDepartConnector(from),
@@ -126,16 +126,16 @@ public:
         throw ProcessError(TL("Do not use this method"));
     }
 
-    void prohibit(const std::vector<E*>& toProhibit) {
-        std::vector<_IntermodalEdge*> toProhibitPE;
-        for (typename std::vector<E*>::const_iterator it = toProhibit.begin(); it != toProhibit.end(); ++it) {
-            toProhibitPE.push_back(myPedNet->getBothDirections(*it).first);
-            toProhibitPE.push_back(myPedNet->getBothDirections(*it).second);
+    void prohibit(const std::map<const E*, RouterProhibition>& toProhibit) {
+        typename _InternalRouter::Prohibitions toProhibitPE;
+        for (auto item : toProhibit) {
+            toProhibitPE[myPedNet->getBothDirections(item.first).first] = item.second;
+            toProhibitPE[myPedNet->getBothDirections(item.first).second] = item.second;
         }
         myInternalRouter->prohibit(toProhibitPE);
     }
 
-    double recomputeWalkCosts(const std::vector<const E*>& edges, double speed, double fromPos, double toPos, SUMOTime msTime, double& length) const {
+    double recomputeWalkCosts(const std::vector<const E*>& edges, double speed, double fromPos, double toPos, SUMOTime msTime, const SUMOVTypeParameter& pars, double& length) const {
         // edges are normal edges so we need to reconstruct paths across intersection
         if (edges.size() == 0) {
             length = 0;
@@ -169,7 +169,7 @@ public:
                         length += to->getLength() - toPos;
                     }
                 }
-                double time = this->compute(from, to, fp, tp, speed, msTime, node, into, true);
+                double time = this->compute(from, to, fp, tp, speed, msTime, node, pars, into, true);
                 if (time >= 0) {
                     cost += time;
                     for (const E* edge : into) {

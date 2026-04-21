@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -27,7 +27,6 @@
 #include <bitset>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/StringUtils.h>
-#include <utils/common/StringTokenizer.h>
 #include <utils/vehicle/SUMOVehicleParameter.h>
 #include <utils/emissions/PollutantsInterface.h>
 #include <utils/geom/GeomHelper.h>
@@ -95,6 +94,7 @@ GUIVehicle::GUIVehicle(SUMOVehicleParameter* pars, ConstMSRoutePtr route,
 
 
 GUIVehicle::~GUIVehicle() {
+    gSelected.deselect(GLO_VEHICLE, getGlID());
 }
 
 
@@ -149,8 +149,8 @@ GUIVehicle::getParameterWindow(GUIMainWindow& app,
     ret->mkItem(TL("depart delay [s]"), false, time2string(getDepartDelay()));
     ret->mkItem(TL("odometer [m]"), true,
                 new FunctionBinding<GUIVehicle, double>(this, &MSBaseVehicle::getOdometer));
-    if (getParameter().repetitionNumber < std::numeric_limits<int>::max()) {
-        ret->mkItem(TL("remaining [#]"), false, (int) getParameter().repetitionNumber - getParameter().repetitionsDone);
+    if (getParameter().repetitionNumber < std::numeric_limits<long long int>::max()) {
+        ret->mkItem(TL("remaining [#]"), false, (long long int) getParameter().repetitionNumber - getParameter().repetitionsDone);
     }
     if (getParameter().repetitionOffset > 0) {
         ret->mkItem(TL("insertion period [s]"), false, time2string(getParameter().repetitionOffset));
@@ -231,6 +231,7 @@ GUIVehicle::getParameterWindow(GUIMainWindow& app,
 GUIParameterTableWindow*
 GUIVehicle::getTypeParameterWindow(GUIMainWindow& app, GUISUMOAbstractView&) {
     GUIParameterTableWindow* ret = new GUIParameterTableWindow(app, *this, "vType:" + myType->getID());
+    ret->mkItem(TL("type"), false, myType->getID());
     ret->mkItem(TL("length [m]"), false, myType->getLength());
     ret->mkItem(TL("width [m]"), false, myType->getWidth());
     ret->mkItem(TL("height [m]"), false, myType->getHeight());
@@ -390,12 +391,10 @@ GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, doub
         double halfWidth = trainHelper.getHalfWidth();
         std::string imgFile = getVType().getImgFile();
         if (asImage && i != trainHelper.getFirstCarriageNo()) {
-            if (getVType().getParameter().hasParameter("carriageImages")) {
-                std::vector<std::string> imgFiles = StringTokenizer(getVType().getParameter().getParameter("carriageImages", ""), ",").getVector();
-                if (imgFiles.size() > 0) {
-                    const int carIndex = trainHelper.isReversed() ? numCarriages - i : i;
-                    imgFile = imgFiles[MIN2((int)imgFiles.size() - 1, carIndex - 1)];
-                }
+            const size_t nImages = getVType().getParameter().carriageImages.size();
+            if (nImages > 0) {
+                const int carIndex = trainHelper.isReversed() ? numCarriages - i : i;
+                imgFile = getVType().getParameter().carriageImages[MIN2((int)nImages - 1, carIndex - 1)];
             }
         }
         if (!asImage || !GUIBaseVehicleHelper::drawAction_drawVehicleAsImage(s, imgFile, this, getVType().getWidth() * exaggeration, curCLength)) {
@@ -403,7 +402,13 @@ GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, doub
                 case SUMOVehicleShape::TRUCK_SEMITRAILER:
                 case SUMOVehicleShape::TRUCK_1TRAILER:
                     if (i == trainHelper.getFirstCarriageNo()) {  // at the moment amReversed is only ever set for rail - so has no impact in this call
+                        GLHelper::pushMatrix();
+                        if (getVType().getGuiShape() == SUMOVehicleShape::TRUCK_SEMITRAILER) {
+                            // default drawing uses a fixed cab length but we want to scale here
+                            glScaled(1, curCLength / 2.5, 1);
+                        }
                         GUIBaseVehicleHelper::drawAction_drawVehicleAsPoly(s, getVType().getGuiShape(), getVType().getWidth() * exaggeration, curCLength, 0, false, reversed);
+                        GLHelper::popMatrix();
                     } else {
                         GLHelper::setColor(current);
                         GLHelper::drawBoxLine(Position(0, 0), 180, curCLength, halfWidth);
@@ -550,7 +555,7 @@ double
 GUIVehicle::getColorValue(const GUIVisualizationSettings& s, int activeScheme) const {
     switch (activeScheme) {
         case 8:
-            if (isStopped()) {
+            if (isStopped() && getNextStop().getSpeed() <= 0) {
                 return isParking() ? -2 : -1;
             }
             return getSpeed();

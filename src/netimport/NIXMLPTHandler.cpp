@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -69,7 +69,7 @@ NIXMLPTHandler::myStartElement(int element,
             if (myCurrentRouteID != "") {
                 addRouteStop(attrs);
             } else if (myCurrentLine == nullptr) {
-                addPTStop(attrs);
+                addPTStop(element, attrs);
             } else {
                 addPTLineStop(attrs);
             }
@@ -141,7 +141,7 @@ NIXMLPTHandler::myEndElement(int element) {
 
 
 void
-NIXMLPTHandler::addPTStop(const SUMOSAXAttributes& attrs) {
+NIXMLPTHandler::addPTStop(int element, const SUMOSAXAttributes& attrs) {
     bool ok = true;
     const std::string id = attrs.get<std::string>(SUMO_ATTR_ID, "busStop", ok);
     const std::string name = attrs.getOpt<std::string>(SUMO_ATTR_NAME, id.c_str(), ok, "");
@@ -150,10 +150,17 @@ NIXMLPTHandler::addPTStop(const SUMOSAXAttributes& attrs) {
     double endPos = attrs.get<double>(SUMO_ATTR_ENDPOS, id.c_str(), ok);
     const double parkingLength = attrs.getOpt<double>(SUMO_ATTR_PARKING_LENGTH, id.c_str(), ok, 0);
     const RGBColor color = attrs.getOpt<RGBColor>(SUMO_ATTR_COLOR, id.c_str(), ok, RGBColor(false));
-    //const std::string lines = attrs.get<std::string>(SUMO_ATTR_LINES, id.c_str(), ok);
+    const std::string lines = attrs.getOpt<std::string>(SUMO_ATTR_LINES, id.c_str(), ok, "");
     const int laneIndex = NBEdge::getLaneIndexFromLaneID(laneID);
-    const std::string edgeID = SUMOXMLDefinitions::getEdgeIDFromLane(laneID);
+    std::string edgeID = SUMOXMLDefinitions::getEdgeIDFromLane(laneID);
     NBEdge* edge = myEdgeCont.retrieve(edgeID);
+    if (edge == nullptr) {
+        edge = myEdgeCont.retrieve(edgeID, true);
+        if (edge != nullptr && myEdgeCont.getSplit(edge) == nullptr) {
+            // splits are treated later
+            edge = nullptr;
+        }
+    }
     if (edge == nullptr) {
         if (!myEdgeCont.wasIgnored(edgeID)) {
             WRITE_ERRORF(TL("Edge '%' for stop '%' not found"), edgeID, id);
@@ -179,8 +186,28 @@ NIXMLPTHandler::addPTStop(const SUMOSAXAttributes& attrs) {
         if (endPos < 0) {
             endPos += edge->getLoadedLength();
         }
+        if (myEdgeCont.wasRemoved(edgeID) && (
+                    startPos >= endPos || startPos < 0 || endPos < 0
+                    || startPos >= edge->getLoadedLength()
+                    || endPos >= edge->getLoadedLength())) {
+            NBEdge* longest = myEdgeCont.getSplitBase(edgeID);
+            if (longest != nullptr) {
+                edge = longest;
+            }
+        }
         Position pos = edge->geometryPositionAtOffset((startPos + endPos) / 2);
-        myCurrentStop = std::make_shared<NBPTStop>(id, pos, edgeID, edgeID, endPos - startPos, name, permissions, parkingLength, color, startPos);
+        myCurrentStop = std::make_shared<NBPTStop>((SumoXMLTag)element, id, pos, edgeID, edgeID, endPos - startPos, name, permissions, parkingLength, color, startPos);
+        while (myEdgeCont.getSplit(edge) != nullptr) {
+            myCurrentStop->resetLoaded();
+            const std::pair<NBEdge*, NBEdge*> split = *myEdgeCont.getSplit(edge);
+            if (myCurrentStop->replaceEdge(edgeID, {split.first, split.second})) {
+                edge = split.first->getID() == myCurrentStop->getEdgeId() ? split.first : split.second;
+                edgeID = edge->getID();
+            }
+        }
+        for (const std::string& line : StringTokenizer(lines).getVector()) {
+            myCurrentStop->addLine(line);
+        }
         if (!myStopCont.insert(myCurrentStop)) {
             WRITE_ERRORF(TL("Could not add public transport stop '%' (already exists)"), id);
         }

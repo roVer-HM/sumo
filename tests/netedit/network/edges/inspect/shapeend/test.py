@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -19,35 +19,32 @@
 import os
 import sys
 
-testRoot = os.path.join(os.environ.get('SUMO_HOME', '.'), 'tests')
-neteditTestRoot = os.path.join(
-    os.environ.get('TEXTTEST_HOME', testRoot), 'netedit')
-sys.path.append(neteditTestRoot)
+sys.path.append(os.path.join(os.environ.get("SUMO_HOME", "."), "tools"))
 import neteditTestFunctions as netedit  # noqa
 
 # Open netedit
-neteditProcess, referencePosition = netedit.setupAndStart(neteditTestRoot)
+neteditProcess, referencePosition = netedit.setupAndStart()
 
 # go to inspect mode
-netedit.inspectMode()
+netedit.changeMode("inspect")
 
 # inspect edge
 netedit.leftClick(referencePosition, netedit.positions.network.edge.leftBot)
 
 # Change parameter 19 with a non valid value (dummy)
-netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeEnd, "dummyShapeEnd", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeEnd, "dummyShapeEnd")
 
 # Change parameter 19 with a non valid value (non valid position)
-netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeEnd, "24", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeEnd, "24")
 
 # Change parameter 19 with a duplicated value (See #3157)
-netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeEnd, "-30.00,0.00", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeEnd, "-30.00,0.00")
 
 # Change parameter 19 with a valid value (empty)
-netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeEnd, "", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeEnd, "")
 
 # Change parameter 19 with a valid value
-netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeEnd, "20.00,-5.00", False)
+netedit.modifyAttribute(netedit.attrs.edge.inspect.shapeEnd, "20.00,-5.00")
 
 # Check undos
 netedit.undo(referencePosition, 1)
@@ -56,7 +53,7 @@ netedit.undo(referencePosition, 1)
 netedit.redo(referencePosition, 1)
 
 # save Netedit config
-netedit.saveNeteditConfig(referencePosition)
+netedit.saveExistentFile("neteditConfig")
 
 # quit netedit
 netedit.quit(neteditProcess)

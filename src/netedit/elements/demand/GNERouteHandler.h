@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -31,6 +31,7 @@ class GNEContainer;
 class GNEDemandElement;
 class GNEEdge;
 class GNEJunction;
+class GNENet;
 class GNEPerson;
 class GNEPlanCreator;
 class GNETAZ;
@@ -46,13 +47,10 @@ class GNERouteHandler : public RouteHandler {
 
 public:
     /// @brief Constructor
-    GNERouteHandler(GNENet* net, const std::string& file, const bool allowUndoRedo, const bool overwrite);
+    GNERouteHandler(GNENet* net, FileBucket* bucket, const bool allowUndoRedo, const bool removeEmptyPersons);
 
     /// @brief Destructor
     virtual ~GNERouteHandler();
-
-    /// @brief run post parser tasks
-    bool postParserTasks();
 
     /// @name build functions
     /// @{
@@ -272,6 +270,9 @@ protected:
     /// @brief get type (Either type o typeDistribution)
     GNEDemandElement* getType(const std::string& id) const;
 
+    /// @brief get route (Either route o routeDistribution)
+    GNEDemandElement* getRoute(const std::string& id) const;
+
     /// @brief get person parent
     GNEDemandElement* getPersonParent(const CommonXMLStructure::SumoBaseObject* sumoBaseObject) const;
 
@@ -292,7 +293,7 @@ protected:
     /// @brief get element by ID
     GNEDemandElement* retrieveDemandElement(const std::vector<SumoXMLTag> tags, const std::string& id);
 
-    /// @brief check if element exist, and if overwritte
+    /// @brief check if element exist, and if overwrite
     bool checkElement(const SumoXMLTag tag, GNEDemandElement* demandElement);
 
 private:
@@ -306,10 +307,10 @@ private:
     std::set<GNEDemandElement*> myParentPlanElements;
 
     /// @brief allow undo/redo
-    const bool myAllowUndoRedo;
+    const bool myAllowUndoRedo = false;
 
-    /// @brief flag to check if overwrite elements
-    const bool myOverwrite;
+    /// @brief check if remove empty persons
+    const bool myRemoveEmptyPersons = false;
 
     /// @brief invalidate default onstructor
     GNERouteHandler() = delete;

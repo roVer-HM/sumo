@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -104,8 +104,6 @@ public:
 
     void prepareStep() override;
 
-    double getExtraReservation(int bestLaneOffset) const override;
-
     /// @brief try to retrieve the given parameter from this device. Throw exception for unsupported key
     std::string getParameter(const std::string& key) const override;
 
@@ -131,8 +129,8 @@ protected:
         const std::pair<MSVehicle*, double>& neighFollow,
         const MSLane& neighLane,
         const std::vector<MSVehicle::LaneQ>& preb,
-        MSVehicle** lastBlocked,
-        MSVehicle** firstBlocked);
+        MSVehicle* lastBlocked,
+        MSVehicle* firstBlocked);
 
     /* @brief decide whether we will overtake or follow a blocking leader
      * and inform it accordingly
@@ -163,7 +161,7 @@ protected:
     static double overtakeDistance(const MSVehicle* follower, const MSVehicle* leader, const double gap, double followerSpeed = INVALID_SPEED, double leaderSpeed = INVALID_SPEED);
 
     /// @brief compute useful slowdowns for blocked vehicles
-    int slowDownForBlocked(MSVehicle** blocked, int state);
+    int slowDownForBlocked(MSVehicle* blocked, int state);
 
     /// @brief anticipate future follow speed for the given leader
     double anticipateFollowSpeed(const std::pair<MSVehicle*, double>& leaderDist, double dist, double vMax, bool acceleratingLeader);
@@ -201,8 +199,10 @@ protected:
     /// @brief information regarding save velocity (unused) and state flags of the ego vehicle
     typedef std::pair<double, int> Info;
 
-    /// @brief a value for tracking the probability that a change to the offset with the same sign is beneficial
-    double mySpeedGainProbability;
+    /// @brief a value for tracking the probability that a change to that side is beneficial
+    double mySpeedGainProbabilityLeft;
+    double mySpeedGainProbabilityRight;
+
     /* @brief a value for tracking the probability of following the/"Rechtsfahrgebot"
      * A larger negative value indicates higher probability for moving to the
      * right (as in mySpeedGainProbability) */
@@ -230,8 +230,6 @@ protected:
     // @brief the factor by which the speedGain-threshold for the leftdiffers from the threshold for the right
     double mySpeedGainRight;
 
-    // @brief willingness to undercut longitudinal safe gaps
-    double myAssertive;
     // @brief lookahead for speedGain in seconds
     double mySpeedGainLookahead;
     // @brief the minimum time to spent driving without lane change after a speed-gain change

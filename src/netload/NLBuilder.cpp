@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -165,6 +165,7 @@ NLBuilder::build() {
                 stateBeginMismatch = true;
             }
         }
+        myNet.setCurrentTimeStep(string2time(myOptions.getString("begin")));
     }
 
     if (myOptions.getBool("junction-taz")) {
@@ -175,8 +176,8 @@ NLBuilder::build() {
             const std::string sourceID = it->first + "-source";
             if (MSEdge::dictionary(sinkID) == nullptr && MSEdge::dictionary(sourceID) == nullptr) {
                 // sink must be built and added before source
-                MSEdge* sink = myEdgeBuilder.buildEdge(sinkID, SumoXMLEdgeFunc::CONNECTOR, "", "", -1, 0);
-                MSEdge* source = myEdgeBuilder.buildEdge(sourceID, SumoXMLEdgeFunc::CONNECTOR, "", "", -1, 0);
+                MSEdge* sink = myEdgeBuilder.buildEdge(sinkID, SumoXMLEdgeFunc::CONNECTOR, "", "", "", -1, 0);
+                MSEdge* source = myEdgeBuilder.buildEdge(sourceID, SumoXMLEdgeFunc::CONNECTOR, "", "", "", -1, 0);
                 sink->setOtherTazConnector(source);
                 source->setOtherTazConnector(sink);
                 MSEdge::dictionary(sinkID, sink);
@@ -213,7 +214,7 @@ NLBuilder::build() {
         if (myXMLHandler.haveSeenAdditionalSpeedRestrictions()) {
             myNet.getEdgeControl().setAdditionalRestrictions();
         }
-        if (MSGlobals::gUseMesoSim && myXMLHandler.haveSeenMesoEdgeType()) {
+        if (MSGlobals::gUseMesoSim && (myXMLHandler.haveSeenMesoEdgeType() || myXMLHandler.haveSeenTLSParams())) {
             myNet.getEdgeControl().setMesoTypes();
             for (MSTrafficLightLogic* tll : myNet.getTLSControl().getAllLogics()) {
                 tll->initMesoTLSPenalties();
@@ -265,7 +266,6 @@ NLBuilder::build() {
     }
     // load the previous state if wished
     if (myOptions.isSet("load-state")) {
-        myNet.setCurrentTimeStep(string2time(myOptions.getString("begin")));
         const std::string& f = myOptions.getString("load-state");
         long before = PROGRESS_BEGIN_TIME_MESSAGE(TLF("Loading state from '%'", f));
         MSStateHandler h(f, string2time(myOptions.getString("load-state.offset")));
@@ -392,6 +392,9 @@ NLBuilder::buildNet() {
         edges = myEdgeBuilder.build(myXMLHandler.networkVersion());
         junctions = myJunctionBuilder.build();
         junctions->postloadInitContainer();
+        for (MSEdge* e : edges->getEdges()) {
+            e->postLoadInitLaneChanger();
+        }
         routeLoaders = buildRouteLoaderControl(myOptions);
         tlc = myJunctionBuilder.buildTLLogics();
         for (std::string timeStr : myOptions.getStringVector("save-state.times")) {
@@ -477,7 +480,7 @@ NLBuilder::buildDefaultMeanData(const std::string& optionName, const std::string
         try {
             SUMOTime begin = string2time(OptionsCont::getOptions().getString("begin"));
             myDetectorBuilder.createEdgeLaneMeanData(id, -1, begin, -1, "traffic", useLanes, false, false,
-                    false, false, false, 100000, 0, SUMO_const_haltingSpeed, "", "", std::vector<MSEdge*>(), false,
+                    false, false, false, 100000, 0, SUMO_const_haltingSpeed, "", "", std::vector<MSEdge*>(), AggregateType::NO,
                     OptionsCont::getOptions().getString(optionName));
         } catch (InvalidArgument& e) {
             WRITE_ERROR(e.what());

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2012-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -121,8 +121,9 @@ private:
     /// @brief cached attrs for delayed loading of MSVehicleControl state
     SUMOSAXAttributes* myVCAttrs;
 
-    /// @brief cached device attrs (used when loading vehicles)
+    /// @brief cached device and reminder attrs (used when loading vehicles)
     std::vector<SUMOSAXAttributes*> myDeviceAttrs;
+    std::vector<SUMOSAXAttributes*> myReminderAttrs;
 
     /// @brief the last object that potentially carries parameters
     Parameterised* myLastParameterised;

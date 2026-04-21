@@ -1,6 +1,6 @@
 @echo off
 REM Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-REM Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
+REM Copyright (C) 2008-2026 German Aerospace Center (DLR) and others.
 REM This program and the accompanying materials are made available under the
 REM terms of the Eclipse Public License 2.0 which is available at
 REM https://www.eclipse.org/legal/epl-2.0/
@@ -12,4 +12,4 @@ REM https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html
 REM SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-or-later
 
 call %~dp0\testEnv.bat D
-start %TEXTTESTPY% -a netedit.gui -gui -v debug
+start %TEXTTESTPY% -a netedit -gui -v debug

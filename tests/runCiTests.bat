@@ -1,6 +1,6 @@
 @echo off
 REM Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-REM Copyright (C) 2008-2025 German Aerospace Center (DLR) and others.
+REM Copyright (C) 2008-2026 German Aerospace Center (DLR) and others.
 REM This program and the accompanying materials are made available under the
 REM terms of the Eclipse Public License 2.0 which is available at
 REM https://www.eclipse.org/legal/epl-2.0/
@@ -15,5 +15,6 @@ SET SUFFIX=
 IF "%2" == "Debug" SET SUFFIX=D
 call %~dp0\testEnv.bat %SUFFIX%
 SET TEXTTEST_INTERPRETER=
-IF "%~x1" == ".py" SET TEXTTEST_INTERPRETER=python 
+IF "%1" == "" SET TEXTTEST_INTERPRETER=texttest.exe
+IF "%~x1" == ".py" SET TEXTTEST_INTERPRETER=python
 %TEXTTEST_INTERPRETER% %1 -b ci -v ci %TEXTTEST_CI_APPS%

@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -20,7 +20,7 @@
 #pragma once
 #include <config.h>
 
-#include <utils/foxtools/fxheader.h>
+#include <netedit/dialogs/GNEDialog.h>
 #include <utils/foxtools/MFXSynchQue.h>
 #include <utils/foxtools/MFXThreadEvent.h>
 
@@ -28,7 +28,6 @@
 // class declarations
 // ===========================================================================
 
-class GNEApplicationWindow;
 class GNERunPythonTool;
 class GNEPythonTool;
 class GUIEvent;
@@ -37,26 +36,19 @@ class GUIEvent;
 // class definitions
 // ===========================================================================
 
-/**
- * @class GNERunPythonToolDialog
- * @brief Abstract dialog for tools
- */
-class GNERunPythonToolDialog : protected FXDialogBox {
+class GNERunPythonToolDialog : public GNEDialog {
     /// @brief FOX-declaration
     FXDECLARE(GNERunPythonToolDialog)
 
 public:
     /// @brief Constructor
-    GNERunPythonToolDialog(GNEApplicationWindow* GNEApp);
+    GNERunPythonToolDialog(GNEApplicationWindow* applicationWindow, GNEPythonTool* tool);
 
     /// @brief destructor
     ~GNERunPythonToolDialog();
 
-    /// @brief get to GNEApplicationWindow
-    GNEApplicationWindow* getGNEApp() const;
-
-    /// @brief run tool (this open windows)
-    void runTool(GNEPythonTool* tool);
+    /// @brief run internal test
+    void runInternalTest(const InternalTestStep::DialogArgument* dialogArgument);
 
     /// @name FOX-callbacks
     /// @{
@@ -73,24 +65,25 @@ public:
     /// @brief event after press back button
     long onCmdBack(FXObject*, FXSelector, void*);
 
+    /// @brief event after press cancel button
+    long onCmdCancel(FXObject*, FXSelector, void*);
+
     /// @brief event after press close button
-    long onCmdClose(FXObject*, FXSelector, void*);
+    long onCmdAccept(FXObject*, FXSelector, void*);
 
     /// @brief called when the thread signals an event
     long onThreadEvent(FXObject*, FXSelector, void*);
+
     /// @}
 
 protected:
     /// @brief FOX needs this
-    GNERunPythonToolDialog();
+    FOX_CONSTRUCTOR(GNERunPythonToolDialog);
 
     /// @brief update toolDialog
     void updateDialog();
 
 private:
-    /// @brief pointer to GNEApplicationWindow
-    GNEApplicationWindow* myGNEApp;
-
     /// @brief tool
     GNEPythonTool* myPythonTool = nullptr;
 
@@ -99,18 +92,6 @@ private:
 
     /// @brief text
     FXText* myText = nullptr;
-
-    /// @brief abort button
-    FXButton* myAbortButton = nullptr;
-
-    /// @brief rerun button
-    FXButton* myRerunButton = nullptr;
-
-    /// @brief back button
-    FXButton* myBackButton = nullptr;
-
-    /// @brief close button
-    FXButton* myCloseButton = nullptr;
 
     /// @brief List of received events
     MFXSynchQue<GUIEvent*> myEvents;

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2014-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2014-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -46,6 +46,7 @@ import sumolib
 from webWizard.SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 
 SUMO_HOME = os.environ.get("SUMO_HOME", os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+DEFAULT_PORT = 8010
 
 try:
     basestring
@@ -321,6 +322,7 @@ class Builder(object):
 
             self.edges = sumolib.net.readNet(os.path.join(self.tmp, self.files["net"])).getEdges()
 
+            seed = 42
             for vehicle in sorted(self.data["vehicles"].keys()):
                 options = self.data["vehicles"][vehicle]
                 self.report("Processing %s" % vehicleNames[vehicle])
@@ -337,6 +339,9 @@ class Builder(object):
                     options += ["--additional-files", ",".join([self.files["stops"], self.files["ptroutes"]])]
                     options += ["--persontrip.walk-opposite-factor", "0.8"]
                     options += ["--duarouter-weights.tls-penalty", "20"]
+
+                options += ["--seed", str(seed)]
+                seed += 1
 
                 try:
                     randomTrips.main(randomTrips.get_options(options))
@@ -567,8 +572,8 @@ def get_options(args=None):
     parser.add_argument("-o", "--output", dest="outputDir",
                         help="Write output to the given folder rather than creating a name based on the timestamp")
     parser.add_argument("--address", default="", help="Address for the Websocket.")
-    parser.add_argument("--port", type=int, default=8010,
-                        help="Port for the Websocket. Please edit script.js when using an other port than 8010.")
+    parser.add_argument("--port", type=int, default=0,
+                        help="Port for the Websocket. By default a random port is chosen.")
     parser.add_argument("-v", "--verbose", action="store_true", default=False, help="tell me what you are doing")
     parser.add_argument("-b", "--begin", default=0, type=sumolib.miscutils.parseTime,
                         help="Defines the begin time for the scenario.")
@@ -612,6 +617,10 @@ def main(options):
         if not options.remote:
             subprocess.call([sumolib.checkBinary("sumo"), "-c", builder.files["config"]])
     else:
+        port = DEFAULT_PORT
+        if os.name != "nt":
+            port = options.port if options.port else sumolib.miscutils.getFreeSocketPort()
+        server = SimpleWebSocketServer(options.address, port, OSMImporterWebSocket)
         if not options.remote:
             path = os.path.dirname(os.path.realpath(__file__))
             # on Linux Firefox refuses to open files in /usr/ #16086
@@ -622,9 +631,12 @@ def main(options):
                     os.makedirs(new_path, exist_ok=True)
                     shutil.copytree(os.path.join(path, "webWizard"), wizard_path)
                 path = new_path
-            webbrowser.open("file://" + os.path.join(path, "webWizard", "index.html"))
-
-        server = SimpleWebSocketServer(options.address, options.port, OSMImporterWebSocket)
+                os.chdir(path)
+            url = "file://" + os.path.join(path, "webWizard", "index.html")
+            if os.name != "nt":
+                # on Windows the webbrowser module uses os.startfile which cannot handle parameters
+                url += "?port=%s" % port
+            webbrowser.open(url)
         server.serveforever()
 
 

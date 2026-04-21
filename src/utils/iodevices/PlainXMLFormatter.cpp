@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2012-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2012-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -29,31 +29,27 @@
 // member method definitions
 // ===========================================================================
 PlainXMLFormatter::PlainXMLFormatter(const int defaultIndentation)
-    : myDefaultIndentation(defaultIndentation), myHavePendingOpener(false) {
-}
-
-
-bool
-PlainXMLFormatter::writeHeader(std::ostream& into, const SumoXMLTag& rootElement) {
-    if (myXMLStack.empty()) {
-        OptionsCont::getOptions().writeXMLHeader(into);
-        openTag(into, rootElement);
-        return true;
-    }
-    return false;
+    : OutputFormatter(OutputFormatterType::XML), myDefaultIndentation(defaultIndentation), myHavePendingOpener(false) {
 }
 
 
 bool
 PlainXMLFormatter::writeXMLHeader(std::ostream& into, const std::string& rootElement,
-                                  const std::map<SumoXMLAttr, std::string>& attrs, bool includeConfig) {
+                                  const std::map<SumoXMLAttr, std::string>& attrs,
+                                  bool writeMetadata, bool includeConfig) {
     if (myXMLStack.empty()) {
-        OptionsCont::getOptions().writeXMLHeader(into, includeConfig);
+        const OptionsCont& oc = OptionsCont::getOptions();
+        oc.writeXMLHeader(into, includeConfig);
         openTag(into, rootElement);
         for (std::map<SumoXMLAttr, std::string>::const_iterator it = attrs.begin(); it != attrs.end(); ++it) {
             writeAttr(into, it->first, it->second);
         }
         into << ">\n";
+        if (writeMetadata) {
+            into << "    <metadata created_at=\"" << StringUtils::isoTimeString() << "\" created_by=\"" << oc.getFullName() << "\">\n";
+            oc.writeConfiguration(into, true, false, false, "", false, true, "        ");
+            into << "    </metadata>\n";
+        }
         myHavePendingOpener = false;
         return true;
     }
@@ -103,6 +99,7 @@ PlainXMLFormatter::writePreformattedTag(std::ostream& into, const std::string& v
     }
     into << val;
 }
+
 
 void
 PlainXMLFormatter::writePadding(std::ostream& into, const std::string& val) {

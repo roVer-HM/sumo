@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -39,6 +39,7 @@
 #include <utils/gui/images/VClassIcons.h>
 #include <utils/gui/windows/GUISUMOAbstractView.h>
 #include <utils/gui/windows/GUIAppEnum.h>
+#include <gui/GUIGlobals.h>
 #include <microsim/MSGlobals.h>
 #include <microsim/MSLane.h>
 #include <microsim/MSLink.h>
@@ -246,7 +247,7 @@ GUILane::drawLinkNo(const GUIVisualizationSettings& s) const {
         return;
     }
     // draw all links
-    if (getEdge().isCrossing()) {
+    if (isCrossing()) {
         // draw indices at the start and end of the crossing
         const MSLink* const link = getLogicalPredecessorLane()->getLinkTo(this);
         PositionVector shape = getShape(s.secondaryShape);
@@ -272,7 +273,7 @@ GUILane::drawTLSLinkNo(const GUIVisualizationSettings& s, const GUINet& net) con
     if (noLinks == 0) {
         return;
     }
-    if (getEdge().isCrossing()) {
+    if (isCrossing()) {
         // draw indices at the start and end of the crossing
         const MSLink* const link = getLogicalPredecessorLane()->getLinkTo(this);
         int linkNo = net.getLinkTLIndex(link);
@@ -313,7 +314,7 @@ GUILane::drawLinkRules(const GUIVisualizationSettings& s, const GUINet& net) con
         drawLinkRule(s, net, nullptr, shape, 0, 0);
         return;
     }
-    if (getEdge().isCrossing()) {
+    if (isCrossing()) {
         // draw rules at the start and end of the crossing
         const MSLink* const link = getLogicalPredecessorLane()->getLinkTo(this);
         const MSLink* link2 = myLinks.front();
@@ -427,6 +428,13 @@ GUILane::drawLinkRule(const GUIVisualizationSettings& s, const GUINet& net, cons
             glVertex2d(x2 - myHalfLaneWidth, 0.5);
             glVertex2d(x2 - myHalfLaneWidth, 0.0);
             glEnd();
+            if (s.gaming && link->haveGreen()) {
+                const MSLane* lane = link->getLane();
+                // exaggerate green signals for railway game
+                if (isRailway(lane->getPermissions())) {
+                    GLHelper::drawFilledCircle(lane->getWidth() / 2., 8, 90, 270);
+                }
+            }
         }
         GLHelper::popName();
         GLHelper::popMatrix();
@@ -514,7 +522,7 @@ GUILane::drawLane2LaneConnections(double exaggeration, bool s2) const {
         GLHelper::setColor(GUIVisualizationSettings::getLinkColor(link->getState()));
         glBegin(GL_LINES);
         Position p1 = myEdge->isWalkingArea() ? getShape(s2).getCentroid() : getShape(s2)[-1];
-        Position p2 = connected->getEdge().isWalkingArea() ? connected->getShape(s2).getCentroid() : connected->getShape(s2)[0];
+        Position p2 = connected->isWalkingArea() ? connected->getShape(s2).getCentroid() : connected->getShape(s2)[0];
         if (exaggeration > 1) {
             p1 = centroid + ((p1 - centroid) * exaggeration);
             p2 = centroid + ((p2 - centroid) * exaggeration);
@@ -1063,6 +1071,7 @@ GUILane::getParameterWindow(GUIMainWindow& app, GUISUMOAbstractView& view) {
     ret->mkItem(TL("netto occupancy [%]"), true, new FunctionBinding<GUILane, double>(this, &GUILane::getNettoOccupancy, 100.));
     ret->mkItem(TL("pending insertions [#]"), true, new FunctionBinding<GUILane, double>(this, &GUILane::getPendingEmits));
     ret->mkItem(TL("edge type"), false, myEdge->getEdgeType());
+    ret->mkItem(TL("routing type"), false, myEdge->getRoutingType());
     ret->mkItem(TL("type"), false, myLaneType);
     ret->mkItem(TL("priority"), false, myEdge->getPriority());
     ret->mkItem(TL("distance [km]"), false, myEdge->getDistance() / 1000);
@@ -1095,9 +1104,10 @@ GUILane::getParameterWindow(GUIMainWindow& app, GUISUMOAbstractView& view) {
 
 Boundary
 GUILane::getCenteringBoundary() const {
+    const PositionVector& shape = GUIGlobals::gSecondaryShape && myShape2.size() > 0 ? myShape2 : myShape;
     Boundary b;
-    b.add(myShape[0]);
-    b.add(myShape[-1]);
+    b.add(shape[0]);
+    b.add(shape[-1]);
     b.grow(RENDERING_BUFFER);
     // ensure that vehicles and persons on the side are drawn even if the edge
     // is outside the view

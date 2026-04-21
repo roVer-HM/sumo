@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -185,6 +185,8 @@ public:
     /// @brief updates the flow scale value to keep track of TraCI-induced change
     void updateScale(const std::string vtypeid);
 
+    bool hasTaxiFlow() const;
+
 private:
     /** @brief Tries to emit the vehicle
      *
@@ -216,6 +218,8 @@ private:
 
     /// @brief init scale value of flow
     static double initScale(const std::string vtypeid);
+
+    static bool hasTaxiDeviceType(const std::string& vtypeId, SumoRNG& rng);
 
 private:
     /// @brief The assigned vehicle control (needed for vehicle re-insertion and deletion)

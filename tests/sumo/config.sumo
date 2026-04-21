@@ -5,6 +5,7 @@ copy_test_path:net.net.xml.gz
 copy_test_path:net2.net.xml
 copy_test_path:net3.net.xml
 copy_test_path:net4.net.xml
+copy_test_path:net5.net.xml
 copy_test_path:three_split.net.xml
 copy_test_path:motorway.net.xml
 copy_test_path:lefthand.net.xml
@@ -61,6 +62,7 @@ physstates:physstates.xml
 cfg:config.cfg
 cfg:data/config.cfg
 fcd:fcd.xml
+person_fcd:person_fcd.xml
 full:full.xml
 vtk:vtk.txt
 queue:queue.xml
@@ -100,6 +102,12 @@ dispatchinfos:dispatchinfos.xml
 aggregated60Prefixed:pre_aggregated_60.xml
 tripinfosPrefix:pre_tripinfos.xml
 logPrefixed:pre_log.txt
+aggregated60Suffixed:aggregated_60_suf.xml
+tripinfosSuffix:tripinfos_suf.xml
+logSuffixed:log_suf.txt
+aggregated60PrefixedSuffixed:pre_aggregated_60_suf.xml
+tripinfosPrefixSuffix:pre_tripinfos_suf.xml
+logPrefixedSuffixed:pre_log_suf.txt
 weights:weights.xml
 lanechanges:lanechanges.xml
 deadlocks:deadlocks.xml
@@ -108,6 +116,13 @@ ssm2:ssm_ego.xml
 png:out.png
 png2:out2.png
 wkt:wkt.txt
+fcd_csv:fcd.csv
+fcd_parquet:fcd.parquet
+person_fcd_parquet:person_fcd.parquet
+
+[collate_script]
+fcd_parquet:python -u $SUMO_HOME/tools/output/parquet2csv.py
+person_fcd_parquet:python -u $SUMO_HOME/tools/output/parquet2csv.py
 
 [run_dependent_text]
 output:^Performance:{->}^Vehicles:
@@ -130,6 +145,8 @@ aggregated15:<!--{[->]}-->
 aggregated25:<!--{[->]}-->
 aggregated60:<!--{[->]}-->
 aggregated60Prefixed:<!--{[->]}-->
+aggregated60Suffixed:<!--{[->]}-->
+aggregated60PrefixedSuffixed:<!--{[->]}-->
 aggregated300:<!--{[->]}-->
 aggregated900:<!--{[->]}-->
 rawdump:<!--{[->]}-->
@@ -140,10 +157,13 @@ statistic:<!--{[->]}-->
 stopinfos:<!--{[->]}-->
 collisions:<!--{[->]}-->
 tripinfosPrefix:<!--{[->]}-->
+tripinfosSuffix:<!--{[->]}-->
+tripinfosPrefixSuffix:<!--{[->]}-->
 vtypeprobe:<!--{[->]}-->
 vehroutes:^<!--{[->]}-->
 personroutes:^<!--{[->]}-->
 fcd:<!--{[->]}-->
+person_fcd:<!--{[->]}-->
 full:<!--{[->]}-->
 queue:<!--{[->]}-->
 emissions:<!--{[->]}-->
@@ -196,6 +216,8 @@ errors:(Datei oder Verzeichnis nicht gefunden){REPLACE (No such file or director
 log:(Datei oder Verzeichnis nicht gefunden){REPLACE (No such file or directory)}
 log:Simulation.*started with{REPLACE Simulation started with}
 logPrefixed:Simulation.*started with{REPLACE Simulation started with}
+logSuffixed:Simulation.*started with{REPLACE Simulation started with}
+logPrefixedSuffixed:Simulation.*started with{REPLACE Simulation started with}
 cfg:<movereminder{LINES 2}
 cfg:movereminder
 cfg:<python-script
@@ -243,11 +265,8 @@ aggregated1:0.00001
 aggregated:0.00001
 
 [batch_extra_version]
-gcc4_64:perf
-msvc12x64:perf
-
-[batch_filter_file]
-msvc12x64D:debug_filter
+gcc:perf
+msvc16x64:perf
 
 [unordered_text]
 vehroutes_ignore_arrival:arrival

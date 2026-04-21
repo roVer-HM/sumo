@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -23,6 +23,7 @@
 #include <config.h>
 
 #include <limits>
+#include "GeomHelper.h"
 #include "Position.h"
 
 
@@ -46,4 +47,12 @@ Position::rotateAround2D(double rad, const Position& origin) {
                p.x() * c - p.y() * s,
                p.x() * s + p.y() * c) + origin;
 
+}
+
+void
+Position::round(int precision) {
+    // bankers rounding as in iostream
+    myX = roundDecimalToEven(myX, precision);
+    myY = roundDecimalToEven(myY, precision);
+    myZ = roundDecimalToEven(myZ, precision);
 }

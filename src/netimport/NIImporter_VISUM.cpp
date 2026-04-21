@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -352,7 +352,12 @@ NIImporter_VISUM::parse_Districts() {
         return;
     }
     if (myLineParser.know(KEYS.getString(VISUM_SURFACEID))) {
-        long long int flaecheID = StringUtils::toLong(myLineParser.get(KEYS.getString(VISUM_SURFACEID)));
+        long long int flaecheID;
+        try {
+            flaecheID = StringUtils::toLong(myLineParser.get(KEYS.getString(VISUM_SURFACEID)));
+        } catch (EmptyData&) {
+            flaecheID = StringUtils::toLong(myLineParser.get(KEYS.getString(VISUM_NO)));
+        }
         myShapeDistrictMap[flaecheID] = district;
     }
 }
@@ -1195,7 +1200,8 @@ void NIImporter_VISUM::parse_stopPoints() {
         Position pos = edge->getGeometry().positionAtOffset(edge->getLength() * relPos);
 
         const double length = OptionsCont::getOptions().getFloat("osm.stop-output.length");
-        std::shared_ptr<NBPTStop> ptStop = std::make_shared<NBPTStop>(id, pos, edge->getID(), edge->getID(), length, name, permissions);
+        SumoXMLTag element = isRailway(permissions) ? SUMO_TAG_TRAIN_STOP : SUMO_TAG_BUS_STOP;
+        std::shared_ptr<NBPTStop> ptStop = std::make_shared<NBPTStop>(element, id, pos, edge->getID(), edge->getID(), length, name, permissions);
         myNetBuilder.getPTStopCont().insert(ptStop);
     }
 }

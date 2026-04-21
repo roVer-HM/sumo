@@ -1,3 +1,6 @@
+# test conditions for warning about long blocks
+block_length
+
 # tests which train gets to drive in case of a link conflict: two trains want to enter a section but only one of them can do so at the same time
 priority
 
@@ -51,6 +54,9 @@ single_incoming_lane
 
 # Two trains approaching conflicting block simultaneously causing a head-on conflict
 halting_conflict
+
+# two tracks cross and the conflict node is a rail signal
+crossing_direct_guard
 
 # switches for a bidirectional section guarded by extra rail signal nodes
 indirect_guard

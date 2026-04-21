@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-# Copyright (C) 2014-2025 German Aerospace Center (DLR) and others.
+# Copyright (C) 2014-2026 German Aerospace Center (DLR) and others.
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
 # https://www.eclipse.org/legal/epl-2.0/
@@ -81,10 +81,12 @@ def main():
     net = None
     if options.edgesFile:
         edgeSet = set([e.id for e in sumolib.xml.parse_fast(options.edgesFile, 'edge', ['id'])])
+
         def attribute_retriever(vehicle):  # noqa
             return len([e for e in vehicle.route[0].edges.split() if e in edgeSet])
     elif options.attribute == "length":
         net = sumolib.net.readNet(options.network)
+
         def attribute_retriever(vehicle):  # noqa
             return sum([net.getEdge(e).getLength() for e in vehicle.route[0].edges.split()])
     elif options.attribute == "depart":

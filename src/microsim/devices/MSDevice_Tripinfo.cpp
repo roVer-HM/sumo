@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2009-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2009-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -911,9 +911,10 @@ MSDevice_Tripinfo::getGlobalParameter(const std::string& prefixedKey) {
 
 void
 MSDevice_Tripinfo::saveState(OutputDevice& out) const {
+    // always write device id to replicate stochastic assignment
+    out.openTag(SUMO_TAG_DEVICE);
+    out.writeAttr(SUMO_ATTR_ID, getID());
     if (myHolder.hasDeparted()) {
-        out.openTag(SUMO_TAG_DEVICE);
-        out.writeAttr(SUMO_ATTR_ID, getID());
         std::ostringstream internals;
         internals << myDepartLane << " ";
         if (!MSGlobals::gUseMesoSim) {
@@ -924,23 +925,25 @@ MSDevice_Tripinfo::saveState(OutputDevice& out) const {
         internals << myStoppingTime << " " << myParkingStarted << " ";
         internals << myArrivalTime << " " << state_arrivalLane << " " << myArrivalPos << " " << myArrivalPosLat << " " << myArrivalSpeed;
         out.writeAttr(SUMO_ATTR_STATE, internals.str());
-        out.closeTag();
     }
+    out.closeTag();
 }
 
 
 void
 MSDevice_Tripinfo::loadState(const SUMOSAXAttributes& attrs) {
-    std::istringstream bis(attrs.getString(SUMO_ATTR_STATE));
-    bis >> myDepartLane;
-    if (!MSGlobals::gUseMesoSim) {
-        bis >> myDepartPosLat;
-    }
-    bis >> myDepartSpeed >> myRouteLength >> myWaitingTime >> myAmWaiting >> myWaitingCount;
-    bis >> myStoppingTime >> myParkingStarted;
-    bis >> myArrivalTime >> myArrivalLane >> myArrivalPos >> myArrivalPosLat >> myArrivalSpeed;
-    if (myArrivalLane == STATE_EMPTY_ARRIVALLANE) {
-        myArrivalLane = "";
+    if (attrs.hasAttribute(SUMO_ATTR_STATE)) {
+        std::istringstream bis(attrs.getString(SUMO_ATTR_STATE));
+        bis >> myDepartLane;
+        if (!MSGlobals::gUseMesoSim) {
+            bis >> myDepartPosLat;
+        }
+        bis >> myDepartSpeed >> myRouteLength >> myWaitingTime >> myAmWaiting >> myWaitingCount;
+        bis >> myStoppingTime >> myParkingStarted;
+        bis >> myArrivalTime >> myArrivalLane >> myArrivalPos >> myArrivalPosLat >> myArrivalSpeed;
+        if (myArrivalLane == STATE_EMPTY_ARRIVALLANE) {
+            myArrivalLane = "";
+        }
     }
 }
 

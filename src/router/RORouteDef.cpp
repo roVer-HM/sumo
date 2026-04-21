@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2002-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2002-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -43,6 +43,7 @@
 // static members
 // ===========================================================================
 bool RORouteDef::myUsingJTRR(false);
+bool RORouteDef::mySkipNewRoutes(false);
 
 // ===========================================================================
 // method definitions
@@ -91,20 +92,40 @@ RORouteDef::buildCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
 
 
 void
+RORouteDef::validateAlternatives(const ROVehicle* veh, MsgHandler* errorHandler) {
+    for (int i = 0; i < (int)myAlternatives.size();) {
+        if (i != myLastUsed || mySkipNewRoutes) {
+            if (myAlternatives[i]->isPermitted(veh, errorHandler)) {
+                i++;
+            } else {
+                myAlternatives.erase(myAlternatives.begin() + i);
+                if (myLastUsed > i) {
+                    myLastUsed--;
+                }
+            }
+        } else {
+            i++;
+        }
+    }
+}
+
+
+void
 RORouteDef::preComputeCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
                                    SUMOTime begin, const ROVehicle& veh) const {
     myNewRoute = false;
     const OptionsCont& oc = OptionsCont::getOptions();
     const bool ignoreErrors = oc.getBool("ignore-errors");
+    const bool hasRestrictions = RONet::getInstance()->hasParamRestrictions();
     assert(myAlternatives[0]->getEdgeVector().size() > 0);
     MsgHandler* mh = ignoreErrors ? MsgHandler::getWarningInstance() : MsgHandler::getErrorInstance();
-    if (myAlternatives[0]->getFirst()->prohibits(&veh) && (!oc.getBool("repair.from")
+    if (myAlternatives[0]->getFirst()->prohibits(&veh, hasRestrictions) && (!oc.getBool("repair.from")
             // do not try to reassign starting edge for trip input
             || myMayBeDisconnected || myAlternatives[0]->getEdgeVector().size() < 2)) {
         mh->inform("Vehicle '" + veh.getID() + "' is not allowed to depart on edge '" +
                    myAlternatives[0]->getFirst()->getID() + "'.");
         return;
-    } else if (myAlternatives[0]->getLast()->prohibits(&veh) && (!oc.getBool("repair.to")
+    } else if (myAlternatives[0]->getLast()->prohibits(&veh, hasRestrictions) && (!oc.getBool("repair.to")
                // do not try to reassign destination edge for trip input
                || myMayBeDisconnected || myAlternatives[0]->getEdgeVector().size() < 2)) {
         // this check is not strictly necessary unless myTryRepair is set.
@@ -139,7 +160,7 @@ RORouteDef::preComputeCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router
         // build a new route to test whether it is better
         ConstROEdgeVector oldEdges({getOrigin(), getDestination()});
         ConstROEdgeVector edges;
-        if (repairCurrentRoute(router, begin, veh, oldEdges, edges)) {
+        if (repairCurrentRoute(router, begin, veh, oldEdges, edges, true)) {
             if (edges.front()->isTazConnector()) {
                 edges.erase(edges.begin());
             }
@@ -169,10 +190,17 @@ RORouteDef::preComputeCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router
 bool
 RORouteDef::repairCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
                                SUMOTime begin, const ROVehicle& veh,
-                               ConstROEdgeVector oldEdges, ConstROEdgeVector& newEdges) const {
+                               ConstROEdgeVector oldEdges, ConstROEdgeVector& newEdges,
+                               bool isTrip) const {
     MsgHandler* mh = (OptionsCont::getOptions().getBool("ignore-errors") ?
                       MsgHandler::getWarningInstance() : MsgHandler::getErrorInstance());
+    RONet* net = RONet::getInstance();
     const int initialSize = (int)oldEdges.size();
+    const bool hasRestrictions = RONet::getInstance()->hasParamRestrictions();
+    if (net->getProhibitions().size() > 0 && !router.hasProhibitions()) {
+        router.prohibit(net->getProhibitions());
+    }
+    net->updateLaneProhibitions(begin);
     if (initialSize == 1) {
         if (myUsingJTRR) {
             /// only ROJTRRouter is supposed to handle this type of input
@@ -182,11 +210,11 @@ RORouteDef::repairCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
             newEdges = oldEdges;
         }
     } else {
-        if (oldEdges.front()->prohibits(&veh)) {
+        if (oldEdges.front()->prohibits(&veh, hasRestrictions)) {
             // option repair.from is in effect
             const std::string& frontID = oldEdges.front()->getID();
             for (ConstROEdgeVector::iterator i = oldEdges.begin(); i != oldEdges.end();) {
-                if ((*i)->prohibits(&veh) || (*i)->isInternal()) {
+                if ((*i)->prohibits(&veh, hasRestrictions) || (*i)->isInternal()) {
                     i = oldEdges.erase(i);
                 } else {
                     WRITE_MESSAGE("Changing invalid starting edge '" + frontID
@@ -199,24 +227,23 @@ RORouteDef::repairCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
             mh->inform("Could not find new starting edge for vehicle '" + veh.getID() + "'.");
             return false;
         }
-        if (oldEdges.back()->prohibits(&veh)) {
+        if (oldEdges.back()->prohibits(&veh, hasRestrictions)) {
             // option repair.to is in effect
             const std::string& backID = oldEdges.back()->getID();
             // oldEdges cannot get empty here, otherwise we would have left the stage when checking "from"
-            while (oldEdges.back()->prohibits(&veh) || oldEdges.back()->isInternal()) {
+            while (oldEdges.back()->prohibits(&veh, hasRestrictions) || oldEdges.back()->isInternal()) {
                 oldEdges.pop_back();
             }
             WRITE_MESSAGE("Changing invalid destination edge '" + backID
                           + "' to edge '" + oldEdges.back()->getID() + "' for vehicle '" + veh.getID() + "'.");
         }
-        ConstROEdgeVector mandatory = veh.getMandatoryEdges(oldEdges.front(), oldEdges.back());
-        std::set<ConstROEdgeVector::const_iterator> jumpStarts;
-        veh.collectJumps(mandatory, jumpStarts);
+        std::vector<ROVehicle::Mandatory> mandatory = veh.getMandatoryEdges(oldEdges.front(), oldEdges.back());
         assert(mandatory.size() >= 2);
         // removed prohibited
         for (ConstROEdgeVector::iterator i = oldEdges.begin(); i != oldEdges.end();) {
-            if ((*i)->prohibits(&veh) || (*i)->isInternal()) {
+            if ((*i)->prohibits(&veh, hasRestrictions) || (*i)->isInternal()) {
                 // no need to check the mandatories here, this was done before
+                WRITE_MESSAGEF(TL("Removing invalid edge '%' from route for vehicle '%'."), (*i)->getID(), veh.getID());
                 i = oldEdges.erase(i);
             } else {
                 ++i;
@@ -226,9 +253,18 @@ RORouteDef::repairCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
         if (mandatory.size() > oldEdges.size() && initialSize > 2) {
             WRITE_MESSAGEF(TL("There are stop edges which were not part of the original route for vehicle '%'."), veh.getID());
         }
-        const ConstROEdgeVector& targets = mandatory.size() > oldEdges.size() ? mandatory : oldEdges;
+        ConstROEdgeVector targets;
+        bool checkPositions = false;
+        if (mandatory.size() >= oldEdges.size()) {
+            for (auto m : mandatory) {
+                targets.push_back(m.edge);
+                checkPositions |= m.pos >= 0;
+            }
+        } else {
+            targets = oldEdges;
+        }
         newEdges.push_back(targets.front());
-        ConstROEdgeVector::iterator nextMandatory = mandatory.begin() + 1;
+        auto nextMandatory = mandatory.begin() + 1;
         int lastMandatory = 0;
         for (ConstROEdgeVector::const_iterator i = targets.begin() + 1;
                 i != targets.end() && nextMandatory != mandatory.end(); ++i) {
@@ -248,8 +284,8 @@ RORouteDef::repairCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
                     last = newEdges.back();
                     newEdges.pop_back();
                 }
-                if (veh.hasJumps() && jumpStarts.count(nextMandatory - 1) != 0) {
-                    while (*i != *nextMandatory) {
+                if (veh.hasJumps() && (nextMandatory - 1)->isJump) {
+                    while (*i != nextMandatory->edge) {
                         ++i;
                     }
                     newEdges.push_back(last);
@@ -257,30 +293,67 @@ RORouteDef::repairCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
                     //std::cout << " skipJump mIndex=" << (nextMandatory - 1 - mandatory.begin()) << " last=" << last->getID() << " next=" << (*i)->getID() << " newEdges=" << toString(newEdges) << "\n";
                 } else {
 
+                    int numEdgesBefore = (int)newEdges.size();
                     //                router.setHint(targets.begin(), i, &veh, begin);
-                    if (!router.compute(last, *i, &veh, begin, newEdges)) {
+                    if (myTryRepair && lastMandatory < (int)newEdges.size() && last != newEdges[lastMandatory]) {
+                        router.setMsgHandler(MsgHandler::getWarningInstance());
+                    }
+                    bool ok;
+                    if (checkPositions
+                            && mandatory[i - targets.begin() - 1].pos >= 0
+                            && mandatory[i - targets.begin()].pos >= 0) {
+                        ok = router.compute(
+                                 last, mandatory[i - targets.begin() - 1].pos,
+                                 *i, mandatory[i - targets.begin()].pos,
+                                 &veh, begin, newEdges);
+                    } else {
+                        ok = router.compute(last, *i, &veh, begin, newEdges);
+                    }
+                    router.setMsgHandler(mh);
+                    if (!ok) {
                         // backtrack: try to route from last mandatory edge to next mandatory edge
                         // XXX add option for backtracking in smaller increments
                         // (i.e. previous edge to edge after *i)
                         // we would then need to decide whether we have found a good
                         // tradeoff between faithfulness to the input data and detour-length
-                        ConstROEdgeVector edges;
-                        if (lastMandatory >= (int)newEdges.size() || last == newEdges[lastMandatory] || !router.compute(newEdges[lastMandatory], *nextMandatory, &veh, begin, edges)) {
+                        if (lastMandatory >= (int)newEdges.size() || last == newEdges[lastMandatory] || !backTrack(router, i, lastMandatory, nextMandatory->edge, newEdges, veh, begin)) {
                             mh->inform("Mandatory edge '" + (*i)->getID() + "' not reachable by vehicle '" + veh.getID() + "'.");
                             return false;
                         }
-                        while (*i != *nextMandatory) {
-                            ++i;
+                    } else if (!myMayBeDisconnected && !isTrip && last != (*i)) {
+                        double airDist = last->getToJunction()->getPosition().distanceTo(
+                                             (*i)->getFromJunction()->getPosition());
+                        double repairDist = 0;
+                        for (auto it2 = (newEdges.begin() + numEdgesBefore + 1); it2 != newEdges.end() && it2 != newEdges.end() - 1; it2++) {
+                            repairDist += (*it2)->getLength();
                         }
-                        newEdges.erase(newEdges.begin() + lastMandatory + 1, newEdges.end());
-                        std::copy(edges.begin() + 1, edges.end(), back_inserter(newEdges));
+                        const double detourFactor = repairDist / MAX2(airDist, 1.0);
+                        const double detour = MAX2(0.0, repairDist - airDist);
+                        const double maxDetourFactor = OptionsCont::getOptions().getFloat("repair.max-detour-factor");
+                        if (detourFactor > maxDetourFactor) {
+                            WRITE_MESSAGEF("    Backtracking to avoid detour of %m for gap of %m)", detour, airDist);
+                            backTrack(router, i, lastMandatory, nextMandatory->edge, newEdges, veh, begin);
+                        } else if (detourFactor > 1.1) {
+                            WRITE_MESSAGEF("    Taking detour of %m to avoid gap of %m)", detour, airDist);
+                        }
                     }
-
                 }
             }
-            if (*i == *nextMandatory) {
+            if (*i == nextMandatory->edge) {
                 nextMandatory++;
                 lastMandatory = (int)newEdges.size() - 1;
+            }
+        }
+        if (veh.getParameter().via.size() > 0 && veh.getParameter().stops.size() > 0) {
+            // check consistency of stops and vias
+            auto it = newEdges.begin();
+            for (const auto& stop : veh.getParameter().stops) {
+                const ROEdge* e = net->getEdge(stop.edge);
+                it = std::find(it, newEdges.end(), e);
+                if (it == newEdges.end()) {
+                    mh->inform("Stop edge '" + e->getID() + "' is inconsistent with via edges for vehicle '" + veh.getID() + "'.");
+                    return false;
+                }
             }
         }
     }
@@ -288,15 +361,35 @@ RORouteDef::repairCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
 }
 
 
+bool
+RORouteDef::backTrack(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
+                      ConstROEdgeVector::const_iterator& i, int lastMandatory, const ROEdge* nextMandatory,
+                      ConstROEdgeVector& newEdges, const ROVehicle& veh, SUMOTime begin) {
+    ConstROEdgeVector edges;
+    bool ok = router.compute(newEdges[lastMandatory], nextMandatory, &veh, begin, edges, true);
+    if (!ok) {
+        return false;
+    }
+
+    while (*i != nextMandatory) {
+        ++i;
+    }
+    newEdges.erase(newEdges.begin() + lastMandatory + 1, newEdges.end());
+    std::copy(edges.begin() + 1, edges.end(), back_inserter(newEdges));
+    return true;
+}
+
+
 void
 RORouteDef::addAlternative(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
-                           const ROVehicle* const veh, RORoute* current, SUMOTime begin) {
+                           const ROVehicle* const veh, RORoute* current, SUMOTime begin,
+                           MsgHandler* errorHandler) {
     if (myTryRepair || myUsingJTRR) {
         if (myNewRoute) {
             delete myAlternatives[0];
             myAlternatives[0] = current;
         }
-        if (!router.isValid(current->getEdgeVector(), veh)) {
+        if (!router.isValid(current->getEdgeVector(), veh, STEPS2TIME(begin))) {
             throw ProcessError("Route '" + getID() + "' (vehicle '" + veh->getID() + "') is not valid.");
         }
         double costs = router.recomputeCosts(current->getEdgeVector(), veh, begin);
@@ -309,7 +402,10 @@ RORouteDef::addAlternative(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
         return;
     }
     // add the route when it's new
-    if (myAlternatives.back()->getProbability() < 0) {
+    if (myAlternatives.back()->getProbability() < 0 || !myAlternatives.back()->isPermitted(veh, errorHandler)) {
+        if (myAlternatives.back()->getProbability() >= 0 && errorHandler == MsgHandler::getErrorInstance()) {
+            throw ProcessError("Route '" + current->getID() + "' (vehicle '" + veh->getID() + "') is not valid.");
+        }
         delete myAlternatives.back();
         myAlternatives.pop_back();
     }
@@ -319,7 +415,7 @@ RORouteDef::addAlternative(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
     // recompute the costs and (when a new route was added) scale the probabilities
     const double scale = double(myAlternatives.size() - 1) / double(myAlternatives.size());
     for (RORoute* const alt : myAlternatives) {
-        if (!router.isValid(alt->getEdgeVector(), veh)) {
+        if (!router.isValid(alt->getEdgeVector(), veh, STEPS2TIME(begin))) {
             throw ProcessError("Route '" + current->getID() + "' (vehicle '" + veh->getID() + "') is not valid.");
         }
         // recompute the costs for all routes

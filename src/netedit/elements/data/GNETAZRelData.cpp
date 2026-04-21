@@ -1,6 +1,6 @@
 /****************************************************************************/
 // Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.dev/sumo
-// Copyright (C) 2001-2025 German Aerospace Center (DLR) and others.
+// Copyright (C) 2001-2026 German Aerospace Center (DLR) and others.
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License 2.0 which is available at
 // https://www.eclipse.org/legal/epl-2.0/
@@ -101,17 +101,40 @@ GNETAZRelData::getColorValue(const GUIVisualizationSettings& s, int activeScheme
             } catch (NumberFormatException&) {
                 return GUIVisualizationSettings::MISSING_DATA;
             }
-
+        default:
+            return 0;
     }
-    return 0;
-
 }
+
+
+double
+GNETAZRelData::getScaleValue(const GUIVisualizationSettings& s, int activeScheme) const {
+    switch (activeScheme) {
+        case 0: // uniform
+            return 0;
+        case 1: // selection
+            return isAttributeCarrierSelected();
+        case 2: // by numerical attribute value
+            try {
+                if (hasParameter(s.relDataScaleAttr)) {
+                    return StringUtils::toDouble(getParameter(s.relDataScaleAttr, "-1"));
+                } else {
+                    return GUIVisualizationSettings::MISSING_DATA;
+                }
+            } catch (NumberFormatException&) {
+                return GUIVisualizationSettings::MISSING_DATA;
+            }
+        default:
+            return 0;
+    }
+}
+
 
 
 bool
 GNETAZRelData::isGenericDataVisible() const {
     // obtain pointer to TAZ data frame (only for code legibly)
-    const GNETAZRelDataFrame* TAZRelDataFrame = myNet->getViewNet()->getViewParent()->getTAZRelDataFrame();
+    const GNETAZRelDataFrame* TAZRelDataFrame = myNet->getViewParent()->getTAZRelDataFrame();
     // get current data edit mode
     DataEditMode dataMode = myNet->getViewNet()->getEditModes().dataEditMode;
     // check if we have to filter generic data
@@ -253,8 +276,8 @@ GNETAZRelData::drawGL(const GUIVisualizationSettings& s) const {
     GLHelper::drawBoundary(s, getCenteringBoundary());
     // draw TAZRels
     if (drawTAZRel()) {
-        // get detail level
-        const auto d = s.getDetailLevel(1);
+        // fixed detail level because tazRelations need high detail when zoomed out
+        const auto d = GUIVisualizationSettings::Detail::Level1;
         // draw geometry only if we'rent in drawForObjectUnderCursor mode
         if (!s.drawForViewObjectsHandler) {
             const auto& color = setColor(s);
@@ -266,7 +289,9 @@ GNETAZRelData::drawGL(const GUIVisualizationSettings& s) const {
             drawInLayer(GLO_TAZ + 1);
             GLHelper::setColor(color);
             // check if update lastWidth
-            const double width = onlyDrawContour ? 0.1 :  0.5 * s.tazRelWidthExaggeration;
+            const double selectionScale = isAttributeCarrierSelected() ? s.selectorFrameScale : 1;
+            const double width = (onlyDrawContour ? 0.1 :  0.5 * s.tazRelWidthExaggeration * selectionScale
+                                  * s.dataScaler.getScheme().getColor(getScaleValue(s, s.dataScaler.getActive())));
             if (width != myLastWidth) {
                 myLastWidth = width;
             }
@@ -385,14 +410,14 @@ GNETAZRelData::getAttribute(SumoXMLAttr key) const {
         case SUMO_ATTR_END:
             return myDataIntervalParent->getAttribute(SUMO_ATTR_END);
         default:
-            return getCommonAttribute(this, key);
+            return getCommonAttribute(key);
     }
 }
 
 
 double
 GNETAZRelData::getAttributeDouble(SumoXMLAttr key) const {
-    throw InvalidArgument(getTagStr() + " doesn't have a double attribute of type '" + toString(key) + "'");
+    return getCommonAttributeDouble(key);
 }
 
 
@@ -421,7 +446,7 @@ GNETAZRelData::isValid(SumoXMLAttr key, const std::string& value) {
             return SUMOXMLDefinitions::isValidNetID(value) &&
                    (myNet->getAttributeCarriers()->retrieveAdditional(SUMO_TAG_TAZ, value, false) != nullptr);
         default:
-            return isCommonValid(key, value);
+            return isCommonAttributeValid(key, value);
     }
 }
 
@@ -460,14 +485,14 @@ GNETAZRelData::drawTAZRel() const {
         return false;
     }
     // check TAZRelFrame
-    if (myNet->getViewNet()->getViewParent()->getTAZRelDataFrame()->shown()) {
+    if (myNet->getViewParent()->getTAZRelDataFrame()->shown()) {
         // check dataSet
-        const GNEDataSet* dataSet = myNet->getViewNet()->getViewParent()->getTAZRelDataFrame()->getDataSetSelector()->getDataSet();
+        const GNEDataSet* dataSet = myNet->getViewParent()->getTAZRelDataFrame()->getDataSetSelector()->getDataSet();
         if (dataSet && (myDataIntervalParent->getDataSetParent() != dataSet)) {
             return false;
         }
         // check interval
-        const GNEDataInterval* dataInterval = myNet->getViewNet()->getViewParent()->getTAZRelDataFrame()->getIntervalSelector()->getDataInterval();
+        const GNEDataInterval* dataInterval = myNet->getViewParent()->getTAZRelDataFrame()->getIntervalSelector()->getDataInterval();
         if (dataInterval && (myDataIntervalParent != dataInterval)) {
             return false;
         }
@@ -514,14 +539,16 @@ GNETAZRelData::setAttribute(SumoXMLAttr key, const std::string& value) {
             break;
         }
         default:
-            setCommonAttribute(this, key, value);
+            setCommonAttribute(key, value);
             if (!isTemplate()) {
                 myDataIntervalParent->getDataSetParent()->updateAttributeColors();
             }
             break;
     }
     // mark interval toolbar for update
-    myNet->getViewNet()->getIntervalBar().markForUpdate();
+    if (!isTemplate()) {
+        myNet->getViewNet()->getIntervalBar().markForUpdate();
+    }
 }
 
 /****************************************************************************/
