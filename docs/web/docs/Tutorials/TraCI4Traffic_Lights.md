@@ -3,7 +3,7 @@ title: TraCI4Traffic Lights
 ---
 
 This shows how to use the [Traffic Control Interface (in short
-TraCI)](../TraCI.md) on a simple example. TraCI gives the
+TraCI)](../TraCI/index.md) on a simple example. TraCI gives the
 possibility to control a running road traffic simulation. TraCI uses a
 TCP-based client/server architecture where SUMO acts as a server and the
 external script (the “controller”) is the client. In this tutorial the
@@ -86,7 +86,7 @@ again. In the end, we close the connection.
 We want to run this simulation in SUMO, acting as a server, and control
 the signal dependent on the actual simulation state. For this task TraCI
 offers commands which are described in the corresponding article
-[TraCI](../TraCI.md) in detail. For this example we will use only
+[TraCI](../TraCI/index.md) in detail. For this example we will use only
 four commands: [Simulation
 Step](../TraCI/Control-related_commands.md#command_0x02_simulation_step),
 [Get Induction Loop

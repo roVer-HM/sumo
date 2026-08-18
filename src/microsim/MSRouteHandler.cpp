@@ -617,7 +617,7 @@ MSRouteHandler::closeVehicle() {
     MSVehicleControl& vehControl = MSNet::getInstance()->getVehicleControl();
     if (myVehicleParameter->departProcedure == DepartDefinition::GIVEN) {
         // let's check whether this vehicle had to depart before the simulation starts
-        if (!(myAddVehiclesDirectly || checkLastDepart()) || (myVehicleParameter->depart < string2time(OptionsCont::getOptions().getString("begin")) && !myAmLoadingState)) {
+        if (!(myAddVehiclesDirectly || checkLastDepart()) || (myVehicleParameter->depart <= MSNet::getInstance()->getStateLoaderTime() && !myAmLoadingState)) {
             mySkippedVehicles.insert(myVehicleParameter->id);
             return;
         }
@@ -818,7 +818,7 @@ MSRouteHandler::closeTransportable() {
         }
         // let's check whether this transportable had to depart before the simulation starts
         if (!(myAddVehiclesDirectly || checkLastDepart())
-                || (myVehicleParameter->depart < string2time(OptionsCont::getOptions().getString("begin")) && !myAmLoadingState)) {
+                || (myVehicleParameter->depart <= MSNet::getInstance()->getStateLoaderTime() && !myAmLoadingState)) {
             deleteActivePlanAndVehicleParameter();
             return;
         }
@@ -876,7 +876,7 @@ MSRouteHandler::closeTransportableFlow() {
         }
         // let's check whether this transportable (person/container) had to depart before the simulation starts
         if (!(myAddVehiclesDirectly || checkLastDepart())
-                || (myVehicleParameter->depart < string2time(OptionsCont::getOptions().getString("begin")) && !myAmLoadingState)) {
+                || (myVehicleParameter->depart <= MSNet::getInstance()->getStateLoaderTime() && !myAmLoadingState)) {
             deleteActivePlanAndVehicleParameter();
             return;
         }
@@ -956,6 +956,9 @@ MSRouteHandler::addFlowTransportable(SUMOTime depart, MSVehicleType* type, const
             myVehicleParameter->id = (baseID
                                       + (i >= 0 ? "." + toString(i) : "")
                                       + (j > 0 ? "." + toString(j) : ""));
+            if (MSGlobals::gStateLoaded && tc.get(myVehicleParameter->id) != nullptr) {
+                return numCreated;
+            }
             myVehicleParameter->depart = depart += net->getInsertionControl().computeRandomDepartOffset();
             MSTransportable* transportable = myActiveType == ObjectTypeEnum::PERSON ?
                                              tc.buildPerson(myVehicleParameter, type, myActiveTransportablePlan, &myParsingRNG) :
@@ -965,9 +968,7 @@ MSRouteHandler::addFlowTransportable(SUMOTime depart, MSVehicleType* type, const
                 std::string error = "Another " + myActiveTypeName + " with the id '" + myVehicleParameter->id + "' exists.";
                 delete transportable;
                 resetActivePlanAndVehicleParameter();
-                if (!MSGlobals::gStateLoaded) {
-                    throw ProcessError(error);
-                }
+                throw ProcessError(error);
             } else if ((net->hasPersons() && net->getPersonControl().get(myVehicleParameter->id) != nullptr)
                        && (net->hasContainers() && net->getContainerControl().get(myVehicleParameter->id) != nullptr)) {
                 WRITE_WARNINGF(TL("There exists a person and a container with the same id '%'. Starting with SUMO 1.9.0 this is an error."), myVehicleParameter->id);
@@ -1202,8 +1203,14 @@ MSRouteHandler::addRideOrTransport(const SUMOSAXAttributes& attrs, const SumoXML
         const std::string intendedVeh = attrs.getOpt<std::string>(SUMO_ATTR_INTENDED, nullptr, ok, "");
         const SUMOTime intendedDepart = attrs.getOptSUMOTimeReporting(SUMO_ATTR_DEPART, nullptr, ok, -1);
         arrivalPos = SUMOVehicleParameter::interpretEdgePos(arrivalPos, to->getLength(), SUMO_ATTR_ARRIVALPOS, agent + " '" + aid + "' takes a " + mode + " to edge '" + to->getID() + "'");
-        myActiveTransportablePlan->push_back(new MSStageDriving(from, to, s, arrivalPos, 0.0, st.getVector(), group, intendedVeh, intendedDepart));
-        myParamStack.push_back(myActiveTransportablePlan->back());
+        MSStageDriving* stage = new MSStageDriving(from, to, s, arrivalPos, 0.0, st.getVector(), group, intendedVeh, intendedDepart);
+        // for loading from saved state
+        stage->setDeparted(attrs.getOptSUMOTimeReporting(SUMO_ATTR_STARTED, nullptr, ok, -1));
+        stage->setEnded(attrs.getOptSUMOTimeReporting(SUMO_ATTR_ENDED, nullptr, ok, -1));
+        stage->setVehicleID(attrs.getOpt<std::string>(SUMO_ATTR_VEHICLE, nullptr, ok, ""));
+        stage->setVehicleDistance(attrs.getOpt<double>(SUMO_ATTR_ROUTELENGTH, nullptr, ok, -1));
+        myActiveTransportablePlan->push_back(stage);
+        myParamStack.push_back(stage);
     } catch (ProcessError&) {
         deleteActivePlanAndVehicleParameter();
         throw;
@@ -1680,11 +1687,22 @@ MSRouteHandler::addWalk(const SUMOSAXAttributes& attrs) {
             }
             const int departLane = attrs.getOpt<int>(SUMO_ATTR_DEPARTLANE, nullptr, ok, -1);
             const double departPosLat = interpretDepartPosLat(attrs.getOpt<std::string>(SUMO_ATTR_DEPARTPOS_LAT, nullptr, ok, ""), departLane, "walk");
-            myActiveTransportablePlan->push_back(new MSStageWalking(myVehicleParameter->id, myActiveRoute, bs, duration, speed, departPos, arrivalPos, departPosLat, departLane, myActiveRouteID));
-            myParamStack.push_back(myActiveTransportablePlan->back());
-            if (attrs.hasAttribute(SUMO_ATTR_ARRIVALPOS)) {
-                myActiveTransportablePlan->back()->markSet(VEHPARS_ARRIVALPOS_SET);
+            MSStageWalking* stage = new MSStageWalking(myVehicleParameter->id, myActiveRoute, bs, duration, speed, departPos, arrivalPos, departPosLat, departLane, myActiveRouteID);
+            stage->setDeparted(attrs.getOptSUMOTimeReporting(SUMO_ATTR_STARTED, nullptr, ok, -1));
+            stage->setEnded(attrs.getOptSUMOTimeReporting(SUMO_ATTR_ENDED, nullptr, ok, -1));
+            stage->setTotalWaitingTime(attrs.getOptSUMOTimeReporting(SUMO_ATTR_WAITINGTIME, nullptr, ok, 0));
+            if (attrs.hasAttribute(SUMO_ATTR_EXITTIMES) && OptionsCont::getOptions().getBool("vehroute-output.exit-times")) {
+                std::vector<SUMOTime>* exitTimes = new std::vector<SUMOTime>();
+                for (const std::string& tStr : attrs.get<std::vector<std::string> >(SUMO_ATTR_EXITTIMES, nullptr, ok)) {
+                    exitTimes->push_back(string2time(tStr));
+                }
+                stage->setExitTimes(exitTimes);
             }
+            if (attrs.hasAttribute(SUMO_ATTR_ARRIVALPOS)) {
+                stage->markSet(VEHPARS_ARRIVALPOS_SET);
+            }
+            myActiveTransportablePlan->push_back(stage);
+            myParamStack.push_back(stage);
             myActiveRoute.clear();
         } catch (ProcessError&) {
             deleteActivePlanAndVehicleParameter();

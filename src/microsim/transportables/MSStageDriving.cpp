@@ -58,18 +58,16 @@ MSStageDriving::MSStageDriving(const MSEdge* origin, const MSEdge* destination,
     myOrigin(origin),
     myLines(lines.begin(), lines.end()),
     myVehicle(nullptr),
-    myVehicleID("NULL"),
     myVehicleVClass(SVC_IGNORING),
     myVehicleDistance(-1.),
     myTimeLoss(-1),
     myWaitingPos(-1),
     myWaitingSince(-1),
-    myWaitingEdge(nullptr),
+    myWaitingEdge(origin),
     myStopWaitPos(Position::INVALID),
     myOriginStop(nullptr),
     myIntendedVehicleID(intendedVeh),
-    myIntendedDepart(intendedDepart),
-    myReservationCommand(nullptr) {
+    myIntendedDepart(intendedDepart) {
 }
 
 
@@ -101,8 +99,8 @@ MSStageDriving::init(MSTransportable* transportable) {
             // else use the middle of the edge, as also used as default for walk's arrivalPos
             myWaitingPos = myOrigin->getLength() / 2;
         }
-        myReservationCommand = new BookReservation(transportable, earliestPickupTime, this);
-        MSNet::getInstance()->getBeginOfTimestepEvents()->addEvent(myReservationCommand, reservationTime);
+        myReservationWaitingPos = myWaitingPos;
+        MSNet::getInstance()->getBeginOfTimestepEvents()->addEvent(new BookReservation(transportable, earliestPickupTime, this), reservationTime);
     }
 }
 
@@ -331,19 +329,22 @@ MSStageDriving::registerWaiting(MSTransportable* transportable, SUMOTime now) {
             }
         }
         // Create reservation only if not already created by previous reservationTime
-        if (myReservationCommand == nullptr) {
+        if (myReservationWaitingPos == INVALID_DOUBLE) {
             MSDevice_Taxi::addReservation(transportable, getLines(), now, now, -1, myWaitingEdge, myWaitingPos, myOriginStop, to, toPos, myDestinationStop, myGroup);
         } else {
             // update "fromPos" with current (new) value of myWaitingPos
-            MSDevice_Taxi::updateReservationFromPos(transportable, getLines(), myWaitingEdge, myReservationCommand->myWaitingPos, to, toPos, myGroup, myWaitingPos);
+            MSDevice_Taxi::updateReservationFromPos(transportable, getLines(), myWaitingEdge, myReservationWaitingPos, to, toPos, myGroup, myWaitingPos);
         }
     }
-    if (transportable->isPerson()) {
-        MSNet::getInstance()->getPersonControl().addWaiting(myWaitingEdge, transportable);
-    } else {
-        MSNet::getInstance()->getContainerControl().addWaiting(myWaitingEdge, transportable);
+    // check required for state-loading
+    if (myVehicle == nullptr) {
+        if (transportable->isPerson()) {
+            MSNet::getInstance()->getPersonControl().addWaiting(myWaitingEdge, transportable);
+        } else {
+            MSNet::getInstance()->getContainerControl().addWaiting(myWaitingEdge, transportable);
+        }
+        myWaitingEdge->addTransportable(transportable);
     }
-    myWaitingEdge->addTransportable(transportable);
 }
 
 SUMOTime
@@ -378,20 +379,20 @@ MSStageDriving::tripInfoOutput(OutputDevice& os, const MSTransportable* const tr
     MSDevice_Tripinfo::addRideTransportData(transportable->isPerson(), myVehicleDistance, duration, myVehicleVClass, myVehicleLine, waitingTime);
     os.openTag(transportable->isPerson() ? "ride" : "transport");
     os.writeAttr("waitingTime", waitingTime != SUMOTime_MAX ? time2string(waitingTime) : "-1");
-    os.writeAttr("vehicle", myVehicleID);
+    os.writeAttr("vehicle", myVehicleID.empty() ? "NULL" : myVehicleID);
     os.writeAttr("depart", myDeparted >= 0 ? time2string(myDeparted) : "-1");
     os.writeAttr("arrival", myArrived >= 0 ? time2string(myArrived) : "-1");
     os.writeAttr("arrivalPos", myArrived >= 0 ? toString(getArrivalPos()) : "-1");
     os.writeAttr("duration", myArrived >= 0 ? time2string(duration) :
                  (myDeparted >= 0 ? time2string(now - myDeparted) : "-1"));
-    os.writeAttr("routeLength", myArrived >= 0 || myVehicle != nullptr ? toString(getDistance()) : "-1");
+    os.writeAttr(SUMO_ATTR_ROUTELENGTH, myArrived >= 0 || myVehicle != nullptr ? toString(getDistance()) : "-1");
     os.writeAttr("timeLoss", myArrived >= 0 ? time2string(getTimeLoss(transportable)) : "-1");
     os.closeTag();
 }
 
 
 void
-MSStageDriving::routeOutput(const bool isPerson, OutputDevice& os, const bool withRouteLength, const MSStage* const previous) const {
+MSStageDriving::routeOutput(const bool isPerson, OutputDevice& os, const bool withRouteLength, const MSStage* const previous, const bool withTiming, const bool /*saveState*/) const {
     os.openTag(isPerson ? SUMO_TAG_RIDE : SUMO_TAG_TRANSPORT);
     if (getFromEdge() != nullptr) {
         os.writeAttr(SUMO_ATTR_FROM, getFromEdge()->getID());
@@ -421,8 +422,8 @@ MSStageDriving::routeOutput(const bool isPerson, OutputDevice& os, const bool wi
     if (withRouteLength) {
         os.writeAttr("routeLength", myVehicleDistance);
     }
-    if (OptionsCont::getOptions().getBool("vehroute-output.exit-times")) {
-        os.writeAttr("vehicle", myVehicleID);
+    if (withTiming) {
+        os.writeAttr("vehicle", myVehicleID.empty() ? "NULL" : myVehicleID);
         os.writeAttr(SUMO_ATTR_STARTED, myDeparted >= 0 ? time2string(myDeparted) : "-1");
         os.writeAttr(SUMO_ATTR_ENDED, myArrived >= 0 ? time2string(myArrived) : "-1");
     }
@@ -636,45 +637,55 @@ MSStageDriving::canLeaveVehicle(const MSTransportable* t, const SUMOVehicle& veh
 
 
 void
-MSStageDriving::saveState(std::ostringstream& out) {
+MSStageDriving::saveState(std::ostringstream& out, MSTransportable* transportable) {
     const bool hasVehicle = myVehicle != nullptr;
     out << " " << myWaitingSince << " " << myTimeLoss << " " << myArrived << " " << hasVehicle;
     if (hasVehicle) {
         out << " " << myDeparted << " " << myVehicle->getID() << " " << myVehicleDistance;
+    } else if (myOriginStop != nullptr) {
+        out.setf(std::ios::fixed, std::ios::floatfield);
+        out << std::setprecision(gPrecision);
+        out << " " << myOriginStop->checkWaitingSpot(transportable);
+        out << " " << myWaitingPos << " " << myStopWaitPos.x() << " " << myStopWaitPos.y();
     }
 }
 
 
 void
 MSStageDriving::loadState(MSTransportable* transportable, std::istringstream& state) {
+    // there should always be at least one prior WAITING_FOR_DEPART stage
+    MSStage* previous = transportable->getNextStage(-1);
+    myOriginStop = (previous->getStageType() == MSStageType::TRIP
+                    ? previous->getOriginStop()
+                    : previous->getDestinationStop());
     bool hasVehicle;
-    state >> myWaitingSince >> myTimeLoss >> myArrived >> hasVehicle;
+    SUMOTime loadedTimeLoss;
+    state >> myWaitingSince >> loadedTimeLoss >> myArrived >> hasVehicle;
     if (hasVehicle) {
         std::string vehID;
         state >> myDeparted >> vehID;
         SUMOVehicle* startVeh = MSNet::getInstance()->getVehicleControl().getVehicle(vehID);
         setVehicle(startVeh);
+        myTimeLoss = loadedTimeLoss;
         myVehicle->addTransportable(transportable);
         state >> myVehicleDistance;
+    } else if (myOriginStop != nullptr) {
+        int waitingSpot;
+        state >> waitingSpot;
+        state >> myWaitingPos;
+        double x, y;
+        state >> x;
+        state >> y;
+        myStopWaitPos = Position(x, y);
+        myOriginStop->addTransportable(transportable, waitingSpot);
+        myWaitingEdge = &myOriginStop->getLane().getEdge();
     } else {
-        // there should always be at least one prior WAITING_FOR_DEPART stage
-        MSStage* previous = transportable->getNextStage(-1);
-        myOriginStop = (previous->getStageType() == MSStageType::TRIP
-                        ? previous->getOriginStop()
-                        : previous->getDestinationStop());
-        if (myOriginStop != nullptr) {
-            // the arrival stop may have an access point
-            myOriginStop->addTransportable(transportable);
-            myWaitingEdge = &myOriginStop->getLane().getEdge();
-            myStopWaitPos = myOriginStop->getWaitPosition(transportable);
-            myWaitingPos = myOriginStop->getWaitingPositionOnLane(transportable);
-        } else {
-            myWaitingEdge = previous->getEdge();
-            myStopWaitPos = Position::INVALID;
-            myWaitingPos = previous->getArrivalPos();
-        }
-        registerWaiting(transportable, SIMSTEP);
+        myWaitingEdge = previous->getEdge();
+        myStopWaitPos = Position::INVALID;
+        myWaitingPos = previous->getArrivalPos();
     }
+    // running reservations will be converted in MSDevice_Taxi::addReservation
+    registerWaiting(transportable, myWaitingSince);
 }
 
 // ---------------------------------------------------------------------------
@@ -684,8 +695,7 @@ SUMOTime
 MSStageDriving::BookReservation::execute(SUMOTime currentTime) {
     MSDevice_Taxi::addReservation(myTransportable, myStage->getLines(), currentTime, currentTime, myEarliestPickupTime,
                                   myStage->myOrigin, myStage->myWaitingPos, myStage->myOriginStop, myStage->getDestination(), myStage->getArrivalPos(), myStage->myDestinationStop, myStage->myGroup);
-    // do not repeat if execution fails
-    return 0;
+    return 0; // do not repeat
 }
 
 /****************************************************************************/

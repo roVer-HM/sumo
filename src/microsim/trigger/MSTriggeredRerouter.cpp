@@ -534,14 +534,15 @@ MSTriggeredRerouter::triggerRouting(SUMOTrafficObject& tObject, MSMoveReminder::
         SUMOVehicle& veh = static_cast<SUMOVehicle&>(tObject);
         bool newDestination = false;
         ConstMSEdgeVector newRoute;
+        MSParkingArea* oldParkingArea = veh.getNextParkingArea();
         MSParkingArea* newParkingArea = rerouteParkingArea(rerouteDef, veh, newDestination, newRoute);
         if (newParkingArea != nullptr) {
             // adapt plans of any riders
             for (MSTransportable* p : veh.getPersons()) {
-                p->rerouteParkingArea(veh.getNextParkingArea(), newParkingArea);
+                p->rerouteParkingArea(oldParkingArea, newParkingArea);
             }
 
-            if (newDestination) {
+            if (newDestination && veh.getParameter().arrivalPosProcedure != ArrivalPosDefinition::DEFAULT) {
                 // update arrival parameters
                 SUMOVehicleParameter* newParameter = new SUMOVehicleParameter();
                 *newParameter = veh.getParameter();
@@ -555,9 +556,9 @@ MSTriggeredRerouter::triggerRouting(SUMOTrafficObject& tObject, MSMoveReminder::
                     : MSNet::getInstance()->getRouterTT(veh.getRNGIndex(), rerouteDef->getClosed());
             const double routeCost = router.recomputeCosts(newRoute, &veh, MSNet::getInstance()->getCurrentTimeStep());
             ConstMSEdgeVector prevEdges(veh.getCurrentRouteEdge(), veh.getRoute().end());
+            resetClosedEdges(hasReroutingDevice, veh);
             const double previousCost = router.recomputeCosts(prevEdges, &veh, MSNet::getInstance()->getCurrentTimeStep());
             const double savings = previousCost - routeCost;
-            resetClosedEdges(hasReroutingDevice, veh);
             //if (getID() == "ego") std::cout << SIMTIME << " pCost=" << previousCost << " cost=" << routeCost
             //        << " prevEdges=" << toString(prevEdges)
             //        << " newEdges=" << toString(edges)
@@ -566,10 +567,20 @@ MSTriggeredRerouter::triggerRouting(SUMOTrafficObject& tObject, MSMoveReminder::
             std::string errorMsg;
             if (veh.replaceParkingArea(newParkingArea, errorMsg)) {
                 veh.replaceRouteEdges(newRoute, routeCost, savings, getID() + ":" + toString(SUMO_TAG_PARKING_AREA_REROUTE), false, false, false);
+                if (oldParkingArea->isReservable()) {
+                    oldParkingArea->removeSpaceReservation(&veh);
+                }
+                if (newParkingArea->isReservable()) {
+                    newParkingArea->addSpaceReservation(&veh);
+                }
             } else {
                 WRITE_WARNING("Vehicle '" + veh.getID() + "' at rerouter '" + getID()
                               + "' could not reroute to new parkingArea '" + newParkingArea->getID()
                               + "' reason=" + errorMsg + ", time=" + time2string(MSNet::getInstance()->getCurrentTimeStep()) + ".");
+            }
+        } else {
+            if (oldParkingArea && oldParkingArea->isReservable()) {
+                oldParkingArea->addSpaceReservation(&veh);
             }
         }
         return false;
@@ -697,11 +708,15 @@ MSTriggeredRerouter::triggerRouting(SUMOTrafficObject& tObject, MSMoveReminder::
     if (rerouteDef->closed.empty() || destUnreachable || rerouteDef->isVia || affected(tObject.getUpcomingEdgeIDs(), closed)) {
         if (tObject.isVehicle()) {
             SUMOVehicle& veh = static_cast<SUMOVehicle&>(tObject);
+            ConstMSEdgeVector prevEdges = veh.getRoute().getEdges();
             const bool canChangeDest = rerouteDef->edgeProbs.getOverallProb() > 0;
             MSVehicleRouter& router = hasReroutingDevice
                                       ? MSRoutingEngine::getRouterTT(veh.getRNGIndex(), veh.getVClass(), prohibited)
                                       : MSNet::getInstance()->getRouterTT(veh.getRNGIndex(), prohibited);
-            bool ok = veh.reroute(now, getID(), router, false, false, canChangeDest, newEdge);
+            bool ok = false;
+            try {
+                ok = veh.reroute(now, getID(), router, false, false, canChangeDest, newEdge);
+            } catch (ProcessError&) {}
             if (!ok && !keepDestination && canChangeDest) {
                 // destination unreachable due to closed intermediate edges. pick among alternative targets
                 RandomDistributor<MSEdge*> edgeProbs2 = rerouteDef->edgeProbs;
@@ -712,14 +727,25 @@ MSTriggeredRerouter::triggerRouting(SUMOTrafficObject& tObject, MSMoveReminder::
                     if (newEdge == &mySpecialDest_terminateRoute) {
                         newEdge = veh.getEdge();
                         newArrivalPos = veh.getPositionOnLane(); // instant arrival
+                        while (veh.hasStops()) {
+                            veh.abortNextStop();
+                        }
                     }
                     if (newEdge == &mySpecialDest_keepDestination && !rerouteDef->permissionsAllowAll) {
                         newEdge = lastEdge;
                         break;
                     }
-                    ok = veh.reroute(now, getID(), router, false, false, true, newEdge);
+                    try {
+                        ok = veh.reroute(now, getID(), router, false, false, true, newEdge);
+                    } catch (ProcessError&) {}
                 }
-
+            }
+            resetClosedEdges(hasReroutingDevice, tObject);
+            if (ok) {
+                // since the old route was closed, savings would be infinite. This isn't useful
+                const double previousCost = router.recomputeCosts(prevEdges, &veh, MSNet::getInstance()->getCurrentTimeStep());
+                const double savings = previousCost - veh.getRoute().getCosts();
+                const_cast<MSRoute&>(veh.getRoute()).setSavings(savings);
             }
             if (!rerouteDef->isVia) {
 #ifdef DEBUG_REROUTER
@@ -854,18 +880,18 @@ MSTriggeredRerouter::getUserProbability() const {
 
 
 double
-MSTriggeredRerouter::getStoppingPlaceOccupancy(MSStoppingPlace* sp) {
-    return (double)(sp->getElement() == SUMO_TAG_PARKING_AREA
-                    ? dynamic_cast<MSParkingArea*>(sp)->getOccupancy()
-                    : sp->getStoppedVehicles().size());
+MSTriggeredRerouter::getStoppingPlaceOccupancy(MSStoppingPlace* sp, const SUMOVehicle* veh) {
+    return (sp->getElement() == SUMO_TAG_PARKING_AREA
+                    ? (double)dynamic_cast<MSParkingArea*>(sp)->getOccupancyIncludingRemoteReservations(veh)
+                    : (double)sp->getStoppedVehicles().size());
 }
 
 
 double
-MSTriggeredRerouter::getLastStepStoppingPlaceOccupancy(MSStoppingPlace* sp) {
-    return (double)(sp->getElement() == SUMO_TAG_PARKING_AREA
-                    ? dynamic_cast<MSParkingArea*>(sp)->getLastStepOccupancy()
-                    : sp->getStoppedVehicles().size());
+MSTriggeredRerouter::getLastStepStoppingPlaceOccupancy(MSStoppingPlace* sp, const SUMOVehicle* veh) {
+    return (sp->getElement() == SUMO_TAG_PARKING_AREA
+                    ? (double)dynamic_cast<MSParkingArea*>(sp)->getLastStepOccupancyIncludingRemoteReservations(veh)
+                    : (double)sp->getStoppedVehicles().size());
 }
 
 
@@ -1155,7 +1181,7 @@ MSTriggeredRerouter::checkStopSwitch(MSBaseVehicle& ego, const MSTriggeredRerout
         //    p->rerouteParkingArea(ego.getNextParkingArea(), newParkingArea);
         //}
 
-        if (newDestination) {
+        if (newDestination && ego.getParameter().arrivalPosProcedure != ArrivalPosDefinition::DEFAULT) {
             // update arrival parameters
             SUMOVehicleParameter* newParameter = new SUMOVehicleParameter();
             *newParameter = ego.getParameter();

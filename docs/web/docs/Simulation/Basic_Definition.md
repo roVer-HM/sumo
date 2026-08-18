@@ -98,10 +98,10 @@ The simulation ends in the following cases:
   (time after a step is \>= end).
 - No value for **--end** has been given and all vehicles have been simulated.
   The state of the simulation is the one in which the last vehicle has
-  left the simulated area. If a [TraCI](../TraCI.md) connection
+  left the simulated area. If a [TraCI](../TraCI/index.md) connection
   is active, the simulation will continue even after the last vehicle
   (potentially "forever").
-- A close command has been received via [TraCI](../TraCI.md)
+- A close command has been received via [TraCI](../TraCI/index.md)
 
 # Defining the Time Step Length
 

@@ -1,4 +1,4 @@
-Eclipse SUMO sumo v1_25_0+1031-30c9dee08ac
+Eclipse SUMO sumo v1_27_0+0202-1c25520502a
  Copyright (C) 2001-2026 German Aerospace Center (DLR) and others; https://sumo.dlr.de
 A microscopic, multi-modal traffic simulation.
 
@@ -96,11 +96,15 @@ Output Options:
   --fcd-output FILE                    Save the Floating Car Data
   --fcd-output.geo                     Save the Floating Car Data using
                                         geo-coordinates (lon/lat)
+  --fcd-output.utm                     Save the Floating Car Data using
+                                        utm/unshifted coordinates (x/y)
   --fcd-output.signals                 Add the vehicle signal state to the FCD
                                         output (brake lights etc.)
   --fcd-output.distance                Add kilometrage to the FCD output
                                         (linear referencing)
   --fcd-output.acceleration            Add acceleration to the FCD output
+  --fcd-output.speed-relative          Add relative speed (vehicle speed / edge
+                                        speed limit) to the FCD output
   --fcd-output.max-leader-distance FLOAT  Add leader vehicle information to the
                                         FCD output (within the given distance)
   --fcd-output.params STR[]            Add generic parameter values to the FCD
@@ -111,6 +115,8 @@ Output Options:
                                         in the FCD output
   --fcd-output.filter-shapes STR[]     List shape names that should be used to
                                         filter the FCD output
+  --fcd-output.skip-empty              Do not save data for time steps which
+                                        have no vehicles / transportables
   --person-fcd-output FILE             Save fcd for persons and container to
                                         separate FILE
   --device.ssm.filter-edges.input-file FILE  Restrict SSM device output to the
@@ -917,6 +923,8 @@ Taxi Device Options:
                                         [stop|randomCircling|taxistand]
   --device.taxi.idle-algorithm.output FILE  Write information from the idling
                                         algorithm to FILE
+  --device.taxi.vclasses STR[]         Network permissions that can be accessed
+                                        by taxis
 
 GLOSA Device Options:
   --device.glosa.probability FLOAT     The probability for a vehicle to have a
@@ -1030,6 +1038,7 @@ Mesoscopic Options:
   --meso-overtaking                    Enable mesoscopic overtaking
   --meso-recheck TIME                  Time interval for rechecking insertion
                                         into the next segment after failure
+  --meso-interpolate-pos               Enable mesoscopic position interpolation
 
 Random Number Options:
   --random                             Initialises the random number generator

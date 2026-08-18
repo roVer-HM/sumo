@@ -51,6 +51,7 @@ public:
     static void analyzeTopology(NBEdgeCont& ec);
     static int repairTopology(NBEdgeCont& ec, NBPTStopCont& sc, NBPTLineCont& lc);
     static int makeAllBidi(NBEdgeCont& ec);
+    static void setPTLinePriority(NBEdgeCont& ec, NBPTLineCont& lc, SVCPermissions vClasses);
     static void extendDirectionPriority(NBEdgeCont& ec, bool fromUniDir);
 
     /// routing edge
@@ -135,6 +136,9 @@ private:
     /// @brief reverse edges sequences that are to broken nodes on both sides
     static int reverseEdges(NBEdgeCont& ec, NBPTStopCont& sc, NBPTLineCont& lc);
 
+    /// @brief reverse a single edge
+    static void reverseEdge(NBEdge* e);
+
     /// @brief add bidi-edges to connect buffers stops in both directions
     static int addBidiEdgesForBufferStops(NBEdgeCont& ec);
 
@@ -159,11 +163,12 @@ private:
 class NBRailwaySignalGuesser {
 
 public:
-    static int guessRailSignals(NBEdgeCont& ec, NBPTStopCont& sc);
+    static int guessRailSignals(NBNodeCont& nc, NBEdgeCont& ec, NBPTStopCont& sc, NBDistrictCont& dc);
 
 private:
-    static int guessByStops(NBEdgeCont& ec, NBPTStopCont& sc, double minLength);
+    static int guessByStops(NBNodeCont& nc, NBEdgeCont& ec, NBPTStopCont& sc, NBDistrictCont& dc, double minLength, bool split);
     static bool canBeSignal(const NBNode* node);
+
 };
 
 class NBRailwayGeometryHelper {

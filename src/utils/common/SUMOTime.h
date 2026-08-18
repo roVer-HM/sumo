@@ -34,6 +34,9 @@ typedef long long int SUMOTime;
 #define SUMOTime_MAX (std::numeric_limits<SUMOTime>::max() - 1000)
 #define SUMOTime_MIN std::numeric_limits<SUMOTime>::min()
 #define SUMOTime_MAX_PERIOD (SUMOTime_MAX - SUMOTime_MAX % DELTA_T)
+#define SUMOTime_DAY 86400000
+#define SUMOTime_HOUR 3600000
+#define SUMOTime_MINUTE 60000
 
 // the step length in ms
 extern SUMOTime DELTA_T;

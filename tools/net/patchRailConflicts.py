@@ -16,8 +16,8 @@
 # @date    2026-01-17
 
 """
-Identifies all rail crossings (two one-directional tracks crossing each other)
-and converts the junction type to the given value
+Identifies all rail crossings (two one-directional tracks crossing each other) and conflict switches (two tracks merging
+at a switch) and converts the junction type to the given value
 """
 import os
 import sys
@@ -48,12 +48,15 @@ def get_options():
     ap.add_argument("-t", "--junction-type", dest="junctionType", default="rail_signal",
                     help="the new junction type for rail/rail crossings")
     ap.add_argument("-k", "--keep-junction-type", dest="keepJunctionType",
-                    default="traffic_light,traffic_light_unregulated,rail_signal",
+                    default="traffic_light,traffic_light_unregulated",
                     help="the new junction type for rail/rail crossings")
     ap.add_argument("-e", "--end-offset", dest="endOffset", type=float, default=0,
                     help="move back the stop line from the crossing")
     ap.add_argument("-j", "--join-distance", dest="joinDist", type=float, default=200,
                     help="The distance for joining clusters which are guarded only from the outside")
+    ap.add_argument("-s", "--split-offset", type=float, default=0, dest="splitOffset",
+                    help=("If set to positive value, split edges FLOAT m before traffic lights " +
+                          "if they are part of a rail conflict (requires repairing routes)."))
     ap.add_argument("-v", "--verbose", action="store_true", default=False,
                     help="tell me what you are doing")
     options = ap.parse_args()
@@ -64,7 +67,6 @@ def get_options():
     elif outputBase[-11:] == ".net.xml.gz":
         outputBase = outputBase[:-11]
 
-    options.vclass = [options.vclass]
     options.keepJunctionType = set(options.keepJunctionType.split(','))
     options.output_nodes = outputBase + ".nod.xml"
     options.output_edges = outputBase + ".edg.xml"
@@ -125,17 +127,40 @@ def findClusters(joinDist, nodes):
 def main(options):
     net = sumolib.net.readNet(options.netfile)
     crossingNodes = []
+    splitNodes = []
     skipped = defaultdict(lambda: 0)
+    warnMixed = defaultdict(lambda: 0)
+    warnMixedEdge = {}
 
     for node in net.getNodes():
-        if any([e.getPermissions() != options.vclass for e in node.getIncoming() + node.getOutgoing()]):
+        if node.getType() == "rail_signal":
             continue
         if not node.hasFoes():
             continue
-        nIn = len(node.getIncoming())
-        nOut = len(node.getOutgoing())
-        nBidi = len([e for e in node.getIncoming() + node.getOutgoing() if e.getBidi() is not None]) / 2
-        if nIn >= 2 and nOut >= 1 and ((nIn + nOut - nBidi) >= 3):
+
+        inVClass = [e for e in node.getIncoming() if options.vclass in e.getPermissions()]
+        outVClass = [e for e in node.getOutgoing() if options.vclass in e.getPermissions()]
+        nIn = len(inVClass)
+        nOut = len(outVClass)
+        nBidi = len([e for e in inVClass + outVClass if e.getBidi() is not None]) / 2
+        isConflict = nIn >= 2 and nOut >= 1 and ((nIn + nOut - nBidi) >= 3)
+
+        if options.splitOffset > 0 and isConflict and node.getType() in options.keepJunctionType:
+            splitNodes.append(node)
+
+        if len(node.getIncoming()) != nIn or len(node.getOutgoing()) != nOut:
+            # do not build rail_signal at mixed nodes
+            continue
+
+        for e in node.getIncoming() + node.getOutgoing():
+            if e.getPermissions() != [options.vclass]:
+                warnMixed[tuple(e.getPermissions())] += 1
+                warnMixedEdge[tuple(e.getPermissions())] = e.getID()
+
+                if options.splitOffset > 0:
+                    splitNodes.append(node)
+
+        if isConflict:
             if node.getType() in options.keepJunctionType:
                 skipped[node.getType()] += 1
                 continue
@@ -151,7 +176,17 @@ def main(options):
     sumolib.writeXMLHeader(outf_con, "$Id$", "connections", options=options)
 
     for outerNodes, incomingEdges in clusters:
-        for nodeID in sorted([n.getID() for n in outerNodes]):
+        allIncoming = set()
+        for node in outerNodes:
+            allIncoming.update(node.getIncoming())
+        uncontrolled = allIncoming.difference(incomingEdges)
+
+        controlledNodes = []
+        for n in outerNodes:
+            if set(n.getIncoming()).difference(uncontrolled):
+                controlledNodes.append(n.getID())
+
+        for nodeID in sorted(controlledNodes):
             outf_nod.write('    <node id="%s" type="%s"/>\n' % (nodeID, options.junctionType))
         outf_nod.write('\n')
 
@@ -160,10 +195,12 @@ def main(options):
                 outf_edg.write('    <edge id="%s" endOffset="%s"/>\n' % (edgeID, options.endOffset))
             outf_edg.write('\n')
 
-        allIncoming = set()
-        for node in outerNodes:
-            allIncoming.update(node.getIncoming())
-        uncontrolled = allIncoming.difference(incomingEdges)
+        for node in splitNodes:
+            for e in node.getIncoming():
+                if options.vclass in e.getPermissions():
+                    outf_edg.write('    <edge id="%s">\n' % e.getID())
+                    outf_edg.write('       <split pos="%s" type="rail_signal"/>\n' % -options.splitOffset)
+                    outf_edg.write('    </edge>\n')
 
         if uncontrolled:
             for edge in uncontrolled:
@@ -179,6 +216,10 @@ def main(options):
     outf_nod.close()
     outf_edg.close()
     outf_con.close()
+
+    for p, count in warnMixed.items():
+        print("Warning: %s occurences of mixed permissions '%s' (example edge '%s')" % (
+            count, ' '.join(p), warnMixedEdge[p]), file=sys.stderr)
 
     if options.verbose:
         if skipped:

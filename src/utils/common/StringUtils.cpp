@@ -34,8 +34,6 @@
 #else
 #include <unistd.h>
 #endif
-#include <xercesc/util/TransService.hpp>
-#include <xercesc/util/TranscodingException.hpp>
 #include <utils/common/UtilExceptions.h>
 #include <utils/common/ToString.h>
 #include <utils/common/StringTokenizer.h>
@@ -48,7 +46,6 @@
 // static member definitions
 // ===========================================================================
 std::string StringUtils::emptyString;
-XERCES_CPP_NAMESPACE::XMLLCPTranscoder* StringUtils::myLCPTranscoder = nullptr;
 
 
 // ===========================================================================
@@ -80,6 +77,16 @@ StringUtils::to_lower_case(const std::string& str) {
     std::string s = str;
     std::transform(s.begin(), s.end(), s.begin(), [](char c) {
         return (char)::tolower(c);
+    });
+    return s;
+}
+
+
+std::string
+StringUtils::to_upper_case(const std::string& str) {
+    std::string s = str;
+    std::transform(s.begin(), s.end(), s.begin(), [](char c) {
+        return (char)::toupper(c);
     });
     return s;
 }
@@ -665,62 +672,6 @@ StringUtils::parseSpeed(const std::string& sData, const bool defaultKmph) {
 }
 
 
-std::string
-StringUtils::transcode(const XMLCh* const data, int length) {
-    if (data == 0) {
-        throw EmptyData();
-    }
-    if (length == 0) {
-        return "";
-    }
-#if _XERCES_VERSION < 30100
-    char* t = XERCES_CPP_NAMESPACE::XMLString::transcode(data);
-    std::string result(t);
-    XERCES_CPP_NAMESPACE::XMLString::release(&t);
-    return result;
-#else
-    try {
-        XERCES_CPP_NAMESPACE::TranscodeToStr utf8(data, "UTF-8");
-        return reinterpret_cast<const char*>(utf8.str());
-    } catch (XERCES_CPP_NAMESPACE::TranscodingException&) {
-        return "?";
-    }
-#endif
-}
-
-
-std::string
-StringUtils::transcodeFromLocal(const std::string& localString) {
-#if _XERCES_VERSION > 30100
-    try {
-        if (myLCPTranscoder == nullptr) {
-            myLCPTranscoder = XERCES_CPP_NAMESPACE::XMLPlatformUtils::fgTransService->makeNewLCPTranscoder(XERCES_CPP_NAMESPACE::XMLPlatformUtils::fgMemoryManager);
-        }
-        if (myLCPTranscoder != nullptr) {
-            return transcode(myLCPTranscoder->transcode(localString.c_str()));
-        }
-    } catch (XERCES_CPP_NAMESPACE::TranscodingException&) {}
-#endif
-    return localString;
-}
-
-
-std::string
-StringUtils::transcodeToLocal(const std::string& utf8String) {
-#if _XERCES_VERSION > 30100
-    try {
-        if (myLCPTranscoder == nullptr) {
-            myLCPTranscoder = XERCES_CPP_NAMESPACE::XMLPlatformUtils::fgTransService->makeNewLCPTranscoder(XERCES_CPP_NAMESPACE::XMLPlatformUtils::fgMemoryManager);
-        }
-        if (myLCPTranscoder != nullptr) {
-            XERCES_CPP_NAMESPACE::TranscodeFromStr utf8(reinterpret_cast<const XMLByte*>(utf8String.c_str()), utf8String.size(), "UTF-8");
-            return myLCPTranscoder->transcode(utf8.str());
-        }
-    } catch (XERCES_CPP_NAMESPACE::TranscodingException&) {}
-#endif
-    return utf8String;
-}
-
 
 std::string
 StringUtils::trim_left(const std::string s, const std::string& t) {
@@ -756,16 +707,16 @@ StringUtils::wrapText(const std::string s, int width) {
             } else {
                 line += " ";
             }
-            line = line + p;
+            line += p;
         } else {
             if (firstLine) {
                 firstLine = false;
             } else {
                 result += "\n";
             }
-            result = result + line;
+            result += line;
             line.clear();
-            firstWord = true;
+            line += p;
         }
     }
     if (line.size() > 0) {
@@ -774,15 +725,9 @@ StringUtils::wrapText(const std::string s, int width) {
         } else {
             result += "\n";
         }
-        result = result + line;
+        result += line;
     }
     return result;
-}
-
-
-void
-StringUtils::resetTranscoder() {
-    myLCPTranscoder = nullptr;
 }
 
 
@@ -803,5 +748,6 @@ StringUtils::adjustDecimalValue(double value, int precision) {
     }
     return valueStr;
 }
+
 
 /****************************************************************************/

@@ -20,8 +20,10 @@
 #include <config.h>
 
 #include <limits>
+#include <utils/xml/SUMOSAXAttributes.h>
 #include <microsim/MSNet.h>
 #include <microsim/MSEdge.h>
+#include <microsim/MSGlobals.h>
 #include <microsim/transportables/MSTransportable.h>
 #include "MSRoutingEngine.h"
 #include "MSDispatch.h"
@@ -36,11 +38,6 @@
 // Reservation methods
 // ===========================================================================
 
-std::string
-Reservation::getID() const {
-    return toString(persons);
-}
-
 // ===========================================================================
 // MSDispatch methods
 // ===========================================================================
@@ -48,7 +45,8 @@ Reservation::getID() const {
 MSDispatch::MSDispatch(const Parameterised::Map& params) :
     Parameterised(params),
     myOutput(nullptr),
-    myReservationCount(0) {
+    myReservationCount(0),
+    myRoutingMode(StringUtils::toInt(getParameter("routingMode", "1"))) {
     const std::string opt = "device.taxi.dispatch-algorithm.output";
     if (OptionsCont::getOptions().isSet(opt)) {
         OutputDevice::createDeviceByOption(opt, "DispatchInfo");
@@ -80,11 +78,44 @@ MSDispatch::addReservation(MSTransportable* person,
                            const std::string& line,
                            int maxCapacity,
                            int maxContainerCapacity) {
+    std::string resID;
+    if (myLoadedReservations.size() > 0) {
+        auto itL = myLoadedReservations.find(person->getID());
+        if (itL != myLoadedReservations.end()) {
+            resID = itL->second;
+            myLoadedReservations.erase(itL);
+        }
+    }
     // no new reservation nedded if the person can be added to an existing group
     if (group == "") {
         // the default empty group implies, no grouping is wanted (and
         // transportable ids are unique)
         group = person->getID();
+    } else {
+        auto it2 = myRunningReservations.find(group);
+        if (it2 != myRunningReservations.end()) {
+            for (auto item : it2->second) {
+                Reservation* res = const_cast<Reservation*>(item.first);
+                if (res->from == from
+                        && res->to == to
+                        && (res->fromPos == fromPos || res->fromStop == fromStop)
+                        && (res->toPos == toPos || res->toStop == toStop)) {
+                    MSDevice_Taxi* taxi = item.second;
+                    if ((taxi->getState() == taxi->PICKUP
+                            && remainingCapacity(taxi, res) > 0
+                            && taxi->compatibleLine(taxi->getHolder().getParameter().line, line))
+                            || resID == res->id) {
+                        //std::cout << SIMTIME << " addPerson=" << person->getID() << " extendRes=" << toString(res->persons) << " taxi=" << taxi->getHolder().getID() << " state=" << taxi->getState() << "\n";
+                        res->persons.insert(person);
+                        taxi->addCustomer(person, res);
+#ifdef DEBUG_RESERVATION
+                        if (DEBUG_COND2(person)) std::cout << SIMTIME << " extendedReservation p=" << person->getID() << " resID=" << res->getID() << " taxi=" << taxi->getID() << "\n";
+#endif
+                        return res;
+                    }
+                }
+            }
+        }
     }
     Reservation* result = nullptr;
     bool added = false;
@@ -95,8 +126,9 @@ MSDispatch::addReservation(MSTransportable* person,
             if (res->persons.count(person) == 0
                     && res->from == from
                     && res->to == to
-                    && res->fromPos == fromPos
-                    && res->toPos == toPos) {
+                    && (res->fromPos == fromPos || res->fromStop == fromStop)
+                    && (res->toPos == toPos || res->toStop == toStop)
+                    && (resID.empty() || res->id == resID)) {
                 if (res->persons.size() > 0 && (*res->persons.begin())->isPerson() != person->isPerson()) {
                     WRITE_WARNINGF(TL("Mixing reservations of persons and containers with the same group is not supported for % and %"),
                                    (*res->persons.begin())->getID(), person->getID());
@@ -114,7 +146,10 @@ MSDispatch::addReservation(MSTransportable* person,
         }
     }
     if (!added) {
-        Reservation* newRes = new Reservation(toString(myReservationCount++), {person}, reservationTime, pickupTime, earliestPickupTime, from, fromPos, fromStop, to, toPos, toStop, group, line);
+        if (resID.empty()) {
+            resID = toString(myReservationCount++);
+        }
+        Reservation* newRes = new Reservation(resID, {person}, reservationTime, pickupTime, earliestPickupTime, from, fromPos, fromStop, to, toPos, toStop, group, line);
         myGroupReservations[group].push_back(newRes);
         result = newRes;
     }
@@ -122,6 +157,7 @@ MSDispatch::addReservation(MSTransportable* person,
 #ifdef DEBUG_RESERVATION
     if (DEBUG_COND2(person)) std::cout << SIMTIME
                                            << " addReservation p=" << person->getID()
+                                           << " addID=" << result->getID()
                                            << " rT=" << time2string(reservationTime)
                                            << " pT=" << time2string(pickupTime)
                                            << " from=" << from->getID() << " fromPos=" << fromPos
@@ -171,17 +207,16 @@ MSDispatch::removeReservation(MSTransportable* person,
         auto it2 = myRunningReservations.find(group);
         if (it2 != myRunningReservations.end()) {
             for (auto item : it2->second) {
-                const Reservation* res = item.first;
+                const Reservation* const res = item.first;
                 if (res->persons.count(person) != 0
                         && res->from == from
                         && res->to == to
                         && res->fromPos == fromPos
                         && res->toPos == toPos) {
-                    MSDevice_Taxi* taxi = item.second;
-                    taxi->cancelCustomer(person);
-                    if (res->persons.empty()) {
+                    if (res->persons.size() == 1) {
                         removedID = res->id;
                     }
+                    item.second->cancelCustomer(person);  // will delete res via fulfilledReservation if necessary
                     break;
                 }
             }
@@ -273,8 +308,14 @@ void
 MSDispatch::servedReservation(const Reservation* res, MSDevice_Taxi* taxi) {
     auto itR = myRunningReservations.find(res->group);
     if (itR != myRunningReservations.end() && itR->second.count(res) != 0) {
+#ifdef DEBUG_RESERVATION
+        std::cout << SIMTIME << " servedReservation res=" << res->id << " taxi=" << taxi->getID() << " (running)\n";
+#endif
         return; // was redispatch
     }
+#ifdef DEBUG_RESERVATION
+    std::cout << SIMTIME << " servedReservation res=" << res->id << " taxi=" << taxi->getID() << "\n";
+#endif
     auto it = myGroupReservations.find(res->group);
     if (it == myGroupReservations.end()) {
         throw ProcessError(TL("Inconsistent group reservations."));
@@ -293,7 +334,19 @@ MSDispatch::servedReservation(const Reservation* res, MSDevice_Taxi* taxi) {
 
 
 void
+MSDispatch::swappedRunning(const Reservation* res, MSDevice_Taxi* taxi) {
+#ifdef DEBUG_RESERVATION
+    std::cout << SIMTIME << " swapped res=" << res->id << " old=" << myRunningReservations[res->group][res]->getID() << " new=" << taxi->getID() << "\n";
+#endif
+    myRunningReservations[res->group][res] = taxi;
+}
+
+
+void
 MSDispatch::fulfilledReservation(const Reservation* res) {
+#ifdef DEBUG_RESERVATION
+    std::cout << SIMTIME << " fullfilled res=" << res->id << "\n";
+#endif
     myRunningReservations[res->group].erase(res);
     if (myRunningReservations[res->group].empty()) {
         myRunningReservations.erase(res->group);
@@ -302,15 +355,27 @@ MSDispatch::fulfilledReservation(const Reservation* res) {
 }
 
 
+SUMOAbstractRouter<MSEdge, SUMOVehicle>&
+MSDispatch::getRouter() const {
+    return myRoutingMode == 1 ? MSRoutingEngine::getRouterTT(0, SVC_TAXI) : MSNet::getInstance()->getRouterTT(0);
+}
+
+
 SUMOTime
 MSDispatch::computePickupTime(SUMOTime t, const MSDevice_Taxi* taxi, const Reservation& res, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router) {
     ConstMSEdgeVector edges;
-    router.compute(taxi->getHolder().getEdge(), taxi->getHolder().getPositionOnLane() - NUMERICAL_EPS,
-                   res.from, res.fromPos, &taxi->getHolder(), t, edges, true);
+    double fromPos = taxi->getHolder().getPositionOnLane() - NUMERICAL_EPS;
+    const MSEdge* from = *taxi->getHolder().getRerouteOrigin();
+    const bool originDiffers = from != taxi->getHolder().getEdge();
+    router.compute(from, originDiffers ? 0 : fromPos, res.from, res.fromPos, &taxi->getHolder(), t, edges, true);
     if (edges.empty()) {
         return SUMOTime_MAX;
     } else {
-        return TIME2STEPS(router.recomputeCosts(edges, &taxi->getHolder(), t));
+        if (originDiffers) {
+            assert(from == *(taxi->getHolder().getCurrentRouteEdge() + 1));
+            edges.insert(edges.begin(), taxi->getHolder().getEdge());
+        }
+        return TIME2STEPS(router.recomputeCostsPos(edges, &taxi->getHolder(), fromPos, res.fromPos, t));
     }
 }
 
@@ -366,6 +431,45 @@ MSDispatch::remainingCapacity(const MSDevice_Taxi* taxi, const Reservation* res)
             ? taxi->getHolder().getVehicleType().getPersonCapacity()
             : taxi->getHolder().getVehicleType().getContainerCapacity()) - (int)res->persons.size();
 }
+
+
+void
+MSDispatch::saveState(OutputDevice& out, SUMOTime nextDispatch) const {
+    out.openTag(SUMO_TAG_DISPATCHER);
+    out.writeAttr(SUMO_ATTR_NEXT, nextDispatch);
+    out.writeAttr(SUMO_ATTR_COUNT, myReservationCount);
+
+    std::ostringstream internals;
+    for (const auto& it : myRunningReservations) {
+        for (const auto& item : it.second) {
+            for (const MSTransportable* t : item.first->persons) {
+                internals << t->getID() << " " << item.first->id << " ";
+            }
+        }
+    }
+    for (const auto& it : myGroupReservations) {
+        for (const Reservation* res : it.second) {
+            for (const MSTransportable* t : res->persons) {
+                internals << t->getID() << " " << res->id << " ";
+            }
+        }
+    }
+    out.writeAttr(SUMO_ATTR_CUSTOMERS, internals.str());
+    out.closeTag();
+}
+
+
+void
+MSDispatch::loadState(const SUMOSAXAttributes& attrs) {
+    bool ok = true;
+    myReservationCount = attrs.get<int>(SUMO_ATTR_COUNT, "dispatcher", ok);
+    std::istringstream bis(attrs.getString(SUMO_ATTR_CUSTOMERS));
+    std::string tID, rID;
+    while (bis >> tID && bis >> rID) {
+        myLoadedReservations[tID] = rID;
+    }
+}
+
 
 
 /****************************************************************************/

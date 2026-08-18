@@ -25,6 +25,9 @@ pickup_ptStops_longTaxiWait
 # persontrip triggers taxi call
 dropoff_ptStops
 
+# group a ride and and a trip to the same stop
+dropoff_ptStops_group
+
 # persontrip triggers taxi call
 ptStops
 
@@ -33,3 +36,6 @@ walk_via_trainStop_ride_taxi
 
 # person walks to a bicycle sharing station and rides to the destination
 bike_sharing
+
+# person walks to a bicycle sharing station and rides to the destination
+bike_sharing_exit_anywhere

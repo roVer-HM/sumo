@@ -24,7 +24,8 @@ Parsing STRECKENTYP ...
 Parsing KNOTEN ... done.
 Parsing BEZIRK ... done.
 Parsing PUNKT ... done.
-Parsing STRECKE ... done.
+Parsing STRECKE ...
+ done.
 Parsing KANTE ... done.
 Parsing ANBINDUNG ... done.
 Parsing ABBIEGER ... done.
@@ -43,7 +44,7 @@ Parsing HALTEPUNKT ...
  Import done:
    21 districts loaded.
    28 nodes loaded.
-   100 types loaded.
+   139 types loaded.
    54 edges loaded.
 Removing self-loops ... done (0ms).
 Removing empty nodes ... done (0ms).
@@ -51,7 +52,7 @@ Removing empty nodes ... done (0ms).
 Moving network to origin ... done (0ms).
 Computing turning directions ... done (0ms).
 Assigning nodes to traffic lights ... done (0ms).
-Sorting nodes' edges ... done (1ms).
+Sorting nodes' edges ... done (0ms).
 Computing node shapes ... done (1ms).
 Computing edge shapes ... done (1ms).
 Computing node types ... done (0ms).
@@ -62,7 +63,7 @@ Computing approaching lanes ... done (0ms).
 Dividing of lanes on approached lanes ... done (0ms).
 Processing turnarounds ... done (0ms).
 Rechecking of lane endings ... done (0ms).
-Computing traffic light control information ... done (1ms).
+Computing traffic light control information ... done (0ms).
 Computing node logics ... done (0ms).
 Computing traffic light logics ...
  done (1ms).

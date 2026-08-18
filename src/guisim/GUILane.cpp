@@ -95,11 +95,6 @@ GUILane::GUILane(const std::string& id, double maxSpeed, double friction, double
     myAmClosed(false),
     myLengthGeometryFactor2(myLengthGeometryFactor),
     myLock(true) {
-    if (MSGlobals::gUseMesoSim) {
-        myShape = splitAtSegments(shape);
-        assert(fabs(myShape.length() - shape.length()) < POSITION_EPS);
-        assert(myShapeSegments.size() == myShape.size());
-    }
     initRotations(myShape, myShapeRotations, myShapeLengths, myShapeColors);
     //
     myHalfLaneWidth = myWidth / 2.;
@@ -114,6 +109,18 @@ GUILane::~GUILane() {
     }
     delete myParkingAreas;
     delete myTesselation;
+}
+
+
+void
+GUILane::updateMesoGUISegments() {
+#ifdef _DEBUG
+    const double origLength = myShape.length();
+#endif
+    myShape = splitAtSegments(myShape);
+    assert(fabs(myShape.length() - origLength) < POSITION_EPS);
+    assert(myShapeSegments.size() == myShape.size());
+    initRotations(myShape, myShapeRotations, myShapeLengths, myShapeColors);
 }
 
 
@@ -333,7 +340,7 @@ GUILane::drawLinkRules(const GUIVisualizationSettings& s, const GUINet& net) con
     if (isRailSignal && noLinks > 1 && myLinks.back()->isTurnaround() && s.showRails) {
         w = myWidth / (double)(noLinks - 1);
     }
-    double x1 = isRailSignal ? -myWidth * 0.5 : 0;
+    double x1 = isRailSignal && myIndex == 0 ? -myWidth * 0.5 : 0;
     for (int i = 0; i < noLinks; ++i) {
         double x2 = x1 + w;
         drawLinkRule(s, net, myLinks[MSGlobals::gLefthand ? noLinks - 1 - i : i], shape, x1, x2);
@@ -1609,13 +1616,14 @@ GUILane::closeTraffic(bool rebuildAllowed) {
 PositionVector
 GUILane::splitAtSegments(const PositionVector& shape) {
     assert(MSGlobals::gUseMesoSim);
-    int no = MELoop::numSegmentsFor(myLength, OptionsCont::getOptions().getFloat("meso-edgelength"));
+    const MESegment::MesoEdgeType& edgeType = MSNet::getInstance()->getMesoType(getEdge().getEdgeType());
+    int no = MELoop::numSegmentsFor(myLength, edgeType.edgeLength);
     const double slength = myLength / no;
     PositionVector result = shape;
     double offset = 0;
     for (int i = 0; i < no; ++i) {
         offset += slength;
-        Position pos = shape.positionAtOffset(offset);
+        Position pos = shape.positionAtOffset(interpolateLanePosToGeometryPos(offset));
         int index = result.indexOfClosest(pos);
         if (pos.distanceTo(result[index]) > POSITION_EPS) {
             index = result.insertAtClosest(pos, false);

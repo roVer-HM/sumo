@@ -52,6 +52,7 @@
 #include <microsim/traffic_lights/MSRailSignalControl.h>
 #include <utils/common/RandHelper.h>
 #include <utils/common/SystemFrame.h>
+#include <utils/traction_wire/Circuit.h>
 #include "MSFrame.h"
 
 
@@ -99,7 +100,7 @@ MSFrame::fillOptions() {
     oc.addDescription("load-state", "Input", TL("Loads a network state from FILE"));
     oc.doRegister("load-state.offset", new Option_String("0", "TIME"));//!!! check, describe
     oc.addDescription("load-state.offset", "Input", TL("Shifts all times loaded from a saved state by the given offset"));
-    oc.doRegister("load-state.remove-vehicles", new Option_StringVector(StringVector({""})));
+    oc.doRegister("load-state.remove-vehicles", new Option_StringVector(StringVector({})));
     oc.addDescription("load-state.remove-vehicles", "Input", TL("Removes vehicles with the given IDs from the loaded state"));
 
     oc.doRegister("junction-taz", new Option_Bool(false));
@@ -167,12 +168,16 @@ MSFrame::fillOptions() {
     oc.addDescription("fcd-output", "Output", TL("Save the Floating Car Data"));
     oc.doRegister("fcd-output.geo", new Option_Bool(false));
     oc.addDescription("fcd-output.geo", "Output", TL("Save the Floating Car Data using geo-coordinates (lon/lat)"));
+    oc.doRegister("fcd-output.utm", new Option_Bool(false));
+    oc.addDescription("fcd-output.utm", "Output", TL("Save the Floating Car Data using utm/unshifted coordinates (x/y)"));
     oc.doRegister("fcd-output.signals", new Option_Bool(false));
     oc.addDescription("fcd-output.signals", "Output", TL("Add the vehicle signal state to the FCD output (brake lights etc.)"));
     oc.doRegister("fcd-output.distance", new Option_Bool(false));
     oc.addDescription("fcd-output.distance", "Output", TL("Add kilometrage to the FCD output (linear referencing)"));
     oc.doRegister("fcd-output.acceleration", new Option_Bool(false));
     oc.addDescription("fcd-output.acceleration", "Output", TL("Add acceleration to the FCD output"));
+    oc.doRegister("fcd-output.speed-relative", new Option_Bool(false));
+    oc.addDescription("fcd-output.speed-relative", "Output", TL("Add relative speed (vehicle speed / edge speed limit) to the FCD output"));
     oc.doRegister("fcd-output.max-leader-distance", new Option_Float(-1));
     oc.addDescription("fcd-output.max-leader-distance", "Output", TL("Add leader vehicle information to the FCD output (within the given distance)"));
     oc.doRegister("fcd-output.params", new Option_StringVector());
@@ -183,6 +188,8 @@ MSFrame::fillOptions() {
     oc.addDescription("fcd-output.attributes", "Output", TL("List attributes that should be included in the FCD output"));
     oc.doRegister("fcd-output.filter-shapes", new Option_StringVector());
     oc.addDescription("fcd-output.filter-shapes", "Output", TL("List shape names that should be used to filter the FCD output"));
+    oc.doRegister("fcd-output.skip-empty", new Option_Bool(false));
+    oc.addDescription("fcd-output.skip-empty", "Output", TL("Do not save data for time steps which have no vehicles / transportables"));
 
     oc.doRegister("person-fcd-output", new Option_FileName());
     oc.addSynonyme("person-fcd-output", "person-fcd");
@@ -525,10 +532,10 @@ MSFrame::fillOptions() {
     oc.doRegister("time-to-impatience", new Option_String("180", "TIME"));
     oc.addDescription("time-to-impatience", "Processing", TL("Specify how long a vehicle may wait until impatience grows from 0 to 1, defaults to 300, non-positive values disable impatience growth"));
 
-    oc.doRegister("default.departspeed", new Option_String("0"));
+    oc.doRegister("default.departspeed", new Option_String("avg"));
     oc.addDescription("default.departspeed", "Processing", TL("Select default depart speed"));
 
-    oc.doRegister("default.departlane", new Option_String("first"));
+    oc.doRegister("default.departlane", new Option_String("best_prob"));
     oc.addDescription("default.departlane", "Processing", TL("Select default depart lane"));
 
     oc.doRegister("default.action-step-length", new Option_Float(0.0));
@@ -606,7 +613,7 @@ MSFrame::fillOptions() {
     oc.doRegister("pedestrian.striping.walkingarea-detail", new Option_Integer(4));
     oc.addDescription("pedestrian.striping.walkingarea-detail", "Processing", TL("Generate INT intermediate points to smooth out lanes within the walkingarea"));
 
-#ifdef JPS_VERSION
+#ifdef HAVE_JUPEDSIM
     oc.doRegister("pedestrian.jupedsim.step-length", new Option_String("0.01", "TIME"));
     oc.addDescription("pedestrian.jupedsim.step-length", "Processing", TL("The update interval of the JuPedSim simulation (in seconds)"));
     oc.doRegister("pedestrian.jupedsim.exit-tolerance", new Option_Float(1.));
@@ -787,6 +794,8 @@ MSFrame::fillOptions() {
     oc.addDescription("meso-overtaking", "Mesoscopic", TL("Enable mesoscopic overtaking"));
     oc.doRegister("meso-recheck", new Option_String("0", "TIME"));
     oc.addDescription("meso-recheck", "Mesoscopic", TL("Time interval for rechecking insertion into the next segment after failure"));
+    oc.doRegister("meso-interpolate-pos", new Option_Bool(false));
+    oc.addDescription("meso-interpolate-pos", "Mesoscopic", TL("Enable mesoscopic position interpolation"));
 
     // add rand options
     RandHelper::insertRandOptions(oc);
@@ -868,7 +877,9 @@ MSFrame::fillOptions() {
 void
 MSFrame::buildStreams() {
     // standard outputs
-    OutputDevice::createDeviceByOption("netstate-dump", "netstate", "netstate_file.xsd");
+    if (OutputDevice::createDeviceByOption("netstate-dump", "netstate", "netstate_file.xsd")) {
+        WRITE_WARNING(TL("Raw netstate dumps are deprecated. Use fcd-output instead."));
+    }
     OutputDevice::createDeviceByOption("summary-output", "summary", "summary_file.xsd");
     OutputDevice::createDeviceByOption("person-summary-output", "personSummary", "person_summary_file.xsd");
     OutputDevice::createDeviceByOption("tripinfo-output", "tripinfos", "tripinfo_file.xsd");
@@ -887,7 +898,7 @@ MSFrame::buildStreams() {
     OutputDevice::createDeviceByOption("overheadwiresegments-output", "overheadWireSegments-export");
     OutputDevice::createDeviceByOption("substations-output", "substations-export");
     OutputDevice::createDeviceByOption("full-output", "full-export", "full_file.xsd");
-    OutputDevice::createDeviceByOption("queue-output", "queue-export", "queue_file.xsd");
+    OutputDevice::createDeviceByOption("queue-output", "queue-export", "queue_file.xsd", 3);
     OutputDevice::createDeviceByOption("amitran-output", "trajectories", "amitran/trajectories.xsd\" timeStepSize=\"" + toString(STEPS2MS(DELTA_T)));
 
     //OutputDevice::createDeviceByOption("vtk-output", "vtk-export");
@@ -947,6 +958,9 @@ MSFrame::checkOptions() {
     if (oc.getBool("mesosim")) {
         if (oc.isDefault("pedestrian.model")) {
             oc.setDefault("pedestrian.model", "nonInteracting");
+        }
+        if (oc.isDefault("no-internal-links")) {
+            oc.setDefault("no-internal-links", "true");
         }
     }
     if (string2time(oc.getString("device.fcd.begin")) < 0) {
@@ -1121,8 +1135,11 @@ MSFrame::checkOptions() {
     if (oc.getInt("threads") > 1) {
         WRITE_WARNING(TL("The option --threads has known problems and does NOT provide meaningful speedup at this time (https://github.com/eclipse-sumo/sumo/issues/4767). Using it is not recommended!"));
     }
+    if (oc.getBool("mapmatch.junctions") && oc.isDefault("junction-taz")) {
+        oc.setDefault("junction-taz", "true");
+    }
 
-#ifdef JPS_VERSION
+#ifdef HAVE_JUPEDSIM
     const std::string pedestrianJPSModel = oc.getString("pedestrian.jupedsim.model");
     const std::vector<std::string> allowedPedestrianJPSModels = {"CollisionFreeSpeed", "CollisionFreeSpeedV2", "GeneralizedCentrifugalForce", "SocialForce"};
     if (std::find(allowedPedestrianJPSModels.begin(), allowedPedestrianJPSModels.end(), pedestrianJPSModel) == allowedPedestrianJPSModels.end()) {
@@ -1167,14 +1184,12 @@ MSFrame::setMSGlobals(OptionsCont& oc) {
     MSGlobals::gStateLoaded = oc.isSet("load-state");
     MSGlobals::gUseMesoSim = oc.getBool("mesosim");
     MSGlobals::gMesoLimitedJunctionControl = oc.getBool("meso-junction-control.limited");
-    if (MSGlobals::gUseMesoSim) {
-        MSGlobals::gUsingInternalLanes = false;
-    }
+    MSGlobals::gMesoInterpolatePos = oc.getBool("meso-interpolate-pos");
     MSGlobals::gWaitingTimeMemory = string2time(oc.getString("waiting-time-memory"));
     MSAbstractLaneChangeModel::initGlobalOptions(oc);
     MSGlobals::gOverheadWireSolver = oc.getBool("overhead-wire.solver");
     MSGlobals::gOverheadWireRecuperation = oc.getBool("overhead-wire.recuperation");
-    MSGlobals::gOverheadWireCurrentLimits = oc.getBool("overhead-wire.substation-current-limits");
+    Circuit::enforceCurrentLimits(oc.getBool("overhead-wire.substation-current-limits"));
     MSGlobals::gInsertionChecks = SUMOVehicleParameter::parseInsertionChecks(oc.getString("insertion-checks"));
     MSGlobals::gMaxRailSignalBlockLength = oc.getFloat("railsignal.max-block-length");
 
@@ -1226,6 +1241,10 @@ MSFrame::setMSGlobals(OptionsCont& oc) {
         mBdefaultClasses |= parseVehicleClasses(vClassName);
     }
     MSRailSignalControl::initSignalized(defaultClasses, mBdefaultClasses);
+    gTaxiClasses = 0;
+    for (const std::string& vClassName : oc.getStringVector("device.taxi.vclasses")) {
+        gTaxiClasses |= parseVehicleClasses(vClassName);
+    }
 
     std::string error;
     if (!SUMOVehicleParameter::parseDepartLane(oc.getString("default.departlane"), "options", "",

@@ -131,9 +131,8 @@ If you just want to have a simple typo fixed you can always drop us a line at <s
 
 ### How do I unsubscribe from the mailing list?
 
-Go to <https://www.eclipse.org/mailman/listinfo/sumo-user>. At the
-bottom of the page you will find a form that allows you to enter your
-email address to unsubscribe it from the list.
+Go to <https://accounts.eclipse.org/mailing-list/sumo-user>. After
+logging in with your Eclipse account a button appears to unsubscribe it from the list.
 
 ## General Problem Solving
 
@@ -174,7 +173,7 @@ always use the latest version of SUMO.
   may allow us to diagnose the problem at a single glance). When sending screenshots of sumo-gui, please include the whole screen so the application version and simulation time are visible.
 - the complete input files for reproducing the error (i.e. a .sumocfg
   and all files referenced therein) in a zip-archive.
-- if your use case involves [TraCI](TraCI.md), please reduce your script to the bare minimum that is needed to show the problem. Then either include the script itself or [generate a log of all traci commands](TraCI/Interfacing_TraCI_from_Python.md#generating_a_log_of_all_traci_commands) and include this.
+- if your use case involves [TraCI](TraCI/index.md), please reduce your script to the bare minimum that is needed to show the problem. Then either include the script itself or [generate a log of all traci commands](TraCI/Interfacing_TraCI_from_Python.md#generating_a_log_of_all_traci_commands) and include this.
 - Please remove
   unnecessary inputs (i.e. only 2 vehicles instead of 2000) and try to
   find the minimum input example which still shows the problem. This includes
@@ -256,7 +255,7 @@ according to the above suggestions.
 
 ## TraCI
 
-### My [TraCI](TraCI.md)-program is to slow. What can I do?
+### My [TraCI](TraCI/index.md)-program is to slow. What can I do?
 
   TraCI communicates over sockets and this communication is slow. You can often reduce the number of TraCI commands via the following strategies.
 
@@ -265,7 +264,7 @@ according to the above suggestions.
 
    Even larger gains can be hand by switching to [libsumo](Libsumo.md). This can be done with a single line of code and completely eliminates the slow socket communication.
 
-### My [TraCI](TraCI.md)-program is not working as intended. Can you help me debug it?
+### My [TraCI](TraCI/index.md)-program is not working as intended. Can you help me debug it?
 
   Unfortunately, we do not have the resources to debug other peoples
   code. If you suspect a bug in TraCI itself, the [general rules of bug-reporting](FAQ.md#how_do_i_report_erroneous_behavior_of_a_sumo_application)
@@ -274,7 +273,7 @@ according to the above suggestions.
   who wants to reproduce your problem needs all your input files to do
   so.
 
-### My [TraCI](TraCI.md)-program is not working as intended. How do I debug it?
+### My [TraCI](TraCI/index.md)-program is not working as intended. How do I debug it?
 
 When using TraCI there are two processes that can raise errors: SUMO and
 the TraCI script being run. Here are some guidelines for figuring out
@@ -314,7 +313,7 @@ client version and SUMO version match. When using SUMO version 1.0.0 or larger y
 ### Is it possible to connect SUMO to an external application (f.e. ns-2)?
 
   There are several approaches to do this, see
-  [TraCI](TraCI.md) and [Topics/V2X](Topics/V2X.md)
+  [TraCI](TraCI/index.md) and [Topics/V2X](Topics/V2X.md)
 
 ### Can SUMO simulate lefthand traffic?
 
@@ -348,7 +347,7 @@ client version and SUMO version match. When using SUMO version 1.0.0 or larger y
 ### Can SUMO simulate driving in reverse?
 
   No. While it is possible to move a vehicle backwards using
-  [TraCI](TraCI.md), other vehicles will not react in a
+  [TraCI](TraCI/index.md), other vehicles will not react in a
   sensible manner to this.
 
 ### Can SUMO simulate driving through the oncoming lane?
@@ -775,7 +774,7 @@ see [inspecting connections](Netedit/editModesCommon.md#inspecting_connections)
   Another small script which helps here is
   [Tools/Routes\#tracemapper.py](Tools/Routes.md#tracemapperpy).
   You can also use the map matching plugin from
-  [Contributed/SUMOPy](Contributed/SUMOPy.md) here.
+  [Contributed/SUMOPy](Contributed/hybridPY/index.md) here.
 
   For more complex cases (i.e. large temporal gaps or spatial errors)
   the problem is known as [Map Matching](https://en.wikipedia.org/wiki/Map_matching). Open source
@@ -806,7 +805,7 @@ SUMO automatically detects [vehicle collisions](Simulation/Safety.md#collisions)
 model aims to be accident free, some effort must be taken to [create accidents](Simulation/Safety.md#deliberately_causing_collisions).
 
 Often, the effects of an accident are required instead of the accident
-itself. Without using [TraCI](TraCI.md) the following approaches
+itself. Without using [TraCI](TraCI/index.md) the following approaches
 may be useful:
 
 1. Let a vehicle halt on the lane for some time (see [Definition of Vehicles, Vehicle Types, and Routes\#Stops and waypoints](Definition_of_Vehicles,_Vehicle_Types,_and_Routes.md#stops_and_waypoints)).
@@ -909,10 +908,11 @@ Deadlocks in a scenario can have many causes:
     starting on the same edge).
 4.  invalid routing
   - only shortest path were used instead of [a user assignment algorithm](Demand/Dynamic_User_Assignment.md)
-  - to many vehicles start/end their route with a [turn-around](Simulation/Turnarounds.md). Can be fixed by computing [routes between junctions](Demand/Shortest_or_Optimal_Path_Routing.md#routing_between_junctions) instead of between edges.
+  - too many vehicles start/end their route with a [turn-around (description/mitigations)](Simulation/Turnarounds.md).
 5.  invalid insertion (vehicles being inserted on the wrong lane close
     to the end of an edge where they need to change to another turn
     lane). This can be fixed by setting the vehicle attribute `departLane="best"`
+6. vehicles inserted with the wrong speed (default is *0*). Change vehicle attributes or set option **--default.departspeed** to increase [insertion flow](Simulation/RoadCapacity.md#insertion_capacity_on_a_2-lane_road).
 
 If the network was imported from OpenStreetMap, it is highly recommended
 to use the [recommended import options](Networks/Import/OpenStreetMap.md#recommended_netconvert_options).
@@ -1215,6 +1215,10 @@ If scaling is greater than 100%, a flickering may appear in sumo-gui and netedit
 The only known solution is leaving Scaling at 100%. Another cause is the use of a modern graphics card.
 If your computer supports it, run SUMO using the integrated graphics card (Control panel->NVidia Control Panel->Select integrated graphic card->apply)
 
+### Vehicles flicker while being tracked
+
+Set a higher gui delay to avoid desynchronization of gui and simulation (drawing and simulating run concurrently).
+
 ### Missing Characters in Parameter Dialogs (i.e. Chinese Street names) on Linux
 
 Install the [Noto Fonts](https://en.wikipedia.org/wiki/Noto_fonts) package for your distribution.
@@ -1234,7 +1238,7 @@ Under windows these settings must be configured using `regedit` i.e. at the regi
 Starting with version 1.26.0 (specifically v1_25_0-454), it is possible to scale fonts and icons sizes in the gui-settings ('UI Scaling' in the openGL tab). The application must be restarted for the setting to take effect.
 
 In older versions the fox-registry (see above) must be used to change the 'normalfont'. On Linux and MaCOS this can be accomplished by creating the file *~/.foxrc/Desktop* with the following line:
-`normalfont="Arial,200"` 
+`normalfont="Arial,200"`
 (with any desired font or size)
 
 ## Upgrading

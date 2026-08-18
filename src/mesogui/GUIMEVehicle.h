@@ -26,6 +26,7 @@
 #include <vector>
 #include <set>
 #include <string>
+#include <utils/foxtools/MFXLock.h>
 #include <guisim/GUIBaseVehicle.h>
 #include <mesosim/MEVehicle.h>
 
@@ -140,6 +141,13 @@ public:
      */
     GUIParameterTableWindow* getTypeParameterWindow(GUIMainWindow& app, GUISUMOAbstractView& parent) override;
 
+    std::string getDriveWays() const;
+
     /// @brief whether this vehicle is selected in the GUI
     bool isSelected() const override;
+
+    std::unique_ptr<MFXOptionalLock> getScopeLock() override {
+        return std::unique_ptr<MFXOptionalLock>(new MFXLock(myLock));
+    }
+
 };

@@ -111,3 +111,12 @@ ticket17453
 
 # crash
 ticket17516
+
+# collision
+ticket17821
+
+# crash
+ticket17847
+
+# cars should not switch rail signals
+ticket17862

@@ -89,9 +89,9 @@ GUITriggerBuilder::beginParkingArea(MSNet& net, const std::string& id,
                                     double width, double length, double angle, const std::string& name,
                                     bool onRoad,
                                     const std::string& departPos,
-                                    bool lefthand) {
+                                    bool lefthand, bool reservable) {
     assert(myParkingArea == 0);
-    GUIParkingArea* stop = new GUIParkingArea(id, lines, badges, *lane, frompos, topos, capacity, width, length, angle, name, onRoad, departPos, lefthand);
+    GUIParkingArea* stop = new GUIParkingArea(id, lines, badges, *lane, frompos, topos, capacity, width, length, angle, name, onRoad, departPos, lefthand, reservable);
     if (!net.addStoppingPlace(SUMO_TAG_PARKING_AREA, stop)) {
         delete stop;
         throw InvalidArgument("Could not build parking area '" + id + "'; probably declared twice.");
@@ -149,8 +149,8 @@ GUITriggerBuilder::endParkingArea() {
 void
 GUITriggerBuilder::endStoppingPlace() {
     if (myCurrentStop != nullptr) {
-        static_cast<GUINet*>(MSNet::getInstance())->registerRenderedObject(dynamic_cast<GUIGlObject*>(myCurrentStop));
         myCurrentStop->finishedLoading();
+        static_cast<GUINet*>(MSNet::getInstance())->registerRenderedObject(dynamic_cast<GUIGlObject*>(myCurrentStop));
         myCurrentStop = nullptr;
     } else {
         throw InvalidArgument("Could not end a stopping place that is not opened.");

@@ -178,6 +178,9 @@ public:
     /// @brief remove person from reservations
     bool cancelCustomer(const MSTransportable* t);
 
+    /// @brief add person after extending reservation
+    void addCustomer(const MSTransportable* t, const Reservation* res);
+
     /// @brief whether the given person is allowed to board this taxi
     bool allowsBoarding(const MSTransportable* t) const;
 
@@ -186,6 +189,18 @@ public:
 
     /// @brief called by MSDevice_Transportable upon unloading a person
     void customerArrived(const MSTransportable* person);
+
+    /** @brief Saves the state of the device
+     */
+    void saveState(OutputDevice& out) const;
+
+    /** @brief Loads the state of the device from the given description
+     * @param[in] attrs XML attributes describing the current state
+     */
+    void loadState(const SUMOSAXAttributes& attrs);
+
+    /// @brief call during state loading after all transportables are loaded
+    static void finalizeLoadState();
 
     /// @brief try to retrieve the given parameter from this device. Throw exception for unsupported key
     std::string getParameter(const std::string& key) const;
@@ -205,6 +220,17 @@ public:
     bool compatibleLine(const Reservation* res);
 
     static bool compatibleLine(const std::string& taxiLine, const std::string& rideLine);
+
+    /// @brief signal the end of the simulation and the removal of all customers
+    static void allCustomersErased();
+
+    /// @brief return all types that are known to carry a taxi device (or the default type if no devices are initialized)
+    static const std::map<SUMOVehicleClass, std::string>& getTaxiTypes();
+
+    static SUMOTime getNextDispatchTime();
+
+    /// @brief initialize the dispatch algorithm
+    static void initDispatch(SUMOTime next = -1);
 
 protected:
     /** @brief Internal notification about the vehicle moves, see MSMoveReminder::notifyMoveInternal()
@@ -242,8 +268,8 @@ private:
     /// @brief whether the taxi has another pickup scheduled
     bool hasFuturePickup();
 
-    /// @brief initialize the dispatch algorithm
-    static void initDispatch();
+    /// @brief optionally swap tasks when a taxi becomes idle
+    void checkTaskSwap();
 
 private:
 
@@ -288,8 +314,15 @@ private:
     // @brief the maximum container capacity in the fleet
     static int myMaxContainerCapacity;
 
-    static std::set<std::string> myVClassWarningVTypes;
+    /// @brief storing only one type per vClass
+    static std::map<SUMOVehicleClass, std::string> myTaxiTypes;
 
+    static SUMOTime myNextDispatchTime;
+
+    /// @brief ids of customers loaded from state
+    static std::map<std::string, MSDevice_Taxi*> myStateLoadedCustomers;
+    /// @brief ids of reservations loaded from state
+    static std::map<std::string, MSDevice_Taxi*> myStateLoadedReservations;
 private:
     /// @brief Invalidated copy constructor.
     MSDevice_Taxi(const MSDevice_Taxi&);

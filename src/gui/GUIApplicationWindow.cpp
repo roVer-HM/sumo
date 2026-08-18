@@ -218,8 +218,6 @@ FXDEFMAP(GUIApplicationWindow) GUIApplicationWindowMap[] = {
     FXMAPFUNC(SEL_UPDATE,   MID_LANGUAGE_ZHT,   GUIApplicationWindow::onUpdChangeLanguage),
     FXMAPFUNC(SEL_COMMAND,  MID_LANGUAGE_TR,    GUIApplicationWindow::onCmdChangeLanguage),
     FXMAPFUNC(SEL_UPDATE,   MID_LANGUAGE_TR,    GUIApplicationWindow::onUpdChangeLanguage),
-    FXMAPFUNC(SEL_COMMAND,  MID_LANGUAGE_HU,    GUIApplicationWindow::onCmdChangeLanguage),
-    FXMAPFUNC(SEL_UPDATE,   MID_LANGUAGE_HU,    GUIApplicationWindow::onUpdChangeLanguage),
     FXMAPFUNC(SEL_COMMAND,  MID_LANGUAGE_JA,    GUIApplicationWindow::onCmdChangeLanguage),
     FXMAPFUNC(SEL_UPDATE,   MID_LANGUAGE_JA,    GUIApplicationWindow::onUpdChangeLanguage),
     FXMAPFUNC(SEL_COMMAND,  MID_LANGUAGE_KO,    GUIApplicationWindow::onCmdChangeLanguage),
@@ -398,7 +396,7 @@ GUIApplicationWindow::create() {
     }
     if (myOnlineMaps.empty()) {
         myOnlineMaps["GeoHack"] = "https://geohack.toolforge.org/geohack.php?params=%lat;%lon_scale:1000";
-        myOnlineMaps["Google Maps"] = "https://www.google.com/maps?ll=%lat,%lon&t=h&z=18";
+        myOnlineMaps["Google Maps"] = "https://www.google.com/maps/search/?api=1&query=%lat,%lon&zoom=19";
         myOnlineMaps["OSM"] = "https://www.openstreetmap.org/?mlat=%lat&mlon=%lon&zoom=18&layers=M";
     }
     updateTimeLCDTooltip();
@@ -1216,7 +1214,7 @@ GUIApplicationWindow::onCmdSaveConfig(FXObject*, FXSelector, void*) {
         return 1;
     }
     const std::string file = MFXUtils::assureExtension(opendialog).text();
-    std::ofstream out(StringUtils::transcodeToLocal(file));
+    std::ofstream out(XMLSubSys::transcodeToLocal(file));
     if (out.good()) {
         OptionsCont::getOptions().writeConfiguration(out, true, false, false, file, true);
         setStatusBarText(TLF("Configuration saved to %.", file));
@@ -2275,10 +2273,28 @@ GUIApplicationWindow::closeAllWindows() {
             (*it)->hide();
         }
     }
+    // save decals and viewport
+    for (GUIGlChildWindow* window : myGLWindows) {
+        GUISUMOAbstractView* view = window->getView();
+        gSchemeStorage.saveDecals(view->getDecals());
+        gSchemeStorage.saveViewport(view->getChanger().getXPos(), view->getChanger().getYPos(),
+                                    view->getChanger().getZPos(), view->getChanger().getRotation());
+    }
     // delete the simulation
     myRunThread->deleteSim();
     // reset the caption
     setTitle(MFXUtils::getTitleText("SUMO " VERSION_STRING));
+    // clear decals and release GPU textures
+    for (GUIGlChildWindow* window : myGLWindows) {
+        GUISUMOAbstractView* view = window->getView();
+        if (view->makeCurrent()) {
+            view->clearDecals();
+            view->processPendingTextureDeletes();
+            GUITextureSubSys::resetTextures();
+            GLHelper::resetFont();
+            view->makeNonCurrent();
+        }
+    }
     // remove trackers and other external windows (must be delayed until deleteSim)
     while (!myGLWindows.empty()) {
         delete myGLWindows.front();
@@ -2300,9 +2316,6 @@ GUIApplicationWindow::closeAllWindows() {
     if (myTestCoordinate) {
         myTestCoordinate->setText(TL("N/A"));
     }
-    //
-    GUITexturesHelper::clearTextures();
-    GLHelper::resetFont();
     update();
 }
 
@@ -2390,16 +2403,16 @@ GUIApplicationWindow::updateTimeLCD(SUMOTime time) {
     str << std::setfill('0');
     const bool hideFraction = myAmGaming || DELTA_T % 1000 == 0;
     if (myShowTimeAsHMS) {
-        SUMOTime day = time / 86400000;
+        SUMOTime day = time / SUMOTime_DAY;
         if (day > 0) {
             str << day << '-';
-            time %= 86400000;
+            time %= SUMOTime_DAY;
         }
         str << std::setw(2);
-        str << time / 3600000 << '-';
-        time %= 3600000;
-        str << std::setw(2) << time / 60000 << '-';
-        time %= 60000;
+        str << time / SUMOTime_HOUR << '-';
+        time %= SUMOTime_HOUR;
+        str << std::setw(2) << time / SUMOTime_MINUTE << '-';
+        time %= SUMOTime_MINUTE;
     }
     str << std::setw(2) << time / 1000;
     if (!hideFraction) {

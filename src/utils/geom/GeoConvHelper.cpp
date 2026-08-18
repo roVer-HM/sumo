@@ -55,6 +55,7 @@ GeoConvHelper::GeoConvHelper(const std::string& proj, const Position& offset,
     myProjection(nullptr),
     myInverseProjection(nullptr),
     myGeoProjection(nullptr),
+    myRadians(true),
 #endif
     myOffset(offset),
     myGeoScale(scale),
@@ -65,6 +66,10 @@ GeoConvHelper::GeoConvHelper(const std::string& proj, const Position& offset,
     myFlatten(flatten),
     myOrigBoundary(orig),
     myConvBoundary(conv) {
+    // older PROJ libraries fail to construct inverse projection if this
+    // string is present
+    myProjString = StringUtils::replace(myProjString, "+type=crs", "");
+
     if (proj == "!") {
         myProjectionMethod = NONE;
     } else if (proj == "-") {
@@ -78,7 +83,7 @@ GeoConvHelper::GeoConvHelper(const std::string& proj, const Position& offset,
 #ifdef PROJ_API_FILE
     } else {
         myProjectionMethod = PROJ;
-        initProj(proj);
+        initProj(myProjString);
         if (myProjection == nullptr) {
             // avoid error about missing datum shift file
             myProjString = std::regex_replace(proj, std::regex("\\+geoidgrids[^ ]*"), std::string(""));
@@ -102,6 +107,32 @@ GeoConvHelper::initProj(const std::string& proj) {
 #ifdef PROJ_VERSION_MAJOR
     myProjection = proj_create(PJ_DEFAULT_CTX, proj.c_str());
     checkError(myProjection);
+#if PROJ_VERSION_MAJOR > 5
+    if (myProjection != nullptr) {
+        const PJ_TYPE type = proj_get_type(myProjection);
+        if (type != PJ_TYPE_TRANSFORMATION
+                && type != PJ_TYPE_CONCATENATED_OPERATION
+                && type != PJ_TYPE_OTHER_COORDINATE_OPERATION) {
+            // handle PROJCS WKT (i.e. from Visum) which doesn't define a transformation but only CRS
+            proj_destroy(myProjection);
+            PJ_CONTEXT* ctx = proj_context_create();
+            proj_context_use_proj4_init_rules(ctx, 1);
+            myProjection = proj_create_crs_to_crs(ctx,
+                                                  "+proj=longlat +datum=WGS84 +type=crs +no_defs",
+                                                  proj.c_str(),
+                                                  NULL);
+            checkError(myProjection);
+            // "modern" proj doesn't default to radians but traditional proj strings do
+            myRadians = false;
+            //auto tmp = proj_normalize_for_visualization(ctx, myProjection);
+            //PJ_PROJ_INFO info = proj_pj_info(myProjection);
+            //printf("ID init: %s\n", info.id);
+            //printf("Description: %s\n", info.description);
+            //printf("Definition: %s\n", info.definition);
+            //printf("Has Inverse: %s\n", info.has_inverse ? "Yes" : "No");
+        }
+    }
+#endif
 #else
     myProjection = pj_init_plus(proj.c_str());
 #endif
@@ -189,11 +220,7 @@ GeoConvHelper::operator=(const GeoConvHelper& orig) {
         myGeoProjection = nullptr;
     }
     if (orig.myProjection != nullptr) {
-#ifdef PROJ_VERSION_MAJOR
-        myProjection = proj_create(PJ_DEFAULT_CTX, orig.myProjString.c_str());
-#else
-        myProjection = pj_init_plus(orig.myProjString.c_str());
-#endif
+        initProj(myProjString);
     }
     if (orig.myInverseProjection != nullptr) {
 #ifdef PROJ_VERSION_MAJOR
@@ -228,6 +255,14 @@ GeoConvHelper::init(OptionsCont& oc) {
     }
 
 #ifdef PROJ_API_FILE
+#ifdef PROJ_VERSION_MAJOR
+#ifdef WIN32
+    if (getenv("SUMO_HOME") != nullptr) {
+        const char* paths[] = { (std::string(getenv("SUMO_HOME")) + "/data/proj").c_str() };
+        proj_context_set_search_paths(PJ_DEFAULT_CTX, 1, paths);
+    }
+#endif
+#endif
     if (oc.getBool("proj.inverse") && oc.getString("proj") == "!") {
         WRITE_ERROR(TL("Inverse projection works only with explicit proj parameters."));
         return false;
@@ -341,7 +376,11 @@ GeoConvHelper::cartesian2geo(Position& cartesian) const {
     PJ_COORD c = proj_coord(cartesian.x(), cartesian.y(), cartesian.z(), 0);
     c = proj_trans(myProjection, PJ_INV, c);
     checkError(myProjection);
-    cartesian.set(proj_todeg(c.lp.lam), proj_todeg(c.lp.phi));
+    if (myRadians) {
+        cartesian.set(proj_todeg(c.lp.lam), proj_todeg(c.lp.phi));
+    } else {
+        cartesian.set(c.lp.lam, c.lp.phi);
+    }
 #else
     projUV p;
     p.u = cartesian.x();
@@ -500,7 +539,7 @@ GeoConvHelper::x2cartesian_const(Position& from) const {
 #ifdef PROJ_API_FILE
         if (myProjection != nullptr) {
 #ifdef PROJ_VERSION_MAJOR
-            PJ_COORD c = proj_coord(proj_torad(x), proj_torad(y), from.z(), 0);
+            PJ_COORD c = proj_coord(myRadians ? proj_torad(x) : x, myRadians ? proj_torad(y) : y, from.z(), 0);
             c = proj_trans(myProjection, PJ_FWD, c);
             checkError(myProjection);
             x = c.xy.x;
@@ -647,7 +686,7 @@ GeoConvHelper::writeLocation(OutputDevice& into) {
     if (myFinal.usingGeoProjection()) {
         into.setPrecision();
     }
-    into.writeAttr(SUMO_ATTR_ORIG_PROJ, myFinal.getProjString());
+    into.writeAttr(SUMO_ATTR_ORIG_PROJ, StringUtils::escapeXML(myFinal.getProjString()));
     into.closeTag();
     into.lf();
 }

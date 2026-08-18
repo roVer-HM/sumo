@@ -47,7 +47,7 @@ public:
         /// @brief constructor
         OptionRow(GNEOptionsEditor* optionsEditor, FXComposite* parent, const std::string& topic,
                   const std::string& name, const std::string& description, const std::string& defaultValue,
-                  const bool editable);
+                  const bool editable, const bool requireSaveNetwork);
 
         /// @brief adjust input name size
         void adjustNameSize();
@@ -60,6 +60,9 @@ public:
 
         /// @brief get description  (Lower)
         const std::string getDescriptionLower() const;
+
+        /// @brief check if option is editable
+        bool isEditable() const;
 
         /// @brief update option (used after load options)
         virtual void updateOption() = 0;
@@ -98,6 +101,9 @@ public:
         /// @brief editable
         const bool myEditable = true;
 
+        /// @brief require save network
+        const bool myRequireSaveNetwork = false;
+
         /// @brief update reset button
         void updateResetButton();
 
@@ -119,7 +125,7 @@ public:
         /// @brief constructor
         OptionString(GNEOptionsEditor* optionsEditor, FXComposite* parent, const std::string& topic,
                      const std::string& name, const std::string& description, const std::string& defaultValue,
-                     const bool editable);
+                     const bool editable, const bool requireSaveNetwork);
 
         /// @brief update option
         void updateOption();
@@ -148,7 +154,7 @@ public:
         /// @brief constructor
         OptionStringVector(GNEOptionsEditor* optionsEditor, FXComposite* parent, const std::string& topic,
                            const std::string& name, const std::string& description, const std::string& defaultValue,
-                           const bool editable);
+                           const bool editable, const bool requireSaveNetwork);
 
         /// @brief update option
         void updateOption();
@@ -177,7 +183,7 @@ public:
         /// @brief constructor
         OptionBool(GNEOptionsEditor* optionsEditor, FXComposite* parent, const std::string& topic,
                    const std::string& name, const std::string& description, const std::string& defaultValue,
-                   const bool editable);
+                   const bool editable, const bool requireSaveNetwork);
 
         /// @brief update option
         void updateOption();
@@ -206,7 +212,7 @@ public:
         /// @brief
         OptionInt(GNEOptionsEditor* optionsEditor, FXComposite* parent, const std::string& topic,
                   const std::string& name, const std::string& description, const std::string& defaultValue,
-                  const bool editable);
+                  const bool editable, const bool requireSaveNetwork);
 
         /// @brief update option
         void updateOption();
@@ -235,7 +241,7 @@ public:
         /// @brief
         OptionIntVector(GNEOptionsEditor* optionsEditor, FXComposite* parent, const std::string& topic,
                         const std::string& name, const std::string& description, const std::string& defaultValue,
-                        const bool editable);
+                        const bool editable, const bool requireSaveNetwork);
 
         /// @brief update option
         void updateOption();
@@ -264,7 +270,7 @@ public:
         /// @brief constructor
         OptionFloat(GNEOptionsEditor* optionsEditor, FXComposite* parent, const std::string& topic,
                     const std::string& name, const std::string& description, const std::string& defaultValue,
-                    const bool editable);
+                    const bool editable, const bool requireSaveNetwork);
 
         /// @brief update option
         void updateOption();
@@ -296,7 +302,7 @@ public:
         /// @brief constructor
         OptionTime(GNEOptionsEditor* optionsEditor, FXComposite* parent, const std::string& topic,
                    const std::string& name, const std::string& description, const std::string& defaultValue,
-                   const bool editable);
+                   const bool editable, const bool requireSaveNetwork);
 
         /// @brief update option
         void updateOption();
@@ -330,7 +336,7 @@ public:
         /// @brief constructor
         OptionFilename(GNEOptionsEditor* optionsEditor, FXComposite* parent, const std::string& topic,
                        const std::string& name, const std::string& description, const std::string& defaultValue,
-                       const bool editable);
+                       const bool editable, const bool requireSaveNetwork);
 
         /// @brief update option
         void updateOption();

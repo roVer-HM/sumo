@@ -5,7 +5,7 @@ title: Libsumo
 # Libsumo
 
 The main way to interact with a running simulation is
-[TraCI](TraCI.md) which gives the complete flexibility of doing
+[TraCI](TraCI/index.md) which gives the complete flexibility of doing
 cross-platform, cross-language, and networked interaction with
 [sumo](sumo.md) acting as a server. One major drawback is the
 communication overhead due to the protocol and the socket communication.
@@ -15,7 +15,7 @@ following properties:
 
 - C++ interface based on static functions and a few simple wrapper
   classes for results which can be linked directly to the client code
-- Function signatures similar to [TraCI](TraCI.md)
+- Function signatures similar to [TraCI](TraCI/index.md)
 - Pre-built language bindings for Java and Python (using
   [SWIG](https://www.swig.org/))
 - Support for other programming languages via
@@ -55,8 +55,8 @@ make again if you previously did a build without swig).
 For the python bindings you will get a libsumo.py and a
 _libsumo.so (or .pyd on Windows). If you place them somewhere on your
 python path you should be able to use them as described below.
-If you want to enable the experimental C# support, make sure that
-you have `ENABLE_CS_BINDINGS` set in your cmake configuration.
+If you want to enable the experimental C or C# support, make sure that
+you have `ENABLE_C_BINDINGS` respectively `ENABLE_CS_BINDINGS` set in your cmake configuration.
 
 !!! note
     Make sure to add `"/your/path/to/sumo/tools"` to the `PYTHONPATH` environment variable.

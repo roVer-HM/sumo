@@ -86,12 +86,25 @@ public:
         }
     }
 
+    virtual bool supportsProhibitions() const {
+        WRITE_WARNINGF(TL("Routing algorithm CHWrapper does not support dynamic closing of edges and lanes%"), "");
+        return false;
+    }
+
     virtual SUMOAbstractRouter<E, V>* clone() {
         CHRouterWrapper<E, V>* clone = new CHRouterWrapper<E, V>(myEdges, myIgnoreErrors, this->myOperation, myBegin, myEnd, myWeightPeriod, this->myHavePermissions, myMaxNumInstances);
         for (const auto& item : myRouters) {
             clone->myRouters[item.first] = static_cast<CHRouterType*>(item.second->clone());
         }
         return clone;
+    }
+
+
+    void setMsgHandler(MsgHandler* const errorMsgHandler) {
+        this->myErrorMsgHandler = errorMsgHandler;
+        for (auto item : myRouters) {
+            item.second->setMsgHandler(errorMsgHandler);
+        }
     }
 
 
@@ -102,6 +115,7 @@ public:
             // create new router for the given permissions and maximum speed
             // XXX a new router may also be needed if vehicles differ in speed factor
             myRouters[svc] = new CHRouterType(myEdges, myIgnoreErrors, this->myOperation, svc.first, myWeightPeriod, false, false);
+            myRouters[svc]->setMsgHandler(this->myErrorMsgHandler);
         }
         return myRouters[svc]->compute(from, to, vehicle, msTime, into, silent);
     }

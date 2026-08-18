@@ -38,7 +38,7 @@ except ImportError:
 # needed for backward compatibility
 from .statistics import Statistics, geh, uMax, uMin, round  # noqa
 
-
+PRACTICAL_INFINITY = 1e400
 _BLACKLIST = type, ModuleType, FunctionType
 
 
@@ -316,17 +316,28 @@ def getFlowNumber(flow):
     if flow.end is not None:
         duration = parseTime(flow.end) - parseTime(flow.begin)
         period = 0
+        isFractional = False
         if flow.period is not None:
             if 'exp' in flow.period:
                 # use expected value
-                period = 1 / float(flow.period[4:-2])
+                period = 1 / float(flow.period[4:-1])
+                isFractional = True
             else:
                 period = float(flow.period)
+        elif flow.probability is not None:
+            # use expected value
+            period = 1 / float(flow.probability)
+            isFractional = True
         for attr in ['perHour', 'vehsPerHour']:
             if flow.hasAttribute(attr):
                 period = 3600 / float(flow.getAttribute(attr))
         if period > 0:
-            return math.ceil(duration / period)
+            count = duration / period
+            if isFractional:
+                return count
+            else:
+                # flows with a regular period always start at least one vehicle at the begin time
+                return math.ceil(count)
         else:
             return 1
 
@@ -392,3 +403,17 @@ def short_names(filenames, noEmpty):
         base = os.path.basename(prefix)
         shortened = [base + f for f in shortened]
     return shortened
+
+
+def getBaseName(filename):
+    """strip extensions such as .net.xml.gz"""
+    if filename[-11:] == ".net.xml.gz" and len(filename) > 11:
+        return filename[:-11]
+    elif filename[-8:] == ".net.xml" and len(filename) > 8:
+        return filename[:-8]
+    elif filename[-7:] == ".xml.gz" and len(filename) > 7:
+        return filename[:-7]
+    elif filename[-4:] == ".xml" and len(filename) > 4:
+        return filename[:-4]
+    else:
+        return filename

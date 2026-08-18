@@ -31,7 +31,7 @@ def main():
     SUMO_HOME = os.environ.get("SUMO_HOME", dirname(dirname(dirname(os.path.abspath(__file__)))))
     for package in ("eclipse-sumo", "sumo-data", "libsumo"):
         version.filter_pep440(join(SUMO_HOME, "build_config", "pyproject", package + ".toml"),
-                              join(SUMO_HOME, "pyproject.toml"))
+                              join(SUMO_HOME, "pyproject.toml"), package == "sumo-data")
         status.log_subprocess([sys.executable, "-m", "build", "--wheel"], cwd=SUMO_HOME)
 
 

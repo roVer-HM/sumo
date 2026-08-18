@@ -49,12 +49,13 @@ The values without a tick in the "On" column need to be [enabled explicitly](#fu
 | -------- | -------------------- | -- | ---- | ----------------------------------------------------------------------------------------------------------- |
 | timestep | (simulation) seconds |  x |   x  | The time step described by the values within this timestep-element                                          |
 | id       | id                   |  x |   x  | The id of the vehicle                                                                                       |
-| x        | m or longitude       |  x |   x  | The absolute X coordinate of the vehicle (center of front bumper). The value depends on the given geographic projection |
-| y        | m or latitude        |  x |   x  | The absolute Y coordinate of the vehicle (center of front bumper). The value depends on the given geographic projection |
+| x        | m or longitude       |  x |   x  | The absolute X coordinate of the vehicle (center of front bumper). The value depends on the given geographic projection. With the option **--fcd-output.utm**, the value is given in UTM coordinates, taking the network offset into account. If the network has no TUM projection (check the line containing "location netOffset" in the network file), you need to reprojected it, e.g. using netconvert. With the option **--fcd-output.geo**, the longitude is given (WGS84).|
+| y        | m or latitude        |  x |   x  | The absolute Y coordinate of the vehicle (center of front bumper). The value depends on the given geographic projection. With the option **--fcd-output.utm**, the value is given in UTM coordinates, taking the network offset into account (see the info above regarding the projection issue). With the option **--fcd-output.geo**, the lattitude is given (WGS84).|
 | z        | m                    |  (x) |   x  | The z value of the vehicle (center of front bumper).<br><br>**Note:** This value is only present if the network contains elevation data      |
 | angle    | degree               |  x |   x  | The angle of the vehicle in navigational standard (0-360 degrees, going clockwise with 0 at the 12'o clock position)    |
 | type     | id                   |  x |   x  | The name of the vehicle type                                                                                |
 | speed    | m/s                  |  x |   x  | The speed of the vehicle                                                                                    |
+| speedVec | m/s                  |  x |   x  | The speed vector of the vehicle:speed_x,speed_y                                                             |
 | pos      | m                    |  x |   x  | The running position of the vehicle measured from the start of the current lane.                            |
 | lane     | id                   |  (x) |      | The id of the current lane (only available in microsimulation).                                                                                 |
 | edge     | id                   |  (x) |   x  | The id of the current edge (only available in meso).                                                        |
@@ -62,6 +63,7 @@ The values without a tick in the "On" column need to be [enabled explicitly](#fu
 | signals  | bitset               |    |      | The [signal state information](../../TraCI/Vehicle_Signalling.md) (blinkers, etc)                           |
 | acceleration  | m/s<sup>2</sup  |    |      | The longitudinal acceleration                                                                               |
 | accelerationLat | m/s<sup>2</sup |   |      | The lateral acceleration (only with enabled sublane model)                                                  |
+| accelerationVec | m/s<sup>2</sup |   |      | The acceleration vector of the vehicle: acceleration_x,acceleration_y                                          |
 | distance | m                    |    |   x  | The [kilometrage / mileage position](../Railways.md#kilometrage_mileage_chainage) of the vehicle.           |
 | odometer | m                    |    |   x  | The odometer value (distance driven since departure).                                                       |
 | vehicle  | id                   |    |   x  | The id of the vehicle the person is currently riding (only available for persons)                           |
@@ -251,3 +253,9 @@ Generated with [plot_trajectories.py](../../Tools/Visualization.md#selected_traj
 <img src="../../images/timeSpeed_output.png" width="500px"/>
 
 Generated with [plot_trajectories.py](../../Tools/Visualization.md#fcd_based_speeds_over_time).
+
+### Time-Space-Plot
+
+<img src="../../images/timespace.png" width="500px"/>
+
+Generated with [plotXMLAttributes.py](../../Tools/Visualization.md#time-space-plot).

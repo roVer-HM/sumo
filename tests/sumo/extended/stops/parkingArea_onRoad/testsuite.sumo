@@ -12,3 +12,6 @@ long_lots
 
 # not enough parking spaces
 congestion
+
+# fill in upstream direction when there is only 1 lane
+1lane

@@ -41,6 +41,7 @@
 SUMOTime MSDevice_FCD::myBegin = SUMOTime_MAX;
 SUMOTime MSDevice_FCD::myPeriod = 0;
 bool MSDevice_FCD::myUseGeo;
+bool MSDevice_FCD::myUseUTM;
 double MSDevice_FCD::myMaxLeaderDistance;
 std::vector<std::string> MSDevice_FCD::myParamsToWrite;
 double MSDevice_FCD::myRadius;
@@ -50,6 +51,7 @@ bool MSDevice_FCD::myEdgeFilterInitialized(false);
 bool MSDevice_FCD::myShapeFilterInitialized(false);
 bool MSDevice_FCD::myShapeFilterDesired(false);
 SumoXMLAttrMask MSDevice_FCD::myWrittenAttributes;
+bool MSDevice_FCD::mySkipEmpty(false);
 
 
 // ===========================================================================
@@ -168,9 +170,11 @@ MSDevice_FCD::initOnce() {
     myPeriod = string2time(oc.getString("device.fcd.period"));
     myBegin = string2time(oc.getString("device.fcd.begin"));
     myUseGeo = oc.getBool("fcd-output.geo");
+    myUseUTM = oc.getBool("fcd-output.utm");
     myMaxLeaderDistance = oc.getFloat("fcd-output.max-leader-distance");
     myParamsToWrite = oc.getStringVector("fcd-output.params");
     myRadius = oc.getFloat("device.fcd.radius");
+    mySkipEmpty = oc.getBool("fcd-output.skip-empty");
     if (oc.isSet("fcd-output.filter-edges.input-file")) {
         const std::string file = oc.getString("fcd-output.filter-edges.input-file");
         std::ifstream strm(file.c_str());
@@ -201,13 +205,17 @@ MSDevice_FCD::initOnce() {
     misc.set(SUMO_ATTR_SIGNALS);
     misc.set(SUMO_ATTR_ACCELERATION);
     misc.set(SUMO_ATTR_ACCELERATION_LAT);
+    misc.set(SUMO_ATTR_SPEED_VEC);
+    misc.set(SUMO_ATTR_ACCEL_VEC);
     misc.set(SUMO_ATTR_DISTANCE);
     misc.set(SUMO_ATTR_ODOMETER);
     misc.set(SUMO_ATTR_POSITION_LAT);
     misc.set(SUMO_ATTR_SPEED_LAT);
+    misc.set(SUMO_ATTR_SPEEDREL);
     misc.set(SUMO_ATTR_LEADER_ID);
     misc.set(SUMO_ATTR_LEADER_SPEED);
     misc.set(SUMO_ATTR_ARRIVALDELAY);
+    misc.set(SUMO_ATTR_DELAY);
     misc.set(SUMO_ATTR_SEGMENT);
     misc.set(SUMO_ATTR_QUEUE);
     misc.set(SUMO_ATTR_ENTRYTIME);
@@ -234,6 +242,9 @@ MSDevice_FCD::initOnce() {
     myWrittenAttributes.set(SUMO_ATTR_ACCELERATION_LAT, myWrittenAttributes.test(SUMO_ATTR_ACCELERATION) && MSGlobals::gSublane);
     if (oc.getBool("fcd-output.distance")) {
         myWrittenAttributes.set(SUMO_ATTR_DISTANCE);
+    }
+    if (oc.getBool("fcd-output.speed-relative")) {
+        myWrittenAttributes.set(SUMO_ATTR_SPEEDREL);
     }
 
     if (oc.isSet("fcd-output.filter-shapes")) {

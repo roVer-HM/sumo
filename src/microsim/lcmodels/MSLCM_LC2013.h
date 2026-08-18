@@ -113,6 +113,16 @@ public:
     /// @brief decides the next lateral speed (for continuous lane changing)
     double computeSpeedLat(double latDist, double& maneuverDist, bool urgent) const override;
 
+    /** @brief Save the state of the laneChangeModel
+     * @param[in] out The OutputDevice to write the information into
+     */
+    virtual void saveState(OutputDevice& out) const override;
+
+    /** @brief Loads the state of the laneChangeModel from the given attributes
+     * @param[in] attrs XML attributes describing the current state
+     */
+    virtual void loadState(const SUMOSAXAttributes& attrs) override;
+
 protected:
 
     /** helper function which contains the actual logic */
@@ -200,13 +210,13 @@ protected:
     typedef std::pair<double, int> Info;
 
     /// @brief a value for tracking the probability that a change to that side is beneficial
-    double mySpeedGainProbabilityLeft;
-    double mySpeedGainProbabilityRight;
+    long long int mySpeedGainProbabilityLeft;
+    long long int mySpeedGainProbabilityRight;
 
     /* @brief a value for tracking the probability of following the/"Rechtsfahrgebot"
      * A larger negative value indicates higher probability for moving to the
      * right (as in mySpeedGainProbability) */
-    double myKeepRightProbability;
+    long long int myKeepRightProbability;
 
     double myLeadingBlockerLength;
     double myLeftSpace;
@@ -254,8 +264,8 @@ protected:
 
     /// @name derived parameters
     //@{
-    // @brief willingness to encroach on other vehicles laterally (pushing them around)
-    double myChangeProbThresholdRight;
-    double myChangeProbThresholdLeft;
+    // @brief thresholds for changing to the right/left
+    long long int myChangeProbThresholdRight;
+    long long int myChangeProbThresholdLeft;
     //@}
 };

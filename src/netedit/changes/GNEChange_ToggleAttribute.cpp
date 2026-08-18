@@ -66,7 +66,9 @@ GNEChange_ToggleAttribute::undo() {
     myAC->toggleAttribute(myKey, myOrigValue);
     // check if networkElements, additional or shapes has to be saved
     if (myAC->getTagProperty()->isNetworkElement()) {
-        myAC->getNet()->getSavingStatus()->requireSaveNetwork();
+        myAC->getNet()->requireRecompute();
+        // any attribute change could impact junction logic and thus requires recompute
+        myAC->getNet()->requireRecompute();
     } else if (myAC->getTagProperty()->isAdditionalElement()) {
         myAC->getNet()->getSavingStatus()->requireSaveAdditionals();
     } else if (myAC->getTagProperty()->isDemandElement()) {
@@ -85,7 +87,9 @@ GNEChange_ToggleAttribute::redo() {
     myAC->toggleAttribute(myKey, myNewValue);
     // check if networkElements, additional or shapes has to be saved
     if (myAC->getTagProperty()->isNetworkElement()) {
-        myAC->getNet()->getSavingStatus()->requireSaveNetwork();
+        myAC->getNet()->requireRecompute();
+        // any attribute change could impact junction logic and thus requires recompute
+        myAC->getNet()->requireRecompute();
     } else if (myAC->getTagProperty()->isAdditionalElement()) {
         myAC->getNet()->getSavingStatus()->requireSaveAdditionals();
     } else if (myAC->getTagProperty()->isDemandElement()) {

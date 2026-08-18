@@ -54,11 +54,11 @@ double MSGlobals::gLateralResolution(-1.); // default for unitTest
 bool MSGlobals::gStateLoaded;
 bool MSGlobals::gUseMesoSim;
 bool MSGlobals::gMesoLimitedJunctionControl;
+bool MSGlobals::gMesoInterpolatePos;
 MELoop* MSGlobals::gMesoNet;
 
 bool MSGlobals::gOverheadWireSolver;
 bool MSGlobals::gOverheadWireRecuperation;
-bool MSGlobals::gOverheadWireCurrentLimits;
 
 bool MSGlobals::gSemiImplicitEulerUpdate(true); // default for unitTest
 

@@ -29,6 +29,7 @@
 #include <utils/common/SUMOTime.h>
 #include <utils/common/WrappingCommand.h>
 #include <utils/router/AStarRouter.h>
+#include <microsim/MSEdge.h>
 #include <microsim/MSRouterDefs.h>
 
 #ifdef HAVE_FOX
@@ -67,8 +68,11 @@ class MSRoutingEngine {
 public:
     typedef SUMOAbstractRouter<MSEdge, SUMOVehicle>::Prohibitions Prohibitions;
 
+    /// @brief initialize constants for using myPriorityFactor 
+    static void initWeightConstants(const OptionsCont& oc);
+
     /// @brief intialize period edge weight update
-    static void initWeightUpdate();
+    static void initWeightUpdate(SUMOTime lastAdaption = - 1);
 
     /// @brief initialize the edge weights if not done before
     static void initEdgeWeights(SUMOVehicleClass svc, SUMOTime lastAdaption = -1, int index = -1);
@@ -81,6 +85,30 @@ public:
     /// @brief Information when the last edge weight adaptation occurred
     static SUMOTime getLastAdaptation() {
         return myLastAdaptation;
+    }
+
+    static bool haveExtras() {
+        return myHaveExtras;
+    }
+
+    /// @brief apply cost modifications from randomness, priorityFactor and preferences
+    static inline void applyExtras(const MSEdge* const e, const SUMOVehicle* const v, SUMOTime step, double& effort) {
+        if (gWeightsRandomFactor != 1.) {
+            long long int key = v->getRandomSeed() ^ e->getNumericalID();
+            if (myDynamicRandomness) {
+                key ^= step;
+            }
+            effort *= (1 + RandHelper::randHash(key) * (gWeightsRandomFactor - 1));
+        }
+        if (myPriorityFactor != 0) {
+            // lower priority should result in higher effort (and the edge with
+            // minimum priority receives a factor of 1 + myPriorityFactor
+            const double relativeInversePrio = 1 - ((e->getPriority() - myMinEdgePriority) / myEdgePriorityRange);
+            effort *= 1 + relativeInversePrio * myPriorityFactor;
+        }
+        if (gRoutingPreferences) {
+            effort /= MSNet::getInstance()->getPreference(e->getRoutingType(), v->getVTypeParameter());
+        }
     }
 
     /// @brief return the cached route or nullptr on miss
@@ -115,6 +143,11 @@ public:
     /// @brief return the person router instance
     static MSTransportableRouter& getIntermodalRouterTT(const int rngIndex,
             const Prohibitions& prohibited = {});
+
+    /// @brief whether the router collects bicycle speeds
+    static bool hasBikeSpeeds() {
+        return myBikeSpeeds;
+    }
 
     /** @brief Returns the effort to pass an edge
     *
@@ -268,6 +301,9 @@ private:
 
     /// @brief whether randomness varies over time
     static bool myDynamicRandomness;
+
+    /// @brief whether extra routing cost modifications are configured
+    static bool myHaveExtras;
 
 #ifdef HAVE_FOX
     /// @brief Mutex for accessing the route cache

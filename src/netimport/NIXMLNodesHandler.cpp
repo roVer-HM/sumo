@@ -52,6 +52,8 @@ NIXMLNodesHandler::NIXMLNodesHandler(NBNodeCont& nc, NBEdgeCont& ec,
     myEdgeCont(ec),
     myTLLogicCont(tlc),
     myLocation(nullptr),
+    myDefaultNodeType(SUMOXMLDefinitions::NodeTypes.hasString(options.getString("default.junctions.type"))
+            ? SUMOXMLDefinitions::NodeTypes.get(options.getString("default.junctions.type")) : SumoXMLNodeType::UNKNOWN),
     myLastParameterised(nullptr) {
 }
 
@@ -152,7 +154,7 @@ NIXMLNodesHandler::addNode(const SUMOSAXAttributes& attrs) {
         WRITE_ERRORF(TL("Missing position (at node ID='%')."), myID);
     }
     bool updateEdgeGeometries = node != nullptr && myPosition != node->getPosition();
-    node = processNodeType(attrs, node, myID, myPosition, updateEdgeGeometries, myNodeCont, myEdgeCont, myTLLogicCont, myLocation);
+    node = processNodeType(attrs, node, myID, myPosition, updateEdgeGeometries, myDefaultNodeType, myNodeCont, myEdgeCont, myTLLogicCont, myLocation);
     myLastParameterised = node;
 }
 
@@ -160,11 +162,11 @@ NIXMLNodesHandler::addNode(const SUMOSAXAttributes& attrs) {
 NBNode*
 NIXMLNodesHandler::processNodeType(const SUMOSAXAttributes& attrs, NBNode* node, const std::string& nodeID, const Position& position,
                                    bool updateEdgeGeometries,
+                                   SumoXMLNodeType type,
                                    NBNodeCont& nc, NBEdgeCont& ec, NBTrafficLightLogicCont& tlc,
                                    GeoConvHelper* from_srs) {
     bool ok = true;
     // get the type
-    SumoXMLNodeType type = SumoXMLNodeType::UNKNOWN;
     if (node != nullptr) {
         type = node->getType();
     }
@@ -275,10 +277,11 @@ NIXMLNodesHandler::addJoinCluster(const SUMOSAXAttributes& attrs) {
     if (attrs.hasAttribute(SUMO_ATTR_Z)) {
         pos.setz(attrs.get<double>(SUMO_ATTR_Z, myID.c_str(), ok));
     }
+    const bool reset = attrs.getOpt<bool>(SUMO_ATTR_RESET, myID.c_str(), ok, OptionsCont::getOptions().getBool("junctions.join-reset"));
 
-    NBNode* node = processNodeType(attrs, nullptr, myID, pos, false, myNodeCont, myEdgeCont, myTLLogicCont, myLocation);
+    NBNode* node = processNodeType(attrs, nullptr, myID, pos, false, myDefaultNodeType, myNodeCont, myEdgeCont, myTLLogicCont, myLocation);
     if (ok) {
-        myNodeCont.addCluster2Join(cluster, node);
+        myNodeCont.addCluster2Join(cluster, node, reset);
     }
 }
 

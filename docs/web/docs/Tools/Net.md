@@ -278,3 +278,16 @@ Example call:
 ```
 python tools/net/remap_network.py --orig-net net.net.xml --target-net net2.net.xml -o out.csv --success-output success.txt
 ```
+
+# generateStationEdges.py
+
+Generate pedestrian edges for every public transport stop to serve as access
+edge in otherwise pure railway networks. If a single edge is generated for all stops with the same name (option **--join**), persons starting on such an edge can automatically pick the stop (plattform) that best suits their journey.
+
+Example call:
+```
+python tools/net/generateStationEdges.py --net-file net.net.xml --stop-file stops.add.xml -o net2 --join --build
+```
+
+This tool generates *.edg.xml* and *.nod.xml* patch files for adding pedestrian edges at stations. These can be applied to the input network by calling netconvert again. The netconvert call happens automatically when option **--build** is set.
+If option **--join** is set, a single pedestrian edge will be generated for all busStops/trainStops with the same `name` attribute.

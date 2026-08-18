@@ -19,6 +19,9 @@ first_later
 # replace first stop after the vehicle has departed
 first_teleport
 
+# insert stop while the vehicle is fast and ahead of a junction
+first_highspeed
+
 # replace second stop after the vehicle has departed
 second
 
@@ -57,8 +60,26 @@ third_later
 # insert stop after the last stop
 last
 
-# replace all stops after the vehicle has departed
+# add multiple stops after the vehicle has departed
 all
+
+# insert a single stop on a looped route (#17741)
+looped
+
+# insert multiple stops on a looped route (#17718)
+looped2
+
+# insert multiple stops that imply a looped route on a non-looped initial route (#17718)
+non_looped_routes_2same_stops
+
+# insert multiple stops that imply a looped route on a non-looped initial route (#17718)
+non_looped_routes_3same_stops
+
+# insert multiple stops that imply a looped route on a non-looped initial route (#17718)
+non_looped_routes_3same_stops_init
+
+# insert multiple stops that imply a looped route on a non-looped initial route (#17718)
+non_looped_routes_6_stops_init
 
 # replace stop with invalid index
 invalid

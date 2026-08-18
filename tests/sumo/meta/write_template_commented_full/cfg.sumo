@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2026-01-17T17:50:02.717912+01:00 by Eclipse SUMO sumo v1_25_0+1031-30c9dee08ac
+<!-- generated on 2026-06-14T16:37:03.261565+01:00 by Eclipse SUMO sumo v1_27_0+0202-1c25520502a
 -->
 
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
@@ -153,6 +153,9 @@
         <!-- Save the Floating Car Data using geo-coordinates (lon/lat) -->
         <fcd-output.geo value="false" type="BOOL"/>
 
+        <!-- Save the Floating Car Data using utm/unshifted coordinates (x/y) -->
+        <fcd-output.utm value="false" type="BOOL"/>
+
         <!-- Add the vehicle signal state to the FCD output (brake lights etc.) -->
         <fcd-output.signals value="false" type="BOOL"/>
 
@@ -161,6 +164,9 @@
 
         <!-- Add acceleration to the FCD output -->
         <fcd-output.acceleration value="false" type="BOOL"/>
+
+        <!-- Add relative speed (vehicle speed / edge speed limit) to the FCD output -->
+        <fcd-output.speed-relative value="false" type="BOOL"/>
 
         <!-- Add leader vehicle information to the FCD output (within the given distance) -->
         <fcd-output.max-leader-distance value="-1" type="FLOAT"/>
@@ -176,6 +182,9 @@
 
         <!-- List shape names that should be used to filter the FCD output -->
         <fcd-output.filter-shapes value="" type="STR[]"/>
+
+        <!-- Do not save data for time steps which have no vehicles / transportables -->
+        <fcd-output.skip-empty value="false" type="BOOL"/>
 
         <!-- Save fcd for persons and container to separate FILE -->
         <person-fcd-output value="" synonymes="person-fcd" type="FILE"/>
@@ -523,10 +532,10 @@
         <time-to-impatience value="180" type="TIME"/>
 
         <!-- Select default depart speed -->
-        <default.departspeed value="0" type="STR"/>
+        <default.departspeed value="avg" type="STR"/>
 
         <!-- Select default depart lane -->
-        <default.departlane value="first" type="STR"/>
+        <default.departlane value="best_prob" type="STR"/>
 
         <!-- Length of the default interval length between action points for the car-following and lane-change models (in seconds). If not specified, the simulation step-length is used per default. Vehicle- or VType-specific settings override the default. Must be a multiple of the simulation step-length. -->
         <default.action-step-length value="0" type="FLOAT"/>
@@ -1260,6 +1269,9 @@
         <!-- Write information from the idling algorithm to FILE -->
         <device.taxi.idle-algorithm.output value="" type="FILE"/>
 
+        <!-- Network permissions that can be accessed by taxis -->
+        <device.taxi.vclasses value="taxi" synonymes="taxi.vclasses" type="STR[]"/>
+
     </taxi_device>
 
     <glosa_device>
@@ -1412,6 +1424,9 @@
 
         <!-- Time interval for rechecking insertion into the next segment after failure -->
         <meso-recheck value="0" type="TIME"/>
+
+        <!-- Enable mesoscopic position interpolation -->
+        <meso-interpolate-pos value="false" type="BOOL"/>
 
     </mesoscopic>
 

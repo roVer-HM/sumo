@@ -13,13 +13,18 @@
 /****************************************************************************/
 /// @file    GNETLSEditorFrame.cpp
 /// @author  Jakob Erdmann
+/// @author  Mirko Barthauer
 /// @date    May 2011
 ///
 // The Widget for modifying traffic lights
 /****************************************************************************/
 
+#include <config.h>
+
+#include <algorithm>
 #include <netbuild/NBLoadedSUMOTLDef.h>
 #include <netbuild/NBOwnTLDef.h>
+#include <netbuild/NBTrafficLightLogic.h>
 #include <netedit/GNEApplicationWindow.h>
 #include <netedit/GNENet.h>
 #include <netedit/GNETagProperties.h>
@@ -2111,6 +2116,10 @@ GNETLSEditorFrame::TLSPhases::addPhase(const int row, const char c) {
         default:
             break;
     }
+    // check if "next" phase settings are impacted by the new row
+    for (int i = (int)myTLSEditorParent->myEditedDef->getLogic()->getPhases().size() - 1; i > row; --i) {
+        updateNextPhase(i, i + 1);
+    }
     // int phase table again
     initPhaseTable();
     // mark new row as selected
@@ -2145,6 +2154,10 @@ GNETLSEditorFrame::TLSPhases::removePhase(const int row) {
     const auto newRow = MAX2(0, (row - 1));
     // delete selected row
     myTLSEditorParent->myEditedDef->getLogic()->deletePhase(row);
+    updateNextPhase(row, -1);
+    for (int i = row; i < (int)myTLSEditorParent->myEditedDef->getLogic()->getPhases().size() + 1; ++i) {
+        updateNextPhase(i, i - 1);
+    }
     // int phase table again
     initPhaseTable();
     // mark new row as selected
@@ -2161,8 +2174,10 @@ GNETLSEditorFrame::TLSPhases::movePhaseUp(const int row) {
     // delete selected row
     if (row == 0) {
         myTLSEditorParent->myEditedDef->getLogic()->swapfirstPhase();
+        updateNextPhase(row, (int)myTLSEditorParent->myEditedDef->getLogic()->getPhases().size() - 1, true);
     } else {
         myTLSEditorParent->myEditedDef->getLogic()->swapPhase(row, row - 1);
+        updateNextPhase(row, row - 1, true);
     }
     // int phase table again
     initPhaseTable();
@@ -2184,8 +2199,10 @@ GNETLSEditorFrame::TLSPhases::movePhaseDown(const int row) {
     // delete selected row
     if (row == (int)myTLSEditorParent->myEditedDef->getLogic()->getPhases().size() - 1) {
         myTLSEditorParent->myEditedDef->getLogic()->swaplastPhase();
+        updateNextPhase((int)myTLSEditorParent->myEditedDef->getLogic()->getPhases().size() - 1, 0, true);
     } else {
         myTLSEditorParent->myEditedDef->getLogic()->swapPhase(row, row + 1);
+        updateNextPhase(row, row + 1, true);
     }
     // int phase table again
     initPhaseTable();
@@ -2492,12 +2509,14 @@ GNETLSEditorFrame::TLSPhases::buildDefaultPhase(const int row) {
         }
     }
     // fix continuous green states
-    const int nextIndex = (myPhaseTable->getNumRows() > newIndex) ? newIndex : 0;
-    const std::string state2 = myPhaseTable->getItemText(nextIndex, (TLSStatic ? 2 : 4));
-    for (int i = 0; i < (int)state.size(); i++) {
-        if (((oldState[i] == LINKSTATE_TL_GREEN_MAJOR) || (oldState[i] == LINKSTATE_TL_GREEN_MINOR)) &&
-                ((state2[i] == LINKSTATE_TL_GREEN_MAJOR) || (state2[i] == LINKSTATE_TL_GREEN_MINOR))) {
-            state[i] = oldState[i];
+    if (myPhaseTable->getNumRows() > 1) {
+        const int nextIndex = (myPhaseTable->getNumRows() > newIndex) ? newIndex : 0;
+        const std::string state2 = myPhaseTable->getItemText(nextIndex, (TLSStatic ? 2 : 4));
+        for (int i = 0; i < (int)state.size(); i++) {
+            if (((oldState[i] == LINKSTATE_TL_GREEN_MAJOR) || (oldState[i] == LINKSTATE_TL_GREEN_MINOR)) &&
+                    ((state2[i] == LINKSTATE_TL_GREEN_MAJOR) || (state2[i] == LINKSTATE_TL_GREEN_MINOR))) {
+                state[i] = oldState[i];
+            }
         }
     }
     // add new step
@@ -2813,6 +2832,44 @@ void
 GNETLSEditorFrame::TLSPhases::updateStateSize(const int col) {
     // update bot label with number of links
     myPhaseTable->setColumnLabelBot(col, "Links: " + toString(myTLSEditorParent->myEditedDef->getLogic()->getNumLinks()));
+}
+
+
+void
+GNETLSEditorFrame::TLSPhases::updateNextPhase(const int oldNext, const int newNext, const bool swap) {
+    // get phases
+    const auto& phases = myTLSEditorParent->myEditedDef->getLogic()->getPhases();
+    int i = 0;
+    for (std::vector<NBTrafficLightLogic::PhaseDefinition>::const_iterator it = phases.begin(); it != phases.end(); it++, ++i) {
+        bool oldRef = std::find(it->next.begin(), it->next.end(), oldNext) != it->next.end();
+        bool newRef = std::find(it->next.begin(), it->next.end(), newNext) != it->next.end();
+        std::vector<int> nextPhases(it->next);
+        bool changed = false;
+        if (swap) {
+            if (oldRef && newRef) {
+                std::replace(nextPhases.begin(), nextPhases.end(), oldNext, -1);
+                std::replace(nextPhases.begin(), nextPhases.end(), newNext, oldNext);
+                std::replace(nextPhases.begin(), nextPhases.end(), -1, newNext);
+                changed = true;
+            } else if (oldRef) {
+                std::replace(nextPhases.begin(), nextPhases.end(), oldNext, newNext);
+                changed = true;
+            } else if (newRef) {
+                std::replace(nextPhases.begin(), nextPhases.end(), newNext, oldNext);
+                changed = true;
+            }
+        } else if (oldRef) {
+            if (newNext < 0) {
+                nextPhases.erase(std::find(nextPhases.begin(), nextPhases.end(), oldNext));
+            } else {
+                std::replace(nextPhases.begin(), nextPhases.end(), oldNext, newNext);
+            }
+            changed = true;
+        }
+        if (changed) {
+            myTLSEditorParent->myEditedDef->getLogic()->setPhaseNext(i, nextPhases);
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------

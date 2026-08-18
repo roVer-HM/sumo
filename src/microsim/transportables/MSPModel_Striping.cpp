@@ -384,18 +384,16 @@ MSPModel_Striping::getWalkingAreaPath(const MSEdge* walkingArea, const MSLane* b
     const auto pathIt = myWalkingAreaPaths.find(std::make_pair(before, after));
     if (pathIt != myWalkingAreaPaths.end()) {
         return &pathIt->second;
-    } else {
-        // this can happen in case of moveToXY where before can point anywhere
-        const MSEdgeVector& preds = walkingArea->getPredecessors();
-        if (preds.size() > 0) {
-            const MSEdge* const pred = walkingArea->getPredecessors().front();
-            const auto pathIt2 = myWalkingAreaPaths.find(std::make_pair(getSidewalk<MSEdge, MSLane>(pred), after));
-            assert(pathIt2 != myWalkingAreaPaths.end());
+    }
+    // this can happen in case of moveToXY where before can point anywhere
+    // or when a person starts directly on a walking area (before == nullptr)
+    for (const MSEdge* const pred : walkingArea->getPredecessors()) {
+        const auto pathIt2 = myWalkingAreaPaths.find(std::make_pair(getSidewalk<MSEdge, MSLane>(pred), after));
+        if (pathIt2 != myWalkingAreaPaths.end()) {
             return &pathIt2->second;
-        } else {
-            return getArbitraryPath(walkingArea);
         }
     }
+    return getArbitraryPath(walkingArea);
 }
 
 
@@ -1071,7 +1069,7 @@ MSPModel_Striping::moveInDirectionOnLane(Pedestrians& pedestrians, const MSLane*
                 //    std::cout << "   obs=" << p.getPerson()->getID() << "  y=" << p.getPosLat() << "  stripe=" << p.stripe() << " oStripe=" << p.otherStripe() << "\n";
                 //}
                 Obstacle o(p);
-                if (p.getDirection() != dir && p.getSpeed(*p.getStage()) == 0.) {
+                if (p.getDirection() != dir && p.getSpeed() == 0.) {
                     // ensure recognition of oncoming
                     o.speed = (p.getDirection() == FORWARD ? 0.1 : -0.1);
                 }
@@ -1482,7 +1480,7 @@ MSPModel_Striping::Obstacle::Obstacle(int dir, double dist) :
 MSPModel_Striping::Obstacle::Obstacle(const PState& ped) :
     xFwd(ped.getMaxX()),
     xBack(ped.getMinX()),
-    speed(ped.getDirection() * ped.getSpeed(*ped.getStage())),
+    speed(ped.getDirection() * ped.getSpeed()),
     type(ped.getOType()),
     description(ped.getID()) {
     assert(!ped.isWaitingToEnter());
@@ -1595,7 +1593,8 @@ MSPModel_Striping::PState::PState(MSPerson* person, MSStageMoving* stage, std::i
         int nextDir;
 
         (*in) >> laneID
-              >> myEdgePos >> myPosLat >> myDir >> mySpeed >> mySpeedLat >> myWaitingToEnter >> myWaitingTime
+              >> myEdgePos >> myPosLat >> myDir >> mySpeed >> mySpeedLat >> myWaitingToEnter
+              >> myWaitingTime >> myTotalWaitingTime
               >> wapLaneFrom >> wapLaneTo
               >> myAmJammed
               >> nextLaneID
@@ -1680,6 +1679,7 @@ MSPModel_Striping::PState::saveState(std::ostringstream& out) {
         << " " << mySpeedLat
         << " " << myWaitingToEnter
         << " " << myWaitingTime
+        << " " << myTotalWaitingTime
         << " " << wapLaneFrom
         << " " << wapLaneTo
         << " " << myAmJammed

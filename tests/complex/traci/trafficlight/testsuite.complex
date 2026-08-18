@@ -39,3 +39,9 @@ setLogic_duration0
 
 # the function should reset when switching the program (#15753)
 getSpentDuration
+
+# the function should still work after calling setRedYellowGreenState  (#17598)
+getSpentDuration2
+
+# the function should reset when switching between programs
+getSpentDuration3

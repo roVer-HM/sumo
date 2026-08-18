@@ -153,7 +153,8 @@ MELoop::checkCar(MEVehicle* veh) {
             return;
         }
     }
-    if (veh->getBlockTime() == SUMOTime_MAX && !veh->isStopped()) {
+    if (veh->getBlockTime() == SUMOTime_MAX && (!veh->isStopped()
+                || (!veh->isStoppedTriggered() && veh->isStoppedParking()))) {
         veh->setBlockTime(leaveTime);
     }
     if (nextEntry == SUMOTime_MAX) {
@@ -216,6 +217,8 @@ MELoop::teleportVehicle(MEVehicle* veh, MESegment* const toSegment, bool disconn
             onSegment->send(veh, nullptr, qIdx, leaveTime, MSMoveReminder::NOTIFICATION_TELEPORT);
             // mark veh as teleporting
             veh->setSegment(nullptr);
+        } else {
+            veh->updateDetectors(veh->getLastEntryTime(), leaveTime, true, MSMoveReminder::NOTIFICATION_TELEPORT);
         }
         // @caution microsim uses current travel time teleport duration
         const SUMOTime teleArrival = leaveTime + TIME2STEPS(veh->getEdge()->getLength() / MAX2(veh->getEdge()->getSpeedLimit(), NUMERICAL_EPS));
@@ -285,6 +288,12 @@ MELoop::nextSegment(MESegment* s, MEVehicle* v) {
         // end of route
         return nullptr;
     }
+    if (MSGlobals::gUsingInternalLanes && s != nullptr && s->getEdge().isNormal()) {
+        const MSEdge* internal = s->getEdge().getInternalFollowingEdge(nextEdge, v->getVClass());
+        if (internal) {
+            nextEdge = internal;
+        }
+    }
     return myEdges2FirstSegments[nextEdge->getNumericalID()];
 }
 
@@ -304,7 +313,7 @@ void
 MELoop::buildSegmentsFor(const MSEdge& e, const OptionsCont& oc) {
     const MESegment::MesoEdgeType& edgeType = MSNet::getInstance()->getMesoType(e.getEdgeType());
     const double length = e.getLength();
-    const int numSegments = numSegmentsFor(length, oc.getFloat("meso-edgelength"));
+    const int numSegments = numSegmentsFor(length, edgeType.edgeLength);
     const double slength = length / (double)numSegments;
     MESegment* newSegment = nullptr;
     MESegment* nextSegment = nullptr;
@@ -320,18 +329,8 @@ MELoop::buildSegmentsFor(const MSEdge& e, const OptionsCont& oc) {
         myEdges2FirstSegments.push_back(0);
     }
     myEdges2FirstSegments[e.getNumericalID()] = newSegment;
-}
-
-
-void
-MELoop::updateSegmentsForEdge(const MSEdge& e) {
-    if (e.getNumericalID() < (int)myEdges2FirstSegments.size()) {
-        const MESegment::MesoEdgeType& edgeType = MSNet::getInstance()->getMesoType(e.getEdgeType());
-        MESegment* s = myEdges2FirstSegments[e.getNumericalID()];
-        while (s != nullptr) {
-            s->initSegment(edgeType, e, s->getCapacity());
-            s = s->getNextSegment();
-        }
+    for (MSLane* lane : e.getLanes()) {
+        lane->updateMesoGUISegments();
     }
 }
 

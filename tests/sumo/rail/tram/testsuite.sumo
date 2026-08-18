@@ -20,3 +20,9 @@ zipper_signal_ungarded
 # driveway computation must deal with traffic lights
 # see #17546
 bidi_conflict_insertion_tls
+
+# see #17684
+uncontrolled_link
+
+# see #17681
+uncontrolled_link2

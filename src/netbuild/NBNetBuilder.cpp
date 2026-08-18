@@ -181,7 +181,7 @@ NBNetBuilder::compute(OptionsCont& oc, const std::set<std::string>& explicitTurn
         NBTurningDirectionsComputer::computeTurnDirections(myNodeCont, false);
         numAddedBidi = NBRailwayTopologyAnalyzer::repairTopology(myEdgeCont, myPTStopCont, myPTLineCont);
     }
-    NBRailwaySignalGuesser::guessRailSignals(myEdgeCont, myPTStopCont);
+    NBRailwaySignalGuesser::guessRailSignals(myNodeCont, myEdgeCont, myPTStopCont, myDistrictCont);
     if (numAddedBidi > 0) {
         // update routes
         myPTLineCont.process(myEdgeCont, myPTStopCont, true);
@@ -189,8 +189,13 @@ NBNetBuilder::compute(OptionsCont& oc, const std::set<std::string>& explicitTurn
     if (oc.exists("railway.topology.direction-priority") && oc.getBool("railway.topology.direction-priority")) {
         NBTurningDirectionsComputer::computeTurnDirections(myNodeCont, false); // recompute after new edges were added
         NBRailwayTopologyAnalyzer::extendDirectionPriority(myEdgeCont, true);
-    } else if (oc.exists("railway.topology.extend-priority") && oc.getBool("railway.topology.extend-priority")) {
+    } else if (oc.exists("railway.topology.extend-priority")
+            && (oc.getBool("railway.topology.extend-priority") || oc.getStringVector("railway.topology.ptline-priority").size() > 0)) {
         NBTurningDirectionsComputer::computeTurnDirections(myNodeCont, false); // recompute after new edges were added
+        if (oc.getStringVector("railway.topology.ptline-priority").size() > 0) {
+            SVCPermissions vClasses = parseVehicleClasses(oc.getStringVector("railway.topology.ptline-priority"));
+            NBRailwayTopologyAnalyzer::setPTLinePriority(myEdgeCont, myPTLineCont, vClasses);
+        }
         NBRailwayTopologyAnalyzer::extendDirectionPriority(myEdgeCont, false);
     }
     if (oc.exists("railway.topology.output") && oc.isSet("railway.topology.output")) {
@@ -832,7 +837,7 @@ NBNetBuilder::transformCoordinate(Position& from, bool includeInBoundary, GeoCon
             if (from_srs != nullptr && from_srs->usingGeoProjection()) {
                 from_srs->cartesian2geo(orig);
             }
-            from.setz(hm.getZ(orig));
+            from.setz(hm.getZ(orig) + GeoConvHelper::getProcessing().getOffset().z());
         }
     }
     const double eps = 1e-6;

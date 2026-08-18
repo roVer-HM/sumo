@@ -59,6 +59,8 @@ set(utils_foxtools_STAT_SRCS
    MFXUtils.cpp
    MFXUtils.h
    MFXWorkerThread.h
+   MFXOptionalLock.h
+   MFXLock.h
    MsgHandlerSynchronized.h
 )
 

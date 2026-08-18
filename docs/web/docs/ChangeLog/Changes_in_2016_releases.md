@@ -200,7 +200,7 @@ title: Changes in the 2016 releases (versions 0.26.0, 0.27.0, 0.27.1 and 0.28.0)
   - The deprecated option **--lanechange.allow-swap** is no longer supported. #2116
   - The `laneChangeModel="JE2013"` has been removed due to strong similarity with *LC2013*.
     Using the model is deprecated and now defaults to *LC2013*
-  - [SUMOPy](../Contributed/SUMOPy.md) has been added to the
+  - [SUMOPy](../Contributed/hybridPY/index.md) has been added to the
     SUMO repository and to the release. Many thanks to Joerg Schweizer.
   - The libraries for the Windows build and release were updated to
     Fox 1.6.52 and Xerces-C 3.1.4 (with an additional fix for
@@ -773,7 +773,7 @@ title: Changes in the 2016 releases (versions 0.26.0, 0.27.0, 0.27.1 and 0.28.0)
     library](../TraCI/C++TraCIAPI.md) Thanks to Alexander
     Weidinger for the patch. #2008
   - Added new [TraaS
-    commands](../TraCI.md#interfaces_by_programming_language)
+    commands](../TraCI/index.md#interfaces_by_programming_language)
     *Edge.getLastStepPersonIDs, Person.getNextEdge,
     Vehicle.getRouteIndex, Vehicle.getStopState, Vehicle.isStopped*
     and some more stop-related vehicle commands.

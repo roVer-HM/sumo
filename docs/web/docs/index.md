@@ -1,4 +1,4 @@
-<hTitles >SUMO User Documentation<hr style="border: 0.5px solid #338033;"></hTitles>
+<h1 class="h-title">SUMO User Documentation</h1>
 
 "**S**imulation of **U**rban **MO**bility" (SUMO) is an open source, highly portable, microscopic and continuous traffic simulation package designed to handle large networks. It allows for intermodal simulation including pedestrians and comes with a large set of tools for scenario creation. It is mainly developed by employees of the [Institute of Transportation Systems](https://www.dlr.de/ts) at the [German Aerospace Center](https://www.dlr.de). SUMO is licensed under the [EPL 2.0](https://www.eclipse.org/legal/epl-2.0/). The source code may also be made available under the following Secondary
 Licenses when the conditions for such availability set forth in the EPL 2.0 are satisfied: [GPL2 or later](https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html).
@@ -36,7 +36,7 @@ This Documentation is continuously updated and always refers to the latest devel
 - [Abstract networks generation](Networks/Abstract_Network_Generation.md)
 - Importing networks with [netconvert](netconvert.md)
   - [Defining own networks using XML](Networks/PlainXML.md)
-  - [Importing non-SUMO networks](Networks/Import.md)
+  - [Importing non-SUMO networks](Networks/Import/index.md)
     - [from OpenStreetMap](Networks/Import/OpenStreetMap.md)
       - [3-Click Scenario Generator](Networks/Import/OpenStreetMap.md#3-click_scenario_generation)
     - [from VISUM](Networks/Import/VISUM.md)
@@ -93,7 +93,7 @@ This Documentation is continuously updated and always refers to the latest devel
 - [Simulation output overview](Simulation/Output/index.md)
 
 ## TraCI (On-line Interaction)
-- [TraCI overview](TraCI.md) - The **Tra**ffic **C**ontrol **I**nterface
+- [TraCI overview](TraCI/index.md) - The **Tra**ffic **C**ontrol **I**nterface
 - [Libsumo](Libsumo.md) - Using sumo as a library
 
 ## Traffic Management and Other Structures

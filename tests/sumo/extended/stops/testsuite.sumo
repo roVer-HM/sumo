@@ -106,6 +106,9 @@ busstop_stopping_position_assignment
 # test defining a custom stop position at a long busStop
 busstop_customPos
 
+# test behavior at busStop if last free pos is jammed
+busstop_jammed
+
 # long stopping times should not trigger teleport, but teleports should possible after the stop
 long_stop
 

@@ -49,7 +49,8 @@ OSM2SUMO_MODES = {
     'monorail': 'rail_urban',
     'subway': 'subway',
     'aerialway': 'cable_car',
-    'ferry': 'ship'
+    'ferry': 'ship',
+    'trolleybus': 'bus'  # Assume trolleybus access to edges is the same as for bus vehicles
 }
 
 GTFS2OSM_MODES = {
@@ -62,6 +63,8 @@ GTFS2OSM_MODES = {
     # '5':  'cableTram',
     # '6':  'aerialLift',
     # '7':  'funicular',
+    '11': 'trolleybus',  # used in Pilsen
+    '800': 'trolleybus',  # used in Prague, as per Extended GTFS Route Types
     # https://developers.google.com/transit/gtfs/reference/extended-route-types
     '100':  'train',        # DB
     '109':  'light_rail',   # S-Bahn
@@ -163,6 +166,8 @@ def import_gtfs(options, gtfsZip):
 
     extra_trips = trips.loc[trips.trip_id.isin(extra_trips_id), :]
     extra_trips.loc[:, 'trip_id'] = extra_trips.loc[:, 'trip_id'] + ".trimmed"
+    if 'block_id' in extra_trips.columns:
+        extra_trips.loc[:, 'block_id'] = ""
     trips = pd.concat((trips, extra_trips))
 
     time_interval = options.end - options.begin
@@ -195,8 +200,11 @@ def import_gtfs(options, gtfsZip):
                          trips.service_id.isin(added.service_id)]
 
     # filter routes by modes
+    # We need to address difference between `trolleybus` and `bus`, therefore we will split
+    # the comma-separated options.modes string into a tuple of strings denoting particular modes
+    split_modes = options.modes.split(',')
     filter_gtfs_modes = [key for key, value in GTFS2OSM_MODES.items()
-                         if value in options.modes]
+                         if value in split_modes]
     routes = routes[routes['route_type'].isin(filter_gtfs_modes)]
     if routes.empty:
         print("Warning! No GTFS data found for the given modes %s." % options.modes)
@@ -497,18 +505,19 @@ def _addToDataFrame(gtfs_data, row, shapes_dict, stop, edge):
                   "edge_id"] = edge
 
 
-def getBestLane(net, lon, lat, radius, stop_length, center, edge_set, pt_class, last_pos=-1):
+def getBestLane(net, lon, lat, radius, stop_length, center, edge_set, pt_class, last_pos=None):
     # get edges near stop location
     x, y = net.convertLonLat2XY(lon, lat)
     edges = [e for e in net.getNeighboringEdges(x, y, radius, includeJunctions=False) if e[0].getID() in edge_set]
     # sort by distance but have edges longer than stop length first
+    # TODO we should rather go for maximum overlap but it is unclear how to weight this against distance
     for edge, _ in sorted(edges, key=lambda x: (x[0].getLength() <= stop_length, x[1])):
         for lane in edge.getLanes():
             if lane.allows(pt_class):
                 pos = lane.getClosestLanePosAndDist((x, y))[0]
-                if pos > last_pos or edge.getID() != edge_set[0]:
-                    start = max(0, pos - (stop_length / 2. if center else stop_length))
-                    end = min(start + stop_length, lane.getLength())
+                start = max(0, pos - (stop_length / 2. if center else stop_length))
+                end = min(start + stop_length, lane.getLength())
+                if last_pos is None or end >= last_pos[1] or edge.getID() != last_pos[0]:
                     return lane.getID(), start, end
     return None
 
@@ -518,7 +527,7 @@ def getAccess(net, lon, lat, radius, lane_id, max_access=10):
     lane = net.getLane(lane_id)
     access = []
     if not lane.getEdge().allows("pedestrian"):
-        for access_edge, _ in sorted(net.getNeighboringEdges(x, y, radius), key=lambda i: i[1]):
+        for access_edge, _ in sorted(net.getNeighboringEdges(x, y, radius), key=lambda i: (i[1], i[0].getID())):
             if access_edge.allows("pedestrian"):
                 access_lane_idx, access_pos, access_dist = access_edge.getClosestLanePosDist((x, y))
                 if not access_edge.getLane(access_lane_idx).allows("pedestrian"):
@@ -629,7 +638,7 @@ def map_gtfs_osm(options, net, osm_routes, gtfs_data, shapes, shapes_dict, filte
                     continue
                 # update the lane id, start and end and add shape
                 lane_id, start, end = best
-                access = getAccess(net, row.stop_lon, row.stop_lat, 100, lane_id)
+                access = getAccess(net, row.stop_lon, row.stop_lat, options.access_radius, lane_id)
                 map_stops[stop][1:7] = [lane_id, start, end, access, pt_type, edge_inter]
                 # update edge in data frame
                 stop_edge = lane_id.rsplit("_", 1)[0]
@@ -646,7 +655,7 @@ def map_gtfs_osm(options, net, osm_routes, gtfs_data, shapes, shapes_dict, filte
                                stop_length, options.center_stops, edge_inter, pt_class)
             if best is not None:
                 lane_id, start, end = best
-                access = getAccess(net, row.stop_lon, row.stop_lat, 100, lane_id)
+                access = getAccess(net, row.stop_lon, row.stop_lat, options.access_radius, lane_id)
                 stop_item_id = "%s_%s" % (row.stop_id, len(stop_items[row.stop_id]))
                 stop_items[row.stop_id].append(stop_item_id)
                 map_stops[stop_item_id] = [sumolib.xml.quoteattr(row.stop_name[0], True),

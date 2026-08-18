@@ -309,6 +309,13 @@ MSRailSignal::getCurrentPhaseDef() const {
     return myCurrentPhase;
 }
 
+
+void
+MSRailSignal::resetLastSwitch(SUMOTime t) {
+    myCurrentPhase.myLastSwitch = t;
+}
+
+
 // ------------ Conversion between time and phase
 SUMOTime
 MSRailSignal::getPhaseIndexAtTime(SUMOTime) const {
@@ -503,8 +510,7 @@ MSRailSignal::LinkInfo::reset() {
     myLastRerouteTime = -1;
     myLastRerouteVehicle = nullptr;
     myDriveways.clear();
-    myControlled = isRailwayOrShared(myLink->getViaLaneOrLane()->getPermissions())
-                   && isRailwayOrShared(myLink->getLane()->getPermissions());
+    myControlled = (myLink->getViaLaneOrLane()->getPermissions() & myLink->getLane()->getPermissions() & SVC_RAIL_CLASSES) != 0;
 }
 
 

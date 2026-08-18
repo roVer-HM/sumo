@@ -46,6 +46,7 @@ netedit.typeKey("enter")
 
 # set invalid arrival pos
 netedit.modifyAttribute(netedit.attrs.flow.create.terminate, "end-number")
+netedit.modifyAttribute(netedit.attrs.flow.create.number, "36")
 
 # press enter to create flow
 netedit.typeKey("enter")

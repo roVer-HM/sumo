@@ -5,7 +5,7 @@ title: DRT
 # drtOnline.py
 
 The `drtOnline.py` tool allows you to simulate shared demand responsive transport (DRT).
-The tool uses [TraCI](../TraCI.md) and the [taxi device](../Simulation/Taxi.md) to control
+The tool uses [TraCI](../TraCI/index.md) and the [taxi device](../Simulation/Taxi.md) to control
 the requests and the drt vehicles. Requests arrive dynamically and are handled by
 a dispatcher that seeks to combine multiple requests in order to maximize the number
 of requests served while minimizing the mileage of the entire fleet of vehicles.
@@ -73,7 +73,7 @@ available for the routing of the drt vehicles.
 # drtOrtools.py
 
 The tool `drtOrtools.py` models demand responsive transport (DRT) in SUMO via
-[TraCI](../TraCI.md) and the [taxi device](../Simulation/Taxi.md) and uses
+[TraCI](../TraCI/index.md) and the [taxi device](../Simulation/Taxi.md) and uses
 [ortools](https://github.com/google/or-tools) to solve the vehicle routing problems.
 
 As `drtOnline.py`, requests arrive dynamically and multiple requests are

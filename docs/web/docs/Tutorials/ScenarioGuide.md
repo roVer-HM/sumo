@@ -24,10 +24,10 @@ interface.
 ## If you already have some network data
 
 Check whether a direct import is possible:
-[Networks/Import](../Networks/Import.md). Otherwise, you will need
+[Networks/Import](../Networks/Import/index.md). Otherwise, you will need
 to convert the data to a simple XML-format which can be read by
 [netconvert](../netconvert.md). Read this page:
-[Networks/Import](../Networks/Import.md).
+[Networks/Import](../Networks/Import/index.md).
 
 ## If you do not yet have any network data
 

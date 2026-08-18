@@ -873,7 +873,7 @@ model](../Simulation/SublaneModel.md) is now 0.6m (down from
 ### Other
 
 - Documentation
-  - The [TraCI command documentation](../TraCI.md#traci_commands) now includes
+  - The [TraCI command documentation](../TraCI/index.md#traci_commands) now includes
     links to the corresponding python functions for each command.
   - New [overview page on safety-related behavior](../Simulation/Safety.md)
   - The [Quick Start tutorial](../Tutorials/quick_start.md) now
@@ -1168,9 +1168,9 @@ model](../Simulation/SublaneModel.md) is now 0.6m (down from
   - Added documentation of [crossings](../Netedit/editModesNetwork.md#crossings) in netedit
   - Added documentation for the [MESO-model](../Simulation/Meso.md#model_description)
   - Extended documentation of the [sublane-model](../Simulation/SublaneModel.md)
-  - Added [TraCI performance information](../TraCI.md#performance)
-  - The [TraCI command reference](../TraCI.md#traci_commands) now includes links to the corresponding python method(s).
-  - Fixed inconsistencies in [TraCI command reference](../TraCI.md#traci_commands) (mostly methods that
+  - Added [TraCI performance information](../TraCI/index.md#performance)
+  - The [TraCI command reference](../TraCI/index.md#traci_commands) now includes links to the corresponding python method(s).
+  - Fixed inconsistencies in [TraCI command reference](../TraCI/index.md#traci_commands) (mostly methods that
     were available in the python client but not yet documented in
     the wiki).
 

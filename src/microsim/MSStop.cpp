@@ -128,11 +128,12 @@ void
 MSStop::write(OutputDevice& dev) const {
     SUMOVehicleParameter::Stop tmp = pars;
     tmp.duration = duration;
-    if (busstop == nullptr
-            && containerstop == nullptr
-            && parkingarea == nullptr
-            && chargingStation == nullptr) {
-        tmp.parametersSet |= STOP_START_SET | STOP_END_SET;
+    if (!triggered && !containerTriggered) {
+        // we are writing in the context of saveState. All required
+        // transportables have entered and we must prevent the trigger condition
+        // to be renewed on loading
+        tmp.triggered = false;
+        tmp.containerTriggered = false;
     }
     tmp.write(dev, false);
     // if the stop has already started but hasn't ended yet we are writing it in

@@ -24,6 +24,7 @@
 #include <config.h>
 
 #include <cassert>
+#include <memory>
 #include <utils/common/MsgHandler.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/common/FileHelpers.h>
@@ -87,8 +88,10 @@ MSVehicleType::~MSVehicleType() {
 
 
 double
-MSVehicleType::computeChosenSpeedDeviation(SumoRNG* rng, const double minDev) const {
-    return roundDecimal(MAX2(minDev, myParameter.speedFactor.sample(rng)), gPrecisionRandom);
+MSVehicleType::computeChosenSpeedDeviation(double speedFactorOverride, SumoRNG* rng, const double minDev) const {
+    return speedFactorOverride < 0
+        ? roundDecimal(MAX2(minDev, myParameter.speedFactor.sample(rng)), gPrecisionRandom)
+        : speedFactorOverride;
 }
 
 
@@ -340,7 +343,9 @@ MSVehicleType::build(SUMOVTypeParameter& from, const std::string& fileName) {
             from.parametersSet |= VTYPEPARS_MASS_SET;
         }
     }
-    MSVehicleType* vtype = new MSVehicleType(from);
+    // the unique_ptr ensures the type is deleted if an exception occurs
+    std::unique_ptr<MSVehicleType> vtypeOwner(new MSVehicleType(from));
+    MSVehicleType* vtype = vtypeOwner.get();
     const double decel = from.getCFParam(SUMO_ATTR_DECEL, SUMOVTypeParameter::getDefaultDecel(from.vehicleClass));
     const double emergencyDecel = from.getCFParam(SUMO_ATTR_EMERGENCYDECEL, SUMOVTypeParameter::getDefaultEmergencyDecel(from.vehicleClass, decel, MSGlobals::gDefaultEmergencyDecel));
     // by default decel and apparentDecel are identical
@@ -409,7 +414,7 @@ MSVehicleType::build(SUMOVTypeParameter& from, const std::string& fileName) {
     }
     // init Rail visualization parameters
     vtype->myParameter.initRailVisualizationParameters(fileName);
-    return vtype;
+    return vtypeOwner.release();
 }
 
 SUMOTime

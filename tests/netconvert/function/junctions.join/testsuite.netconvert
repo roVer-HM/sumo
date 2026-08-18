@@ -72,3 +72,9 @@ footpaths_around
 
 # do not join appendages of multiple short edges between side roads
 noisy_fringe
+
+# resetting connections for a single junction
+join_junctions_reset
+
+# resetting all connections
+join_junctions_reset_all

@@ -83,6 +83,7 @@ copy_test_path:fcd.xml.gz
 copy_test_path:fcd2.xml
 copy_test_path:data.txt
 copy_test_path:data.csv
+copy_test_path:data.csv.gz
 copy_test_path:source.csv
 copy_test_path:osm.xml
 copy_test_path:osm_bbox.osm.xml
@@ -127,7 +128,11 @@ edges:edges.edg.xml
 nodes:nodes.nod.xml
 edges:edges.xml
 nodes:nodes.xml
+edges:out.edg.xml
+nodes:out.nod.xml
+connections:out.con.xml
 net:net.net.xml
+net:out.net.xml
 connections:connections.xml
 fixed:routes.rou.xml.fixed
 activityfile:activityfile.tcl
@@ -143,6 +148,7 @@ routesA:outA.rou.xml
 routesB:outB.rou.xml
 tripinfos:004/tripinfo_004.xml
 additional:out.add.xml
+additional:out_stops.add.xml
 additional2:out2.add.xml
 additional_overwrite:in_out.add.xml
 diff_nod:diff.nod.xml
@@ -290,6 +296,9 @@ routes:<!-- generated on{[->]}-->
 routesA:<!-- generated on{[->]}-->
 routesB:<!-- generated on{[->]}-->
 xml:<!-- generated on{[->]}-->
+edges:<!-- generated on{[->]}-->
+nodes:<!-- generated on{[->]}-->
+connections:<!-- generated on{[->]}-->
 toolcfg:<!-- generated on{[->]}-->
 created_shapes:<!-- generated on{[->]}-->
 deleted_shapes:<!-- generated on{[->]}-->
@@ -409,6 +418,7 @@ xmlstats:0.0101
 aggregatebattery:0.0101
 additional:0.0001
 tripinfos:0.0101
+pois:0.0001
 
 [unordered_text]
 errors:ERROR:SCHEMA

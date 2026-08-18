@@ -44,11 +44,11 @@ if hasattr(sys, "_is_gil_enabled") and not sys._is_gil_enabled():
     warnings.warn("This package has not been validated in free-threaded Python (no-GIL mode).")
 if hasattr(os, "add_dll_directory"):
     # since Python 3.8 the DLL search path has to be set explicitly see https://bugs.python.org/issue43173
-    if SUMO_DATA_HOME and os.path.exists(os.path.join(SUMO_DATA_HOME, "bin", "zlib.dll")):
+    if SUMO_DATA_HOME and os.path.exists(os.path.join(SUMO_DATA_HOME, "bin", "z.dll")):
         os.add_dll_directory(os.path.abspath(os.path.join(SUMO_DATA_HOME, "bin")))
-    elif "SUMO_HOME" in os.environ and os.path.exists(os.path.join(os.environ["SUMO_HOME"], "bin", "zlib.dll")):
+    elif "SUMO_HOME" in os.environ and os.path.exists(os.path.join(os.environ["SUMO_HOME"], "bin", "z.dll")):
         os.add_dll_directory(os.path.join(os.environ["SUMO_HOME"], "bin"))
-    elif os.path.exists(os.path.join(os.path.dirname(__file__), "..", "..", "bin", "zlib.dll")):
+    elif os.path.exists(os.path.join(os.path.dirname(__file__), "..", "..", "bin", "z.dll")):
         os.add_dll_directory(os.path.join(os.path.dirname(__file__), "..", "..", "bin"))
 
 try:
@@ -66,6 +66,21 @@ from .libsumo import TraCIStage, TraCINextStopData, TraCIReservation, TraCILogic
 from .libsumo import TraCICollision, TraCISignalConstraint  # noqa
 from ._libsumo import TraCILogic_phases_get, TraCILogic_phases_set, TraCILogic_swiginit, new_TraCILogic  # noqa
 from .libsumo import *  # noqa
+
+if os.environ.get('LIBSUMO_AS_TRACI') != "quiet":
+    try:
+        import importlib.metadata  # noqa
+        pyarrow_version = importlib.metadata.version("pyarrow")
+        pyarrow_so_version = "%s%02i" % tuple(map(int, pyarrow_version.split(".")[:2]))
+        sumo_arrow_so_version = simulation.getParameter("", "buildConfig.ARROW_SO_VERSION")
+        if sumo_arrow_so_version and pyarrow_so_version != sumo_arrow_so_version:
+            print("Warning! pyarrow is installed with version %s which might be incompatible with libsumo "
+                  "which is compiled against libarrow%s." % (pyarrow_version, sumo_arrow_so_version))
+            print(" Try to uninstall pyarrow or install a matching pyarrow version, if you encounter problems.")
+    except (ImportError, ValueError, TypeError):
+        # either pyarrow is not installed (fine) or importlib is not available (not great, but we cannot do much)
+        # the ValueError / TypeError occur if we could not parse the pyarrow version
+        pass
 
 DOMAINS = [
     busstop,  # noqa

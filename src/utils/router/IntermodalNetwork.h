@@ -435,17 +435,17 @@ public:
                 // add access edges that allow exiting a taxi
                 _IntermodalEdge* const walkCon = getWalkingConnector(edgePair.first);
                 if (walkCon != 0) {
-                    addRestrictedCarExit(carEdge, walkCon, SVC_TAXI);
+                    addRestrictedCarExit(carEdge, walkCon, gTaxiClasses);
                 } else {
                     // we are on an edge where pedestrians are forbidden and want to continue on an arbitrary pedestrian edge
                     for (const E* const out : edgePair.first->getToJunction()->getOutgoing()) {
                         if (!out->isInternal() && !out->isTazConnector() && getSidewalk<E, L>(out) != 0) {
-                            addRestrictedCarExit(carEdge, getBothDirections(out).first, SVC_TAXI);
+                            addRestrictedCarExit(carEdge, getBothDirections(out).first, gTaxiClasses);
                         }
                     }
                     for (const E* const in : edgePair.first->getToJunction()->getIncoming()) {
                         if (!in->isInternal() && !in->isTazConnector() && getSidewalk<E, L>(in) != 0) {
-                            addRestrictedCarExit(carEdge, getBothDirections(in).second, SVC_TAXI);
+                            addRestrictedCarExit(carEdge, getBothDirections(in).second, gTaxiClasses);
                         }
                     }
                 }
@@ -468,7 +468,7 @@ public:
                 carEdge->addSuccessor(getArrivalConnector(edgePair.first));
             } else {
                 // use intermediate access edge that prevents taxi arrival
-                addRestrictedCarExit(carEdge, getArrivalConnector(edgePair.first), (SVCAll & ~SVC_TAXI));
+                addRestrictedCarExit(carEdge, getArrivalConnector(edgePair.first), (SVCAll & ~gTaxiClasses));
             }
         }
     }
@@ -559,7 +559,7 @@ public:
                             beforeSplit->addSuccessor(access);
                             access->addSuccessor(conn);
                         } else if (transferTaxiWalk) {
-                            addRestrictedCarExit(beforeSplit, stopConn, SVC_TAXI);
+                            addRestrictedCarExit(beforeSplit, stopConn, gTaxiClasses);
                         }
                     }
                 }
@@ -645,7 +645,7 @@ public:
                             beforeSplit->addSuccessor(access);
                             access->addSuccessor(stopConn);
                         } else if (transferTaxiWalk) {
-                            addRestrictedCarExit(beforeSplit, stopConn, SVC_TAXI);
+                            addRestrictedCarExit(beforeSplit, stopConn, gTaxiClasses);
                         }
                     }
                     if (transferWalkTaxi) {

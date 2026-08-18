@@ -113,7 +113,7 @@ public:
      * @param[in] zoomDist The distance in m to use for the zoom, values < 0 means: use the centeringBoundary
      * @note caller is responsible for calling update
      */
-    virtual void centerTo(const Position& pos, bool applyZoom, double zoomDist = 20);
+    virtual void centerTo(const Position& pos, bool applyZoom);
 
     /// @brief centers to the chosen artifact
     void centerTo(const Boundary& bound);
@@ -417,8 +417,6 @@ public:
         /// @brief whether the decal shall be drawn in screen coordinates, rather than network coordinates
         int glID = -1;
 
-        /// @brief The image pointer for later cleanup
-        FXImage* image = nullptr;
     };
 
     /// @brief The list of decals to show
@@ -426,6 +424,15 @@ public:
 
     /// @brief The mutex to use before accessing the decals list in order to avoid thread conflicts
     FXMutex& getDecalsLockMutex();
+
+    /// @brief queue a texture for deletion
+    void queueTextureDelete(unsigned int textureId);
+
+    /// @brief process pending texture deletions
+    void processPendingTextureDeletes();
+
+    /// @brief clear all decals
+    void clearDecals();
 
     /// @brief get coloring schemes combo
     MFXComboBoxIcon* getColoringSchemesCombo();
@@ -612,6 +619,12 @@ protected:
 
     /// @brief The mutex to use before accessing the decals list in order to avoid thread conflicts
     FXMutex myDecalsLockMutex;
+
+    /// @brief texture IDs pending deletion
+    std::vector<unsigned int> myPendingTextureDeletes;
+
+    /// @brief mutex for pending texture deletes
+    FXMutex myTextureDeleteMutex;
 
     ///@}
 

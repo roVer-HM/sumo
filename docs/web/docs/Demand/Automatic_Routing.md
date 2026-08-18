@@ -64,7 +64,7 @@ each simulation step means a major slowdown for the simulation this
 interval may be altered using the ".adaptation-interval" option.
 
 !!! note
-    these weights are also used when using [TraCI](../TraCI.md) functions *vehicle.rerouteTraveltime* and *vehicle.changeTarget* if the routing mode was set to *ROUTING_MODE_AGGREGATED* using *vehicle.setRoutingMode*. Likewise, the function *simulation.findRoute* can be switched to using these weights by setting the argument routingMode=*ROUTING_MODE_AGGREGATED*.
+    these weights are also used when using [TraCI](../TraCI/index.md) functions *vehicle.rerouteTraveltime* and *vehicle.changeTarget* if the routing mode was set to *ROUTING_MODE_AGGREGATED* using *vehicle.setRoutingMode*. Likewise, the function *simulation.findRoute* can be switched to using these weights by setting the argument routingMode=*ROUTING_MODE_AGGREGATED*.
 
 ## Adapting by exponential average
 

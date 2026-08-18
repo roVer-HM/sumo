@@ -778,6 +778,9 @@ GNEFileSelector::onCmdAccept(FXObject* obj, FXSelector sel, void* ptr) {
                     }
                 }
                 return myFileDialog->onCmdAccept(obj, sel, ptr);
+            } else if (myOpenMode == GNEFileDialog::OpenMode::LOAD_MULTIPLE) {
+                // quick hack: don't check
+                return myFileDialog->onCmdAccept(obj, sel, ptr);
             } else {
                 // check that file exist
                 if (FXStat::exists(filenameExtension.c_str())) {

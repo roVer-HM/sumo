@@ -460,9 +460,9 @@ MSLink::setRequestInformation(int index, bool hasFoes, bool isCont,
                 const MSLane* const siblingCont = sibling->getLinkCont().front()->getViaLaneOrLane();
                 if (siblingCont->isInternal() && lane->getShape().distance2D(siblingCont->getShape().front()) < minDist) {
                     // there may still be overlap with siblingCont (when considering vehicle widths)
-                    const double distToDivergence2 = computeDistToDivergence(lane, siblingCont, minDist, true, sibling->getLength());
-                    double lbcLane2 = MAX2(0.0, lane->getLength() - lane->interpolateGeometryPosToLanePos(distToDivergence2));
-                    ConflictInfo ci2 = ConflictInfo(lbcLane2, siblingCont->getWidth(), CONFLICT_SIBLING_CONTINUATION);
+                    const double maxCommonLength = MIN2(lane->getLength(), sibling->getLength() + siblingCont->getLength());
+                    const double lengthBehindDivergence = MAX2(0.0, lane->getLength() - maxCommonLength);
+                    ConflictInfo ci2 = ConflictInfo(lengthBehindDivergence, siblingCont->getWidth(), CONFLICT_SIBLING_CONTINUATION);
                     myConflicts.push_back(ci2);
                     myFoeLanes.push_back(siblingCont);
                     myRecheck.insert({this, siblingCont->getLinkCont().front()});
@@ -588,6 +588,7 @@ MSLink::recheckSetRequestInformation() {
             double lbcSibCont = MIN2(siblingCont->getLength(), MAX2(0.0, sibling->getLength() + siblingCont->getLength() - distToDivergence));
 #ifdef MSLink_DEBUG_CROSSING_POINTS
             std::cout << " siblingContinuation: distToDivergence=" << distToDivergence << " lbcSibCont=" << lbcSibCont << "\n";
+            std::cout << " conflictIndex=" << conflictIndex << " foeLane=" << foeLane->getID() << " foeExitLink=" << foeExitLink->getDescription() << " intLane=" << intLane->getID() << "\n";
 #endif
             ConflictInfo ci2 = ConflictInfo(lbcSibCont, intLane->getWidth());
             ci2.foeConflictIndex = conflictIndex;
@@ -645,7 +646,7 @@ MSLink::computeDistToDivergence(const MSLane* lane, const MSLane* sibling, doubl
     }
 
 #ifdef MSLink_DEBUG_CROSSING_POINTS_DETAILS
-    std::cout << "   sameSource=" << sameSource << " minDist=" << minDist << " backDist=" << l.back().distanceTo2D(s.back()) << "\n";
+    std::cout << "   sameSource=" << sameSource << " lane=" << lane->getID() << " sib=" << sibling->getID() << " minDist=" << minDist << " backDist=" << l.back().distanceTo2D(s.back()) << "\n";
 #endif
     if (l.back().distanceTo2D(s.back()) > minDist) {
         // compute the final divergence point
@@ -950,6 +951,49 @@ MSLink::opened(SUMOTime arrivalTime, double arrivalSpeed, double leaveSpeed, dou
 
     if (MSGlobals::gUseMesoSim && impatience == 1 && !myLane->getEdge().isRoundabout()) {
         return true;
+    }
+    if (myLane->getBidiLane() != nullptr) {
+        MSLane* bidi = myLane->getBidiLane();
+        if (bidi->getVehicleNumber() > 0) {
+            if (ego == nullptr) {
+                return false;
+            }
+            double maxOncomingWidth = 0;
+            const MSLane::VehCont& vehs = bidi->getVehiclesSecure();
+            for (MSVehicle* foe : vehs) {
+                maxOncomingWidth = MAX2(maxOncomingWidth, foe->getVehicleType().getWidth());
+            }
+            bidi->releaseVehicles();
+            if (MSGlobals::gLateralResolution > 0) {
+                if (ego->getVehicleType().getWidth() + maxOncomingWidth + MSGlobals::gLateralResolution < myLane->getWidth()) {
+                    return false;
+                }
+            } else if (maxOncomingWidth > 0) {
+                // do not enter a lane that has any oncoming vehicles
+                return false;
+            }
+        }
+        for (auto ili : bidi->getIncomingLanes()) {
+            if (ili.lane->getEdge().getPriority() > myLaneBefore->getEdge().getPriority()
+                    || (ili.lane->getEdge().getPriority() == myLaneBefore->getEdge().getPriority()
+                        && ili.lane->getID() > myLaneBefore->getID())) {
+                BlockingFoes bidiApproachFoes;
+                double maxOncomingWidth = 0;
+                if (ili.viaLink->blockedAtTime(arrivalTime, leaveTime, arrivalSpeed, leaveSpeed, false, 0, decel, 0,
+                            MSGlobals::gLateralResolution ? &bidiApproachFoes : nullptr, ego) || bidiApproachFoes.size() > 0) {
+                    if (MSGlobals::gLateralResolution > 0) {
+                        for (const SUMOTrafficObject* foe : bidiApproachFoes) {
+                            maxOncomingWidth = MAX2(maxOncomingWidth, foe->getVehicleType().getWidth());
+                        }
+                        if (ego->getVehicleType().getWidth() + maxOncomingWidth + MSGlobals::gLateralResolution < myLane->getWidth()) {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+            }
+        }
     }
     const bool lastWasContRed = lastWasContState(LINKSTATE_TL_RED);
     for (const MSLink* const link : foeLinks) {
@@ -1576,7 +1620,7 @@ MSLink::getLeaderInfo(const MSVehicle* ego, double dist, std::vector<const MSPer
                                    isInternalJunctionLink() || isExitLinkAfterInternalJunction()));
         if (gDebugFlag1) {
             std::cout << " distToCrossing=" << distToCrossing << " foeLane=" << foeLane->getID() << " cWidth=" << crossingWidth
-                      << " flag=" << myConflicts[i].flag
+                      << " flag=" << myConflicts[i].flag << " i=" << i << " fcIndex=" << myConflicts[i].foeConflictIndex
                       << " ijl=" << isInternalJunctionLink() << " sT=" << sameTarget << " sS=" << sameSource
                       << " lbc=" << myConflicts[i].getLengthBehindCrossing(this)
                       << " flbc=" << myConflicts[i].getFoeLengthBehindCrossing(foeExitLink)

@@ -6,7 +6,7 @@ title: VehicleInsertion
 
 Vehicles are either loaded [from XML
 inputs](../index.md#demand_modelling) or [added
-at runtime via TraCI](../TraCI.md). When loading from XML, not all
+at runtime via TraCI](../TraCI/index.md). When loading from XML, not all
 vehicles are loaded at once. Instead, vehicles are loaded in chunks, the
 size of which can be configured with the option **--route-steps**. This is done to
 conserve memory when performing long simulations.
@@ -56,7 +56,7 @@ There are two methods for inserting vehicles into the simulation:
 2.  for every edge with vehicles to insert, abort trying to insert
     vehicles after one of the vehicles could not be inserted
 
-In an uncongested networks these methods behave similar but in a
+In an uncongested network these methods behave similar but in a
 congested network with lots of vehicles which cannot be inserted variant
 2) is much faster. In older version of sumo 1) was the default and one
 could switch to 2) using the option **--sloppy-insert**. Since version 0.18.0, variant 2) is

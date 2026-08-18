@@ -216,10 +216,10 @@ public:
     virtual SUMOAbstractRouter<MSEdge, SUMOVehicle>& getRouter(SUMOVehicle& veh, const Prohibitions& prohibited = {});
 
     /// @brief Return the number of occupied places of the StoppingPlace
-    virtual double getStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace) = 0;
+    virtual double getStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace, const SUMOVehicle* veh) = 0;
 
     /// @brief Return the number of occupied places of the StoppingPlace from the previous time step
-    virtual double getLastStepStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace) = 0;
+    virtual double getLastStepStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace, const SUMOVehicle* veh) = 0;
 
     /// @brief Return the number of places the StoppingPlace provides
     virtual double getStoppingPlaceCapacity(MSStoppingPlace* stoppingPlace) = 0;

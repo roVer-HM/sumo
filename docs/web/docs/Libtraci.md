@@ -5,7 +5,7 @@ title: Libtraci
 # Libtraci
 
 The main way to interact with a running simulation is
-[TraCI](TraCI.md) which gives the complete flexibility of doing
+[TraCI](TraCI/index.md) which gives the complete flexibility of doing
 cross-platform, cross-language, and networked interaction with
 [sumo](sumo.md) acting as a server.
 To allow coupling with client code, bindings must be provided for each client

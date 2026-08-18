@@ -101,9 +101,9 @@ public:
      * @param[in] previous The previous stage for additional info such as from edge
      * @exception IOError not yet implemented
      */
-    void routeOutput(const bool isPerson, OutputDevice& os, const bool withRouteLength, const MSStage* const previous) const;
+    void routeOutput(const bool isPerson, OutputDevice& os, const bool withRouteLength, const MSStage* const previous, const bool withTiming, const bool saveState = false) const;
 
-    void saveState(std::ostringstream& out);
+    void saveState(std::ostringstream& out, MSTransportable* transportable);
 
     void loadState(MSTransportable* transportable, std::istringstream& state);
 

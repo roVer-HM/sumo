@@ -126,6 +126,7 @@ public:
     const MSPhaseDefinition& getCurrentPhaseDef() const override;
     /// @}
 
+    void resetLastSwitch(SUMOTime t) override;
 
     void activateProgram() override;
     void deactivateProgram() override;

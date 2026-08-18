@@ -707,6 +707,17 @@ NBNodeCont::addJoinExclusion(const std::vector<std::string>& ids) {
 
 
 std::string
+NBNodeCont::createUnusedID(const std::string& base, const std::string& sep) {
+    std::string result = base;
+    int i = 0;
+    while (myNodes.find(result) != myNodes.end()) {
+        result = base + sep + toString(i++);
+    }
+    return result;
+}
+
+
+std::string
 NBNodeCont::createClusterId(const std::set<std::string>& cluster, const std::string& prefix) {
     int maxIds = OptionsCont::getOptions().getInt("max-join-ids");
     if (maxIds <= 0) {
@@ -726,9 +737,9 @@ NBNodeCont::createClusterId(const std::set<std::string>& cluster, const std::str
 
 
 void
-NBNodeCont::addCluster2Join(const std::set<std::string>& cluster, NBNode* node) {
+NBNodeCont::addCluster2Join(const std::set<std::string>& cluster, NBNode* node, const bool resetConnections) {
     // error handling has to take place here since joins could be loaded from multiple files
-    std::set<std::string> validCluster;
+    JoinCluster join{{}, node, resetConnections};
     for (std::string nodeID : cluster) {
         if (myJoinExclusions.count(nodeID) > 0) {
             WRITE_WARNINGF(TL("Ignoring join-cluster because junction '%' was already excluded from joining."), nodeID);
@@ -738,17 +749,17 @@ NBNodeCont::addCluster2Join(const std::set<std::string>& cluster, NBNode* node) 
             return;
         } else {
             if (retrieve(nodeID) != nullptr) {
-                validCluster.insert(nodeID);
+                join.cluster.insert(nodeID);
             } else {
                 WRITE_ERRORF(TL("Unknown junction '%' in join-cluster."), nodeID);
             }
         }
     }
-    if (validCluster.size() > 1) {
-        myJoined.insert(validCluster.begin(), validCluster.end());
-        myClusters2Join.push_back(std::make_pair(validCluster, node));
+    if (join.cluster.size() > 1) {
+        myJoined.insert(join.cluster.begin(), join.cluster.end());
+        myClusters2Join.emplace_back(join);
     } else {
-        WRITE_WARNINGF(TL("Ignoring join-cluster '%' because it has size '%'."), node->getID(), validCluster.size());
+        WRITE_WARNINGF(TL("Ignoring join-cluster '%' because it has size '%'."), node->getID(), join.cluster.size());
     }
 }
 
@@ -756,10 +767,10 @@ NBNodeCont::addCluster2Join(const std::set<std::string>& cluster, NBNode* node) 
 int
 NBNodeCont::joinLoadedClusters(NBDistrictCont& dc, NBEdgeCont& ec, NBTrafficLightLogicCont& tlc) {
     int numJoined = 0;
-    for (auto& item : myClusters2Join) {
+    for (JoinCluster& item : myClusters2Join) {
         // verify loaded cluster
         NodeSet cluster;
-        for (std::string nodeID : item.first) {
+        for (std::string nodeID : item.cluster) {
             NBNode* node = retrieve(nodeID);
             if (node == nullptr) {
                 WRITE_ERRORF(TL("unknown junction '%' while joining."), nodeID);
@@ -768,9 +779,9 @@ NBNodeCont::joinLoadedClusters(NBDistrictCont& dc, NBEdgeCont& ec, NBTrafficLigh
             }
         }
         if (cluster.size() > 1) {
-            joinNodeCluster(cluster, dc, ec, tlc, item.second);
+            joinNodeCluster(cluster, dc, ec, tlc, item.node, item.resetConnections);
             numJoined++;
-            myJoinExclusions.insert(item.second->getID());
+            myJoinExclusions.insert(item.node->getID());
         }
     }
     myClusters2Join.clear(); // make save for recompute
@@ -1834,6 +1845,7 @@ NBNodeCont::joinNodeCluster(NodeSet cluster, NBDistrictCont& dc, NBEdgeCont& ec,
     if (predefined != nullptr) {
         if (predefined->getType() != SumoXMLNodeType::UNKNOWN) {
             nodeType = predefined->getType();
+            setTL = predefined->isTLControlled();
         }
         Position ppos = predefined->getPosition();
         if (ppos.x() != Position::INVALID.x()) {

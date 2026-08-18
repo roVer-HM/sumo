@@ -25,6 +25,7 @@
 #include <netimport/NILoader.h>
 #include <netwrite/NWFrame.h>
 #include <utils/common/MsgRetrievingFunction.h>
+#include <utils/common/RandHelper.h>
 #include <utils/common/SystemFrame.h>
 #include <utils/gui/events/GUIEvent_Message.h>
 #include <utils/options/OptionsCont.h>
@@ -82,6 +83,7 @@ GNELoadThread::run() {
     } else if (neteditOptions.getString("sumo-net-file").size() > 0) {
         // load a network file
         type = GNEEvent_FileLoaded::Type::NETWORK;
+        loadedFile = neteditOptions.getString("sumo-net-file");
         // set network as default file in file bucket
         myApplicationWindow->getFileBucketHandler()->setDefaultFilenameFile(FileBucket::Type::NETWORK, neteditOptions.getString("sumo-net-file"));
     } else if (neteditOptions.getString("netecfg-file").size() > 0) {

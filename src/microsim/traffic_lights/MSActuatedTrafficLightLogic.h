@@ -133,6 +133,10 @@ public:
 
     void setShowDetectors(bool show);
 
+    void saveState(OutputDevice& out) const override;
+
+    void loadExtraState(const std::string& state) override;
+
     /// @brief try to get the value of the given parameter (including prefixed parameters)
     const std::string getParameter(const std::string& key, const std::string defaultValue = "") const override;
 
@@ -148,7 +152,7 @@ public:
     /// @brief return all named conditions defined for this traffic light
     std::map<std::string, double> getConditions() const override;
 
-    void loadState(MSTLLogicControl& tlcontrol, SUMOTime t, int step, SUMOTime spentDuration, bool active) override;
+    void loadState(MSTLLogicControl& tlcontrol, SUMOTime t, int step, SUMOTime spentDuration, SUMOTime nextSwitch, SUMOTime timeInCycle, bool active) override;
 
 protected:
     /// @brief initialize custom switching rules

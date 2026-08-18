@@ -192,7 +192,7 @@ private:
     double getWeightedFloat2(const std::string& name, const std::string& name2, const std::string& suffix);
 
     /// @brief parse permissions
-    SVCPermissions getPermissions(const std::string& name, bool warn = false, SVCPermissions unknown = SVCAll);
+    SVCPermissions getPermissions(const std::string& name, const std::string& edgeType, SVCPermissions unknown);
 
     /** @brief tries to get a bool which is possibly assigned to a certain modality
      *
@@ -383,6 +383,8 @@ private:
     };
 
 
+    /// @brief Parses meta data (i.e. projection)
+    void parse_Network();
 
     /// @brief Parses VSYS
     void parse_VSysTypes();
@@ -482,7 +484,12 @@ private:
     NBCapacity2Lanes myCapacity2Lanes;
 
     /// @brief Definition of a storage for vsystypes
-    typedef std::map<std::string, std::string> VSysTypeNames;
+    struct VSysType {
+        VSysType(const std::string& _type, const std::string& _name) : type(_type), name(_name) {}
+        const std::string type;
+        const std::string name;
+    };
+    typedef std::map<std::string, VSysType> VSysTypeNames;
     /// @brief The used vsystypes
     VSysTypeNames myVSysTypes;
 
@@ -520,6 +527,8 @@ private:
 
     /// @brief A temporary storage for district shapes as they are filled incrementally
     std::map<NBDistrict*, PositionVector> myDistrictShapes;
+
+    SVCPermissions myDefaultPermissions;
 
 protected:
     /**
@@ -572,6 +581,9 @@ protected:
         VISUM_CATID,
         VISUM_EDGEITEM,
         VISUM_POICATEGORY,
+        VISUM_NETWORK,
+        VISUM_PROJECTIONDEFINITION,
+        VISUM_PRT,
         VISUM_NO // must be the last one
     };
 

@@ -64,6 +64,8 @@ enum class GUIIcon {
     HALL_OF_FAME,
     CLEARMESSAGEWINDOW,
     GITHUB,
+    TELEPORT,
+    INSERTION_DELAY,
     /// @}
 
     /// @name netedit view icons
@@ -761,7 +763,6 @@ enum class GUIIcon {
     LANGUAGE_PT,
     LANGUAGE_FR,
     LANGUAGE_IT,
-    LANGUAGE_HU,
     LANGUAGE_TR,
     LANGUAGE_ZH,
     LANGUAGE_ZHT,

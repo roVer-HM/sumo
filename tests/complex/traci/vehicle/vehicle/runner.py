@@ -104,6 +104,7 @@ def check(vehID):
     print("departure", traci.vehicle.getDeparture(vehID))
     print("departDelay", traci.vehicle.getDepartDelay(vehID))
     try:
+        traci.vehicle.setParameter(vehID, "laneChangeModel.lcCooperative", "0.1")
         print("lcStrategic", traci.vehicle.getParameter(vehID, "laneChangeModel.lcStrategic"))
         print("lcCooperative", traci.vehicle.getParameter(vehID, "laneChangeModel.lcCooperative"))
         print("lcSpeedGain", traci.vehicle.getParameter(vehID, "laneChangeModel.lcSpeedGain"))
@@ -126,6 +127,7 @@ def check(vehID):
     print("line", "'%s'" % traci.vehicle.getLine(vehID))
     print("via", traci.vehicle.getVia(vehID))
     print("dist", traci.vehicle.getDistance(vehID))
+    print("refDist", traci.vehicle.getReferenceDistance(vehID))
     print("lane change state right", traci.vehicle.getLaneChangeState(vehID, -1))
     print("lane change state left", traci.vehicle.getLaneChangeState(vehID, 1))
     print("lane change able right", traci.vehicle.couldChangeLane(vehID, -1))

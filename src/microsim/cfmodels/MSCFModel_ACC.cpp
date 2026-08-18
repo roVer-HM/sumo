@@ -39,6 +39,7 @@
 #include <microsim/MSLane.h>
 #include <utils/common/RandHelper.h>
 #include <utils/common/SUMOTime.h>
+#include <utils/xml/SUMOSAXAttributes.h>
 #include <microsim/lcmodels/MSAbstractLaneChangeModel.h>
 #include <math.h>
 #include <microsim/MSNet.h>
@@ -84,6 +85,7 @@ MSCFModel_ACC::MSCFModel_ACC(const MSVehicleType* vtype) :
     myGapControlGainSpace(vtype->getParameter().getCFParam(SUMO_ATTR_GC_GAIN_SPACE, DEFAULT_GC_GAIN_SPACE)),
     myCollisionAvoidanceGainSpeed(vtype->getParameter().getCFParam(SUMO_ATTR_CA_GAIN_SPEED, DEFAULT_CA_GAIN_SPEED)),
     myCollisionAvoidanceGainSpace(vtype->getParameter().getCFParam(SUMO_ATTR_CA_GAIN_SPACE, DEFAULT_CA_GAIN_SPACE)),
+    myApplyDriverstate(vtype->getParameter().getCFParam(SUMO_ATTR_APPLYDRIVERSTATE, 0)),
     myEmergencyThreshold(vtype->getParameter().getCFParam(SUMO_ATTR_CA_OVERRIDE, DEFAULT_EMERGENCY_OVERRIDE_THRESHOLD)) {
     // ACC does not drive very precise and often violates minGap
     myCollisionMinGapFactor = vtype->getParameter().getCFParam(SUMO_ATTR_COLLISION_MINGAP_FACTOR, 0.1);
@@ -92,8 +94,35 @@ MSCFModel_ACC::MSCFModel_ACC(const MSVehicleType* vtype) :
 MSCFModel_ACC::~MSCFModel_ACC() {}
 
 
+void
+MSCFModel_ACC::ACCVehicleVariables::saveState(OutputDevice& out, const MSCFModel& /*cfm*/) const {
+    out.openTag(SUMO_TAG_CFM_VARIABLES);
+    out.writeAttr(SUMO_ATTR_ID, "ACC");
+    std::ostringstream internals;
+    internals << ACC_ControlMode << " ";
+    internals << lastUpdateTime;
+    out.writeAttr(SUMO_ATTR_STATE, internals.str());
+    out.closeTag();
+}
+
+
+void
+MSCFModel_ACC::ACCVehicleVariables::loadState(const SUMOSAXAttributes& attrs) {
+    bool ok = true;
+    const std::string cfmID = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    if (cfmID != "ACC") {
+        throw ProcessError(TLF("incompatible carFollowModel '%' when loading state for ACC", cfmID));
+    }
+    std::istringstream bis(attrs.getString(SUMO_ATTR_STATE));
+    bis >> ACC_ControlMode;
+    bis >> lastUpdateTime;
+}
+
 double
-MSCFModel_ACC::followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel, const MSVehicle* const /*pred*/, const CalcReason /*usage*/) const {
+MSCFModel_ACC::followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel, const MSVehicle* const pred, const CalcReason /*usage*/) const {
+    if (myApplyDriverstate) {
+        applyHeadwayAndSpeedDifferencePerceptionErrors(veh, speed, gap2pred, predSpeed, predMaxDecel, pred);
+    }
     const double desSpeed = MIN2(veh->getLane()->getSpeedLimit(), veh->getMaxSpeed());
     const double vACC = _v(veh, gap2pred, speed, predSpeed, desSpeed, true);
     const double vSafe = maximumSafeFollowSpeed(gap2pred, speed, predSpeed, predMaxDecel);
@@ -108,6 +137,9 @@ MSCFModel_ACC::followSpeed(const MSVehicle* const veh, double speed, double gap2
 
 double
 MSCFModel_ACC::stopSpeed(const MSVehicle* const veh, const double speed, double gap, double decel, const CalcReason /*usage*/) const {
+    if (myApplyDriverstate) {
+        applyHeadwayPerceptionError(veh, speed, gap);
+    }
     // NOTE: This allows return of smaller values than minNextSpeed().
     // Only relevant for the ballistic update: We give the argument headway=TS, to assure that
     // the stopping position is approached with a uniform deceleration also for tau!=TS.

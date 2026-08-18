@@ -280,7 +280,7 @@ GUIEdge::drawGL(const GUIVisualizationSettings& s) const {
     GLHelper::popName();
     // (optionally) draw the name and/or the street name
     GUILane* lane2 = dynamic_cast<GUILane*>((*myLanes).back());
-    const GUIGlObject* selCheck = gSelected.isSelected(this) ? (GUIGlObject*)this : (GUIGlObject*)lane2;
+    const GUIGlObject* selCheck = gSelected.isSelected(this) ? (GUIGlObject*)this : (GUIGlObject*)anySelectedLane();
     const bool drawEdgeName = s.edgeName.show(selCheck) && myFunction == SumoXMLEdgeFunc::NORMAL;
     const bool drawInternalEdgeName = s.internalEdgeName.show(selCheck) && myFunction == SumoXMLEdgeFunc::INTERNAL;
     const bool drawCwaEdgeName = s.cwaEdgeName.show(selCheck) && (myFunction == SumoXMLEdgeFunc::CROSSING || myFunction == SumoXMLEdgeFunc::WALKINGAREA);
@@ -394,51 +394,16 @@ GUIEdge::drawGL(const GUIVisualizationSettings& s) const {
 void
 GUIEdge::drawMesoVehicles(const GUIVisualizationSettings& s) const {
     GUIMEVehicleControl* vehicleControl = GUINet::getGUIInstance()->getGUIMEVehicleControl();
-    const double now = SIMTIME;
     if (vehicleControl != nullptr) {
-        // draw the meso vehicles
         vehicleControl->secureVehicles();
         FXMutexLock locker(myLock);
-        int laneIndex = 0;
-        for (std::vector<MSLane*>::const_iterator msl = myLanes->begin(); msl != myLanes->end(); ++msl, ++laneIndex) {
-            GUILane* l = static_cast<GUILane*>(*msl);
-            // go through the vehicles
-            double segmentOffset = 0; // offset at start of current segment
-            for (MESegment* segment = MSGlobals::gMesoNet->getSegmentForEdge(*this);
-                    segment != nullptr; segment = segment->getNextSegment()) {
-                const double length = segment->getLength();
-                if (laneIndex < segment->numQueues()) {
-                    // make a copy so we don't have to worry about synchronization
-                    std::vector<MEVehicle*> queue = segment->getQueue(laneIndex);
-                    const int queueSize = (int)queue.size();
-                    double vehiclePosition = segmentOffset + length;
-                    // draw vehicles beginning with the leader at the end of the segment
-                    double latOff = 0.;
-                    for (int i = 0; i < queueSize; ++i) {
-                        const GUIMEVehicle* const veh = static_cast<GUIMEVehicle*>(queue[queueSize - i - 1]);
-                        const double intendedLeave = MIN2(veh->getEventTimeSeconds(), veh->getBlockTimeSeconds());
-                        const double entry = veh->getLastEntryTimeSeconds();
-                        const double relPos = segmentOffset + length * (now - entry) / (intendedLeave - entry);
-                        if (relPos < vehiclePosition) {
-                            vehiclePosition = relPos;
-                        }
-                        while (vehiclePosition < segmentOffset) {
-                            // if there is only a single queue for a
-                            // multi-lane edge shift vehicles and start
-                            // drawing again from the end of the segment
-                            vehiclePosition += length;
-                            latOff += 0.2;
-                        }
-                        /// @fixme use correct shape for geometryPositionAtOffset
-                        const Position p = l->geometryPositionAtOffset(vehiclePosition, latOff);
-                        const double angle = l->getShape(s.secondaryShape).rotationAtOffset(l->interpolateLanePosToGeometryPos(vehiclePosition));
-                        veh->drawOnPos(s, p, angle);
-                        vehiclePosition -= veh->getVehicleType().getLengthWithGap();
-                    }
-                }
-                segmentOffset += length;
-            }
-            GLHelper::popMatrix();
+        for (const auto& item : getMesoPositions()) {
+            const GUIMEVehicle* const veh = static_cast<const GUIMEVehicle*>(item.first);
+            const GUILane* const lane = static_cast<GUILane*>((*myLanes)[veh->getQueIndex()]);
+            assert(this == &veh->getSegment()->getEdge());
+            const Position p = lane->geometryPositionAtOffset(item.second.first, (double)item.second.second * 0.5);
+            const double angle = lane->getShape(s.secondaryShape).rotationAtOffset(lane->interpolateLanePosToGeometryPos(item.second.first));
+            veh->drawOnPos(s, p, angle);
         }
         vehicleControl->releaseVehicles();
     }
@@ -462,6 +427,7 @@ void
 GUIEdge::setColor(const GUIVisualizationSettings& s) const {
     myMesoColor = RGBColor(0, 0, 0); // default background color when using multiColor
     const GUIColorer& c = s.edgeColorer;
+    mySegmentColors.clear();
     if (!setFunctionalColor(c) && !setMultiColor(c)) {
         myMesoColor = c.getScheme().getColor(getColorValue(s, c.getActive()));
     }
@@ -493,7 +459,6 @@ GUIEdge::setFunctionalColor(const GUIColorer& c) const {
 bool
 GUIEdge::setMultiColor(const GUIColorer& c) const {
     const int activeScheme = c.getActive();
-    mySegmentColors.clear();
     switch (activeScheme) {
         case 10: // alternating segments
             for (MESegment* segment = MSGlobals::gMesoNet->getSegmentForEdge(*this);
@@ -672,5 +637,18 @@ GUIEdge::getClickPriority() const {
         return INVALID_PRIORITY;
     }
     return GLO_EDGE;
+}
+
+
+GUILane*
+GUIEdge::anySelectedLane() const {
+    MSLane* result = myLanes->back();
+    for (MSLane* lane : *myLanes) {
+        if (lane->isSelected()) {
+            result = lane;
+            break;
+        }
+    }
+    return dynamic_cast<GUILane*>(result);
 }
 /****************************************************************************/

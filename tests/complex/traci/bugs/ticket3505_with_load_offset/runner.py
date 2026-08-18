@@ -29,12 +29,12 @@ import traci  # noqa
 import sumolib  # noqa
 
 sumoBinary = sumolib.checkBinary('sumo')
-subprocess.call([sumoBinary, "save_state.sumocfg"])
+subprocess.call([sumoBinary, "-c", "save_state.sumocfg"] + sys.argv[1:])
 # LOAD
 loadParams = ["-c", "sumo.sumocfg"]
 print("Starting...")
 print("loadParams: %s" % str(loadParams))
-v = traci.start([sumoBinary] + loadParams)
+v = traci.start([sumoBinary] + sys.argv[1:] + loadParams)
 while traci.simulation.getTime() < 300:
     traci.simulationStep()
 print(traci.simulation.getTime())

@@ -1,5 +1,8 @@
 symmetric_approach
 
+# see #17972
+symmetric_approach_fast
+
 # 2 zipper lanes and a non-zipper lane
 3lanes
 
@@ -36,3 +39,12 @@ action_step_offset
 
 # 4  zipper links in multiple conflicts
 4links
+
+# see #17624
+highspeed
+
+# see #17624 (longer approach)
+highspeed2
+
+# see #17624 (only a single edge and the speed difference comes from starting conditions instead of turning speed limit)
+highspeed_laneDrop

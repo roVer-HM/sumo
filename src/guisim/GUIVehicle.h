@@ -26,6 +26,7 @@
 #include <vector>
 #include <string>
 #include <utils/geom/PositionVector.h>
+#include <utils/foxtools/MFXLock.h>
 #include <microsim/MSVehicle.h>
 #include "GUIBaseVehicle.h"
 
@@ -174,6 +175,11 @@ public:
 
     /// @brief handle route to accomodate to given stop
     void rerouteDRTStop(MSStoppingPlace* busStop);
+
+    std::unique_ptr<MFXOptionalLock> getScopeLock() override {
+        return std::unique_ptr<MFXOptionalLock>(new MFXLock(myLock));
+    }
+
 
 protected:
     /// @brief register vehicle for drawing while outside the network

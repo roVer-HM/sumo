@@ -72,6 +72,16 @@ MSCFModel::~MSCFModel() {}
 
 MSCFModel::VehicleVariables::~VehicleVariables() {}
 
+void
+MSCFModel::VehicleVariables::saveState(OutputDevice& /* out */, const MSCFModel& cfm) const {
+    WRITE_WARNINGF(TL("carFollowModel of vType '%' cannot save state"), cfm.myType->getID());
+}
+
+
+void
+MSCFModel::VehicleVariables::loadState(const SUMOSAXAttributes& /* attrs */) {
+}
+
 
 double
 MSCFModel::brakeGap(const double speed, const double decel, const double headwayTime) const {
@@ -454,6 +464,7 @@ MSCFModel::getMinimalArrivalTime(double dist, double currentSpeed, double arriva
     }
     // will either drive as fast as possible and decelerate as late as possible
     // or accelerate as fast as possible and then hold that speed
+    arrivalSpeed = MAX2(0.0, arrivalSpeed); // ballistic model may call this with -std::numeric_limits<double>::max()
     const double accel = (arrivalSpeed >= currentSpeed) ? getMaxAccel() : -getMaxDecel();
     const double accelTime = accel == 0. ? 0. : (arrivalSpeed - currentSpeed) / accel;
     const double accelWay = accelTime * (arrivalSpeed + currentSpeed) * 0.5;

@@ -2,7 +2,7 @@
 title: Interfacing TraCI from Python
 ---
 
-The [TraCI](../TraCI.md#traci_commands) commands are split into the
+The [TraCI](../TraCI/index.md#traci_commands) commands are split into the
 domains busstop, calibrator, chargingstation, edge, gui, inductionloop, junction, lane,
 lanearea, meandata, multientryexit, overheadwire, parkingarea, person, poi, polygon,
 rerouter, route, routeprobe, simulation, trafficlight, variablespeedsign, vehicle, and vehicletype,
@@ -195,7 +195,7 @@ The following filter types are available:
 - VClass: Only return vehicles of the specified vClasses
 
 See the [pydoc
-documentation](https://sumo.dlr.de/pydoc/traci._vehicle.html#VehicleDomain-addSubscriptionFilterCFManeuver)
+documentation](https://sumo.dlr.de/pydoc/traci/_vehicle.html#VehicleDomain.addSubscriptionFilterCFManeuver)
 for detailed specifications.
 
 !!! caution

@@ -178,7 +178,8 @@ MSTLLogicControl::TLSLogicVariants::setStateInstantiatingOnline(MSTLLogicControl
     // build only once...
     MSTrafficLightLogic* logic = getLogic(TRACI_PROGRAM);
     if (logic == nullptr) {
-        MSPhaseDefinition* phase = new MSPhaseDefinition(DELTA_T, state);
+        MSPhaseDefinition* phase = new MSPhaseDefinition(SUMOTime_DAY, state);
+        phase->earliestEnd = SUMOTime_DAY; // prevent immediate switch
         std::vector<MSPhaseDefinition*> phases;
         phases.push_back(phase);
         logic = new MSSimpleTrafficLightLogic(tlc, myCurrentProgram->getID(), TRACI_PROGRAM, 0, TrafficLightType::STATIC, phases, 0,
@@ -188,7 +189,7 @@ MSTLLogicControl::TLSLogicVariants::setStateInstantiatingOnline(MSTLLogicControl
             MSNet::getInstance()->createTLWrapper(logic);
         }
     } else {
-        MSPhaseDefinition nphase(DELTA_T, state);
+        MSPhaseDefinition nphase(SUMOTime_DAY, state);
         *(dynamic_cast<MSSimpleTrafficLightLogic*>(logic)->getPhases()[0]) = nphase;
         switchTo(tlc, TRACI_PROGRAM);
     }
@@ -232,11 +233,25 @@ MSTLLogicControl::TLSLogicVariants::getDefault() const {
 void
 MSTLLogicControl::TLSLogicVariants::switchTo(MSTLLogicControl& tlc, const std::string& programID) {
     // set the found wished sub-program as this tls' current one
+    const std::string state = myCurrentProgram->getCurrentPhaseDef().getState();
     myCurrentProgram->deactivateProgram();
     myCurrentProgram = getLogicInstantiatingOff(tlc, programID);
     myCurrentProgram->activateProgram();
     myCurrentProgram->setTrafficLightSignals(MSNet::getInstance()->getCurrentTimeStep());
+    if (state != myCurrentProgram->getCurrentPhaseDef().getState()) {
+        myCurrentProgram->resetLastSwitch(SIMSTEP);
+    };
     executeOnSwitchActions();
+}
+
+
+void
+MSTLLogicControl::TLSLogicVariants::switchToLoaded(MSTrafficLightLogic* tl) {
+    // setting tl as active and updating signal states happens on the calling side (MSTrafficLightLogic::loadState)
+    if (myCurrentProgram != tl) {
+        myCurrentProgram->deactivateProgram();
+        myCurrentProgram = tl;
+    }
 }
 
 
@@ -871,7 +886,9 @@ MSTLLogicControl::clearState(SUMOTime time, bool quickReload) {
                     offset -= phases[step]->duration;
                     step++;
                 }
-                logic->loadState(*this, time, step, offset, logic->isActive());
+                SUMOTime nextSwitch = time + phases[step]->duration - offset;
+                SUMOTime timeInCycle = (time - offset) % logic->getDefaultCycleTime();
+                logic->loadState(*this, time, step, offset, nextSwitch, timeInCycle, logic->isActive());
             }
         }
     }

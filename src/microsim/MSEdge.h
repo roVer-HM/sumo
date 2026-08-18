@@ -707,8 +707,10 @@ public:
 
     /** @brief Sets a new maximum speed for all lanes (used by TraCI and MSCalibrator)
      * @param[in] val the new speed in m/s
+     * @param[in] modified whether this modifies the original speed
+     * @param[in] jamThreshold also set a new jamThreshold
      */
-    void setMaxSpeed(double val, double jamThreshold = -1);
+    void setMaxSpeed(const double val, const bool modified = true, const double jamThreshold = -1);
 
     /** @brief Sets a new friction coefficient COF for all lanes [*later to be (used by TraCI and MSCalibrator)*]
     * @param[in] val the new coefficient in [0..1]
@@ -803,9 +805,6 @@ public:
     /** @brief Remove all transportables before quick-loading state */
     void clearState();
 
-    /// @brief update meso segment parameters
-    void updateMesoType();
-
     void postLoadInitLaneChanger();
 
     static DepartLaneDefinition& getDefaultDepartLaneDefinition() {
@@ -881,6 +880,12 @@ public:
             myRailwayRoutingEdge = new RailEdge<MSEdge, SUMOVehicle>(this);
         }
         return myRailwayRoutingEdge;
+    }
+
+    const std::map<const MEVehicle*, std::pair<double, int> >& getMesoPositions() const;
+
+    inline void invalidateMesoCache() const {
+        myLastCacheUpdate = -1;
     }
 
 protected:
@@ -1064,6 +1069,12 @@ protected:
 
     /// @brief List of waiting vehicles
     mutable std::vector<SUMOVehicle*> myWaiting;
+
+    /// @brief Mesoscopic vehicle positions
+    mutable std::map<const MEVehicle*, std::pair<double, int> > myCachedMesoPos;
+
+    /// @brief time stamp of mesoscopic vehicle positions
+    mutable SUMOTime myLastCacheUpdate = -1;
 
 #ifdef HAVE_FOX
     /// @brief Mutex for accessing waiting vehicles

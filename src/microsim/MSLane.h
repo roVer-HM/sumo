@@ -296,6 +296,7 @@ public:
     }
     ///@}
 
+    virtual void updateMesoGUISegments() {}
 
     /// @name interaction with MSMoveReminder
     /// @{
@@ -580,7 +581,7 @@ public:
         if (myRestrictions != nullptr) {
             std::map<SUMOVehicleClass, double>::const_iterator r = myRestrictions->find(veh->getVClass());
             if (r != myRestrictions->end()) {
-                if (mySpeedByVSS || mySpeedByTraCI) {
+                if (mySpeedModified) {
                     return MIN2(myMaxSpeed, MIN2(vehMaxSpeed, r->second * veh->getChosenSpeedFactor()));
                 } else {
                     return MIN2(vehMaxSpeed, r->second * veh->getChosenSpeedFactor());
@@ -588,6 +589,11 @@ public:
             }
         }
         return MIN2(vehMaxSpeed, myMaxSpeed * veh->getChosenSpeedFactor());
+    }
+
+
+    inline bool isSpeedModified() const {
+        return mySpeedModified;
     }
 
 
@@ -746,12 +752,12 @@ public:
         return myVehicles.empty();
     }
 
-    /** @brief Sets a new maximum speed for the lane (used by TraCI and MSCalibrator)
+    /** @brief Sets a new maximum speed for the lane (used by TraCI, MSLaneSpeedTrigger (VSS) and MSCalibrator)
      * @param[in] val the new speed in m/s
-     * @param[in] whether a variable speed sign (VSS) imposes the speed limit
-     * @param[in] whether TraCI imposes the speed limit
+     * @param[in] modified whether this modifies the original speed
+     * @param[in] jamThreshold also set a new jamThreshold
      */
-    void setMaxSpeed(double val, bool byVSS = false, bool byTraCI = false, double jamThreshold = -1);
+    void setMaxSpeed(const double val, const bool modified = true, const double jamThreshold = -1);
 
     /** @brief Sets a new friction coefficient for the lane [*to be later (used by TraCI and MSCalibrator)*]
     * @param[in] val the new friction coefficient [0..1]
@@ -966,7 +972,7 @@ public:
     inline bool isApproachedFrom(MSEdge* const edge) {
         return myApproachingLanes.find(edge) != myApproachingLanes.end();
     }
-    bool isApproachedFrom(MSEdge* const edge, MSLane* const lane);
+    bool isApproachedFrom(MSLane* const lane, SUMOVehicleClass svc);
 
     /// @brief Returns vehicle class specific stopOffset for the vehicle
     double getVehicleStopOffset(const MSVehicle* veh) const;
@@ -988,7 +994,7 @@ public:
 
     /// @brief return the sublane followers with the largest missing rear gap among all predecessor lanes (within dist)
     MSLeaderDistanceInfo getFollowersOnConsecutive(const MSVehicle* ego, double backOffset,
-            bool allSublanes, double searchDist = -1, MinorLinkMode mLinkMode = FOLLOW_ALWAYS) const;
+            bool allSublanes, double searchDist = -1, MinorLinkMode mLinkMode = FOLLOW_ALWAYS, bool maxSearchDist = false) const;
 
     /// @brief return by how much further the leader must be inserted to avoid rear end collisions
     double getMissingRearGap(const MSVehicle* leader, double backOffset, double leaderSpeed) const;
@@ -1251,7 +1257,7 @@ public:
      * @param[in] ignoreMinorLinks Whether backward search should stop at minor links
      * @return the follower vehicle and its gap to ego
      */
-    std::pair<MSVehicle* const, double> getFollower(const MSVehicle* ego, double egoPos, double dist, MinorLinkMode mLinkMode) const;
+    std::pair<MSVehicle* const, double> getFollower(const MSVehicle* ego, double egoPos, double dist, MinorLinkMode mLinkMode, bool maxSearchDist = false) const;
 
 
     ///@brief add parking vehicle. This should only used during state loading
@@ -1451,6 +1457,12 @@ protected:
     /// @brief return length of fractional vehicles on this lane
     double getFractionalVehicleLength(bool brutto) const;
 
+    /// @brief whether the route of the give vehicle might be extended on insertion
+    bool mayContinue(const MSVehicle* veh) const;
+
+    /// @brief whether any link from this lane is unsafe
+    bool hasUnsafeLink() const;
+
     /// @brief detect frontal collisions
     static bool isFrontalCollision(const MSVehicle* collider, const MSVehicle* victim);
 
@@ -1531,11 +1543,8 @@ protected:
     /// Lane-wide friction coefficient [0..1]
     double myFrictionCoefficient;
 
-    /// @brief Whether the current speed limit is set by a variable speed sign (VSS)
-    bool mySpeedByVSS;
-
-    /// @brief Whether the current speed limit has been set through TraCI
-    bool mySpeedByTraCI;
+    /// @brief Whether the current speed limit is set by a variable speed sign (VSS), TraCI or a MSCalibrator
+    bool mySpeedModified;
 
     /// The vClass permissions for this lane
     SVCPermissions myPermissions;

@@ -232,6 +232,11 @@ public:
      */
     double getOccupancyTime() const;
 
+    /** @brief Returns the maximum stop arrival delay of public transport vehicles that are on the detector
+     * or passed the detector in the last step or -INVALID_DOUBLE
+     */
+    double getArrivalDelay() const;
+
     ///@brief return last time a vehicle was on the detector
     SUMOTime getLastDetectionTime() const;
 
@@ -245,6 +250,10 @@ public:
      * Setting a negative value resets the override
      */
     void overrideTimeSinceDetection(double time);
+
+    /* @brief loads the time since detetion (from state)
+     */
+    void loadTimeSinceLastDetection(double time);
 
     /// @name Methods inherited from MSDetectorFileOutput.
     /// @{

@@ -75,8 +75,6 @@ available as XML Schema Definitions:
 
 # Node Descriptions
 
-<center>
-
 | Node Descriptions  |                                 |
 |--------------------|---------------------------------|
 | Filename extension | .nod.xml                        |
@@ -85,12 +83,15 @@ available as XML Schema Definitions:
 | SUMO specific?     | Yes                             |
 | XML Schema         | [nodes_file.xsd](https://sumo.dlr.de/xsd/nodes_file.xsd)                  |
 
-</center>
-
 Within the nodes-files, normally having the extension ".nod.xml" (see
 [Known Extensions](../Other/File_Extensions.md)), every node is
 described in a single line which looks like this:
-`<node id="<STRING>" x="<FLOAT>" y="<FLOAT>" [type="<TYPE>"]/>` - the straight brackets ('\[' and '\]')
+
+```xml
+   <node id="<STRING>" x="<FLOAT>" y="<FLOAT>" [type="<TYPE>"]/>
+```
+
+the straight brackets ('\[' and '\]')
 indicate that the parameter is optional. Each of these attributes has a
 certain meaning and value range:
 
@@ -201,7 +202,7 @@ error and will yield in a program stop:
 - `allway_stop`: This junction works like
   an [*All-way stop*](https://en.wikipedia.org/wiki/All-way_stop).
 - `rail_signal`: This junction is
-  controlled by a [rail signal](../Simulation/Rail_signals.md).
+  controlled by a [rail signal](../Simulation/Railways.md#rail_signals).
   This type of junction/control is only useful for rails.
 - `zipper`: This junction connects edges
   where the number of lanes decreases and traffic needs to merge
@@ -344,8 +345,7 @@ joinable node clusters works like this:
 
 ### Specifying and excluding explicit joins
 
-More fine grained control over joining can be achieved by using the
-following syntax within a nodes-file
+More fine grained control over joining can be achieved by using elements `<join>` and `<joinExclude>` within a nodes-file
 
 ```xml
 <nodes>
@@ -357,50 +357,28 @@ following syntax within a nodes-file
 This will cause the nodes *id0*,*id23* and *id24* to be joined into a
 single junction. It will also prevent the nodes *id13* and *id17* from
 being joined. The **joinExclude**-tag is only useful together with the
-option **--junctions.join** but the **join**-tag can also be used all by itself. Nodes to be
-excluded from joining can also be specified via the option **--junctions.join-exclude id,[id\]+**.
+option **--junctions.join** but the **join**-tag can also be used all by itself.
 
-!!! note
-    The `<join>`-element supports all attributes that are also supported by the `<node>`-element. This allows overriding the attributes of the created node.
+Element `<joinExclude>` only supports attribute `nodes` and works in the same way as option **--junctions.join-exclude id,[id\]+**.
+The supported attributes for element `<join>` are described below.
+
+| Attribute Name  | Value Type                                | Description                  |
+| --------------- | ----------------------------------------- | ------------------------------------------------------------------------- |
+| **nodes*        | id list (string)                          | The ids of nodes to join                                                  |
+| reset           | bool (default: *false*)                   | Whether all connections at the created node should be re-guessed          |
+| <any [node node attriutes](#node_descriptions)>             | Sets attributes on the new node (i.e. its `id` or `type`)                 |
+
 
 ### Connections after joining nodes
 
-!!! caution
-    After merging nodes, the lane-to-lane connections are recalculated. You can override them by resorting to a 2-step process:
+The connections at joined junctions depend on the loaded connection definitions and on further attributes and options
 
-        # 1. Merging the junctions.
-        netconvert --sumo-net-file berlin-separated-junctions.net.xml \
-          --output-file berlin-joined-junctions.net.xml \
-          --junctions.join
-        # 2. Resetting the connections.
-        netconvert --sumo-net-file berlin-joined-junctions.net.xml \
-          --output-file berlin-with-fixed-connections.net.xml \
-          --connection-files berlin-new-connections.con.xml
-
-    See [#Connection Descriptions](#connection_descriptions) on how to define connections in **\*.con.xml** format.
-
-When loading networks with defined connections, the results of joining
-nodes may be quite surprising. Please note the - quite pathologic -
-network on the left side and compare it to the one on the right. You may
-note some big differences in lane-to-lane connections, especially for
-the edge coming from the south.
-
-[<img src="../images/JunctionJoin_before.svg" alt="junction before joining" width="400" />](../images/JunctionJoin_before.svg
-"junctionJoin_before.svg")
-[<img src="../images/JunctionJoin_after.svg" alt="junction after joining" width="400" />](../images/JunctionJoin_after.svg
-"junctionJoin_after.svg")
-
-The reason is that during joining, edges are subsequently merged, and
-the connections are tried to be kept. In the case of the straight
-connection on the left lane of the road from south, it is propagated
-along the intersection - along all four edges that are lying within the
-intersection - yielding in a further right-turning connection.
-
-To avoid surprises like this, you should first join the nodes. Then, set
-the connections.
+- if no connections are loaded, the connections will be guessed for the joined junction (this applies to most junctions imported from OSM where explicit connection data is often missing)
+- if any connections are loaded, they connections at the joined node will be re-created to match the loaded connectivity
+  - unless option `<join>`-attribute `reset="true"` or option **--junctions.join-reset** is set in which guess all connections will be guessed again
 
 !!! note
-    If you use the option **--junctions.join** during OSM import, the connections are guessed based on the joined junctions and no pathologies should occur.
+Re-guessing loaded connections is useful when joining junctions while merging networks.
 
 # Edge Descriptions
 
@@ -479,7 +457,8 @@ Let's list an edge's attributes again:
 | endOffset      | float \>= 0                           | Move the stop line back from the intersection by the given amount (effectively shortening the edge and locally enlarging the intersection)  |
 | sidewalkWidth  | float \>= 0                           | Adds a sidewalk with the given width (defaults to -1 which adds nothing).  |
 | bikeLaneWidth  | float \>= 0                           | Adds a bicycle lane with the given width (defaults to -1 which adds nothing).  |
-| distance       | float                                 | [Kilometrage](../Simulation/Railways.md#kilometrage_mileage_chainage) at the start of this edge. If the value is positive, kilometrage increases in driving direction; if the value is negative, kilometrage decreases. Kilometrage along the edge is computed as abs(*distance* + *offsetFromStart*).  |
+| distance       | float                                 | [Kilometrage](../Simulation/Distances.md#defining_and_using_linear_coordinates) at the start of this edge. If the value is positive, kilometrage increases in driving direction; if the value is negative, kilometrage decreases. Kilometrage along the edge is computed as abs(*distance* + *offsetFromStart*).  |
+| bidi           | id                                    | Declares the opposite-direction edge that should form a pair of bidi-edges with this edge |
 | routingType    | id                                    | Used together with [preference](../Simulation/Routing.md#routing_by_travel_time_and_routingtype) to set custom edge preferences for routing |
 
 The priority plays a role during the computation of the way-giving rules
@@ -892,9 +871,16 @@ connection file specifies which edges outgoing from a junction may be
 reached by a certain edge incoming into this junction and optionally
 also which lanes shall be used on both sides.
 
+### Edge-to-Edge connectivity
+
 If you only want to describe which edges may be reached from a certain
-edge, the definition is:`<connection from="<FROM_EDGE_ID>" to="<T0_EDGE_ID>"/>`. This tells
-[netconvert](../netconvert.md) not only that vehicles shall be
+edge, the definition is:
+
+```
+<connection from="<FROM_EDGE_ID>" to="<T0_EDGE_ID>"/>
+```
+
+This tells [netconvert](../netconvert.md) not only that vehicles shall be
 allowed to drive from the edge named *<FROM_EDGE_ID\>* to the edge named
 *<TO_EDGE_ID\>*, but also prohibits all movements to other edges from
 *<FROM_EDGE_ID\>*, unless they are specified within this file. Let's
@@ -905,11 +891,19 @@ repeat the parameters:
 | **from**       | referenced edge id | The name of the edge the vehicles leave                                                                                              |
 | to             | referenced edge id | The name of the edge the vehicles may reach when leaving "from". If omitted or set to "" the incoming edge will have no connections. |
 
-When using this kind of input, [netconvert](../netconvert.md) will
+When using the kind of input, [netconvert](../netconvert.md) will
 compute which lanes shall be used if any of the connected edges has more
-than one lane. If you also want to override this computation and set the
-lanes by hand, use the following: `<connection from="<FROM_EDGE_ID>" to="<T0_EDGE_ID>" fromLane="<INT_1>" toLane="<INT_2>"/>`
-Here, a connection from the edge's "*<FROM_EDGE_ID\>*" lane with the number *<INT_1\>* is build to the lane *<INT_2\>* of the edge "*<TO_EDGE_ID\>*". Lanes are counted from the right (outer) to the left (inner) side of the road beginning with 0. Again the parameter:
+than one lane. To obtain more control, additional attributes may be given as described below.
+
+### Lane-to-Lane connectivity
+
+To declare connections fully (and avoid any kind of guessing), use the following:
+
+```
+<connection from="<FROM_EDGE_ID>" to="<T0_EDGE_ID>" fromLane="<INT_1>" toLane="<INT_2>"/>
+```
+
+Here, a connection from the edge's "*<FROM_EDGE_ID\>*" lane with the number *<INT_1\>* is build to the lane *<INT_2\>* of the edge "*<TO_EDGE_ID\>*". Lanes are counted from the right (outer) to the left (inner) side of the road beginning with 0. This style must be used when further connection attributes (such as permissions) shall be declared.
 
 | Attribute Name | Value Type                             | Default | Description      |
 | -------------- | -------------------------------------- | ------- | ----------------------------------------------------------------------- |
@@ -932,8 +926,17 @@ Here, a connection from the edge's "*<FROM_EDGE_ID\>*" lane with the number *<IN
 | indirect | bool    | false | declare an indirect (two-step) turning movement (affects geometry and right-of-way) |
 | type | string    |  | set custom edgeType for applying [vClass-specific speed limits](#vehicle-class_specific_speed_limits) |
 
+### Deleting connections
+
+[netconvert](../netconvert.md) may be used to patch existing sumo networks (*.net.xml* files) and changing connections is one of the supported use cases.
 If you only wish to **remove** a connection it may be convenient to use
-the following xml definition: `<delete from="<FROM_EDGE_ID>" to="<T0_EDGE_ID>"/>`. The attributes are the same as for the
+the following xml definition: 
+
+```
+<delete from="<FROM_EDGE_ID>" to="<T0_EDGE_ID>"/>
+```
+
+The attributes are the same as for the
 simple connection element:
 
 | Attribute Name | Value Type         | Description                                                |
@@ -945,6 +948,24 @@ simple connection element:
 
 !!! note
     Note that in basic format (that is, without **fromLane** and **toLane** attributes) the definition deletes **all** connections from given incoming edge to the given outgoing edge. When **fromLane** and **toLane** attributes are provided, only the connection from given lane to given lane is removed.
+
+### Patching connections and guessing again
+
+By default there are two modes when processing connections.
+
+1. when loading from *plain-xml*, any missing information is guessed (and this typically causes connections to be added)
+2. when loading from a *.net.xml*, everything existing is kept by default and nothing is guessed. Any changes to connections must be enacted by explicitly adding or removing connections (as described above).
+
+It may be convenient to trigger re-guessing of connections for selected edges (i.e. after loading and edge-patch to change lane numbers).
+For this, the following definition may be used:
+
+```
+<connection from="<FROM_EDGE_ID>" reset="true"/>
+```
+
+This will trigger all connections from edge with id `FROM_EDGE_ID` to be removed and re-guessed.
+
+### Examples
 
 There are two examples within the distribution. Both use the nodes and
 edges descriptions from the example located in
@@ -1007,6 +1028,8 @@ Network with explicit lane-2-lane connections
 
 !!! caution
     Please do not use both types of connection declarations (those with an lane attribute and those without) for the same from-edge! The behavior is not verified and tested for these settings.
+
+
 
 ## Setting Connection Priorities
 

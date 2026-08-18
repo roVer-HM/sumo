@@ -304,7 +304,7 @@ A net with two loops
 4.  Insert more vehicles, lower the simulation [time-step
     length](../Simulation/Basic_Definition.md#defining_the_time_step_length)
     and try to observe stop-and-go waves, experiment with different
-    [car-following models](../Car-Following-Models.md), [color the
+    [car-following models](../Car-Following-Models/index.md), [color the
     vehicles](../sumo-gui.md#vehicle_visualisation_settings) by
     speed.
 

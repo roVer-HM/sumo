@@ -212,6 +212,9 @@ public:
         /// @brief get value
         const std::string getValue() const;
 
+        /// @brief update text field depending on openMode
+        void updateFromDialog(const GNEFileDialog& fileDialog);
+
         /// @brief filename textField
         FXTextField* myFilenameTextField = nullptr;
 
@@ -548,4 +551,6 @@ public:
         /// @brief Invalidated assignment operator.
         BoolArgument& operator=(const IntArgument&) = delete;
     };
+
+    static GNEFileDialog::OpenMode getOpenMode(const Option* o);
 };

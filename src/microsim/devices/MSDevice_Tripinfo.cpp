@@ -226,8 +226,19 @@ MSDevice_Tripinfo::notifyMoveInternal(const SUMOTrafficObject& veh,
         myMesoTimeLoss += TIME2STEPS(timeOnLane * (vmax - meanSpeedVehicleOnLane) / vmax);
     }
     myWaitingTime += veh.getWaitingTime();
+    if (veh.getWaitingTime() >= TIME2STEPS(1)) {
+        // waiting counts the time spent waiting to enter the next link (when it's occupied).
+        myWaitingCount++;
+    }
 }
 
+
+void
+MSDevice_Tripinfo::recordMesoParkingTimeLoss(SUMOTime waitingTime) {
+    myMesoTimeLoss += waitingTime;
+    myWaitingTime += waitingTime;
+    myWaitingCount++;
+}
 
 void
 MSDevice_Tripinfo::updateParkingStopTime() {
@@ -286,7 +297,7 @@ MSDevice_Tripinfo::notifyLeave(SUMOTrafficObject& veh, double /*lastPos*/,
                || reason == NOTIFICATION_TELEPORT
                || reason == NOTIFICATION_TELEPORT_CONTINUATION) {
         if (MSGlobals::gUseMesoSim) {
-            myRouteLength += myHolder.getEdge()->getLength();
+            myRouteLength += myHolder.getCurrentEdge()->getLength();
         } else {
             const MSLane* lane = static_cast<MSVehicle&>(veh).getLane();
             if (lane != nullptr) {
@@ -432,10 +443,7 @@ MSDevice_Tripinfo::generateOutputForUnfinished() {
     }
     // unfinished persons
     if (net->hasPersons()) {
-        MSTransportableControl& pc = net->getPersonControl();
-        while (pc.loadedBegin() != pc.loadedEnd()) {
-            pc.erase(pc.loadedBegin()->second);
-        }
+        net->getPersonControl().eraseAll();
     }
 
 }

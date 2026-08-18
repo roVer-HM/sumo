@@ -72,14 +72,14 @@ public:
     /// @{
     /** @brief Checks for waiting steps when the vehicle moves
     *
-    * @param[in] veh Vehicle that asks this reminder.
+    * @param[in] tObject Vehicle that asks this reminder.
     * @param[in] oldPos Position before move.
     * @param[in] newPos Position after move with newSpeed.
     * @param[in] newSpeed Moving speed.
     *
     * @return True (always).
     */
-    bool notifyMove(SUMOTrafficObject& veh, double oldPos,  double newPos, double newSpeed) override;
+    bool notifyMove(SUMOTrafficObject& tObject, double oldPos,  double newPos, double newSpeed) override;
     /// @}
 
     /// @brief return the name for this type of device
@@ -110,6 +110,19 @@ public:
 
     /// @brief Called on vehicle deletion to extend tripinfo
     void generateOutput(OutputDevice* tripinfoOut) const override;
+
+protected:
+    /** @brief Internal notification about the vehicle moves, see MSMoveReminder::notifyMoveInternal()
+     *
+     */
+    void notifyMoveInternal(const SUMOTrafficObject& tObject,
+                            const double frontOnLane,
+                            const double timeOnLane,
+                            const double meanSpeedFrontOnLane,
+                            const double meanSpeedVehicleOnLane,
+                            const double travelledDistanceFrontOnLane,
+                            const double travelledDistanceVehicleOnLane,
+                            const double meanLengthOnLane) override;
 
 private:
     /** @brief Constructor

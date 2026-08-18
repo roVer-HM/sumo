@@ -842,7 +842,7 @@ SUMOAbstractRouter<MSEdge, SUMOVehicle>& MSDevice_StationFinder::getRouter(SUMOV
 
 
 double
-MSDevice_StationFinder::getStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace) {
+MSDevice_StationFinder::getStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace, const SUMOVehicle*) {
     MSChargingStation* cs = dynamic_cast<MSChargingStation*>(stoppingPlace);
     if (cs->getParkingArea() != nullptr) {
         return cs->getParkingArea()->getOccupancy();
@@ -852,7 +852,7 @@ MSDevice_StationFinder::getStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace
 
 
 double
-MSDevice_StationFinder::getLastStepStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace) {
+MSDevice_StationFinder::getLastStepStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace, const SUMOVehicle*) {
     MSChargingStation* cs = dynamic_cast<MSChargingStation*>(stoppingPlace);
     if (cs->getParkingArea() != nullptr) {
         return cs->getParkingArea()->getLastStepOccupancy();

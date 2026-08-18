@@ -18,6 +18,7 @@
 /// @author  Walter Bamberger
 /// @author  Gregor Laemmel
 /// @author  Mirko Barthauer
+/// @author  William Harrison Davis
 /// @date    Mon, 14.04.2008
 ///
 // Importer for networks stored in OpenStreetMap format
@@ -91,6 +92,12 @@ public:
         if (e1->myIsOneWay != e2->myIsOneWay) {
             return e1->myIsOneWay > e2->myIsOneWay;
         }
+        if (e1->myPlacement != e2->myPlacement) {
+            return (int)e1->myPlacement > (int)e2->myPlacement;
+        }
+        if (e1->myPlacementLane != e2->myPlacementLane) {
+            return e1->myPlacementLane > e2->myPlacementLane;
+        }
         return e1->myCurrentNodes > e2->myCurrentNodes;
     }
 };
@@ -142,6 +149,8 @@ NIImporter_OpenStreetMap::load(const OptionsCont& oc, NBNetBuilder& nb) {
     myImportCrossings = oc.getBool("osm.crossings");
     myOnewayDualSidewalk = oc.getBool("osm.oneway-reverse-sidewalk");
     myAnnotateDefaults = oc.getBool("osm.annotate-defaults");
+    myPlacementSkippedNonExplicitOneWay = 0;
+    myPlacementSkippedAuxOppositeDirection = 0;
 
     myAllAttributes = OptionsCont::getOptions().getBool("osm.all-attributes");
     std::vector<std::string> extra = OptionsCont::getOptions().getStringVector("osm.extra-attributes");
@@ -268,6 +277,12 @@ NIImporter_OpenStreetMap::load(const OptionsCont& oc, NBNetBuilder& nb) {
             running = -1;
         }
         insertEdge(e, running, currentFrom, last, passed, nb, first, last);
+    }
+    if (myPlacementSkippedNonExplicitOneWay > 0 || myPlacementSkippedAuxOppositeDirection > 0) {
+        WRITE_MESSAGEF(TL("Skipped applying OSM placement on % edge(s): % due to non-explicit one-way and % due to opposite-direction auxiliary edges."),
+                       myPlacementSkippedNonExplicitOneWay + myPlacementSkippedAuxOppositeDirection,
+                       myPlacementSkippedNonExplicitOneWay,
+                       myPlacementSkippedAuxOppositeDirection);
     }
 
     /* Collect edges which explicitly are part of a roundabout and store the edges of each
@@ -496,7 +511,7 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
     if (type == "") {  // we do not want to import it
         return newIndex;
     }
-
+    std::string routingType = "";
     int numLanesForward = tc.getEdgeTypeNumLanes(type);
     int numLanesBackward = tc.getEdgeTypeNumLanes(type);
     double speed = tc.getEdgeTypeSpeed(type);
@@ -510,6 +525,13 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
         extra = extra & ~SVC_BUS;
     }
     SVCPermissions permissions = (defaultPermissions & ~extraDis) | extra;
+    if (!myImportBikeAccess && permissions == (SVC_PEDESTRIAN | SVC_BICYCLE)
+            && (e->myExtraDisallowed & SVC_BICYCLE) != 0
+            && (e->myExtraAllowed & SVC_BICYCLE) == 0) {
+        // remove bicyle permissions where they affect network building the most
+        permissions = SVC_PEDESTRIAN;
+        defaultsToOneWay = true;
+    }
     if (defaultPermissions == SVC_SHIP) {
         // extra permission apply to the ships operating on the route rather than the waterway
         permissions = defaultPermissions;
@@ -529,17 +551,24 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
     if (useDistance) {
         // negative sign denotes counting in the other direction
         if (distanceStart < distanceEnd) {
-            distanceStart *= -1;
-        } else {
             distanceEnd *= -1;
+        } else {
+            distanceStart *= -1;
         }
     } else {
         distanceStart = 0;
         distanceEnd = 0;
     }
     // get additional direction information
-    int nodeDirection = myOSMNodes.find(StringUtils::toLong(from->getID()))->second->myRailDirection |
-                        myOSMNodes.find(StringUtils::toLong(to->getID()))->second->myRailDirection;
+    int nodeDirection = WAY_UNKNOWN;
+    const NIOSMNode* fn = myOSMNodes.find(StringUtils::toLong(from->getID()))->second;
+    const NIOSMNode* ft = myOSMNodes.find(StringUtils::toLong(to->getID()))->second;
+    if (fn->railwaySignal) {
+        nodeDirection |= fn->myRailDirection;
+    }
+    if (ft->railwaySignal) {
+        nodeDirection |= ft->myRailDirection;
+    }
 
     std::vector<std::shared_ptr<NBPTStop> > ptStops;
     for (long long i : passed) {
@@ -565,23 +594,23 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
         Position pos(n->lon, n->lat, n->ele);
         shape.push_back(pos);
     }
-#ifdef DEBUG_LAYER_ELEVATION
-    if (e->id == "DEBUGID") {
-        std::cout
-                << " id=" << id << " from=" << from->getID() << " fromRailDirection=" << myOSMNodes.find(StringUtils::toLong(from->getID()))->second->myRailDirection
-                << " to=" << to->getID() << " toRailDirection=" << myOSMNodes.find(StringUtils::toLong(to->getID()))->second->myRailDirection
-                << " origRailDirection=" << e->myRailDirection
-                << " nodeDirection=" << nodeDirection
-                << "\n";
-    }
-#endif
-    if (e->myRailDirection == WAY_UNKNOWN && nodeDirection != WAY_UNKNOWN && nodeDirection != WAY_FORWARD
-            && nodeDirection != (WAY_FORWARD | WAY_UNKNOWN)) {
-        //std::cout << "way " << e->id << " nodeDirection=" << nodeDirection << " origDirection=" << e->myRailDirection << "\n";
-        // heuristic: assume that the mapped way direction indicates
-        // potential driving direction
+    //if (e->id == DEBUGID) {
+    //    std::cout
+    //            << " id=" << id << " from=" << from->getID() << " fromRailDirection=" << myOSMNodes.find(StringUtils::toLong(from->getID()))->second->myRailDirection
+    //            << " to=" << to->getID() << " toRailDirection=" << myOSMNodes.find(StringUtils::toLong(to->getID()))->second->myRailDirection
+    //            << " origRailDirection=" << e->myRailDirection
+    //            << " nodeDirection=" << nodeDirection
+    //            << "\n";
+    //}
+    if (e->myRailDirection == WAY_UNKNOWN && (nodeDirection & WAY_BACKWARD) != 0) {
+        // legacy behavior seems to have handled missing tags quite well
         e->myRailDirection = WAY_BOTH;
+        //std::cout << " id=" << id << " newRailDir=" << e->myRailDirection << "\n";
+    } else if (nodeDirection != WAY_UNKNOWN) {
+        // additional direction information can just be added
+        e->myRailDirection = (e->myRailDirection | nodeDirection) & ~WAY_UNKNOWN;
     }
+
     if (!NBNetBuilder::transformCoordinates(shape)) {
         WRITE_ERRORF("Unable to project coordinates for edge '%'.", id);
     }
@@ -620,19 +649,18 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
     // check directions
     bool addForward = true;
     bool addBackward = true;
-    const bool explicitTwoWay = e->myIsOneWay == "no";
-    if ((e->myIsOneWay == "true" || e->myIsOneWay == "yes" || e->myIsOneWay == "1"
-            || (defaultsToOneWay && e->myIsOneWay != "no" && e->myIsOneWay != "false" && e->myIsOneWay != "0"))
-            && e->myRailDirection != WAY_BOTH) {
+    const bool explicitOneWay = StringUtils::isBool(e->myIsOneWay) && StringUtils::toBool(e->myIsOneWay);
+    const bool explicitTwoWay = StringUtils::isBool(e->myIsOneWay) && !StringUtils::toBool(e->myIsOneWay);
+    if ((explicitOneWay || (defaultsToOneWay && (!explicitTwoWay || isRailway(permissions)))) && (e->myRailDirection & WAY_BACKWARD) == 0) {
         addBackward = false;
     }
-    if (e->myIsOneWay == "-1" || e->myIsOneWay == "reverse" || e->myRailDirection == WAY_BACKWARD) {
+    if (e->myIsOneWay == "-1" || e->myIsOneWay == "reverse"
+            || ((e->myRailDirection & WAY_BACKWARD) != 0 && (e->myRailDirection & WAY_FORWARD) == 0)) {
         // one-way in reversed direction of way
         addForward = false;
         addBackward = true;
     }
-    if (!e->myIsOneWay.empty() && e->myIsOneWay != "false" && e->myIsOneWay != "no" && e->myIsOneWay != "true"
-            && e->myIsOneWay != "yes" && e->myIsOneWay != "-1" && e->myIsOneWay != "1" && e->myIsOneWay != "reverse") {
+    if (!e->myIsOneWay.empty() && !explicitOneWay && !explicitTwoWay && e->myIsOneWay != "-1" && e->myIsOneWay != "reverse") {
         WRITE_WARNINGF(TL("New value for oneway found: %"), e->myIsOneWay);
     }
     if ((permissions == SVC_BICYCLE || permissions == (SVC_BICYCLE | SVC_PEDESTRIAN) || permissions == SVC_PEDESTRIAN)) {
@@ -646,7 +674,6 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
             addBackward = true;
         }
     }
-    bool ok = true;
     // if we had been able to extract the number of lanes, override the highway type default
     if (e->myNoLanes > 0) {
         if (addForward && !addBackward) {
@@ -669,7 +696,7 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
         }
     } else if (e->myNoLanes == 0) {
         WRITE_WARNINGF(TL("Skipping edge '%' because it has zero lanes."), id);
-        ok = false;
+        return newIndex;
     } else {
         // the total number of lanes is not known but at least one direction
         if (e->myNoLanesForward > 0) {
@@ -699,7 +726,7 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
         backwardPermissions = SVC_BUS;
         numLanesBackward = 1;
     }
-    // with is meant for raw lane count before adding sidewalks or cycleways
+    // width is meant for raw lane count before adding sidewalks or cycleways
     const int taggedLanes = (addForward ? numLanesForward : 0) + (addBackward ? numLanesBackward : 0);
     if (e->myWidth > 0 && e->myWidthLanesForward.size() == 0 && e->myWidthLanesBackward.size() == 0 && taggedLanes != 0
             && !OptionsCont::getOptions().getBool("ignore-widths")) {
@@ -717,10 +744,27 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
     double speedBackward = speed;
     if (e->myMaxSpeedBackward != MAXSPEED_UNGIVEN) {
         speedBackward = e->myMaxSpeedBackward;
+        addBackward = true;
     }
     if (speed <= 0 || speedBackward <= 0) {
         WRITE_WARNINGF(TL("Skipping edge '%' because it has speed %."), id, speed);
-        ok = false;
+        return newIndex;
+    }
+    if (e->myNoLanes == 1 && addForward && addBackward) {
+        // narrow road which now receives a total of 2 lanes but has less capacity than implied
+        if (e->myWidth < 0 && e->myWidthLanesForward.size() == 0 && e->myWidthLanesBackward.size() == 0) {
+            if (forwardWidth == NBEdge::UNSPECIFIED_WIDTH) {
+                forwardWidth = SUMO_const_laneWidth;
+            }
+            if (backwardWidth == NBEdge::UNSPECIFIED_WIDTH) {
+                backwardWidth = SUMO_const_laneWidth;
+            }
+            forwardWidth /= 2;
+            backwardWidth /= 2;
+        }
+        if (e->myWidth < 5) {
+            routingType = "narrow";
+        }
     }
     // deal with cycleways that run in the opposite direction of a one-way street
     WayType cyclewayType = e->myCyclewayType; // make a copy because we do some temporary modifications
@@ -783,159 +827,238 @@ NIImporter_OpenStreetMap::insertEdge(Edge* e, int index, NBNode* from, NBNode* t
         }
     }
 
+    bool applyPlacement = false;
+    double placementOffset = 0;
+    if (e->myPlacement != PlacementType::NONE) {
+        if (!explicitOneWay) {
+            if (index <= 0) {
+                myPlacementSkippedNonExplicitOneWay++;
+            }
+        } else if (!(addForward && !addBackward)) {
+            if (index <= 0) {
+                myPlacementSkippedAuxOppositeDirection++;
+            }
+        } else if (numLanesForward <= 0) {
+            if (index <= 0) {
+                WRITE_WARNINGF(TL("Ignoring placement for edge '%' because lane count is invalid."), id);
+            }
+        } else {
+            const double defaultPlacementWidth = forwardWidth == NBEdge::UNSPECIFIED_WIDTH || forwardWidth <= 0
+                                                 ? SUMO_const_laneWidth : forwardWidth;
+            std::vector<double> laneWidths((size_t)numLanesForward, defaultPlacementWidth);
+            if (!OptionsCont::getOptions().getBool("ignore-widths")
+                    && (int)e->myWidthLanesForward.size() == numLanesForward) {
+                for (int i = 0; i < numLanesForward; ++i) {
+                    laneWidths[(size_t)i] = e->myWidthLanesForward[(size_t)i] > 0
+                                            ? e->myWidthLanesForward[(size_t)i] : defaultPlacementWidth;
+                }
+            }
+            if (e->myPlacementLane < 1 || e->myPlacementLane > numLanesForward) {
+                if (index <= 0) {
+                    WRITE_WARNINGF(TL("Ignoring placement for edge '%' because lane index '%' is out of range [1, %]."),
+                                   id, e->myPlacementLane, numLanesForward);
+                }
+            } else {
+                const int laneIndex = e->myPlacementLane - 1;
+                double leftOffset = 0;
+                for (int i = 0; i < laneIndex; ++i) {
+                    leftOffset += laneWidths[(size_t)i];
+                }
+                double placementRefOffset = leftOffset;
+                if (e->myPlacement == PlacementType::RIGHT_OF) {
+                    placementRefOffset += laneWidths[(size_t)laneIndex];
+                } else if (e->myPlacement == PlacementType::MIDDLE_OF) {
+                    placementRefOffset += laneWidths[(size_t)laneIndex] / 2.;
+                }
+                double totalWidth = 0;
+                for (double laneWidth : laneWidths) {
+                    totalWidth += laneWidth;
+                }
+                placementOffset = totalWidth / 2. - placementRefOffset;
+                applyPlacement = true;
+            }
+        }
+    }
+    if (applyPlacement && fabs(placementOffset) > POSITION_EPS) {
+        try {
+            shape.move2side(placementOffset);
+        } catch (InvalidArgument&) {
+            if (index <= 0) {
+                WRITE_WARNINGF(TL("Ignoring placement for edge '%' because offset shape computation failed."), id);
+            }
+            applyPlacement = false;
+        }
+    }
+
     const std::string origID = OptionsCont::getOptions().getBool("output.original-names") ? toString(e->id) : "";
-    if (ok) {
-        const bool lefthand = OptionsCont::getOptions().getBool("lefthand");
-        const int offsetFactor = lefthand ? -1 : 1;
-        LaneSpreadFunction lsf = (addBackward || OptionsCont::getOptions().getBool("osm.oneway-spread-right")) &&
-                                 (e->myRailDirection == WAY_UNKNOWN || explicitTwoWay)  ? LaneSpreadFunction::RIGHT : LaneSpreadFunction::CENTER;
-        if (addBackward && lsf == LaneSpreadFunction::RIGHT && OptionsCont::getOptions().getString("default.spreadtype") == toString(LaneSpreadFunction::ROADCENTER)) {
-            lsf = LaneSpreadFunction::ROADCENTER;
+    const bool lefthand = OptionsCont::getOptions().getBool("lefthand");
+    const int offsetFactor = lefthand ? -1 : 1;
+    LaneSpreadFunction lsf = ((addBackward || OptionsCont::getOptions().getBool("osm.oneway-spread-right")) &&
+            ((!isRailway(permissions) || (permissions == SVC_CABLE_CAR && e->myRailDirection == WAY_UNKNOWN)))
+            ? LaneSpreadFunction::RIGHT : LaneSpreadFunction::CENTER);
+    if (addBackward && lsf == LaneSpreadFunction::RIGHT && OptionsCont::getOptions().getString("default.spreadtype") == toString(LaneSpreadFunction::ROADCENTER)) {
+        lsf = LaneSpreadFunction::ROADCENTER;
+    }
+    if (addForward && addBackward && lsf == LaneSpreadFunction::RIGHT && explicitOneWay) {
+        lsf = LaneSpreadFunction::ROADCENTER;
+    }
+    if (tc.getEdgeTypeSpreadType(type) != LaneSpreadFunction::SPREAD_UNKNOWN) {
+        // user defined value overrides defaults
+        lsf = tc.getEdgeTypeSpreadType(type);
+    }
+    if (applyPlacement) {
+        // placement references the directional edge centerline for one-way edges
+        lsf = LaneSpreadFunction::CENTER;
+    }
+    if (defaults.size() > 0) {
+        e->setParameter("osmDefaults", joinToString(defaults, " "));
+    }
+
+    id = StringUtils::escapeXML(id);
+    const std::string reverseID = "-" + id;
+    const bool markOSMDirection =  from->getType() == SumoXMLNodeType::RAIL_SIGNAL || to->getType() == SumoXMLNodeType::RAIL_SIGNAL;
+    if (addForward) {
+        assert(numLanesForward > 0);
+        NBEdge* nbe = new NBEdge(id, from, to, type, speed, NBEdge::UNSPECIFIED_FRICTION, numLanesForward, tc.getEdgeTypePriority(type),
+                                 forwardWidth, NBEdge::UNSPECIFIED_OFFSET, shape, lsf,
+                                 StringUtils::escapeXML(streetName), origID, true);
+        if (markOSMDirection) {
+            nbe->setParameter(NBTrafficLightDefinition::OSM_DIRECTION, "forward");
         }
-        if (tc.getEdgeTypeSpreadType(type) != LaneSpreadFunction::RIGHT) {
-            // user defined value overrides defaults
-            lsf = tc.getEdgeTypeSpreadType(type);
+        nbe->setPermissions(forwardPermissions, -1);
+        if ((e->myBuswayType & WAY_FORWARD) != 0) {
+            nbe->setPermissions(SVC_BUS, 0);
         }
-        if (defaults.size() > 0) {
-            e->setParameter("osmDefaults", joinToString(defaults, " "));
+        applyChangeProhibition(nbe, e->myChangeForward);
+        applyLaneUse(nbe, e, true);
+        applyTurnSigns(nbe, e->myTurnSignsForward);
+        nbe->setTurnSignTarget(last->getID());
+        if (addBikeLane && (cyclewayType == WAY_UNKNOWN || (cyclewayType & WAY_FORWARD) != 0)) {
+            nbe->addBikeLane(bikeLaneWidth * offsetFactor);
+        } else if (nbe->getPermissions(0) == SVC_BUS) {
+            // bikes drive on buslanes if no separate cycle lane is available
+            nbe->setPermissions(SVC_BUS | SVC_BICYCLE, 0);
+        }
+        if ((addSidewalk && (sidewalkType == WAY_UNKNOWN || (sidewalkType & WAY_FORWARD) != 0))
+                || (myImportSidewalks && (sidewalkType & WAY_FORWARD) != 0 && defaultPermissions != SVC_PEDESTRIAN)) {
+            nbe->addSidewalk(sidewalkWidth * offsetFactor);
+        }
+        if (!addBackward && (e->myExtraAllowed & SVC_PEDESTRIAN) != 0 && (nbe->getPermissions(0) & SVC_PEDESTRIAN) == 0) {
+            // Pedestrians are explicitly allowed (maybe through foot="yes") but did not get a sidewalk (maybe through sidewalk="no").
+            // Since we do not have a backward edge, we need to make sure they can at least walk somewhere, see #14124
+            nbe->setPermissions(nbe->getPermissions(0) | SVC_PEDESTRIAN, 0);
+        }
+        nbe->updateParameters(e->getParametersMap());
+        nbe->setDistance(distanceStart);
+        if (e->myAmInRoundabout) {
+            // ensure roundabout edges have the precedence
+            nbe->setJunctionPriority(to, NBEdge::JunctionPriority::ROUNDABOUT);
+            nbe->setJunctionPriority(from, NBEdge::JunctionPriority::ROUNDABOUT);
         }
 
-        id = StringUtils::escapeXML(id);
-        const std::string reverseID = "-" + id;
-        const bool markOSMDirection =  from->getType() == SumoXMLNodeType::RAIL_SIGNAL || to->getType() == SumoXMLNodeType::RAIL_SIGNAL;
-        if (addForward) {
-            assert(numLanesForward > 0);
-            NBEdge* nbe = new NBEdge(id, from, to, type, speed, NBEdge::UNSPECIFIED_FRICTION, numLanesForward, tc.getEdgeTypePriority(type),
-                                     forwardWidth, NBEdge::UNSPECIFIED_OFFSET, shape, lsf,
-                                     StringUtils::escapeXML(streetName), origID, true);
-            if (markOSMDirection) {
-                nbe->setParameter(NBTrafficLightDefinition::OSM_DIRECTION, "forward");
-            }
-            nbe->setPermissions(forwardPermissions, -1);
-            if ((e->myBuswayType & WAY_FORWARD) != 0) {
-                nbe->setPermissions(SVC_BUS, 0);
-            }
-            applyChangeProhibition(nbe, e->myChangeForward);
-            applyLaneUse(nbe, e, true);
-            applyTurnSigns(nbe, e->myTurnSignsForward);
-            nbe->setTurnSignTarget(last->getID());
-            if (addBikeLane && (cyclewayType == WAY_UNKNOWN || (cyclewayType & WAY_FORWARD) != 0)) {
-                nbe->addBikeLane(bikeLaneWidth * offsetFactor);
-            } else if (nbe->getPermissions(0) == SVC_BUS) {
-                // bikes drive on buslanes if no separate cycle lane is available
-                nbe->setPermissions(SVC_BUS | SVC_BICYCLE, 0);
-            }
-            if ((addSidewalk && (sidewalkType == WAY_UNKNOWN || (sidewalkType & WAY_FORWARD) != 0))
-                    || (myImportSidewalks && (sidewalkType & WAY_FORWARD) != 0 && defaultPermissions != SVC_PEDESTRIAN)) {
-                nbe->addSidewalk(sidewalkWidth * offsetFactor);
-            }
-            if (!addBackward && (e->myExtraAllowed & SVC_PEDESTRIAN) != 0 && (nbe->getPermissions(0) & SVC_PEDESTRIAN) == 0) {
-                // Pedestrians are explicitly allowed (maybe through foot="yes") but did not get a sidewalk (maybe through sidewalk="no").
-                // Since we do not have a backward edge, we need to make sure they can at least walk somewhere, see #14124
-                nbe->setPermissions(nbe->getPermissions(0) | SVC_PEDESTRIAN, 0);
-            }
-            nbe->updateParameters(e->getParametersMap());
-            nbe->setDistance(distanceStart);
-            if (e->myAmInRoundabout) {
-                // ensure roundabout edges have the precedence
-                nbe->setJunctionPriority(to, NBEdge::JunctionPriority::ROUNDABOUT);
-                nbe->setJunctionPriority(from, NBEdge::JunctionPriority::ROUNDABOUT);
-            }
-
-            // process forward lanes width
-            const int numForwardLanesFromWidthKey = (int)e->myWidthLanesForward.size();
-            if (numForwardLanesFromWidthKey > 0 && !OptionsCont::getOptions().getBool("ignore-widths")) {
-                if ((int)nbe->getLanes().size() != numForwardLanesFromWidthKey) {
-                    WRITE_WARNINGF(TL("Forward lanes count for edge '%' ('%') is not matching the number of lanes defined in width:lanes:forward key ('%'). Using default width values."),
-                                   id, nbe->getLanes().size(), numForwardLanesFromWidthKey);
-                } else {
-                    for (int i = 0; i < numForwardLanesFromWidthKey; i++) {
-                        const double actualWidth = e->myWidthLanesForward[i] <= 0 ? forwardWidth : e->myWidthLanesForward[i];
-                        const int laneIndex = lefthand ? i : numForwardLanesFromWidthKey - i - 1;
-                        nbe->setLaneWidth(laneIndex, actualWidth);
-                    }
+        // process forward lanes width
+        const int numForwardLanesFromWidthKey = (int)e->myWidthLanesForward.size();
+        if (numForwardLanesFromWidthKey > 0 && !OptionsCont::getOptions().getBool("ignore-widths")) {
+            if ((int)nbe->getLanes().size() != numForwardLanesFromWidthKey) {
+                WRITE_WARNINGF(TL("Forward lanes count for edge '%' ('%') is not matching the number of lanes defined in width:lanes:forward key ('%'). Using default width values."),
+                               id, nbe->getLanes().size(), numForwardLanesFromWidthKey);
+            } else {
+                for (int i = 0; i < numForwardLanesFromWidthKey; i++) {
+                    const double actualWidth = e->myWidthLanesForward[i] <= 0 ? forwardWidth : e->myWidthLanesForward[i];
+                    const int laneIndex = lefthand ? i : numForwardLanesFromWidthKey - i - 1;
+                    nbe->setLaneWidth(laneIndex, actualWidth);
                 }
             }
-
-            if (!ec.insert(nbe)) {
-                delete nbe;
-                throw ProcessError(TLF("Could not add edge '%'.", id));
-            }
         }
-        if (addBackward) {
-            assert(numLanesBackward > 0);
-            NBEdge* nbe = new NBEdge(reverseID, to, from, type, speedBackward, NBEdge::UNSPECIFIED_FRICTION, numLanesBackward, tc.getEdgeTypePriority(type),
-                                     backwardWidth, NBEdge::UNSPECIFIED_OFFSET, shape.reverse(), lsf,
-                                     StringUtils::escapeXML(streetName), origID, true);
-            if (markOSMDirection) {
-                nbe->setParameter(NBTrafficLightDefinition::OSM_DIRECTION, "backward");
-            }
-            nbe->setPermissions(backwardPermissions);
-            if ((e->myBuswayType & WAY_BACKWARD) != 0) {
-                nbe->setPermissions(SVC_BUS, 0);
-            }
-            applyChangeProhibition(nbe, e->myChangeBackward);
-            applyLaneUse(nbe, e, false);
-            applyTurnSigns(nbe, e->myTurnSignsBackward);
-            nbe->setTurnSignTarget(first->getID());
-            if (addBikeLane && (cyclewayType == WAY_UNKNOWN || (cyclewayType & WAY_BACKWARD) != 0)) {
-                nbe->addBikeLane(bikeLaneWidth * offsetFactor);
-            } else if (nbe->getPermissions(0) == SVC_BUS) {
-                // bikes drive on buslanes if no separate cycle lane is available
-                nbe->setPermissions(SVC_BUS | SVC_BICYCLE, 0);
-            }
-            if ((addSidewalk && (sidewalkType == WAY_UNKNOWN || (sidewalkType & WAY_BACKWARD) != 0))
-                    || (myImportSidewalks && (sidewalkType & WAY_BACKWARD) != 0 && defaultPermissions != SVC_PEDESTRIAN)) {
-                nbe->addSidewalk(sidewalkWidth * offsetFactor);
-            }
-            nbe->updateParameters(e->getParametersMap());
-            nbe->setDistance(distanceEnd);
-            if (e->myAmInRoundabout) {
-                // ensure roundabout edges have the precedence
-                nbe->setJunctionPriority(from, NBEdge::JunctionPriority::ROUNDABOUT);
-                nbe->setJunctionPriority(to, NBEdge::JunctionPriority::ROUNDABOUT);
-            }
-            // process backward lanes width
-            const int numBackwardLanesFromWidthKey = (int)e->myWidthLanesBackward.size();
-            if (numBackwardLanesFromWidthKey > 0 && !OptionsCont::getOptions().getBool("ignore-widths")) {
-                if ((int)nbe->getLanes().size() != numBackwardLanesFromWidthKey) {
-                    WRITE_WARNINGF(TL("Backward lanes count for edge '%' ('%') is not matching the number of lanes defined in width:lanes:backward key ('%'). Using default width values."),
-                                   id, nbe->getLanes().size(), numBackwardLanesFromWidthKey);
-                } else {
-                    for (int i = 0; i < numBackwardLanesFromWidthKey; i++) {
-                        const double actualWidth = e->myWidthLanesBackward[i] <= 0 ? backwardWidth : e->myWidthLanesBackward[i];
-                        const int laneIndex = lefthand ? i : numBackwardLanesFromWidthKey - i - 1;
-                        nbe->setLaneWidth(laneIndex, actualWidth);
-                    }
+        if ((e->myRailDirection & WAY_PREFER_FORWARD) != 0 && isRailway(forwardPermissions)) {
+            nbe->setRoutingType("4");
+        } else {
+            nbe->setRoutingType(routingType);
+        }
+
+        if (!ec.insert(nbe)) {
+            delete nbe;
+            throw ProcessError(TLF("Could not add edge '%'.", id));
+        }
+    }
+    if (addBackward) {
+        assert(numLanesBackward > 0);
+        NBEdge* nbe = new NBEdge(reverseID, to, from, type, speedBackward, NBEdge::UNSPECIFIED_FRICTION, numLanesBackward, tc.getEdgeTypePriority(type),
+                                 backwardWidth, NBEdge::UNSPECIFIED_OFFSET, shape.reverse(), lsf,
+                                 StringUtils::escapeXML(streetName), origID, true);
+        if (markOSMDirection) {
+            nbe->setParameter(NBTrafficLightDefinition::OSM_DIRECTION, "backward");
+        }
+        nbe->setPermissions(backwardPermissions);
+        if ((e->myBuswayType & WAY_BACKWARD) != 0) {
+            nbe->setPermissions(SVC_BUS, 0);
+        }
+        applyChangeProhibition(nbe, e->myChangeBackward);
+        applyLaneUse(nbe, e, false);
+        applyTurnSigns(nbe, e->myTurnSignsBackward);
+        nbe->setTurnSignTarget(first->getID());
+        if (addBikeLane && (cyclewayType == WAY_UNKNOWN || (cyclewayType & WAY_BACKWARD) != 0)) {
+            nbe->addBikeLane(bikeLaneWidth * offsetFactor);
+        } else if (nbe->getPermissions(0) == SVC_BUS) {
+            // bikes drive on buslanes if no separate cycle lane is available
+            nbe->setPermissions(SVC_BUS | SVC_BICYCLE, 0);
+        }
+        if ((addSidewalk && (sidewalkType == WAY_UNKNOWN || (sidewalkType & WAY_BACKWARD) != 0))
+                || (myImportSidewalks && (sidewalkType & WAY_BACKWARD) != 0 && defaultPermissions != SVC_PEDESTRIAN)) {
+            nbe->addSidewalk(sidewalkWidth * offsetFactor);
+        }
+        nbe->updateParameters(e->getParametersMap());
+        nbe->setDistance(distanceEnd);
+        if (e->myAmInRoundabout) {
+            // ensure roundabout edges have the precedence
+            nbe->setJunctionPriority(from, NBEdge::JunctionPriority::ROUNDABOUT);
+            nbe->setJunctionPriority(to, NBEdge::JunctionPriority::ROUNDABOUT);
+        }
+        // process backward lanes width
+        const int numBackwardLanesFromWidthKey = (int)e->myWidthLanesBackward.size();
+        if (numBackwardLanesFromWidthKey > 0 && !OptionsCont::getOptions().getBool("ignore-widths")) {
+            if ((int)nbe->getLanes().size() != numBackwardLanesFromWidthKey) {
+                WRITE_WARNINGF(TL("Backward lanes count for edge '%' ('%') is not matching the number of lanes defined in width:lanes:backward key ('%'). Using default width values."),
+                               id, nbe->getLanes().size(), numBackwardLanesFromWidthKey);
+            } else {
+                for (int i = 0; i < numBackwardLanesFromWidthKey; i++) {
+                    const double actualWidth = e->myWidthLanesBackward[i] <= 0 ? backwardWidth : e->myWidthLanesBackward[i];
+                    const int laneIndex = lefthand ? i : numBackwardLanesFromWidthKey - i - 1;
+                    nbe->setLaneWidth(laneIndex, actualWidth);
                 }
             }
-
-            if (!ec.insert(nbe)) {
-                delete nbe;
-                throw ProcessError(TLF("Could not add edge '-%'.", id));
-            }
         }
-        if ((e->myParkingType & PARKING_BOTH) != 0 && OptionsCont::getOptions().isSet("parking-output")) {
-            if ((e->myParkingType & PARKING_RIGHT) != 0) {
-                if (addForward) {
-                    nb.getParkingCont().push_back(NBParking(id, id));
-                } else {
-                    /// XXX parking area should be added on the left side of a reverse one-way street
-                    if ((e->myParkingType & PARKING_LEFT) == 0 && !addBackward) {
-                        /// put it on the wrong side (better than nothing)
-                        nb.getParkingCont().push_back(NBParking(reverseID, reverseID));
-                    }
-                }
-            }
-            if ((e->myParkingType & PARKING_LEFT) != 0) {
-                if (addBackward) {
+        if ((e->myRailDirection & WAY_PREFER_BACKWARD) != 0 && isRailway(backwardPermissions)) {
+            nbe->setRoutingType("4");
+        } else {
+            nbe->setRoutingType(routingType);
+        }
+
+        if (!ec.insert(nbe)) {
+            delete nbe;
+            throw ProcessError(TLF("Could not add edge '-%'.", id));
+        }
+    }
+    if ((e->myParkingType & PARKING_BOTH) != 0 && OptionsCont::getOptions().isSet("parking-output")) {
+        if ((e->myParkingType & PARKING_RIGHT) != 0) {
+            if (addForward) {
+                nb.getParkingCont().push_back(NBParking(id, id));
+            } else {
+                /// XXX parking area should be added on the left side of a reverse one-way street
+                if ((e->myParkingType & PARKING_LEFT) == 0 && !addBackward) {
+                    /// put it on the wrong side (better than nothing)
                     nb.getParkingCont().push_back(NBParking(reverseID, reverseID));
-                } else {
-                    /// XXX parking area should be added on the left side of an one-way street
-                    if ((e->myParkingType & PARKING_RIGHT) == 0 && !addForward) {
-                        /// put it on the wrong side (better than nothing)
-                        nb.getParkingCont().push_back(NBParking(id, id));
-                    }
+                }
+            }
+        }
+        if ((e->myParkingType & PARKING_LEFT) != 0) {
+            if (addBackward) {
+                nb.getParkingCont().push_back(NBParking(reverseID, reverseID));
+            } else {
+                /// XXX parking area should be added on the left side of an one-way street
+                if ((e->myParkingType & PARKING_RIGHT) == 0 && !addForward) {
+                    /// put it on the wrong side (better than nothing)
+                    nb.getParkingCont().push_back(NBParking(id, id));
                 }
             }
         }
@@ -1818,6 +1941,7 @@ NIImporter_OpenStreetMap::EdgesHandler::myStartElement(int element, const SUMOSA
                 && key != "oneway:bicycle"
                 && key != "oneway:bus"
                 && key != "oneway:psv"
+                && key != "placement"
                 && key != "bus:lanes"
                 && key != "bus:lanes:forward"
                 && key != "bus:lanes:backward"
@@ -1901,7 +2025,10 @@ NIImporter_OpenStreetMap::EdgesHandler::myStartElement(int element, const SUMOSA
             if (key == "sidewalk") {
                 if (value == "no" || value == "none" || value == "separate") {
                     myCurrentEdge->mySidewalkType = WAY_NONE;
-                } else if (value == "both") {
+                    if (value == "separate") {
+                        myCurrentEdge->myExtraDisallowed |= SVC_PEDESTRIAN;
+                    }
+                } else if (value == "both" || value == "yes") {
                     myCurrentEdge->mySidewalkType = WAY_BOTH;
                 } else if (value == "right") {
                     myCurrentEdge->mySidewalkType = WAY_FORWARD;
@@ -1924,11 +2051,17 @@ NIImporter_OpenStreetMap::EdgesHandler::myStartElement(int element, const SUMOSA
                 if (value == "yes") {
                     myCurrentEdge->mySidewalkType = (WayType)(myCurrentEdge->mySidewalkType | WAY_FORWARD);
                 }
+                if (value == "separate") {
+                    myCurrentEdge->myExtraDisallowed |= SVC_PEDESTRIAN;
+                }
             }
             if (key == "sidewalk:both") {
                 if (myCurrentEdge->mySidewalkType == WAY_UNKNOWN) {
                     if (value == "no" || value == "none" || value == "separate") {
                         myCurrentEdge->mySidewalkType = WAY_NONE;
+                        if (value == "separate") {
+                            myCurrentEdge->myExtraDisallowed |= SVC_PEDESTRIAN;
+                        }
                     }
                     if (value == "yes") {
                         myCurrentEdge->mySidewalkType = WAY_BOTH;
@@ -2030,6 +2163,10 @@ NIImporter_OpenStreetMap::EdgesHandler::myStartElement(int element, const SUMOSA
                 // need to add a bus way in reversed direction of way
                 myCurrentEdge->myBuswayType = WAY_BACKWARD;
             }
+        } else if (key == "placement") {
+            if (!interpretPlacement(value, myCurrentEdge->myPlacement, myCurrentEdge->myPlacementLane)) {
+                WRITE_WARNINGF(TL("Ignoring unsupported placement value '%' for edge '%'."), value, myCurrentEdge->id);
+            }
         } else if (key == "lanes") {
             try {
                 myCurrentEdge->myNoLanes = StringUtils::toInt(value);
@@ -2114,17 +2251,15 @@ NIImporter_OpenStreetMap::EdgesHandler::myStartElement(int element, const SUMOSA
             }
         } else if (key == "railway:preferred_direction") {
             if (value == "both") {
-                myCurrentEdge->myRailDirection = WAY_BOTH;
-            } else if (myCurrentEdge->myRailDirection == WAY_UNKNOWN) {
-                if (value == "backward") {
-                    myCurrentEdge->myRailDirection = WAY_BACKWARD;
-                } else if (value == "forward") {
-                    myCurrentEdge->myRailDirection = WAY_FORWARD;
-                }
+                myCurrentEdge->myRailDirection = WAY_BOTH | WAY_PREFER_FORWARD | WAY_PREFER_BACKWARD;
+            } else if (value == "backward") {
+                myCurrentEdge->myRailDirection = (myCurrentEdge->myRailDirection | WAY_BACKWARD | WAY_PREFER_BACKWARD) & ~WAY_UNKNOWN;
+            } else if (value == "forward") {
+                myCurrentEdge->myRailDirection = (myCurrentEdge->myRailDirection | WAY_FORWARD | WAY_PREFER_FORWARD) & ~WAY_UNKNOWN;
             }
         } else if (key == "railway:bidirectional") {
             if (value == "regular") {
-                myCurrentEdge->myRailDirection = WAY_BOTH;
+                myCurrentEdge->myRailDirection = (myCurrentEdge->myRailDirection | WAY_BOTH) & ~WAY_UNKNOWN;
             }
         } else if (key == "electrified" || key == "segregated") {
             if (value != "no") {
@@ -2282,6 +2417,40 @@ NIImporter_OpenStreetMap::EdgesHandler::interpretChangeType(const std::string& v
     }
     //std::cout << " way=" << myCurrentEdge->id << " value=" << value << " result=" << std::bitset<32>(result) << "\n";
     return result;
+}
+
+
+bool
+NIImporter_OpenStreetMap::EdgesHandler::interpretPlacement(const std::string& value, NIImporter_OpenStreetMap::PlacementType& placement, int& laneIndex) const {
+    placement = NIImporter_OpenStreetMap::PlacementType::NONE;
+    laneIndex = -1;
+    const std::vector<std::string> tokens = StringTokenizer(value, ":").getVector();
+    if (tokens.size() != 2) {
+        return false;
+    }
+    const std::string where = StringUtils::prune(tokens[0]);
+    if (where == "left_of") {
+        placement = NIImporter_OpenStreetMap::PlacementType::LEFT_OF;
+    } else if (where == "right_of") {
+        placement = NIImporter_OpenStreetMap::PlacementType::RIGHT_OF;
+    } else if (where == "middle_of") {
+        placement = NIImporter_OpenStreetMap::PlacementType::MIDDLE_OF;
+    } else {
+        return false;
+    }
+    try {
+        laneIndex = StringUtils::toInt(StringUtils::prune(tokens[1]));
+    } catch (ProcessError&) {
+        placement = NIImporter_OpenStreetMap::PlacementType::NONE;
+        laneIndex = -1;
+        return false;
+    }
+    if (laneIndex <= 0) {
+        placement = NIImporter_OpenStreetMap::PlacementType::NONE;
+        laneIndex = -1;
+        return false;
+    }
+    return true;
 }
 
 
@@ -2685,8 +2854,8 @@ NIImporter_OpenStreetMap::RelationHandler::myEndElement(int element) {
                     if (!NBNetBuilder::transformCoordinate(ptPos)) {
                         WRITE_ERRORF("Unable to project coordinates for node '%'.", n->id);
                     }
-                    SumoXMLTag element = isRailway(n->permissions) ? SUMO_TAG_TRAIN_STOP : SUMO_TAG_BUS_STOP;
-                    ptStop = std::make_shared<NBPTStop>(element, toString(n->id), ptPos, "", "", n->ptStopLength, n->name, n->permissions);
+                    const SumoXMLTag stopElement = isRailway(n->permissions) ? SUMO_TAG_TRAIN_STOP : SUMO_TAG_BUS_STOP;
+                    ptStop = std::make_shared<NBPTStop>(stopElement, toString(n->id), ptPos, "", "", n->ptStopLength, n->name, n->permissions);
                     myNBPTStopCont->insert(ptStop);
                     if (myStopAreas.count(n->id)) {
                         ptStop->setIsMultipleStopPositions(false, myStopAreas[n->id]);

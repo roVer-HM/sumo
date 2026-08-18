@@ -28,17 +28,12 @@ if "SUMO_HOME" in os.environ:
 import traci  # noqa
 import sumolib  # noqa
 
-WATCH = False
-
-sumoBinary = 'sumo-gui' if WATCH else sumolib.checkBinary('sumo')
 cmd = [
-    sumoBinary,
+    sumolib.checkBinary('sumo'),
     '-n', 'input_net.net.xml',
     '--no-step-log', ]
-if not WATCH:
-    cmd += ['-S', '-Q']
 
-traci.start(cmd)
+traci.start(cmd + sys.argv[1:])
 
 ANGLE_UNDEF = traci.constants.INVALID_DOUBLE_VALUE
 INVALID = traci.constants.INVALID_DOUBLE_VALUE

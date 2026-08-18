@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-11-14T15:06:22.226003+01:00 by Eclipse SUMO netconvert v1_25_0+0045-28a3daf62ee
+<!-- generated on 2026-04-01T00:10:46.245082+01:00 by Eclipse SUMO netconvert v1_26_0+0915-c030b39bdd3
 -->
 
 <netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
@@ -161,6 +161,7 @@
         <default.disallow value="" type="STR" help="The default for disallowed vehicle classes"/>
         <default.junctions.keep-clear value="true" type="BOOL" help="Whether junctions should be kept clear by default"/>
         <default.junctions.radius value="4" type="FLOAT" help="The default turning radius of intersections"/>
+        <default.junctions.type value="" synonymes="default-junction-type j" type="STR" help="[traffic_light|priority|right_before_left|left_before_right|traffic_light_right_on_red|priority_stop|allway_stop|...] Determines default junction type (see docs/Networks/PlainXML#node_types)"/>
         <default.connection-length value="-1" type="FLOAT" help="The default length when overriding connection lengths"/>
         <default.connection.cont-pos value="-1" type="FLOAT" help="Whether/where connections should have an internal junction"/>
         <default.right-of-way value="default" type="STR" help="The default algorithm for computing right of way rules (&apos;default&apos;, &apos;edgePriority&apos;)"/>
@@ -254,14 +255,15 @@
         <no-turnarounds.tls value="false" synonymes="no-tls-turnarounds" deprecated="no-tls-turnarounds" type="BOOL" help="Disables building turnarounds at tls-controlled junctions"/>
         <no-turnarounds.geometry value="true" type="BOOL" help="Disables building turnarounds at geometry-like junctions"/>
         <no-turnarounds.except-deadend value="false" type="BOOL" help="Disables building turnarounds except at dead end junctions"/>
-        <no-turnarounds.except-turnlane value="false" type="BOOL" help="Disables building turnarounds except at at junctions with a dedicated turning lane"/>
+        <no-turnarounds.except-turnlane value="false" type="BOOL" help="Disables building turnarounds except at junctions with a dedicated turning lane"/>
         <no-turnarounds.fringe value="false" type="BOOL" help="Disables building turnarounds at fringe junctions"/>
         <no-left-connections value="false" type="BOOL" help="Disables building connections to left"/>
         <junctions.join value="false" type="BOOL" help="Joins junctions that are close to each other (recommended for OSM import)"/>
         <junctions.join-dist value="10" type="FLOAT" help="Determines the maximal distance for joining junctions (defaults to 10)"/>
-        <junctions.join.parallel-threshold value="30" type="FLOAT" help="The angular threshold in degress for rejection of parallel edges when joining junctions"/>
+        <junctions.join.parallel-threshold value="30" type="FLOAT" help="The angular threshold in degrees for rejection of parallel edges when joining junctions"/>
         <junctions.join-exclude value="" type="STR[]" help="Interprets STR[] as list of junctions to exclude from joining"/>
         <junctions.join-same value="-1" type="FLOAT" help="Joins junctions that have similar coordinates even if not connected"/>
+        <junctions.join-reset value="false" type="BOOL" help="Reset connections for joined junctions"/>
         <junctions.attach-removed value="-1" type="FLOAT" help="Attach junction to the closest edge within FLOAT distance that has it&apos;s id in param removedNodeIDs (for joining networks)"/>
         <max-join-ids value="4" type="INT" help="Abbreviate junction or TLS id if it joins more than INT junctions"/>
         <junctions.corner-detail value="5" type="INT" help="Generate INT intermediate points to smooth out intersection corners"/>
@@ -314,9 +316,11 @@
         <railway.topology.all-bidi value="false" type="BOOL" help="Make all rails usable in both direction"/>
         <railway.topology.all-bidi.input-file value="" type="FILE" help="Make all rails edge ids from FILE usable in both direction"/>
         <railway.topology.direction-priority value="false" type="BOOL" help="Set edge priority values based on estimated main direction"/>
+        <railway.topology.ptline-priority value="" type="STR[]" help="Set edge priority values based on public transport lines for the given list of vClasses"/>
         <railway.topology.extend-priority value="false" type="BOOL" help="Extend loaded edge priority values based on estimated main direction"/>
         <railway.geometry.straighten value="false" type="BOOL" help="Move junctions to straighten a sequence of rail edges"/>
         <railway.signal.guess.by-stops value="false" type="BOOL" help="Guess signals that guard public transport stops"/>
+        <railway.signal.guess.by-stops.split value="false" type="BOOL" help="Split edges to improve positioning of guessed signals and prevent switches as rail_signals"/>
         <railway.signal.permit-unsignalized value="tram,cable_car" type="STR[]" help="List rail classes that may run without rail signals"/>
         <railway.access-distance value="150" synonymes="osm.stop-output.footway-access-distance" deprecated="osm.stop-output.footway-access-distance" type="FLOAT" help="The search radius for finding suitable road accesses for rail stops"/>
         <railway.max-accesses value="5" synonymes="osm.stop-output.footway-max-accesses" deprecated="osm.stop-output.footway-max-accesses" type="INT" help="The maximum road accesses registered per rail stops"/>

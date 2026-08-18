@@ -62,14 +62,16 @@ FXIMPLEMENT_ABSTRACT(GNEOptionsEditorRow::OptionFilename,   GNEOptionsEditorRow:
 // ---------------------------------------------------------------------------
 
 GNEOptionsEditorRow::OptionRow::OptionRow(GNEOptionsEditor* optionsEditor, FXComposite* parent, const std::string& topic,
-        const std::string& name, const std::string& description, const std::string& defaultValue, const bool editable) :
+        const std::string& name, const std::string& description, const std::string& defaultValue, const bool editable,
+        const bool requireSaveNetwork) :
     FXHorizontalFrame(parent, GUIDesignAuxiliarHorizontalFrame),
     myOptionsEditor(optionsEditor),
     myTopic(topic),
     myName(name),
     myDescription(description),
     myDefaultValue(defaultValue),
-    myEditable(editable) {
+    myEditable(editable),
+    myRequireSaveNetwork(requireSaveNetwork) {
     // build label with name (default width 150)
     myNameLabel = new MFXLabelTooltip(this, myOptionsEditor->myDialog->getApplicationWindow()->getStaticTooltipMenu(),
                                       name.c_str(), nullptr, GUIDesignLabelThickedFixed(MINNAMEWIDTH));
@@ -109,6 +111,12 @@ GNEOptionsEditorRow::OptionRow::getDescriptionLower() const {
 }
 
 
+bool
+GNEOptionsEditorRow::OptionRow::isEditable() const {
+    return myEditable;
+}
+
+
 void
 GNEOptionsEditorRow::OptionRow::updateResetButton() {
     if (getValue() != myDefaultValue) {
@@ -124,8 +132,8 @@ GNEOptionsEditorRow::OptionRow::updateResetButton() {
 
 GNEOptionsEditorRow::OptionString::OptionString(GNEOptionsEditor* optionsEditor, FXComposite* parent,
         const std::string& topic, const std::string& name, const std::string& description,
-        const std::string& defaultValue, const bool editable) :
-    OptionRow(optionsEditor, parent, topic, name, description, defaultValue, editable) {
+        const std::string& defaultValue, const bool editable, const bool requireSaveNetwork) :
+    OptionRow(optionsEditor, parent, topic, name, description, defaultValue, editable, requireSaveNetwork) {
     myStringTextField = new FXTextField(myContentFrame, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
     myStringTextField->setText(myOptionsEditor->myOptionsContainer.getString(name).c_str());
     if (!editable) {
@@ -152,8 +160,16 @@ GNEOptionsEditorRow::OptionString::restoreOption() {
 long
 GNEOptionsEditorRow::OptionString::onCmdSetOption(FXObject*, FXSelector, void*) {
     myOptionsEditor->myOptionsContainer.resetWritable();
-    myOptionsEditor->myOptionsContainer.set(myName, myStringTextField->getText().text());
+    // check if reset or set
+    if (myStringTextField->getText().text() == myOptionsEditor->myOriginalOptionsContainer.getString(myName)) {
+        myOptionsEditor->myOptionsContainer.resetDefault(myName);
+    } else {
+        myOptionsEditor->myOptionsContainer.set(myName, myStringTextField->getText().text());
+    }
     myOptionsEditor->myOptionsModified = true;
+    if (myRequireSaveNetwork) {
+        myOptionsEditor->myRequireSaveNetwork = true;
+    }
     updateResetButton();
     return 1;
 }
@@ -175,8 +191,8 @@ GNEOptionsEditorRow::OptionString::getValue() const {
 
 GNEOptionsEditorRow::OptionStringVector::OptionStringVector(GNEOptionsEditor* optionsEditor, FXComposite* parent,
         const std::string& topic, const std::string& name, const std::string& description,
-        const std::string& defaultValue, const bool editable) :
-    OptionRow(optionsEditor, parent, topic, name, description, defaultValue, editable) {
+        const std::string& defaultValue, const bool editable, const bool requireSaveNetwork) :
+    OptionRow(optionsEditor, parent, topic, name, description, defaultValue, editable, requireSaveNetwork) {
     myStringVectorTextField = new FXTextField(myContentFrame, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
     if (!editable) {
         myStringVectorTextField->disable();
@@ -187,14 +203,14 @@ GNEOptionsEditorRow::OptionStringVector::OptionStringVector(GNEOptionsEditor* op
 
 void
 GNEOptionsEditorRow::OptionStringVector::updateOption() {
-    myStringVectorTextField->setText(toString(myOptionsEditor->myOptionsContainer.getStringVector(myName)).c_str());
+    myStringVectorTextField->setText(myOptionsEditor->myOptionsContainer.getValueString(myName).c_str());
     updateResetButton();
 }
 
 
 void
 GNEOptionsEditorRow::OptionStringVector::restoreOption() {
-    myStringVectorTextField->setText(toString(myOptionsEditor->myOriginalOptionsContainer.getStringVector(myName)).c_str());
+    myStringVectorTextField->setText(myOptionsEditor->myOriginalOptionsContainer.getValueString(myName).c_str());
     onCmdSetOption(nullptr, 0, nullptr);
 }
 
@@ -202,8 +218,16 @@ GNEOptionsEditorRow::OptionStringVector::restoreOption() {
 long
 GNEOptionsEditorRow::OptionStringVector::onCmdSetOption(FXObject*, FXSelector, void*) {
     myOptionsEditor->myOptionsContainer.resetWritable();
-    myOptionsEditor->myOptionsContainer.set(myName, myStringVectorTextField->getText().text());
+    // check if reset or set
+    if (myStringVectorTextField->getText().text() == myOptionsEditor->myOriginalOptionsContainer.getValueString(myName)) {
+        myOptionsEditor->myOptionsContainer.resetDefault(myName);
+    } else {
+        myOptionsEditor->myOptionsContainer.set(myName, myStringVectorTextField->getText().text());
+    }
     myOptionsEditor->myOptionsModified = true;
+    if (myRequireSaveNetwork) {
+        myOptionsEditor->myRequireSaveNetwork = true;
+    }
     updateResetButton();
     return 1;
 }
@@ -228,8 +252,8 @@ GNEOptionsEditorRow::OptionStringVector::getValue() const {
 
 GNEOptionsEditorRow::OptionBool::OptionBool(GNEOptionsEditor* optionsEditor, FXComposite* parent,
         const std::string& topic, const std::string& name, const std::string& description,
-        const std::string& defaultValue, const bool editable) :
-    OptionRow(optionsEditor, parent, topic, name, description, defaultValue, editable) {
+        const std::string& defaultValue, const bool editable, const bool requireSaveNetwork) :
+    OptionRow(optionsEditor, parent, topic, name, description, defaultValue, editable, requireSaveNetwork) {
     myCheckButton = new FXCheckButton(myContentFrame, "", this, MID_GNE_SET_ATTRIBUTE, GUIDesignCheckButton);
     if (!editable) {
         myCheckButton->disable();
@@ -267,14 +291,25 @@ GNEOptionsEditorRow::OptionBool::restoreOption() {
 long
 GNEOptionsEditorRow::OptionBool::onCmdSetOption(FXObject*, FXSelector, void*) {
     myOptionsEditor->myOptionsContainer.resetWritable();
-    if (myCheckButton->getCheck()) {
+    // check if reset or set
+    const bool check = myCheckButton->getCheck() == TRUE;
+    if (check == myOptionsEditor->myOriginalOptionsContainer.getBool(myName)) {
+        myOptionsEditor->myOptionsContainer.resetDefault(myName);
+    } else if (check) {
         myOptionsEditor->myOptionsContainer.set(myName, "true");
-        myCheckButton->setText(TL("true"));
     } else {
         myOptionsEditor->myOptionsContainer.set(myName, "false");
+    }
+    // set text
+    if (check) {
+        myCheckButton->setText(TL("true"));
+    } else {
         myCheckButton->setText(TL("false"));
     }
     myOptionsEditor->myOptionsModified = true;
+    if (myRequireSaveNetwork) {
+        myOptionsEditor->myRequireSaveNetwork = true;
+    }
     // special checks for Debug flags
     if ((myName == "gui-testing-debug") && myOptionsEditor->myOptionsContainer.isSet("gui-testing-debug")) {
         MsgHandler::enableDebugMessages(myOptionsEditor->myOptionsContainer.getBool("gui-testing-debug"));
@@ -315,8 +350,8 @@ GNEOptionsEditorRow::OptionBool::getValue() const {
 
 GNEOptionsEditorRow::OptionInt::OptionInt(GNEOptionsEditor* optionsEditor, FXComposite* parent,
         const std::string& topic, const std::string& name, const std::string& description,
-        const std::string& defaultValue, const bool editable) :
-    OptionRow(optionsEditor, parent, topic, name, description, defaultValue, editable) {
+        const std::string& defaultValue, const bool editable, const bool requireSaveNetwork) :
+    OptionRow(optionsEditor, parent, topic, name, description, defaultValue, editable, requireSaveNetwork) {
     myIntTextField = new FXTextField(myContentFrame, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextFieldRestricted(TEXTFIELD_INTEGER));
     if (!editable) {
         myIntTextField->disable();
@@ -327,14 +362,14 @@ GNEOptionsEditorRow::OptionInt::OptionInt(GNEOptionsEditor* optionsEditor, FXCom
 
 void
 GNEOptionsEditorRow::OptionInt::updateOption() {
-    myIntTextField->setText(toString(myOptionsEditor->myOptionsContainer.getInt(myName)).c_str());
+    myIntTextField->setText(myOptionsEditor->myOptionsContainer.getValueString(myName).c_str());
     updateResetButton();
 }
 
 
 void
 GNEOptionsEditorRow::OptionInt::restoreOption() {
-    myIntTextField->setText(toString(myOptionsEditor->myOriginalOptionsContainer.getInt(myName)).c_str());
+    myIntTextField->setText(myOptionsEditor->myOriginalOptionsContainer.getValueString(myName).c_str());
     onCmdSetOption(nullptr, 0, nullptr);
 }
 
@@ -345,8 +380,16 @@ GNEOptionsEditorRow::OptionInt::onCmdSetOption(FXObject*, FXSelector, void*) {
         myIntTextField->setText(myDefaultValue.c_str());
     } else {
         myOptionsEditor->myOptionsContainer.resetWritable();
-        myOptionsEditor->myOptionsContainer.set(myName, myIntTextField->getText().text());
+        // check if reset or set
+        if (myIntTextField->getText().text() == myOptionsEditor->myOriginalOptionsContainer.getValueString(myName)) {
+            myOptionsEditor->myOptionsContainer.resetDefault(myName);
+        } else {
+            myOptionsEditor->myOptionsContainer.set(myName, myIntTextField->getText().text());
+        }
         myOptionsEditor->myOptionsModified = true;
+        if (myRequireSaveNetwork) {
+            myOptionsEditor->myRequireSaveNetwork = true;
+        }
     }
     updateResetButton();
     return 1;
@@ -372,10 +415,10 @@ GNEOptionsEditorRow::OptionInt::getValue() const {
 
 GNEOptionsEditorRow::OptionIntVector::OptionIntVector(GNEOptionsEditor* optionsEditor, FXComposite* parent,
         const std::string& topic, const std::string& name, const std::string& description,
-        const std::string& defaultValue, const bool editable) :
-    OptionRow(optionsEditor, parent, topic, name, description, defaultValue, editable) {
+        const std::string& defaultValue, const bool editable, const bool requireSaveNetwork) :
+    OptionRow(optionsEditor, parent, topic, name, description, defaultValue, editable, requireSaveNetwork) {
     myIntVectorTextField = new FXTextField(myContentFrame, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
-    myIntVectorTextField->setText(toString(myOptionsEditor->myOptionsContainer.getIntVector(name)).c_str());
+    myIntVectorTextField->setText(myOptionsEditor->myOptionsContainer.getValueString(name).c_str());
     if (!editable) {
         myIntVectorTextField->disable();
     }
@@ -385,14 +428,14 @@ GNEOptionsEditorRow::OptionIntVector::OptionIntVector(GNEOptionsEditor* optionsE
 
 void
 GNEOptionsEditorRow::OptionIntVector::updateOption() {
-    myIntVectorTextField->setText(toString(myOptionsEditor->myOptionsContainer.getIntVector(myName)).c_str());
+    myIntVectorTextField->setText(myOptionsEditor->myOptionsContainer.getValueString(myName).c_str());
     updateResetButton();
 }
 
 
 void
 GNEOptionsEditorRow::OptionIntVector::restoreOption() {
-    myIntVectorTextField->setText(toString(myOptionsEditor->myOriginalOptionsContainer.getIntVector(myName)).c_str());
+    myIntVectorTextField->setText(myOptionsEditor->myOriginalOptionsContainer.getValueString(myName).c_str());
     onCmdSetOption(nullptr, 0, nullptr);
 }
 
@@ -406,9 +449,17 @@ GNEOptionsEditorRow::OptionIntVector::onCmdSetOption(FXObject*, FXSelector, void
             StringUtils::toInt(intValue);
         }
         myOptionsEditor->myOptionsContainer.resetWritable();
-        myOptionsEditor->myOptionsContainer.set(myName, myIntVectorTextField->getText().text());
+        // check if reset or set
+        if (myIntVectorTextField->getText().text() == myOptionsEditor->myOriginalOptionsContainer.getString(myName)) {
+            myOptionsEditor->myOptionsContainer.resetDefault(myName);
+        } else {
+            myOptionsEditor->myOptionsContainer.set(myName, myIntVectorTextField->getText().text());
+        }
         myIntVectorTextField->setTextColor(GUIDesignTextColorBlack);
         myOptionsEditor->myOptionsModified = true;
+        if (myRequireSaveNetwork) {
+            myOptionsEditor->myRequireSaveNetwork = true;
+        }
     } catch (...) {
         myIntVectorTextField->setTextColor(GUIDesignTextColorRed);
     }
@@ -436,10 +487,10 @@ GNEOptionsEditorRow::OptionIntVector::getValue() const {
 
 GNEOptionsEditorRow::OptionFloat::OptionFloat(GNEOptionsEditor* optionsEditor, FXComposite* parent,
         const std::string& topic, const std::string& name, const std::string& description,
-        const std::string& defaultValue, const bool editable) :
-    OptionRow(optionsEditor, parent, topic, name, description, parseFloat(defaultValue), editable) {
+        const std::string& defaultValue, const bool editable, const bool requireSaveNetwork) :
+    OptionRow(optionsEditor, parent, topic, name, description, parseFloat(defaultValue), editable, requireSaveNetwork) {
     myFloatTextField = new FXTextField(myContentFrame, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextFieldRestricted(TEXTFIELD_REAL));
-    myFloatTextField->setText(toString(myOptionsEditor->myOptionsContainer.getFloat(name)).c_str());
+    myFloatTextField->setText(myOptionsEditor->myOptionsContainer.getValueString(name).c_str());
     if (!editable) {
         myFloatTextField->disable();
     }
@@ -449,14 +500,14 @@ GNEOptionsEditorRow::OptionFloat::OptionFloat(GNEOptionsEditor* optionsEditor, F
 
 void
 GNEOptionsEditorRow::OptionFloat::updateOption() {
-    myFloatTextField->setText(toString(myOptionsEditor->myOptionsContainer.getFloat(myName)).c_str());
+    myFloatTextField->setText(myOptionsEditor->myOptionsContainer.getValueString(myName).c_str());
     updateResetButton();
 }
 
 
 void
 GNEOptionsEditorRow::OptionFloat::restoreOption() {
-    myFloatTextField->setText(toString(myOptionsEditor->myOriginalOptionsContainer.getFloat(myName)).c_str());
+    myFloatTextField->setText(myOptionsEditor->myOriginalOptionsContainer.getValueString(myName).c_str());
     onCmdSetOption(nullptr, 0, nullptr);
 }
 
@@ -468,8 +519,16 @@ GNEOptionsEditorRow::OptionFloat::onCmdSetOption(FXObject*, FXSelector, void*) {
         myFloatTextField->setText(myDefaultValue.c_str());
     } else {
         myOptionsEditor->myOptionsContainer.resetWritable();
-        myOptionsEditor->myOptionsContainer.set(myName, myFloatTextField->getText().text());
+        // check if reset or set
+        if (myFloatTextField->getText().text() == myOptionsEditor->myOriginalOptionsContainer.getValueString(myName)) {
+            myOptionsEditor->myOptionsContainer.resetDefault(myName);
+        } else {
+            myOptionsEditor->myOptionsContainer.set(myName, myFloatTextField->getText().text());
+        }
         myOptionsEditor->myOptionsModified = true;
+        if (myRequireSaveNetwork) {
+            myOptionsEditor->myRequireSaveNetwork = true;
+        }
     }
     updateResetButton();
     return 1;
@@ -505,8 +564,8 @@ GNEOptionsEditorRow::OptionFloat::parseFloat(const std::string& value) const {
 
 GNEOptionsEditorRow::OptionTime::OptionTime(GNEOptionsEditor* optionsEditor, FXComposite* parent,
         const std::string& topic, const std::string& name, const std::string& description,
-        const std::string& defaultValue, const bool editable) :
-    OptionRow(optionsEditor, parent, topic, name, description, parseTime(defaultValue), editable) {
+        const std::string& defaultValue, const bool editable, const bool requireSaveNetwork) :
+    OptionRow(optionsEditor, parent, topic, name, description, parseTime(defaultValue), editable, requireSaveNetwork) {
     myTimeTextField = new FXTextField(myContentFrame, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
     myTimeTextField->setText(toString(myOptionsEditor->myOptionsContainer.getString(name)).c_str());
     if (!editable) {
@@ -518,14 +577,14 @@ GNEOptionsEditorRow::OptionTime::OptionTime(GNEOptionsEditor* optionsEditor, FXC
 
 void
 GNEOptionsEditorRow::OptionTime::updateOption() {
-    myTimeTextField->setText(toString(myOptionsEditor->myOptionsContainer.getString(myName)).c_str());
+    myTimeTextField->setText(myOptionsEditor->myOptionsContainer.getValueString(myName).c_str());
     updateResetButton();
 }
 
 
 void
 GNEOptionsEditorRow::OptionTime::restoreOption() {
-    myTimeTextField->setText(toString(myOptionsEditor->myOriginalOptionsContainer.getString(myName)).c_str());
+    myTimeTextField->setText(myOptionsEditor->myOriginalOptionsContainer.getValueString(myName).c_str());
     onCmdSetOption(nullptr, 0, nullptr);
 }
 
@@ -537,8 +596,16 @@ GNEOptionsEditorRow::OptionTime::onCmdSetOption(FXObject*, FXSelector, void*) {
         myTimeTextField->setText(myDefaultValue.c_str());
     } else {
         myOptionsEditor->myOptionsContainer.resetWritable();
-        myOptionsEditor->myOptionsContainer.set(myName, myTimeTextField->getText().text());
+        // check if reset or set
+        if (myTimeTextField->getText().text() == myOptionsEditor->myOriginalOptionsContainer.getValueString(myName)) {
+            myOptionsEditor->myOptionsContainer.resetDefault(myName);
+        } else {
+            myOptionsEditor->myOptionsContainer.set(myName, myTimeTextField->getText().text());
+        }
         myOptionsEditor->myOptionsModified = true;
+        if (myRequireSaveNetwork) {
+            myOptionsEditor->myRequireSaveNetwork = true;
+        }
     }
     updateResetButton();
     return 1;
@@ -573,8 +640,8 @@ GNEOptionsEditorRow::OptionTime::parseTime(const std::string& value) const {
 // ---------------------------------------------------------------------------
 
 GNEOptionsEditorRow::OptionFilename::OptionFilename(GNEOptionsEditor* optionsEditor, FXComposite* parent, const std::string& topic,
-        const std::string& name, const std::string& description, const std::string& defaultValue, const bool editable) :
-    OptionRow(optionsEditor, parent, topic, name, description, defaultValue, editable) {
+        const std::string& name, const std::string& description, const std::string& defaultValue, const bool editable, const bool requireSaveNetwork) :
+    OptionRow(optionsEditor, parent, topic, name, description, defaultValue, editable, requireSaveNetwork) {
     myOpenFilenameButton = GUIDesigns::buildFXButton(myContentFrame, "", "", TL("Select filename"),
                            GUIIconSubSys::getIcon(GUIIcon::OPEN), this, MID_GNE_SET_ATTRIBUTE_DIALOG, GUIDesignButtonIcon);
     myFilenameTextField = new FXTextField(myContentFrame, GUIDesignTextFieldNCol, this, MID_GNE_SET_ATTRIBUTE, GUIDesignTextField);
@@ -588,14 +655,14 @@ GNEOptionsEditorRow::OptionFilename::OptionFilename(GNEOptionsEditor* optionsEdi
 
 void
 GNEOptionsEditorRow::OptionFilename::updateOption() {
-    myFilenameTextField->setText(myOptionsEditor->myOptionsContainer.getString(myName).c_str());
+    myFilenameTextField->setText(myOptionsEditor->myOptionsContainer.getValueString(myName).c_str());
     updateResetButton();
 }
 
 
 void
 GNEOptionsEditorRow::OptionFilename::restoreOption() {
-    myFilenameTextField->setText(myOptionsEditor->myOriginalOptionsContainer.getString(myName).c_str());
+    myFilenameTextField->setText(myOptionsEditor->myOriginalOptionsContainer.getValueString(myName).c_str());
     onCmdSetOption(nullptr, 0, nullptr);
 }
 
@@ -603,7 +670,12 @@ GNEOptionsEditorRow::OptionFilename::restoreOption() {
 long
 GNEOptionsEditorRow::OptionFilename::onCmdOpenDialog(FXObject*, FXSelector, void*) {
     // get open mode
-    GNEFileDialog::OpenMode openMode = (myName.find("output") != std::string::npos) ? GNEFileDialog::OpenMode::SAVE : GNEFileDialog::OpenMode::LOAD_SINGLE;
+    GNEFileDialog::OpenMode openMode = GNEFileDialog::OpenMode::LOAD_SINGLE;
+    if (myName.find("output") != std::string::npos || myName.find("log") != std::string::npos) {
+        openMode = GNEFileDialog::OpenMode::SAVE;
+    } else if (myName.find("files") != std::string::npos) {
+        openMode = GNEFileDialog::OpenMode::LOAD_MULTIPLE;
+    }
     // open dialog
     const GNEFileDialog XMLFileDialog(myOptionsEditor->myDialog->getApplicationWindow(), myOptionsEditor->myDialog,
                                       TL("XML file"),
@@ -611,7 +683,9 @@ GNEOptionsEditorRow::OptionFilename::onCmdOpenDialog(FXObject*, FXSelector, void
                                       GNEFileDialog::ConfigType::NETEDIT);
     // check that file is valid
     if (XMLFileDialog.getResult() == GNEDialog::Result::ACCEPT) {
-        myFilenameTextField->setText(XMLFileDialog.getFilename().c_str(), TRUE);
+        myFilenameTextField->setText((openMode == GNEFileDialog::OpenMode::LOAD_MULTIPLE
+                                      ? joinToString(XMLFileDialog.getFilenames(), ",").c_str()
+                                      : XMLFileDialog.getFilename().c_str()), TRUE);
     }
     updateResetButton();
     return 1;
@@ -622,9 +696,17 @@ long
 GNEOptionsEditorRow::OptionFilename::onCmdSetOption(FXObject*, FXSelector, void*) {
     if (SUMOXMLDefinitions::isValidFilename(myFilenameTextField->getText().text())) {
         myOptionsEditor->myOptionsContainer.resetWritable();
-        myOptionsEditor->myOptionsContainer.set(myName, myFilenameTextField->getText().text());
+        // check if reset or set
+        if (myFilenameTextField->getText().text() == myOptionsEditor->myOriginalOptionsContainer.getValueString(myName)) {
+            myOptionsEditor->myOptionsContainer.resetDefault(myName);
+        } else {
+            myOptionsEditor->myOptionsContainer.set(myName, myFilenameTextField->getText().text());
+        }
         myFilenameTextField->setTextColor(GUIDesignTextColorBlack);
         myOptionsEditor->myOptionsModified = true;
+        if (myRequireSaveNetwork) {
+            myOptionsEditor->myRequireSaveNetwork = true;
+        }
     } else {
         myFilenameTextField->setTextColor(GUIDesignTextColorRed);
     }

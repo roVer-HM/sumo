@@ -193,6 +193,10 @@ class ArgumentParser(argparse.ArgumentParser):
         return s
 
     @staticmethod
+    def additional_file_list(s):
+        return s
+
+    @staticmethod
     def edgedata_file(s):
         return s
 
@@ -330,6 +334,7 @@ class ArgumentParser(argparse.ArgumentParser):
                                     typeName = 'time'
                                 knownTypes = ['bool', 'float', 'int', 'time', 'file',
                                               'net_file', 'route_file', 'additional_file',
+                                              'additional_file_list',
                                               'edgedata_file', 'data_file', 'file_list',
                                               'route_file_list', 'sumoconfig_file',
                                               'sumoconfig_file_list', 'edge', 'edge_list']

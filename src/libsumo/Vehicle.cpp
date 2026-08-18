@@ -741,6 +741,23 @@ Vehicle::getDrivingDistance2D(const std::string& vehID, double x, double y) {
 
 
 double
+Vehicle::getReferenceDistance(const std::string& vehID) {
+    MSBaseVehicle* veh = Helper::getVehicle(vehID);
+    if (veh->hasDeparted()) {
+        double lanePos = veh->getPositionOnLane();
+        MSVehicle* microVeh = dynamic_cast<MSVehicle*>(veh);
+        if (microVeh != nullptr && microVeh->getLane()->isInternal()) {
+            lanePos = microVeh->getRoute().getDistanceBetween(0., lanePos, microVeh->getEdge()->getLanes()[0],
+                      microVeh->getLane(), microVeh->getRoutePosition());
+        }
+        return veh->getEdge()->getDistanceAt(lanePos);
+    } else {
+        return INVALID_DOUBLE_VALUE;
+    }
+}
+
+
+double
 Vehicle::getAllowedSpeed(const std::string& vehID) {
     MSBaseVehicle* veh = Helper::getVehicle(vehID);
     return veh->isOnRoad() ? CALL_MICRO_FUN(veh, getLane()->getVehicleMaxSpeed(veh), veh->getEdge()->getVehicleMaxSpeed(veh)) : INVALID_DOUBLE_VALUE;
@@ -1217,7 +1234,7 @@ Vehicle::getStopParameter(const std::string& vehID, int nextStopIndex, const std
         }
         const SUMOVehicleParameter::Stop& pars = (nextStopIndex >= 0
                 ? vehicle->getStop(nextStopIndex).pars
-                : vehicle->getPastStops()[vehicle->getPastStops().size() + nextStopIndex]);
+                : vehicle->getPastStops()[(int)vehicle->getPastStops().size() + nextStopIndex]);
         if (customParam) {
             // custom user parameter
             return pars.getParameter(param, "");
@@ -1251,7 +1268,7 @@ Vehicle::getStopParameter(const std::string& vehID, int nextStopIndex, const std
         } else if (param == toString(SUMO_ATTR_EXTENSION)) {
             return pars.extension < 0 ? "-1" : time2string(pars.extension);
         } else if (param == toString(SUMO_ATTR_INDEX)) {
-            return toString(nextStopIndex + vehicle->getPastStops().size());
+            return toString(nextStopIndex + (int)vehicle->getPastStops().size());
         } else if (param == toString(SUMO_ATTR_PARKING)) {
             return toString(pars.parking);
         } else if (param == toString(SUMO_ATTR_TRIGGERED)) {
@@ -2255,6 +2272,9 @@ Vehicle::moveTo(const std::string& vehID, const std::string& laneID, double pos,
         moveReminderReason = MSMoveReminder::NOTIFICATION_DEPARTED;
     }
     l->forceVehicleInsertion(veh, pos, moveReminderReason);
+    if (veh->getLaneChangeModel().isOpposite()) {
+        veh->getLaneChangeModel().changedToOpposite();
+    }
 }
 
 
@@ -2612,7 +2632,7 @@ Vehicle::highlight(const std::string& vehID, const TraCIColor& col, double size,
     // Layer
     double lyr = 0.;
     if (MSNet::getInstance()->isGUINet()) {
-        lyr = GLO_VEHICLE + 0.01;
+        lyr = (double)GLO_VEHICLE + 0.01;
         lyr += (type + 1) / 257.;
     }
     // Make Polygon
@@ -2922,6 +2942,8 @@ Vehicle::handleVariable(const std::string& objID, const int variable, VariableWr
             return wrapper->wrapInt(objID, variable, getStopState(objID));
         case VAR_DISTANCE:
             return wrapper->wrapDouble(objID, variable, getDistance(objID));
+        case VAR_REFERENCE_DISTANCE:
+            return wrapper->wrapDouble(objID, variable, getReferenceDistance(objID));
         case VAR_ALLOWED_SPEED:
             return wrapper->wrapDouble(objID, variable, getAllowedSpeed(objID));
         case VAR_SPEED_FACTOR:

@@ -108,6 +108,9 @@ public:
     /** Information whether limited junction control shall be used */
     static bool gMesoLimitedJunctionControl;
 
+    /** Information whether positions will be interpolated */
+    static bool gMesoInterpolatePos;
+
     /// mesoscopic simulation infrastructure
     static MELoop* gMesoNet;
 
@@ -122,9 +125,6 @@ public:
 
     // whether recuperation into the overhead wire is allowed
     static bool gOverheadWireRecuperation;
-
-    // whether traction substation current limits are taken into account when solving the overhead wire circuit
-    static bool gOverheadWireCurrentLimits;
 
     /// encoding of the string-option default.emergencydecel
     static double gDefaultEmergencyDecel;

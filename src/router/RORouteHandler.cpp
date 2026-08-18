@@ -496,12 +496,11 @@ RORouteHandler::closeRoute(const bool mayBeDisconnected) {
             }
         }
     }
-    RORoute* route = new RORoute(myActiveRouteID, myCurrentCosts, myActiveRouteProbability, myActiveRoute,
-                                 myActiveRouteColor, myActiveRouteStops);
+    std::shared_ptr<RORoute> route = std::make_shared<RORoute>(myActiveRouteID, myCurrentCosts, myActiveRouteProbability, myActiveRoute,
+                                     myActiveRouteColor, myActiveRouteStops);
     myActiveRoute.clear();
     if (myCurrentAlternatives == nullptr) {
         if (myNet.getRouteDef(myActiveRouteID) != nullptr) {
-            delete route;
             if (myVehicleParameter != nullptr) {
                 myErrorOutput->inform("Another route for vehicle '" + myVehicleParameter->id + "' exists.");
             } else {
@@ -615,8 +614,7 @@ RORouteHandler::closeRouteDistribution() {
                 }
                 if (ok) {
                     // negative probability indicates that this route should not be written
-                    RORoute* route = new RORoute(myCurrentAlternatives->getID(), 0, -1, edges, nullptr, myActiveRouteStops);
-                    myCurrentAlternatives->addLoadedAlternative(route);
+                    myCurrentAlternatives->addLoadedAlternative(std::make_shared<RORoute>(myCurrentAlternatives->getID(), 0, -1, edges, nullptr, myActiveRouteStops));
                 }
             }
         }
@@ -701,15 +699,13 @@ RORouteHandler::closePerson() {
         for (ROPerson::PlanItem* item : *myActivePlan) {
             person->getPlan().push_back(item);
         }
+        myActivePlan->clear();
         if (myNet.addPerson(person)) {
             checkLastDepart();
             registerLastDepart();
         }
     }
-    delete myVehicleParameter;
-    myVehicleParameter = nullptr;
-    delete myActivePlan;
-    myActivePlan = nullptr;
+    deleteActivePlanAndVehicleParameter();
 }
 
 
@@ -770,13 +766,7 @@ RORouteHandler::closePersonFlow() {
             }
         }
     }
-    delete myVehicleParameter;
-    myVehicleParameter = nullptr;
-    for (ROPerson::PlanItem* const it : *myActivePlan) {
-        delete it;
-    }
-    delete myActivePlan;
-    myActivePlan = nullptr;
+    deleteActivePlanAndVehicleParameter();
 }
 
 
@@ -1274,7 +1264,7 @@ RORouteHandler::addWalk(const SUMOSAXAttributes& attrs) {
         if (attrs.hasAttribute(SUMO_ATTR_ROUTE)) {
             const std::string routeID = attrs.get<std::string>(SUMO_ATTR_ROUTE, myVehicleParameter->id.c_str(), ok);
             RORouteDef* routeDef = myNet.getRouteDef(routeID);
-            const RORoute* route = routeDef != nullptr ? routeDef->getFirstRoute() : nullptr;
+            const std::shared_ptr<const RORoute> route = routeDef != nullptr ? routeDef->getFirstRoute() : nullptr;
             if (route == nullptr) {
                 throw ProcessError("The route '" + routeID + "' for walk of person '" + myVehicleParameter->id + "' is not known.");
             }

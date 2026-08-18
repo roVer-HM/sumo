@@ -105,12 +105,12 @@ METriggeredCalibrator::execute(SUMOTime currentTime) {
         if (!mySpeedIsDefault) {
             // if not, reset adaptation values
             const double jamThresh = OptionsCont::getOptions().getFloat("meso-jam-threshold");
-            myEdge->setMaxSpeed(myDefaultSpeed, jamThresh);
+            myEdge->setMaxSpeed(myDefaultSpeed, false, jamThresh);
             mySpeedIsDefault = true;
         }
         if (myCurrentStateInterval == myIntervals.end()) {
             // keep calibrator alive but do not call again
-            return TIME2STEPS(86400);
+            return SUMOTime_DAY;
         }
         return myFrequency;
     }

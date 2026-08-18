@@ -25,6 +25,8 @@
 #include <vector>
 #include <map>
 
+#include "RouteCostCalculator.h"
+
 
 // ===========================================================================
 // class definitions
@@ -43,18 +45,18 @@ public:
     /// Destructor
     virtual ~LogitCalculator() {}
 
-    void setCosts(R* route, const double costs, const bool /* isActive */) const {
+    void setCosts(std::shared_ptr<R> route, const double costs, const bool /* isActive */) const {
         route->setCosts(costs);
     }
 
     /** @brief calculate the probabilities in the logit model */
-    void calculateProbabilities(std::vector<R*> alternatives, const V* const veh, const SUMOTime time) {
+    void calculateProbabilities(const std::vector<std::shared_ptr<R> >& alternatives, const V* const veh, const SUMOTime time) {
         const double theta = myTheta >= 0 ? myTheta : getThetaForCLogit(alternatives);
         const double beta = myBeta >= 0 ? myBeta : getBetaForCLogit(alternatives);
         const double t = STEPS2TIME(time);
         if (beta > 0) {
             // calculate commonalities
-            for (const R* const pR : alternatives) {
+            for (const std::shared_ptr<R>& pR : alternatives) {
                 double lengthR = 0;
                 const std::vector<const E*>& edgesR = pR->getEdgeVector();
                 for (const E* const edge : edgesR) {
@@ -62,7 +64,7 @@ public:
                     lengthR += edge->getTravelTime(veh, t);
                 }
                 double overlapSum = 0;
-                for (const R* const pS : alternatives) {
+                for (const std::shared_ptr<R>& pS : alternatives) {
                     double overlapLength = 0.;
                     double lengthS = 0;
                     for (const E* const edge : pS->getEdgeVector()) {
@@ -73,13 +75,13 @@ public:
                     }
                     overlapSum += pow(overlapLength / sqrt(lengthR * lengthS), myGamma);
                 }
-                myCommonalities[pR] = beta * log(overlapSum);
+                myCommonalities[pR.get()] = beta * log(overlapSum);
             }
         }
-        for (R* const pR : alternatives) {
+        for (const std::shared_ptr<R>& pR : alternatives) {
             double weightedSum = 0;
-            for (const R* const pS : alternatives) {
-                weightedSum += exp(theta * (pR->getCosts() - pS->getCosts() + myCommonalities[pR] - myCommonalities[pS]));
+            for (const std::shared_ptr<R>& pS : alternatives) {
+                weightedSum += exp(theta * (pR->getCosts() - pS->getCosts() + myCommonalities[pR.get()] - myCommonalities[pS.get()]));
             }
             pR->setProbability(1. / weightedSum);
         }
@@ -88,9 +90,9 @@ public:
 
 private:
     /** @brief calculate the scaling factor in the logit model */
-    double getBetaForCLogit(const std::vector<R*> alternatives) const {
+    double getBetaForCLogit(const std::vector<std::shared_ptr<R> > alternatives) const {
         double min = std::numeric_limits<double>::max();
-        for (const R* const pR : alternatives) {
+        for (const std::shared_ptr<R>& pR : alternatives) {
             const double cost = pR->getCosts() / 3600.;
             if (cost < min) {
                 min = cost;
@@ -100,12 +102,12 @@ private:
     }
 
     /** @brief calculate the scaling factor in the logit model */
-    double getThetaForCLogit(const std::vector<R*> alternatives) const {
+    double getThetaForCLogit(const std::vector<std::shared_ptr<R> > alternatives) const {
         // @todo this calculation works for travel times only
         double sum = 0.;
         double diff = 0.;
         double min = std::numeric_limits<double>::max();
-        for (const R* const pR : alternatives) {
+        for (const std::shared_ptr<R>& pR : alternatives) {
             const double cost = pR->getCosts() / 3600.;
             sum += cost;
             if (cost < min) {
@@ -113,7 +115,7 @@ private:
             }
         }
         const double meanCost = sum / double(alternatives.size());
-        for (const R* const pR : alternatives) {
+        for (const std::shared_ptr<R>& pR : alternatives) {
             diff += pow(pR->getCosts() / 3600. - meanCost, 2);
         }
         const double cvCost = sqrt(diff / double(alternatives.size())) / meanCost;
@@ -136,6 +138,8 @@ private:
     const double myTheta;
 
     /// @brief The route commonality factors for c-logit
+    // we do not use a shared pointer here to avoid lifetime extension of the route object
+    // TODO this map needs cleanup if we use it a lot or even better we should somehow store the value directly in the route
     std::map<const R*, double> myCommonalities;
 
 private:

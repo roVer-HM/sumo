@@ -67,6 +67,7 @@ repositories include a nightly build as well (called ***sumo-git***).
 - [Fedora 41 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_41/)
 - [Fedora 42 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_42/)
 - [Fedora 43 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_43/)
+- [Fedora 44 repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_44/)
 - [Fedora Rawhide repository](https://download.opensuse.org/repositories/science:/dlr/Fedora_Rawhide/)
 - [CentOS 7 repository](https://download.opensuse.org/repositories/science:/dlr/CentOS_7/)
 - [Debian 9 repository](https://download.opensuse.org/repositories/science:/dlr/Debian_9.0/)
@@ -81,6 +82,7 @@ repositories include a nightly build as well (called ***sumo-git***).
 - [xUbuntu 20.04 repository](https://download.opensuse.org/repositories/science:/dlr/xUbuntu_20.04/)
 - [xUbuntu 22.04 repository](https://download.opensuse.org/repositories/science:/dlr/xUbuntu_22.04/)
 - [xUbuntu 24.04 repository](https://download.opensuse.org/repositories/science:/dlr/xUbuntu_24.04/)
+- [xUbuntu 26.04 repository](https://download.opensuse.org/repositories/science:/dlr/xUbuntu_26.04/)
 - [Arch repository](https://download.opensuse.org/repositories/science:/dlr/Arch/)
 
 Furthermore there are a debian and an ubuntu
@@ -207,7 +209,7 @@ see [the notes below](Downloads.md#note_on_licensing). The following packages ca
 <li>Windows zip with all extras (contains GPL code): <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-win64extra-git.zip">https://sumo.dlr.de/daily/sumo-win64extra-git.zip</a><?php getInfo("sumo-win64extra-git.zip","d",true);?></li>
 <li>Windows 64-bit binaries of the SUMO game: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-game-win64-git.zip">https://sumo.dlr.de/daily/sumo-game-win64-git.zip</a><?php getInfo("sumo-game-win64-git.zip","d",true);?></li>
 <li>Windows 64-bit debug version: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-win64Debug-git.zip">https://sumo.dlr.de/daily/sumo-win64Debug-git.zip</a><?php getInfo("sumo-win64Debug-git.zip","d",true);?></li>
-<li>macOS pkg installer: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-git.pkg">sumo-git.pkg</a><?php getInfo("sumo-git.pkg","r",false);?></li>
+<li>macOS pkg installer: <a class="no-arrow-link" href="https://sumo.dlr.de/daily/sumo-git.pkg">https://sumo.dlr.de/daily/sumo-git.pkg</a><?php getInfo("sumo-git.pkg","d",true);?></li>
 </ul>
 
 The nightly builds are also available as [home made Python wheels](https://sumo.dlr.de/daily/wheels/) and
@@ -279,6 +281,10 @@ binary downloads above which already contain the runtime dependencies.
 - [networks](Data/Networks.md)
 - [traffic data](Data/Traffic_Data.md)
 - [Test cases](Tutorials/index.md#using_examples_from_the_test_suite)
+
+## Logos
+
+Visit the [Logos and Branding Page](https://sumo.dlr.de/logo) to download official logo files and other brand assets.
 
 # Note on Licensing
 

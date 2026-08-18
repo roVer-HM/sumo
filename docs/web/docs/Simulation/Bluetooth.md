@@ -11,7 +11,7 @@ Every vehicle can act as a sender and/or a receiving device. The
 parameters of the detection (e.g. the range and detection probability)
 can be configured and a log of the detection events can be written. It
 is currently not possible to retrieve the detection events via
-[TraCI](../TraCI.md) or react directly in the simulation to such an
+[TraCI](../TraCI/index.md) or react directly in the simulation to such an
 event. The relevant parameters for configuring the sender and receiver
 devices are described at
 [sumo#communication](../sumo.md#communication). Details on the

@@ -1,4 +1,5 @@
 flake8
+gdal-bin
 python3-autopep8
 python3-ezdxf
 python3-flake8
@@ -17,3 +18,4 @@ python3-shapely
 python3-termcolor
 python3-xmltodict
 scrot
+tkdiff

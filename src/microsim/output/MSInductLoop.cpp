@@ -39,6 +39,7 @@
 #include <microsim/MSEdge.h>
 #include <microsim/MSVehicle.h>
 #include <microsim/MSNet.h>
+#include <microsim/MSVehicleControl.h>
 #include <microsim/transportables/MSTransportable.h>
 #include <microsim/transportables/MSPModel.h>
 #include <utils/common/MsgHandler.h>
@@ -283,6 +284,12 @@ MSInductLoop::getTimeSinceLastDetection() const {
 }
 
 
+void
+MSInductLoop::loadTimeSinceLastDetection(double time) {
+    myLastLeaveTime = SIMTIME - time;
+}
+
+
 double
 MSInductLoop::getOccupancyTime() const {
 #ifdef HAVE_FOX
@@ -303,6 +310,26 @@ MSInductLoop::getOccupancyTime() const {
     }
 }
 
+
+double
+MSInductLoop::getArrivalDelay() const {
+#ifdef HAVE_FOX
+    ScopedLocker<> lock(myNotificationMutex, myNeedLock);
+#endif
+    MSVehicleControl& vc = MSNet::getInstance()->getVehicleControl();
+    double result = -INVALID_DOUBLE;
+    for (const auto& item : collectVehiclesOnDet(SIMSTEP - DELTA_T)) {
+        SUMOVehicle* v = vc.getVehicle(item.idM);
+        if (v != nullptr) {
+            MSBaseVehicle* veh = dynamic_cast<MSBaseVehicle*>(v);
+            double ad = veh->getStopArrivalDelay();
+            if (ad != INVALID_DOUBLE) {
+                result = MAX2(result, ad);
+            }
+        }
+    }
+    return result;
+}
 
 
 SUMOTime
@@ -411,7 +438,7 @@ MSInductLoop::writeXMLOutput(OutputDevice& dev, SUMOTime startTime, SUMOTime sto
     const double meanSpeed = contrib != 0 ? speedSum / (double)contrib : -1;
     const double harmonicMeanSpeed = contrib != 0 ? (double)contrib / inverseSpeedSum : -1;
     const double meanLength = contrib != 0 ? lengthSum / (double)contrib : -1;
-    dev.openTag(SUMO_TAG_INTERVAL).writeAttr(SUMO_ATTR_BEGIN, STEPS2TIME(startTime)).writeAttr(SUMO_ATTR_END, STEPS2TIME(stopTime));
+    dev.openTag(SUMO_TAG_INTERVAL).writeTime(SUMO_ATTR_BEGIN, startTime).writeTime(SUMO_ATTR_END, stopTime);
     dev.writeAttr(SUMO_ATTR_ID, StringUtils::escapeXML(getID())).writeAttr("nVehContrib", contrib);
     dev.writeAttr("flow", flow).writeAttr("occupancy", occupancy).writeAttr("speed", meanSpeed).writeAttr("harmonicMeanSpeed", harmonicMeanSpeed);
     dev.writeAttr("length", meanLength).writeAttr("nVehEntered", myEnteredVehicleNumber).closeTag();

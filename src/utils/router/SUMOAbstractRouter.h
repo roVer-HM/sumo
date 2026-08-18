@@ -181,7 +181,7 @@ public:
         UNUSED_PARAMETER(vehicle);
     }
 
-    void setMsgHandler(MsgHandler* const errorMsgHandler) {
+    virtual void setMsgHandler(MsgHandler* const errorMsgHandler) {
         myErrorMsgHandler = errorMsgHandler;
     }
 
@@ -422,6 +422,10 @@ public:
 
     bool hasProhibitions() const {
         return this->myProhibited.size() > 0;
+    }
+
+    virtual bool supportsProhibitions() const {
+        return true;
     }
 
     /// Builds the path from marked edges

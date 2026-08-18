@@ -77,7 +77,7 @@ public:
                    double width, double length, double angle, const std::string& name,
                    bool onRoad,
                    const std::string& departPos,
-                   bool lefthand);
+                   bool lefthand, bool reservable);
 
 
     /// @brief Destructor
@@ -136,6 +136,11 @@ public:
     const Position& getSignPos() const {
         return mySignPos;
     }
+
+
+    /// @brief return list of remote reservation ids
+    int getNumReservations() const;
+    const std::string getReservationString() const;
 
 private:
     /// @brief The rotations of the shape parts

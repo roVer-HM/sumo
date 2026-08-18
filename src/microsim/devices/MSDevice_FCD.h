@@ -91,6 +91,10 @@ public:
         return myUseGeo;
     }
 
+    static inline bool useUTM() {
+        return myUseUTM;
+    }
+
     static inline double getMaxLeaderDistance() {
         return myMaxLeaderDistance;
     }
@@ -109,6 +113,10 @@ public:
 
     static inline const SumoXMLAttrMask& getWrittenAttributes() {
         return myWrittenAttributes;
+    }
+
+    static inline bool skipEmpty() {
+        return mySkipEmpty;
     }
 
     /// @brief initialize edge filter and attribute mask (once)
@@ -137,6 +145,7 @@ private:
     static SUMOTime myBegin;
     static SUMOTime myPeriod;
     static bool myUseGeo;
+    static bool myUseUTM;
     static double myMaxLeaderDistance;
     static std::vector<std::string> myParamsToWrite;
     static double myRadius;
@@ -153,6 +162,9 @@ private:
     /// @brief bit mask for checking attributes to be written
     static SumoXMLAttrMask myWrittenAttributes;
     static SumoXMLAttrMask getDefaultMask();
+
+    /// @brief whether time steps without vehicles will generate output
+    static bool mySkipEmpty;
 
 private:
     /// @brief Invalidated copy constructor.

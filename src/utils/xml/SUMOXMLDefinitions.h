@@ -305,6 +305,8 @@ enum SumoXMLTag {
     SUMO_TAG_LINK,
     /// @brief Link-approaching vehicle information for state-saving
     SUMO_TAG_APPROACHING,
+    /// @brief Dispatcher state for saving
+    SUMO_TAG_DISPATCHER,
 
     SUMO_TAG_WAY,
     SUMO_TAG_ND,
@@ -349,6 +351,7 @@ enum SumoXMLTag {
 
     SUMO_TAG_VEHICLETRANSFER,
     SUMO_TAG_DEVICE,
+    SUMO_TAG_CFM_VARIABLES,
     SUMO_TAG_REMINDER,
 
     /// @name Car-Following models
@@ -841,33 +844,39 @@ enum SumoXMLAttr {
     SUMO_ATTR_ODOMETER           = 61,
     SUMO_ATTR_POSITION_LAT       = 62,
     SUMO_ATTR_SPEED_LAT          = 63,
+    SUMO_ATTR_STAGE              = 64,
+    SUMO_ATTR_SPEED_VEC          = 65,
+    SUMO_ATTR_ACCEL_VEC          = 66,
 
     // only usable with SumoXMLAttrMask
-    SUMO_ATTR_ARRIVALDELAY       = 64,
+    SUMO_ATTR_DELAY              = 67,
+    SUMO_ATTR_ARRIVALDELAY       = 68,
 
     // emission-output
-    SUMO_ATTR_CO                 = 65,
-    SUMO_ATTR_CO2                = 66,
-    SUMO_ATTR_HC                 = 67,
-    SUMO_ATTR_PMX                = 68,
-    SUMO_ATTR_NOX                = 69,
-    SUMO_ATTR_FUEL               = 70,
-    SUMO_ATTR_ELECTRICITY        = 71,
-    SUMO_ATTR_ROUTE              = 72,
-    SUMO_ATTR_ECLASS             = 73,
-    SUMO_ATTR_WAITING            = 74,
+    SUMO_ATTR_CO                 = 69,
+    SUMO_ATTR_CO2                = 70,
+    SUMO_ATTR_HC                 = 71,
+    SUMO_ATTR_PMX                = 72,
+    SUMO_ATTR_NOX                = 73,
+    SUMO_ATTR_FUEL               = 74,
+    SUMO_ATTR_ELECTRICITY        = 75,
+    SUMO_ATTR_ROUTE              = 76,
+    SUMO_ATTR_ECLASS             = 77,
+    SUMO_ATTR_WAITING            = 78,
 
     // meso-attributes
-    SUMO_ATTR_SEGMENT            = 75,
-    SUMO_ATTR_QUEUE              = 76,
-    SUMO_ATTR_ENTRYTIME          = 77,
-    SUMO_ATTR_EVENTTIME          = 78,
-    SUMO_ATTR_BLOCKTIME          = 79,
+    SUMO_ATTR_SEGMENT            = 79,
+    SUMO_ATTR_QUEUE              = 80,
+    SUMO_ATTR_ENTRYTIME          = 81,
+    SUMO_ATTR_EVENTTIME          = 82,
+    SUMO_ATTR_BLOCKTIME          = 83,
 
     // write the tag name
-    SUMO_ATTR_TAG                = 80,
-    SUMO_ATTR_OVERLAPDENSITY     = 81,
-    SUMO_ATTR_FLOW               = 82,
+    SUMO_ATTR_TAG                = 84,
+    SUMO_ATTR_OVERLAPDENSITY     = 85,
+    SUMO_ATTR_FLOW               = 86,
+    SUMO_ATTR_PERSON_NUMBER      = 87,
+    SUMO_ATTR_CONTAINER_NUMBER   = 88,
 
     /// @}
 
@@ -1240,7 +1249,12 @@ enum SumoXMLAttr {
     SUMO_ATTR_RESISTANCE_COEFFICIENT_CONSTANT,
     SUMO_ATTR_RESISTANCE_COEFFICIENT_LINEAR,
     SUMO_ATTR_RESISTANCE_COEFFICIENT_QUADRATIC,
-
+    SUMO_ATTR_CURVE_RESISTANCE,
+    SUMO_ATTR_ROECKL_SHARP_RADIUS,
+    SUMO_ATTR_ROECKL_NUMERATOR,
+    SUMO_ATTR_ROECKL_NUMERATOR_SHARP,
+    SUMO_ATTR_ROECKL_OFFSET,
+    SUMO_ATTR_ROECKL_OFFSET_SHARP,
     SUMO_ATTR_LCA_STRATEGIC_PARAM,
     SUMO_ATTR_LCA_COOPERATIVE_PARAM,
     SUMO_ATTR_LCA_SPEEDGAIN_PARAM,
@@ -1339,8 +1353,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_PERSON_CAPACITY,
     SUMO_ATTR_CONTAINER_CAPACITY,
     SUMO_ATTR_PARKING_LENGTH,
-    SUMO_ATTR_PERSON_NUMBER,
-    SUMO_ATTR_CONTAINER_NUMBER,
     SUMO_ATTR_MODES,
     SUMO_ATTR_WALKFACTOR,
     /// @}
@@ -1408,8 +1420,12 @@ enum SumoXMLAttr {
     SUMO_ATTR_STATE,
     /// @brief The state of the lanechange model
     SUMO_ATTR_LCSTATE,
+    SUMO_ATTR_LCSTATE2,
+    SUMO_ATTR_LCSTATE_BASE,
     /// @brief foe visibility distance of a link
     SUMO_ATTR_VISIBILITY_DISTANCE,
+    /// @brief reset building step / connection guessing
+    SUMO_ATTR_RESET,
     /// @brief icon
     SUMO_ATTR_ICON,
     /// @brief A layer number
@@ -1644,6 +1660,7 @@ enum SumoXMLAttr {
     SUMO_ATTR_ORIGIN,
     SUMO_ATTR_DESTINATION,
     SUMO_ATTR_VISIBLE,
+    SUMO_ATTR_RESERVABLE,
     SUMO_ATTR_MAIN,
     SUMO_ATTR_SIDING,
     SUMO_ATTR_MINSAVING,
@@ -1860,11 +1877,20 @@ enum SumoXMLAttr {
     SUMO_ATTR_RNG_DRIVERSTATE,
     // @}
 
+    //@name Taxi state saving attributes
+    // @{
+    SUMO_ATTR_CUSTOMERS,
+    SUMO_ATTR_RESERVATIONS,
+    // @}
+
     //@name further state saving attributes
     // @{
     SUMO_ATTR_BIKESPEED,
     SUMO_ATTR_PASTSPEED,
     SUMO_ATTR_PASTBIKESPEED,
+    SUMO_ATTR_LOADERTIME,
+    SUMO_ATTR_ENTRYPOS,
+    SUMO_ATTR_ROUTELENGTH,
     // @}
 
     //@name meso edge type attributes
@@ -1878,6 +1904,7 @@ enum SumoXMLAttr {
     SUMO_ATTR_MESO_TLS_FLOW_PENALTY,
     SUMO_ATTR_MESO_MINOR_PENALTY,
     SUMO_ATTR_MESO_OVERTAKING,
+    SUMO_ATTR_MESO_EDGELENGHT,
     // @}
 
     /// @brief invalid attribute, must be the last one
@@ -1949,7 +1976,8 @@ enum class SumoXMLEdgeFunc {
 enum class LaneSpreadFunction {
     RIGHT = 0,
     ROADCENTER = 1,
-    CENTER = 2
+    CENTER = 2,
+    SPREAD_UNKNOWN = 3
 };
 
 /**
@@ -2401,6 +2429,13 @@ enum class NetconvertConfigFileExtension {
     ALL,
 };
 
+/// @brief netconvert file extension
+enum class NetconvertPlainFileExtension {
+    EDGXML,
+    XML,
+    ALL,
+};
+
 /// @brief OSM file extension
 enum class OSMFileExtension {
     OSM,
@@ -2595,6 +2630,9 @@ public:
     /// @brief netconvert config file extensions
     static StringBijection<NetconvertConfigFileExtension> NetconvertConfigFileExtensions;
 
+    /// @brief netconvert config file extensions
+    static StringBijection<NetconvertPlainFileExtension> NetconvertPlainFileExtensions;
+
     /// @brief OSM file extensions
     static StringBijection<OSMFileExtension> OSMFileExtensions;
 
@@ -2787,6 +2825,9 @@ private:
 
     /// @brief netconvert config file extension values
     static StringBijection<NetconvertConfigFileExtension>::Entry netconvertConfigFileExtensionValues[];
+
+    /// @brief netconvert config file extension values
+    static StringBijection<NetconvertPlainFileExtension>::Entry netconvertPlainFileExtensionValues[];
 
     /// @brief OSM file extension values
     static StringBijection<OSMFileExtension>::Entry osmFileExtensionValues[];

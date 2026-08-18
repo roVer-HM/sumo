@@ -60,13 +60,14 @@ jobs:
 
     # required for CMake to find Ninja
     - name: "Set up MSVC Developer Command Prompt"
-      # uses: seanmiddleditch/gha-setup-vsdevenv@v4  # disabled until it gets an update for node.js
-      uses: compnerd/gha-setup-vsdevenv@main
+      # uses: seanmiddleditch/gha-setup-vsdevenv@v4  # the original but no longer maintained
+      # uses: compnerd/gha-setup-vsdevenv@main  # disabled until it gets an update for node.js
+      uses: behrisch/gha-setup-vsdevenv@node24_update
 
     - name: Setup Python dependencies
       # the pipdeptree below is just for debugging but often comes handy so keep it enabled
       run: |
-        python -m pip install -r tools/req_ci.txt -r tools/requirements.txt texttest pipdeptree
+        python -m pip install -r tools/req_ci.txt texttest pipdeptree
         pipdeptree
 
     - name: Building SUMO plain
@@ -92,7 +93,7 @@ jobs:
       run: cmake --build build_msvc --config Release --target traas
 
     - name: Uploading artifacts (SUMO binaries)
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: windows-${{ matrix.build_type }}-binaries
         path: bin
@@ -151,7 +152,7 @@ jobs:
 
     - name: Uploading test results
       if: failure()
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: texttesttmp-${{ matrix.build_type }}
         path: D:/texttest/tt.zip

@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Log in to the Container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -37,15 +37,24 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: build_config/docker/Dockerfile.ubuntu.git
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      # currently this only runs sumo --version but already mounts the workspace
+      # so that we can use it for running texttest (TODO)
+      - name: Smoke test
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/work" -w /work \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:nightly \
+            sumo --version

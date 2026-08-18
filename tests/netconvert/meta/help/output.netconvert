@@ -1,4 +1,4 @@
-Eclipse SUMO netconvert v1_25_0+0045-28a3daf62ee
+Eclipse SUMO netconvert v1_26_0+0915-c030b39bdd3
  Copyright (C) 2001-2026 German Aerospace Center (DLR) and others; https://sumo.dlr.de
 Network importer / builder for the microscopic, multi-modal traffic simulation
  SUMO.
@@ -272,6 +272,7 @@ Building Defaults Options:
                                         by default
   --default.junctions.radius FLOAT     The default turning radius of
                                         intersections
+  -j, --default.junctions.type STR     [traffic_light|priority|right_before_left|left_before_right|traffic_light_right_on_red|priority_stop|allway_stop|...] Determines default junction type (see docs/Networks/PlainXML#node_types)
   --default.connection-length FLOAT    The default length when overriding
                                         connection lengths
   --default.connection.cont-pos FLOAT  Whether/where connections should have an
@@ -449,8 +450,7 @@ Junctions Options:
   --no-turnarounds.except-deadend      Disables building turnarounds except at
                                         dead end junctions
   --no-turnarounds.except-turnlane     Disables building turnarounds except at
-                                        at junctions with a dedicated turning
-                                        lane
+                                        junctions with a dedicated turning lane
   --no-turnarounds.fringe              Disables building turnarounds at fringe
                                         junctions
   --no-left-connections                Disables building connections to left
@@ -458,13 +458,14 @@ Junctions Options:
                                         other (recommended for OSM import)
   --junctions.join-dist FLOAT          Determines the maximal distance for
                                         joining junctions (defaults to 10)
-  --junctions.join.parallel-threshold FLOAT  The angular threshold in degress
+  --junctions.join.parallel-threshold FLOAT  The angular threshold in degrees
                                         for rejection of parallel edges when
                                         joining junctions
   --junctions.join-exclude STR[]       Interprets STR[] as list of junctions to
                                         exclude from joining
   --junctions.join-same FLOAT          Joins junctions that have similar
                                         coordinates even if not connected
+  --junctions.join-reset               Reset connections for joined junctions
   --junctions.attach-removed FLOAT     Attach junction to the closest edge
                                         within FLOAT distance that has it's id
                                         in param removedNodeIDs (for joining
@@ -581,12 +582,18 @@ Railway Options:
                                         FILE usable in both direction
   --railway.topology.direction-priority  Set edge priority values based on
                                         estimated main direction
+  --railway.topology.ptline-priority STR[]  Set edge priority values based on
+                                        public transport lines for the given
+                                        list of vClasses
   --railway.topology.extend-priority   Extend loaded edge priority values based
                                         on estimated main direction
   --railway.geometry.straighten        Move junctions to straighten a sequence
                                         of rail edges
   --railway.signal.guess.by-stops      Guess signals that guard public
                                         transport stops
+  --railway.signal.guess.by-stops.split  Split edges to improve positioning of
+                                        guessed signals and prevent switches as
+                                        rail_signals
   --railway.signal.permit-unsignalized STR[]  List rail classes that may run
                                         without rail signals
   --railway.access-distance FLOAT      The search radius for finding suitable

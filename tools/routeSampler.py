@@ -38,7 +38,7 @@ except ImportError:
 if 'SUMO_HOME' in os.environ:
     sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
 import sumolib  # noqa
-from sumolib.miscutils import parseTime, humanReadableTime, Benchmarker  # noqa
+from sumolib.miscutils import parseTime, humanReadableTime, Benchmarker, getFlowNumber  # noqa
 from sumolib.statistics import setPrecision  # noqa
 
 PRESERVE_INPUT_COUNT = 'input'
@@ -106,6 +106,8 @@ def get_options(args=None):
                     help="custom aggregation interval (seconds or H:M:S)")
     op.add_argument("--depart-distribution", category="time", dest="departDistVals",
                     help="load list of densities that cover [begin, end] to customize departure time probabilities")
+    op.add_argument("--timeline", category="time",
+                    help="load shares of intervals when splitting")
     # processing
     op.add_argument("--turn-max-gap", type=int, dest="turnMaxGap", default=0,
                     help="Allow at most a gap of INT edges between from-edge and to-edge")
@@ -123,6 +125,8 @@ def get_options(args=None):
                     help="set optimization method level (full, INT boundary)")
     op.add_argument("--optimize-input", dest="optimizeInput", action="store_true", default=False,
                     help="Skip resampling and run optimize directly on the input routes")
+    op.add_argument("--keep-attributes", dest="keepAttrs", action="store_true", default=False,
+                    help="use loaded vehicle attributes when writing used routes")
     op.add_argument("--init-input", dest="initInput", action="store_true", default=False,
                     help="use loaded routes as initialization for the used routes")
     op.add_argument("--init-input.remove-overflow", dest="initInputRemove", action="store_true", default=False,
@@ -148,6 +152,8 @@ def get_options(args=None):
     op.add_argument("--threads", dest="threads", type=int, default=1,
                     help="If parallelization is desired, enter the number of CPUs to use. Set to a value >> then " +
                     "your machines CPUs if you want to utilize all CPUs (Default is 1)")
+    op.add_argument("--merge-strategy", default="sum", choices=["sum", "ignore"],
+                    help="how to merge different data points for the same location and interval")
 
     options = op.parse_args(args=args)
     if (options.routeFiles is None or
@@ -212,6 +218,19 @@ def get_options(args=None):
         sep = ',' if ',' in options.departDistVals else None
         options.departDistVals = list(map(float, options.departDistVals.split(sep)))
 
+    if options.timeline:
+        TIME_LINES = {  # see https://sumo.dlr.de/docs/Demand/Importing_O/D_Matrices.html
+            "TGw3_PKW":
+            "0.9,0.5,0.2,0.2,0.5,1.3,7.0,9.3,6.7,4.2,4.0,3.8,4.1,4.6,5.0,6.7,9.6,9.2,7.1,4.8,3.5,2.7,2.2,1.9",  # noqa
+            "TGw2_PKW":	"0.8,0.5,0.4,0.3,0.4,1.2,4.5,7.4,6.6,5.2,5.0,5.0,5.2,5.3,5.6,6.7,8.4,8.6,7.4,5.0,3.9,3.0,2.1,1.6",  # noqa
+            "TGs1_PKW": "3.3,2.8,2.0,1.5,1.2,1.3,1.2,1.5,2.5,3.7,4.8,5.5,6.0,6.7,7.0,7.1,6.9,7.4,7.0,6.0,4.7,4.1,3.5,2.3",  # noqa
+            "TGw_LKW": "0.3,0.4,0.4,0.6,0.8,2.0,4.8,7.5,9.0,8.7,9.0,9.0,7.5,8.4,7.8,6.9,5.4,4.0,2.7,1.8,1.2,0.9,0.6,0.3",  # noqa
+            "TGs_LKW": "1.3,1.1,0.6,0.8,0.9,1.5,2.6,3.1,3.5,3.8,4.5,4.9,5.0,5.3,5.6,5.7,5.9,6.0,5.7,5.3,4.8,4.6,10.0,7.6"  # noqa
+        }
+        options.timeline = TIME_LINES.get(options.timeline, options.timeline)
+        sep = ',' if ',' in options.timeline else None
+        options.timeline = list(map(float, options.timeline.split(sep)))
+
     return options
 
 
@@ -223,32 +242,91 @@ class Routes:
         self.edgeIDs = {}
         self.withProb = 0
         self.routeStops = defaultdict(list)  # list of list of stops for the given edges
+        self.vehAttrs = []
+        self.namedRoutes = {}  # id -> index in all
+        self.namedRouteStops = {}  # id -> stops
+        self.vTypes = []
         for routefile in routefiles:
             warned = False
             # not all routes may have specified probability, in this case use their number of occurrences
-            for r in sumolib.xml.parse(routefile, ['route', 'walk'], heterogeneous=True):
-                if r.edges is None:
-                    if not warned:
-                        print("Warning: Ignoring walk in file '%s' because it does not contain edges." % routefile,
-                              file=sys.stderr)
-                        warned = True
-                    continue
-                edges = tuple(r.edges.split())
-                self.all.append(edges)
-                prob = float(r.getAttributeSecure("probability", 1))
-                if r.hasAttribute("probability"):
-                    self.withProb += 1
-                    prob = float(r.probability)
-                else:
-                    prob = 1
-                if prob <= 0:
-                    print("Warning: route probability must be positive (edges=%s)" % r.edges, file=sys.stderr)
-                    prob = 0
-                if r.hasAttribute("id"):
-                    self.edgeIDs[edges] = r.id
-                self.edgeProbs[edges] += prob
-                if keepStops and r.stop:
-                    self.routeStops[edges].append(list(r.stop))
+            for tag in sumolib.xml.parse(routefile):
+                edges = None
+                stops = []
+                attrs = None
+                prob = 1
+                if tag.name == 'route':
+                    self.namedRoutes[tag.id] = len(self.all)
+                    edges = tuple(tag.edges.split())
+                    self.edgeIDs[edges] = tag.id
+                    self.namedRoutes[tag.id] = len(self.all)
+                    if tag.stop:
+                        stops = list(tag.stop)
+                        self.namedRouteStops[tag.id] = stops
+                    if tag.hasAttribute("probability"):
+                        self.withProb += 1
+                        prob = float(tag.probability)
+                    if prob <= 0:
+                        print("Warning: probability must be positive for route '%s'" % tag.id, file=sys.stderr)
+                        prob = 0
+                elif tag.name == 'vehicle' or tag.name == 'flow':
+                    attrs = tuple(tag.getAttributes())
+                    if tag.hasAttribute('route'):
+                        edges = self.all[self.namedRoutes[tag.route]]
+                        stops = self.namedRouteStops[tag.route]
+                    elif tag.hasChild('route'):
+                        edges = tuple(tag.route[0].edges.split())
+                        if tag.route[0].stop:
+                            stops = list(tag.route[0].stop)
+                        if tag.route[0].hasAttribute("probability"):
+                            self.withProb += 1
+                            prob = float(tag.route[0].probability)
+                        if prob <= 0:
+                            print("Warning: probability must be positive for route in vehicle '%s'" % tag.id,
+                                  file=sys.stderr)
+                            prob = 0
+                    elif tag.hasChild('routeDistribution') and tag.routeDistribution[0].hasChild('route'):
+                        for route in tag.routeDistribution[0].route:
+                            edges = tuple(route.edges.split())
+                            if route.stop:
+                                stops = list(route.stop)
+                            if route.hasAttribute("probability"):
+                                self.withProb += 1
+                                prob = float(route.probability)
+                            if prob <= 0:
+                                print("Warning: probability must be positive for route in vehicle '%s'" % tag.id,
+                                      file=sys.stderr)
+                                prob = 0
+                    else:
+                        if not warned:
+                            print("Warning: Ignoring %s in file '%s' because it does not contain edges." % (
+                                tag.name, routefile), file=sys.stderr)
+                            warned = True
+                        continue
+                    if tag.stop:
+                        stops += list(tag.stop)
+                elif tag.name == 'person':
+                    if tag.walk:
+                        if tag.walk[0].edges is None:
+                            if not warned:
+                                print("Warning: Ignoring walk for person %s in file '%s' "
+                                      "because it does not contain edges." % (tag.id, routefile), file=sys.stderr)
+                                warned = True
+                            continue
+                        edges = tuple(tag.walk[0].edges.split())
+                        if len(tag.walk) > 1:
+                            if not warned:
+                                print("Warning: Ignoring walks beyond the first for person %s in file '%s'." % (
+                                    tag.id, routefile), file=sys.stderr)
+                                warned = True
+                elif tag.name == 'vType':
+                    self.vTypes.append(tag)
+
+                if edges:
+                    self.all.append(edges)
+                    self.vehAttrs.append(attrs)
+                    self.edgeProbs[edges] += prob
+                    if keepStops and stops:
+                        self.routeStops[edges].append(stops)
 
         self.unique = sorted(list(self.edgeProbs.keys()))
         self.uniqueSets = [set(edges) for edges in self.unique]
@@ -258,6 +336,7 @@ class Routes:
             print("Error: no input routes loaded", file=sys.stderr)
             sys.exit()
         self.probabilities = np.array([self.edgeProbs[e] for e in self.unique], dtype=np.float64)
+        self.unique2all = None
 
     def write(self, outf, prefix, intervalPrefix, routeIndex, count, writeDist=False):
         edges = self.unique[routeIndex]
@@ -285,6 +364,45 @@ class Routes:
             for stop in stops:
                 outf.write(stop.toXML(indent + ' ' * 4))
             outf.write('%s</route>\n' % indent)
+
+    def sampleAttrs(self, rng, vehID, depart, uniqueIndex):
+        if self.unique2all is None:
+            # init once
+            nUnique = len(self.unique)
+            self.usedIDs = set()
+            self.unique2all = [set() for i in range(nUnique)]
+            self.unique2allUsed = [set() for i in range(nUnique)]
+            for i, edges in enumerate(self.all):
+                i2 = self.edges2index[edges]
+                self.unique2all[i2].add(i)
+                self.unique2allUsed[i2].add(i)
+
+        unused = self.unique2allUsed[uniqueIndex]
+        if not unused:
+            unused.update(self.unique2all[uniqueIndex])
+
+        allIndex = rng.choice(tuple(unused))
+        unused.remove(allIndex)
+        result = []
+        duplicate = False
+        origDepart = depart
+        attrs = self.vehAttrs[allIndex]
+        if attrs is None:
+            return vehID, depart, ''
+        for a, v in attrs:
+            if a == 'id':
+                vehID = v
+                i = 1
+                while vehID in self.usedIDs:
+                    duplicate = True
+                    vehID = "%s#%s" % (v, i)
+                    i += 1
+                self.usedIDs.add(vehID)
+            elif a == 'depart':
+                origDepart = parseTime(v)
+            else:
+                result.append(' %s="%s"' % (a, v))
+        return vehID, depart if duplicate else origDepart, ' '.join(result)
 
 
 class DepartDist:
@@ -470,19 +588,26 @@ def getIntervals(options):
         end = parseTime(options.end)
     if options.interval is not None:
         interval = parseTime(options.interval)
+    numIntervals = int((end - begin) // interval)
+    if (end - begin) % interval != 0:
+        numIntervals += 1
 
     # init departDist after begin and end are known, store in options for
     # easier handover to solveInterval
     options.departDist = None
     if hasattr(options, "departDistVals") and options.departDistVals:
         options.departDist = DepartDist(options.departDistVals, begin, end)
+    if hasattr(options, "timeline") and options.timeline:
+        if len(options.timeline) % numIntervals != 0:
+            print("Warning! Number of intervals does not match length of timeline.", file=sys.stderr)
+        s = sum(options.timeline)
+        agg = len(options.timeline) // numIntervals
+        vals = [sum(options.timeline[i:i+agg]) for i in range(0, len(options.timeline), agg)]
+        scales = [numIntervals * v / s for v in vals]
+    else:
+        scales = numIntervals * [1.0]
 
-    result = []
-    while begin < end:
-        result.append((begin, begin + interval))
-        begin += interval
-
-    return result
+    return [(begin + i * interval, begin + (i + 1) * interval, s) for i, s in enumerate(scales)]
 
 
 def getOverlap(begin, end, iBegin, iEnd):
@@ -529,7 +654,7 @@ def parseEdgeCounts(interval, attr, warn):
 
 
 def parseDataIntervals(parseFun, fnames, begin, end, allRoutes, attr, options,
-                       isOrigin=False, isDest=False, isRatio=False, isTaz=False, warn=False):
+                       isOrigin=False, isDest=False, isRatio=False, isTaz=False, warn=False, intervalScale=1.0):
     locations = {}  # edges -> CountData
     result = []
     if attr is None or attr == "None":
@@ -549,9 +674,11 @@ def parseDataIntervals(parseFun, fnames, begin, end, allRoutes, attr, options,
                             print("Warning: Missing '%s' value in file '%s' for edge(s) '%s'" %
                                   (attr, fname, ' '.join(edges)), file=sys.stderr)
                         continue
+                    firstData = False
                     if edges not in locations:
                         result.append(CountData(0, edges, allRoutes, isOrigin, isDest, isRatio, isTaz, options))
                         locations[edges] = result[-1]
+                        firstData = True
                     elif (isOrigin and isDest) != (locations[edges].isOrigin and locations[edges].isDest):
                         print("Warning: Edge relation '%s' occurs as turn relation and also as OD-relation" %
                               ' '.join(edges), file=sys.stderr)
@@ -567,13 +694,15 @@ def parseDataIntervals(parseFun, fnames, begin, end, allRoutes, attr, options,
                             interval.begin, interval.end),
                             file=sys.stderr)
                     value *= overlap
+                    if iBegin <= begin and iEnd >= end:
+                        value *= intervalScale
                     if not isRatio:
                         value = int(value)
                     if value < 0:
                         if warn:
                             print("Ignoring negative count %s for edge(s) '%s'" % (
                                 value, " ".join(edges)), file=sys.stderr)
-                    else:
+                    elif firstData or options.merge_strategy == "sum":
                         locations[edges].addCount(value)
     return result
 
@@ -679,6 +808,7 @@ def optimize(options, countData, routes, priorRouteCounts, routeUsage, intervalC
     res = opt.linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b, bounds=bounds, options=linProgOpts)
 
     if res.success:
+        sys.stdout.flush()
         print("Optimization succeeded")
         routeCountsR = res.x[:k]  # cut of slack variables
         # translate to original route indices
@@ -795,8 +925,8 @@ def initTotalCounts(options, routes, intervals, b, e):
         if len(options.totalCount) == 1:
             # split proportionally
             countSums = []
-            for begin, end in intervals:
-                countData = parseCounts(options, routes, begin, end)
+            for begin, end, scale in intervals:
+                countData = parseCounts(options, routes, begin, end, False, scale)
                 countSums.append(sum(cd.origCount for cd in countData))
             countSumTotal = sum(countSums)
             origTotal = options.totalCount[0]
@@ -826,13 +956,13 @@ def _sample_skewed(sampleSet, rng, probabilityMap):
 def _solveIntervalMP(options, routes, interval, cpuIndex):
     output_list = []
     rng = np.random.RandomState(options.seed + cpuIndex)
-    for i, (begin, end) in enumerate(interval):
+    for i, (begin, end, scale) in enumerate(interval):
         local_outf = StringIO()
         local_mismatch_outf = StringIO() if options.mismatchOut else None
         intervalPrefix = "%s_" % int(begin)
         intervalCount = options.totalCount[i] if options.totalCount else None
         uFlow, oFlow, gehOKPerc, ratioPerc, inputCount, usedRoutes, local_outf = solveInterval(
-            options, routes, begin, end, intervalPrefix, local_outf, local_mismatch_outf, rng, intervalCount)
+            options, routes, begin, end, intervalPrefix, local_outf, local_mismatch_outf, rng, intervalCount, scale)
 
         output_list.append([begin, uFlow, oFlow, gehOKPerc, ratioPerc, inputCount, usedRoutes, local_outf.getvalue(),
                             local_mismatch_outf.getvalue() if options.mismatchOut else None])
@@ -840,25 +970,30 @@ def _solveIntervalMP(options, routes, interval, cpuIndex):
     return output_lst
 
 
-def parseCounts(options, routes, b, e, warn=False):
+def parseCounts(options, routes, b, e, warn, intervalScale):
     countData = (parseDataIntervals(parseTurnCounts, options.turnFiles, b, e,
-                                    routes, options.turnAttr, options=options, warn=warn)
+                                    routes, options.turnAttr, options=options, warn=warn,
+                                    intervalScale=intervalScale)
                  + parseDataIntervals(parseTurnCounts, options.turnRatioFiles, b, e,
-                                      routes, options.turnRatioAttr, options=options, isRatio=True, warn=warn)
+                                      routes, options.turnRatioAttr, options=options, isRatio=True, warn=warn,
+                                      intervalScale=intervalScale)
                  + parseDataIntervals(parseEdgeCounts, options.edgeDataFiles, b, e,
-                                      routes, options.edgeDataAttr, options=options, warn=warn)
+                                      routes, options.edgeDataAttr, options=options, warn=warn,
+                                      intervalScale=intervalScale)
                  + parseDataIntervals(parseTurnCounts, options.odFiles, b, e,
                                       routes, options.turnAttr, options=options,
-                                      isOrigin=True, isDest=True, warn=warn)
+                                      isOrigin=True, isDest=True, warn=warn, intervalScale=intervalScale)
                  + parseDataIntervals(parseEdgeCounts, options.edgeDataFiles, b, e,
-                                      routes, options.departAttr, options=options, isOrigin=True, warn=warn)
+                                      routes, options.departAttr, options=options, isOrigin=True, warn=warn,
+                                      intervalScale=intervalScale)
                  + parseDataIntervals(parseEdgeCounts, options.edgeDataFiles, b, e,
-                                      routes, options.arrivalAttr, options=options, isDest=True, warn=warn)
+                                      routes, options.arrivalAttr, options=options, isDest=True, warn=warn,
+                                      intervalScale=intervalScale)
                  )
     if options.tazFiles is not None:
         countData += parseDataIntervals(parseTazCounts, options.odFiles, b, e,
                                         routes, options.turnAttr, options=options,
-                                        isTaz=True, warn=warn)
+                                        isTaz=True, warn=warn, intervalScale=intervalScale)
     for i, cd in enumerate(countData):
         cd.index = i
     return countData
@@ -888,8 +1023,8 @@ def getHourFraction(options, begin, end):
         return 1 / options.gehScale
 
 
-def solveInterval(options, routes, begin, end, intervalPrefix, outf, mismatchf, rng, intervalCount):
-    countData = parseCounts(options, routes, begin, end)
+def solveInterval(options, routes, begin, end, intervalPrefix, outf, mismatchf, rng, intervalCount, intervalScale=1.0):
+    countData = parseCounts(options, routes, begin, end, False, intervalScale)
 
     ratioIndices = None
     if options.turnRatioFiles:
@@ -936,6 +1071,7 @@ def solveInterval(options, routes, begin, end, intervalPrefix, outf, mismatchf, 
         if options.verbose:
             print("Starting optimization for interval [%s, %s] (mismatch %s)" % (
                 begin, end, totalMismatch))
+            sys.stdout.flush()
         routeCounts = optimize(options, countData, routes, routeCounts, routeUsage, intervalCount, rng)
         resetCounts(routeCounts, routeUsage, countData)
         numSampled = sum(routeCounts)
@@ -1144,20 +1280,29 @@ def writeRoutes(options, rng, outf, routes, routeCounts, begin, end, intervalPre
         else:
             departs = [rng.uniform(begin, end) for ri in usedRoutes]
         departs.sort()
+        objects = []  # sort again if keepAttrs is active
         for i, routeIndex in enumerate(usedRoutes):
             if options.writeRouteIDs:
                 routeID = routeIndex
             vehID = options.prefix + intervalPrefix + str(i)
             depart = departs[i]
+            attrs = options.vehattrs
+            if options.keepAttrs:
+                vehID, depart, attrs = routes.sampleAttrs(rng, vehID, depart, routeIndex)
+            objects.append((depart, vehID, attrs, routeID, routeIndex))
+        if options.keepAttrs:
+            objects.sort()
+        for depart, vehID, attrs, routeID, routeIndex in objects:
             if routeID is not None:
+                fullRouteID = "%s%s%s" % (options.prefix, intervalPrefix, routeID)
                 if options.pedestrians:
                     outf.write('    <person id="%s" depart="%.2f"%s>\n' % (
                         vehID, depart, options.vehattrs))
-                    outf.write('        <walk route="%s%s%s"/>\n' % (options.prefix, intervalPrefix, routeID))
+                    outf.write('        <walk route="%s"/>\n' % fullRouteID)
                     outf.write('    </person>\n')
                 else:
-                    outf.write('    <vehicle id="%s" depart="%.2f" route="%s%s%s"%s/>\n' % (
-                        vehID, depart, options.prefix, intervalPrefix, routeID, options.vehattrs))
+                    outf.write('    <vehicle id="%s" depart="%.2f" route="%s"%s/>\n' % (
+                        vehID, depart, fullRouteID, attrs))
             else:
                 if options.pedestrians:
                     outf.write('    <person id="%s" depart="%.2f"%s>\n' % (
@@ -1166,7 +1311,7 @@ def writeRoutes(options, rng, outf, routes, routeCounts, begin, end, intervalPre
                     outf.write('    </person>\n')
                 else:
                     outf.write('    <vehicle id="%s" depart="%.2f"%s>\n' % (
-                        vehID, depart, options.vehattrs))
+                        vehID, depart, attrs))
                     routes.write(outf, None, None, routeIndex, None)
                     outf.write('    </vehicle>\n')
     else:
@@ -1250,9 +1395,14 @@ def writeMismatch(options, mismatchf, countData, begin, end):
         if len(cd.edgeTuple) == 1:
             mismatchf.write('        <edge id="%s" measuredCount="%s" deficit="%s" GEH="%.2f"/>\n' % (
                 cd.edgeTuple[0], cd.origCount, cd.count, geh))
-        elif len(cd.edgeTuple) == 2:
+        else:
             tag = 'tazRelation' if cd.isTaz else 'edgeRelation'
-            relationPrefix = '        <%s from="%s" to="%s" ' % ((tag,) + cd.edgeTuple)
+            orig = cd.edgeTuple[0]
+            dest = cd.edgeTuple[-1]
+            via = ""
+            if len(cd.edgeTuple) > 2:
+                via = ' via="%s"' % ' '.join(cd.edgeTuple[1:-1])
+            relationPrefix = '        <%s from="%s" to="%s"%s ' % (tag, orig, dest, via)
             if cd.isRatio:
                 deficit = setPrecision("%.2f",  options.precision) % (cd.assignedProbability() - cd.origCount)
                 mismatchf.write('%smeasuredProbability="%s" deficit="%s" totalAssignedFromCount="%s"/>\n'
@@ -1260,9 +1410,6 @@ def writeMismatch(options, mismatchf, countData, begin, end):
             else:
                 mismatchf.write('%smeasuredCount="%s" deficit="%s" GEH="%.2f"/>\n'
                                 % (relationPrefix, cd.origCount, cd.count, geh))
-        else:
-            print("Warning: output for edge relations with more than 2 edges not supported (%s)" % cd.edgeTuple,
-                  file=sys.stderr)
     mismatchf.write('    </interval>\n')
 
 
@@ -1279,9 +1426,9 @@ def main(options):
 
     # preliminary integrity check for the whole time range
     b = intervals[0][0]
-    e = intervals[-1][-1]
+    e = intervals[-1][1]
     with Benchmarker(options.verboseTiming, "Loading counts"):
-        countData = parseCounts(options, routes, b, e, True)
+        countData = parseCounts(options, routes, b, e, True, 1.0)
     routeUsage = getRouteUsage(routes, countData)
 
     for cd in countData:
@@ -1329,7 +1476,10 @@ def main(options):
     usedRoutesSummary = sumolib.miscutils.Statistics("avg interval written vehs")
 
     with open(options.out, 'w') as outf, Benchmarker(options.verboseTiming, "Sampling all intervals"):
-        sumolib.writeXMLHeader(outf, "$Id$", "routes", options=options)  # noqa
+        sumolib.writeXMLHeader(outf, root="routes", options=options)
+        if options.keepAttrs:
+            for vType in routes.vTypes:
+                outf.write(vType.toXML(' ' * 4))
         if options.threads > 1:
             # call the multiprocessing function
             results = multi_process(options.threads, intervals,
@@ -1345,11 +1495,11 @@ def main(options):
                     inputCountSummary.add(result[5][i], begin)
                     usedRoutesSummary.add(sum(result[6][i]), begin)
         else:
-            for i, (begin, end) in enumerate(intervals):
+            for i, (begin, end, scale) in enumerate(intervals):
                 intervalPrefix = "" if len(intervals) == 1 else "%s_" % int(begin)
                 intervalCount = options.totalCount[i] if options.totalCount else None
                 uFlow, oFlow, gehOK, ratioPerc, inputCount, usedRoutes, _ = solveInterval(
-                    options, routes, begin, end, intervalPrefix, outf, mismatchf, rng, intervalCount)
+                    options, routes, begin, end, intervalPrefix, outf, mismatchf, rng, intervalCount, scale)
                 underflowSummary.add(uFlow, begin)
                 overflowSummary.add(oFlow, begin)
                 gehSummary.add(gehOK, begin)

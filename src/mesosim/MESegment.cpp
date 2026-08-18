@@ -30,6 +30,8 @@
 #include <microsim/MSLink.h>
 #include <microsim/MSMoveReminder.h>
 #include <microsim/traffic_lights/MSTrafficLightLogic.h>
+#include <microsim/traffic_lights/MSDriveWay.h>
+#include <microsim/traffic_lights/MSRailSignalControl.h>
 #include <microsim/output/MSXMLRawOut.h>
 #include <microsim/output/MSDetectorFileOutput.h>
 #include <microsim/MSVehicleControl.h>
@@ -133,6 +135,9 @@ MESegment::MESegment(const std::string& id,
     if (multiQueue) {
         if (next == nullptr) {
             for (const MSEdge* const edge : parent.getSuccessors()) {
+                if (edge->isTazConnector()) {
+                    continue;
+                }
                 const std::vector<MSLane*>* const allowed = parent.allowedLanes(*edge);
                 assert(allowed != nullptr);
                 assert(allowed->size() > 0);
@@ -176,8 +181,7 @@ MESegment::initSegment(const MesoEdgeType& edgeType, const MSEdge& parent, const
                     myNextSegment == nullptr && (
                         parent.getToJunction()->getType() == SumoXMLNodeType::TRAFFIC_LIGHT ||
                         parent.getToJunction()->getType() == SumoXMLNodeType::TRAFFIC_LIGHT_NOJUNCTION ||
-                        parent.getToJunction()->getType() == SumoXMLNodeType::TRAFFIC_LIGHT_RIGHT_ON_RED)
-                    && !tlsPenaltyOverride());
+                        parent.getToJunction()->getType() == SumoXMLNodeType::TRAFFIC_LIGHT_RIGHT_ON_RED));
 
     // only apply to the last segment of an uncontrolled edge that has at least 1 minor link
     myCheckMinorPenalty = (edgeType.minorPenalty > 0 &&
@@ -367,7 +371,30 @@ bool
 MESegment::initialise(MEVehicle* veh, SUMOTime time) {
     int qIdx = 0;
     if (hasSpaceFor(veh, time, qIdx, true) == time) {
+        const bool isRail = veh->isRail();
+        // see MSLane::isInsertionSuccess
+        if (isRail && veh->getInsertionChecks() != (int)InsertionCheck::NONE
+                && veh->getParameter().departProcedure != DepartDefinition::SPLIT
+                && MSRailSignalControl::isSignalized(veh->getVClass())
+                && isRailwayOrShared(myEdge.getPermissions())) {
+            const MSDriveWay* dw = MSDriveWay::getDepartureDriveway(veh);
+            MSEdgeVector occupied;
+            if (dw->foeDriveWayOccupied(false, veh, occupied)) {
+                myEdge.getLanes()[0]->setParameter("insertionBlocked:" + veh->getID(), dw->getID());
+                return false;
+            }
+        }
         receive(veh, qIdx, time, true);
+        if (isRail) {
+            myEdge.getLanes()[0]->unsetParameter("insertionConstraint:" + veh->getID());
+            //unsetParameter("insertionOrder:" + veh->getID());
+            //unsetParameter("insertionBlocked:" + veh->getID());
+            //// rail_signal (not traffic_light) requires approach information for
+            //// switching correctly at the start of the next simulation step
+            //if (firstRailSignal != nullptr && firstRailSignal->getJunction()->getType() == SumoXMLNodeType::RAIL_SIGNAL) {
+            //    veh->registerInsertionApproach(firstRailSignal, firstRailSignalDist);
+            //}
+        }
         // we can check only after insertion because insertion may change the route via devices
         std::string msg;
         if (MSGlobals::gCheckRoutes && !veh->hasValidRoute(msg)) {
@@ -428,6 +455,7 @@ MESegment::removeCar(MEVehicle* v, SUMOTime leaveTime, const MSMoveReminder::Not
     myNumVehicles--;
     myEdge.lock();
     MEVehicle* nextLeader = q.remove(v);
+    myEdge.invalidateMesoCache();
     myEdge.unlock();
     return nextLeader;
 }
@@ -620,7 +648,7 @@ MESegment::receive(MEVehicle* veh, const int qIdx, SUMOTime time, const bool isD
     veh->setBlockTime(SUMOTime_MAX);
     if (!isDepart && (
                 // arrival on entering a new edge
-                (newEdge && veh->moveRoutePointer())
+                (newEdge && myEdge.isNormal() && veh->moveRoutePointer())
                 // arrival on entering a new segment
                 || veh->hasArrived())) {
         // route has ended
@@ -632,7 +660,7 @@ MESegment::receive(MEVehicle* veh, const int qIdx, SUMOTime time, const bool isD
         MSNet::getInstance()->getVehicleControl().scheduleVehicleRemoval(veh);
         return;
     }
-    assert(veh->getEdge() == &getEdge());
+    assert(veh->getEdge() == &getEdge() || getEdge().isInternal());
     // route continues
     Queue& q = myQueues[qIdx];
     const double maxSpeedOnEdge = veh->getEdge()->getLanes()[qIdx]->getVehicleMaxSpeed(veh);
@@ -667,6 +695,7 @@ MESegment::receive(MEVehicle* veh, const int qIdx, SUMOTime time, const bool isD
                 cars.insert(cars.begin(), veh);
             }
         }
+        myEdge.invalidateMesoCache();
         myEdge.unlock();
         myNumVehicles++;
         if (!isDepart && !isTeleport) {
@@ -814,7 +843,10 @@ MESegment::loadState(const std::vector<SUMOVehicle*>& vehs, const SUMOTime block
     Queue& q = myQueues[queIdx];
     for (SUMOVehicle* veh : vehs) {
         MEVehicle* v = static_cast<MEVehicle*>(veh);
-        assert(v->getSegment() == this);
+        assert(v->getSegment() == this || myEdge.isInternal());
+        if (myEdge.isInternal()) {
+            v->setSegment(this, v->getQueIndex());
+        }
         q.getModifiableVehicles().push_back(v);
         myNumVehicles++;
         q.setOccupancy(q.getOccupancy() + v->getVehicleType().getLengthWithGap());
@@ -879,19 +911,6 @@ MESegment::getLinkPenalty(const MEVehicle* veh) const {
     } else {
         return 0;
     }
-}
-
-
-bool
-MESegment::tlsPenaltyOverride() const {
-    for (const MSLane* lane : myEdge.getLanes()) {
-        for (const MSLink* link : lane->getLinkCont()) {
-            if (link->isTLSControlled() && StringUtils::toBool(link->getTLLogic()->getParameter(OVERRIDE_TLS_PENALTIES, "0"))) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 

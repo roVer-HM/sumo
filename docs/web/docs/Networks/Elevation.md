@@ -20,7 +20,7 @@ Elevation data can be imported from the following sources
 
 # Related Topics
 
-## Retrieving Elevation data via [TraCI](../TraCI.md)
+## Retrieving Elevation data via [TraCI](../TraCI/index.md)
 
 Current 3D-Position can be retrieved for persons and vehicles.
 

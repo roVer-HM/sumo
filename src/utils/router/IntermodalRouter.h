@@ -200,7 +200,8 @@ public:
             const std::string oID = originStopID != "" ? originStopID : from->getID();
             const std::string dType = stopID != "" ? "stop" : "edge";
             const std::string dID = stopID != "" ? stopID : to->getID();
-            this->myErrorMsgHandler->informf(TL("No connection between % '%' and % '%' found."), oType, oID, dType, dID);
+            const std::string vClass = vehicle == nullptr ? "" : (" with vClass " + getVehicleClassNames(vehicle->getVClass()));
+            this->myErrorMsgHandler->informf(TL("No connection between % '%' and % '%' found%."), oType, oID, dType, dID, vClass);
         }
         if (into.size() > 0) {
             into.back().arrivalPos = arrivalPos;
@@ -216,6 +217,7 @@ public:
                   << " departPos=" << trip.departPos
                   << " arrivalPos=" << trip.arrivalPos
                   << " modes=" << getVehicleClassNames(modeSet)
+                  << " vehType=" << (vehicle == nullptr ? "NULL" : vehicle->getVTypeParameter().id)
                   << " edges=" << toString(intoEdges)
 //                  << " resultEdges=" << toString(into)
                   << " time=" << time

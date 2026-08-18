@@ -57,6 +57,9 @@
 #include <libsumo/Helper.h>
 #include <libsumo/StorageHelper.h>
 #include <libsumo/TraCIConstants.h>
+#ifdef HAVE_PARQUET
+#include <arrow/util/config.h>
+#endif
 #ifdef HAVE_LIBSUMOGUI
 #include "GUI.h"
 #endif
@@ -804,6 +807,7 @@ Simulation::findIntermodalRoute(const std::string& from, const std::string& to,
 std::string
 Simulation::getParameter(const std::string& objectID, const std::string& key) {
     if (StringUtils::startsWith(key, "chargingStation.")) {
+        WRITE_WARNING("Retrieving chargingStation parameters via the simulation API is deprecated, please use traci.chargingstation.");
         const std::string attrName = key.substr(16);
         MSChargingStation* cs = static_cast<MSChargingStation*>(MSNet::getInstance()->getStoppingPlace(objectID, SUMO_TAG_CHARGING_STATION));
         if (cs == nullptr) {
@@ -821,6 +825,7 @@ Simulation::getParameter(const std::string& objectID, const std::string& key) {
             throw TraCIException("Invalid chargingStation parameter '" + attrName + "'");
         }
     } else if (StringUtils::startsWith(key, "overheadWire.")) {
+        WRITE_WARNING("Retrieving overheadWire parameters via the simulation API is deprecated, please use traci.overheadwire.");
         const std::string attrName = key.substr(16);
         MSOverheadWire* cs = static_cast<MSOverheadWire*>(MSNet::getInstance()->getStoppingPlace(objectID, SUMO_TAG_OVERHEAD_WIRE_SEGMENT));
         if (cs == 0) {
@@ -885,6 +890,7 @@ Simulation::getParameter(const std::string& objectID, const std::string& key) {
             throw TraCIException("Invalid stats parameter '" + attrName + "'");
         }
     } else if (StringUtils::startsWith(key, "parkingArea.")) {
+        WRITE_WARNING("Retrieving parkingArea parameters via the simulation API is deprecated, please use traci.parkingarea.");
         const std::string attrName = key.substr(12);
         MSParkingArea* pa = static_cast<MSParkingArea*>(MSNet::getInstance()->getStoppingPlace(objectID, SUMO_TAG_PARKING_AREA));
         if (pa == nullptr) {
@@ -904,6 +910,7 @@ Simulation::getParameter(const std::string& objectID, const std::string& key) {
             throw TraCIException("Invalid parkingArea parameter '" + attrName + "'");
         }
     } else if (StringUtils::startsWith(key, "busStop.")) {
+        WRITE_WARNING("Retrieving busStop parameters via the simulation API is deprecated, please use traci.busstop.");
         const std::string attrName = key.substr(8);
         MSStoppingPlace* bs = static_cast<MSStoppingPlace*>(MSNet::getInstance()->getStoppingPlace(objectID, SUMO_TAG_BUS_STOP));
         if (bs == nullptr) {
@@ -921,10 +928,31 @@ Simulation::getParameter(const std::string& objectID, const std::string& key) {
     } else if (StringUtils::startsWith(key, "device.tripinfo.")) {
         if (objectID != "") {
             throw TraCIException("Simulation parameter '" + key + "' is not supported for object id '" + objectID
-                                 + "'. Use empty id for global device parameers or vehicle domain for vehicle specific parameters");
+                                 + "'. Use empty id for global device parameters or vehicle domain for vehicle specific parameters");
         }
         const std::string attrName = key.substr(16);
         return MSDevice_Tripinfo::getGlobalParameter(attrName);
+    } else if (StringUtils::startsWith(key, "buildConfig.")) {
+        if (objectID != "") {
+            throw TraCIException("Simulation parameter '" + key + "' is not supported for object id '" + objectID
+                                 + "'. Use an empty id for buildConfig parameters");
+        }
+        if (key == "buildConfig.ARROW_SO_VERSION") {
+#ifdef HAVE_PARQUET
+            return ARROW_SO_VERSION;
+#else
+            return "";
+#endif
+        } else if (key == "buildConfig.JPS_VERSION") {
+#ifdef HAVE_JUPEDSIM
+            return toString(JPS_VERSION);
+#else
+            return "";
+#endif
+        } else if (key == "buildConfig.ENABLED") {
+            return HAVE_ENABLED;
+        }
+        throw TraCIException("Unknown parameter '" + key + "'");
     } else if (objectID == "") {
         return MSNet::getInstance()->getParameter(key, "");
     } else {

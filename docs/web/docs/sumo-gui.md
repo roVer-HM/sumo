@@ -786,7 +786,7 @@ The following attributes are supported
 
 All image files in the visualization support transparency. For vehicles,
 pois and polygons, this transparency can be set dynamically by changing
-the color via [TraCI](TraCI.md) and setting the alpha-channel.
+the color via [TraCI](TraCI/index.md) and setting the alpha-channel.
 
 All objects that have their color set (via input files or visualisation
 settings) support (Red,Green,Blue,Alpha) color values.

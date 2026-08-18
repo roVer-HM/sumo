@@ -19,3 +19,23 @@ protect_reversal_noSignal
 # rail signal must prohibit entering an occupied driveway if it contains a self-intersecting part
 protect_selfintersecting
 protect_selfintersecting2
+
+# see #18106
+not_selfintersecting
+
+# see #17623
+intermediate_insertion
+
+# see #17683
+intermediate_arrival
+
+# see #17683
+intermediate_arrival2
+
+# see #17623
+intermediate_insertion_circle
+
+# see #17623
+# 
+# non-rail classes should be ignored when determining moving-block applicability from permissions
+shared_mbOption

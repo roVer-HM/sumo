@@ -13,14 +13,32 @@ ticket8423
 # ride destination is a busStop only reachable via access
 ticket8578
 
+# rail taxi simulation without using vClass taxi
+ticket9812
+
+# rail taxi simulation without using vClass taxi
+ticket9812_taxi_vclasses
+
+# rail taxi simulation without using vClass taxi
+ticket9812_railRouter
+
 # dispatch-rerouting must handle the case where the vehicle is too close to the person to brake
 ticket9867
+
+# not using the empty parking area
+ticket15072
 
 # graceful insertion from parking stop on dispatch
 ticket15080
 
 # rail taxi simulation (driving a taxi on rails to work around #9812)
 ticket15907
+
+# rail taxi simulation (driving a taxi on rails to work around #9812)
+ticket15907_useOption
+
+# rail taxi simulation (driving a taxi on rails to work around #9812)
+ticket15907_changeVClass
 
 # stop fails to end
 ticket16271
@@ -33,3 +51,12 @@ ticket17166b
 
 # default transfer options
 ticket17168
+
+# travelTime estimate must use getRerouteOrigin
+ticket17629
+
+# failure to add stop when initial route is looped
+ticket17890
+
+# simulation does not terminate
+ticket17908

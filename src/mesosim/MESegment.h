@@ -51,6 +51,7 @@ class MESegment : public Named {
 public:
     static const double DO_NOT_PATCH_JAM_THRESHOLD;
     static const int PARKING_QUEUE = -1;
+    /// @brief special param value
     static const std::string OVERRIDE_TLS_PENALTIES;
 
     /// @brief edge type specific meso parameters
@@ -65,6 +66,7 @@ public:
         double tlsFlowPenalty;
         SUMOTime minorPenalty;
         bool overtaking;
+        double edgeLength;
     };
 
 
@@ -219,6 +221,11 @@ public:
     inline const std::vector<MEVehicle*>& getQueue(int index) const {
         assert(index < (int)myQueues.size());
         return myQueues[index].getVehicles();
+    }
+
+    inline SUMOTime getQueueBlockTime(int index) const {
+        assert(index < (int)myQueues.size());
+        return myQueues[index].getBlockTime();
     }
 
     /** @brief Returns the running index of the segment in the edge (0 is the most upstream).
@@ -482,6 +489,16 @@ public:
     /// @brief called when permissions change due to Rerouter or TraCI
     void updatePermissions();
 
+    /// @brief whether the traffic light should use normal junction control despite penalty options
+    void overrideTLSPenalty() {
+        myTLSPenalty = false;
+    }
+
+    /// @brief convert net time gap (leader back to follower front) to gross time gap (leader front to follower front)
+    inline SUMOTime getMinTauWithVehLength(double lengthWithGap, double vehicleTau) const {
+        return (SUMOTime)((double)myTau_ff * vehicleTau + lengthWithGap * myTau_length);
+    }
+
 private:
     bool overtake();
 
@@ -513,9 +530,6 @@ private:
     }
 
     SUMOTime getTauJJ(double nextQueueSize, double nextQueueCapacity, double nextJamThreshold) const;
-
-    /// @brief whether the traffic light should use normal junction control despite penalty options
-    bool tlsPenaltyOverride() const;
 
 private:
     /// @brief The microsim edge this segment belongs to

@@ -23,7 +23,7 @@ For instance, a single vehicle can configured as taxi as in the following minima
     </vehicle>
 ```
 
-The following table gives the full list of possible parameters for the taxi device (all parameter names have to be prepended with "device.taxi"):
+The following table gives the full list of possible sumo options for the taxi device (all option names have to be prepended with "--device.taxi." when set from the command line):
 
 | Parameter                        | Type             | Range                                                        | Default          | Description                                                                         |
 | -------------------------------- | ---------------- | ------------------------------------------------------------ | ---------------- | ----------------------------------------------------------------------------------- |
@@ -59,7 +59,7 @@ A person can also use a taxi by including it as a [personTrip](../Specification/
 Whenever a person enters a taxi during the intermodal route search, a time penalty is applied to account for the expected time loss from waiting for the taxi and embarking. The default value is set 300s and can be configure with option **--persontrip.taxi.waiting-time**. This prevents rapid switching between travel modes.
 
 ## Groups of Persons
-Multiple persons can travel together as a group using attribute `group` (if the taxi has sufficient capacity):
+Multiple persons can travel together from the same origin to the same destination as a group using attribute `group` (if the taxi has sufficient capacity):
 
 ```xml
     <person id="p0" depart="0.00">
@@ -69,6 +69,8 @@ Multiple persons can travel together as a group using attribute `group` (if the 
         <ride from="B2C2" to="A0B0" lines="taxi" group="g0"/>
     </person>
 ```
+
+Starting with version SUMO 1.27.0 this grouping also works if reservations are received after a taxi has alrady been dispatched. Persons in the same group will be permitted to join the ride up to the capacity of the vehicle.
 
 ## Prebooking
 Direct ride hailing can be regarded as a spontaneous booking. If the taxi is to be requested before the person is at the pick-up location, prebooking is necessary. This is used by specifying an `earliestPickupTime` and a `reservationTime` in the `ride`. The `reservationTime` specifies the time at which the reservation is created and made available to the dispatch. It may also be less than the person's depart. The `earliestPickupTime` specifies the time at which the person is ready to be picked up. Depending on the algorithm used, this may allow a better dispatch to be made. Especially in combination with a custom dispatch algorithm via [TraCi](#traci), the requirements of different use cases can be addressed.
@@ -138,7 +140,16 @@ algorithms are available
 !!! note
     User-contributed dispatch algorithms are welcome.
 
+## Dispatch Options
+
 The period in which the dispatch algorithm runs can be controlled with option **--device.taxi.dispatch-period**. The default is 60s.
+
+The option **--device.taxi.dispatch-algorithm.params KEY1:VALUE1[,KEY2:VALUE]** supports key:value-pair `routingMode:0` which makes taxis use empty-network traveltimes when estimating pickup duration (or loaded traveltimes when available). By default taxis will use [current traveltimes (smoothed)](../Demand/Automatic_Routing.md#edge_weights) instead.
+
+## Swapping tasks after dispatch
+
+Taxis can be configured with `<param key="device.taxi.swapGroup" value="<GROUPNAME>"/>` in their `vType` or `<vehicle>`-definition (setting `<GROUPNAME>` to an arbitrary non-empty string).
+If a taxi sets this parameter, it can receive tasks from other taxis with the same `swapGroup` value upon entering the idle state. This is doen if the other taxi has not yet picked up any passengers and the idle taxi is closer to the pickup location.
 
 ## Algorithm-Output
 
@@ -200,11 +211,15 @@ Example declarations for the rerouter and the taxi vType that references it:
 </vType>
 ```
 
+### Taxis stands for rail taxis
 
+When defining taxi stands for rail taxis, overtaking on a rail track is not possible and thus parking spaces will automatically be filled beginning at the downstream end.
+If the first taxi in the queue of waiting taxis is dispatched, all idling taxis behind it will then automatically advance in the queue to fill up that spot.
+If another vehicle approaches the end of the queue and cannot park (due to lack of free capacity or havin a different destination), the whole queue ahead will exit the parkingArea to allow the rear vehcle to pass.
 
 ## Customer Stops
 
-Taxis will stop to pick-up and drop-off customers. The 'actType' attribute of a stop indicates the purpose ('pickup' / 'dropOff') as well as the ids of the customers and their reservation id. Stop attributes can be configured using [generic parameters]() `<vType>` or `<vehicle>` definition of the taxi:
+Taxis will stop to pick-up and drop-off customers. The 'actType' attribute of a stop indicates the purpose ('pickup' / 'dropOff') as well as the ids of the customers and their reservation id. Stop attributes can be configured using [generic parameters](GenericParameters.md) in the `<vType>` or `<vehicle>` definition of the taxi:
 
 ```xml
     <vType id="taxi" vClass="taxi">
@@ -222,7 +237,7 @@ By default, vehicle stops will have attribute `parking="true"` which means that 
 param "device.taxi.parking" to "false".
 
 # TraCI
-To couple an external dispatch algorithm to SUMO, the following [TraCI](../TraCI.md) functions are provided:
+To couple an external dispatch algorithm to SUMO, the following [TraCI](../TraCI/index.md) functions are provided:
 
 !!! note
     To make use of these functions, the option **--device.taxi.dispatch-algorithm traci** must be set

@@ -210,6 +210,11 @@ public:
     /// @brief update GLObject (geometry, ID, etc.) (optional)
     virtual void updateGLObject();
 
+    /// @brief check if object is visible (Currently used only in netedit)
+    virtual bool isVisible(const GUIVisualizationSettings& /*s*/) const {
+        return true;
+    }
+
     virtual double getColorValue(const GUIVisualizationSettings& /*s*/, int /*activeScheme*/) const {
         return 0;
     }
@@ -312,6 +317,9 @@ protected:
 
     /// @brief build basic additional popup options. Used to unify pop-ups menu in netedit and SUMO-GUI
     void buildAdditionalsPopupOptions(GUIMainWindow& app, GUIGLObjectPopupMenu* ret, const std::string& type);
+
+    /// @brief to be called by child class to ensure cleanup in correct order
+    void cleanupOnDestruction();
 
 private:
     /// @brief The numerical id of the object

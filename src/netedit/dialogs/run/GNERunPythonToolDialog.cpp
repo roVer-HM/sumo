@@ -56,7 +56,8 @@ GNERunPythonToolDialog::getRunCommand() const {
 long
 GNERunPythonToolDialog::onCmdBack(FXObject*, FXSelector, void*) {
     // close runTool dialog and open tool dialog
-    onCmdClose(nullptr, 0, nullptr);
+    closeDialogCanceling();
+    myText->setText("", 0);
     return myApplicationWindow->handle(myPythonTool->getMenuCommand(), FXSEL(SEL_COMMAND, MID_GNE_OPENPYTHONTOOLDIALOG), nullptr);
 }
 

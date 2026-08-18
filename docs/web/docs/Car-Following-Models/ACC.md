@@ -15,6 +15,8 @@ Note, that the additional modes (iii) and (iv) aim to enable stable and safe car
 whereas the original publication [\[1\]](#references) reveals string instabilities in experimental data and simulations
 for vehicle platoons with ACC controllers (see [String Instabilities in ACC Platoons](#string_instabilities_in_acc_platoons)).
 
+The full list if model parameters can be found at [carFollowing model parameters](../Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#car-following_model_parameters).
+
 see also [CACC model](CACC.md).
 
 ## (i) Speed control mode

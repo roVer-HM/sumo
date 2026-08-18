@@ -48,6 +48,7 @@ class MSVehicleDevice;
 class SUMOSAXAttributes;
 class EnergyParams;
 class PositionVector;
+class MFXOptionalLock;
 
 typedef std::vector<const MSEdge*> ConstMSEdgeVector;
 
@@ -143,6 +144,9 @@ public:
      * @return The current route pointer
      */
     virtual const ConstMSEdgeVector::const_iterator& getCurrentRouteEdge() const = 0;
+
+    /// @return the current edge which may be internal
+    virtual const MSEdge* getCurrentEdge() const = 0;
 
     /** @brief Returns the vehicle's emission model parameter
      *
@@ -393,6 +397,8 @@ public:
 
     /// @brief get bounding rectangle
     virtual PositionVector getBoundingBox(double offset = 0) const = 0;
+
+    virtual std::unique_ptr<MFXOptionalLock> getScopeLock() = 0;
 
     /// @name parking memory io
     //@{

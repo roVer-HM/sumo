@@ -20,7 +20,7 @@ sudo apt-get install git
 git clone --recursive https://github.com/eclipse-sumo/sumo
 cd sumo
 export SUMO_HOME="$PWD"
-sudo apt-get install $(cat build_config/build_req_deb.txt build_config/tools_req_deb.txt)
+sudo build_config/install_dependencies.sh  # this will also add repositories for parquet, download and build jupedsim from source
 cmake -B build .
 cmake --build build -j$(nproc)
 ```
@@ -60,12 +60,18 @@ alternatives below.
   - flake, astyle and autopep for style checking
   - see also further dependencies [for GUI testing](../Developer/GUI_Testing.md)
 
-The package names above are for openSUSE, for ubuntu the call to get the most important optional libraries and tools is:
+The package names above are for openSUSE, on a debian/ubuntu system the packages can be installed using:
 
 ```
-sudo apt-get install ccache libavformat-dev libswscale-dev libopenscenegraph-dev python3-pip python3-build
-sudo apt-get install libgtest-dev gettext tkdiff xvfb flake8 astyle python3-autopep8 python3-gi-cairo gir1.2-gtk-3.0
-sudo apt-get install python3-pyproj python3-rtree python3-pandas python3-pulp python3-ezdxf
+sudo apt-get install $(cat build_config/build_req_deb.txt build_config/tools_req_deb.txt)
+```
+
+In contrast to the install script this will not include jupedsim and parquet.
+Some larger dependencies need to be added manually if needed (for a description see the section above):
+
+```
+sudo apt-get install libavformat-dev libswscale-dev libopenscenegraph-dev
+sudo apt-get install python3-gi-cairo gir1.2-gtk-3.0
 python3 -m pip install texttest
 ```
 
@@ -79,7 +85,7 @@ see https://arrow.apache.org/install/
 wget https://packages.apache.org/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
 sudo apt install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
 sudo apt update
-sudo apt install -y -V libarrow-dev libparquet-dev
+PARQUET_VERSION=$(apt-cache policy libparquet-dev | grep -o '23[0-9.-]*' | head -1) apt-get -y install libarrow-dev=$PARQUET_VERSION libparquet-dev=$PARQUET_VERSION
 ```
 
 ## Getting the source code
@@ -197,11 +203,11 @@ Other useful cmake configuration options:
   include EPL compatible licensed code)
 - `-D CMAKE_BUILD_TYPE=RelWithDebInfo` enable debug symbols for
   debugging the release build or using a different profiler
-- `-D PROJ_LIBRARY=` disable PROJ
-- `-D FOX_CONFIG=` disable FOX toolkit (GUI and multithreading)
-- `-D PYTHON_EXECUTABLE=/usr/bin/python3` select a different python version (also for libsumo / libtraci)
+- `-D ENABLE_PROJ=OFF` disable PROJ
+- `-D ENABLE_FOX=OFF` disable FOX toolkit (GUI and multithreading)
+- `-D Python_EXECUTABLE=/usr/bin/python3` select a different python version (also for libsumo / libtraci, note the capitalization)
 - `-D MVN_EXECUTABLE=` disable maven packaging (especially useful if you have no network connection)
-- `-D ENABLE_CS_BINDINGS=ON` enable C# bindings when compiling libsumo / libtraci
+- `-D ENABLE_C_BINDINGS=ON` enable C bindings when compiling libsumo (requires SWIG at least version 4.3)
 
 After this is finished, run
 
@@ -262,7 +268,7 @@ before calling the executable.
 Many of the project features are optional. To test a minimal setup, the following build configuration can be used:
 
 ```
-cmake -DFOX_CONFIG= -DPROJ_LIBRARY= -DCHECK_OPTIONAL_LIBS=OFF -DFMI=OFF -B build. 
+cmake -DENABLE_FOX=OFF -DENABLE_PROJ=OFF -DCHECK_OPTIONAL_LIBS=OFF -DENABLE_FMI=OFF -B build .
 ```
 
 ## Installing the SUMO binaries
@@ -293,35 +299,38 @@ from the same folder you ran `make install`. This will leave some empty
 directories, so if you want to remove them as well, double check that
 $SUMO_HOME points to the right directory (see above) and run
 ```
-sudo xargs rm -r $SUMO_HOME
+sudo rm -r $SUMO_HOME
 ```
 
-## Building Python wheels for sumolib, traci and libsumo
+## Building Python wheels for sumolib, traci, libsumo and eclipse-sumo
 
-If you want to distribute sumolib, traci and/or libsumo as wheels
-you can build those wheels directly from the tools tree. Please be aware
-that nightly builds of those packages are also available on https://test.pypi.org
+If you want to distribute sumolib, traci, libsumo or the whole SUMO package
+as wheels, you can build those directly from the source tree. Please be aware
+that nightly builds of those packages are also available on
+https://sumo.dlr.de/daily/wheels/ (built on the SUMO servers) and
+https://sumo.dlr.de/daily/ciwheels/ (built on GitHub CI, has usually more platforms).
+
+If you still want to build them all yourself, maybe because you need a custom configuration,
+the easiest way is to call tools/build_config/build_wheels.sh but be aware that this
+will invoke [cibuildwheel](https://cibuildwheel.pypa.io/) which in turn fires up docker
+and may take some time and space to build for multiple python versions.
+
+If you only need a single wheel the pattern is usually:
 ```
-pip install wheel build
-cd tools
-python build_config/version.py build_config/setup-sumolib.py ./setup.py
+tools/build_config/version.py --pep440 build_config/pyproject/sumolib.toml pyproject.toml
 python -m build --wheel
-python build_config/version.py build_config/setup-traci.py ./setup.py
-python -m build --wheel
-python build_config/version.py build_config/setup-libsumo.py ./setup.py
-python -m build --wheel
 ```
-You will need a recent version of pip (>=22) for this to work. If for some reason
-you cannot update your pip you can also use the (discouraged!) method of calling
-setup.py directly.
-```
-cd tools
-python build_config/setup-sumolib.py bdist_wheel
-```
-Please note that you always need to be in the tools directory for this to work
-and your wheels will be placed in tools/dist. Furthermore the traci and the sumolib wheel
-are platform and Python version independent while libsumo depends on the exact
-platform and Python you built it with.
+where the first line patches the pyproject.toml with the current version
+(you can replace sumolib here by traci, libsumo etc.)
+and saves it in the SUMO root dir and the second call runs the build.
+
+You will need a recent version of pip (>=22) and [python-build](https://build.pypa.io/)
+for this to work. If you cannot build in an isolated environment
+(maybe because you do not have internet access) you will also need scikit-build-core
+(for sumo-data, eclipse-sumo and libsumo) and/or hatchling (sumolib and traci).
+The traci and the sumolib wheel are platform and Python version independent,
+sumo-data and eclipse-sumo depend on the platform but not on the Python version
+while libsumo depends on the exact platform and Python you built it with.
 
 ## (Frequent) Rebuilds
 
@@ -348,7 +357,7 @@ Note that this will clone the full repository, including the latest version of J
 
 ``` bash
 cd jupedsim
-git checkout v1.3.1
+git checkout v1.4.1
 cmake -B build .
 cmake --build build
 sudo cmake --install build

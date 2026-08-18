@@ -2,6 +2,23 @@
 title: Traffic Lights
 ---
 
+# High level Overview
+
+The purpose of traffic light modelling in SUMO is threefold:
+
+1. provide comfortable ways to set up plausible traffic signals for a whole city 
+2. provide functionality to replicate an existing traffic light with high fidelity 
+3. provide functionality to simulate any conceivable traffic light algorithm for research purposes
+
+The first aim is supported by a deep pool of heuristics that construct traffic lights and programs.
+The other aims are supported by the following capabilities:
+
+- parameterization of the [built-in-algorithms](#defining_new_tls-programs)
+- loading custom algorithms directly into the simulation with a [mini-programming language](#type_actuated_with_custom_switching_rules) tailored to traffic light operations
+- attaching arbitrary external code to a running simulation via a [process-coupling interface (TraCI)](#controlling_traffic_lights_via_traci)
+
+# Workflow
+
 Normally, [netconvert](../netconvert.md) and
 [netgenerate](../netgenerate.md) generate traffic lights and
 programs for junctions during the computation of the networks. Still,
@@ -11,8 +28,9 @@ to run [sumo](../sumo.md)/[sumo-gui](../sumo-gui.md) with
 additional program definitions. Also,
 [sumo](../sumo.md)/[sumo-gui](../sumo-gui.md) allow loading
 definitions which describe when and how a set of traffic lights can
-switch from one program to another. Both will be discussed in the
-following subchapters. Another possibility is to edit traffic light plans
+[switch from one program to another](#defining_program_switch_times_and_procedure).
+Both will be discussed in the following subchapters.
+Another possibility is to edit traffic light plans
 visually in [netedit](../Netedit/editModesNetwork.md#traffic_lights).
 
 # Automatically Generated TLS-Programs
@@ -47,17 +65,18 @@ visually in [netedit](../Netedit/editModesNetwork.md#traffic_lights).
   option **--tls.allred.time** can be used.
 - It is also possible to generate
   [Actuated Traffic Lights](#type_actuated)
-  by setting the option **--tls.default-type**. This will generated the same signal plans as
+  by setting the option **--tls.default-type**. This will generate the same signal plans as
   above but with green phases that have a variable length of 5s-50s
   (both values can be set using the options **--tls.min-dur, --tls.max-dur**).
-    - default type **actuated**: traffic light actuation is based on gaps measured by automatically generated induction loops
-    - default type **delay_based**: actuation is based on vehicle delays
+  - default type **actuated**: traffic light actuation is based on gaps measured by automatically generated induction loops
+  - default type **delay_based**: actuation is based on vehicle delays
 - The generated phase layout can be selected setting option **--tls.layout** to
   *opposites* (default) or *incoming* (see below).
 - The generated phase layout is also influenced by the [node
   type](../Networks/PlainXML.md#node_types) which may be either
   *traffic_light* or *traffic_light_right_on_red* (explained
   below)
+- by default, generated programs will have a fixed phase sequence and only vary in timing (for tlType *actuated* and *delay_based*). As an exception, a program that can *skip* a phase is generated when the only point of conflict is a [pedestrian crossing](Pedestrians.md#generating_a_network_with_crossings_and_walkingareas) and the tlType is *actuated*. This program uses [dynamic phase selection](#dynamic_phase_selection_phase_skipping) so that the pedestrian crossing phase is only activated once pedestrians are waiting at the crossing.
 
 ## Default 4-arm intersection (layout *opposites*)
 
@@ -66,7 +85,7 @@ By default, programs are generated with 4 green phases:
 1.  a straight phase
 2.  a left-turning phase (only if there is a dedicated left-turn lane)
 3.  a straight phase for the direction orthogonal to the first one
-4.  a left-turning phase for the direction direction orthogonal to the
+4.  a left-turning phase for the direction orthogonal to the
     first one (only if there is a dedicated left-turn lane)
 
 Due to the default timings explained above, the green phases usually
@@ -74,8 +93,8 @@ have a duration of 31s.
 
 If the node type is set to *traffic_light_right_on_red* rather than
 *traffic_light*, then right turns from all sides are permitted in all
-phases (after coming to a stop before entering the traffic stream that
-currently has the green light.
+phases. Whenever a right-turn does not have the green light, it is treated like a priority stop: the vehicle must stop for a configurable time and then wait for a safe gap in traffic before turning right.
+The stopping duration is configurable with vType attribute `jmStopSignWait` and defaults to 1 simulation step.
 
 ## Phase layout *incoming*
 
@@ -247,10 +266,10 @@ the input file.
 TLS Link indices can be access using either
 
 - [sumolib](../Tools/Sumolib.md) using
-  [connection.getTLLinkIndex()](https://sumo.dlr.de/pydoc/sumolib.net.connection.html)
+  [connection.getTLLinkIndex()](https://sumo.dlr.de/pydoc/sumolib/net/connection.html)
 - [sumolib](../Tools/Sumolib.md) using
-  [tls.getConnections()](https://sumo.dlr.de/pydoc/sumolib.net.html#TLS)
-- or [TraCI](../TraCI.md) using
+  [tls.getConnections()](https://sumo.dlr.de/pydoc/sumolib/net.html#TLS)
+- or [TraCI](../TraCI/index.md) using
   [traci.trafficlight.getControlledLinks()](../TraCI/Traffic_Lights_Value_Retrieval.md#structure_of_compound_object_controlled_links)
 
 ## Viewing TLS-Programs graphically
@@ -513,6 +532,7 @@ The following elements are permitted in an expression for attributes
   - 'z:DETID': returns the time gap since the last vehicle detection for inductionLoop detector with id 'DETID' or id 'TLSID_PROGRAMID_DETID' (DETID may omit the [prefix 'TLSID_PROGRAMID_'](#detectors))
   - 'a:DETID': returns number of vehicles on detector with id 'DETID'. Supports inductionLoop and laneAreaDetectors. Also supports omitting the prefix of the detector id. (see 'z:')
   - 'w:DETID': returns longest individual waiting time in seconds for vehicles on detector with id 'DETID'. Supports inductionLoop and laneAreaDetectors. Also supports omitting the prefix of the detector id. (see 'z:')
+  - 'd:DETID': returns maximum stop arrival delay in seconds for public transport vehicles on detector with id 'DETID'. Supports inductionLoop and laneAreaDetectors. Also supports omitting the prefix of the detector id. (see 'z:')
   - 'g:TLSINDEX': returns current green duration in seconds for link with the given index
   - 'r:TLSINDEX': returns current red duration in seconds for link with the given index
   - 'p:TLSINDEX': returns the number of persons that are on a waiting area and intending to cross the pedestrian crossing with the given tls link index
@@ -1163,3 +1183,7 @@ The following additional features may be activated via checkboxes:
 
 ![track_phases.png](../images/track_phases.png
 "Track Phases Window")
+
+# Miscellaneous
+
+- [LiSUM](../Tools/LiSuM.md) LiSuM is a middleware that couples LISA+ and SUMO, making it easier to use Software-in-the-Loop for existing virtual controller definitions (i.e. as used in VISSIM)execute more complex traffic

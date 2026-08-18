@@ -62,9 +62,10 @@ def fromVersionHeader():
 def gitDescribe(commit="HEAD", gitDir=GITDIR, padZero=True):
     """
     The original git describe format is "<tag>-<commit_count>-g<hash>".
-    We convert it to "<tag>+<commit-count>-hash". If padZero is true (the default),
-    the commit count is padded to four digits.
-    If the git describe call fails, the result of fromVersionHeader is returned.
+    This function converts it to "<tag>+<commit_count>-<hash>".
+    If padZero is true (the default), the commit count is padded to four digits.
+    If the git describe call fails or cannot find tags (because it is a shallow clone),
+    the result of fromVersionHeader is returned.
     """
     command = ["git", "describe", "--long", "--always", commit]
     if gitDir:
@@ -82,5 +83,5 @@ def gitDescribe(commit="HEAD", gitDir=GITDIR, padZero=True):
         m2 = d.find("-", m1)
         diff = max(0, 4 - (m2 - m1)) if padZero else 0
         # prefix the number of commits with a "+" and pad with 0
-        d = d[:m1].replace("-", "+") + (diff * "0") + d[m1:]
-    return d
+        return d[:m1].replace("-", "+") + (diff * "0") + d[m1:]
+    return fromVersionHeader()

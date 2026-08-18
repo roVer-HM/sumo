@@ -18,6 +18,7 @@
 // External runner for python and external tools
 /****************************************************************************/
 #include <config.h>
+#include <utils/xml/XMLSubSys.h>
 
 #ifdef HAVE_BOOST
 #ifdef _MSC_VER
@@ -115,6 +116,7 @@ GNEExternalRunner::run() {
         myRunning = true;
         // Show command
         myRunDialog->addEvent(new GUIEvent_Message(GUIEventType::OUTPUT_OCCURRED, runCommand + "\n"), false);
+        myRunDialog->addEvent(new GUIEvent_Message(GUIEventType::MESSAGE_OCCURRED, std::string(TL("starting process...\n"))), true);
         // run command derivating the std_out to out and std_err to err
         boost::process::v1::child c(runCommand,
                                     boost::process::v1::std_in < in,
@@ -159,6 +161,7 @@ GNEExternalRunner::run() {
         // end running
         myRunning = false;
         // send end signal
+        myRunDialog->addEvent(new GUIEvent_Message(GUIEventType::MESSAGE_OCCURRED, std::string(TL("process finished\n"))), false);
         myRunDialog->addEvent(new GUIEvent_Message(GUIEventType::TOOL_ENDED, ""), true);
         // return exit code
         return c.exit_code();
@@ -178,7 +181,7 @@ GNEExternalRunner::run() {
     }
     // open process showing std::err in console
 #ifdef WIN32
-    myPipe = _popen(StringUtils::transcodeToLocal(runCommand + " 2>&1").c_str(), "r");
+    myPipe = _popen(XMLSubSys::transcodeToLocal(runCommand + " 2>&1").c_str(), "r");
 #else
     myPipe = popen((runCommand + " 2>&1").c_str(), "r");
 #endif

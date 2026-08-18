@@ -3,3 +3,4 @@
 --ptstop-files input_ptstops.xml
 --output=net.net.xml 
 --railway.signal.guess.by-stops
+--ptstop-output additional.xml

@@ -23,13 +23,13 @@
 #include <utils/common/Named.h>
 #include <microsim/MSMoveReminder.h>
 #include <microsim/MSRoute.h>
+#include <microsim/MSLink.h>
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
 class SUMOVehicle;
 class MSLane;
-class MSLink;
 class MSRailSignal;
 
 // ===========================================================================
@@ -224,7 +224,8 @@ protected:
     bool myAbortedBuild;
     /// @brief whether driveway building was aborted when no further bidi edge was found
     bool myBidiEnded;
-    bool myIsSubDriveway;
+    /// @brief set to parent driveway if this is a subDriveway, nullptr otherwise
+    MSDriveWay* myParent;
 
     /* @brief the actual driveway part up to the next railsignal (halting position)
      * This must be free of other trains */
@@ -251,6 +252,10 @@ protected:
      * current link and any of the conflict links */
     std::vector<MSLink*> myConflictLinks;
 
+    bool isSubDriveWay() const {
+        return myParent != nullptr;
+    }
+
     /// @brief Whether the approaching vehicle is prevent from driving by another vehicle approaching the given link
     bool hasLinkConflict(const Approaching& closest, const MSLink* foeLink) const;
 
@@ -267,17 +272,18 @@ protected:
      *
      * returns edge that is assumed to safe from oncoming-deadlock or nullptr
      */
-    void buildRoute(const MSLink* origin, MSRouteIterator next, MSRouteIterator end, LaneVisitedMap& visited, std::set<MSLink*>&);
+    void buildRoute(const MSLink* origin, MSRouteIterator next, MSRouteIterator end, LaneVisitedMap& visited, std::set<MSLink*, MSLink::ComparatorNumericalLaneIdLess>&);
 
     /* @brief find switches that threaten this driveway
      * @param[out] flankSwitches collect the switches
      */
-    void checkFlanks(const MSLink* originLink, const std::vector<const MSLane*>& lanes, const LaneVisitedMap& visited, bool allFoes, std::set<MSLink*>& flankSwitches) const;
+    void checkFlanks(const MSLink* originLink, const std::vector<const MSLane*>& lanes, const LaneVisitedMap& visited,
+                     bool allFoes, bool movingBlock, std::set<MSLink*, MSLink::ComparatorNumericalLaneIdLess>& flankSwitches) const;
 
     /* @brief find links that cross the driveway without entering it
      * @param[out] flankSwitches collect the switches
      */
-    void checkCrossingFlanks(MSLink* dwLink, const LaneVisitedMap& visited, std::set<MSLink*>& flankSwitches) const;
+    void checkCrossingFlanks(MSLink* dwLink, const LaneVisitedMap& visited, std::set<MSLink*, MSLink::ComparatorNumericalLaneIdLess>& flankSwitches) const;
 
     /* @brief find upstream protection from the given link
      * @param[out] flank: the stored flank lanes
@@ -308,9 +314,10 @@ protected:
     void addConflictLink(const MSLink* link);
 
     /// @brief return whether a siding can be used. If a siding exist but is occupied, also return the occupied driveway in the siding
-    std::pair<bool, const MSDriveWay*> canUseSiding(const SUMOVehicle* ego, const MSDriveWay* foe, bool recurse = true) const;
+    std::pair<bool, const MSDriveWay*> canUseSiding(const SUMOVehicle* ego, const MSDriveWay* foe, const MSEdge* recurseSidingEnd = nullptr) const;
 
-    bool isFoeOrSubFoe(const MSDriveWay* foe) const;
+    /// @brief return dw if it is a foe or a subDrivway of dw if it is a foe
+    const MSDriveWay* getFoeOrSubFoe(const MSDriveWay* dw) const;
 
     bool forwardEndOnRoute(const MSDriveWay* foe) const;
 
@@ -350,11 +357,12 @@ protected:
 private:
 
     struct Siding {
-        Siding(int s, int e, double l) : start(s), end(e), length(l) {}
+        Siding(int s, int e, double l, std::vector<int> iEnds) : start(s), end(e), length(l), intermediateEnds(iEnds) {}
         // indices along route
         int start;
         int end;
         double length;
+        std::vector<int> intermediateEnds;
     };
 
     std::set<SUMOVehicle*, ComparatorNumericalIdLess> myTrains;

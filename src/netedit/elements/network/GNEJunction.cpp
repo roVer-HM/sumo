@@ -707,7 +707,7 @@ GNEJunction::drawGL(const GUIVisualizationSettings& s) const {
             // calculate junction contour (always before children)
             calculateJunctioncontour(s, d, junctionExaggeration, drawBubble);
             // draw Junction childs
-            drawJunctionChildren(s, d);
+            drawJunctionChildren(s);
         }
         // update drawing toggle
         *myDrawingToggle = myNet->getViewNet()->getDrawingToggle();
@@ -1751,6 +1751,10 @@ GNEJunction::drawJunctionAsBubble(const GUIVisualizationSettings& s, const GUIVi
     const double bubbleRadius = s.neteditSizeSettings.junctionBubbleRadius * exaggeration;
     // set bubble color
     const RGBColor bubbleColor = setColor(s, true);
+    if (bubbleColor.alpha() == 0) {
+        // never draw when at full transparency (make sure no matrices have been pushed before return)
+        return;
+    }
     // push matrix
     GLHelper::pushMatrix();
     // set color
@@ -1770,6 +1774,10 @@ GNEJunction::drawJunctionAsShape(const GUIVisualizationSettings& s, const GUIVis
     if (s.drawJunctionShape && (myNBNode->getShape().size() > 0)) {
         // set shape color
         const RGBColor junctionShapeColor = setColor(s, false);
+        if (junctionShapeColor.alpha() == 0) {
+            // never draw when at full transparency (make sure no matrices have been pushed before return)
+            return;
+        }
         // set color
         GLHelper::setColor(junctionShapeColor);
         // adjust shape to exaggeration (check)
@@ -1874,40 +1882,37 @@ GNEJunction::drawJunctionName(const GUIVisualizationSettings& s) const {
 
 
 void
-GNEJunction::drawJunctionChildren(const GUIVisualizationSettings& s, const GUIVisualizationSettings::Detail d) const {
-    // check if draw junction elements
-    if (s.drawForViewObjectsHandler || (d <= GUIVisualizationSettings::Detail::JunctionElement)) {
-        // draw crossings
-        for (const auto& crossing : myGNECrossings) {
-            crossing->drawGL(s);
-        }
-        // draw walking areas
-        for (const auto& walkingArea : myGNEWalkingAreas) {
-            walkingArea->drawGL(s);
-        }
-        // draw internalLanes
-        for (const auto& internalLanes : myInternalLanes) {
-            internalLanes->drawGL(s);
-        }
-        // draw connections
-        for (const auto& incomingEdge : myGNEIncomingEdges) {
-            for (const auto& connection : incomingEdge->getGNEConnections()) {
-                connection->drawGL(s);
-            }
-        }
-        // draw child demand elements
-        for (const auto& demandElement : getChildDemandElements()) {
-            demandElement->drawGL(s);
-        }
-        // draw child demand elements
-        for (const auto& demandElement : getChildDemandElements()) {
-            demandElement->drawGL(s);
-        }
-        // draw path additional elements
-        myNet->getNetworkPathManager()->drawJunctionPathElements(s, this);
-        myNet->getDemandPathManager()->drawJunctionPathElements(s, this);
-        myNet->getDataPathManager()->drawJunctionPathElements(s, this);
+GNEJunction::drawJunctionChildren(const GUIVisualizationSettings& s) const {
+    // draw crossings
+    for (const auto& crossing : myGNECrossings) {
+        crossing->drawGL(s);
     }
+    // draw walking areas
+    for (const auto& walkingArea : myGNEWalkingAreas) {
+        walkingArea->drawGL(s);
+    }
+    // draw internalLanes
+    for (const auto& internalLanes : myInternalLanes) {
+        internalLanes->drawGL(s);
+    }
+    // draw connections
+    for (const auto& incomingEdge : myGNEIncomingEdges) {
+        for (const auto& connection : incomingEdge->getGNEConnections()) {
+            connection->drawGL(s);
+        }
+    }
+    // draw child demand elements
+    for (const auto& demandElement : getChildDemandElements()) {
+        demandElement->drawGL(s);
+    }
+    // draw child demand elements
+    for (const auto& demandElement : getChildDemandElements()) {
+        demandElement->drawGL(s);
+    }
+    // draw path additional elements
+    myNet->getNetworkPathManager()->drawJunctionPathElements(s, this);
+    myNet->getDemandPathManager()->drawJunctionPathElements(s, this);
+    myNet->getDataPathManager()->drawJunctionPathElements(s, this);
 }
 
 
@@ -1917,7 +1922,7 @@ GNEJunction::calculateJunctioncontour(const GUIVisualizationSettings& s, const G
     // if we're selecting using a boundary, first don't calculate contour bt check if edge boundary is within selection boundary
     if (gViewObjectsHandler.selectingUsingRectangle() && gViewObjectsHandler.getSelectionTriangle().isBoundaryFullWithin(myJunctionBoundary)) {
         // simply add object in ViewObjectsHandler with full boundary
-        gViewObjectsHandler.selectObject(this, getType(), false, nullptr);
+        gViewObjectsHandler.selectObject(s, this, getType(), false, nullptr);
     } else {
         // always calculate for shape
         myNetworkElementContour.calculateContourClosedShape(s, d, this, myNBNode->getShape(), getType(), exaggeration, this);
@@ -2152,7 +2157,7 @@ GNEJunction::setColor(const GUIVisualizationSettings& s, bool bubble) const {
     const int scheme = s.junctionColorer.getActive();
     // first check if we're editing shape
     if (myShapeEdited) {
-        return s.colorSettings.editShapeColor;
+        return s.junctionColorer.getScheme().getColor(4);
     }
     // set default color
     RGBColor color = s.junctionColorer.getScheme().getColor(getColorValue(s, scheme));

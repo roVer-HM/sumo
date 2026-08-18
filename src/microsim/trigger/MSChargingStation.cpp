@@ -130,6 +130,12 @@ MSChargingStation::getParkingArea() const {
 }
 
 
+double
+MSChargingStation::getTotalChargingPower() const {
+    return myTotalChargingPower;
+}
+
+
 void
 MSChargingStation::setChargingPower(double chargingPower) {
     myNominalChargingPower = chargingPower;
@@ -162,6 +168,20 @@ void
 MSChargingStation::setChargingVehicle(bool value) {
     myChargingVehicle = value;
     if (myTotalChargingPower > 0 && myChargingVehicle && myTotalPowerCheckEvent == nullptr) {
+        myTotalPowerCheckEvent = new WrappingCommand<MSChargingStation>(this, &MSChargingStation::checkTotalPower);
+        MSNet::getInstance()->getEndOfTimestepEvents()->addEvent(myTotalPowerCheckEvent);
+    }
+}
+
+
+void
+MSChargingStation::setTotalChargingPower(double totalPower) {
+    if (totalPower <= 0) {
+        return;
+    }
+    const bool hadLimit = myTotalChargingPower > 0;
+    myTotalChargingPower = totalPower;
+    if (!hadLimit && (myChargeInTransit || myChargingVehicle) && myTotalPowerCheckEvent == nullptr) {
         myTotalPowerCheckEvent = new WrappingCommand<MSChargingStation>(this, &MSChargingStation::checkTotalPower);
         MSNet::getInstance()->getEndOfTimestepEvents()->addEvent(myTotalPowerCheckEvent);
     }
@@ -202,16 +222,37 @@ MSChargingStation::checkTotalPower(SUMOTime currentTime) {
     if (sumReqWh > capWh && sumReqWh > 0) {
         const double ratio = capWh / sumReqWh;
         for (auto* charge : thisStepCharges) {
+            MSDevice_Battery* battery = myChargedBatteries[charge->vehicleID];
+            double abc = battery->getActualBatteryCapacity();
+
             const double deliveredWh = charge->WCharged * ratio;
             const double excessWh = charge->WCharged - deliveredWh;
             charge->WCharged = deliveredWh;
+            if (charge->chargingEfficiency > 0 && TS > 0) {
+                // derive power [W] from energy [Wh]: Power = (Energy [Wh] * 3600) [Ws] / (efficiency * TS [s])
+                // ergo we are doing [Ws/s -> W]
+                charge->chargingPower = (deliveredWh * 3600.0) / (charge->chargingEfficiency * TS);
+            }
+            charge->actualBatteryCapacity = abc - excessWh;
+            charge->totalEnergyCharged -= excessWh;
 
             //  inform also battery device
-            MSDevice_Battery* battery = myChargedBatteries[charge->vehicleID];
-            double abc = battery->getActualBatteryCapacity();
             battery->setActualBatteryCapacity(abc - excessWh);
             battery->setEnergyCharged(deliveredWh);
+            myTotalCharge -= excessWh;
+
+#ifdef DEBUG_SIMSTEP
+            std::cout << "time=" << time2string(currentTime)
+                      << " vehID=" << charge->vehicleID
+                      << " requestedWh=" << (deliveredWh + excessWh)
+                      << " deliveredWh=" << deliveredWh
+                      << " deliveredW="  << charge->chargingPower
+                      << " ratio=" << ratio << std::endl;
+#endif
         }
+#ifdef DEBUG_SIMSTEP
+        std::cout << "===============\n\n";
+#endif
     }
     return DELTA_T;
 }

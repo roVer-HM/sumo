@@ -191,13 +191,19 @@ GUIGlObject::GUIGlObject(GUIGlObjectType type, const std::string& microsimID, FX
 
 
 GUIGlObject::~GUIGlObject() {
+    cleanupOnDestruction();
+    GUIGlObjectStorage::gIDStorage.remove(getGlID());
+}
+
+
+void
+GUIGlObject::cleanupOnDestruction() {
     // remove all paramWindow related with this object
     for (const auto& paramWindow : myParamWindows) {
         paramWindow->removeObject(this);
     }
     // remove object from GLObjectValuePassConnector and GUIGlObjectStorage
     GLObjectValuePassConnector<double>::removeObject(*this);
-    GUIGlObjectStorage::gIDStorage.remove(getGlID());
 }
 
 

@@ -38,15 +38,17 @@ rm -f $STATUSLOG
 echo -n "$(uname -s)_$(uname -m)_$FILEPREFIX " > $STATUSLOG
 date >> $STATUSLOG
 echo "--" >> $STATUSLOG
-if test -e $PREFIX/sumo_test_env/bin/activate; then
-  # activate the virtual environment containing the python packages which are not available via apt
-  source $PREFIX/sumo_test_env/bin/activate
-fi
 cd $PREFIX/sumo
 basename $MAKELOG >> $STATUSLOG
 git clean -f -x -d -q . &> $MAKELOG || (echo "git clean failed" | tee -a $STATUSLOG; tail -10 $MAKELOG)
 git pull >> $MAKELOG 2>&1 || (echo "git pull failed" | tee -a $STATUSLOG; tail -10 $MAKELOG)
 git submodule update >> $MAKELOG 2>&1 || (echo "git submodule update failed" | tee -a $STATUSLOG; tail -10 $MAKELOG)
+if test -e ../sumo_test_env/bin/activate; then
+  # activate the virtual environment containing the python packages which are not available via apt
+  source ../sumo_test_env/bin/activate
+  # only-binary to make sonar happy
+  pip install --only-binary :all: -r docs/web/requirements.txt -r tools/req_test_server.txt
+fi
 GITREV=`tools/build_config/version.py -`
 date >> $MAKELOG
 mkdir -p wheelhouse build/$FILEPREFIX && cd build/$FILEPREFIX
@@ -157,6 +159,7 @@ fi
 if test -e $PREFIX/upload.sh && test ${FILEPREFIX::10} == "clangMacOS"; then
   cd $PREFIX
   base=$(basename $SUMO_REPORT)
-  tar czf $base.tar.gz ${FILEPREFIX}*.log $(find $base -type f -mtime -2)
+  # --disable-copyfile prevents some ._-files to be added by macOS; find -L copies symlinks
+  tar --disable-copyfile -czhf $base.tar.gz ${FILEPREFIX}*.log $(find -L $base -type f -mtime -2)
   ./upload.sh $base.tar.gz
 fi

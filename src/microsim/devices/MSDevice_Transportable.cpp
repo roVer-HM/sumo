@@ -125,6 +125,7 @@ MSDevice_Transportable::transferAtSplitOrJoin(MSBaseVehicle* otherVeh) {
             if (stage->canLeaveVehicle(t, myHolder, stop)) {
                 MSStageDriving* const stage2 = dynamic_cast<MSStageDriving*>(t->getNextStage(1));
                 if (stage2 && stage2->isWaitingFor(otherVeh)) {
+                    auto locker = myHolder.getScopeLock();
                     it = myTransportables.erase(it);
                     // proceeding registers t as waiting on edge
                     t->proceed(MSNet::getInstance(), SIMSTEP);
@@ -208,6 +209,7 @@ MSDevice_Transportable::notifyMove(SUMOTrafficObject& /*tObject*/, double /*oldP
                     stop.duration = MAX2(stop.duration, timeForNext - currentTime);
 
                     veh.removeTransportableMass(transportable);
+                    auto locker = myHolder.getScopeLock();
                     i = myTransportables.erase(i); // erase first in case proceed throws an exception
                     numUnloaded++;
                     if (taxiDevice != nullptr) {
@@ -261,6 +263,7 @@ bool
 MSDevice_Transportable::notifyLeave(SUMOTrafficObject& veh, double /*lastPos*/,
                                     MSMoveReminder::Notification reason, const MSLane* /* enteredLane */) {
     if (reason >= MSMoveReminder::NOTIFICATION_ARRIVED) {
+        auto locker = myHolder.getScopeLock();
         for (std::vector<MSTransportable*>::iterator i = myTransportables.begin(); i != myTransportables.end();) {
             MSTransportableControl& tc = myAmContainer ? MSNet::getInstance()->getContainerControl() : MSNet::getInstance()->getPersonControl();
             MSTransportable* transportable = *i;
@@ -282,6 +285,7 @@ MSDevice_Transportable::notifyLeave(SUMOTrafficObject& veh, double /*lastPos*/,
 
 void
 MSDevice_Transportable::addTransportable(MSTransportable* transportable) {
+    auto locker = myHolder.getScopeLock();
     if (myTransportables.empty()) {
         myOriginalType = &myHolder.getVehicleType();
     }
@@ -305,6 +309,7 @@ void
 MSDevice_Transportable::removeTransportable(MSTransportable* transportable) {
     auto it = std::find(myTransportables.begin(), myTransportables.end(), transportable);
     if (it != myTransportables.end()) {
+        auto locker = myHolder.getScopeLock();
         myTransportables.erase(it);
         if (MSStopOut::active() && myHolder.isStopped()) {
             if (myAmContainer) {
@@ -355,17 +360,36 @@ void
 MSDevice_Transportable::saveState(OutputDevice& out) const {
     out.openTag(SUMO_TAG_DEVICE);
     out.writeAttr(SUMO_ATTR_ID, getID());
-    std::vector<std::string> internals;
-    internals.push_back(toString(myStopped));
-    out.writeAttr(SUMO_ATTR_STATE, toString(internals));
+    SUMOTime nextPerson = 0;
+    SUMOTime nextContainer = 0;
+    if (myHolder.isStopped()) {
+        nextPerson = myHolder.getNextStop().timeToBoardNextPerson;
+        nextContainer = myHolder.getNextStop().timeToLoadNextContainer;
+    }
+    std::ostringstream internals;
+    internals << myStopped
+        << " " << nextPerson
+        << " " << nextContainer;
+    out.writeAttr(SUMO_ATTR_STATE, internals.str());
     out.closeTag();
 }
 
 
 void
 MSDevice_Transportable::loadState(const SUMOSAXAttributes& attrs) {
+    SUMOTime nextPerson;
+    SUMOTime nextContainer;
     std::istringstream bis(attrs.getString(SUMO_ATTR_STATE));
     bis >> myStopped;
+    bis >> nextPerson;
+    bis >> nextContainer;
+    if (nextPerson != 0 || nextContainer !=0) {
+        assert(myHolder.hasStops());
+        MSStop& stop = myHolder.getNextStopMutable();
+        stop.timeToBoardNextPerson = nextPerson;
+        stop.timeToLoadNextContainer = nextContainer;
+        stop.duration = MAX2(stop.duration, MAX2(nextPerson, nextContainer) - SIMSTEP);
+    }
 }
 
 

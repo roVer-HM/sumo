@@ -82686,6 +82686,7 @@
     <tag k="postal_code" v="10178"/>
     <tag k="sidewalk" v="both"/>
     <tag k="surface" v="asphalt"/>
+    <tag k="width" v="12.2"/>
   </way>
   <way id="23809672">
     <nd ref="27412234"/>

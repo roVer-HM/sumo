@@ -85,7 +85,7 @@ MSStoppingPlaceRerouter::rerouteStoppingPlace(MSStoppingPlace* destStoppingPlace
         if (!destVisible) {
             // cannot determine destination occupancy, only register visibly full
             for (const StoppingPlaceVisible& stoppingPlace : stoppingPlaceCandidates) {
-                if (stoppingPlace.second && getLastStepStoppingPlaceOccupancy(stoppingPlace.first) >= getStoppingPlaceCapacity(stoppingPlace.first)) {
+                if (stoppingPlace.second && getLastStepStoppingPlaceOccupancy(stoppingPlace.first, &veh) >= getStoppingPlaceCapacity(stoppingPlace.first)) {
                     rememberStoppingPlaceScore(veh, stoppingPlace.first, "occupied");
                     rememberBlockedStoppingPlace(veh, stoppingPlace.first, &stoppingPlace.first->getLane().getEdge() == veh.getEdge());
                 }
@@ -102,7 +102,7 @@ MSStoppingPlaceRerouter::rerouteStoppingPlace(MSStoppingPlace* destStoppingPlace
         for (const StoppingPlaceVisible& item : stoppingPlaceCandidates) {
             if (item.second) {
                 if (&item.first->getLane().getEdge() == veh.getEdge()
-                        && getLastStepStoppingPlaceOccupancy(item.first) < getStoppingPlaceCapacity(item.first)) {
+                        && getLastStepStoppingPlaceOccupancy(item.first, &veh) < getStoppingPlaceCapacity(item.first)) {
                     const double distToStart = item.first->getBeginLanePosition() - veh.getPositionOnLane();
                     const double distToEnd = item.first->getEndLanePosition() - veh.getPositionOnLane();
                     if (distToEnd > brakeGap) {
@@ -128,7 +128,8 @@ MSStoppingPlaceRerouter::rerouteStoppingPlace(MSStoppingPlace* destStoppingPlace
         return nullptr;
     }
 
-    if (ignoreDest || getLastStepStoppingPlaceOccupancy(destStoppingPlace) >= getStoppingPlaceCapacity(destStoppingPlace) || onTheWay != nullptr) {
+    const bool destIsFull = destStoppingPlace != nullptr && getLastStepStoppingPlaceOccupancy(destStoppingPlace, &veh) >= getStoppingPlaceCapacity(destStoppingPlace);
+    if (ignoreDest || destIsFull || onTheWay != nullptr) {
         // if the current route ends at the stopping place, the new route will
         // also end at the new stopping place
         newDestination = (destStoppingPlace != nullptr && &destStoppingPlace->getLane().getEdge() == route.getLastEdge()
@@ -140,6 +141,7 @@ MSStoppingPlaceRerouter::rerouteStoppingPlace(MSStoppingPlace* destStoppingPlace
         if (DEBUGCOND) {
             std::cout << SIMTIME << " veh=" << veh.getID()
                       << " newDest=" << newDestination
+                      << " destIsFull=" << destIsFull
                       << " onTheWay=" << Named::getIDSecure(onTheWay)
                       << "\n";
         }
@@ -155,14 +157,14 @@ MSStoppingPlaceRerouter::rerouteStoppingPlace(MSStoppingPlace* destStoppingPlace
         // a map stores elegible stopping places
         StoppingPlaceMap_t stoppingPlaces;
         SUMOAbstractRouter<MSEdge, SUMOVehicle>& router = getRouter(veh, closedEdges);
-        const double brakeGap = veh.getBrakeGap(true);
+        const double brakeGap = veh.getBrakeGap();
 
         if (onTheWay != nullptr) {
             // compute new route
             if (newDestination) {
                 newRoute.push_back(veh.getEdge());
             } else {
-                bool valid = evaluateDestination(veh, brakeGap, newDestination, onTheWay, getLastStepStoppingPlaceOccupancy(onTheWay), 1, router, stoppingPlaces, newRoutes, stopApproaches, maxValues, scores, insertStopIndex, keepCurrentStop);
+                bool valid = evaluateDestination(veh, brakeGap, newDestination, onTheWay, getLastStepStoppingPlaceOccupancy(onTheWay, &veh), 1, router, stoppingPlaces, newRoutes, stopApproaches, maxValues, scores, insertStopIndex, keepCurrentStop);
                 if (!valid) {
                     WRITE_WARNINGF(TL("Stopping place '%' along the way cannot be used by vehicle '%' for unknown reason"), onTheWay->getID(), veh.getID());
                     return nullptr;
@@ -175,7 +177,7 @@ MSStoppingPlaceRerouter::rerouteStoppingPlace(MSStoppingPlace* destStoppingPlace
         std::vector<std::tuple<SUMOTime, MSStoppingPlace*, int>> blockedTimes;
         resetStoppingPlaceScores(veh);
 
-        if (destStoppingPlace != nullptr) {
+        if (destStoppingPlace != nullptr && destIsFull) {
             rememberStoppingPlaceScore(veh, destStoppingPlace, "occupied");
             rememberBlockedStoppingPlace(veh, destStoppingPlace, &destStoppingPlace->getLane().getEdge() == veh.getEdge());
         }
@@ -190,7 +192,7 @@ MSStoppingPlaceRerouter::rerouteStoppingPlace(MSStoppingPlace* destStoppingPlace
                 continue;
             }
             const bool visible = stoppingPlaceCandidates[i].second || (stoppingPlaceCandidates[i].first == destStoppingPlace && destVisible);
-            double occupancy = getStoppingPlaceOccupancy(stoppingPlaceCandidates[i].first);
+            double occupancy = getStoppingPlaceOccupancy(stoppingPlaceCandidates[i].first, &veh);
             if (!visible && (stoppingPlaceKnowledge == 0 || stoppingPlaceKnowledge < RandHelper::rand(veh.getRNG()))) {
                 double capacity = getStoppingPlaceCapacity(stoppingPlaceCandidates[i].first);
                 const double minOccupancy = MIN2(capacity - NUMERICAL_EPS, (getNumberStoppingPlaceReroutes(veh) * capacity / stoppingPlaceFrustration));
@@ -467,9 +469,7 @@ MSStoppingPlaceRerouter::evaluateDestination(SUMOVehicle& veh, double brakeGap, 
                 WRITE_WARNINGF(TL("Invalid distance computation for vehicle '%' to stopping place '%' at time=%."),
                                veh.getID(), alternative->getID(), time2string(now));
             }
-            const double endPos = getStoppingPlaceOccupancy(alternative) == getStoppingPlaceCapacity(alternative)
-                                  ? alternative->getLastFreePos(veh, veh.getPositionOnLane() + brakeGap)
-                                  : alternative->getEndLanePosition();
+            const double endPos = alternative->getLastFreePos(veh, veh.getPositionOnLane() + brakeGap);
             const double distToEnd = stoppingPlaceValues["distanceto"] - toPos + endPos;
 
             if (distToEnd < brakeGap) {

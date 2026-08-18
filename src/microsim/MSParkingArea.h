@@ -122,7 +122,7 @@ public:
                   double width, double length, double angle, const std::string& name,
                   bool onRoad,
                   const std::string& departPos,
-                  bool lefthand);
+                  bool lefthand, bool reservable);
 
     /// @brief Destructor
     virtual ~MSParkingArea();
@@ -135,6 +135,14 @@ public:
 
     /// @brief whether vehicles park on the road
     bool parkOnRoad() const;
+
+    /// @brief whether parked vehicles must advance in a queue
+    bool mustAdvance(SUMOVehicleClass svc) const;
+
+    /// @brief whether vehicles may reserve a slot for this parkingArea
+    inline bool isReservable() const {
+        return myReservable;
+    }
 
     /// @brief compute lot for this vehicle
     int getLotIndex(const SUMOVehicle* veh) const;
@@ -152,8 +160,12 @@ public:
 
     int getOccupancyIncludingReservations(const SUMOVehicle* forVehicle) const;
 
+    int getOccupancyIncludingRemoteReservations(const SUMOVehicle* forVehicle) const;
+
     /// @brief Returns the area occupancy at the end of the last simulation step
     int getLastStepOccupancy() const;
+
+    int getLastStepOccupancyIncludingRemoteReservations(const SUMOVehicle* forVehicle) const;
 
     /// @brief Add a badge to the accepted set
     void accept(std::string badge);
@@ -165,7 +177,7 @@ public:
     void refuse(std::string badge);
 
     /// @brief Return the parking accepts the vehicle (due to its given badges)
-    bool accepts(SUMOVehicle* veh) const;
+    bool accepts(SUMOVehicle* veh) const override;
 
     /** @brief Called if a vehicle enters this stop
      *
@@ -177,7 +189,7 @@ public:
      * @param[in] parking whether this is offroad parking
      * @see computeLastFreePos
      */
-    void enter(SUMOVehicle* veh, const bool parking);
+    void enter(SUMOVehicle* veh, const bool parking) override;
 
     /** @brief Called if a vehicle leaves this stop
      *
@@ -188,7 +200,17 @@ public:
      * @param[in] what The vehicle that leaves the parking area
      * @see computeLastFreePos
      */
-    void leaveFrom(SUMOVehicle* what);
+    void leaveFrom(SUMOVehicle* what) override;
+
+    /// @brief api for reserving spaces at this parkingArea
+    /// @{
+    void addSpaceReservation(const SUMOVehicle* veh);
+    void removeSpaceReservation(const SUMOVehicle* veh);
+
+    const std::set<const SUMOVehicle*>& getRemoteReservedVehicles() const {
+        return myRemoteReservedVehicles;
+    }
+    /// @}
 
     /** @brief Called at the end of the time step
      *
@@ -200,7 +222,7 @@ public:
     SUMOTime updateOccupancy(SUMOTime currentTime);
 
     /// @brief Returns the last free position on this stop
-    double getLastFreePos(const SUMOVehicle& forVehicle, double brakePos = 0) const;
+    double getLastFreePos(const SUMOVehicle& forVehicle, double brakePos = 0) const override;
 
     /** @brief Returns the last free position on this stop including
      * reservations from the current lane and time step
@@ -291,6 +313,9 @@ protected:
     /// @brief overwrite the capacity (caution: will delete ANY previous parking space definitions)
     void setRoadsideCapacity(int capactity);
 
+    /// @brief whether overtaking on this lane is impossible for the given vehicle class
+    bool cannotChange(SUMOVehicleClass svc) const;
+
 protected:
 
 
@@ -313,6 +338,9 @@ protected:
 
     /// @brief Whether vehicles stay on the road
     bool myOnRoad;
+
+    /// @brief Whether this parkingarea may receive reservations by vehicles that are on their way
+    bool myReservable;
 
     /// @brief The default width of each parking space
     double myWidth;
@@ -347,8 +375,12 @@ protected:
     double myReservationMaxLength;
     double myLastReservationMaxLength;
 
-    /// @brief the set of vehicles that performed a reservation in this step
+    /// @brief the set of vehicles that performed a local reservation in this step
     std::set<const SUMOVehicle*> myReservedVehicles;
+    /// @brief the set of vehicles that performed a remote reservation
+    std::set<const SUMOVehicle*> myRemoteReservedVehicles;
+    /// @brief a copy from the last step is needed to achieve thread/lane ordering independence
+    std::set<const SUMOVehicle*> myLastRemoteReservedVehicles;
 
     /// @brief maximum length of all parked vehicles
     double myMaxVehLength;

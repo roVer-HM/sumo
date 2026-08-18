@@ -44,7 +44,8 @@ cfg.write('''<?xml version="1.0" encoding="UTF-8"?>
         <net-file value="input_net.net.xml"/>
         <route-files value="%s"/>
         <additional-files value="input_additional.add.xml"/>
-        <netstate-dump value="%s"/>
+        <fcd-output value="%s"/>
+        <fcd-output.attributes value="speed"/>
     </input>
 
     <time>
@@ -57,6 +58,11 @@ cfg.write('''<?xml version="1.0" encoding="UTF-8"?>
         <no-duration-log value="true"/>
         <no-step-log value="true"/>
     </report>
+
+    <processing>
+       <default.departspeed value="0"/>
+       <default.departlane value="first"/>
+    </processing>
 
 </configuration>''' % (routeFile, stateFile, time))
 cfg.close()

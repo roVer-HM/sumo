@@ -30,6 +30,12 @@ departtime_dist
 
 # Use the input as a starting point for sampling
 keep_input
+
+# Use the input as a starting point for sampling and keep attributes
+keep_input_attrs
+
+# Use the input as a starting point for sampling (with multiple data intervals)
+keep_input_intervals
 verbose
 
 # save configuration file
@@ -43,6 +49,13 @@ edgedata
 
 # read multiple attributes from the same edge
 edgedata_entered_departed
+
+# read multiple edge data files with the same edge
+multiple_edgedata
+
+# read multiple edge data files with the same edge but do not sum
+# 
+multiple_edgedata_ignore
 
 # using edgedata as input to specify departure counts
 edgedata_departures
@@ -73,7 +86,7 @@ optimize_1
 optimize_2
 
 # read routes that do not cover all detectors
-# use linear programming to optimize route usage 
+# use linear programming to optimize route usage
 small_input_optimize
 
 # read routes that do not cover all detectors.
@@ -103,4 +116,8 @@ min_count2
 
 # set minimum number of visited counting locations per route
 min_count_optimize
+
+# see #18079
+marouter_input
+timeline
 errors

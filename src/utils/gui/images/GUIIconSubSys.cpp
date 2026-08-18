@@ -22,6 +22,8 @@
 #include <config.h>
 
 #include <utils/common/UtilExceptions.h>
+#include <utils/common/Translation.h>
+#include <utils/gui/div/GUIDesigns.h>
 
 #include "GUIIcons.h"
 #include "GUIIconSubSys.h"
@@ -109,6 +111,9 @@
 #include "icons/yellow_vehicle.xpm"
 #include "icons/green_person.xpm"
 #include "icons/yellow_person.xpm"
+
+#include "icons/teleport.xpm"
+#include "icons/insertion_delay.xpm"
 
 #include "icons/colorwheel.xpm"
 #include "icons/removedb.xpm"
@@ -578,7 +583,6 @@
 #include "icons/languages/fr.xpm"
 #include "icons/languages/it.xpm"
 #include "icons/languages/en.xpm"
-#include "icons/languages/hu.xpm"
 #include "icons/languages/tr.xpm"
 #include "icons/languages/zh.xpm"
 #include "icons/languages/zht.xpm"
@@ -704,6 +708,9 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::YELLOWEDGE] = new FXXPMIcon(a, yellow_edge_xpm);
     myIcons[GUIIcon::YELLOWVEHICLE] = new FXXPMIcon(a, yellow_vehicle_xpm);
     myIcons[GUIIcon::YELLOWPERSON] = new FXXPMIcon(a, yellow_person_xpm);
+
+    myIcons[GUIIcon::TELEPORT] = new FXXPMIcon(a, teleport_xpm);
+    myIcons[GUIIcon::INSERTION_DELAY] = new FXXPMIcon(a, insertion_delay_xpm);
 
     myIcons[GUIIcon::COLORWHEEL] = new FXXPMIcon(a, colorwheel_xpm);
     myIcons[GUIIcon::REMOVEDB] = new FXXPMIcon(a, removedb_xpm);
@@ -1156,7 +1163,6 @@ GUIIconSubSys::GUIIconSubSys(FXApp* a) {
     myIcons[GUIIcon::LANGUAGE_PT] = new FXXPMIcon(a, language_pt_xpm);
     myIcons[GUIIcon::LANGUAGE_FR] = new FXXPMIcon(a, language_fr_xpm);
     myIcons[GUIIcon::LANGUAGE_IT] = new FXXPMIcon(a, language_it_xpm);
-    myIcons[GUIIcon::LANGUAGE_HU] = new FXXPMIcon(a, language_hu_xpm);
     myIcons[GUIIcon::LANGUAGE_TR] = new FXXPMIcon(a, language_tr_xpm);
     myIcons[GUIIcon::LANGUAGE_ZH] = new FXXPMIcon(a, language_zh_xpm);
     myIcons[GUIIcon::LANGUAGE_ZHT] = new FXXPMIcon(a, language_zht_xpm);

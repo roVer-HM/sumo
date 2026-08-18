@@ -15,23 +15,37 @@
 # @author  Michael Behrisch
 # @date    2025-12-15
 
-SCRIPT_DIR=$(dirname $0)
+# This script installs all standard SUMO dependencies (without OpenSceneGraph and ffmpeg)
+# on macOS and some standard Linux distros. It tries not to ask any questions and messes
+# directly with your system so it is most useful in an isolated environment (container / CI).
+
+FOX_VERSION=1.6.59
+JUPEDSIM_VERSION=1.4.2
+
 # Check for macOS
 if [[ "$(uname)" == "Darwin" ]]; then
-    brew update && brew bundle --file=$SCRIPT_DIR/Brewfile --no-upgrade
-    exit 0
+    ID="macOS"
+else
+    source /etc/os-release
 fi
 
-if [[ ! -f /etc/os-release ]]; then
-    echo "Unknown OS and /etc/os-release not found"
-    exit 1
-fi
-source /etc/os-release
-
-# Determine Linux version
+SCRIPT_DIR=$(dirname $0)
 case "$ID" in
+    macOS)
+        brew update && brew bundle --file=$SCRIPT_DIR/Brewfile --no-upgrade
+        SUDO=sudo
+        ;;
     ubuntu|debian)
-        apt-get -y install $(cat $SCRIPT_DIR/build_req_deb.txt)
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get -qq update
+        apt-get -y install curl $(cat $SCRIPT_DIR/build_req_deb.txt)
+        # Adding parquet support libraries
+        curl -LO https://packages.apache.org/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+        apt-get -y install ./apache-arrow-apt-source-latest-*.deb
+        rm ./apache-arrow-apt-source-latest-*.deb
+        apt-get -qq update
+        PARQUET_VERSION=$(apt-cache policy libparquet-dev | grep -o '23[0-9.-]*' | head -1)
+        apt-get -y install libarrow-dev=$PARQUET_VERSION libparquet-dev=$PARQUET_VERSION
         ;;
     centos)
         if [[ "$VERSION_ID" == "7" ]]; then
@@ -55,16 +69,18 @@ case "$ID" in
         dnf install -y libX11-devel libXft-devel libXcursor-devel libXrandr-devel libXinerama-devel mesa-libGL-devel mesa-libGLU-devel freetype-devel fontconfig-devel libjpeg-turbo-devel libpng-devel
         # installing arrow / parquet
         dnf install -y https://packages.apache.org/artifactory/arrow/almalinux/$(echo $VERSION_ID | cut -f1 -d.)/apache-arrow-release-latest.rpm
-        dnf install -y arrow-devel parquet-devel
+        PARQUET_VERSION=$(dnf --showduplicates list parquet-devel | grep -o '23[0-9.-]*el[0-9]*' | tail -1)
+        dnf install -y arrow-devel-$PARQUET_VERSION parquet-devel-$PARQUET_VERSION
         cd /opt
         # building fox from source
-        curl -LO http://www.fox-toolkit.org/ftp/fox-1.6.59.tar.gz
-        tar xf fox-1.6.59.tar.gz
-        cd fox-1.6.59
+        curl -LO http://www.fox-toolkit.org/ftp/fox-$FOX_VERSION.tar.gz
+        tar xf fox-$FOX_VERSION.tar.gz
+        cd fox-$FOX_VERSION
         ./configure --disable-static --enable-shared
         make -j$(nproc)
         make install
         cd ..
+        rm -rf fox-$FOX_VERSION.tar.gz fox-$FOX_VERSION
         ;;
     *)
         echo "Unknown or unsupported OS: $ID"
@@ -72,11 +88,14 @@ case "$ID" in
 esac
 
 # building jupedsim from source
-curl -LO https://github.com/PedestrianDynamics/jupedsim/archive/refs/tags/v1.3.1.tar.gz
-tar xf v1.3.1.tar.gz
-cmake -B jupedsim-build -DCMAKE_BUILD_TYPE=Release jupedsim-1.3.1
+curl -LO https://github.com/PedestrianDynamics/jupedsim/archive/refs/tags/v$JUPEDSIM_VERSION.tar.gz
+tar xf v$JUPEDSIM_VERSION.tar.gz
+cmake -B jupedsim-build -DCMAKE_BUILD_TYPE=Release jupedsim-$JUPEDSIM_VERSION
 cmake --build jupedsim-build -j2
-cmake --install jupedsim-build
+$SUDO cmake --install jupedsim-build
+rm -rf v$JUPEDSIM_VERSION.tar.gz jupedsim-$JUPEDSIM_VERSION jupedsim-build
 
-# see https://github.com/pypa/manylinux/issues/1421
-pipx install -f patchelf==0.16.1.0
+if [[ "$ID" != "macOS" ]]; then
+    # see https://github.com/pypa/manylinux/issues/1421
+    pipx install -f patchelf==0.16.1.0
+fi

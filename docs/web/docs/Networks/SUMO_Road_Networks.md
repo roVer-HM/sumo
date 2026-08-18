@@ -512,7 +512,7 @@ these files by hand and rebuild the network with
 
 - Network Import
   -  - [Defining own networks using XML and netconvert](../Networks/PlainXML.md)
-    - [Importing networks from other applications using netconvert](../Networks/Import.md)
+    - [Importing networks from other applications using netconvert](index.md)
   - [netconvert](../netconvert.md) manual
 - Generation of abstract road networks
   - [Generating abstract networks using

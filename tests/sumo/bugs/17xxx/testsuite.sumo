@@ -29,3 +29,22 @@ ticket17551
 
 # crash
 ticket17583
+
+# zipper deadlock
+ticket17650
+
+# load network with 1-point walkingarea shape
+ticket17689
+
+# invalid continuation behavior
+ticket17714
+
+# invalid continuation behavior (changeLeft forbidden)
+ticket17714b
+
+# crash
+ticket17854
+
+# extended ascii in ids
+ticket17935
+ticket17939

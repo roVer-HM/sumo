@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-11-14T15:06:22.588964+01:00 by Eclipse SUMO netgenerate v1_25_0+0045-28a3daf62ee
+<!-- generated on 2026-03-18T08:52:22.529928+01:00 by Eclipse SUMO netgenerate v1_26_0+0671-ff4ec946b20
 -->
 
 <netgenerateConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netgenerateConfiguration.xsd">
@@ -148,10 +148,10 @@
         <default.disallow value="" type="STR" help="The default for disallowed vehicle classes"/>
         <default.junctions.keep-clear value="true" type="BOOL" help="Whether junctions should be kept clear by default"/>
         <default.junctions.radius value="4" type="FLOAT" help="The default turning radius of intersections"/>
+        <default.junctions.type value="" synonymes="default-junction-type j" type="STR" help="[traffic_light|priority|right_before_left|left_before_right|traffic_light_right_on_red|priority_stop|allway_stop|...] Determines default junction type (see docs/Networks/PlainXML#node_types)"/>
         <default.connection-length value="-1" type="FLOAT" help="The default length when overriding connection lengths"/>
         <default.connection.cont-pos value="-1" type="FLOAT" help="Whether/where connections should have an internal junction"/>
         <default.right-of-way value="default" type="STR" help="The default algorithm for computing right of way rules (&apos;default&apos;, &apos;edgePriority&apos;)"/>
-        <default-junction-type value="" synonymes="j junctions" type="STR" help="[traffic_light|priority|right_before_left|left_before_right|traffic_light_right_on_red|priority_stop|allway_stop|...] Determines junction type (see wiki/Networks/PlainXML#Node_types)"/>
     </building_defaults>
 
     <tls_building>
@@ -219,13 +219,14 @@
         <no-turnarounds.tls value="false" synonymes="no-tls-turnarounds" deprecated="no-tls-turnarounds" type="BOOL" help="Disables building turnarounds at tls-controlled junctions"/>
         <no-turnarounds.geometry value="true" type="BOOL" help="Disables building turnarounds at geometry-like junctions"/>
         <no-turnarounds.except-deadend value="false" type="BOOL" help="Disables building turnarounds except at dead end junctions"/>
-        <no-turnarounds.except-turnlane value="false" type="BOOL" help="Disables building turnarounds except at at junctions with a dedicated turning lane"/>
+        <no-turnarounds.except-turnlane value="false" type="BOOL" help="Disables building turnarounds except at junctions with a dedicated turning lane"/>
         <no-turnarounds.fringe value="false" type="BOOL" help="Disables building turnarounds at fringe junctions"/>
         <no-left-connections value="false" type="BOOL" help="Disables building connections to left"/>
         <junctions.join value="false" type="BOOL" help="Joins junctions that are close to each other (recommended for OSM import)"/>
         <junctions.join-dist value="10" type="FLOAT" help="Determines the maximal distance for joining junctions (defaults to 10)"/>
-        <junctions.join.parallel-threshold value="30" type="FLOAT" help="The angular threshold in degress for rejection of parallel edges when joining junctions"/>
+        <junctions.join.parallel-threshold value="30" type="FLOAT" help="The angular threshold in degrees for rejection of parallel edges when joining junctions"/>
         <junctions.join-same value="-1" type="FLOAT" help="Joins junctions that have similar coordinates even if not connected"/>
+        <junctions.join-reset value="false" type="BOOL" help="Reset connections for joined junctions"/>
         <max-join-ids value="4" type="INT" help="Abbreviate junction or TLS id if it joins more than INT junctions"/>
         <junctions.corner-detail value="5" type="INT" help="Generate INT intermediate points to smooth out intersection corners"/>
         <junctions.internal-link-detail value="5" type="INT" help="Generate INT intermediate points to smooth out lanes within the intersection"/>

@@ -268,6 +268,8 @@ public:
      */
     virtual const MSPhaseDefinition& getCurrentPhaseDef() const = 0;
 
+    virtual void resetLastSwitch(SUMOTime t) = 0;
+
     virtual SUMOTime getMinDur(int step = -1) const;
     virtual SUMOTime getMaxDur(int step = -1) const;
     virtual SUMOTime getEarliestEnd(int step = -1) const;
@@ -430,7 +432,9 @@ public:
 
 
     /** @brief restores the tls state */
-    virtual void loadState(MSTLLogicControl& tlcontrol, SUMOTime t, int step, SUMOTime spentDuration, bool active);
+    virtual void loadState(MSTLLogicControl& tlcontrol, SUMOTime t, int step, SUMOTime spentDuration, SUMOTime nextSwitch, SUMOTime timeInCycle, bool active);
+
+    virtual void loadExtraState(const std::string& /*state*/) {}
 
 
 protected:

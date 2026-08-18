@@ -169,13 +169,27 @@ MSDevice_Battery::~MSDevice_Battery() {
 }
 
 
-bool MSDevice_Battery::notifyMove(SUMOTrafficObject& tObject, double /* oldPos */, double /* newPos */, double /* newSpeed */) {
+bool MSDevice_Battery::notifyMove(SUMOTrafficObject& tObject, double /* oldPos */, double /* newPos */, double newSpeed) {
     if (!tObject.isVehicle()) {
         return false;
     }
-    SUMOVehicle& veh = static_cast<SUMOVehicle&>(tObject);
+    notifyMoveInternal(tObject, 0., TS, 0., newSpeed, 0., 0., 0.);
+    return true;
+}
+
+
+void
+MSDevice_Battery::notifyMoveInternal(const SUMOTrafficObject& tObject,
+                                     const double /* frontOnLane */,
+                                     const double timeOnLane,
+                                     const double /* meanSpeedFrontOnLane */,
+                                     const double meanSpeedVehicleOnLane,
+                                     const double /* travelledDistanceFrontOnLane */,
+                                     const double /* travelledDistanceVehicleOnLane */,
+                                     const double /* meanLengthOnLane */) {
+    const SUMOVehicle& veh = static_cast<const SUMOVehicle&>(tObject);
     // Start vehicleStoppedTimer if the vehicle is stopped. In other case reset timer
-    if (veh.getSpeed() < myStoppingThreshold) {
+    if (meanSpeedVehicleOnLane < myStoppingThreshold) {
         // Increase vehicle stopped timer
         increaseVehicleStoppedTimer();
     } else {
@@ -188,13 +202,13 @@ bool MSDevice_Battery::notifyMove(SUMOTrafficObject& tObject, double /* oldPos *
     if (getMaximumBatteryCapacity() != 0) {
         if (!myTrackFuel && !veh.getVehicleType().getParameter().wasSet(VTYPEPARS_EMISSIONCLASS_SET)) {
             // no explicit emission class, we fall back to the energy model; a warning has been issued on creation
-            myConsum = PollutantsInterface::getEnergyHelper().compute(0, PollutantsInterface::ELEC, veh.getSpeed(), veh.getAcceleration(),
-                       veh.getSlope(), params) * TS;
+            myConsum = PollutantsInterface::getEnergyHelper().compute(0, PollutantsInterface::ELEC, meanSpeedVehicleOnLane, veh.getAcceleration(),
+                       veh.getSlope(), params) * timeOnLane;
         } else {
             myConsum = PollutantsInterface::compute(veh.getVehicleType().getEmissionClass(),
                                                     myTrackFuel ? PollutantsInterface::FUEL : PollutantsInterface::ELEC,
-                                                    veh.getSpeed(), veh.getAcceleration(),
-                                                    veh.getSlope(), params) * TS;
+                                                    meanSpeedVehicleOnLane, veh.getAcceleration(),
+                                                    veh.getSlope(), params) * timeOnLane;
         }
         if (veh.isParking()) {
             // recuperation from last braking step is ok but further consumption should cease
@@ -230,9 +244,9 @@ bool MSDevice_Battery::notifyMove(SUMOTrafficObject& tObject, double /* oldPos *
         // if the vehicle is almost stopped, or charge in transit is enabled, then charge vehicle
         MSChargingStation* const cs = static_cast<MSChargingStation*>(MSNet::getInstance()->getStoppingPlace(chargingStationID, SUMO_TAG_CHARGING_STATION));
         const MSParkingArea* pa = cs->getParkingArea();
-        if (((veh.getSpeed() < myStoppingThreshold) || cs->getChargeInTransit()) && (pa == nullptr || veh.isParking()) && cs->getChargeType() == myChargeType) {
+        if (((meanSpeedVehicleOnLane < myStoppingThreshold) || cs->getChargeInTransit()) && (pa == nullptr || veh.isParking()) && cs->getChargeType() == myChargeType) {
             // Set Flags Stopped/intransit to
-            if (veh.getSpeed() < myStoppingThreshold) {
+            if (meanSpeedVehicleOnLane < myStoppingThreshold) {
                 // vehicle ist almost stopped, then is charging stopped
                 myChargingStopped = true;
 
@@ -251,7 +265,7 @@ bool MSDevice_Battery::notifyMove(SUMOTrafficObject& tObject, double /* oldPos *
 
             // Only update charging start time if vehicle allow charge in transit, or in other case
             // if the vehicle not allow charge in transit but it's stopped.
-            if ((myActChargingStation->getChargeInTransit()) || (veh.getSpeed() < myStoppingThreshold)) {
+            if ((myActChargingStation->getChargeInTransit()) || (meanSpeedVehicleOnLane < myStoppingThreshold)) {
                 // Update Charging start time
                 increaseChargingStartTime();
             }
@@ -262,7 +276,7 @@ bool MSDevice_Battery::notifyMove(SUMOTrafficObject& tObject, double /* oldPos *
                 myActChargingStation->setChargingVehicle(true);
 
                 // Calulate energy charged
-                myEnergyCharged = MIN2(MIN2(myActChargingStation->getChargingPower(myTrackFuel) * myActChargingStation->getEfficency(), getMaximumChargeRate() * (myTrackFuel ? 1 : 1. / 3600.)) * TS, getMaximumBatteryCapacity() - getActualBatteryCapacity());
+                myEnergyCharged = MIN2(MIN2(myActChargingStation->getChargingPower(myTrackFuel) * myActChargingStation->getEfficency(), getMaximumChargeRate() * (myTrackFuel ? 1 : 1. / 3600.)) * timeOnLane, getMaximumBatteryCapacity() - getActualBatteryCapacity());
 
                 // Update Battery charge
                 setActualBatteryCapacity(getActualBatteryCapacity() + myEnergyCharged);
@@ -300,9 +314,6 @@ bool MSDevice_Battery::notifyMove(SUMOTrafficObject& tObject, double /* oldPos *
         // Reset timer
         resetChargingStartTime();
     }
-
-    // Always return true.
-    return true;
 }
 
 

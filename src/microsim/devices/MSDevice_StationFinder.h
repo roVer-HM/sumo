@@ -221,10 +221,10 @@ public:
     SUMOAbstractRouter<MSEdge, SUMOVehicle>& getRouter(SUMOVehicle& veh, const Prohibitions& prohibited) override;
 
     /// @brief Return the number of occupied places of the StoppingPlace
-    double getStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace) override;
+    double getStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace, const SUMOVehicle* veh) override;
 
     /// @brief Return the number of occupied places of the StoppingPlace from the previous time step
-    double getLastStepStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace) override;
+    double getLastStepStoppingPlaceOccupancy(MSStoppingPlace* stoppingPlace, const SUMOVehicle* veh) override;
 
     /// @brief Return the number of places the StoppingPlace provides
     double getStoppingPlaceCapacity(MSStoppingPlace* stoppingPlace) override;

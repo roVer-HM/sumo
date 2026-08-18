@@ -155,16 +155,22 @@ GUISUMOAbstractView::GUISUMOAbstractView(FXComposite* p, GUIMainWindow& app, GUI
 
 GUISUMOAbstractView::~GUISUMOAbstractView() {
     gSchemeStorage.setDefault(myVisualizationSettings->name);
-    gSchemeStorage.saveViewport(myChanger->getXPos(), myChanger->getYPos(), myChanger->getZPos(), myChanger->getRotation());
-    gSchemeStorage.saveDecals(myDecals);
     delete myPopup;
     delete myChanger;
     delete myGUIDialogEditViewport;
     delete myGUIDialogViewSettings;
-    // cleanup decals
-    for (auto& decal : myDecals) {
-        delete decal.image;
+
+    // release GPU textures
+    if (makeCurrent()) {
+        for (auto& decal : myDecals) {
+            if (decal.glID > 0) {
+                queueTextureDelete(static_cast<unsigned int>(decal.glID));
+            }
+        }
+        processPendingTextureDeletes();
+        makeNonCurrent();
     }
+
     // remove all elements
     for (auto& additional : myAdditionallyDrawn) {
         additional.first->removeActiveAddVisualisation(this, ~0);
@@ -234,7 +240,24 @@ GUISUMOAbstractView::screenPos2NetPos(int x, int y) const {
 
 void
 GUISUMOAbstractView::addDecals(const std::vector<Decal>& decals) {
-    myDecals.insert(myDecals.end(), decals.begin(), decals.end());
+    // insert decals but avoid duplicates
+    FXMutexLock lock(myDecalsLockMutex);
+    for (const auto& d : decals) {
+        bool found = false;
+        for (const auto& existing : myDecals) {
+            if (existing.filename == d.filename &&
+                    existing.centerX == d.centerX &&
+                    existing.centerY == d.centerY &&
+                    existing.centerZ == d.centerZ) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            myDecals.push_back(d);
+            myDecals.back().initialised = false;
+        }
+    }
 }
 
 
@@ -298,6 +321,10 @@ GUISUMOAbstractView::paintGL() {
     if (getWidth() == 0 || getHeight() == 0) {
         return;
     }
+
+    // process pending texture deletions
+    processPendingTextureDeletes();
+
     const long start = SysUtils::getCurrentMillis();
 
     if (getTrackedID() != GUIGlObject::INVALID_ID) {
@@ -964,9 +991,9 @@ GUISUMOAbstractView::centerTo(GUIGlID id, bool applyZoom, double zoomDist) {
 
 
 void
-GUISUMOAbstractView::centerTo(const Position& pos, bool applyZoom, double zoomDist) {
+GUISUMOAbstractView::centerTo(const Position& pos, bool applyZoom) {
     // called during tracking. update is triggered somewhere else
-    myChanger->centerTo(pos, zoomDist, applyZoom);
+    myChanger->centerTo(pos, 20, applyZoom);
     updatePositionInformationLabel();
 }
 
@@ -1710,6 +1737,40 @@ GUISUMOAbstractView::getDecalsLockMutex() {
 }
 
 
+void
+GUISUMOAbstractView::queueTextureDelete(unsigned int textureId) {
+    FXMutexLock lock(myTextureDeleteMutex);
+    myPendingTextureDeletes.push_back(textureId);
+}
+
+
+void
+GUISUMOAbstractView::processPendingTextureDeletes() {
+    FXMutexLock lock(myTextureDeleteMutex);
+    if (!myPendingTextureDeletes.empty()) {
+        glDeleteTextures(
+            static_cast<GLsizei>(myPendingTextureDeletes.size()),
+            myPendingTextureDeletes.data()
+        );
+        myPendingTextureDeletes.clear();
+    }
+}
+
+
+void
+GUISUMOAbstractView::clearDecals() {
+    FXMutexLock lock(myDecalsLockMutex);
+    for (auto& decal : myDecals) {
+        if (decal.glID > 0) {
+            queueTextureDelete(static_cast<unsigned int>(decal.glID));
+            decal.glID = -1;
+        }
+        decal.initialised = false;
+    }
+    myDecals.clear();
+}
+
+
 MFXComboBoxIcon*
 GUISUMOAbstractView::getColoringSchemesCombo() {
     return myGlChildWindowParent->getColoringSchemesCombo();
@@ -1734,7 +1795,7 @@ GUISUMOAbstractView::checkGDALImage(Decal& d) {
             const double horizontalSize = xSize * adfGeoTransform[1];
             const double verticalSize = ySize * adfGeoTransform[5];
             Position bottomRight(topLeft.x() + horizontalSize, topLeft.y() + verticalSize);
-            if (GeoConvHelper::getFinal().x2cartesian_const(topLeft) && GeoConvHelper::getFinal().x2cartesian_const(bottomRight)) {
+            if (GeoConvHelper::getFinal().usingGeoProjection() && GeoConvHelper::getFinal().x2cartesian_const(topLeft) && GeoConvHelper::getFinal().x2cartesian_const(bottomRight)) {
                 //WRITE_MESSAGE("proj: " + toString(poDataset->GetProjectionRef()) + " dim: " + toString(d.width) + "," + toString(d.height) + " center: " + toString(d.centerX) + "," + toString(d.centerY));
             } else {
                 WRITE_WARNINGF(TL("Could not transform coordinates from WGS84 in decal %, assuming UTM."), d.filename);
@@ -1812,8 +1873,8 @@ GUISUMOAbstractView::drawDecals() {
                 }
                 MFXImageHelper::scalePower2(img, GUITexturesHelper::getMaxTextureSize());
                 decal.glID = GUITexturesHelper::add(img);
+                delete img;
                 decal.initialised = true;
-                decal.image = img;
             } catch (InvalidArgument& e) {
                 WRITE_ERROR("Could not load '" + decal.filename + "'.\n" + e.what());
                 decal.skip2D = true;

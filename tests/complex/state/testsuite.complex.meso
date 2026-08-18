@@ -4,6 +4,9 @@ persons
 # railway specific tests
 rail
 
+# taxi specific tests
+taxi
+
 # two vehicles saved and reloaded
 plain
 
@@ -12,6 +15,8 @@ precision
 
 # include route and vtype dists
 dists
+dists2
+dists3
 
 # include route and vtype dists
 dists_gz
@@ -70,6 +75,7 @@ save_flow50
 load_flow_state_only
 save_parking
 save_parking_busStop
+save_parking_blocked
 save_rng
 save_routeDistribution
 
@@ -129,3 +135,17 @@ meso_lane_queue_differs
 
 # flow saved and loaded with meandata output
 meandata
+
+# remove vehicle on state loading and re-use it's id
+remove_reuse
+
+# see #17526
+waut
+
+# see #17526
+# 
+# save at waut switch time
+waut2
+
+# see #17897
+routeLoader

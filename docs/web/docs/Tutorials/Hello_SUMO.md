@@ -158,7 +158,7 @@ More information on defining networks using XML can be found here:
 XML-descriptions](../Networks/PlainXML.md).
 [netconvert](../netconvert.md) also allows to import networks from
 other applications, further information is available here:
-[Networks/Import](../Networks/Import.md).
+[Networks/Import](../Networks/Import/index.md).
 
 More information on defining vehicles can be found here: [Definition of
 Vehicles, Vehicle Types, and

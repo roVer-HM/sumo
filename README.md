@@ -2,7 +2,7 @@
 
 Eclipse SUMO - Simulation of Urban MObility
 ===========================================
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18406080.svg)](https://doi.org/10.5281/zenodo.18406080)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20836073.svg)](https://doi.org/10.5281/zenodo.20836073)
 [![Windows](https://github.com/eclipse-sumo/sumo/actions/workflows/windows.yml/badge.svg)](https://github.com/eclipse-sumo/sumo/actions/workflows/windows.yml)
 [![Linux](https://github.com/eclipse-sumo/sumo/actions/workflows/linux.yml/badge.svg)](https://github.com/eclipse-sumo/sumo/actions/workflows/linux.yml)
 [![macOS](https://github.com/eclipse-sumo/sumo/actions/workflows/macos.yml/badge.svg)](https://github.com/eclipse-sumo/sumo/actions/workflows/macos.yml)
@@ -40,11 +40,11 @@ Contact
 -------
 
 To stay informed, we have a mailing list for SUMO, which
-[you can subscribe](https://dev.eclipse.org/mailman/listinfo/sumo-user) to.
-Messages to the list can be sent to sumo-user@eclipse.org.
+[you can subscribe](https://accounts.eclipse.org/mailing-list/sumo-user) to.
+Messages to the list can be sent to sumo-user@eclipse.org (this requires a subscription for the sending address).
 SUMO announcements will be made through the sumo-announce@eclipse.org list;
-[you can subscribe](https://dev.eclipse.org/mailman/listinfo/sumo-announce) to it as well.
-For further contact information, have a look at [this page](https://sumo.dlr.de/docs/Contact.html).
+[you can subscribe](https://accounts.eclipse.org/mailing-list/sumo-announce) to it as well.
+For further contact information, have a look at [the contact page](https://sumo.dlr.de/docs/Contact.html).
 
 
 Build and Installation
@@ -70,7 +70,7 @@ cmake -B build .
 cmake --build build -j$(nproc)
 ```
 
-For [detailed build instructions, have a look at our Documentation](https://sumo.dlr.de/docs/Developer/Main.html#build_instructions).
+For [detailed build instructions, have a look at our documentation](https://sumo.dlr.de/docs/Developer/Main.html#build_instructions).
 
 
 Getting started
@@ -85,7 +85,7 @@ Documentation
 ---------------
 
 - The main documentation is at [sumo.dlr.de/docs](https://sumo.dlr.de/docs). Note that this tracks the [development version](https://sumo.dlr.de/docs/FAQ.html#why_does_sumo_not_behave_as_documented_in_this_wiki).
-- A mirror of the main documentation is at [sumo.sourceforge.net/docs](https://sumo.sourceforge.net/docs).
+- A mirror of the main documentation is at [eclipse.dev/sumo/docs/](https://eclipse.dev/sumo/docs/).
 - An offline version of the documentation is part of every release and can be accessed via `docs/userdoc/index.html`.
 
 Improving SUMO
@@ -93,7 +93,7 @@ Improving SUMO
 
 Please use the [GitHub issue tracking tool](https://github.com/eclipse-sumo/sumo/issues) for bugs and requests,
 or file them to the sumo-user@eclipse.org list. Before
-filing a bug, please consider to check with a current repository checkout
+filing a bug, please consider to check with a current repository checkout or a [nightly build](https://sumo.dlr.de/docs/Downloads.php#nightly_snapshots)
 whether the problem has already been fixed.
 
 We welcome patches, pull requests and other contributions! For details see [our contribution guidelines](CONTRIBUTING.md).

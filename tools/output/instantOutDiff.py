@@ -43,8 +43,9 @@ def get_options(args=None):
     argParser.add_argument("--combine-lanes", action="store_true", dest="combineLanes",
                            default=False, help="do not distinguish detectors by lane id")
     argParser.add_argument("--filter-ids", dest="filterIDs",
-                           help="only use detector ids with the given substring")
+                           help="only use detector ids from the given list")
     options = argParser.parse_args(args=args)
+    options.filter = None if options.filterIDs is None else set(options.filterIDs.split(','))
     return options
 
 
@@ -53,8 +54,12 @@ def parseTimes(fname, options):
     for event in sumolib.xml.parse_fast(fname, 'instantOut', ['id', 'time', 'state']):
         if event.state == options.eType:
             detID = event.id
+            if options.filter and detID not in options.filter:
+                continue
             if options.combineLanes:
                 detID = lane2edge(detID)
+                if options.filter and detID not in options.filter:
+                    continue
             detTimes[detID].append(parseTime(event.time))
     return detTimes
 
@@ -84,9 +89,10 @@ def write_diff(options):
                         delta = min(delta, abs(t - times2[i]))
                     timeMismatch.add(delta, t)
                     totalTimeMismatch.add(delta, "%s,%s" % (det, t))
-                countMismatch.add(len(times) - len(times2), det)
-                absCountMismatch.add(abs(len(times) - len(times2)), det)
-                outf.write(timeMismatch.toXML())
+                delta = len(times) - len(times2)
+                countMismatch.add(delta, det)
+                absCountMismatch.add(abs(delta), det)
+                outf.write(timeMismatch.toXML(extraAttributes={'delta': delta}))
             else:
                 countMismatch.add(len(times), det)
                 absCountMismatch.add(len(times), det)
@@ -96,6 +102,16 @@ def write_diff(options):
     print(countMismatch)
     print(absCountMismatch)
     print(totalTimeMismatch)
+    missing = origTimes.keys() - newTimes.keys()
+    newDets = newTimes.keys() - origTimes.keys()
+    if missing:
+        total = sum([len(origTimes[k]) for k in missing])
+        print("%s detectors with %s events are only in the first file" % (
+            len(missing), total))
+    if newDets:
+        total = sum([len(newTimes[k]) for k in newDets])
+        print("%s detectors with %s events are only in the second file" % (
+            len(newDets), total))
 
 
 if __name__ == "__main__":

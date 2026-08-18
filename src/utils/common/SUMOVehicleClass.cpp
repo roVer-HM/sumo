@@ -48,6 +48,7 @@ static StringBijection<SUMOVehicleClass>::Entry sumoVehicleClassStringInitialize
     {"public_army",       SVC_ARMY}, // !!! deprecated
     {"army",              SVC_ARMY},
     {"vip",               SVC_VIP},
+    {"pedestrian",        SVC_PEDESTRIAN},
     {"passenger",         SVC_PASSENGER},
     {"hov",               SVC_HOV},
     {"taxi",              SVC_TAXI},
@@ -58,19 +59,18 @@ static StringBijection<SUMOVehicleClass>::Entry sumoVehicleClassStringInitialize
     {"transport",         SVC_TRUCK}, // !!! deprecated
     {"truck",             SVC_TRUCK},
     {"trailer",           SVC_TRAILER},
+    {"motorcycle",        SVC_MOTORCYCLE},
+    {"moped",             SVC_MOPED},
+    {"bicycle",           SVC_BICYCLE},
+    {"evehicle",          SVC_E_VEHICLE},
     {"lightrail",         SVC_TRAM}, // !!! deprecated
     {"tram",              SVC_TRAM},
     {"cityrail",          SVC_RAIL_URBAN}, // !!! deprecated
     {"rail_urban",        SVC_RAIL_URBAN},
     {"rail_slow",         SVC_RAIL}, // !!! deprecated
     {"rail",              SVC_RAIL},
-    {"rail_fast",         SVC_RAIL_FAST},
     {"rail_electric",     SVC_RAIL_ELECTRIC},
-    {"motorcycle",        SVC_MOTORCYCLE},
-    {"moped",             SVC_MOPED},
-    {"bicycle",           SVC_BICYCLE},
-    {"pedestrian",        SVC_PEDESTRIAN},
-    {"evehicle",          SVC_E_VEHICLE},
+    {"rail_fast",         SVC_RAIL_FAST},
     {"ship",              SVC_SHIP},
     {"container",         SVC_CONTAINER},
     {"cable_car",         SVC_CABLE_CAR},
@@ -354,7 +354,9 @@ parseVehicleClasses(const std::string& allowedS) {
         while (sta.hasNext()) {
             const std::string s = sta.next();
             if (!SumoVehicleClassStrings.hasString(s)) {
-                if (gIgnoreUnknownVClass) {
+                if (!SUMOXMLDefinitions::isValidNetID(s)) {
+                    WRITE_ERRORF(TL("Invalid character in vehicle class '%' encountered."), s);
+                } else if (gIgnoreUnknownVClass) {
                     WRITE_WARNINGF(TL("Unknown vehicle class '%' ignored."), s);
                 } else {
                     WRITE_ERRORF(TL("Unknown vehicle class '%' encountered."), s);
@@ -560,7 +562,7 @@ getDefaultVehicleLength(const SUMOVehicleClass vc) {
         case SVC_PEDESTRIAN:
             return 0.215;
         case SVC_WHEELCHAIR:
-            return 0.5;
+            return 1.2;
         case SVC_BICYCLE:
             return 1.6;
         case SVC_SCOOTER:

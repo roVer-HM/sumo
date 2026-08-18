@@ -77,7 +77,7 @@ The slope-dependent speed is scaled according to `maxSpeed * speedFactor` which 
 
 One way for overcoming most of these problems is to control bicycle
 movements at intersections with an [external control
-script](../TraCI.md). This approach is described in [Integration of
+script](../TraCI/index.md). This approach is described in [Integration of
 an external bicycle model in SUMO, Heather
 Twaddle 2016](https://www.researchgate.net/publication/302909195_Integration_of_an_External_Bicycle_Model_in_SUMO).
 

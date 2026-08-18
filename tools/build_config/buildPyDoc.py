@@ -26,40 +26,58 @@ import sys
 import shutil
 import pydoc
 import types
-from optparse import OptionParser
 try:
     # this can be removed once https://github.com/python/cpython/issues/127276 has been resolved
     import importlib.resources
     css_data = importlib.resources.files('pydoc_data').joinpath('_pydoc.css').read_text()
 except Exception:
     css_data = ""
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    import pathlib
+    import pdoc
+    HAVE_PDOC = True
+except ImportError:
+    HAVE_PDOC = False
+
+TOOLS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(TOOLS_DIR)
 import traci  # noqa
 import sumolib  # noqa
 from sumolib.miscutils import working_dir  # noqa
+if HAVE_PDOC:
+    traci.__all__ += ["_" + d._name for d in traci.DOMAINS]
 
 
-def pydoc_recursive(module):
+def pydoc_recursive(module, github_links):
     pydoc.writedoc(module)
     if css_data:
         with open(module.__name__ + ".html") as inp:
             html = inp.read()
         with open(module.__name__ + ".html", "w") as out:
+            if github_links:
+                html = html.replace("file:" + TOOLS_DIR, "https://github.com/eclipse-sumo/sumo/tree/main/tools")
+                html = html.replace(TOOLS_DIR + "/", "")
             out.write(html.replace("</head>", "<style>%s</style></head>" % css_data))
     for submod in module.__dict__.values():
         if isinstance(submod, types.ModuleType) and submod.__name__.startswith(module.__name__):
-            pydoc_recursive(submod)
+            pydoc_recursive(submod, github_links)
 
 
-optParser = OptionParser()
-optParser.add_option("-p", "--pydoc-output", help="output folder for pydoc")
-optParser.add_option("-c", "--clean", action="store_true", default=False, help="remove output dirs")
-(options, args) = optParser.parse_args()
+if __name__ == "__main__":
+    optParser = sumolib.options.ArgumentParser()
+    optParser.add_option("pydoc_output_dir", help="output folder for pydoc")
+    optParser.add_option("--clean", action="store_true", default=False, help="remove output dirs")
+    optParser.add_option("--local-links", action="store_true", default=False, help="keep file links")
+    options = optParser.parse_args()
 
-if options.pydoc_output:
-    if options.clean:
-        shutil.rmtree(options.pydoc_output, ignore_errors=True)
-    os.mkdir(options.pydoc_output)
-    with working_dir(options.pydoc_output):
-        for module in (traci, sumolib):
-            pydoc_recursive(module)
+    if options.pydoc_output_dir:
+        if options.clean:
+            shutil.rmtree(options.pydoc_output_dir, ignore_errors=True)
+        os.mkdir(options.pydoc_output_dir)
+        if HAVE_PDOC:
+            pdoc.pdoc(os.path.join(TOOLS_DIR, "sumolib"), os.path.join(TOOLS_DIR, "traci"),
+                      output_directory=pathlib.Path(options.pydoc_output_dir))
+        else:
+            with working_dir(options.pydoc_output_dir):
+                for module in (traci, sumolib):
+                    pydoc_recursive(module, not options.local_links)

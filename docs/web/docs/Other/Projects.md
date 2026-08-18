@@ -62,7 +62,7 @@ Testing and implementing suitable measures to reduce traffic-related emissions
 
 - [AutomoVer](https://www.dlr.de/en/fk/research-and-transfer/research-services/market-simulation-vector21/vector21-projects)
 Development of guidance for decision-makers
-- [MAVEN](http://www.maven-its.eu/) Managing Automated Vehicles
+- [MAVEN](https://cordis.europa.eu/project/id/690727) Managing Automated Vehicles
   Enhances Network
 - [TransAID](https://ec.europa.eu/inea/en/horizon-2020/projects/H2020-Transport/Automated-Road-Transport/TransAID)
   new hierarchical traffic management procedures to allow the smooth
@@ -75,7 +75,7 @@ Development of guidance for decision-makers
   developing additional car following models
 - [Urban Mobility](https://web.archive.org/web/20180329070141/http://www.urmo.info/) Intermodal routing and
   modeling of transfer between vehicles in SUMO
-- [Mobility Inside](https://www.mobility-inside.de/) Using SUMO's
+- [Mobility Inside](https://web.archive.org/web/20251008224332/https://www.mobility-inside.de/) Using SUMO's
   intermodal routing engine
 - [HubChain (german)](http://komob.de/projekte/hub-chain/) simulating
   autonomous public transport in rural areas
@@ -107,7 +107,7 @@ Addresses the environmental footprint in the transport sector by developing a ne
   demonstrator is included with SUMO.
 - [DRIVE C2X](https://web.archive.org/web/20170311043037/https://www.drive-c2x.eu/project) Driving implementation
   and evaluation of C2X communication technology
-- [MENDEL](https://ikt-em-projekte.de/projekte/mendel-minimal-belastung-elektrischer-netze/) modeling electric
+- [MENDEL](https://web.archive.org/web/20250616152941/https://ikt-em-projekte.de/projekte/mendel-minimal-belastung-elektrischer-netze/) modeling electric
   buses and optimizing charging with respect to grid load
 
 ## At other Institutions
@@ -122,7 +122,7 @@ Addresses the environmental footprint in the transport sector by developing a ne
   connected to SUMO
 - [eWorld](https://web.archive.org/web/20161205050209/https://eworld.sourceforge.net/) - an application that
   allows to convert and enrich roads networks; interaction is done via
-  the [TraCI](../TraCI.md)-protocol
+  the [TraCI](../TraCI/index.md)-protocol
 - [Environmental Monitoring in/of Metropolitan Areas](https://www.ibr.cs.tu-bs.de/projects/emma/index.xml?lang=en)
   by Sven Lahde, Michael Doering, Wolf-Bastian Pöttner, Moritz Rosin,
   Gerrit Lammert and Lars Wolf from the University of Braunschweig,

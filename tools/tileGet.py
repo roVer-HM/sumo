@@ -22,6 +22,9 @@ from __future__ import division
 import math
 import os
 import sys
+import json
+import shutil
+import subprocess
 from multiprocessing.pool import Pool
 import signal
 
@@ -32,6 +35,8 @@ try:
 except ImportError:
     import urllib
     from urllib2 import HTTPError as urlerror
+
+HAVE_GDAL = shutil.which("gdalwarp") is not None and shutil.which("gdal_translate") is not None
 
 import sumolib  # noqa
 
@@ -77,6 +82,72 @@ def getZoomWidthHeight(south, west, north, east, maxTileSize):
     return center, zoom, width, height
 
 
+def gdalCmd(*args):
+    """Run a GDAL command line tool, raising on failure."""
+    env = dict(os.environ)
+    if os.name == "nt" and "SUMO_HOME" in env:
+        env["PROJ_DATA"] = os.path.join(env["SUMO_HOME"], "data", "proj")
+    subprocess.check_call([str(a) for a in args], stdout=subprocess.DEVNULL, env=env)
+
+
+def getGeoTransform(filename):
+    """Return (geotransform, xsize, ysize) of a raster using gdalinfo."""
+    env = dict(os.environ)
+    if os.name == "nt" and "SUMO_HOME" in env:
+        env["PROJ_DATA"] = os.path.join(env["SUMO_HOME"], "data", "proj")
+    info = json.loads(subprocess.check_output(["gdalinfo", "-json", filename], env=env))
+    return info["geoTransform"], info["size"][0], info["size"][1]
+
+
+def reprojectTiles(options, tile_list, zoom, net, decals):
+    """Merge downloaded tiles and reproject from EPSG:3857 to the network projection."""
+    R = 6378137.0  # Web Mercator radius
+    tile_size_m = 2 * math.pi * R / (2 ** zoom)
+    # Assign EPSG:3857 bounds to each tile and write a georeferenced copy
+    tif_paths = []
+    for x, y, filename in tile_list:
+        x_min = -math.pi * R + x * tile_size_m
+        y_max = math.pi * R - y * tile_size_m
+        tpath = os.path.join(options.output_dir, "%s_%d_%d.tif" % (options.prefix, x, y))
+        gdalCmd("gdal_translate", "-a_srs", "EPSG:3857", "-a_ullr",
+                x_min, y_max, x_min + tile_size_m, y_max - tile_size_m, filename, tpath)
+        tif_paths.append(tpath)
+    vrt_path = os.path.join(options.output_dir, options.prefix + ".vrt")
+    gdalCmd("gdalbuildvrt", vrt_path, *tif_paths)
+    warped_path = os.path.join(options.output_dir, options.prefix + "_warped.tif")
+    warp_args = ["-t_srs", net._location["projParameter"], "-r", "bilinear"]
+    # Warp once to get the full geotransform reliably (JPEG has no native georef support)
+    gdalCmd("gdalwarp", "-overwrite", *(warp_args + [vrt_path, warped_path]))
+    out_path = os.path.join(options.output_dir, options.prefix + ".jpg")
+    gt, xsize, ysize = getGeoTransform(warped_path)
+    w, h = gt[1] * xsize, -gt[5] * ysize
+    if options.crop_margin:
+        m = list(map(float, options.crop_margin.split(",")))
+        if len(m) == 1:
+            m = 4 * m
+        warp_args += ["-te", gt[0] + m[0], gt[3] - h + m[1], gt[0] + w - m[2], gt[3] - m[3]]
+        gdalCmd("gdalwarp", "-overwrite", *(warp_args + [vrt_path, warped_path]))
+        gt, xsize, ysize = getGeoTransform(warped_path)
+        w, h = gt[1] * xsize, -gt[5] * ysize
+    gdalCmd("gdal_translate", "-of", "JPEG", warped_path, out_path)
+    if options.background_factor != 1.0:
+        from PIL import Image, ImageEnhance
+        img = Image.open(out_path)
+        for Enhancer in (ImageEnhance.Color, ImageEnhance.Brightness, ImageEnhance.Contrast):
+            img = Enhancer(img).enhance(options.background_factor)
+        img.save(out_path)
+    center_x = gt[0] + w / 2 + net.getLocationOffset()[0]
+    center_y = gt[3] - h / 2 + net.getLocationOffset()[1]
+    print('    <decal file="%s" centerX="%s" centerY="%s" width="%s" height="%s" layer="%d"/>' %
+          (os.path.basename(out_path), center_x, center_y, w, h, options.layer), file=decals)
+    for tpath in tif_paths:
+        os.unlink(tpath)
+    os.unlink(vrt_path)
+    os.unlink(warped_path)
+    for x, y, filename in tile_list:
+        os.unlink(filename)
+
+
 def worker(options, request, filename):
     if options.simulate:
         print(request, filename)
@@ -84,6 +155,22 @@ def worker(options, request, filename):
         urllib.urlretrieve(request, filename)
         if os.stat(filename).st_size < options.min_file_size:
             raise ValueError("small file")
+
+
+def writeSettings(options, net, tile_list, zoom, decals):
+    if net is None:
+        print("Warning: No network given, will not try reprojection or writing a decal file.", file=sys.stderr)
+    if options.reproject:
+        reprojectTiles(options, tile_list, zoom, net, decals)
+    else:
+        for x, y, filename in tile_list:
+            lat, lon = fromTileToLatLon(x, y, zoom)
+            nw = net.convertLonLat2XY(lon, lat)
+            lat, lon = fromTileToLatLon(x + 1, y + 1, zoom)
+            se = net.convertLonLat2XY(lon, lat)
+            print('    <decal file="%s" centerX="%s" centerY="%s" width="%s" height="%s" layer="%d"/>' %
+                  (os.path.basename(filename), (nw[0] + se[0]) / 2, (nw[1] + se[1]) / 2,
+                   se[0] - nw[0], nw[1] - se[1], options.layer), file=decals)
 
 
 def retrieveOpenStreetMapTiles(options, west, south, east, north, decals, net, is_retina):
@@ -100,6 +187,7 @@ def retrieveOpenStreetMapTiles(options, west, south, east, north, decals, net, i
         opener.addheaders = [('User-agent', options.user_agent)]
         urllib.install_opener(opener)
 
+    tile_list = []
     for x in range(sx, ex + 1):
         for y in range(sy, ey + 1):
             scale = '@2x' if is_retina and "cartodb" in options.url else ''
@@ -107,14 +195,8 @@ def retrieveOpenStreetMapTiles(options, west, south, east, north, decals, net, i
 
             filename = os.path.join(options.output_dir, "%s%s_%s.png" % (options.prefix, x, y))
             worker(options, request, filename)
-            if net is not None:
-                lat, lon = fromTileToLatLon(x, y, zoom)
-                upperLeft = net.convertLonLat2XY(lon, lat)
-                lat, lon = fromTileToLatLon(x + 0.5, y + 0.5, zoom)
-                center = net.convertLonLat2XY(lon, lat)
-                print('    <decal file="%s" centerX="%s" centerY="%s" width="%s" height="%s" layer="%d"/>' %
-                      (os.path.basename(filename), center[0], center[1],
-                       2 * (center[0] - upperLeft[0]), 2 * (upperLeft[1] - center[1]), options.layer), file=decals)
+            tile_list.append((x, y, filename))
+    writeSettings(options, net, tile_list, zoom, decals)
 
 
 def retrieveMapServerTiles(options, west, south, east, north, decals, net, pattern):
@@ -136,6 +218,7 @@ def retrieveMapServerTiles(options, west, south, east, north, decals, net, patte
         signal.signal(signal.SIGINT, original_sigint_handler)
 
     futures = []
+    tile_list = []
     for x in range(sx, ex + 1):
         for y in range(sy, ey + 1):
             request = options.url + pattern.format(z=zoom, y=y, x=x)
@@ -145,16 +228,10 @@ def retrieveMapServerTiles(options, west, south, east, north, decals, net, patte
                 worker(options, request, filename)
             else:
                 futures.append((x, y, pool.apply_async(worker, (options, request, filename))))
-            if net is not None:
-                lat, lon = fromTileToLatLon(x, y, zoom)
-                upperLeft = net.convertLonLat2XY(lon, lat)
-                lat, lon = fromTileToLatLon(x + 0.5, y + 0.5, zoom)
-                center = net.convertLonLat2XY(lon, lat)
-                print('    <decal file="%s" centerX="%s" centerY="%s" width="%s" height="%s" layer="%d"/>' %
-                      (os.path.basename(filename), center[0], center[1],
-                       2 * (center[0] - upperLeft[0]), 2 * (upperLeft[1] - center[1]), options.layer), file=decals)
+            tile_list.append((x, y, filename))
     for x, y, future in futures:
         future.get()
+    writeSettings(options, net, tile_list, zoom, decals)
 
 
 def get_options(args=None):
@@ -189,12 +266,20 @@ def get_options(args=None):
                          help="Number of parallel jobs to run when downloading tiles. 0 means no parallelism.")
     optParser.add_option("-r", "--retina", action="store_true", default=False,
                          help="set 'true' for double resolution tiles (applies to cartodb only).")
+    optParser.add_option("--reproject", action="store_true", default=False,
+                         help="reproject tiles from EPSG:3857 (Web Mercator) to the network projection")
+    optParser.add_option("--crop-margin",
+                         help="when using --reproject, shrink the output image by this many meters on each side "
+                              "(either one value or west,south,east,north)")
+    optParser.add_option("--background-factor", type=float, default=1.0,
+                         help="reduce saturation, brightness and contrast of the reprojected image by "
+                              "this factor (requires Pillow); 1.0 is unchanged, 0.8 looks fine.")
 
     URL_SHORTCUTS = {
         "arcgis": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile",
         "mapquest": "https://www.mapquestapi.com/staticmap/v5/map",
         "google": "https://maps.googleapis.com/maps/api/staticmap",
-        "berlin2024": "https://tiles.codefor.de/berlin-2026-dop20rgbi",
+        "berlin": "https://tiles.codefor.de/berlin/geoportal/luftbilder/2025-dop20rgb/",
         "osm": "https://tile.openstreetmap.org",
         "osm_hot": "https://a.tile.openstreetmap.fr/hot",
         "cartodb_dark": "https://cartodb-basemaps-a.global.ssl.fastly.net/dark_nolabels/",
@@ -215,6 +300,10 @@ def get_options(args=None):
         west, south, east, north = [float(v) for v in options.bbox.split(',')]
         if south > north or west > east:
             optParser.error("Invalid geocoordinates in bbox.")
+    if options.reproject and not HAVE_GDAL:
+        print("Warning: --reproject requested but the GDAL binaries are not available, "
+              "falling back to unprojected tiles.", file=sys.stderr)
+        options.reproject = False
     return options
 
 
@@ -246,7 +335,7 @@ def get(args=None):
     prefix = os.path.join(options.output_dir, options.prefix)
     mapQuest = "mapquest" in options.url
     with sumolib.openz(os.path.join(options.output_dir, options.decals_file), "w") as decals:
-        sumolib.xml.writeHeader(decals, root="viewsettings")
+        sumolib.xml.writeHeader(decals, root="viewsettings", options=options)
         if "MapServer" in options.url or "berlin" in options.url:
             pattern = "/{z}/{x}/{y}.png" if "berlin" in options.url else "/{z}/{y}/{x}"
             retrieveMapServerTiles(options, west, south, east, north, decals, net, pattern)

@@ -12,7 +12,6 @@ FROM ubuntu:jammy AS build
 
 ENV SUMO_HOME=/usr/share/sumo
 ARG DEBIAN_FRONTEND=noninteractive
-ARG JUPEDSIM_VERSION=1.3.1
 
 RUN apt-get -qq update && \
     apt-get -y install git ca-certificates lsb-release wget
@@ -20,24 +19,10 @@ RUN apt-get -qq update && \
 RUN cd /opt; git clone --shallow-submodules --single-branch --recursive https://github.com/eclipse-sumo/sumo
 
 # installing dependencies
-RUN apt-get -y install $(cat /opt/sumo/build_config/build_req_deb.txt) && \
+RUN /opt/sumo/build_config/install_dependencies.sh && \
     apt-get -y install libavformat-dev libopenscenegraph-dev libswscale-dev && \
-    wget https://packages.apache.org/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb && \
-    apt-get -y install ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb && \
-    rm ./apache-arrow-apt-source-latest-*.deb && \
-    apt-get -qq update && \
-    apt-get -y install libarrow-dev libparquet-dev && \
     apt-get -y install $(cat /opt/sumo/build_config/tools_req_deb.txt) && \
-    pip3 install --no-cache-dir -r /opt/sumo/tools/requirements.txt -r /opt/sumo/docs/web/requirements.txt
-
-# JuPedSim build
-RUN cd /opt && \
-    wget -q https://github.com/PedestrianDynamics/jupedsim/archive/refs/tags/v$JUPEDSIM_VERSION.tar.gz && \
-    tar xzf v$JUPEDSIM_VERSION.tar.gz && \
-    cmake -B jupedsim-build -D CMAKE_INSTALL_PREFIX=/install/usr jupedsim-${JUPEDSIM_VERSION} && \
-    cmake --build jupedsim-build -j$(nproc) && \
-    cmake --install jupedsim-build && \
-    rm -rf /opt/jupedsim-$JUPEDSIM_VERSION /opt/jupedsim-build v$JUPEDSIM_VERSION.tar.gz
+    pip3 install --no-cache-dir -r /opt/sumo/tools/req_ci.txt -r /opt/sumo/docs/web/requirements.txt
 
 # SUMO build
 RUN cd /opt/sumo && \
@@ -59,14 +44,16 @@ LABEL org.opencontainers.image.authors="SUMO Developers <sumo-dev@eclipse.org>" 
 # Setup environment
 ENV SUMO_HOME=/usr/share/sumo
 ARG DEBIAN_FRONTEND=noninteractive
-ARG ARROW_VERSION=2200
+ARG ARROW_VERSION=2300
 
 # Getting build artifacts
 COPY --from=build /install/usr /usr
+COPY --from=build /usr/local/lib/libjupedsim.so /usr/lib/libjupedsim.so
 # Get dependency lists
 COPY --from=build /opt/sumo/build_config/build_req_deb.txt /tmp/build_req_deb.txt
 COPY --from=build /opt/sumo/build_config/tools_req_deb.txt /tmp/tools_req_deb.txt
 COPY --from=build /opt/sumo/tools/requirements.txt /tmp/requirements.txt
+COPY --from=build /opt/sumo/tools/req_ci.txt /tmp/req_ci.txt
 
 # Installing runtime dependencies (for simplicity we use the build dependencies. Possibility for optimization in the future)
 RUN apt-get -qq update && \
@@ -81,6 +68,6 @@ RUN apt-get -qq update && \
     rm -rf /var/lib/apt/lists/*
 
 # Installing tools dependencies for python
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+RUN pip3 install --no-cache-dir -r /tmp/req_ci.txt
 
 CMD ["/bin/bash", "-c"]

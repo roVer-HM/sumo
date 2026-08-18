@@ -1404,6 +1404,9 @@ TRACI_CONST int CMD_REROUTE_EFFORT = 0x91;
 // validates current route (vehicles)
 TRACI_CONST int VAR_ROUTE_VALID = 0x92;
 
+// retrieve distance along linear reference system (vehicle, edge)
+TRACI_CONST int VAR_REFERENCE_DISTANCE = 0x95;
+
 // retrieve information regarding the current person/container stage
 TRACI_CONST int VAR_STAGE = 0xc0;
 
@@ -1475,6 +1478,9 @@ TRACI_CONST int VAR_CS_CHARGE_DELAY = 0x9a;
 
 // parking area access permissions
 TRACI_CONST int VAR_ACCESS_BADGE = 0x9b;
+
+// charging station total power
+TRACI_CONST int VAR_CS_TOTAL_POWER = 0x9c;
 
 } // namespace libsumo
 

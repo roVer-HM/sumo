@@ -60,6 +60,11 @@ def add_options():
     op.add_argument("--write-terminals", action="store_true", default=False,
                     dest="writeTerminals", category="processing",
                     help="Write vehicle parameters that describe terminal stops and times")
+    op.add_argument("--original-lines", action="store_true", default=False,
+                    dest="origLines", category="processing",
+                    help="Do not distinguish line ids that have distinct stop sequences")
+    op.add_argument("--join-blocks", action="store_true", default=False, dest="joinBlocks",
+                    help="Do not concatenate trips by block_id")
     op.add_argument("-H", "--human-readable-time", category="output", dest="hrtime", default=False, action="store_true",
                     help="write times as h:m:s")
     op.add_argument("-v", "--verbose", action="store_true", default=False,
@@ -81,6 +86,7 @@ def check_options(options):
         options.modes = ",".join(gtfs2osm.OSM2SUMO_MODES.keys())
     if options.gtfs and not options.date:
         raise ValueError("When option --gtfs is set, option --date must be set as well")
+    options.ft = humanReadableTime if options.hrtime else lambda x: x
 
     return options
 
@@ -113,11 +119,16 @@ def get_merged_data(options):
         stops_merged['start_char'] = ''
 
     trips_routes_merged = pd.merge(trips_on_day, routes, on='route_id')
-    merged = pd.merge(stops_merged, trips_routes_merged,
-                      on='trip_id')[['trip_id', 'block_id', 'route_id', 'route_short_name', 'route_type',
-                                     'stop_id', 'stop_name', 'stop_lat', 'stop_lon', 'stop_sequence',
-                                     'fare_zone', 'fare_token', 'start_char', 'trip_headsign',
-                                     'arrival_time', 'departure_time']].drop_duplicates()
+    merged = pd.merge(stops_merged, trips_routes_merged, on='trip_id').drop_duplicates()
+    cols = ['trip_id', 'block_id', 'route_id', 'route_short_name', 'route_type',
+            'stop_id', 'stop_name', 'stop_lat', 'stop_lon', 'stop_sequence',
+            'fare_zone', 'fare_token', 'start_char', 'trip_headsign',
+            'arrival_time', 'departure_time']
+    # 'block_id' is optional
+    if 'block_id' not in merged.columns:
+        cols.remove('block_id')
+        options.joinBlocks = False
+    merged = merged[cols]
     return merged
 
 
@@ -128,12 +139,45 @@ def dataAvailable(options):
     return False
 
 
+def joinBlocks(data):
+    """For trips that have the same non-empty block_id:
+       - sort trips by first depart
+       - swap trip_id and block_id (old trip_id can be written as stop attribute tripId)
+       - renumber stop_sequence
+    """
+    blocks = []
+    for block_id, block in data.groupby('block_id', dropna=False):
+        if not pd.isna(block_id) and block_id != "":
+            departs = block.groupby('trip_id')['departure_time'].min().rename('trip_departure_time')
+            if len(departs) > 1:
+                block = block.join(departs, on='trip_id')
+                block.sort_values(by=['trip_departure_time', 'stop_sequence'], inplace=True)
+                block.reset_index(drop=True, inplace=True)
+                block['stop_sequence'] = block.index
+                # block.to_csv('debug_%s.csv' % block_id, sep=";", index=False)
+                del block['trip_departure_time']
+                # swap columns so later code will treat the block like a single trip (but preserve the original trip_id)
+                block[['trip_id', 'block_id']] = block[['block_id', 'trip_id']].values
+        blocks.append(block)
+    return pd.concat(blocks)
+
+
 def main(options):
-    ft = humanReadableTime if options.hrtime else lambda x: x
+    ft = options.ft
     if options.mergedCSV:
+        # Need everything except few columns as strings. The exceptions are:
+        # - `arrival_time` and `departure_time` have to be integers,
+        # - `stop_lat`, `stop_lon`, and `stop_sequence` have to be floats
         full_data_merged = pd.read_csv(options.mergedCSV, sep=";",
                                        keep_default_na=False,
-                                       dtype={"route_type": str})
+                                       dtype=str)
+        full_data_merged['arrival_time'] = full_data_merged['arrival_time'].astype(int)
+        full_data_merged['departure_time'] = full_data_merged['departure_time'].astype(int)
+        full_data_merged['stop_lat'] = full_data_merged['stop_lat'].astype(float)
+        full_data_merged['stop_lon'] = full_data_merged['stop_lon'].astype(float)
+        full_data_merged['stop_sequence'] = full_data_merged['stop_sequence'].astype(float)
+        if 'block_id' not in full_data_merged.columns:
+            options.joinBlocks = False
     else:
         full_data_merged = get_merged_data(options)
     if options.mergedCSVOutput:
@@ -141,6 +185,9 @@ def main(options):
         full_data_merged.to_csv(options.mergedCSVOutput, sep=";", index=False)
     if full_data_merged.empty:
         return False
+    if options.joinBlocks:
+        full_data_merged = joinBlocks(full_data_merged)
+
     fcdFile = {}
     tripFile = {}
     if not os.path.exists(options.fcd):
@@ -157,8 +204,9 @@ def main(options):
         tripFile[mode] = io.open(filePrefix + '.rou.xml', 'w', encoding="utf8")
         tripFile[mode].write(u"<routes>\n")
     timeIndex = 0
+    lines = set()  # unique line ids
     for _, trip_data in full_data_merged.groupby('route_id'):
-        seqs = {}
+        seqs = {}  # stop sequence -> routeID, lineID
         for trip_id, data in trip_data.groupby('trip_id'):
             stopSeq = []
             buf = u""
@@ -183,9 +231,17 @@ def main(options):
                 departureSec = d.departure_time + timeIndex
                 until = 0 if firstDep is None else departureSec - timeIndex - firstDep
                 buf += ((u'    <timestep time="%s"><vehicle id="%s" x="%s" y="%s" until="%s" ' +
-                         u'name=%s fareZone="%s" fareSymbol="%s" startFare="%s" speed="20"/></timestep>\n') %
+                         u'name=%s gtfsid=%s block="%s" fareZone="%s" fareSymbol="%s" startFare="%s" speed="20"/>' +
+                         u'</timestep>\n') %
                         (arrivalSec - offset, trip_id, d.stop_lon, d.stop_lat, until,
-                         sumolib.xml.quoteattr(d.stop_name, True), d.fare_zone, d.fare_token, d.start_char))
+                         sumolib.xml.quoteattr(d.stop_name, True),
+                         # Store also the original GTFS stop ID which allows us to map other external data to
+                         # this particular stop (mapping by `name` is ambiguous, we may have several platforms
+                         # of a stop with the identical name). By definition, the `stop_id` is a UTF8 string, hence
+                         # the quoting.
+                         sumolib.xml.quoteattr(d.stop_id, True),
+                         "" if not options.joinBlocks or pd.isna(d.block_id) else d.block_id,
+                         d.fare_zone, d.fare_token, d.start_char))
                 if firstDep is None:
                     firstDep = departureSec - timeIndex
                     firstStop = d.stop_name
@@ -195,11 +251,23 @@ def main(options):
             if mode in modes:
                 s = tuple(stopSeq)
                 if s not in seqs:
-                    seqs[s] = trip_id
+                    lineID = d.route_short_name.replace(" ", "_")
+                    if not options.origLines:
+                        baseLine = lineID
+                        i = 0
+                        while lineID in lines:
+                            i += 1
+                            lineID = "%s#%s" % (baseLine, i)
+                    lines.add(lineID)
+                    seqs[s] = trip_id, lineID
                     fcdFile[mode].write(buf)
                     timeIndex = arrivalSec
+                # The `line` attribute shall hold the line short name that can be used to determine person rides
+                # as per https://sumo.dlr.de/docs/Specification/Persons.html#rides
+                # The spaces in the route name are replaced by underscores to allow for space-separated lists of lines.
+                routeID, lineID = seqs[s]
                 tripFile[mode].write(u'    <vehicle id="%s" route="%s" type="%s" depart="%s" line="%s">\n' %
-                                     (trip_id, seqs[s], mode, firstDep, seqs[s]))
+                                     (trip_id, routeID, mode, firstDep, lineID))
                 params = [("gtfs.route_name", d.route_short_name)]
                 if d.trip_headsign:
                     params.append(("gtfs.trip_headsign", d.trip_headsign))

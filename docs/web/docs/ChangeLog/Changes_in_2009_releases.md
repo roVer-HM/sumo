@@ -163,7 +163,7 @@ title: Changes in the 2009 releases (versions 0.10.0, 0.10.1, 0.10.2, 0.10.3, 0.
     detectors"
   - fixed crashes occurring when using the distance command
     ([defect 70: TraCI does not recognize edges with'\['...](https://github.com/eclipse-sumo/sumo/issues/70))
-  - added [APIs for getting information about vehicles, vehicle types, lanes, routes, polygons, PoIs, and junctions](../TraCI.md).
+  - added [APIs for getting information about vehicles, vehicle types, lanes, routes, polygons, PoIs, and junctions](../TraCI/index.md).
   - added the possibility to change the phase and retrieve the
     current phase and complete definition of a tls using the new
     phase definition

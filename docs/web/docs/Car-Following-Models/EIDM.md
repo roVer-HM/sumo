@@ -29,7 +29,7 @@ The aim of the model is to correctly replicate submicroscopic acceleration profi
     The model was not tested with option **--step-method.ballistic**. The author recommends to lower the step length to increase the realism of positional updates instead.
 
 !!! caution
-    The model is not compatible with the [actionSteps](../Car-Following-Models.md#actionsteplength) feature.
+    The model is not compatible with the [actionSteps](index.md#actionsteplength) feature.
  
 ## References
 

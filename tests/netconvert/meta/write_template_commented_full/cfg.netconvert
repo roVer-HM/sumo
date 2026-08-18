@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-11-14T15:06:47.605373+01:00 by Eclipse SUMO netconvert v1_25_0+0045-28a3daf62ee
+<!-- generated on 2026-04-01T00:10:46.281667+01:00 by Eclipse SUMO netconvert v1_26_0+0915-c030b39bdd3
 -->
 
 <netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
@@ -441,6 +441,9 @@
         <!-- The default turning radius of intersections -->
         <default.junctions.radius value="4" type="FLOAT"/>
 
+        <!-- [traffic_light|priority|right_before_left|left_before_right|traffic_light_right_on_red|priority_stop|allway_stop|...] Determines default junction type (see docs/Networks/PlainXML#node_types) -->
+        <default.junctions.type value="" synonymes="default-junction-type j" type="STR"/>
+
         <!-- The default length when overriding connection lengths -->
         <default.connection-length value="-1" type="FLOAT"/>
 
@@ -690,7 +693,7 @@
         <!-- Disables building turnarounds except at dead end junctions -->
         <no-turnarounds.except-deadend value="false" type="BOOL"/>
 
-        <!-- Disables building turnarounds except at at junctions with a dedicated turning lane -->
+        <!-- Disables building turnarounds except at junctions with a dedicated turning lane -->
         <no-turnarounds.except-turnlane value="false" type="BOOL"/>
 
         <!-- Disables building turnarounds at fringe junctions -->
@@ -705,7 +708,7 @@
         <!-- Determines the maximal distance for joining junctions (defaults to 10) -->
         <junctions.join-dist value="10" type="FLOAT"/>
 
-        <!-- The angular threshold in degress for rejection of parallel edges when joining junctions -->
+        <!-- The angular threshold in degrees for rejection of parallel edges when joining junctions -->
         <junctions.join.parallel-threshold value="30" type="FLOAT"/>
 
         <!-- Interprets STR[] as list of junctions to exclude from joining -->
@@ -713,6 +716,9 @@
 
         <!-- Joins junctions that have similar coordinates even if not connected -->
         <junctions.join-same value="-1" type="FLOAT"/>
+
+        <!-- Reset connections for joined junctions -->
+        <junctions.join-reset value="false" type="BOOL"/>
 
         <!-- Attach junction to the closest edge within FLOAT distance that has it&apos;s id in param removedNodeIDs (for joining networks) -->
         <junctions.attach-removed value="-1" type="FLOAT"/>
@@ -852,6 +858,9 @@
         <!-- Set edge priority values based on estimated main direction -->
         <railway.topology.direction-priority value="false" type="BOOL"/>
 
+        <!-- Set edge priority values based on public transport lines for the given list of vClasses -->
+        <railway.topology.ptline-priority value="" type="STR[]"/>
+
         <!-- Extend loaded edge priority values based on estimated main direction -->
         <railway.topology.extend-priority value="false" type="BOOL"/>
 
@@ -860,6 +869,9 @@
 
         <!-- Guess signals that guard public transport stops -->
         <railway.signal.guess.by-stops value="false" type="BOOL"/>
+
+        <!-- Split edges to improve positioning of guessed signals and prevent switches as rail_signals -->
+        <railway.signal.guess.by-stops.split value="false" type="BOOL"/>
 
         <!-- List rail classes that may run without rail signals -->
         <railway.signal.permit-unsignalized value="tram,cable_car" type="STR[]"/>

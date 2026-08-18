@@ -93,7 +93,7 @@ public:
 
     /** @brief Saves the current state into the given stream
      */
-    void saveState(std::ostringstream& out);
+    void saveState(std::ostringstream& out, MSTransportable* transportable);
 
     /** @brief Reconstructs the current state
      */
@@ -110,7 +110,7 @@ public:
      * @param[in] withRouteLength whether route length shall be written
      * @exception IOError not yet implemented
      */
-    virtual void routeOutput(const bool isPerson, OutputDevice& os, const bool withRouteLength, const MSStage* const previous) const;
+    virtual void routeOutput(const bool isPerson, OutputDevice& os, const bool withRouteLength, const MSStage* const previous, const bool withTiming, const bool saveState = false) const;
 
     /// @brief move forward and return whether the person arrived
     bool moveToNextEdge(MSTransportable* person, SUMOTime currentTime, int prevDir, MSEdge* nextInternal = nullptr, const bool isReplay = false);
@@ -149,6 +149,11 @@ public:
         const MSStageWalking& sw = static_cast<const MSStageWalking&>(s);
         return myWalkingTime == sw.myWalkingTime;
     }
+
+    void setExitTimes(std::vector<SUMOTime>* exitTimes) {
+        myExitTimes = exitTimes;
+    }
+
 
 private:
     /// @brief compute total walking distance

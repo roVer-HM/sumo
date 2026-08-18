@@ -27,6 +27,9 @@ geomhelper
 # parsing a network working with tlLogic
 tls
 
+# parsing a network working with tlLogic
+tls_subsecond
+
 # generate a patch file to update the network
 patch_network
 
@@ -42,6 +45,12 @@ getShortestRoute_rail
 # finding fastest routes
 getFastestRoute
 
+# test using routingType to influence results. refs #17560
+getOptimalPath_routingType
+
+# test using routingType to influence results. refs #17560
+getOptimalPath_routingType2
+
 # testing statistics
 statistics
 
@@ -56,3 +65,6 @@ utf8_bom
 
 # see #16633
 connection_permissions
+
+# get neighboring lanes and edges (test includeJunctions=True/False)
+getNeighboring

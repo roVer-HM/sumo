@@ -17,14 +17,12 @@ using command line options, the others have to be defined within {{AdditionalFil
 
 ## Converting Outputs
 
-All output files written by SUMO are in XML-format by default. However,
-with the python tool [xml2csv.py](../../Tools/Xml.md#xml2csvpy) you
-can convert any of them to a flat-file (CSV) format which can be opened
-with most spread-sheet software. If you need a more compressed but still
-"standardized" binary version, you can use
-[xml2protobuf.py](../../Tools/Xml.md#xml2protobufpy). Furthermore all
-files can be written and read in compressed form (gzip) which is triggered by the
-file extension .gz.
+All output files written by SUMO are in XML-format by default. However, by setting the file extension *.csv* or *.parqet* files will instead by written [tabular output](../../TabularOutputs.md) instead.
+It is also possible to convert existing XML output files with the python tool [xml2csv.py](../../Tools/Xml.md#xml2csvpy) to a flat-file (CSV) format which can be opened
+with most spread-sheet software. 
+
+The file endings *.xml.gz* or *.csv.gz* will automatically switch to gzip-compressed output files.
+Note, that *.xml.gz* files are also accepted as input by all SUMO applications.
 
 ## Separating outputs of repeated runs
 
@@ -41,11 +39,7 @@ found by following its link.
 
 ## vehicle-based information, disaggregated
 
-- [raw vehicle positions dump](RawDump.md):
-  all vehicle positions over time
-  *contains*: positions and speeds for all vehicles for all simulated
-  time steps
-  *used for*: obtaining movements of nodes (V2V, for ns-2)
+
 - [emission output](EmissionOutput.md):
   emission values of all vehicles for every simulation step
 - [full output](FullOutput.md): various
@@ -69,6 +63,12 @@ found by following its link.
 - [vehicle type probe](VTypeProbe.md):
   positions of vehicles over time for a certain vehicle type
   (deprecated, use vType filters with FCD-output instead)
+- [raw vehicle positions dump](RawDump.md):
+  all vehicle positions over time
+  *contains*: positions and speeds for all vehicles for all simulated
+  time steps
+  *used for*: obtaining movements of nodes (V2V, for ns-2)
+  **caution: this output deprecated in favor of fcd-output**
 
 ## simulated detectors
 
@@ -115,7 +115,7 @@ There is no dedicated output format for traffic at junctions. Instead junction r
   or separate the approaching edges and to include or exclude the
   junction interior. (area-based detection on edges)
 
-Alternatively, the [values for edges or lanes](#values_for_edges_or_lanes) can be aggregated to obtain the flow at at a junction by using edgeData attribute `edges` and `aggregate="true"`.
+Alternatively, the [values for edges or lanes](#values_for_edges_or_lanes) can be aggregated to obtain the flow at a junction by using edgeData attribute `edges` and `aggregate="true"`.
 
 ## vehicle-based information
 

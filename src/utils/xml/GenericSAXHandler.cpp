@@ -100,7 +100,7 @@ GenericSAXHandler::startElement(const XMLCh* const /*uri*/,
                                 const XMLCh* const /*localname*/,
                                 const XMLCh* const qname,
                                 const XERCES_CPP_NAMESPACE::Attributes& attrs) {
-    std::string name = StringUtils::transcode(qname);
+    std::string name = XMLSubSys::transcode(qname);
     if (!myRootSeen && myExpectedRoot != "" && name != myExpectedRoot) {
         WRITE_WARNINGF(TL("Found root element '%' in file '%' (expected '%')."), name, getFileName(), myExpectedRoot);
     }
@@ -134,7 +134,7 @@ void
 GenericSAXHandler::endElement(const XMLCh* const /*uri*/,
                               const XMLCh* const /*localname*/,
                               const XMLCh* const qname) {
-    std::string name = StringUtils::transcode(qname);
+    std::string name = XMLSubSys::transcode(qname);
     int element = convertTag(name);
     // collect characters
     if (myCharactersVector.size() != 0) {
@@ -186,7 +186,7 @@ void
 GenericSAXHandler::characters(const XMLCh* const chars,
                               const XERCES3_SIZE_t length) {
     if (myCollectCharacterData) {
-        myCharactersVector.push_back(StringUtils::transcode(chars, (int)length));
+        myCharactersVector.push_back(XMLSubSys::transcode(chars, (int)length));
     }
 }
 
@@ -204,12 +204,24 @@ GenericSAXHandler::convertTag(const std::string& tag) const {
 std::string
 GenericSAXHandler::buildErrorMessage(const XERCES_CPP_NAMESPACE::SAXParseException& exception) {
     std::ostringstream buf;
-    char* pMsg = XERCES_CPP_NAMESPACE::XMLString::transcode(exception.getMessage());
-    buf << pMsg << std::endl;
-    buf << TL(" In file '") << getFileName() << "'" << std::endl;
+    const XMLCh* const sysId = exception.getSystemId();
+    if (sysId != nullptr) {
+        const std::string url = XMLSubSys::transcode(sysId);
+        if (StringUtils::startsWith(url, "http:") || StringUtils::startsWith(url, "https:")) {
+            buf << "Failed to read " << url << ".\n";
+        }
+    }
+    if (XMLSubSys::transcode(exception.getMessage()).find("NetAccessor") != std::string::npos) {
+        buf << "No network access.\n";
+    }
+    if (buf.tellp() == 0) {
+        char* pMsg = XERCES_CPP_NAMESPACE::XMLString::transcode(exception.getMessage());
+        buf << pMsg << "\n";
+        XERCES_CPP_NAMESPACE::XMLString::release(&pMsg);
+    }
+    buf << TL(" In file '") << getFileName() << "'\n";
     buf << TL(" At line/column ") << exception.getLineNumber() + 1
-        << '/' << exception.getColumnNumber() << "." << std::endl;
-    XERCES_CPP_NAMESPACE::XMLString::release(&pMsg);
+        << '/' << exception.getColumnNumber() << ".\n";
     return buf.str();
 }
 

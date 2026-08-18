@@ -12,6 +12,8 @@ cruising) control, (ii) gap control and (iii) gap-closing control. A
 fourth mode (i.e. collision avoidance mode) has been introduced within
 the project [TransAID](https://www.transaid.eu), when the CACC model was first integrated to SUMO [\[4\]](#references).
 
+The full list if model parameters can be found at [carFollowing model parameters](../Definition_of_Vehicles%2C_Vehicle_Types%2C_and_Routes.md#car-following_model_parameters).
+
 see also [ACC model](ACC.md).
 
 ## (i) Speed control mode

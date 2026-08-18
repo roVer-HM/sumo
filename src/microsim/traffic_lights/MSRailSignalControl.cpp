@@ -99,7 +99,7 @@ MSRailSignalControl::addSignal(MSRailSignal* signal) {
     mySignals.push_back(signal);
     for (const auto& links : signal->getLinks()) {
         for (const MSLink* link : links) {
-            mySignalizedClasses |= link->getPermissions();
+            mySignalizedClasses |= (link->getPermissions() & myMBClasses);
         }
     }
 }
@@ -299,8 +299,8 @@ MSRailSignalControl::updateSignals(SUMOTime t) {
     //std::cout << SIMTIME << " activeSignals=" << myActiveSignals.size() << "\n";
     for (auto it = myActiveSignals.begin(); it != myActiveSignals.end();) {
         MSRailSignal* rs = *it;
-        //std::cout << SIMTIME << " update " << rs->getID() << "\n";
         const bool keepActive = rs->updateCurrentPhase();
+        // std::cout << SIMTIME << " update " << rs->getID() << " keepActive=" << keepActive << "\n";
         if (rs->isActive()) {
             rs->setTrafficLightSignals(t);
         }

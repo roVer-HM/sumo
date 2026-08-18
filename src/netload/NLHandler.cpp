@@ -75,7 +75,6 @@ NLHandler::NLHandler(const std::string& file, MSNet& net,
     myHaveSeenDefaultLength(false),
     myHaveSeenNeighs(false),
     myHaveSeenAdditionalSpeedRestrictions(false),
-    myHaveSeenMesoEdgeType(false),
     myHaveSeenTLSParams(false),
     myNetworkVersion(0, 0),
     myNetIsLoaded(false) {
@@ -280,10 +279,6 @@ NLHandler::myStartElement(int element,
                         myNet.addPreference(routingType, typeName, prio);
                     }
                 }
-                break;
-            }
-            case SUMO_TAG_MESO: {
-                addMesoEdgeType(attrs);
                 break;
             }
             case SUMO_TAG_STOPOFFSET: {
@@ -553,6 +548,17 @@ NLHandler::addLane(const SUMOSAXAttributes& attrs) {
     const double maxSpeed = attrs.get<double>(SUMO_ATTR_SPEED, id.c_str(), ok);
     const double friction = attrs.getOpt<double>(SUMO_ATTR_FRICTION, id.c_str(), ok, (double)(1.), false);
     const double length = attrs.get<double>(SUMO_ATTR_LENGTH, id.c_str(), ok);
+    // sanity check values that could lead to crashing later on
+    if (std::isnan(length)) {
+        WRITE_ERRORF(TL("Attribute length of lane '%' is invalid (%)"), id, length);
+        myCurrentIsBroken = true;
+        return;
+    }
+    if (std::isnan(maxSpeed)) {
+        WRITE_ERRORF(TL("Attribute maxSpeed of lane '%' is invalid (%)"), id, maxSpeed);
+        myCurrentIsBroken = true;
+        return;
+    }
     const std::string allow = attrs.getOpt<std::string>(SUMO_ATTR_ALLOW, id.c_str(), ok, "", false);
     const std::string disallow = attrs.getOpt<std::string>(SUMO_ATTR_DISALLOW, id.c_str(), ok, "");
     const std::string changeLeftS = attrs.getOpt<std::string>(SUMO_ATTR_CHANGE_LEFT, id.c_str(), ok, "");
@@ -563,7 +569,7 @@ NLHandler::addLane(const SUMOSAXAttributes& attrs) {
     const int index = attrs.get<int>(SUMO_ATTR_INDEX, id.c_str(), ok);
     const bool isRampAccel = attrs.getOpt<bool>(SUMO_ATTR_ACCELERATION, id.c_str(), ok, false);
     const std::string type = attrs.getOpt<std::string>(SUMO_ATTR_TYPE, id.c_str(), ok, "");
-    if (shape.size() < 2) {
+    if (shape.size() < 2 && myEdgeControlBuilder.getCurrentEdgeFunction() != SumoXMLEdgeFunc::WALKINGAREA) {
         WRITE_ERRORF(TL("Shape of lane '%' is broken.\n Can not build according edge."), id);
         myCurrentIsBroken = true;
         return;
@@ -815,7 +821,10 @@ NLHandler::initTrafficLightLogic(const SUMOSAXAttributes& attrs) {
         } else {
             WRITE_ERRORF(TL("Traffic light '%' has unknown type '%'."), id, typeS);
         }
-        if (MSGlobals::gUseMesoSim && (type == TrafficLightType::ACTUATED || type == TrafficLightType::NEMA)) {
+        if (MSGlobals::gUseMesoSim && type != TrafficLightType::STATIC
+                && type != TrafficLightType::RAIL_SIGNAL
+                && type != TrafficLightType::RAIL_CROSSING
+                && type != TrafficLightType::OFF) {
             if (!myHaveWarnedAboutInvalidTLType) {
                 WRITE_WARNINGF(TL("Traffic light type '%' cannot be used in mesoscopic simulation. Using '%' as fallback."), toString(type), toString(TrafficLightType::STATIC));
                 myHaveWarnedAboutInvalidTLType = true;
@@ -1393,10 +1402,7 @@ NLHandler::addEdgeLaneMeanData(const SUMOSAXAttributes& attrs, int objecttype) {
     }
     try {
         myDetectorBuilder.createEdgeLaneMeanData(id, period, begin, end,
-                type, useLanes,
-                // equivalent to TplConvert::_2bool used in SUMOSAXAttributes::getBool
-                excludeEmpty[0] != 't' && excludeEmpty[0] != 'T' && excludeEmpty[0] != '1' && excludeEmpty[0] != 'x',
-                excludeEmpty == "defaults", withInternal, trackVehicles, detectPersons,
+                type, useLanes, excludeEmpty, withInternal, trackVehicles, detectPersons,
                 maxTravelTime, minSamples, haltingSpeedThreshold, vtypes, writeAttributes, edges, aggregate,
                 FileHelpers::checkForRelativity(file, getFileName()));
     } catch (InvalidArgument& e) {
@@ -1714,29 +1720,6 @@ NLHandler::addRoundabout(const SUMOSAXAttributes& attrs) {
     }
 }
 
-
-void
-NLHandler::addMesoEdgeType(const SUMOSAXAttributes& attrs) {
-    bool ok = true;
-    MESegment::MesoEdgeType edgeType = myNet.getMesoType(""); // init defaults
-    edgeType.tauff = attrs.getOptSUMOTimeReporting(SUMO_ATTR_MESO_TAUFF, myCurrentTypeID.c_str(), ok, edgeType.tauff);
-    edgeType.taufj = attrs.getOptSUMOTimeReporting(SUMO_ATTR_MESO_TAUFJ, myCurrentTypeID.c_str(), ok, edgeType.taufj);
-    edgeType.taujf = attrs.getOptSUMOTimeReporting(SUMO_ATTR_MESO_TAUJF, myCurrentTypeID.c_str(), ok, edgeType.taujf);
-    edgeType.taujj = attrs.getOptSUMOTimeReporting(SUMO_ATTR_MESO_TAUJJ, myCurrentTypeID.c_str(), ok, edgeType.taujj);
-    edgeType.jamThreshold = attrs.getOpt<double>(SUMO_ATTR_JAM_DIST_THRESHOLD, myCurrentTypeID.c_str(), ok, edgeType.jamThreshold);
-    edgeType.junctionControl = attrs.getOpt<bool>(SUMO_ATTR_MESO_JUNCTION_CONTROL, myCurrentTypeID.c_str(), ok, edgeType.junctionControl);
-    edgeType.tlsPenalty = attrs.getOpt<double>(SUMO_ATTR_MESO_TLS_PENALTY, myCurrentTypeID.c_str(), ok, edgeType.tlsPenalty);
-    edgeType.tlsFlowPenalty = attrs.getOpt<double>(SUMO_ATTR_MESO_TLS_FLOW_PENALTY, myCurrentTypeID.c_str(), ok, edgeType.tlsFlowPenalty);
-    edgeType.minorPenalty = attrs.getOptSUMOTimeReporting(SUMO_ATTR_MESO_MINOR_PENALTY, myCurrentTypeID.c_str(), ok, edgeType.minorPenalty);
-    edgeType.overtaking = attrs.getOpt<bool>(SUMO_ATTR_MESO_OVERTAKING, myCurrentTypeID.c_str(), ok, edgeType.overtaking);
-
-    if (ok) {
-        myNet.addMesoType(myCurrentTypeID, edgeType);
-    }
-    if (myNetIsLoaded) {
-        myHaveSeenMesoEdgeType = true;
-    }
-}
 
 void
 NLHandler::addDeadlock(const SUMOSAXAttributes& attrs) {

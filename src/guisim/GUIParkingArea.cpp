@@ -58,8 +58,8 @@ GUIParkingArea::GUIParkingArea(const std::string& id, const std::vector<std::str
                                unsigned int capacity, double width, double length, double angle, const std::string& name,
                                bool onRoad,
                                const std::string& departPos,
-                               bool lefthand) :
-    MSParkingArea(id, lines, badges, lane, frompos, topos, capacity, width, length, angle, name, onRoad, departPos, lefthand),
+                               bool lefthand, bool reservable) :
+    MSParkingArea(id, lines, badges, lane, frompos, topos, capacity, width, length, angle, name, onRoad, departPos, lefthand, reservable),
     GUIGlObject_AbstractAdd(GLO_PARKING_AREA, id, GUIIconSubSys::getIcon(GUIIcon::PARKINGAREA)) {
     const double offsetSign = (MSGlobals::gLefthand || lefthand) ? -1 : 1;
     myShapeRotations.reserve(myShape.size() - 1);
@@ -114,6 +114,10 @@ GUIParkingArea::getParameterWindow(GUIMainWindow& app,
     ret->mkItem(TL("capacity [#]"), false, getCapacity());
     ret->mkItem(TL("alternatives [#]"), false, getNumAlternatives());
     ret->mkItem(TL("access badges"), false, joinToString(myAcceptedBadges, " "));
+    if (isReservable()) {
+        ret->mkItem(TL("reservations [#]"), true, getNumReservations());
+        ret->mkItem(TL("reservation ids"), true, getReservationString());
+    }
     // close building
     ret->closeBuilding();
     return ret;
@@ -232,5 +236,14 @@ GUIParkingArea::getOptionalName() const {
     return myName;
 }
 
+int
+GUIParkingArea::getNumReservations() const {
+    return (int)getRemoteReservedVehicles().size();
+}
+
+const std::string
+GUIParkingArea::getReservationString() const {
+    return toString(getRemoteReservedVehicles());
+}
 
 /****************************************************************************/

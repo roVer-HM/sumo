@@ -76,6 +76,9 @@ public:
         return myParameter;
     }
 
+    inline SUMOVehicleParameter& getParameterMutable() {
+        return myParameter;
+    }
 
     /** @brief Returns the type of the routable
      *

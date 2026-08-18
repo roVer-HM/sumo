@@ -1,4 +1,4 @@
-name: macos-wheels
+name: macos-selfhost-test
 
 on:
   push:            # run on push events

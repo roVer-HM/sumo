@@ -27,6 +27,7 @@
 #include <utils/vehicle/SUMOVehicle.h>
 #include <utils/router/SUMOAbstractRouter.h>
 #include <microsim/transportables/MSTransportable.h>
+#include <microsim/transportables/MSTransportableControl.h>
 #include <microsim/MSEventControl.h>
 #include <microsim/MSGlobals.h>
 #include <microsim/MSVehicle.h>
@@ -66,10 +67,14 @@ Command* MSDevice_Taxi::myDispatchCommand(nullptr);
 std::vector<MSDevice_Taxi*> MSDevice_Taxi::myFleet;
 int MSDevice_Taxi::myMaxCapacity(0);
 int MSDevice_Taxi::myMaxContainerCapacity(0);
-std::set<std::string> MSDevice_Taxi::myVClassWarningVTypes;
+std::map<SUMOVehicleClass, std::string> MSDevice_Taxi::myTaxiTypes;
+SUMOTime MSDevice_Taxi::myNextDispatchTime(-1);
+std::map<std::string, MSDevice_Taxi*> MSDevice_Taxi::myStateLoadedCustomers;
+std::map<std::string, MSDevice_Taxi*> MSDevice_Taxi::myStateLoadedReservations;
 
 #define TAXI_SERVICE "taxi"
 #define TAXI_SERVICE_PREFIX "taxi:"
+#define SWAP_THRESHOLD 5
 
 // ===========================================================================
 // method definitions
@@ -102,6 +107,10 @@ MSDevice_Taxi::insertOptions(OptionsCont& oc) {
 
     oc.doRegister("device.taxi.idle-algorithm.output", new Option_FileName());
     oc.addDescription("device.taxi.idle-algorithm.output", "Taxi Device", TL("Write information from the idling algorithm to FILE"));
+
+    oc.doRegister("device.taxi.vclasses", new Option_StringVector({"taxi"}));
+    oc.addSynonyme("device.taxi.vclasses", "taxi.vclasses");
+    oc.addDescription("device.taxi.vclasses", "Taxi Device", TL("Network permissions that can be accessed by taxis"));
 }
 
 
@@ -118,23 +127,30 @@ MSDevice_Taxi::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>
             // (see MSStageDriving::isWaitingFor)
             const_cast<SUMOVehicleParameter&>(v.getParameter()).line = TAXI_SERVICE;
         }
-        if (v.getVClass() != SVC_TAXI && myVClassWarningVTypes.count(v.getVehicleType().getID()) == 0) {
-            WRITE_WARNINGF(TL("Vehicle '%' with device.taxi should have vClass taxi instead of '%'."), v.getID(), toString(v.getVClass()));
-            myVClassWarningVTypes.insert(v.getVehicleType().getID());
-        }
         const int personCapacity = v.getVehicleType().getPersonCapacity();
         const int containerCapacity = v.getVehicleType().getContainerCapacity();
         myMaxCapacity = MAX2(myMaxCapacity, personCapacity);
         myMaxContainerCapacity = MAX2(myMaxContainerCapacity, containerCapacity);
+        if (myTaxiTypes[v.getVClass()] == "") {
+            myTaxiTypes[v.getVClass()] = v.getVehicleType().getID();
+        }
+        if ((gTaxiClasses & v.getVClass()) == 0) {
+            gTaxiClasses |= v.getVClass();
+            MSNet::getInstance()->resetIntermodalRouter();
+        }
         if (personCapacity < 1 && containerCapacity < 1) {
             WRITE_WARNINGF(TL("Vehicle '%' with personCapacity % and containerCapacity % is not usable as taxi."), v.getID(), toString(personCapacity), toString(containerCapacity));
         }
     }
 }
 
+SUMOTime
+MSDevice_Taxi::getNextDispatchTime() {
+    return myNextDispatchTime;
+}
 
 void
-MSDevice_Taxi::initDispatch() {
+MSDevice_Taxi::initDispatch(SUMOTime next) {
     OptionsCont& oc = OptionsCont::getOptions();
     myDispatchPeriod = string2time(oc.getString("device.taxi.dispatch-period"));
     // init dispatch algorithm
@@ -156,10 +172,14 @@ MSDevice_Taxi::initDispatch() {
     }
     myDispatchCommand = new StaticCommand<MSDevice_Taxi>(&MSDevice_Taxi::triggerDispatch);
     // round to next multiple of myDispatchPeriod
-    const SUMOTime now = MSNet::getInstance()->getCurrentTimeStep();
-    const SUMOTime begin = string2time(oc.getString("begin"));
-    const SUMOTime delay = (myDispatchPeriod - ((now - begin) % myDispatchPeriod)) % myDispatchPeriod;
-    MSNet::getInstance()->getEndOfTimestepEvents()->addEvent(myDispatchCommand, now + delay);
+    if (next < 0) {
+        const SUMOTime now = MSNet::getInstance()->getCurrentTimeStep();
+        const SUMOTime begin = string2time(oc.getString("begin"));
+        const SUMOTime delay = (myDispatchPeriod - ((now - begin) % myDispatchPeriod)) % myDispatchPeriod;
+        next = now + delay;
+    }
+    myNextDispatchTime = next;
+    MSNet::getInstance()->getEndOfTimestepEvents()->addEvent(myDispatchCommand, next);
 }
 
 bool
@@ -183,12 +203,12 @@ MSDevice_Taxi::addReservation(MSTransportable* person,
     if (!isReservation(lines)) {
         return;
     }
-    if ((to->getPermissions() & SVC_TAXI) == 0) {
+    if ((to->getPermissions() & gTaxiClasses) == 0) {
         throw ProcessError("Cannot add taxi reservation for " + std::string(person->isPerson() ? "person" : "container")
                            + " '" + person->getID() + "' because destination edge '" + to->getID() + "'"
                            + " does not permit taxi access");
     }
-    if ((from->getPermissions() & SVC_TAXI) == 0) {
+    if ((from->getPermissions() & gTaxiClasses) == 0) {
         throw ProcessError("Cannot add taxi reservation for " + std::string(person->isPerson() ? "person" : "container")
                            + " '" + person->getID() + "' because origin edge '" + from->getID() + "'"
                            + " does not permit taxi access");
@@ -200,7 +220,14 @@ MSDevice_Taxi::addReservation(MSTransportable* person,
         // pickup position should be at the stop-endPos
         fromPos = fromStop->getEndLanePosition();
     }
-    myDispatcher->addReservation(person, reservationTime, pickupTime, earliestPickupTime, from, fromPos, fromStop, to, toPos, toStop, group, *lines.begin(), myMaxCapacity, myMaxContainerCapacity);
+    Reservation* res = myDispatcher->addReservation(person, reservationTime, pickupTime, earliestPickupTime, from, fromPos, fromStop, to, toPos, toStop, group, *lines.begin(), myMaxCapacity, myMaxContainerCapacity);
+    if (myStateLoadedCustomers.size() > 0) {
+        auto it = myStateLoadedCustomers.find(person->getID());
+        if (it != myStateLoadedCustomers.end()) {
+            //std::cout << SIMTIME << " loadedServed p=" << person->getID() << " res=" << res->getID() << " taxi=" << it->second->getID() << "\n";
+            myDispatcher->servedReservation(res, it->second);
+        }
+    }
 }
 
 void
@@ -235,6 +262,7 @@ MSDevice_Taxi::triggerDispatch(SUMOTime currentTime) {
         }
     }
     myDispatcher->computeDispatch(currentTime, active);
+    myNextDispatchTime = currentTime + myDispatchPeriod;
     return myDispatchPeriod;
 }
 
@@ -250,8 +278,56 @@ MSDevice_Taxi::cleanup() {
         myDispatcher = nullptr;
     }
     myDispatchCommand = nullptr;
-    myVClassWarningVTypes.clear();
+    myTaxiTypes.clear();
 }
+
+
+void
+MSDevice_Taxi::allCustomersErased() {
+    for (MSDevice_Taxi* taxi : myFleet) {
+        // disable taskSwap
+        taxi->myState = EMPTY;
+    }
+}
+
+
+const std::map<SUMOVehicleClass, std::string>&
+MSDevice_Taxi::getTaxiTypes() {
+    if (myTaxiTypes.size() < std::bitset<64>(gTaxiClasses).count()) {
+        for (const std::string& vClassName : OptionsCont::getOptions().getStringVector("device.taxi.vclasses")) {
+            SUMOVehicleClass svc = (SUMOVehicleClass)parseVehicleClasses(vClassName);
+            if (myTaxiTypes[svc] == "") {
+                switch(svc) {
+                    // @see MSVehicleControl::initDefaultTypes()
+                    case SVC_TAXI:
+                        myTaxiTypes[svc] = DEFAULT_TAXITYPE_ID;
+                        break;
+                    case SVC_RAIL:
+                        myTaxiTypes[svc] = DEFAULT_RAILTYPE_ID;
+                        break;
+                    case SVC_BICYCLE:
+                        myTaxiTypes[svc] = DEFAULT_BIKETYPE_ID;
+                        break;
+                    case SVC_PASSENGER:
+                        myTaxiTypes[svc] = DEFAULT_VTYPE_ID;
+                        break;
+                    default: {
+                        const std::string typeID = "DEFAULT_" + StringUtils::to_upper_case(vClassName) + "TYPE";
+                        MSVehicleControl& vc = MSNet::getInstance()->getVehicleControl();
+                        if (!vc.hasVType(typeID)) {
+                            SUMOVTypeParameter tp(typeID, svc);
+                            MSVehicleType* t = MSVehicleType::build(tp);
+                            vc.addVType(t);
+                        }
+                        myTaxiTypes[svc] = typeID;;
+                    }
+                }
+            }
+        }
+    }
+    return myTaxiTypes;
+}
+
 
 // ---------------------------------------------------------------------------
 // MSDevice_Taxi-methods
@@ -318,7 +394,8 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
     if (DEBUG_COND) {
         std::cout << SIMTIME << " taxi=" << myHolder.getID() << " dispatch:\n";
         for (const Reservation* res : reservations) {
-            std::cout << "   persons=" << toString(res->persons) << "\n";
+            std::cout << "   res=" << res->getID();
+            std::cout << " persons=" << toString(res->persons) << "\n";
         }
     }
 #endif
@@ -456,7 +533,6 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
         }
     }
 
-    const SUMOTime t = MSNet::getInstance()->getCurrentTimeStep();
     bool hasPickup = false;
     for (const Reservation* res : reservations) {
         myCurrentReservations.insert(res);
@@ -477,14 +553,12 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
                     stops.back().containerTriggered = true;
                 }
                 stops.back().permitted.insert(transportable->getID());
+                stops.back().parametersSet |= STOP_PERMITTED_SET | STOP_TRIGGER_SET;
             }
-            // proof this lines: Is needed for pre-booking?
-            std::set<const MSTransportable*> persons = res->persons;
-            for (auto itr = persons.begin(); itr != persons.end(); itr++) {
-                stops.back().awaitedPersons.insert((*itr)->getID());
+            for (const MSTransportable* t : res->persons) {
+                stops.back().awaitedPersons.insert(t->getID());
             }
 
-            stops.back().parametersSet |= STOP_PERMITTED_SET;
             if (stops.back().duration == -1) {
                 // keep dropOffDuration if the stop is dropOff and pickUp
                 stops.back().duration = TIME2STEPS(myHolder.getFloatParam("device.taxi.pickUpDuration", false, 0));
@@ -493,12 +567,14 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
             prepareStop(tmpEdges, stops, lastPos, res->to, res->toPos, res->toStop, "dropOff " + toString(res->persons) + " (" + res->id + ")", res, isPickup);
             stops.back().duration = TIME2STEPS(myHolder.getFloatParam("device.taxi.dropOffDuration", false, 60)); // pay and collect bags
         }
+        stops.back().parametersSet |= STOP_DURATION_SET | STOP_PARKING_SET;
     }
 #ifdef DEBUG_DISPATCH
     if (DEBUG_COND) {
         std::cout << "   tmpEdges=" << toString(tmpEdges) << "\n";
     }
 #endif
+    const SUMOTime t = SIMSTEP;
     if (!myHolder.replaceRouteEdges(tmpEdges, -1, 0, "taxi:prepare_dispatch", false, false, false)) {
         throw ProcessError("Route replacement for taxi dispatch failed for vehicle '" + myHolder.getID()
                            + "' at time=" + time2string(t) + ".");
@@ -509,9 +585,8 @@ MSDevice_Taxi::dispatchShared(std::vector<const Reservation*> reservations) {
 #endif
     for (SUMOVehicleParameter::Stop& stop : stops) {
         std::string error;
-        myHolder.addStop(stop, error);
-        if (error != "") {
-            WRITE_WARNINGF(TL("Could not add taxi stop, time=%, error=%"), myHolder.getID(), stop.actType, time2string(t), error)
+        if (!myHolder.addStop(stop, error)) {
+            WRITE_WARNINGF(TL("Could not add taxi stop for %, desc=% time=% error=%"), myHolder.getID(), stop.actType, time2string(t), error)
         }
     }
     SUMOAbstractRouter<MSEdge, SUMOVehicle>& router = MSRoutingEngine::getRouterTT(myHolder.getRNGIndex(), myHolder.getVClass());
@@ -619,6 +694,30 @@ MSDevice_Taxi::cancelCustomer(const MSTransportable* t) {
 
 
 void
+MSDevice_Taxi::addCustomer(const MSTransportable* t, const Reservation* res) {
+    myCustomers.insert(t);
+    MSBaseVehicle& veh = dynamic_cast<MSBaseVehicle&>(myHolder);
+    for (const MSStop& stop : veh.getStops()) {
+        SUMOVehicleParameter::Stop& pars = const_cast<SUMOVehicleParameter::Stop&>(stop.pars);
+        //std::cout << " sE=" << (*stop.edge)->getID() << " sStart=" << pars.startPos << " sEnd=" << pars.endPos << " rFrom=" <<
+        //    res->from->getID() << " rTo=" << res->to->getID() << " rFromPos=" << res->fromPos << " resToPos=" << res->toPos << "\n";
+        if (*stop.edge == res->from
+                && pars.startPos <= res->fromPos
+                && pars.endPos >= res->fromPos) {
+            pars.awaitedPersons.insert(t->getID());
+            pars.permitted.insert(t->getID());
+            pars.actType += " +" + t->getID();
+        } else if (*stop.edge == res->to
+                && pars.startPos <= res->toPos
+                && pars.endPos >= res->toPos) {
+            pars.actType += " +" + t->getID();
+            break;
+        }
+    }
+}
+
+
+void
 MSDevice_Taxi::prepareStop(ConstMSEdgeVector& edges,
                            StopParVector& stops,
                            double& lastPos, const MSEdge* stopEdge, double stopPos,
@@ -694,6 +793,7 @@ MSDevice_Taxi::prepareStop(ConstMSEdgeVector& edges,
     } else {
         stop.startPos = stopPos;
         stop.endPos = MAX2(stopPos, MIN2(myHolder.getVehicleType().getLength(), stopEdge->getLength()));
+        stop.parametersSet |= STOP_START_SET | STOP_END_SET;
     }
     stop.parking = SUMOVehicleParameter::parseParkingType(myHolder.getStringParam("device.taxi.parking", false, "true"));
     stop.actType = action;
@@ -830,8 +930,11 @@ MSDevice_Taxi::customerArrived(const MSTransportable* person) {
             myDispatcher->fulfilledReservation(res);
         }
         myCurrentReservations.clear();
-        if (MSGlobals::gUseMesoSim && MSNet::getInstance()->getCurrentTimeStep() < myServiceEnd) {
-            myIdleAlgorithm->idle(this);
+        checkTaskSwap();
+        if (isEmpty()) {
+            if (MSGlobals::gUseMesoSim && MSNet::getInstance()->getCurrentTimeStep() < myServiceEnd) {
+                myIdleAlgorithm->idle(this);
+            }
         }
     } else {
         // check whether a single reservation has been fulfilled
@@ -848,6 +951,59 @@ MSDevice_Taxi::customerArrived(const MSTransportable* person) {
                 resIt = myCurrentReservations.erase(resIt);
             } else {
                 ++resIt;
+            }
+        }
+    }
+}
+
+
+void
+MSDevice_Taxi::checkTaskSwap() {
+    const std::string swapGroup = myHolder.getStringParam("device.taxi.swapGroup", false, "");
+    if (swapGroup != "") {
+        SUMOAbstractRouter<MSEdge, SUMOVehicle>& router = myDispatcher->getRouter();
+        const double stopTime = myHolder.isStopped() ? MAX2(0.0, STEPS2TIME(myHolder.getNextStop().duration)) : 0;
+        double maxSaving = 0;
+        MSDevice_Taxi* bestSwap = nullptr;
+        for (MSDevice_Taxi* taxi : myFleet) {
+            if (taxi->getHolder().hasDeparted() && taxi->getState() == PICKUP
+                    && taxi->getHolder().getStringParam("device.taxi.swapGroup", false, "") == swapGroup) {
+                SUMOVehicle& veh = taxi->getHolder();
+                const MSStop& stop = veh.getNextStop();
+                ConstMSEdgeVector toPickup(veh.getCurrentRouteEdge(), stop.edge + 1);
+                const double cost = router.recomputeCostsPos(toPickup, &veh, veh.getPositionOnLane(), stop.pars.endPos, SIMSTEP);
+                ConstMSEdgeVector toPickup2;
+                router.compute(myHolder.getEdge(), myHolder.getPositionOnLane(), *stop.edge, stop.pars.endPos, &myHolder, SIMSTEP, toPickup2, true);
+                if (!toPickup2.empty()) {
+                    const double cost2 = router.recomputeCostsPos(toPickup2, &myHolder, myHolder.getPositionOnLane(), stop.pars.endPos, SIMSTEP);
+                    const double saving = cost - cost2 - stopTime;
+                    //std::cout << SIMTIME << " taxi=" << getID() << " other=" << veh.getID() << " cost=" << cost << " cost2=" << cost2 << " stopTime=" << stopTime << " saving=" << saving << " route1=" << toString(toPickup) << " route2=" << toString(toPickup2) << "\n";
+                    if (saving > maxSaving) {
+                        maxSaving = saving;
+                        bestSwap = taxi;
+                    }
+                }
+            }
+        }
+        if (maxSaving > SWAP_THRESHOLD) {
+#ifdef DEBUG_DISPATCH
+            if (DEBUG_COND) {
+                std::cout << SIMTIME << " taxi=" << myHolder.getID() << " swapWith=" << bestSwap->getHolder().getID() << " saving=" << maxSaving << " lastDispatch=";
+                for (const Reservation* res : bestSwap->myLastDispatch) {
+                    std::cout << toString(res->persons) << "; ";
+                }
+                std::cout << "\n";
+            }
+#endif
+            dispatchShared(bestSwap->myLastDispatch);
+            bestSwap->myCurrentReservations.clear();
+            bestSwap->myCustomers.clear();
+            bestSwap->myState = EMPTY;
+            while (bestSwap->getHolder().hasStops()) {
+                bestSwap->getHolder().abortNextStop();
+            }
+            for (const Reservation* res : myCurrentReservations) {
+                myDispatcher->swappedRunning(res, this);
             }
         }
     }
@@ -915,6 +1071,92 @@ MSDevice_Taxi::setParameter(const std::string& key, const std::string& value) {
         throw InvalidArgument("Setting parameter '" + key + "' is not supported for device of type '" + deviceName() + "'");
     }
 }
+
+
+void
+MSDevice_Taxi::saveState(OutputDevice& out) const {
+    out.openTag(SUMO_TAG_DEVICE);
+    out.writeAttr(SUMO_ATTR_ID, getID());
+    std::ostringstream internals;
+    internals << myState
+        << " " << myCustomersServed
+        << " " << myOccupiedDistance
+        << " " << myOccupiedTime;
+    out.writeAttr(SUMO_ATTR_STATE, internals.str());
+    if (myCustomers.size() > 0) {
+        out.writeAttr(SUMO_ATTR_CUSTOMERS, joinNamedToStringSorting(myCustomers, " "));
+    }
+    if (myCurrentReservations.size() > 0) {
+        out.writeAttr(SUMO_ATTR_RESERVATIONS, joinNamedToStringSorting(myCurrentReservations, " "));
+    }
+    out.closeTag();
+}
+
+
+void
+MSDevice_Taxi::loadState(const SUMOSAXAttributes& attrs) {
+    bool ok = true;
+    std::istringstream bis(attrs.getString(SUMO_ATTR_STATE));
+    bis >> myState;
+    bis >> myCustomersServed;
+    bis >> myOccupiedDistance;
+    bis >> myOccupiedTime;
+    if (attrs.hasAttribute(SUMO_ATTR_CUSTOMERS)) {
+        for (const std::string& id : attrs.get<std::vector<std::string> >(SUMO_ATTR_CUSTOMERS, getID().c_str(), ok)) {
+            myStateLoadedCustomers[id] = this;
+        }
+    }
+    if (attrs.hasAttribute(SUMO_ATTR_RESERVATIONS)) {
+        for (const std::string& id : attrs.get<std::vector<std::string> >(SUMO_ATTR_RESERVATIONS, getID().c_str(), ok)) {
+            myStateLoadedReservations[id] = this;
+        }
+    }
+}
+
+
+void
+MSDevice_Taxi::finalizeLoadState() {
+    if (myStateLoadedCustomers.size() > 0) {
+        MSNet* net = MSNet::getInstance();
+        MSTransportableControl* pc = net->hasPersons() ? &net->getPersonControl() : nullptr;
+        MSTransportableControl* cc = net->hasContainers() ? &net->getContainerControl() : nullptr;
+        for (auto item : myStateLoadedCustomers) {
+            MSTransportable* t = nullptr;
+            if (pc != nullptr) {
+                t = pc->get(item.first);
+            }
+            if (t == nullptr && cc != nullptr) {
+                t = cc->get(item.first);
+            }
+            if (t == nullptr) {
+                WRITE_ERRORF("Could not find taxi customer '%'. Ensure state contains transportables", item.first);
+            } else {
+                item.second->myCustomers.insert(t);
+            }
+        }
+    }
+    if (myStateLoadedReservations.size() > 0) {
+        assert(myDispatcher != nullptr);
+        std::map<std::string, const Reservation*> resLookup;
+        for (const Reservation* res : myDispatcher->getReservations()) {
+            resLookup[res->getID()] = res;
+        }
+        for (const Reservation* res : myDispatcher->getRunningReservations()) {
+            resLookup[res->getID()] = res;
+        }
+        for (auto item : myStateLoadedReservations) {
+            auto it = resLookup.find(item.first);
+            if (it == resLookup.end()) {
+                WRITE_ERRORF("Could not find taxi reservation '%'.", item.first);
+            } else {
+                item.second->myCurrentReservations.insert(it->second);
+            }
+        }
+    }
+    myStateLoadedCustomers.clear();
+    myStateLoadedReservations.clear();
+}
+
 
 bool
 MSDevice_Taxi::compatibleLine(const std::string& taxiLine, const std::string& rideLine) {

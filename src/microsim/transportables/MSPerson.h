@@ -104,7 +104,15 @@ public:
         void tripInfoOutput(OutputDevice& os, const MSTransportable* const transportable) const;
 
         /// @brief Called on writing vehroute output. Currently does nothing.
-        void routeOutput(const bool, OutputDevice&, const bool, const MSStage* const) const {};
+        void routeOutput(const bool /*isPerson*/, OutputDevice& /*os*/, const bool /*withRouteLength*/, const MSStage* const /*previous*/, const bool /*withTiming*/, const bool /*saveState*/ = false) const {};
+
+        /** @brief Saves the current state into the given stream
+        */
+        void saveState(std::ostringstream& out, MSTransportable* transportable);
+
+        /** @brief Reconstructs the current state
+        */
+        void loadState(MSTransportable* person, std::istringstream& state);
 
     private:
         class ProceedCmd : public Command {

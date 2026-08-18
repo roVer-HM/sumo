@@ -57,7 +57,7 @@ std::vector<MSRoutingEngine::TimeAndCount> MSRoutingEngine::myEdgeTravelTimes;
 std::vector<std::vector<double> > MSRoutingEngine::myPastEdgeSpeeds;
 std::vector<std::vector<double> > MSRoutingEngine::myPastEdgeBikeSpeeds;
 Command* MSRoutingEngine::myEdgeWeightSettingCommand = nullptr;
-double MSRoutingEngine::myAdaptationWeight;
+double MSRoutingEngine::myAdaptationWeight(0);
 int MSRoutingEngine::myAdaptationSteps;
 int MSRoutingEngine::myAdaptationStepsIndex = 0;
 SUMOTime MSRoutingEngine::myAdaptationInterval = -1;
@@ -70,6 +70,7 @@ double MSRoutingEngine::myPriorityFactor(0);
 double MSRoutingEngine::myMinEdgePriority(std::numeric_limits<double>::max());
 double MSRoutingEngine::myEdgePriorityRange(0);
 bool MSRoutingEngine::myDynamicRandomness(false);
+bool MSRoutingEngine::myHaveExtras(false);
 
 SUMOAbstractRouter<MSEdge, SUMOVehicle>::Operation MSRoutingEngine::myEffortFunc = &MSRoutingEngine::getEffort;
 #ifdef HAVE_FOX
@@ -81,21 +82,22 @@ FXMutex MSRoutingEngine::myRouteCacheMutex;
 // method definitions
 // ===========================================================================
 void
-MSRoutingEngine::initWeightUpdate() {
+MSRoutingEngine::initWeightUpdate(SUMOTime lastAdaptation) {
     if (myAdaptationInterval == -1) {
         myEdgeWeightSettingCommand = nullptr;
-        myEdgeSpeeds.clear();
-        myEdgeTravelTimes.clear();
-        myAdaptationSteps = -1;
-        myLastAdaptation = -1;
+        myLastAdaptation = lastAdaptation;
         const OptionsCont& oc = OptionsCont::getOptions();
         myWithTaz = oc.getBool("device.rerouting.with-taz");
         myAdaptationInterval = string2time(oc.getString("device.rerouting.adaptation-interval"));
         myAdaptationWeight = oc.getFloat("device.rerouting.adaptation-weight");
         const SUMOTime period = string2time(oc.getString("device.rerouting.period"));
         if (myAdaptationWeight < 1. && myAdaptationInterval > 0) {
+            SUMOTime nextAdaptation = -1;
+            if (lastAdaptation >= 0) {
+                nextAdaptation = lastAdaptation + myAdaptationInterval;
+            }
             myEdgeWeightSettingCommand = new StaticCommand<MSRoutingEngine>(&MSRoutingEngine::adaptEdgeEfforts);
-            MSNet::getInstance()->getEndOfTimestepEvents()->addEvent(myEdgeWeightSettingCommand);
+            MSNet::getInstance()->getEndOfTimestepEvents()->addEvent(myEdgeWeightSettingCommand, nextAdaptation);
         } else if (period > 0) {
             WRITE_WARNING(TL("Rerouting is useless if the edge weights do not get updated!"));
         }
@@ -106,6 +108,10 @@ MSRoutingEngine::initWeightUpdate() {
 
 void
 MSRoutingEngine::initEdgeWeights(SUMOVehicleClass svc, SUMOTime lastAdaption, int index) {
+    const OptionsCont& oc = OptionsCont::getOptions();
+    if (myAdaptationWeight == 0 || !oc.isDefault("device.rerouting.adaptation-steps")) {
+        myAdaptationSteps = oc.getInt("device.rerouting.adaptation-steps");
+    }
     if (myBikeSpeeds && svc == SVC_BICYCLE) {
         _initEdgeWeights(myEdgeBikeSpeeds, myPastEdgeBikeSpeeds);
     } else {
@@ -114,10 +120,34 @@ MSRoutingEngine::initEdgeWeights(SUMOVehicleClass svc, SUMOTime lastAdaption, in
     if (lastAdaption >= 0) {
         myLastAdaptation = lastAdaption;
     }
-    if (index >= 0) {
-        assert(index < (int)myPastEdgeSpeeds.size());
+    if (index >= 0 && myAdaptationSteps > 0) {
+        assert(index < myAdaptationSteps);
         myAdaptationStepsIndex = index;
     }
+}
+
+
+void
+MSRoutingEngine::initWeightConstants(const OptionsCont& oc) {
+    if (oc.getFloat("weights.priority-factor") != 0) {
+        myPriorityFactor = oc.getFloat("weights.priority-factor");
+        if (myPriorityFactor < 0) {
+            throw ProcessError(TL("weights.priority-factor cannot be negative."));
+        }
+        myMinEdgePriority = std::numeric_limits<double>::max();
+        double maxEdgePriority = -std::numeric_limits<double>::max();
+        for (const MSEdge* const edge : MSNet::getInstance()->getEdgeControl().getEdges()) {
+            maxEdgePriority = MAX2(maxEdgePriority, (double)edge->getPriority());
+            myMinEdgePriority = MIN2(myMinEdgePriority, (double)edge->getPriority());
+        }
+        myEdgePriorityRange = maxEdgePriority - myMinEdgePriority;
+        if (myEdgePriorityRange == 0) {
+            WRITE_WARNING(TL("Option weights.priority-factor does not take effect because all edges have the same priority"));
+            myPriorityFactor = 0;
+        }
+    }
+    myDynamicRandomness = oc.getBool("weights.random-factor.dynamic");
+    myHaveExtras = gRoutingPreferences || myPriorityFactor != 0 || gWeightsRandomFactor != 0;
 }
 
 
@@ -125,12 +155,8 @@ void
 MSRoutingEngine::_initEdgeWeights(std::vector<double>& edgeSpeeds, std::vector<std::vector<double> >& pastEdgeSpeeds) {
     if (edgeSpeeds.empty()) {
         const OptionsCont& oc = OptionsCont::getOptions();
-        if (myAdaptationWeight == 0 || !oc.isDefault("device.rerouting.adaptation-steps")) {
-            myAdaptationSteps = oc.getInt("device.rerouting.adaptation-steps");
-        }
         const bool useLoaded = oc.getBool("device.rerouting.init-with-loaded-weights");
         const double currentSecond = SIMTIME;
-        double maxEdgePriority = -std::numeric_limits<double>::max();
         for (const MSEdge* const edge : MSNet::getInstance()->getEdgeControl().getEdges()) {
             while (edge->getNumericalID() >= (int)edgeSpeeds.size()) {
                 edgeSpeeds.push_back(0);
@@ -149,22 +175,8 @@ MSRoutingEngine::_initEdgeWeights(std::vector<double>& edgeSpeeds, std::vector<s
             if (myAdaptationSteps > 0) {
                 pastEdgeSpeeds[edge->getNumericalID()] = std::vector<double>(myAdaptationSteps, edgeSpeeds[edge->getNumericalID()]);
             }
-            maxEdgePriority = MAX2(maxEdgePriority, (double)edge->getPriority());
-            myMinEdgePriority = MIN2(myMinEdgePriority, (double)edge->getPriority());
         }
-        myEdgePriorityRange = maxEdgePriority - myMinEdgePriority;
         myLastAdaptation = MSNet::getInstance()->getCurrentTimeStep();
-        myPriorityFactor = oc.getFloat("weights.priority-factor");
-        myDynamicRandomness = oc.getBool("weights.random-factor.dynamic");
-        if (myPriorityFactor < 0) {
-            throw ProcessError(TL("weights.priority-factor cannot be negative."));
-        }
-        if (myPriorityFactor > 0) {
-            if (myEdgePriorityRange == 0) {
-                WRITE_WARNING(TL("Option weights.priority-factor does not take effect because all edges have the same priority"));
-                myPriorityFactor = 0;
-            }
-        }
     }
 }
 
@@ -194,22 +206,7 @@ MSRoutingEngine::getEffortExtra(const MSEdge* const e, const SUMOVehicle* const 
     double effort = (!myBikeSpeeds || v == nullptr || v->getVClass() != SVC_BICYCLE
                      ? getEffort(e, v, t)
                      : getEffortBike(e, v, t));
-    if (gWeightsRandomFactor != 1.) {
-        long long int key = v->getRandomSeed() ^ e->getNumericalID();
-        if (myDynamicRandomness) {
-            key ^= SIMSTEP;
-        }
-        effort *= (1 + RandHelper::randHash(key) * (gWeightsRandomFactor - 1));
-    }
-    if (myPriorityFactor != 0) {
-        // lower priority should result in higher effort (and the edge with
-        // minimum priority receives a factor of 1 + myPriorityFactor
-        const double relativeInversePrio = 1 - ((e->getPriority() - myMinEdgePriority) / myEdgePriorityRange);
-        effort *= 1 + relativeInversePrio * myPriorityFactor;
-    }
-    if (gRoutingPreferences) {
-        effort /= MSNet::getInstance()->getPreference(e->getRoutingType(), v->getVTypeParameter());
-    }
+    applyExtras(e, v, SIMSTEP, effort);
     return effort;
 }
 
@@ -275,7 +272,7 @@ MSRoutingEngine::adaptEdgeEfforts(SUMOTime currentTime) {
     if (myAdaptationSteps > 0) {
         myAdaptationStepsIndex = (myAdaptationStepsIndex + 1) % myAdaptationSteps;
     }
-    myLastAdaptation = currentTime + DELTA_T; // because we run at the end of the time step
+    myLastAdaptation = currentTime;
     if (OptionsCont::getOptions().isSet("device.rerouting.output")) {
         OutputDevice& dev = OutputDevice::getDeviceByOption("device.rerouting.output");
         dev.openTag(SUMO_TAG_INTERVAL);

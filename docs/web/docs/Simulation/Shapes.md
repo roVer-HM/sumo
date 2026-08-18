@@ -93,8 +93,8 @@ position on this lane. So, the attributes have the following meanings:
 - You can [read variables of loaded
   PoIs](../TraCI/POI_Value_Retrieval.md) and [read variables of
   loaded polygons](../TraCI/Polygon_Value_Retrieval.md) via
-  [TraCI](../TraCI.md)
+  [TraCI](../TraCI/index.md)
 - You can [add PoIs and manipulate their
   properties](../TraCI/Change_PoI_State.md) and [the same for
   polygons](../TraCI/Change_Polygon_State.md) via
-  [TraCI](../TraCI.md)
+  [TraCI](../TraCI/index.md)

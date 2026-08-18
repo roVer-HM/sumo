@@ -16,8 +16,8 @@
 # @date    2013-10-23
 
 from __future__ import print_function
-from .miscutils import euclidean
-from .geomhelper import polygonOffsetWithMinimumDistanceToPoint
+from .miscutils import euclidean, PRACTICAL_INFINITY
+from .geomhelper import polygonOffsetWithMinimumDistanceToPoint, positionAtShapeOffset
 
 try:
     basestring
@@ -75,23 +75,28 @@ def addInternal(net, edges):
     return result
 
 
-def _getMinPath(paths, detoursOut=None):
+def _getMinPath(paths, detoursOut=None, indicesOut=None, priorEdges=0):
     minDist = 1e400
     minPath = None
     minDetours = None
-    for path, (dist, _, detours) in paths.items():
+    minIndices = None
+    for path, (dist, _, detours, indices) in paths.items():
         if dist < minDist:
             minPath = path
             minDist = dist
             minDetours = detours
+            minIndices = indices
     if detoursOut is not None:
         detoursOut += minDetours
+    if indicesOut is not None:
+        indicesOut += [i + priorEdges for i in minIndices]
     return minPath
 
 
 def mapTrace(trace, net, delta, verbose=False, airDistFactor=2, fillGaps=0, gapPenalty=-1,
              debug=False, direction=False, vClass=None, vias=None, reversalPenalty=0.,
-             fastest=False, resultDetours=None):
+             fastest=False, resultDetours=None, preferences={}, distPenalty=2,
+             resultIndices=None):
     """
     matching a list of 2D positions to consecutive edges in a network.
     The positions are assumed to be dense (i.e. covering each edge of the route) and in the correct order.
@@ -99,6 +104,8 @@ def mapTrace(trace, net, delta, verbose=False, airDistFactor=2, fillGaps=0, gapP
     result = ()
     if resultDetours is None:
         resultDetours = []
+    if resultIndices is None:
+        resultIndices = []
     paths = {}  # maps a path stub to a tuple (currentCost, posOnLastEdge, detours)
     lastPos = None
     nPathCalls = 0
@@ -112,15 +119,23 @@ def mapTrace(trace, net, delta, verbose=False, airDistFactor=2, fillGaps=0, gapP
             candidates = []
             for edgeID in vias[idx]:
                 if net.hasEdge(edgeID):
-                    candidates.append((net.getEdge(edgeID), 0.))
+                    edge = net.getEdge(edgeID)
+                    offset = polygonOffsetWithMinimumDistanceToPoint(pos, edge.getShape())
+                    offsetPos = positionAtShapeOffset(edge.getShape(), offset)
+                    candidates.append((net.getEdge(edgeID), euclidean(pos, offsetPos)))
                 else:
                     print("Unknown via edge %s for %s,%s" % (edgeID, x, y))
+            if candidates:
+                # normalize distances depending on the minimum value in the candidate set
+                minLocError = min([d for e, d in candidates])
+                candidates = [(e, d - minLocError) for e, d in candidates]
+
             # print("idx %s: vias=%s, candidates=%s (%s)" % (idx, len(vias[idx]),
             #    len(candidates), [ed[0].getID() for ed in candidates]))
         else:
             candidates = net.getNeighboringEdges(x, y, delta, False)
         if debug:
-            print("\n\npos:%s, %s" % (x, y))
+            print("\n\nindex: %s pos:%s, %s" % (idx, x, y))
             print("candidates:%s\n" % [(e.getID(), c) for e, c in candidates])
         if verbose and not candidates:
             if nNoCandidates == 0:
@@ -139,13 +154,12 @@ def mapTrace(trace, net, delta, verbose=False, airDistFactor=2, fillGaps=0, gapP
                 minDist = 1e400
                 minPath = None
                 minDetours = None
-                for path, (dist, lastBase, detours) in paths.items():
+                for path, (dist, lastBase, detours, indices) in paths.items():
                     pathLength = None
                     if debug:
-                        print("*** extending path %s by edge '%s' (d=%s)" %
-                              ([e.getID() for e in path], edge.getID(), d))
-                        print("              lastBase: %.2f, base: %.2f, advance: %.2f, old dist: %.2f, minDist: %.2f" %
-                              (lastBase, base, advance, dist, minDist))
+                        print("*** extending prev '%s' path: %s" % (path[-1].getID(), " ".join([e.getID() for e in path])))  # noqa
+                        print("           by edge '%s' (d=%s) lastBase: %.2f, base: %.2f, advance: %.2f, old dist: %.2f, minDist: %.2f" %  # noqa
+                              (edge.getID(), d, lastBase, base, advance, dist, minDist))
                     if dist < minDist:
                         if edge == path[-1] and base > lastBase:
                             pathLength = base - lastBase
@@ -155,14 +169,15 @@ def mapTrace(trace, net, delta, verbose=False, airDistFactor=2, fillGaps=0, gapP
                             baseDiff = advance - pathCost
                             extension = ()
                             if debug:
-                                print("---------- same edge")
+                                print("------- same edge")
                         else:
                             penalty = airDistFactor * advance if gapPenalty < 0 else gapPenalty
                             maxGap = min(penalty + edge.getLength() + path[-1].getLength(), fillGaps)
                             extension, cost = net.getOptimalPath(path[-1], edge, maxCost=maxGap,
                                                                  fastest=fastest,
                                                                  reversalPenalty=reversalPenalty,
-                                                                 fromPos=lastBase, toPos=base, vClass=vClass)
+                                                                 fromPos=lastBase, toPos=base, vClass=vClass,
+                                                                 preferences=preferences)
                             nPathCalls += 1
                             if extension is None:
                                 airLineDist = euclidean(
@@ -172,44 +187,58 @@ def mapTrace(trace, net, delta, verbose=False, airDistFactor=2, fillGaps=0, gapP
                                 pathLength = pathCost
                                 baseDiff = abs(lastBase + advance -
                                                path[-1].getLength() - base - airLineDist) + penalty
-                                extension = (edge,)
+                                if cost > maxGap and maxGap > 0:
+                                    pathCost = PRACTICAL_INFINITY
+                                    extension = ()
+                                else:
+                                    extension = (edge,)
                             else:
                                 pathCost = cost
                                 baseDiff = advance - pathCost
                                 extension = extension[1:]
                                 pathLength = sum([e.getLength() for e in extension[:-1]]) - lastBase + base
                             if debug:
-                                print("---------- extension path: %s, cost: %.2f, pathCost: %.2f" %
-                                      (" ".join([e.getID() for e in extension]),
-                                          cost, pathCost))
-                        dist += d * d + pathCost
+                                print("------- extension cost: %.2f, pathCost: %.2f, pathLength: %.2f n: %s edges: %s" %
+                                      (cost, pathCost, pathLength, len(extension),
+                                       " ".join([e.getID() for e in extension])))
+                        dist += d ** distPenalty + pathCost
                         if direction:
                             dist += baseDiff * baseDiff
                         if dist < minDist:
                             minDist = dist
                             minPath = path + extension
                             minDetours = detours
+                            minIndices = indices
                             bestLength = pathLength
-                        if debug:
-                            print("*** new dist: %.2f baseDiff: %.2f minDist: %.2f" % (dist, baseDiff, minDist))
+                            if debug:
+                                print("*** new dist: %.2f baseDiff: %.2f minDist: %.2f advance: %.2f pathLength: %.2f detour: %.2f" % (  # noqa
+                                    dist, baseDiff, minDist, advance, bestLength, bestLength / advance))
                 if minPath:
-                    newPaths[minPath] = (minDist, base, minDetours + [bestLength / advance if advance > 0 else 0])
+                    newPaths[minPath] = (minDist, base,
+                                         minDetours + [bestLength / advance if advance > 0 else 0],
+                                         minIndices + [len(minPath) - 1])
             else:
                 #  the penality for picking a departure edge that is further away from pos
                 #  must outweigh the distance that is saved by picking an edge
                 #  that is closer to the subsequent pos
                 if debug:
                     print("*** origin %s d=%s base=%s" % (edge.getID(), d, base))
-                newPaths[(edge,)] = (d * 2, base, [0])
+                newPaths[(edge,)] = (d * 2, base, [0], [0])
         if not newPaths:
+            if debug:
+                print("*** no newPaths ***")
             # no mapping for the current pos, the route may be disconnected or the radius is too small
             if paths:
-                minPath = _getMinPath(paths, resultDetours)
+                minPath = _getMinPath(paths, resultDetours, resultIndices)
                 if len(result) > 0 and minPath[0] in result:
                     cropIndex = max([i for i in range(len(minPath)) if minPath[i] in result])
                     minPath = minPath[cropIndex+1:]
                 result += minPath
-            resultDetours.append(0)
+                # signal disconnect
+                resultDetours.append(PRACTICAL_INFINITY)
+            else:
+                resultDetours.append(-1)
+            resultIndices.append(None)
         paths = newPaths
         lastPos = pos
     if verbose:
@@ -217,12 +246,18 @@ def mapTrace(trace, net, delta, verbose=False, airDistFactor=2, fillGaps=0, gapP
             print("%s Points had no candidates." % nNoCandidates, end="")
         print(" (%s router calls)" % nPathCalls)
     if paths:
-        result += _getMinPath(paths, resultDetours)
+        result += _getMinPath(paths, resultDetours, resultIndices, len(result))
         if debug:
             print("**************** paths:")
-            for edges, (cost, base, _) in paths.items():
-                print(cost, base, " ".join([e.getID() for e in edges]))
+            for edges, (cost, base, detours, indices) in paths.items():
+                print(cost, base, detours, indices, " ".join([e.getID() for e in edges]))
             print("**************** result:")
             for i in result:
                 print("path:%s" % i.getID())
+    # remove disconnect info if no positions where mapped after the first unmapped
+    if PRACTICAL_INFINITY in resultDetours:
+        for i, d in enumerate(resultDetours):
+            if d == PRACTICAL_INFINITY:
+                if all([d2 == -1 for d2 in resultDetours[i + 1:]]):
+                    resultDetours[i] = -1
     return result

@@ -177,7 +177,7 @@ public:
     MSNet(MSVehicleControl* vc, MSEventControl* beginOfTimestepEvents,
           MSEventControl* endOfTimestepEvents,
           MSEventControl* insertionEvents,
-          ShapeContainer* shapeCont = 0);
+          ShapeContainer* shapeCont = nullptr);
 
 
     /// @brief Destructor
@@ -348,6 +348,16 @@ public:
      * @param step The new simulation step
      */
     void clearState(const SUMOTime step, bool quickReload = false);
+
+
+    SUMOTime getLoaderTime() const;
+
+    void setLoaderTime(SUMOTime time);
+
+    /// @brief return the next time for route loading the time of state loading
+    SUMOTime getStateLoaderTime() const {
+        return myStateLoaderTime;
+    }
 
     /** @brief Write netstate, summary and detector output
      * @todo Which exceptions may occur?
@@ -791,6 +801,9 @@ public:
     MSPedestrianRouter& getPedestrianRouter(int rngIndex, const Prohibitions& prohibited = {}) const;
     MSTransportableRouter& getIntermodalRouter(int rngIndex, const int routingMode = 0, const Prohibitions& prohibited = {}) const;
 
+    /// @brief force reconstruction of intermodal network
+    void resetIntermodalRouter() const;
+
     static void adaptIntermodalRouter(MSTransportableRouter& router);
 
 
@@ -845,9 +858,6 @@ public:
     /// @brief find electrical substation by its id
     MSTractionSubstation* findTractionSubstation(const std::string& substationId);
 
-    /// @brief return whether given electrical substation exists in the network
-    bool existTractionSubstation(const std::string& substationId);
-
     /// @brief string constants for simstep stages
     static const std::string STAGE_EVENTS;
     static const std::string STAGE_MOVEMENTS;
@@ -881,6 +891,15 @@ protected:
 
     /// @brief Current time step
     SUMOTime myStep;
+
+    /* @brief the time for rejecting vehicle that departed in the past are were already loaded.
+     * When not loading state, this value is the simulation begin time.
+     * When loading state, this is the time up to which vehicles have been
+     * loaded before saving state. This is typically after the state time.
+     * The state will include vehicles up to this time and they should not be
+     * loaded again from a route file. Uniqueness of ids is not a sufficient
+     * guard against loading again because these vehicles could arrive shortly after state loading. */
+    SUMOTime myStateLoaderTime;
 
     /// @brief whether libsumo triggered a partial step (executeMove)
     bool myStepCompletionMissing = false;

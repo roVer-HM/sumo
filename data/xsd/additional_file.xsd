@@ -250,6 +250,7 @@
                     <xsd:simpleType>
                         <xsd:restriction base="xsd:string">
                             <xsd:enumeration value="defaults"/>
+                            <xsd:enumeration value="modified"/>
                         </xsd:restriction>
                     </xsd:simpleType>
                 </xsd:union>
@@ -595,6 +596,7 @@
         <xsd:attribute name="departPos" type="floatType" use="optional"/>
         <xsd:attribute name="lefthand" type="boolType" use="optional"/>
         <xsd:attribute name="acceptedBadges" type="xsd:string" use="optional"/>
+        <xsd:attribute name="reservable" type="boolType"/>
     </xsd:complexType>
 
     <xsd:complexType name="parkingSpaceType">

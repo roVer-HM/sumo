@@ -835,6 +835,13 @@ class VehicleDomain(VTypeDomain):
         """
         return self._getUniversal(tc.VAR_DISTANCE, vehID)
 
+    def getReferenceDistance(self, vehID):
+        """getReferenceDistance(string) -> double
+        Returns the distance along the linear reference system
+        in which the current edge takes part (i.e. kilometrage/mile markers)
+        """
+        return self._getUniversal(tc.VAR_REFERENCE_DISTANCE, vehID)
+
     def getStopParameter(self, vehID, nextStopIndex, param, customParam=False):
         """getStopParameter(string, int, string) -> string
         Gets the value of the given parameter for the stop at the given index
@@ -1206,7 +1213,7 @@ class VehicleDomain(VTypeDomain):
         setRoute(string, list) ->  None
 
         changes the vehicle route to given edges list.
-        The first edge in the list has to be the one that the vehicle is at at the moment.
+        The first edge in the list has to be the one that the vehicle is at the moment.
 
         example usage:
         setRoute('1', ['1', '2', '4', '6', '7'])

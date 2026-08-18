@@ -300,7 +300,7 @@ MSStageWalking::tripInfoOutput(OutputDevice& os, const MSTransportable* const pe
 
 
 void
-MSStageWalking::routeOutput(const bool /* isPerson */, OutputDevice& os, const bool withRouteLength, const MSStage* const /* previous */) const {
+MSStageWalking::routeOutput(const bool /* isPerson */, OutputDevice& os, const bool withRouteLength, const MSStage* const /* previous */, const bool withTiming, const bool saveState) const {
     os.openTag("walk").writeAttr(SUMO_ATTR_EDGES, myRoute);
     std::string comment = "";
     if (myDestinationStop != nullptr) {
@@ -331,11 +331,16 @@ MSStageWalking::routeOutput(const bool /* isPerson */, OutputDevice& os, const b
         std::vector<std::string> missing(MAX2(0, (int)myRoute.size() - (int)myExitTimes->size()), "-1");
         exits.insert(exits.end(), missing.begin(), missing.end());
         os.writeAttr("exitTimes", exits);
+    }
+    if (withTiming) {
         os.writeAttr(SUMO_ATTR_STARTED, myDeparted >= 0 ? time2string(myDeparted) : "-1");
         os.writeAttr(SUMO_ATTR_ENDED, myArrived >= 0 ? time2string(myArrived) : "-1");
     }
     if (OptionsCont::getOptions().getBool("vehroute-output.cost")) {
         os.writeAttr(SUMO_ATTR_COST, getCosts());
+    }
+    if (saveState && getTotalWaitingTime() > 0) {
+        os.writeAttr("waitingTime", time2string(getTotalWaitingTime()));
     }
     os.closeTag(comment);
 }
@@ -469,8 +474,16 @@ MSStageWalking::getStageSummary(const bool /* isPerson */) const {
 
 
 void
-MSStageWalking::saveState(std::ostringstream& out) {
+MSStageWalking::saveState(std::ostringstream& out, MSTransportable* /*transportable*/) {
     out << " " << myDeparted << " " << (myRouteStep - myRoute.begin()) << " " << myLastEdgeEntryTime;
+    if (myExitTimes != nullptr) {
+        out << " " << myExitTimes->size();
+        for (SUMOTime t : *myExitTimes) {
+            out << " " << t;
+        }
+    } else {
+        out << " " << -1;
+    }
     myPState->saveState(out);
 }
 
@@ -479,6 +492,20 @@ void
 MSStageWalking::loadState(MSTransportable* transportable, std::istringstream& state) {
     int stepIdx;
     state >> myDeparted >> stepIdx >> myLastEdgeEntryTime;
+    int exitTimesSize;
+    state >> exitTimesSize;
+    if (exitTimesSize >= 0) {
+        myExitTimes = new std::vector<SUMOTime>();
+        SUMOTime t;
+        for (int i = 0; i < exitTimesSize; i++) {
+            state >> t;
+            myExitTimes->push_back(t);
+        }
+        if (!OptionsCont::getOptions().getBool("vehroute-output.exit-times")) {
+            delete myExitTimes;
+            myExitTimes = nullptr;
+        }
+    }
     myRouteStep = myRoute.begin() + stepIdx;
     myPState = MSNet::getInstance()->getPersonControl().getMovementModel()->loadState(transportable, this, state);
     if (myPState->getLane() && !myPState->getLane()->isNormal()) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2026-01-17T17:50:02.689537+01:00 by Eclipse SUMO sumo v1_25_0+1031-30c9dee08ac
+<!-- generated on 2026-06-14T16:37:03.252403+01:00 by Eclipse SUMO sumo v1_27_0+0202-1c25520502a
 -->
 
 <xsd:schema elementFormDefault="qualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
@@ -83,14 +83,17 @@
             <xsd:element name="substations-output.precision" type="intOptionType" minOccurs="0"/>
             <xsd:element name="fcd-output" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="fcd-output.geo" type="boolOptionType" minOccurs="0"/>
+            <xsd:element name="fcd-output.utm" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="fcd-output.signals" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="fcd-output.distance" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="fcd-output.acceleration" type="boolOptionType" minOccurs="0"/>
+            <xsd:element name="fcd-output.speed-relative" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="fcd-output.max-leader-distance" type="floatOptionType" minOccurs="0"/>
             <xsd:element name="fcd-output.params" type="strArrayOptionType" minOccurs="0"/>
             <xsd:element name="fcd-output.filter-edges.input-file" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="fcd-output.attributes" type="strArrayOptionType" minOccurs="0"/>
             <xsd:element name="fcd-output.filter-shapes" type="strArrayOptionType" minOccurs="0"/>
+            <xsd:element name="fcd-output.skip-empty" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="person-fcd-output" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="device.ssm.filter-edges.input-file" type="fileOptionType" minOccurs="0"/>
             <xsd:element name="full-output" type="fileOptionType" minOccurs="0"/>
@@ -512,6 +515,7 @@
             <xsd:element name="device.taxi.dispatch-keep-unreachable" type="timeOptionType" minOccurs="0"/>
             <xsd:element name="device.taxi.idle-algorithm" type="strOptionType" minOccurs="0"/>
             <xsd:element name="device.taxi.idle-algorithm.output" type="fileOptionType" minOccurs="0"/>
+            <xsd:element name="device.taxi.vclasses" type="strArrayOptionType" minOccurs="0"/>
         </xsd:all>
     </xsd:complexType>
 
@@ -591,6 +595,7 @@
             <xsd:element name="meso-minor-penalty" type="timeOptionType" minOccurs="0"/>
             <xsd:element name="meso-overtaking" type="boolOptionType" minOccurs="0"/>
             <xsd:element name="meso-recheck" type="timeOptionType" minOccurs="0"/>
+            <xsd:element name="meso-interpolate-pos" type="boolOptionType" minOccurs="0"/>
         </xsd:all>
     </xsd:complexType>
 

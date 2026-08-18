@@ -15,3 +15,12 @@ rerouting
 
 # on idling pick the closest taxi stand
 closest_stand
+
+# idling taxis should advance in the queue when parking is onRoad
+advance_queue
+
+# when idling at delivery spots, spillback must be avoided (when no overtaking is possible)
+queued_station_idling
+
+# on idling pick the closest taxi stand, stands on edges with different lengths
+queued_station_idling2

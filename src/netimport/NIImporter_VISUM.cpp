@@ -35,6 +35,9 @@
 #include "NILoader.h"
 #include "NIImporter_VISUM.h"
 
+// use a string that distinguishes edge types from tsys-codes
+// (rename codes loaded as types prior to loading edge types)
+#define TSYSPREFIX "@"
 
 StringBijection<NIImporter_VISUM::VISUM_KEY>::Entry NIImporter_VISUM::KEYS_DE[] = {
     { "VSYS", VISUM_SYS },
@@ -81,6 +84,9 @@ StringBijection<NIImporter_VISUM::VISUM_KEY>::Entry NIImporter_VISUM::KEYS_DE[] 
     { "KATNR", VISUM_CATID },
     { "ZWISCHENPUNKT", VISUM_EDGEITEM },
     { "POIKATEGORIE", VISUM_POICATEGORY },
+    { "NETZ", VISUM_NETWORK },
+    { "DEFKOORD", VISUM_PROJECTIONDEFINITION },
+    { "IV", VISUM_PRT },
     { "NR", VISUM_NO } // must be the last one
 };
 
@@ -105,6 +111,14 @@ NIImporter_VISUM::loadNetwork(const OptionsCont& oc, NBNetBuilder& nb) {
                             NBCapacity2Lanes(oc.getFloat("lanes-from-capacity.norm")),
                             oc.getBool("visum.use-type-priority"),
                             oc.getString("visum.language-file"));
+    // rename loaded types (tsys code interpretations) so they never clash with edge types
+    std::vector<std::string> codes;
+    for (auto it = nb.getTypeCont().begin(); it != nb.getTypeCont().end(); it++) {
+        codes.push_back(it->first);
+    }
+    for (const std::string& code : codes) {
+        nb.getTypeCont().updateEdgeTypeID(code, TSYSPREFIX + code);
+    }
     loader.load();
 }
 
@@ -123,9 +137,11 @@ NIImporter_VISUM::NIImporter_VISUM(NBNetBuilder& nb,
     if (languageFile != "") {
         loadLanguage(languageFile);
     }
+    myDefaultPermissions = parseVehicleClasses(OptionsCont::getOptions().getString("default.allow"));
 
     // the order of process is important!
     // set1
+    addParser(KEYS.getString(VISUM_NETWORK), &NIImporter_VISUM::parse_Network);
     addParser(KEYS.getString(VISUM_SYS), &NIImporter_VISUM::parse_VSysTypes);
     addParser(KEYS.getString(VISUM_LINKTYPE), &NIImporter_VISUM::parse_Types);
     addParser(KEYS.getString(VISUM_NODE), &NIImporter_VISUM::parse_Nodes);
@@ -273,9 +289,22 @@ NIImporter_VISUM::load() {
 
 void
 NIImporter_VISUM::parse_VSysTypes() {
-    std::string name = myLineParser.know("VSysCode") ? myLineParser.get("VSysCode").c_str() : myLineParser.get(KEYS.getString(VISUM_CODE)).c_str();
-    std::string type = myLineParser.know("VSysMode") ? myLineParser.get("VSysMode").c_str() : myLineParser.get(KEYS.getString(VISUM_TYP)).c_str();
-    myVSysTypes[name] = type;
+    std::string code = myLineParser.know("VSysCode") ? myLineParser.get("VSysCode").c_str() : myLineParser.get(KEYS.getString(VISUM_CODE));
+    std::string name = myLineParser.get(KEYS.getString(VISUM_NAME)).c_str();
+    std::string type = myLineParser.know("VSysMode") ? myLineParser.get("VSysMode").c_str() : myLineParser.get(KEYS.getString(VISUM_TYP));
+    myVSysTypes.emplace(code, VSysType(type, StringUtils::to_lower_case(name)));
+}
+
+
+void
+NIImporter_VISUM::parse_Network() {
+    const std::string key = KEYS.getString(VISUM_PROJECTIONDEFINITION);
+    if (myLineParser.know(key)) {
+        std::string proj = myLineParser.get(key);
+        // visum network contains projected geometry, we only need the projection info computing lon, lat outputs
+        GeoConvHelper* result = new GeoConvHelper(proj, Position(0, 0), Boundary(0, 0, 1, 1), Boundary(0, 0, 1, 1));
+        GeoConvHelper::setLoaded(*result);
+    }
 }
 
 
@@ -292,7 +321,7 @@ NIImporter_VISUM::parse_Types() {
         WRITE_ERROR("Type '" + myCurrentID + "' has speed " + toString(speed));
     }
     // get the permissions
-    SVCPermissions permissions = getPermissions(KEYS.getString(VISUM_TYPES), true);
+    SVCPermissions permissions = getPermissions(KEYS.getString(VISUM_TYPES), myCurrentID, myDefaultPermissions);
     // get the priority
     const int priority = 1000 - StringUtils::toInt(myLineParser.get(KEYS.getString(VISUM_RANK)));
     // try to retrieve the number of lanes
@@ -408,10 +437,6 @@ NIImporter_VISUM::parse_Edges() {
         speed = myNetBuilder.getTypeCont().getEdgeTypeSpeed(type);
     }
 
-    // get the information whether the edge is a one-way
-    bool oneway = myLineParser.know("Einbahn")
-                  ? StringUtils::toBool(myLineParser.get("Einbahn"))
-                  : true;
     // get the number of lanes
     int nolanes = myNetBuilder.getTypeCont().getEdgeTypeNumLanes(type);
     if (!OptionsCont::getOptions().getBool("visum.recompute-lane-number")) {
@@ -431,7 +456,7 @@ NIImporter_VISUM::parse_Edges() {
     }
     // check whether the id is already used
     //  (should be the opposite direction)
-    bool oneway_checked = oneway;
+    bool oneway_checked = true;
     NBEdge* previous = myNetBuilder.getEdgeCont().retrieve(myCurrentID);
     if (previous != nullptr) {
         myCurrentID = '-' + myCurrentID;
@@ -451,25 +476,8 @@ NIImporter_VISUM::parse_Edges() {
     }
     std::string name = StringUtils::latin1_to_utf8(myLineParser.get(KEYS.getString(VISUM_NAME)));
     // add the edge
-    const SVCPermissions permissions = getPermissions(KEYS.getString(VISUM_TYPES), false, myNetBuilder.getTypeCont().getEdgeTypePermissions(type));
+    const SVCPermissions permissions = getPermissions(KEYS.getString(VISUM_TYPES), type, myNetBuilder.getTypeCont().getEdgeTypePermissions(type));
     int prio = myUseVisumPrio ? myNetBuilder.getTypeCont().getEdgeTypePriority(type) : -1;
-    if (nolanes != 0 && speed != 0) {
-        LaneSpreadFunction lsf = oneway_checked ? LaneSpreadFunction::CENTER : LaneSpreadFunction::RIGHT;
-        NBEdge* e = new NBEdge(myCurrentID, from, to, type, speed, NBEdge::UNSPECIFIED_FRICTION, nolanes, prio,
-                               NBEdge::UNSPECIFIED_WIDTH, NBEdge::UNSPECIFIED_OFFSET, lsf, name);
-        e->setPermissions(permissions);
-        if (!myNetBuilder.getEdgeCont().insert(e)) {
-            delete e;
-            WRITE_ERRORF(TL("Duplicate edge occurred ('%')."), myCurrentID);
-        }
-    }
-    myTouchedEdges.push_back(myCurrentID);
-    // nothing more to do, when the edge is a one-way street
-    if (oneway) {
-        return;
-    }
-    // add the opposite edge
-    myCurrentID = '-' + myCurrentID;
     if (nolanes != 0 && speed != 0) {
         LaneSpreadFunction lsf = oneway_checked ? LaneSpreadFunction::CENTER : LaneSpreadFunction::RIGHT;
         NBEdge* e = new NBEdge(myCurrentID, from, to, type, speed, NBEdge::UNSPECIFIED_FRICTION, nolanes, prio,
@@ -660,7 +668,8 @@ NIImporter_VISUM::parse_Turns() {
     std::string type = myLineParser.know("VSysCode")
                        ? myLineParser.get("VSysCode")
                        : myLineParser.get(KEYS.getString(VISUM_TYPES));
-    if (myVSysTypes.find(type) != myVSysTypes.end() && myVSysTypes.find(type)->second == "IV") {
+    if (myVSysTypes.find(type) != myVSysTypes.end() &&
+            myVSysTypes.find(type)->second.type == KEYS.getString(VISUM_PRT)) {
         // try to set the turning definition
         NBEdge* src = from->getConnectionTo(via);
         NBEdge* dest = via->getConnectionTo(to);
@@ -1159,7 +1168,7 @@ void NIImporter_VISUM::parse_LanesConnections() {
 void NIImporter_VISUM::parse_stopPoints() {
     std::string id = NBHelpers::normalIDRepresentation(myLineParser.get(KEYS.getString(VISUM_NO)));
     std::string name = StringUtils::latin1_to_utf8(myLineParser.get(KEYS.getString(VISUM_NAME)));
-    SVCPermissions permissions = getPermissions(KEYS.getString(VISUM_TYPES), true);
+    SVCPermissions permissions = getPermissions(KEYS.getString(VISUM_TYPES), id, myDefaultPermissions);
     NBNode* from = getNamedNodeSecure(KEYS.getString(VISUM_FROMNODE));
     NBNode* to = getNamedNodeSecure(KEYS.getString(VISUM_FROMNODENO));
     const std::string edgeID = myLineParser.get(KEYS.getString(VISUM_LINKNO));
@@ -1242,31 +1251,56 @@ NIImporter_VISUM::getWeightedBool(const std::string& name) {
 }
 
 SVCPermissions
-NIImporter_VISUM::getPermissions(const std::string& name, bool warn, SVCPermissions unknown) {
+NIImporter_VISUM::getPermissions(const std::string& name, const std::string& edgeType, SVCPermissions unknown) {
     SVCPermissions result = 0;
+    NBTypeCont& tc = myNetBuilder.getTypeCont();
     for (std::string v : StringTokenizer(myLineParser.get(name), ",").getVector()) {
-        // common values in english and german
-        // || v == "funiculaire-telecabine" ---> no matching
-        v = StringUtils::to_lower_case(v);
-        if (v == "bus" || v == "tcsp" || v == "acces tc" || v == "Accès tc" || v == "accès tc") {
-            result |= SVC_BUS;
-        } else if (v == "walk" || v == "w" || v == "f" || v == "ped" || v == "map") {
-            result |= SVC_PEDESTRIAN;
-        } else if (v == "l" || v == "lkw" || v == "h" || v == "hgv" || v == "lw" || v == "truck" || v == "tru" || v == "pl") {
-            result |= SVC_TRUCK;
-        } else if (v == "b" || v == "bike" || v == "velo") {
-            result |= SVC_BICYCLE;
-        } else if (v == "train" || v == "rail") {
-            result |= SVC_RAIL;
-        } else if (v == "tram") {
-            result |= SVC_TRAM;
-        } else if (v == "p" || v == "pkw" || v == "car" || v == "c" || v == "vp" || v == "2rm") {
-            result |= SVC_PASSENGER;
+        const std::string v2 = TSYSPREFIX + v;
+        const std::string v3 = StringUtils::to_lower_case(v);
+        const std::string v4 = TSYSPREFIX + v3;
+        if (tc.knows(v2)) {
+            result |= tc.getEdgeTypePermissions(v2);
+        } else if (tc.knows(v4)) {
+            result |= tc.getEdgeTypePermissions(v4);
         } else {
-            if (warn) {
-                WRITE_WARNINGF("Encountered unknown vehicle category '" + v + "' in type '%'", myLineParser.get(KEYS.getString(VISUM_NO)));
+            SVCPermissions guessed = SVC_IGNORING;
+            std::string desc;
+            auto it = myVSysTypes.find(v);
+            if (it != myVSysTypes.end()) {
+                desc = it->second.name;
+                if (desc.find("taxi") != std::string::npos) {
+                    guessed = SVC_TAXI;
+                } else if (desc.find("bus") != std::string::npos) {
+                    guessed = SVC_BUS;
+                } else if (desc.find("seilbahn") != std::string::npos || desc.find("funiculaire") != std::string::npos || desc.find("cable") != std::string::npos || desc.find("funicular") != std::string::npos) {
+                    guessed = SVC_CABLE_CAR;
+                } else if (desc.find("subway") != std::string::npos || desc.find("ubahn") != std::string::npos || desc.find("u-bahn") != std::string::npos) {
+                    guessed = SVC_SUBWAY;
+                } else if (desc.find("train") != std::string::npos || desc.find("schiene") != std::string::npos || desc.find("rail") != std::string::npos || desc.find("bahn") != std::string::npos || desc.find("zug") != std::string::npos) {
+                    guessed = SVC_RAIL;
+                } else if (desc.find("tram") != std::string::npos || desc.find("strab") != std::string::npos) {
+                    guessed = SVC_TRAM;
+                } else if (desc.find("moto") != std::string::npos) {
+                    guessed = SVC_MOTORCYCLE;
+                } else if (desc.find("bike") != std::string::npos || desc.find("velo") != std::string::npos || desc.find("bicycle") != std::string::npos || desc.find("rad") != std::string::npos) {
+                    guessed = SVC_BICYCLE;
+                } else if (desc.find("foot") != std::string::npos || desc.find("ped") != std::string::npos || desc.find("fu\xdf") != std::string::npos
+                        || desc.find("fuss") != std::string::npos || desc.find("walk") != std::string::npos || desc.find("pied") != std::string::npos) {
+                    guessed = SVC_PEDESTRIAN;
+                } else if (desc.find("lkw") != std::string::npos || desc.find("truck") != std::string::npos || desc.find("camion") != std::string::npos) {
+                    guessed = SVC_TRUCK;
+                } else if (desc.find("pkw") != std::string::npos || desc.find("car") != std::string::npos || desc.find("auto") != std::string::npos) {
+                    guessed = SVC_PASSENGER;
+                }
             }
-            result |= unknown;
+            if (guessed == SVC_IGNORING) {
+                WRITE_WARNINGF("Encountered unknown vehicle category '%' in type '%' (description: '%')", v3, edgeType, desc);
+                guessed = unknown;
+            } else {
+                WRITE_WARNINGF("Encountered unknown vehicle category '%' in type '%' (guessed '%' based on description '%')", v3, edgeType, getVehicleClassNames(guessed), desc);
+            }
+            tc.insertEdgeType(v4, 1, 1, -1, guessed, LaneSpreadFunction::RIGHT, NBEdge::UNSPECIFIED_WIDTH, false, NBEdge::UNSPECIFIED_WIDTH, NBEdge::UNSPECIFIED_WIDTH, 0, 0, 0);
+            result |= guessed;
         }
     }
     return result;

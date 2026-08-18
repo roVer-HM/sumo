@@ -28,17 +28,21 @@ if "SUMO_HOME" in os.environ:
 import sumolib  # noqa
 import traci  # noqa
 
-if sys.argv[1] == "sumo":
-    sumoCall = [sumolib.checkBinary('sumo')]
+sumoOptions = [a for a in sys.argv[1:] if a.startswith('--')]
+positionalArgs = [a for a in sys.argv[1:] if not a.startswith('--')]
+if positionalArgs[0] == "sumo":
+    sumoCall = [sumolib.checkBinary('sumo')] + sumoOptions
 else:
-    sumoCall = [sumolib.checkBinary('sumo-gui'), '-S', '-Q']
+    sumoCall = [sumolib.checkBinary('sumo-gui'), '-S', '-Q'] + sumoOptions
 
 egoID = "ego"
 
 
 def runSingle(traciEndTime, downstreamDist, foeDistToJunction):
     step = 0
-    traci.start(sumoCall + ["-n", "input_net.net.xml", "-r", "input_routes.rou.xml", "--no-step-log", "true"])
+    traci.start(sumoCall + ["-n", "input_net.net.xml", "-r",
+                            "input_routes.rou.xml", "--no-step-log", "true",
+                            "--default.departspeed", "0", "--default.departlane", "first"])
     subscribed = False
     while not step > traciEndTime:
         responses = traci.simulationStep()
@@ -74,8 +78,8 @@ def runSingle(traciEndTime, downstreamDist, foeDistToJunction):
     sys.stdout.flush()
 
 
-if len(sys.argv) < 4:
+if len(positionalArgs) < 3:
     print("Usage: runner <sumo/sumo-gui> <downstreamDist> <foeDistToJunction>")
     sys.exit("")
 sys.stdout.flush()
-runSingle(100, float(sys.argv[2]), float(sys.argv[3]))
+runSingle(100, float(positionalArgs[1]), float(positionalArgs[2]))

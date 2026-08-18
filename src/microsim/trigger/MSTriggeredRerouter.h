@@ -239,10 +239,10 @@ public:
     }
 
     /// @brief Return the number of occupied places of the stopping place
-    double getStoppingPlaceOccupancy(MSStoppingPlace* sp);
+    double getStoppingPlaceOccupancy(MSStoppingPlace* sp, const SUMOVehicle* veh);
 
     /// @brief Return the number of occupied places of the stopping place from the previous time step
-    double getLastStepStoppingPlaceOccupancy(MSStoppingPlace* sp);
+    double getLastStepStoppingPlaceOccupancy(MSStoppingPlace* sp, const SUMOVehicle* veh);
 
     /// @brief Return the number of places the stopping place provides
     double getStoppingPlaceCapacity(MSStoppingPlace* sp);

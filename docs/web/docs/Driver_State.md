@@ -117,13 +117,16 @@ The error model is:
 
 # Supported carFollowModels
 
-All models support the driverstate effect of `freeSpeedError`. Note, that CACC disables the `freeSpeedError` unless parameter `vType`-attribute `applyDriverState="true"` is defined.
+All models support the driverstate effect of `freeSpeedError`.
 The following models support the driverstate effects speedDifferenceError and headywayError:
 
 - Krauss
 - IDM
 - CACC
+- ACC
 
+!!! note
+    The models CACC and ACC only apply driverstate device effects if parameter `vType`-attribute `applyDriverState="1"` is defined (any number other than *0* works).
 
 # Publication
 
